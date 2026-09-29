@@ -1,0 +1,25 @@
+schema: spec-driven
+
+context: |
+  This repository is a new Rust implementation target for Opute Host Agent.
+  The pinned Go source and its typed contracts are the behavioral baseline.
+  The migration changes implementation and architecture only: no product
+  capability, endpoint, mode, provider, authorization behavior, or documented
+  operational promise may be added or removed in this change. The old Rust
+  port is abandoned and must not be copied. Opute Platform owns intent,
+  authorization, cross-host orchestration, routing, and semantic outcomes;
+  Host Agent owns typed host execution, admission, provider lifecycle, plans,
+  durable observations, and MCP transport. Evidence must prove parity at the
+  actual wire, state, packaging, and external-effect boundaries.
+
+rules:
+  proposal:
+    - State that this is a pure refactor and enumerate non-goals.
+    - Name the pinned Go source revision and the new repository target.
+  design:
+    - Separate observable parity requirements from internal Rust structure.
+    - Identify preserved, introduced, and retired invariants with owners and evidence.
+    - Describe rollback and data preservation before any production cutover.
+  tasks:
+    - Give every milestone a concrete parity artifact and fail-closed exit gate.
+    - Keep production mutation and cutover separate from local development validation.

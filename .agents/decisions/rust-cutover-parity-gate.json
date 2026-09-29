@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "rust-cutover-parity-gate",
+  "title": "Rust Host Agent cutover requires complete behavior parity evidence",
+  "status": "proposed-unverified",
+  "claim": "No Rust slice may receive production traffic or justify Go retirement until a provenance-bound manifest passes every CLI, schema/catalog, auth, MCP wire, provider, plan, durable-state, package, client, and isolated external-effect parity gate for the selected current Go revision. Missing, stale, malformed, or blocked evidence fails the gate. Cutover and Go retirement are separate decisions.",
+  "owner": "The new host-agent Rust repository owns the parity manifest and verifier; the Host Agent, Platform, release, and deployment owners retain their respective cutover decisions.",
+  "authority": {
+    "decision": ".agents/decisions/rust-cutover-parity-gate.json",
+    "contract": "openspec/specs/host-agent-contract/spec.md",
+    "design": "openspec/changes/reimplement-host-agent-in-rust/design.md",
+    "tasks": "openspec/changes/reimplement-host-agent-in-rust/tasks.md",
+    "sourceLock": "baseline/source-lock.json"
+  },
+  "rationale": "A compiled binary, green unit tests, a health response, or a static tool list cannot establish that the replacement preserves an authenticated operational boundary or existing durable work.",
+  "scope": {
+    "included": [
+      "all Host Agent modes, public capabilities, and configured provider projections",
+      "MCP, CLI, package, installation, and client behavior",
+      "plans, operations, observations, state conversion, and rollback",
+      "production cutover and subsequent Go retirement"
+    ],
+    "excluded": [
+      "new product capabilities, which require a separate OpenSpec delta",
+      "private deployment credentials and controller implementation",
+      "the abandoned Rust prototype"
+    ]
+  },
+  "exception": "No implicit exception. A different product contract requires a separately reviewed specification and owner decision. A blocked live test remains unverified and cannot be waived by a passing lower-level test.",
+  "evidence": {
+    "required": [
+      "exact Go source tree and current selected release/catalog revision",
+      "machine-readable parity inventory with supported modes and provider fixtures",
+      "differential CLI, schema/catalog, auth, and MCP wire results",
+      "provider lifecycle, Tasks/cancellation, plan, and durable-state results",
+      "isolated external-effect and rollback rehearsal results",
+      "published package and real client first-success results",
+      "Host Agent, Platform, release, and deployment owner cutover review"
+    ],
+    "verifier": "To be implemented fail closed in task 0.5 before any Rust runtime seam is promoted"
+  },
+  "revisionBehavior": "A Go contract, package, mode, provider, schema, catalog, or transport revision change invalidates affected parity evidence and requires a reviewed source-lock and manifest rebase. A Rust implementation change reruns the affected gates and the whole-agent cutover verifier.",
+  "anchors": [
+    {
+      "kind": "file",
+      "path": "baseline/source-lock.json",
+      "note": "Pinned initial Go source and release/catalog provenance"
+    },
+    {
+      "kind": "file",
+      "path": "openspec/specs/host-agent-contract/spec.md",
+      "note": "Observable parity baseline and cutover requirement"
+    },
+    {
+      "kind": "file",
+      "path": "openspec/changes/reimplement-host-agent-in-rust/tasks.md",
+      "note": "Implementation and evidence gates"
+    }
+  ],
+  "verify": null,
+  "verificationStatus": "Not yet enforceable: the manifest and verifier are required by task 0.5 before runtime implementation. This draft records the invariant delta but cannot authorize cutover.",
+  "supersedes": [],
+  "withdrawn": false
+}
