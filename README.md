@@ -24,6 +24,7 @@ parity and cutover gates in this specification pass.
 - [Architecture and parity design](openspec/changes/reimplement-host-agent-in-rust/design.md)
 - [Ordered implementation gates](openspec/changes/reimplement-host-agent-in-rust/tasks.md)
 - [Milestones and E2E validation plan](openspec/changes/reimplement-host-agent-in-rust/milestones.md)
+- [Legacy and compatibility inventory](openspec/changes/reimplement-host-agent-in-rust/legacy-inventory.md)
 - [Proposed cutover parity invariant](.agents/decisions/rust-cutover-parity-gate.json)
 
 OpenSpec uses `skip_specs: true` for this change because the requested refactor

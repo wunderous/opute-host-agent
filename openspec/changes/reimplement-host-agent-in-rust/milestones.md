@@ -743,6 +743,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D4 | T2 sandbox infrastructure (where the nested-Incus VMs run) | A dedicated, disposable pool with no shared Incus, Kubernetes, or tunnel state | `AGENTS.md` forbids mutating shared runtime to validate. |
 | D5 | Staging Platform identity for M11 | A dedicated `parity-rs-*` ID and tenant | Spec: distinct identity, never inferred. |
 | D6 | Go rebase cadence while Rust is built | Rebase at each milestone exit, not continuously | This bounds churn and keeps evidence attributable. |
+| D7 | Observable legacy surface ([legacy-inventory.md](legacy-inventory.md) class O) | Retire it in Go first through a separate OpenSpec change, then rebase | Rust never builds shims that will be deleted anyway. The parity principle holds because Rust still matches Go exactly, just a newer Go. |
 
 ## 7. Risks this plan specifically mitigates
 
