@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from parity import canaries, canon, runner, verify
+from parity import canaries, canon, oracle, runner, verify
 
 GO_SHA = "a" * 64
 RUST_SHA = "b" * 64
@@ -37,16 +37,19 @@ class Tree:
             "sourceLock": "baseline/source-lock.json",
             "sourceLockSha256": _sha(lock_bytes),
             "goReference": {"binarySha256": GO_SHA},
-            "rustCandidate": {"binarySha256": None},
+            "rustCandidate": {"binarySha256": RUST_SHA},
             "evidence": {
                 "go-vs-go": {"summary": "evidence/gg/summary.json", "right": "go", "minRepeat": 2},
                 "go-vs-rust": {"summary": None, "right": "rust", "minRepeat": 1},
             },
             "canaries": {"results": "evidence/canaries.json", "expected": "canaries.json"},
+            "oracles": {"results": "evidence/oracles.json"},
             "gates": {
                 "m0": {"requirePass": ["go-vs-go"], "requireCanaries": True, "requireInventory": True},
                 "cutover": {"requirePass": ["go-vs-go", "go-vs-rust"], "requireCanaries": True,
                             "requireInventory": True},
+                "m1": {"requirePass": ["go-vs-go", {"suite": "go-vs-rust", "surfaces": ["cli", "config", "lifecycle"]}],
+                       "requireCanaries": True, "requireInventory": True, "requireOracles": True},
             },
             "items": [{"id": s["id"], "scenario": s["id"], "surface": s["surface"], "owner": s["owner"]}
                       for s in self.scenarios],
@@ -54,6 +57,7 @@ class Tree:
         self.write_bundle("evidence/gg", "go", GO_SHA, repeat=2)
         self.write_inventory()
         self.write_canaries()
+        self.write_oracles()
         self.save()
 
     def save(self) -> None:
@@ -108,6 +112,24 @@ class Tree:
                "canaryFileSha256": runner.sha256_file(canaries.CANARY_FILE), "results": results}
         (self.root / "evidence").mkdir(exist_ok=True)
         (self.root / "evidence/canaries.json").write_text(json.dumps(doc))
+
+    def write_oracles(self, control_exit: int = 1, rust_sha: str = RUST_SHA, rust_exit: int = 0) -> None:
+        suites = json.loads(oracle.ORACLE_FILE.read_text())
+        results = []
+        for suite in suites:
+            for label, sha, code in (("go", GO_SHA, 0), ("rust", rust_sha, rust_exit),
+                                     (oracle.NEGATIVE_CONTROL[0], "c" * 64, control_exit)):
+                results.append({"suite": suite["id"], "binary": label, "binarySha256": sha, "exit": code,
+                                "passed": suite["tests"] if code == 0 else [], "failed": [],
+                                "expectedTests": suite["tests"]})
+        doc = {"sourceCommit": self.lock["sourceCommit"],
+               "oracleFileSha256": runner.sha256_file(oracle.ORACLE_FILE), "results": results}
+        (self.root / "evidence/oracles.json").write_text(json.dumps(doc))
+
+    def rust_evidence(self, dirty: set[str] = frozenset()) -> None:
+        self.write_bundle("evidence/gr", "rust", RUST_SHA, repeat=1, dirty=dirty)
+        self.manifest["evidence"]["go-vs-rust"]["summary"] = "evidence/gr/summary.json"
+        self.save()
 
     def run(self, gate: str = "m0") -> dict:
         return verify.verify(self.root / "parity-manifest.json", gate)
@@ -217,6 +239,36 @@ class VerifyTest(unittest.TestCase):
 
     def test_unknown_gate_fails(self):
         self.assertFalse(self.tree.run("nonexistent")["gate"]["pass"])
+
+    def test_scoped_gate_ignores_items_outside_its_surfaces(self):
+        later = next(s["id"] for s in self.tree.scenarios if s["surface"] not in ("cli", "config", "lifecycle"))
+        self.tree.rust_evidence(dirty={later})
+        report = self.assertGate(True, "m1")
+        self.assertEqual(report["items"][later]["go-vs-rust"], "fail")
+        self.assertGate(False, "cutover")
+
+    def test_scoped_gate_fails_on_its_own_surface(self):
+        own = next(s["id"] for s in self.tree.scenarios if s["surface"] == "lifecycle")
+        self.tree.rust_evidence(dirty={own})
+        self.assertGate(False, "m1")
+
+    def test_scoped_gate_requires_rust_evidence(self):
+        self.assertGate(False, "m1")
+
+    def test_oracle_negative_control_must_fail(self):
+        self.tree.rust_evidence()
+        self.tree.write_oracles(control_exit=0)
+        self.assertGate(False, "m1")
+
+    def test_oracle_must_cover_the_recorded_rust_binary(self):
+        self.tree.rust_evidence()
+        self.tree.write_oracles(rust_sha="d" * 64)
+        self.assertGate(False, "m1")
+
+    def test_oracle_failure_fails_gate(self):
+        self.tree.rust_evidence()
+        self.tree.write_oracles(rust_exit=1)
+        self.assertGate(False, "m1")
 
     def test_malformed_manifest_fails(self):
         (self.tree.root / "parity-manifest.json").write_text("{not json")

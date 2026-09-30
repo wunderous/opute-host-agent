@@ -16,12 +16,14 @@ from . import canon, runner
 MANIFEST = runner.REPO_ROOT / "parity-manifest.json"
 
 
-def sync(go_binary_sha256: str | None = None) -> dict:
+def sync(go_binary_sha256: str | None = None, rust_binary_sha256: str | None = None) -> dict:
     manifest = json.loads(MANIFEST.read_text())
     lock_path = runner.REPO_ROOT / manifest["sourceLock"]
     manifest["sourceLockSha256"] = hashlib.sha256(lock_path.read_bytes()).hexdigest()
     if go_binary_sha256:
         manifest["goReference"]["binarySha256"] = go_binary_sha256
+    if rust_binary_sha256:
+        manifest["rustCandidate"]["binarySha256"] = rust_binary_sha256
     manifest["items"] = [
         {"id": s["id"], "scenario": s["id"], "surface": s["surface"], "owner": s["owner"],
          "anchors": s.get("anchors", [])}

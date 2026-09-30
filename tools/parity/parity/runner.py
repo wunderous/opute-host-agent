@@ -14,6 +14,8 @@ import gzip
 import hashlib
 import json
 import signal
+import socket
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -109,6 +111,7 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
     sandbox = agent.Sandbox(side=side, run_id=run_id, fixture=fixture_path)
     steps: dict[str, Any] = {}
     server: agent.Server | None = None
+    held: list[socket.socket] = []
     try:
         for index, step in enumerate(scenario["steps"]):
             label = step.get("as", f"step{index}")
@@ -120,7 +123,7 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
             elif "serve" in step:
                 spec = step["serve"]
                 server = agent.Server(impl, sandbox, spec.get("argv", ["serve"]), _env(spec))
-                steps[label] = server.wait_ready(spec.get("timeout", 30))
+                steps[label] = server.wait_ready(spec.get("timeout", 30), spec.get("readyPort"))
             elif "http" in step:
                 spec = step["http"]
                 body = spec.get("body")
@@ -135,6 +138,25 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                     token=spec.get("token", "${TOKEN}"), name=spec.get("name"),
                     modern=spec.get("modern", True), headers=spec.get("headers"),
                     omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
+            elif "listeners" in step:
+                steps[label] = {"listeners": agent.listeners_of(server.proc.pid)} if server else {"listeners": None}
+            elif "write" in step:
+                spec = step["write"]
+                path = Path(sandbox.expand(spec["path"]))
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(sandbox.expand(spec.get("content", "")))
+                path.chmod(int(spec.get("mode", "0644"), 8))
+                steps[label] = {"wrote": spec["path"]}
+            elif "mkdir" in step:
+                Path(sandbox.expand(step["mkdir"]["path"])).mkdir(parents=True, exist_ok=True)
+                steps[label] = {"mkdir": step["mkdir"]["path"]}
+            elif "occupy" in step:
+                holder = socket.socket()
+                holder.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                holder.bind(("127.0.0.1", sandbox.port))
+                holder.listen(1)
+                held.append(holder)
+                steps[label] = {"occupied": True}
             elif "stop" in step:
                 sig = getattr(signal, step["stop"].get("signal", "SIGINT"))
                 steps[label] = server.stop(sig) if server else {"exit": None}
@@ -144,6 +166,8 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
     finally:
         if server is not None:
             steps["_implicitStop"] = server.stop()
+        for holder in held:
+            holder.close()
     observation: dict[str, Any] = {"steps": steps}
     collect = scenario.get("collect", [])
     if "trace" in collect:
@@ -152,16 +176,29 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
         observation["files"] = sandbox.files()
     if "sqlite" in collect:
         observation["sqlite"] = sandbox.sqlite_schemas()
+    if "serverLog" in collect:
+        log = sandbox.root / "server.log"
+        observation["serverLog"] = agent._strip_log_prefix(log.read_text(errors="replace")) if log.exists() else None
     return observation, sandbox.variables
+
+
+_EXCLUSIVE = threading.Lock()
 
 
 def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: str) -> dict:
     spec = scenario.get("compare", {})
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        fut_l = pool.submit(execute, left, scenario, "a", run_id)
-        fut_r = pool.submit(execute, right, scenario, "b", run_id)
-        obs_l, vars_l = fut_l.result()
-        obs_r, vars_r = fut_r.result()
+    if scenario.get("exclusive"):
+        # Scenarios that use fixed default ports run one side at a time and
+        # never overlap another exclusive scenario.
+        with _EXCLUSIVE:
+            obs_l, vars_l = execute(left, scenario, "a", run_id)
+            obs_r, vars_r = execute(right, scenario, "b", run_id)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            fut_l = pool.submit(execute, left, scenario, "a", run_id)
+            fut_r = pool.submit(execute, right, scenario, "b", run_id)
+            obs_l, vars_l = fut_l.result()
+            obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)
     norm_r, viol_r = canon.normalize(obs_r, spec, vars_r)
     differences = canon.diff(norm_l, norm_r)
@@ -186,6 +223,7 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
     jobs = [(s, i) for i in range(repeat) for s in scenarios]
     results: dict[str, list[dict]] = {s["id"]: [] for s in scenarios}
     last: dict[str, dict] = {}
+    first_failure: dict[str, dict] = {}
     started = time.time()
 
     def job(item: tuple[dict, int]) -> tuple[str, int, dict]:
@@ -198,6 +236,9 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
                                  "maskViolations": sum(len(v) for v in outcome["maskViolations"].values())})
             if sid not in last or i >= last[sid]["iteration"]:
                 last[sid] = {"iteration": i, **outcome}
+            failed = outcome["diff"] or any(outcome["maskViolations"].values())
+            if failed and (sid not in first_failure or i < first_failure[sid]["iteration"]):
+                first_failure[sid] = {"iteration": i, **outcome}
 
     summary_items = {}
     for scenario in scenarios:
@@ -213,6 +254,13 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
                 "diff": outcome["diff"], "maskViolations": outcome["maskViolations"]}).encode(),
             "iterations.json": canon.canonical_json(iterations).encode(),
         }
+        # Keep the first failing iteration too: a flake that the last
+        # iteration does not show must still be diagnosable from evidence.
+        failure = first_failure.get(sid)
+        if failure is not None:
+            files["first-failure.json.gz"] = _gz({
+                "iteration": failure["iteration"], "diff": failure["diff"],
+                "maskViolations": failure["maskViolations"], "raw": failure["raw"]})
         hashes = {}
         for name, data in files.items():
             (sdir / name).write_bytes(data)

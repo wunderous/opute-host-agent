@@ -1,0 +1,25 @@
+[
+  {
+    "id": "standalone-startup",
+    "package": "./test/standalone",
+    "milestone": "M1",
+    "run": "^(TestStandaloneInvalidConfigurationExitsBeforeMCP|TestDeprecatedTransportFlagIsRejectOnly)$",
+    "tests": [
+      "TestStandaloneInvalidConfigurationExitsBeforeMCP",
+      "TestDeprecatedTransportFlagIsRejectOnly"
+    ],
+    "overlay": [
+      {
+        "file": "test/standalone/transport_cli_test.go",
+        "old": "func buildStandaloneBinary(t *testing.T) string {\n\tt.Helper()\n",
+        "new": "func buildStandaloneBinary(t *testing.T) string {\n\tt.Helper()\n\tif override := os.Getenv(\"OPUTE_STANDALONE_BINARY\"); override != \"\" {\n\t\treturn override\n\t}\n"
+      },
+      {
+        "file": "test/standalone/isolation_test.go",
+        "old": "func buildStandaloneIsolationBinary(t *testing.T) string {\n\tt.Helper()\n",
+        "new": "func buildStandaloneIsolationBinary(t *testing.T) string {\n\tt.Helper()\n\tif override := os.Getenv(\"OPUTE_STANDALONE_BINARY\"); override != \"\" {\n\t\treturn override\n\t}\n"
+      }
+    ],
+    "note": "The overlay only makes the tests' build helpers honour OPUTE_STANDALONE_BINARY; test bodies are unchanged."
+  }
+]

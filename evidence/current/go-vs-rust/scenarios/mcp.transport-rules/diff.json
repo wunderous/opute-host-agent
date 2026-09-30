@@ -1,0 +1,531 @@
+{
+ "diff": [
+  {
+   "left": "method not allowed\n",
+   "path": [
+    "steps",
+    "deleteMcp",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "POST, OPTIONS",
+   "path": [
+    "steps",
+    "deleteMcp",
+    "headers",
+    "allow"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "deleteMcp",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 405,
+   "path": [
+    "steps",
+    "deleteMcp",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "empty body\n",
+   "path": [
+    "steps",
+    "emptyBody",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "emptyBody",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "emptyBody",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "forbidden origin\n",
+   "path": [
+    "steps",
+    "foreignOrigin",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "foreignOrigin",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 403,
+   "path": [
+    "steps",
+    "foreignOrigin",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "method not allowed\n",
+   "path": [
+    "steps",
+    "getMcp",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "POST, OPTIONS",
+   "path": [
+    "steps",
+    "getMcp",
+    "headers",
+    "allow"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "getMcp",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 405,
+   "path": [
+    "steps",
+    "getMcp",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "invalid json-rpc\n",
+   "path": [
+    "steps",
+    "invalidJson",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "invalidJson",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "invalidJson",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+     "_meta": {
+      "io.modelcontextprotocol/serverInfo": {
+       "name": "host-agent",
+       "version": "0.2.3"
+      }
+     },
+     "capabilities": {
+      "extensions": {
+       "io.modelcontextprotocol/tasks": {}
+      },
+      "tools": {}
+     },
+     "resultType": "complete",
+     "supportedVersions": [
+      "2026-07-28"
+     ]
+    }
+   },
+   "path": [
+    "steps",
+    "loopbackOrigin",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "loopbackOrigin",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 200,
+   "path": [
+    "steps",
+    "loopbackOrigin",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32020,
+     "message": "HeaderMismatch"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "missingMethodHeader",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "missingMethodHeader",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "missingMethodHeader",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32020,
+     "message": "HeaderMismatch"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "missingProtocolHeader",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "missingProtocolHeader",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "missingProtocolHeader",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32020,
+     "message": "HeaderMismatch"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "noMeta",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "noMeta",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "noMeta",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "",
+   "path": [
+    "steps",
+    "optionsMcp",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "$absent",
+   "path": [
+    "steps",
+    "optionsMcp",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 204,
+   "path": [
+    "steps",
+    "optionsMcp",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32601,
+     "message": "Method not found: resources/list"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "resourcesList",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "resourcesList",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 404,
+   "path": [
+    "steps",
+    "resourcesList",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32601,
+     "message": "Method not found: tasks/list"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "tasksList",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "tasksList",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 404,
+   "path": [
+    "steps",
+    "tasksList",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32601,
+     "message": "JSON RPC not handled: \"no/such/method\" unsupported"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "unknownMethod",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "unknownMethod",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 404,
+   "path": [
+    "steps",
+    "unknownMethod",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32020,
+     "message": "HeaderMismatch"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "wrongMethodHeader",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "wrongMethodHeader",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "wrongMethodHeader",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "error": {
+     "code": -32022,
+     "data": {
+      "requested": "2026-07-28",
+      "supported": [
+       "2026-07-28"
+      ]
+     },
+     "message": "Unsupported protocol version"
+    },
+    "id": 1,
+    "jsonrpc": "2.0"
+   },
+   "path": [
+    "steps",
+    "wrongProtocolHeader",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "wrongProtocolHeader",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 400,
+   "path": [
+    "steps",
+    "wrongProtocolHeader",
+    "status"
+   ],
+   "right": 501
+  }
+ ],
+ "maskViolations": {
+  "a": [],
+  "b": []
+ }
+}

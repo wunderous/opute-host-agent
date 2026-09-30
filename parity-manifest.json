@@ -1,20 +1,20 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m0/canaries/results.json"
+  "results": "evidence/current/canaries.json"
  },
  "evidence": {
   "go-vs-go": {
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m0/go-vs-go/summary.json"
+   "summary": "evidence/current/go-vs-go/summary.json"
   },
   "go-vs-rust": {
-   "minRepeat": 1,
-   "purpose": "T1 differential parity of the Rust candidate",
+   "minRepeat": 5,
+   "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": null
+   "summary": "evidence/current/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -22,6 +22,7 @@
    "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence; later milestones add T2/T3/T4 suites here",
    "requireCanaries": true,
    "requireInventory": true,
+   "requireOracles": true,
    "requirePass": [
     "go-vs-go",
     "go-vs-rust"
@@ -33,6 +34,23 @@
    "requireInventory": true,
    "requirePass": [
     "go-vs-go"
+   ]
+  },
+  "m1": {
+   "description": "M1 exit: harness valid (Go-vs-Go x20, canaries, inventory) and the Rust candidate matches Go on every CLI, config and lifecycle item (x5), and passes the Go black-box startup tests; other surfaces may still differ (M2+)",
+   "requireCanaries": true,
+   "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "cli",
+      "config",
+      "lifecycle"
+     ]
+    }
    ]
   }
  },
@@ -141,6 +159,119 @@
   },
   {
    "anchors": [
+    "internal/cli/cli.go:Run",
+    "internal/cli/cli.go:splitCommand",
+    "internal/cli/cli.go:runRecipe",
+    "internal/cli/cli.go:runProvider",
+    "internal/cli/cli.go:runPublicMcp",
+    "Go flag package (FlagSet.Parse, PrintDefaults)"
+   ],
+   "id": "cli.dispatch",
+   "owner": "cli",
+   "scenario": "cli.dispatch",
+   "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/cli/cli.go:runServer (env-file, --env, mode, transport)",
+    "internal/config/envfile.go:LoadEnvFile",
+    "internal/config/config.go:envValue"
+   ],
+   "id": "config.env-precedence",
+   "owner": "config",
+   "scenario": "config.env-precedence",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Validate",
+    "internal/app/app.go:validateConfig"
+   ],
+   "id": "config.validation-matrix",
+   "owner": "config",
+   "scenario": "config.validation-matrix",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/app/app.go:Run",
+    "internal/app/runtime.go:NewRuntime"
+   ],
+   "id": "lifecycle.serve-standalone",
+   "owner": "server",
+   "scenario": "lifecycle.serve-standalone",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/app/app.go:Run signal.NotifyContext"
+   ],
+   "id": "lifecycle.serve-platform-sigterm",
+   "owner": "server",
+   "scenario": "lifecycle.serve-platform-sigterm",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/state/store.go:Open (idempotent migrations)",
+    "internal/authz/service.go:Open (client upsert)"
+   ],
+   "id": "lifecycle.restart-reopens-state",
+   "owner": "server",
+   "scenario": "lifecycle.restart-reopens-state",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/resource/host_lock.go:newHostLock",
+    "internal/state/store.go:Open",
+    "internal/authz/store.go:OpenStore",
+    "internal/transport/http.go:Start"
+   ],
+   "id": "lifecycle.fault-injection",
+   "owner": "server",
+   "scenario": "lifecycle.fault-injection",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load defaultBindHost"
+   ],
+   "id": "defaults.bind-host",
+   "owner": "config",
+   "scenario": "defaults.bind-host",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load defaultPort 3014"
+   ],
+   "id": "defaults.port-standalone",
+   "owner": "config",
+   "scenario": "defaults.port-standalone",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load defaultPort 3004"
+   ],
+   "id": "defaults.port-platform",
+   "owner": "config",
+   "scenario": "defaults.port-platform",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load instanceRoot/stateDir",
+    "internal/config/config.go:userConfigDir"
+   ],
+   "id": "defaults.state-location",
+   "owner": "config",
+   "scenario": "defaults.state-location",
+   "surface": "lifecycle"
+  },
+  {
+   "anchors": [
     "internal/transport/http.go:handleHealth",
     "test/compliance/mcp_test.go:TestMCPAuthProtectsMCPButNotHealth"
    ],
@@ -230,9 +361,14 @@
    "surface": "durable-state"
   }
  ],
+ "oracles": {
+  "results": "evidence/current/go-oracles.json",
+  "suites": "tools/parity/oracles.json"
+ },
  "rustCandidate": {
-  "binarySha256": null,
-  "note": "No Rust runtime exists yet (M1). Every go-vs-rust item is unverified until one does."
+  "binarySha256": "ddd408185a9c2a7ddbdc259ed2477e8d64364e4a2b7617619884543eb3a67a53",
+  "build": "cargo build --release --locked",
+  "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
  "schemaVersion": 1,
  "sourceLock": "baseline/source-lock.json",

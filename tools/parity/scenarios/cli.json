@@ -3,55 +3,176 @@
     "id": "cli.version",
     "surface": "cli",
     "owner": "cli",
-    "anchors": ["internal/cli/cli.go:Run --version"],
+    "anchors": [
+      "internal/cli/cli.go:Run --version"
+    ],
     "steps": [
-      {"as": "long", "cli": {"argv": ["--version"]}},
-      {"as": "short", "cli": {"argv": ["-version"]}}
+      {
+        "as": "long",
+        "cli": {
+          "argv": [
+            "--version"
+          ]
+        }
+      },
+      {
+        "as": "short",
+        "cli": {
+          "argv": [
+            "-version"
+          ]
+        }
+      }
     ]
   },
   {
     "id": "cli.help",
     "surface": "cli",
     "owner": "cli",
-    "anchors": ["internal/cli/cli.go:printUsage"],
+    "anchors": [
+      "internal/cli/cli.go:printUsage"
+    ],
     "steps": [
-      {"as": "help", "cli": {"argv": ["help"]}},
-      {"as": "serveFlags", "cli": {"argv": ["serve", "-h"]}},
-      {"as": "publicMcpFlags", "cli": {"argv": ["public-mcp", "-h"]}}
+      {
+        "as": "help",
+        "cli": {
+          "argv": [
+            "help"
+          ]
+        }
+      },
+      {
+        "as": "serveFlags",
+        "cli": {
+          "argv": [
+            "serve",
+            "-h"
+          ]
+        }
+      },
+      {
+        "as": "publicMcpFlags",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "-h"
+          ]
+        }
+      }
     ]
   },
   {
     "id": "cli.usage-errors",
     "surface": "cli",
     "owner": "cli",
-    "anchors": ["internal/cli/cli.go:Run", "internal/cli/cli.go:runRecipe", "internal/cli/cli.go:runProvider"],
+    "anchors": [
+      "internal/cli/cli.go:Run",
+      "internal/cli/cli.go:runRecipe",
+      "internal/cli/cli.go:runProvider"
+    ],
     "steps": [
-      {"as": "unknownCommand", "cli": {"argv": ["bogus"]}},
-      {"as": "unknownFlag", "cli": {"argv": ["serve", "--bogus"]}},
-      {"as": "recipeNoSub", "cli": {"argv": ["recipe"]}},
-      {"as": "recipeValidateNoSource", "cli": {"argv": ["recipe", "validate"]}},
-      {"as": "providerNoSub", "cli": {"argv": ["provider"]}},
-      {"as": "envFlagMalformed", "cli": {"argv": ["serve", "--env", "NOEQUALS", "--check"]}}
+      {
+        "as": "unknownCommand",
+        "cli": {
+          "argv": [
+            "bogus"
+          ]
+        }
+      },
+      {
+        "as": "unknownFlag",
+        "cli": {
+          "argv": [
+            "serve",
+            "--bogus"
+          ]
+        }
+      },
+      {
+        "as": "recipeNoSub",
+        "cli": {
+          "argv": [
+            "recipe"
+          ]
+        }
+      },
+      {
+        "as": "recipeValidateNoSource",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate"
+          ]
+        }
+      },
+      {
+        "as": "providerNoSub",
+        "cli": {
+          "argv": [
+            "provider"
+          ]
+        }
+      },
+      {
+        "as": "envFlagMalformed",
+        "cli": {
+          "argv": [
+            "serve",
+            "--env",
+            "NOEQUALS",
+            "--check"
+          ]
+        }
+      }
     ]
   },
   {
     "id": "cli.check.standalone-ok",
     "surface": "cli",
     "owner": "config",
-    "anchors": ["internal/app/app.go:Check"],
-    "collect": ["files", "sqlite"],
+    "anchors": [
+      "internal/app/app.go:Check"
+    ],
+    "collect": [
+      "files",
+      "sqlite"
+    ],
     "steps": [
-      {"as": "check", "cli": {"argv": ["serve", "--mode=standalone", "--check"], "profile": "standalone"}}
+      {
+        "as": "check",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone",
+            "--check"
+          ],
+          "profile": "standalone"
+        }
+      }
     ]
   },
   {
     "id": "cli.check.platform-ok",
     "surface": "cli",
     "owner": "config",
-    "anchors": ["internal/app/app.go:Check"],
-    "collect": ["files"],
+    "anchors": [
+      "internal/app/app.go:Check"
+    ],
+    "collect": [
+      "files"
+    ],
     "steps": [
-      {"as": "check", "cli": {"argv": ["serve", "--mode=platform", "--check"], "profile": "platform"}}
+      {
+        "as": "check",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=platform",
+            "--check"
+          ],
+          "profile": "platform"
+        }
+      }
     ]
   },
   {
@@ -63,19 +184,675 @@
       "test/standalone/isolation_test.go:TestStandaloneInvalidConfigurationExitsBeforeMCP",
       "test/standalone/transport_cli_test.go:TestDeprecatedTransportFlagIsRejectOnly"
     ],
-    "collect": ["files"],
+    "collect": [
+      "files"
+    ],
     "steps": [
-      {"as": "missingId", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_REMOTE_AGENT_ID": null}, "probePort": true}},
-      {"as": "blankId", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_REMOTE_AGENT_ID": "   "}, "probePort": true}},
-      {"as": "transportFlagWs", "cli": {"argv": ["serve", "--mode=standalone", "--transport=ws"], "profile": "standalone", "probePort": true}},
-      {"as": "transportEnvStdio", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_TRANSPORT": "stdio"}, "probePort": true}},
-      {"as": "reverseTunnelRetired", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_REVERSE_TUNNEL": "true"}, "probePort": true}},
-      {"as": "wsUrlRetired", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_HOST_WS_URL": "ws://example.invalid"}, "probePort": true}},
-      {"as": "cpcTokenRetired", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_CPC_TOKEN": "x"}, "probePort": true}},
-      {"as": "onboardingRetired", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_ONBOARDING_TOKEN": "x"}, "probePort": true}},
-      {"as": "standaloneWithPlatformUrl", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_MCP_URL": "http://example.invalid/mcp"}, "probePort": true}},
-      {"as": "unsupportedProvider", "cli": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_INFRA_PROVIDER_ID": "docker"}, "probePort": true}},
-      {"as": "envFileMissing", "cli": {"argv": ["serve", "--mode=standalone", "--env-file", "${SANDBOX}/missing.env"], "profile": "standalone", "probePort": true}}
+      {
+        "as": "missingId",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_REMOTE_AGENT_ID": null
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "blankId",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_REMOTE_AGENT_ID": "   "
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "transportFlagWs",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone",
+            "--transport=ws"
+          ],
+          "profile": "standalone",
+          "probePort": true
+        }
+      },
+      {
+        "as": "transportEnvStdio",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_TRANSPORT": "stdio"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "reverseTunnelRetired",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_REVERSE_TUNNEL": "true"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "wsUrlRetired",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_HOST_WS_URL": "ws://example.invalid"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "cpcTokenRetired",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_CPC_TOKEN": "x"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "onboardingRetired",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_ONBOARDING_TOKEN": "x"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "standaloneWithPlatformUrl",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_MCP_URL": "http://example.invalid/mcp"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "unsupportedProvider",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_INFRA_PROVIDER_ID": "docker"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "envFileMissing",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode=standalone",
+            "--env-file",
+            "${SANDBOX}/missing.env"
+          ],
+          "profile": "standalone",
+          "probePort": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "cli.dispatch",
+    "surface": "cli",
+    "owner": "cli",
+    "anchors": [
+      "internal/cli/cli.go:Run",
+      "internal/cli/cli.go:splitCommand",
+      "internal/cli/cli.go:runRecipe",
+      "internal/cli/cli.go:runProvider",
+      "internal/cli/cli.go:runPublicMcp",
+      "Go flag package (FlagSet.Parse, PrintDefaults)"
+    ],
+    "note": "Covers argument handling up to the point where Go constructs the runtime. Successful recipe/provider/public-mcp operations are M6/M7/M8 surfaces and are not in this scenario.",
+    "steps": [
+      {
+        "as": "implicitServeCheck",
+        "cli": {
+          "argv": [
+            "--check"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "standaloneCheck",
+        "cli": {
+          "argv": [
+            "standalone",
+            "--check"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "standaloneOverridesMode",
+        "cli": {
+          "argv": [
+            "standalone",
+            "--mode=platform",
+            "--check"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "paddedCommand",
+        "cli": {
+          "argv": [
+            " serve ",
+            "--check"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "versionWithExtra",
+        "cli": {
+          "argv": [
+            "--version",
+            "extra"
+          ]
+        }
+      },
+      {
+        "as": "helpIgnoresArgs",
+        "cli": {
+          "argv": [
+            "help",
+            "--bogus"
+          ]
+        }
+      },
+      {
+        "as": "doubleDash",
+        "cli": {
+          "argv": [
+            "serve",
+            "--",
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_PORT": "0"
+          }
+        }
+      },
+      {
+        "as": "positionalStopsFlags",
+        "cli": {
+          "argv": [
+            "serve",
+            "extra",
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_PORT": "0"
+          }
+        }
+      },
+      {
+        "as": "badSyntaxTripleDash",
+        "cli": {
+          "argv": [
+            "serve",
+            "---check"
+          ]
+        }
+      },
+      {
+        "as": "badSyntaxEquals",
+        "cli": {
+          "argv": [
+            "serve",
+            "-=x"
+          ]
+        }
+      },
+      {
+        "as": "invalidBool",
+        "cli": {
+          "argv": [
+            "serve",
+            "--check=maybe"
+          ]
+        }
+      },
+      {
+        "as": "boolForms",
+        "cli": {
+          "argv": [
+            "serve",
+            "-check=T"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "needsArgument",
+        "cli": {
+          "argv": [
+            "serve",
+            "--mode"
+          ]
+        }
+      },
+      {
+        "as": "helpLong",
+        "cli": {
+          "argv": [
+            "serve",
+            "--help"
+          ]
+        }
+      },
+      {
+        "as": "helpWithValue",
+        "cli": {
+          "argv": [
+            "serve",
+            "-help=1"
+          ]
+        }
+      },
+      {
+        "as": "recipeHelp",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate",
+            "-h"
+          ]
+        }
+      },
+      {
+        "as": "recipeApplyHelp",
+        "cli": {
+          "argv": [
+            "recipe",
+            "apply",
+            "--help"
+          ]
+        }
+      },
+      {
+        "as": "recipeDashSub",
+        "cli": {
+          "argv": [
+            "recipe",
+            "-h"
+          ]
+        }
+      },
+      {
+        "as": "recipeUnknownSub",
+        "cli": {
+          "argv": [
+            "recipe",
+            "bogus"
+          ]
+        }
+      },
+      {
+        "as": "recipeNoWait",
+        "cli": {
+          "argv": [
+            "recipe",
+            "apply",
+            "--source",
+            "x.yaml",
+            "--wait=false"
+          ]
+        }
+      },
+      {
+        "as": "recipeBadKind",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate",
+            "--source",
+            "x.yaml",
+            "--kind",
+            "batch"
+          ]
+        }
+      },
+      {
+        "as": "recipeStatusNoRunId",
+        "cli": {
+          "argv": [
+            "recipe",
+            "status"
+          ]
+        }
+      },
+      {
+        "as": "recipeApplyNoSource",
+        "cli": {
+          "argv": [
+            "recipe",
+            "apply"
+          ]
+        }
+      },
+      {
+        "as": "recipeBadInput",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate",
+            "--source",
+            "x.yaml",
+            "--input",
+            "novalue"
+          ]
+        }
+      },
+      {
+        "as": "recipeEmptyInputKey",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate",
+            "--source",
+            "x.yaml",
+            "--input",
+            " =v"
+          ]
+        }
+      },
+      {
+        "as": "recipeMissingEnvInput",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate",
+            "--source",
+            "x.yaml",
+            "--input",
+            "model=@env:PARITY_UNSET"
+          ]
+        }
+      },
+      {
+        "as": "recipeInvalidConfig",
+        "cli": {
+          "argv": [
+            "recipe",
+            "validate",
+            "--source",
+            "x.yaml"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_REMOTE_AGENT_ID": null
+          }
+        }
+      },
+      {
+        "as": "providerUnknownSub",
+        "cli": {
+          "argv": [
+            "provider",
+            "bogus"
+          ]
+        }
+      },
+      {
+        "as": "providerHelp",
+        "cli": {
+          "argv": [
+            "provider",
+            "install",
+            "-h"
+          ]
+        }
+      },
+      {
+        "as": "providerInstallNoSource",
+        "cli": {
+          "argv": [
+            "provider",
+            "install"
+          ]
+        }
+      },
+      {
+        "as": "providerReloadNoSource",
+        "cli": {
+          "argv": [
+            "provider",
+            "reload"
+          ]
+        }
+      },
+      {
+        "as": "providerValidateNoProvider",
+        "cli": {
+          "argv": [
+            "provider",
+            "validate"
+          ]
+        }
+      },
+      {
+        "as": "providerStatusNoProvider",
+        "cli": {
+          "argv": [
+            "provider",
+            "status",
+            "--source",
+            "x"
+          ]
+        }
+      },
+      {
+        "as": "providerBadInputFirst",
+        "cli": {
+          "argv": [
+            "provider",
+            "install",
+            "--input",
+            "bad"
+          ]
+        }
+      },
+      {
+        "as": "providerInvalidConfig",
+        "cli": {
+          "argv": [
+            "provider",
+            "status",
+            "--provider",
+            "p"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_TRANSPORT": "ws"
+          }
+        }
+      },
+      {
+        "as": "publicMcpMissing",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--binding-id",
+            "b"
+          ]
+        }
+      },
+      {
+        "as": "publicMcpTokenMissing",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--binding-id",
+            "b",
+            "--endpoint",
+            "https://h/mcp",
+            "--local-target",
+            "http://127.0.0.1:1/mcp",
+            "--token-file",
+            "${SANDBOX}/none.env"
+          ]
+        }
+      },
+      {
+        "as": "tokenLoose",
+        "write": {
+          "path": "${SANDBOX}/loose.env",
+          "content": "OPUTE_CLOUDFLARED_TUNNEL_TOKEN=abc\n",
+          "mode": "0644"
+        }
+      },
+      {
+        "as": "publicMcpTokenLoose",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--binding-id",
+            "b",
+            "--endpoint",
+            "https://h/mcp",
+            "--local-target",
+            "http://127.0.0.1:1/mcp",
+            "--token-file",
+            "${SANDBOX}/loose.env"
+          ]
+        }
+      },
+      {
+        "as": "tokenEmpty",
+        "write": {
+          "path": "${SANDBOX}/empty.env",
+          "content": "# x\nOPUTE_CLOUDFLARED_TUNNEL_TOKEN=  \n",
+          "mode": "0600"
+        }
+      },
+      {
+        "as": "publicMcpTokenEmpty",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--binding-id",
+            "b",
+            "--endpoint",
+            "https://h/mcp",
+            "--local-target",
+            "http://127.0.0.1:1/mcp",
+            "--token-file",
+            "${SANDBOX}/empty.env"
+          ]
+        }
+      },
+      {
+        "as": "tokenAbsent",
+        "write": {
+          "path": "${SANDBOX}/absent.env",
+          "content": "OTHER=1\n",
+          "mode": "0600"
+        }
+      },
+      {
+        "as": "publicMcpTokenAbsent",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--binding-id",
+            "b",
+            "--endpoint",
+            "https://h/mcp",
+            "--local-target",
+            "http://127.0.0.1:1/mcp",
+            "--token-file",
+            "${SANDBOX}/absent.env"
+          ]
+        }
+      },
+      {
+        "as": "tokenDir",
+        "mkdir": {
+          "path": "${SANDBOX}/tokendir"
+        }
+      },
+      {
+        "as": "publicMcpTokenIsDir",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--binding-id",
+            "b",
+            "--endpoint",
+            "https://h/mcp",
+            "--local-target",
+            "http://127.0.0.1:1/mcp",
+            "--token-file",
+            "${SANDBOX}/tokendir"
+          ]
+        }
+      },
+      {
+        "as": "publicMcpEnvFileMissing",
+        "cli": {
+          "argv": [
+            "public-mcp",
+            "--env-file",
+            "${SANDBOX}/none.env"
+          ]
+        }
+      }
     ]
   }
 ]

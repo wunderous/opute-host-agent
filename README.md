@@ -1,8 +1,17 @@
 # Opute Host Agent — Rust reimplementation
 
-This local repository is the **new implementation target** for a behavior-preserving
-Rust reimplementation of the Go Host Agent. It currently contains only the
-contract baseline and an OpenSpec change. It does not contain a runnable agent.
+This repository is the **new implementation target** for a behavior-preserving
+Rust reimplementation of the Go Host Agent. It holds the contract baseline, the
+OpenSpec change, the differential parity harness, and the Rust agent as it is
+built milestone by milestone. As of M1 the Rust binary matches Go's command line,
+configuration, validation and startup/shutdown lifecycle; it does not yet serve
+MCP (M2+) and is **not** a replacement for the Go agent.
+
+```sh
+make rust-check     # fmt, clippy -D warnings, unit tests
+make rust-build     # target/release/opute-host-agent
+make parity-m1      # full M1 evidence: harness self-checks, Go vs Rust, Go oracle tests, m1 gate
+```
 
 The source baseline is `wunderous/host-agents` commit
 `ace7013df17528fee1bed13a1d70a132d6c5eb9b` (tree

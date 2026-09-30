@@ -1,0 +1,476 @@
+[
+  {
+    "id": "lifecycle.serve-standalone",
+    "surface": "lifecycle",
+    "owner": "server",
+    "anchors": [
+      "internal/app/app.go:Run",
+      "internal/app/runtime.go:NewRuntime"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "files",
+      "sqlite",
+      "serverLog"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "sockets",
+        "listeners": {}
+      },
+      {
+        "as": "stop",
+        "stop": {
+          "signal": "SIGINT"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lifecycle.serve-platform-sigterm",
+    "surface": "lifecycle",
+    "owner": "server",
+    "anchors": [
+      "internal/app/app.go:Run signal.NotifyContext"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "files",
+      "sqlite",
+      "serverLog"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "sockets",
+        "listeners": {}
+      },
+      {
+        "as": "stop",
+        "stop": {
+          "signal": "SIGTERM"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lifecycle.restart-reopens-state",
+    "surface": "lifecycle",
+    "owner": "server",
+    "anchors": [
+      "internal/state/store.go:Open (idempotent migrations)",
+      "internal/authz/service.go:Open (client upsert)"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "files",
+      "sqlite"
+    ],
+    "steps": [
+      {
+        "as": "first",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "firstStop",
+        "stop": {}
+      },
+      {
+        "as": "second",
+        "serve": {
+          "argv": [
+            "standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "secondStop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "lifecycle.fault-injection",
+    "surface": "lifecycle",
+    "owner": "server",
+    "anchors": [
+      "internal/resource/host_lock.go:newHostLock",
+      "internal/state/store.go:Open",
+      "internal/authz/store.go:OpenStore",
+      "internal/transport/http.go:Start"
+    ],
+    "collect": [
+      "files"
+    ],
+    "steps": [
+      {
+        "as": "blocker",
+        "write": {
+          "path": "${SANDBOX}/blocker",
+          "content": "not a directory\n"
+        }
+      },
+      {
+        "as": "lockDirBlocked",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_HOST_RESOURCE_LOCK_DIR": "${SANDBOX}/blocker/lock"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "stateDirBlocked",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/blocker/state"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "stateDirIsFile",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/blocker"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "checkStateDirBlocked",
+        "cli": {
+          "argv": [
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/blocker/state"
+          }
+        }
+      },
+      {
+        "as": "stateDbDir",
+        "mkdir": {
+          "path": "${SANDBOX}/s2/state.db"
+        }
+      },
+      {
+        "as": "stateDbIsDirectory",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/s2"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "authzDbDir",
+        "mkdir": {
+          "path": "${SANDBOX}/s3/authz.sqlite"
+        }
+      },
+      {
+        "as": "authzDbIsDirectory",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/s3"
+          },
+          "probePort": true
+        }
+      },
+      {
+        "as": "occupy",
+        "occupy": {}
+      },
+      {
+        "as": "portInUse",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "tooManyColons",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_BIND_HOST": "::1"
+          }
+        }
+      },
+      {
+        "as": "portOutOfRange",
+        "cli": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_PORT": "70000"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "defaults.bind-host",
+    "surface": "lifecycle",
+    "owner": "config",
+    "anchors": [
+      "internal/config/config.go:Load defaultBindHost"
+    ],
+    "fixture": "incus-empty",
+    "steps": [
+      {
+        "as": "standalone",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_BIND_HOST": null
+          }
+        }
+      },
+      {
+        "as": "standaloneSockets",
+        "listeners": {}
+      },
+      {
+        "as": "standaloneStop",
+        "stop": {}
+      },
+      {
+        "as": "platform",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform",
+          "env": {
+            "HOST_MCP_BIND_HOST": null
+          }
+        }
+      },
+      {
+        "as": "platformSockets",
+        "listeners": {}
+      },
+      {
+        "as": "platformStop",
+        "stop": {}
+      },
+      {
+        "as": "quoted",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_BIND_HOST": "'127.0.0.1'",
+            "HOST_MCP_PORT": "\"${PORT}\""
+          }
+        }
+      },
+      {
+        "as": "quotedSockets",
+        "listeners": {}
+      },
+      {
+        "as": "quotedStop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "defaults.port-standalone",
+    "surface": "lifecycle",
+    "owner": "config",
+    "anchors": [
+      "internal/config/config.go:Load defaultPort 3014"
+    ],
+    "exclusive": true,
+    "fixture": "incus-empty",
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "HOST_MCP_BIND_HOST": null,
+            "HOST_MCP_PORT": null
+          },
+          "readyPort": 3014
+        }
+      },
+      {
+        "as": "sockets",
+        "listeners": {}
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "defaults.port-platform",
+    "surface": "lifecycle",
+    "owner": "config",
+    "anchors": [
+      "internal/config/config.go:Load defaultPort 3004"
+    ],
+    "exclusive": true,
+    "fixture": "incus-empty",
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform",
+          "env": {
+            "HOST_MCP_BIND_HOST": null,
+            "HOST_MCP_PORT": null
+          },
+          "readyPort": 3004
+        }
+      },
+      {
+        "as": "sockets",
+        "listeners": {}
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "defaults.state-location",
+    "surface": "lifecycle",
+    "owner": "config",
+    "anchors": [
+      "internal/config/config.go:Load instanceRoot/stateDir",
+      "internal/config/config.go:userConfigDir"
+    ],
+    "collect": [
+      "files"
+    ],
+    "steps": [
+      {
+        "as": "xdg",
+        "cli": {
+          "argv": [
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": null,
+            "OPUTE_HOST_AGENT_INSTANCE_ROOT": null
+          }
+        }
+      },
+      {
+        "as": "home",
+        "cli": {
+          "argv": [
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": null,
+            "OPUTE_HOST_AGENT_INSTANCE_ROOT": null,
+            "XDG_CONFIG_HOME": null
+          }
+        }
+      },
+      {
+        "as": "namedInstance",
+        "cli": {
+          "argv": [
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": null,
+            "OPUTE_HOST_AGENT_INSTANCE_ROOT": null,
+            "OPUTE_HOST_AGENT_INSTANCE": "blue-2"
+          }
+        }
+      },
+      {
+        "as": "instanceRoot",
+        "cli": {
+          "argv": [
+            "--check"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_STATE_DIR": null,
+            "OPUTE_HOST_AGENT_INSTANCE_ROOT": "${SANDBOX}/root"
+          }
+        }
+      }
+    ]
+  }
+]

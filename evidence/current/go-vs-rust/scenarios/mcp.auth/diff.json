@@ -1,0 +1,335 @@
+{
+ "diff": [
+  {
+   "left": {
+    "authorization_endpoint": "http://127.0.0.1:${PORT}/oauth/authorize",
+    "authorization_response_iss_parameter_supported": true,
+    "client_id_metadata_document_supported": true,
+    "code_challenge_methods_supported": [
+     "S256"
+    ],
+    "grant_types_supported": [
+     "authorization_code",
+     "client_credentials"
+    ],
+    "issuer": "http://127.0.0.1:${PORT}",
+    "response_types_supported": [
+     "code"
+    ],
+    "revocation_endpoint": "http://127.0.0.1:${PORT}/oauth/revoke",
+    "scopes_supported": [
+     "mcp"
+    ],
+    "token_endpoint": "http://127.0.0.1:${PORT}/oauth/token",
+    "token_endpoint_auth_methods_supported": [
+     "client_secret_basic",
+     "client_secret_post",
+     "none"
+    ]
+   },
+   "path": [
+    "steps",
+    "asMetadata",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "asMetadata",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 200,
+   "path": [
+    "steps",
+    "asMetadata",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "agentId": "${AGENT_ID}",
+    "capabilities": {
+     "host": {
+      "canInvokeWindowsInterop": false,
+      "canManageWsl": false,
+      "canShutdownWsl": false,
+      "canTerminateWslDistribution": false
+     }
+    },
+    "capacity": {
+     "runningVmCount": 0,
+     "totalVmCount": 0
+    },
+    "executionContext": {
+     "displayName": "Linux",
+     "id": "native-linux",
+     "kind": "native-linux"
+    },
+    "fingerprint": "host:v2:6191e4673f57054598897a6145e7e77aea4b1ae777cfca3618707e03511ac86a",
+    "fingerprintSource": "linux-machine-id",
+    "fingerprintVersion": "v2",
+    "instanceId": "standalone",
+    "ok": true
+   },
+   "path": [
+    "steps",
+    "healthWithoutToken",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "healthWithoutToken",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 200,
+   "path": [
+    "steps",
+    "healthWithoutToken",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "Unauthorized\n",
+   "path": [
+    "steps",
+    "malformedAuthorization",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "Bearer resource_metadata=\"http://127.0.0.1:${PORT}/.well-known/oauth-protected-resource/mcp\", scope=\"mcp\"",
+   "path": [
+    "steps",
+    "malformedAuthorization",
+    "headers",
+    "www-authenticate"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "malformedAuthorization",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 401,
+   "path": [
+    "steps",
+    "malformedAuthorization",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "Unauthorized\n",
+   "path": [
+    "steps",
+    "noToken",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "Bearer resource_metadata=\"http://127.0.0.1:${PORT}/.well-known/oauth-protected-resource/mcp\", scope=\"mcp\"",
+   "path": [
+    "steps",
+    "noToken",
+    "headers",
+    "www-authenticate"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "noToken",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 401,
+   "path": [
+    "steps",
+    "noToken",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "authorization_servers": [
+     "http://127.0.0.1:${PORT}"
+    ],
+    "bearer_methods_supported": [
+     "header"
+    ],
+    "resource": "http://127.0.0.1:${PORT}/mcp",
+    "resource_documentation": "http://127.0.0.1:${PORT}/mcp",
+    "scopes_supported": [
+     "mcp"
+    ]
+   },
+   "path": [
+    "steps",
+    "prm",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "prm",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 200,
+   "path": [
+    "steps",
+    "prm",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": {
+    "authorization_servers": [
+     "http://127.0.0.1:${PORT}"
+    ],
+    "bearer_methods_supported": [
+     "header"
+    ],
+    "resource": "http://127.0.0.1:${PORT}/mcp",
+    "resource_documentation": "http://127.0.0.1:${PORT}/mcp",
+    "scopes_supported": [
+     "mcp"
+    ]
+   },
+   "path": [
+    "steps",
+    "prmRoot",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "application/json",
+   "path": [
+    "steps",
+    "prmRoot",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 200,
+   "path": [
+    "steps",
+    "prmRoot",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "",
+   "path": [
+    "steps",
+    "tokenEndpointGet",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "$absent",
+   "path": [
+    "steps",
+    "tokenEndpointGet",
+    "headers",
+    "content-type"
+   ],
+   "right": "text/plain; charset=utf-8"
+  },
+  {
+   "left": 405,
+   "path": [
+    "steps",
+    "tokenEndpointGet",
+    "status"
+   ],
+   "right": 501
+  },
+  {
+   "left": "Unauthorized\n",
+   "path": [
+    "steps",
+    "wrongToken",
+    "body"
+   ],
+   "right": "not implemented until milestone M2\n"
+  },
+  {
+   "left": "Bearer resource_metadata=\"http://127.0.0.1:${PORT}/.well-known/oauth-protected-resource/mcp\", scope=\"mcp\"",
+   "path": [
+    "steps",
+    "wrongToken",
+    "headers",
+    "www-authenticate"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": "nosniff",
+   "path": [
+    "steps",
+    "wrongToken",
+    "headers",
+    "x-content-type-options"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 401,
+   "path": [
+    "steps",
+    "wrongToken",
+    "status"
+   ],
+   "right": 501
+  }
+ ],
+ "maskViolations": {
+  "a": [],
+  "b": []
+ }
+}
