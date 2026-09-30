@@ -66,7 +66,17 @@ real dependency boundary, and M1 has none yet.
    reserved range below the ephemeral range and are handed out once. The
    runner also keeps the first failing iteration's diff, so a rare flake
    stays diagnosable from evidence.
-3. **Shutdown log.** Lifecycle scenarios now compare the server log with
+3. **Wildcard listener family (caught by CI, not locally).** For `0.0.0.0`
+   (the platform default) Go's `favoriteAddrFamily` opens one dual-stack
+   `AF_INET6` socket on `[::]` with `IPV6_V6ONLY=0` when the kernel maps IPv4
+   into IPv6. Rust bound plain `AF_INET`, so `defaults.bind-host` and
+   `defaults.port-platform` differed (`tcp6` vs `tcp` listener) on the
+   IPv6-capable GitHub runner. The development container has no IPv6, where
+   both fall back to `AF_INET` and agree. Rust now applies Go's rule
+   (`app::go_listen`: address pick, wildcard family, `SO_REUSEADDR`,
+   somaxconn backlog). The IPv6 half is proven by CI, which uploads its diff
+   bundles on failure.
+4. **Shutdown log.** Lifecycle scenarios now compare the server log with
    timestamps stripped. Go logs only the "listening" line, and so does Rust.
 
 ## Harness additions

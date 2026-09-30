@@ -42,3 +42,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Verify committed evidence and re-prove M1 parity
         run: make parity-ci
+      - name: Upload parity diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-ci-evidence
+          path: .parity/ci-*
+          if-no-files-found: ignore

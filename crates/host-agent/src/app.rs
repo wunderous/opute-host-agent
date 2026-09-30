@@ -216,7 +216,8 @@ fn serve(addr: &str) -> Result<()> {
         .build()
         .map_err(|e| go_err!("start runtime: {e}"))?;
     rt.block_on(async move {
-        let listener = bind_first(&addrs, addr).await?;
+        let listener = tokio::net::TcpListener::from_std(go_listen(&addrs, addr)?)
+            .map_err(|e| go_err!("listen tcp {addr}: {e}"))?;
         let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
             .map_err(|e| go_err!("install signal handler: {e}"))?;
         let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
@@ -235,19 +236,84 @@ fn serve(addr: &str) -> Result<()> {
     })
 }
 
-async fn bind_first(addrs: &[SocketAddr], addr: &str) -> Result<tokio::net::TcpListener> {
-    let mut last = None;
-    for candidate in addrs {
-        match tokio::net::TcpListener::bind(candidate).await {
-            Ok(l) => return Ok(l),
-            Err(e) => last = Some(e),
-        }
+/// `net.Listen("tcp", addr)` with Go's socket choices (`ipsock_posix.go`):
+///
+/// ```text
+///   pick one address:  bracketed host → first non-IPv4, else first IPv4
+///   wildcard host (empty, 0.0.0.0, ::) and the kernel maps IPv4 into IPv6
+///       → AF_INET6 bound to [::]:P, IPV6_V6ONLY=0   (one dual-stack socket)
+///   otherwise → the address's own family; AF_INET6 still gets IPV6_V6ONLY=0
+///   SO_REUSEADDR, backlog = /proc/sys/net/core/somaxconn
+/// ```
+///
+/// Binding `0.0.0.0` as plain `AF_INET` would drop IPv6 clients that Go
+/// accepts, and it shows up as a different listener (`tcp` vs `tcp6`).
+fn go_listen(addrs: &[SocketAddr], addr: &str) -> Result<std::net::TcpListener> {
+    use socket2::{Domain, Protocol, Socket, Type};
+    let chosen = if addr.contains('[') {
+        addrs.iter().find(|a| a.is_ipv6())
+    } else {
+        addrs.iter().find(|a| a.is_ipv4())
     }
-    let e = last.unwrap_or_else(|| std::io::Error::from_raw_os_error(99));
-    Err(go_err!(
-        "listen tcp {addr}: bind: {}",
-        goerr::errno_text(&e)
-    ))
+    .or_else(|| addrs.first())
+    .copied()
+    .ok_or_else(|| go_err!("listen tcp {addr}: no suitable address found"))?;
+    let local = listen_sockaddr(chosen, ipv4_mapped_supported());
+    let fail =
+        |op: &str, e: std::io::Error| go_err!("listen tcp {addr}: {op}: {}", goerr::errno_text(&e));
+    let domain = if local.is_ipv6() {
+        Domain::IPV6
+    } else {
+        Domain::IPV4
+    };
+    let socket =
+        Socket::new(domain, Type::STREAM, Some(Protocol::TCP)).map_err(|e| fail("socket", e))?;
+    if local.is_ipv6() {
+        socket
+            .set_only_v6(false)
+            .map_err(|e| fail("setsockopt", e))?;
+    }
+    socket
+        .set_reuse_address(true)
+        .map_err(|e| fail("setsockopt", e))?;
+    socket.bind(&local.into()).map_err(|e| fail("bind", e))?;
+    socket
+        .listen(listen_backlog())
+        .map_err(|e| fail("listen", e))?;
+    socket
+        .set_nonblocking(true)
+        .map_err(|e| fail("setsockopt", e))?;
+    Ok(socket.into())
+}
+
+/// Go's `favoriteAddrFamily` for a listener: a wildcard address becomes the
+/// IPv6 wildcard when IPv4-mapped IPv6 works, so one socket serves both.
+fn listen_sockaddr(chosen: SocketAddr, ipv4_mapped: bool) -> SocketAddr {
+    if chosen.ip().is_unspecified() && ipv4_mapped {
+        SocketAddr::new(std::net::Ipv6Addr::UNSPECIFIED.into(), chosen.port())
+    } else {
+        chosen
+    }
+}
+
+/// Go's `supportsIPv4map` probe: an IPv6 socket with IPV6_V6ONLY=0 can bind
+/// `[::ffff:127.0.0.1]:0`.
+fn ipv4_mapped_supported() -> bool {
+    use socket2::{Domain, Protocol, Socket, Type};
+    let Ok(socket) = Socket::new(Domain::IPV6, Type::STREAM, Some(Protocol::TCP)) else {
+        return false;
+    };
+    let mapped: SocketAddr = (std::net::Ipv4Addr::LOCALHOST.to_ipv6_mapped(), 0).into();
+    socket.set_only_v6(false).is_ok() && socket.bind(&mapped.into()).is_ok()
+}
+
+/// Go's `maxListenerBacklog`: the kernel's somaxconn, else `syscall.SOMAXCONN`.
+fn listen_backlog() -> i32 {
+    std::fs::read_to_string("/proc/sys/net/core/somaxconn")
+        .ok()
+        .and_then(|s| s.trim().parse::<u64>().ok())
+        .filter(|&n| n > 0)
+        .map_or(128, |n| n.min(i32::MAX as u64) as i32)
 }
 
 /// M1 owns the listener lifecycle only. HTTP routes (`/health`, `/mcp`,
@@ -366,6 +432,19 @@ mod tests {
             "listen tcp: address 70000: invalid port"
         );
         assert_eq!(resolve_listen_addr("[::1]:3014").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn wildcard_listen_is_dual_stack_when_ipv4_maps() {
+        let wild4: SocketAddr = "0.0.0.0:3004".parse().unwrap();
+        let wild6: SocketAddr = "[::]:3004".parse().unwrap();
+        let loop4: SocketAddr = "127.0.0.1:3014".parse().unwrap();
+        assert_eq!(listen_sockaddr(wild4, true), wild6);
+        assert_eq!(listen_sockaddr(wild4, false), wild4);
+        assert_eq!(listen_sockaddr(wild6, true), wild6);
+        assert_eq!(listen_sockaddr(loop4, true), loop4);
+        let empty = resolve_listen_addr(":3004").unwrap();
+        assert_eq!(listen_sockaddr(empty[0], true), wild6);
     }
 
     #[test]
