@@ -6,6 +6,9 @@ evidence are committed. The pinned Go revision is the initial baseline; rebase
 it deliberately if the production Go contract changes. Do not import the
 abandoned Rust port.
 
+[milestones.md](milestones.md) groups these gates into ordered milestones and
+defines the differential end-to-end harness and evidence each one requires.
+
 ## 0. Freeze and enumerate the behavior to preserve
 
 - [ ] 0.1 In the new repository, create a machine-readable parity manifest
