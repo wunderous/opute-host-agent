@@ -163,6 +163,40 @@ def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report) -> d
     return out
 
 
+def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report) -> str:
+    """Go black-box tests: the Go reference and the recorded Rust candidate
+    pass every expected test, and the negative control fails."""
+    from . import oracle as oracle_mod
+    spec = manifest.get("oracles") or {}
+    doc, err = _load(root / spec["results"]) if spec.get("results") else (None, "no oracle results")
+    if err:
+        report.problem(f"oracles: {err}", "oracles")
+        return UNVERIFIED
+    if (doc.get("sourceCommit") != lock["sourceCommit"]
+            or doc.get("oracleFileSha256") != runner.sha256_file(oracle_mod.ORACLE_FILE)):
+        report.problem("oracles: stale results (source or oracle list changed)", "oracles")
+        return UNVERIFIED
+    expected_suites = {s["id"] for s in json.loads(oracle_mod.ORACLE_FILE.read_text())}
+    want = {"go": manifest["goReference"]["binarySha256"],
+            "rust": (manifest.get("rustCandidate") or {}).get("binarySha256")}
+    ok = True
+    for suite in sorted(expected_suites):
+        rows = {r["binary"]: r for r in doc.get("results", []) if r.get("suite") == suite}
+        for label, sha in want.items():
+            row = rows.get(label)
+            if row is None or not sha or row.get("binarySha256") != sha:
+                report.problem(f"oracles/{suite}: no result for the recorded {label} binary", "oracles")
+                ok = False
+            elif row.get("exit") != 0 or not set(row.get("expectedTests", [])) <= set(row.get("passed", [])):
+                report.problem(f"oracles/{suite}: {label} failed {row.get('failed')}", "oracles")
+                ok = False
+        control = rows.get(oracle_mod.NEGATIVE_CONTROL[0])
+        if control is None or control.get("exit") == 0:
+            report.problem(f"oracles/{suite}: negative control did not fail (overlay may not run the binary)", "oracles")
+            ok = False
+    return PASS if ok else FAIL
+
+
 def _check_inventory(root: Path, lock: dict, manifest: dict, report: Report) -> str:
     index, err = _load(root / "baseline/inventory/index.json")
     if err:
@@ -226,8 +260,14 @@ def verify(manifest_path: Path, gate: str) -> dict:
 
     rules = manifest["gates"][gate]
     failures: list[str] = []
-    for suite in rules.get("requirePass", []):
-        bad = [i for i, row in report.items.items() if row.get(suite) != PASS]
+    for req in rules.get("requirePass", []):
+        suite = req if isinstance(req, str) else req["suite"]
+        surfaces = None if isinstance(req, str) else set(req.get("surfaces", []))
+        scoped = {i: row for i, row in report.items.items()
+                  if surfaces is None or row.get("surface") in surfaces}
+        if surfaces is not None and not scoped:
+            failures.append(f"{suite}: no items for surfaces {sorted(surfaces)}")
+        bad = [i for i, row in scoped.items() if row.get(suite) != PASS]
         if bad:
             failures.append(f"{suite}: {len(bad)} item(s) not pass: {', '.join(sorted(bad)[:8])}"
                             + (" ..." if len(bad) > 8 else ""))
@@ -241,7 +281,13 @@ def verify(manifest_path: Path, gate: str) -> dict:
             failures.append(f"canaries not all caught: {bad or 'none recorded'}")
     if rules.get("requireInventory") and inventory != PASS:
         failures.append(f"inventory {inventory}")
-    scopes = {"global"} | set(rules.get("requirePass", [])) | set(rules.get("requireNotFail", []))
+    oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
+    if rules.get("requireOracles") and oracles != PASS:
+        failures.append(f"oracles {oracles}")
+    required_suites = {r if isinstance(r, str) else r["suite"] for r in rules.get("requirePass", [])}
+    scopes = {"global"} | required_suites | set(rules.get("requireNotFail", []))
+    if rules.get("requireOracles"):
+        scopes.add("oracles")
     if rules.get("requireCanaries"):
         scopes.add("canaries")
     if rules.get("requireInventory"):
@@ -255,6 +301,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "items": report.items,
         "canaries": canaries,
         "inventory": inventory,
+        "oracles": oracles,
     }
 
 
@@ -273,6 +320,8 @@ def render(report: dict) -> str:
         lines.append(f"  canaries     caught={sum(v == PASS for v in c.values())}/{len(c)}")
     if report.get("inventory"):
         lines.append(f"  inventory    {report['inventory']}")
+    if report.get("oracles"):
+        lines.append(f"  go oracles   {report['oracles']}")
     for p in report.get("problems", [])[:20]:
         lines.append(f"  problem: {p}")
     for f in gate.get("failures", []):

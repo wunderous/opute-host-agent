@@ -11,12 +11,14 @@ from __future__ import annotations
 import http.client
 import json
 import os
+import random
 import signal
 import socket
 import sqlite3
 import stat
 import subprocess
 import tempfile
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -54,10 +56,33 @@ def tool_name_prefix(agent_id: str) -> str:
     return uuid.uuid5(_PREFIX_NAMESPACE, agent_id).hex[:8]
 
 
+# Sandbox ports come from a fixed range below Linux's ephemeral range
+# (32768+), and each is handed out once per harness process. Asking the
+# kernel for port 0 is racy under parallel load: the number can be reused by
+# another sandbox or by an outgoing client connection before the agent binds
+# it, which shows up as a spurious diff (listener seen, bind failed).
+_PORT_RANGE = range(20000, 30000)
+_PORT_LOCK = threading.Lock()
+_PORTS_HANDED_OUT: set[int] = set()
+_PORT_CURSOR = [random.randrange(len(_PORT_RANGE))]
+
+
 def free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+    with _PORT_LOCK:
+        for _ in range(len(_PORT_RANGE)):
+            _PORT_CURSOR[0] = (_PORT_CURSOR[0] + 1) % len(_PORT_RANGE)
+            port = _PORT_RANGE[_PORT_CURSOR[0]]
+            if port in _PORTS_HANDED_OUT:
+                continue
+            with socket.socket() as probe:
+                try:
+                    probe.bind(("0.0.0.0", port))
+                except OSError:
+                    continue
+            _PORTS_HANDED_OUT.add(port)
+            return port
+        _PORTS_HANDED_OUT.clear()
+    return free_port()
 
 
 def port_open(port: int) -> bool:
@@ -253,12 +278,13 @@ class Server:
             stdin=subprocess.DEVNULL,
         )
 
-    def wait_ready(self, timeout: float = 30.0) -> dict:
+    def wait_ready(self, timeout: float = 30.0, port: int | None = None) -> dict:
         deadline = time.monotonic() + timeout
+        port = port or self.sandbox.port
         while time.monotonic() < deadline:
             if self.proc.poll() is not None:
                 return {"ready": False, "exit": self.proc.returncode}
-            if port_open(self.sandbox.port):
+            if port_open(port):
                 return {"ready": True}
             time.sleep(0.02)
         return {"ready": False, "timedOut": True}
@@ -275,6 +301,49 @@ class Server:
                 return {"exit": self.proc.returncode, "killed": True}
         self._log.close()
         return {"exit": self.proc.returncode, "killed": False}
+
+
+def _proc_listen_inodes() -> dict[str, str]:
+    """inode -> "addr:port" for every LISTEN TCP socket in this netns."""
+    out: dict[str, str] = {}
+    for table, v6 in (("/proc/net/tcp", False), ("/proc/net/tcp6", True)):
+        try:
+            lines = Path(table).read_text().splitlines()[1:]
+        except OSError:
+            continue
+        for line in lines:
+            parts = line.split()
+            if len(parts) < 10 or parts[3] != "0A":
+                continue
+            host_hex, port_hex = parts[1].split(":")
+            raw = bytes.fromhex(host_hex)
+            if v6:
+                words = [raw[i:i + 4][::-1] for i in range(0, 16, 4)]
+                import ipaddress
+                addr = "[" + str(ipaddress.IPv6Address(b"".join(words))) + "]"
+            else:
+                addr = ".".join(str(b) for b in raw[::-1])
+            out[parts[9]] = f"{addr}:{int(port_hex, 16)}"
+    return out
+
+
+def listeners_of(pid: int) -> list[str]:
+    """Sorted LISTEN addresses held by a process (Go and Rust alike)."""
+    inodes = _proc_listen_inodes()
+    found = set()
+    try:
+        for fd in Path(f"/proc/{pid}/fd").iterdir():
+            try:
+                target = os.readlink(fd)
+            except OSError:
+                continue
+            if target.startswith("socket:["):
+                inode = target[8:-1]
+                if inode in inodes:
+                    found.add(inodes[inode])
+    except OSError:
+        pass
+    return sorted(found)
 
 
 def modern_meta(client_name: str = "opute-parity", client_version: str = "1") -> dict:

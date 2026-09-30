@@ -274,6 +274,9 @@ unowned surfaces.
 
 **Closes:** 1.1, 1.3, 2.1. **Depends on:** M0.
 
+**Status:** implemented; the `m1` gate passes. See
+[evidence/m1/README.md](../../../evidence/m1/README.md).
+
 **Scope:** workspace (binary plus only the contract, core, host, and server
 modules that real edges justify); formatting, lint, test, and reproducible
 build; CLI and config parsing with identical precedence; `--check`; ordered

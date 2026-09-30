@@ -26,6 +26,276 @@
   },
   {
    "observed": {
+    "badSyntaxEquals": {
+     "exit": 1,
+     "stderr": "bad flag syntax: -=x\nUsage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nbad flag syntax: -=x",
+     "stdout": "",
+     "timedOut": false
+    },
+    "badSyntaxTripleDash": {
+     "exit": 1,
+     "stderr": "bad flag syntax: ---check\nUsage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nbad flag syntax: ---check",
+     "stdout": "",
+     "timedOut": false
+    },
+    "boolForms": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "doubleDash": {
+     "exit": 1,
+     "stderr": "HOST_MCP_PORT must be positive",
+     "stdout": "",
+     "timedOut": false
+    },
+    "helpIgnoresArgs": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "Usage: opute-host-agent [standalone|serve|public-mcp|recipe|provider|help] [flags]\n\n  opute-host-agent                   server-only standalone MCP profile (HTTP)\n  opute-host-agent serve             MCP server only (HTTP)\n  opute-host-agent recipe validate --source ./recipe.yaml\n  opute-host-agent recipe apply --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M\n  opute-host-agent recipe status --run-id RUN_ID\n  opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]\n  opute-host-agent provider install --source ./plugin.yaml --activate\n\nStandalone mode never requires Opute Platform.\n",
+     "timedOut": false
+    },
+    "helpLong": {
+     "exit": 1,
+     "stderr": "Usage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    },
+    "helpWithValue": {
+     "exit": 1,
+     "stderr": "Usage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    },
+    "implicitServeCheck": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "invalidBool": {
+     "exit": 1,
+     "stderr": "invalid boolean value \"maybe\" for -check: parse error\nUsage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\ninvalid boolean value \"maybe\" for -check: parse error",
+     "stdout": "",
+     "timedOut": false
+    },
+    "needsArgument": {
+     "exit": 1,
+     "stderr": "flag needs an argument: -mode\nUsage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nflag needs an argument: -mode",
+     "stdout": "",
+     "timedOut": false
+    },
+    "paddedCommand": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "positionalStopsFlags": {
+     "exit": 1,
+     "stderr": "HOST_MCP_PORT must be positive",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerBadInputFirst": {
+     "exit": 1,
+     "stderr": "--input requires key=value",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerHelp": {
+     "exit": 1,
+     "stderr": "Usage of provider install:\n  -activate\n    \tafter successful validation, make this provider active\n  -endpoint string\n    \tprovider MCP endpoint override\n  -input value\n    \tprovider input as key=value; repeatable\n  -mode string\n    \tprovider recipe mode, such as managed or external\n  -operation string\n    \tprovider validation operation\n  -provider string\n    \tconnected provider ID\n  -source string\n    \ttrusted local provider descriptor path\n  -token string\n    \tprovider bearer token\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerInstallNoSource": {
+     "exit": 1,
+     "stderr": "provider install requires --source",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerInvalidConfig": {
+     "exit": 1,
+     "stderr": "invalid OPUTE_TRANSPORT \"ws\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerReloadNoSource": {
+     "exit": 1,
+     "stderr": "provider reload requires --source",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerStatusNoProvider": {
+     "exit": 1,
+     "stderr": "provider status requires --provider",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerUnknownSub": {
+     "exit": 1,
+     "stderr": "unknown provider command \"bogus\"; use install, validate, status, or reload",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerValidateNoProvider": {
+     "exit": 1,
+     "stderr": "provider validate requires --provider",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpEnvFileMissing": {
+     "exit": 1,
+     "stderr": "load env file: open env file \"${SANDBOX}/none.env\": open ${SANDBOX}/none.env: no such file or directory",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpMissing": {
+     "exit": 1,
+     "stderr": "public-mcp requires --binding-id, --endpoint, --local-target, and --token-file",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpTokenAbsent": {
+     "exit": 1,
+     "stderr": "public MCP token file did not contain OPUTE_CLOUDFLARED_TUNNEL_TOKEN",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpTokenEmpty": {
+     "exit": 1,
+     "stderr": "public MCP token file contains an empty tunnel token",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpTokenIsDir": {
+     "exit": 1,
+     "stderr": "public MCP token file must be a regular 0600-or-more-restrictive file",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpTokenLoose": {
+     "exit": 1,
+     "stderr": "public MCP token file must be a regular 0600-or-more-restrictive file",
+     "stdout": "",
+     "timedOut": false
+    },
+    "publicMcpTokenMissing": {
+     "exit": 1,
+     "stderr": "inspect public MCP token file: stat ${SANDBOX}/none.env: no such file or directory",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeApplyHelp": {
+     "exit": 1,
+     "stderr": "Usage of recipe apply:\n  -activate\n    \tafter successful validation, make this runtime active for its declared capability\n  -input value\n    \trecipe input as key=value; repeatable\n  -kind string\n    \trecipe family: runtime or tunnel (default \"runtime\")\n  -resume\n    \tresume a persisted recipe run\n  -revision string\n    \timmutable source revision\n  -run-id string\n    \tdurable recipe run ID\n  -sha256 string\n    \texpected raw recipe sha256, as hex or sha256:<hex>\n  -source string\n    \trecipe path or pinned remote source\n  -wait\n    \twait for recipe apply to reach a terminal state (default true)\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeApplyNoSource": {
+     "exit": 1,
+     "stderr": "recipe apply requires --source",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeBadInput": {
+     "exit": 1,
+     "stderr": "--input requires key=value",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeBadKind": {
+     "exit": 1,
+     "stderr": "recipe kind must be runtime or tunnel",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeDashSub": {
+     "exit": 1,
+     "stderr": "unknown recipe command \"-h\"; use validate, apply, or status",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeEmptyInputKey": {
+     "exit": 1,
+     "stderr": "--input requires key=value",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeHelp": {
+     "exit": 1,
+     "stderr": "Usage of recipe validate:\n  -activate\n    \tafter successful validation, make this runtime active for its declared capability\n  -input value\n    \trecipe input as key=value; repeatable\n  -kind string\n    \trecipe family: runtime or tunnel (default \"runtime\")\n  -resume\n    \tresume a persisted recipe run\n  -revision string\n    \timmutable source revision\n  -run-id string\n    \tdurable recipe run ID\n  -sha256 string\n    \texpected raw recipe sha256, as hex or sha256:<hex>\n  -source string\n    \trecipe path or pinned remote source\n  -wait\n    \twait for recipe apply to reach a terminal state (default true)\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeInvalidConfig": {
+     "exit": 1,
+     "stderr": "OPUTE_REMOTE_AGENT_ID is required; the host agent must be onboarded with one canonical id",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeMissingEnvInput": {
+     "exit": 1,
+     "stderr": "environment input \"PARITY_UNSET\" is missing",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeNoWait": {
+     "exit": 1,
+     "stderr": "recipe apply always waits for a terminal result; use the MCP operation directly for asynchronous execution",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeStatusNoRunId": {
+     "exit": 1,
+     "stderr": "recipe status requires --run-id",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeUnknownSub": {
+     "exit": 1,
+     "stderr": "unknown recipe command \"bogus\"; use validate, apply, or status",
+     "stdout": "",
+     "timedOut": false
+    },
+    "standaloneCheck": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "standaloneOverridesMode": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "tokenAbsent": {
+     "wrote": "${SANDBOX}/absent.env"
+    },
+    "tokenDir": {
+     "mkdir": "${SANDBOX}/tokendir"
+    },
+    "tokenEmpty": {
+     "wrote": "${SANDBOX}/empty.env"
+    },
+    "tokenLoose": {
+     "wrote": "${SANDBOX}/loose.env"
+    },
+    "versionWithExtra": {
+     "exit": 1,
+     "stderr": "flag provided but not defined: -version\nUsage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nflag provided but not defined: -version",
+     "stdout": "",
+     "timedOut": false
+    }
+   },
+   "owner": "cli",
+   "scenario": "cli.dispatch"
+  },
+  {
+   "observed": {
     "help": {
      "exit": 0,
      "stderr": "",
@@ -107,6 +377,378 @@
    },
    "owner": "cli",
    "scenario": "cli.version"
+  },
+  {
+   "observed": {
+    "badEnvFile": {
+     "exit": 1,
+     "stderr": "load env file: invalid env assignment at ${SANDBOX}/bad.env:2",
+     "stdout": "",
+     "timedOut": false
+    },
+    "blankProcessEnvLosesToFile": {
+     "exit": 1,
+     "stderr": "invalid --transport \"ws\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "envFileApplies": {
+     "exit": 1,
+     "stderr": "invalid --transport \"ws\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "envFlagLastWins": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "envFlagWinsOverFile": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "envVarFile": {
+     "exit": 1,
+     "stderr": "invalid --transport \"ws\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "fileBad": {
+     "wrote": "${SANDBOX}/bad.env"
+    },
+    "fileHttp": {
+     "wrote": "${SANDBOX}/http.env"
+    },
+    "fileId": {
+     "wrote": "${SANDBOX}/id.env"
+    },
+    "fileWs": {
+     "wrote": "${SANDBOX}/ws.env"
+    },
+    "flagFileBeatsEnvVarFile": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "idFromFile": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "invalidModeFlag": {
+     "exit": 1,
+     "stderr": "invalid OPUTE_AGENT_MODE \"standalonee\": expected platform or standalone",
+     "stdout": "",
+     "timedOut": false
+    },
+    "modeCaseInsensitive": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "modeDefaultsToStandalone": {
+     "exit": 1,
+     "stderr": "standalone mode cannot use platform setting OPUTE_MCP_URL",
+     "stdout": "",
+     "timedOut": false
+    },
+    "modeFlagBeatsEnv": {
+     "exit": 1,
+     "stderr": "standalone mode cannot use platform setting OPUTE_MCP_URL",
+     "stdout": "",
+     "timedOut": false
+    },
+    "modeFromEnvFile": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "processEnvWinsOverFile": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "quotedAgentId": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "quotedZeroPort": {
+     "exit": 1,
+     "stderr": "HOST_MCP_PORT must be positive",
+     "stdout": "",
+     "timedOut": false
+    },
+    "transportCaseInsensitive": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    }
+   },
+   "owner": "config",
+   "scenario": "config.env-precedence"
+  },
+  {
+   "observed": {
+    "agentIdNonAscii": {
+     "exit": 1,
+     "stderr": "OPUTE_REMOTE_AGENT_ID \"agént\" is invalid: use printable non-whitespace characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "agentIdPrintable": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "agentIdSymbols": {
+     "exit": 1,
+     "stderr": "OPUTE_REMOTE_AGENT_ID \"urn:opute:host/α\" is invalid: use printable non-whitespace characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "agentIdTab": {
+     "exit": 1,
+     "stderr": "OPUTE_REMOTE_AGENT_ID \"a\\tb\" is invalid: use printable non-whitespace characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "agentIdTooLong": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "agentIdWithSpace": {
+     "exit": 1,
+     "stderr": "OPUTE_REMOTE_AGENT_ID \"agent one\" is invalid: use printable non-whitespace characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "cpuInf": {
+     "exit": 1,
+     "stderr": "host resource CPU capacity must be finite and non-negative",
+     "stdout": "",
+     "timedOut": false
+    },
+    "cpuNaN": {
+     "exit": 1,
+     "stderr": "host resource CPU capacity must be finite and non-negative",
+     "stdout": "",
+     "timedOut": false
+    },
+    "cpuNegativeFallsBack": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "healthUrlStandalone": {
+     "exit": 1,
+     "stderr": "standalone mode cannot use platform setting OPUTE_MCP_HEALTH_URL",
+     "stdout": "",
+     "timedOut": false
+    },
+    "instanceTooLong": {
+     "exit": 1,
+     "stderr": "OPUTE_HOST_AGENT_INSTANCE must be at most 63 characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "instanceTrailingDash": {
+     "exit": 1,
+     "stderr": "OPUTE_HOST_AGENT_INSTANCE \"blue-\" is invalid: use [a-z0-9][a-z0-9-]{0,62}",
+     "stdout": "",
+     "timedOut": false
+    },
+    "limitsNegativeFallBack": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "networkAddressBadPrefix": {
+     "exit": 1,
+     "stderr": "OPUTE_INCUS_NETWORK_ADDRESS must be an IPv4 CIDR: invalid CIDR address: 10.0.0.1/33",
+     "stdout": "",
+     "timedOut": false
+    },
+    "networkAddressLeadingZeroOctet": {
+     "exit": 1,
+     "stderr": "OPUTE_INCUS_NETWORK_ADDRESS must be an IPv4 CIDR: invalid CIDR address: 10.0.0.01/24",
+     "stdout": "",
+     "timedOut": false
+    },
+    "networkAddressLeadingZeroPrefix": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "networkAddressMapped": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "networkAddressNoPrefix": {
+     "exit": 1,
+     "stderr": "OPUTE_INCUS_NETWORK_ADDRESS must be an IPv4 CIDR: invalid CIDR address: 10.1.2.3",
+     "stdout": "",
+     "timedOut": false
+    },
+    "networkAddressV6": {
+     "exit": 1,
+     "stderr": "OPUTE_INCUS_NETWORK_ADDRESS must be an IPv4 CIDR",
+     "stdout": "",
+     "timedOut": false
+    },
+    "networkNameInvalid": {
+     "exit": 1,
+     "stderr": "OPUTE_INCUS_NETWORK_NAME \"br_0\" is invalid: use letters, digits, and hyphens",
+     "stdout": "",
+     "timedOut": false
+    },
+    "networkNameTooLong": {
+     "exit": 1,
+     "stderr": "OPUTE_INCUS_NETWORK_NAME must be at most 63 characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "onboardingSessionRetired": {
+     "exit": 1,
+     "stderr": "OPUTE_ONBOARDING_SESSION_ID is retired; enroll a host resource URL instead of phone-home credentials",
+     "stdout": "",
+     "timedOut": false
+    },
+    "ownershipEnforce": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "ownershipUnknownIsAudit": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "platformUrlsAllowed": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "portHuge": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "portNegative": {
+     "exit": 1,
+     "stderr": "HOST_MCP_PORT must be positive",
+     "stdout": "",
+     "timedOut": false
+    },
+    "portPlusSign": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "portText": {
+     "exit": 1,
+     "stderr": "HOST_MCP_PORT must be positive",
+     "stdout": "",
+     "timedOut": false
+    },
+    "portZero": {
+     "exit": 1,
+     "stderr": "HOST_MCP_PORT must be positive",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerQuoted": {
+     "exit": 1,
+     "stderr": "unsupported provider \"'incus'\": only incus is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerUpper": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "remoteAgentAuthTokenRetired": {
+     "exit": 1,
+     "stderr": "OPUTE_REMOTE_AGENT_AUTH_TOKEN is retired; enroll a host resource URL instead of phone-home credentials",
+     "stdout": "",
+     "timedOut": false
+    },
+    "retiredBlankIgnored": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "reverseTunnelFalse": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "reverseTunnelUpper": {
+     "exit": 1,
+     "stderr": "OPUTE_REVERSE_TUNNEL is retired; the kernel serves mode-scoped Streamable HTTP POST /mcp",
+     "stdout": "",
+     "timedOut": false
+    },
+    "tenantInvalid": {
+     "exit": 1,
+     "stderr": "OPUTE_TENANT_ID \"-bad\" is invalid: use [a-z][a-z0-9-]{0,31}",
+     "stdout": "",
+     "timedOut": false
+    },
+    "tenantOk": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    },
+    "tenantTooLong": {
+     "exit": 1,
+     "stderr": "OPUTE_TENANT_ID must be at most 32 characters",
+     "stdout": "",
+     "timedOut": false
+    },
+    "tenantUpper": {
+     "exit": 1,
+     "stderr": "OPUTE_TENANT_ID \"Tenant\" is invalid: use [a-z][a-z0-9-]{0,31}",
+     "stdout": "",
+     "timedOut": false
+    },
+    "transportEnvWsPlatform": {
+     "exit": 1,
+     "stderr": "invalid --transport \"ws\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    }
+   },
+   "owner": "config",
+   "scenario": "config.validation-matrix"
   },
   {
    "observed": {

@@ -37,7 +37,7 @@ defines the differential end-to-end harness and evidence each one requires.
 
 ## 1. Establish the smallest maintainable Rust ownership structure
 
-- [ ] 1.1 Create a Rust workspace with a binary and only the contract, core,
+- [x] 1.1 Create a Rust workspace with a binary and only the contract, core,
   host, and transport modules or crates justified by actual dependency edges.
   Add reproducible formatting, lint, unit-test, and build commands. Gate: no
   Go package-by-package translation or speculative public trait layer.
@@ -45,14 +45,17 @@ defines the differential end-to-end harness and evidence each one requires.
   pinned authoritative contracts. One descriptor source must drive Rust
   validation, MCP publication, and parity comparison. Gate: deterministic
   generation and a failing diff for any unreviewed contract drift.
-- [ ] 1.3 Implement explicit composition and lifecycle ordering for config,
+- [x] 1.3 Implement explicit composition and lifecycle ordering for config,
   state, auth, catalog, providers, and listeners. Gate: focused tests prove
   partial startup cleans up in reverse order and never exposes a half-ready
   MCP endpoint.
 
+Evidence for 1.1, 1.3 and 2.1: [evidence/m1/README.md](../../../evidence/m1/README.md)
+(`make parity-verify-m1`). Task 1.2 (generated descriptors) is part of M3.
+
 ## 2. Prove identity, transport, and read-only parity
 
-- [ ] 2.1 Match Go CLI/config parsing, explicit opaque
+- [x] 2.1 Match Go CLI/config parsing, explicit opaque
   `OPUTE_REMOTE_AGENT_ID`, standalone/platform defaults, and fail-closed
   startup. Gate: differential CLI and configuration fixtures, including
   missing/ambiguous identity and environment precedence, pass.

@@ -1,7 +1,11 @@
 # M0 evidence: parity harness, inventory and fail-closed verifier
 
-This directory records the M0 evidence from
-[milestones.md](../../openspec/changes/reimplement-host-agent-in-rust/milestones.md).
+This file records the M0 results from
+[milestones.md](../../openspec/changes/reimplement-host-agent-in-rust/milestones.md)
+as they stood when M0 merged. The evidence bundles themselves now live in
+[`evidence/current/`](../current/), which is regenerated whenever the harness
+changes (a harness change invalidates older bundles); see
+[evidence/m1/README.md](../m1/README.md) for the latest numbers.
 To reproduce it from a clean checkout, run `make parity-m0` (Go 1.24.7,
 Python 3.11). Provenance is bound to `baseline/source-lock.json`: Go commit
 `ace7013d…`, tree `ac17cfb2…`, and Go reference binary sha256 `71924b62…`,

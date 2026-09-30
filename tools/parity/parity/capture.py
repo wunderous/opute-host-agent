@@ -32,6 +32,7 @@ SURFACE_OWNERS = {
     "cli": "cli",
     "config": "config",
     "http": "transport",
+    "lifecycle": "server",
     "auth": "transport",
     "mcp-wire": "transport",
     "catalog": "contracts",
