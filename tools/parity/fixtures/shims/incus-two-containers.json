@@ -1,0 +1,9 @@
+{
+  "description": "Mirrors the Go packaged-mode fixture (test/modes/packaged_test.go writeIncusFixture): one running and one stopped container.",
+  "commands": {
+    "incus": [
+      {"argv": ["list", "--format", "json"], "stdout": "[{\"name\":\"worker-01\",\"status\":\"Running\",\"type\":\"container\",\"state\":{\"network\":{\"eth0\":{\"addresses\":[{\"address\":\"192.0.2.11\",\"family\":\"inet\",\"scope\":\"global\"}]}}}},{\"name\":\"worker-02\",\"status\":\"Stopped\",\"type\":\"container\",\"state\":{\"network\":{\"eth0\":{\"addresses\":[{\"address\":\"192.0.2.12\",\"family\":\"inet\",\"scope\":\"global\"}]}}}}]"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

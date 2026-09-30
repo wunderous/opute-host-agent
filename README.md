@@ -33,6 +33,13 @@ existing behavior that the Rust implementation must preserve. OpenSpec's
 [spec-driven workflow](https://openspec.dev/docs/schemas/spec-driven) explicitly
 supports this form of behavior-preserving refactor.
 
+## Parity harness
+
+`tools/parity/` holds the differential Go/Rust harness, `baseline/inventory/` the
+captured Go contract, and `parity-manifest.json` the fail-closed gates. See
+[tools/parity/README.md](tools/parity/README.md) and
+[evidence/m0/README.md](evidence/m0/README.md).
+
 ## Validate the planning artifacts
 
 Node.js 20.19+ is required for the pinned OpenSpec CLI:

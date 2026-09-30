@@ -1,0 +1,251 @@
+{
+ "items": [
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"host-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/kubernetes/k3s/recipes/install.yaml",
+   "sha256": "556e504cf2fd6b05cf83cabb2fdd144c79b70da7e3da0286226272b27eb124f6",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\n  \"contractVersion\": \"runtime-recipe.v1\",\n  \"inputs\": {\n    \"activationNonce\": \"default\",\n    \"providerId\": \"com.opute.k3s\"\n  },\n  \"plan\": {\n    \"catalogRevision\": \"sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2\",\n    \"contractVersion\": \"host-plan.v1\",\n    \"documentHash\": \"sha256:8cc9d57b1e353a4112a7076efae9da9cf5e867b00ba4d6e1cd1583dbdb50e33b\",\n    \"generation\": 1,\n    \"idempotencyKey\": \"com.opute.k3s-com.opute.k3s-default\",\n    \"levels\": [\n      [\n        \"host\"\n      ]\n    ],\n    \"nodeCount\": 1,\n    \"planId\": \"com.opute.k3s.managed\",\n    \"valid\": true\n  },\n  \"rawSha256\": \"sha256:91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788\",\n  \"recipeHash\": \"sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d\",\n  \"recipeId\": \"com.opute.k3s.managed\",\n  \"recipeVersion\": \"1.0.0\",\n  \"runtime\": {\n    \"id\": \"provider-kubernetes\",\n    \"servingContract\": \"kubernetes.v1\",\n    \"capabilities\": [\n      \"kubernetes\"\n    ]\n  },\n  \"source\": {\n    \"kind\": \"path\",\n    \"source\": \"${GO_SRC}/plugins/kubernetes/k3s/recipes/kubernetes.yaml\",\n    \"rawSha256\": \"sha256:91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788\",\n    \"recipeHash\": \"sha256:ef4c812066781196f5d12879767a8a74fdc24b8a9a41f923877d9bbc3a446b3d\"\n  },\n  \"valid\": true\n}\n",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/kubernetes/k3s/recipes/kubernetes.yaml",
+   "sha256": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"host-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/kubernetes/k3s/recipes/storage-reclaim.yaml",
+   "sha256": "382b124ede63e5c15ca8d44e9d5aa725e6df3fcf9f0c07f86d84e2788d020bfd",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\n  \"contractVersion\": \"runtime-recipe.v1\",\n  \"inputs\": {\n    \"activationNonce\": \"default\",\n    \"providerId\": \"com.opute.ollama\"\n  },\n  \"plan\": {\n    \"catalogRevision\": \"sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2\",\n    \"contractVersion\": \"host-plan.v1\",\n    \"documentHash\": \"sha256:1349e780879336ed99d28f78ff0cccc7d6bb5baf91eb5f3e884ac4bc5ae9bde6\",\n    \"generation\": 1,\n    \"idempotencyKey\": \"com.opute.ollama.activate-com.opute.ollama-default\",\n    \"levels\": [\n      [\n        \"host\"\n      ]\n    ],\n    \"nodeCount\": 1,\n    \"planId\": \"com.opute.ollama.activate\",\n    \"valid\": true\n  },\n  \"rawSha256\": \"sha256:10391f1717b9087f8ef3008df5570ed2fc0d8834be9bc14d11a1ed5f8850d0a8\",\n  \"recipeHash\": \"sha256:74ff7261e59e935a527cdc928af05b3f46c4bd439f6fcb93d6d5b294298a80e3\",\n  \"recipeId\": \"com.opute.ollama.activate\",\n  \"recipeVersion\": \"1.0.2\",\n  \"runtime\": {\n    \"id\": \"provider-llm-serving\",\n    \"servingContract\": \"llm-serving.v1\",\n    \"capabilities\": [\n      \"llm-serving\"\n    ]\n  },\n  \"source\": {\n    \"kind\": \"path\",\n    \"source\": \"${GO_SRC}/plugins/llm/ollama/recipes/activate.yaml\",\n    \"rawSha256\": \"sha256:10391f1717b9087f8ef3008df5570ed2fc0d8834be9bc14d11a1ed5f8850d0a8\",\n    \"recipeHash\": \"sha256:74ff7261e59e935a527cdc928af05b3f46c4bd439f6fcb93d6d5b294298a80e3\"\n  },\n  \"valid\": true\n}\n",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/llm/ollama/recipes/activate.yaml",
+   "sha256": "10391f1717b9087f8ef3008df5570ed2fc0d8834be9bc14d11a1ed5f8850d0a8",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "nondeterministic": true,
+    "variants": [
+     {
+      "exit": 1,
+      "stderr": "recipe operation failed: Error: required recipe input \"endpoint\" is missing",
+      "stdout": "",
+      "timedOut": false
+     },
+     {
+      "exit": 1,
+      "stderr": "recipe operation failed: Error: required recipe input \"model\" is missing",
+      "stdout": "",
+      "timedOut": false
+     }
+    ]
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/llm/ollama/recipes/ollama-external.yaml",
+   "sha256": "a1812c48cb5fef954311f65915e7144c68448916c3fed5a4a60450735fd4d4de",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\n  \"contractVersion\": \"runtime-recipe.v1\",\n  \"inputs\": {\n    \"artifactPath\": \"~/.local/share/opute/providers/com.opute.ollama/ollama-linux-amd64.tar.zst\",\n    \"artifactSha256\": \"50539c5fe9bf85887733355098dcdb266b433cb8c73fa180713417e9ed6e42bb\",\n    \"artifactUri\": \"https://github.com/ollama/ollama/releases/download/v0.32.15/ollama-linux-amd64.tar.zst\",\n    \"binaryInspectPath\": \"~/.local/share/opute/providers/com.opute.ollama/lib/ollama/llama-server\",\n    \"binaryPath\": \"%h/.local/share/opute/providers/com.opute.ollama/bin/ollama\",\n    \"contextSize\": 32768,\n    \"endpoint\": \"http://127.0.0.1:11434\",\n    \"listenAddress\": \"127.0.0.1:11434\",\n    \"model\": \"hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M\",\n    \"recipeRevision\": \"1.2.5\",\n    \"runtimeDir\": \"~/.local/share/opute/providers/com.opute.ollama\",\n    \"serviceFile\": \"~/.config/systemd/user/ollama.service\",\n    \"serviceName\": \"ollama.service\"\n  },\n  \"plan\": {\n    \"catalogRevision\": \"sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2\",\n    \"contractVersion\": \"host-plan.v1\",\n    \"documentHash\": \"sha256:0cbe439f9928998457f646ddc6104c92729169c648b01dd19b3e047ede47deec\",\n    \"generation\": 1,\n    \"idempotencyKey\": \"com.opute.ollama-1.2.5-50539c5fe9bf85887733355098dcdb266b433cb8c73fa180713417e9ed6e42bb-http://127.0.0.1:11434-hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M-32768-ollama.service-~/.config/systemd/user/ollama.service\",\n    \"levels\": [\n      [\n        \"artifact\"\n      ],\n      [\n        \"extract\"\n      ],\n      [\n        \"service-file\"\n      ],\n      [\n        \"supervisor\"\n      ],\n      [\n        \"enable\"\n      ],\n      [\n        \"start\"\n      ],\n      [\n        \"endpoint-ready\"\n      ],\n      [\n        \"model\"\n      ],\n      [\n        \"readiness\"\n      ]\n    ],\n    \"nodeCount\": 9,\n    \"planId\": \"com.opute.ollama.managed-linux\",\n    \"valid\": true\n  },\n  \"rawSha256\": \"sha256:a83a7976007f1833bf6e9bf171d93ed4026ef13c79155cee3bb6f623cc18ceed\",\n  \"recipeHash\": \"sha256:25e28051573f1b859344d1d64ff027a642c568d04fbe86f5cb814aa8b8fe986f\",\n  \"recipeId\": \"com.opute.ollama.managed-linux\",\n  \"recipeVersion\": \"1.2.5\",\n  \"runtime\": {\n    \"id\": \"provider-llm\",\n    \"servingContract\": \"openai-chat.v1\",\n    \"capabilities\": [\n      \"llm-serving\",\n      \"chat\",\n      \"streaming\",\n      \"model-discovery\"\n    ]\n  },\n  \"source\": {\n    \"kind\": \"path\",\n    \"source\": \"${GO_SRC}/plugins/llm/ollama/recipes/ollama.yaml\",\n    \"rawSha256\": \"sha256:a83a7976007f1833bf6e9bf171d93ed4026ef13c79155cee3bb6f623cc18ceed\",\n    \"recipeHash\": \"sha256:25e28051573f1b859344d1d64ff027a642c568d04fbe86f5cb814aa8b8fe986f\"\n  },\n  \"valid\": true\n}\n",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/llm/ollama/recipes/ollama.yaml",
+   "sha256": "a83a7976007f1833bf6e9bf171d93ed4026ef13c79155cee3bb6f623cc18ceed",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\n  \"contractVersion\": \"runtime-recipe.v1\",\n  \"inputs\": {\n    \"activationNonce\": \"default\",\n    \"providerId\": \"com.opute.cloudflare\"\n  },\n  \"plan\": {\n    \"catalogRevision\": \"sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2\",\n    \"contractVersion\": \"host-plan.v1\",\n    \"documentHash\": \"sha256:ca5d3d09642676efb1032280dbce1665f424d7d23af72d13852e8b8e17da6ed0\",\n    \"generation\": 1,\n    \"idempotencyKey\": \"com.opute.cloudflare.tunneling-com.opute.cloudflare-default\",\n    \"levels\": [\n      [\n        \"host\"\n      ]\n    ],\n    \"nodeCount\": 1,\n    \"planId\": \"com.opute.cloudflare.activate-tunneling\",\n    \"valid\": true\n  },\n  \"rawSha256\": \"sha256:6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460\",\n  \"recipeHash\": \"sha256:e88dd75b8f5c9e9aa143c521455fa336b2e897b29fa86fefd2d1d03aef845bad\",\n  \"recipeId\": \"com.opute.cloudflare.activate-tunneling\",\n  \"recipeVersion\": \"1.0.0\",\n  \"runtime\": {\n    \"id\": \"provider-tunneling\",\n    \"servingContract\": \"tunneling.v1\",\n    \"capabilities\": [\n      \"tunneling\"\n    ]\n  },\n  \"source\": {\n    \"kind\": \"path\",\n    \"source\": \"${GO_SRC}/plugins/tunneling/cloudflare/recipes/activate-tunneling.yaml\",\n    \"rawSha256\": \"sha256:6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460\",\n    \"recipeHash\": \"sha256:e88dd75b8f5c9e9aa143c521455fa336b2e897b29fa86fefd2d1d03aef845bad\"\n  },\n  \"valid\": true\n}\n",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/cloudflare/recipes/activate-tunneling.yaml",
+   "sha256": "6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\n  \"contractVersion\": \"runtime-recipe.v1\",\n  \"inputs\": {\n    \"activationNonce\": \"default\",\n    \"providerId\": \"com.opute.cloudflare\"\n  },\n  \"plan\": {\n    \"catalogRevision\": \"sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2\",\n    \"contractVersion\": \"host-plan.v1\",\n    \"documentHash\": \"sha256:c0955557930106a0a49eebfaa707283d5e86dfe5a85e669539265c314e99031f\",\n    \"generation\": 1,\n    \"idempotencyKey\": \"com.opute.cloudflare-com.opute.cloudflare-default\",\n    \"levels\": [\n      [\n        \"host\"\n      ]\n    ],\n    \"nodeCount\": 1,\n    \"planId\": \"com.opute.cloudflare.activate\",\n    \"valid\": true\n  },\n  \"rawSha256\": \"sha256:2c9d9ad41f1cc0c836196e6c0e56014c6eab4fde0f1eed2e746eaeb946cad0c4\",\n  \"recipeHash\": \"sha256:e5693323574d081f3763b7b4a793efcbbb73f1d8bf24f6ab27ee30e5394fa8d5\",\n  \"recipeId\": \"com.opute.cloudflare.activate\",\n  \"recipeVersion\": \"1.1.0\",\n  \"runtime\": {\n    \"id\": \"provider-ha-networking-cf\",\n    \"servingContract\": \"public-ingress.v1\",\n    \"capabilities\": [\n      \"mesh-runtime\",\n      \"mesh-membership\",\n      \"public-ingress\"\n    ]\n  },\n  \"source\": {\n    \"kind\": \"path\",\n    \"source\": \"${GO_SRC}/plugins/tunneling/cloudflare/recipes/activate.yaml\",\n    \"rawSha256\": \"sha256:2c9d9ad41f1cc0c836196e6c0e56014c6eab4fde0f1eed2e746eaeb946cad0c4\",\n    \"recipeHash\": \"sha256:e5693323574d081f3763b7b4a793efcbbb73f1d8bf24f6ab27ee30e5394fa8d5\"\n  },\n  \"valid\": true\n}\n",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/cloudflare/recipes/activate.yaml",
+   "sha256": "2c9d9ad41f1cc0c836196e6c0e56014c6eab4fde0f1eed2e746eaeb946cad0c4",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"tunnel-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/cloudflare/recipes/tunneling-managed.yaml",
+   "sha256": "9742a921054fb5d56c2297ad17937d190d8fb728822e9575a4ae4a823b08c45f",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"tunnel-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/cloudflare/recipes/tunneling-public-host.yaml",
+   "sha256": "db9d4e1a82d376daeaa1ed2d4448f80e5ad2e6063886395c4de60864a70b840a",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"tunnel-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/cloudflare/recipes/tunneling.yaml",
+   "sha256": "2f404972cbe5c463b8fe501973894c241341b2621e5941fad06af1434a958bc7",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\n  \"contractVersion\": \"runtime-recipe.v1\",\n  \"inputs\": {\n    \"activationNonce\": \"default\",\n    \"providerId\": \"com.opute.tailscale\"\n  },\n  \"plan\": {\n    \"catalogRevision\": \"sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2\",\n    \"contractVersion\": \"host-plan.v1\",\n    \"documentHash\": \"sha256:14ed0146f367ac281c98f7d537d0cc46c7bca956fb1f0e545763d0c8a2ca3add\",\n    \"generation\": 1,\n    \"idempotencyKey\": \"com.opute.tailscale-com.opute.tailscale-default\",\n    \"levels\": [\n      [\n        \"host\"\n      ]\n    ],\n    \"nodeCount\": 1,\n    \"planId\": \"com.opute.tailscale.activate\",\n    \"valid\": true\n  },\n  \"rawSha256\": \"sha256:f878248c0cd8c9035a2ab3d2e7f92ca80aeef33b82747d96b7f4053249722204\",\n  \"recipeHash\": \"sha256:ae7582fce75d44e5ade84961e19d1a38da3f3780b7fc973c78ee21fb06cf9150\",\n  \"recipeId\": \"com.opute.tailscale.activate\",\n  \"recipeVersion\": \"1.2.0\",\n  \"runtime\": {\n    \"id\": \"provider-ha-networking\",\n    \"servingContract\": \"network-overlay.v1\",\n    \"capabilities\": [\n      \"mesh-runtime\",\n      \"mesh-membership\",\n      \"private-mesh\",\n      \"public-ingress\"\n    ]\n  },\n  \"source\": {\n    \"kind\": \"path\",\n    \"source\": \"${GO_SRC}/plugins/tunneling/tailscale/recipes/activate.yaml\",\n    \"rawSha256\": \"sha256:f878248c0cd8c9035a2ab3d2e7f92ca80aeef33b82747d96b7f4053249722204\",\n    \"recipeHash\": \"sha256:ae7582fce75d44e5ade84961e19d1a38da3f3780b7fc973c78ee21fb06cf9150\"\n  },\n  \"valid\": true\n}\n",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/tailscale/recipes/activate.yaml",
+   "sha256": "f878248c0cd8c9035a2ab3d2e7f92ca80aeef33b82747d96b7f4053249722204",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"host-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/tailscale/recipes/ha-network-bundle.yaml",
+   "sha256": "7ede770cca2ee6ed3fa350b768cc2a75a9f9a63b78f2a99f5a7939aba238d6cc",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"host-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/tailscale/recipes/install.yaml",
+   "sha256": "c841b175bbb154a698cb57b2b481baf3da1e7603008907404554babb57e6b627",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"host-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/tailscale/recipes/overlay-mesh.yaml",
+   "sha256": "3c783ab82f5e1cafdc657e29ab569fef7c906d61a351554efbc814ebfbc2a27c",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"host-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "plugins/tunneling/tailscale/recipes/public-ingress.yaml",
+   "sha256": "97528bf47b0f350ca4f57cf5ed957e99ba2c5f3027d1573d1e38e0fd5d9b2da6",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: unsupported runtime recipe contractVersion \"tunnel-recipe.v1\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "test/fixtures/recipes/cloudflared.yaml",
+   "sha256": "7eaf09f3f22ce2286a45653b77c0e132d0dd7aa4df9fa094c471509cb7eb0e75",
+   "status": "gap"
+  },
+  {
+   "cliValidate": {
+    "exit": 1,
+    "stderr": "recipe operation failed: Error: validate recipe host plan: node \"service\" action set_host_service_state arguments: missing required property \"uri\"",
+    "stdout": "",
+    "timedOut": false
+   },
+   "gapReason": "plan execution parity (node states, retry, compensation) is M6",
+   "owner": "core",
+   "recipe": "test/fixtures/recipes/ollama.yaml",
+   "sha256": "207cfd478066c0fec152c98b2347aabdc326d490fc08b021edc8155d3fdf3b18",
+   "status": "gap"
+  }
+ ],
+ "owner": "core",
+ "surface": "plans"
+}

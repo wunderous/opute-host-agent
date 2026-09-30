@@ -1,0 +1,50 @@
+[
+  {
+    "id": "catalog.standalone",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": ["internal/tools/standalone.go:StandaloneToolDefinitions", "test/contract/standalone_catalog_test.go"],
+    "fixture": "incus-empty",
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {"as": "list", "mcp": {"method": "tools/list"}},
+      {"as": "stop", "stop": {}}
+    ]
+  },
+  {
+    "id": "catalog.standalone-mutations-enabled",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": ["internal/config/config.go:StandaloneAllowMutations"],
+    "fixture": "incus-empty",
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"}}},
+      {"as": "list", "mcp": {"method": "tools/list"}},
+      {"as": "stop", "stop": {}}
+    ]
+  },
+  {
+    "id": "catalog.platform",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": ["internal/tools/catalog.go", "test/contract/catalog_test.go"],
+    "fixture": "incus-empty",
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=platform"], "profile": "platform"}},
+      {"as": "list", "mcp": {"method": "tools/list"}},
+      {"as": "stop", "stop": {}}
+    ]
+  },
+  {
+    "id": "catalog.standalone-prefixed-names",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": ["docs/adr/0012-mcp-tool-name-prefix.md", "internal/hostmcp/toolprefix.go"],
+    "fixture": "incus-empty",
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_MCP_PREFIX_TOOL_NAMES": "true"}}},
+      {"as": "list", "mcp": {"method": "tools/list"}},
+      {"as": "stop", "stop": {}}
+    ]
+  }
+]

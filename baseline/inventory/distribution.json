@@ -1,0 +1,36 @@
+{
+ "artifacts": [
+  "host-agent-linux-arm64",
+  "host-agent-linux-x64",
+  "host-agent-windows-x64.exe",
+  "host-agent-windows-x64.exe.gz",
+  "host-agent-windows-x64.gz",
+  "opute-provider-cloudflare-linux-x64",
+  "opute-provider-k3s-linux-x64",
+  "opute-provider-tailscale-linux-x64"
+ ],
+ "deployFiles": {
+  "deploy/opute-bootstrap-mcp.service": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5",
+  "deploy/opute-host-agent-sudoers": "38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad",
+  "deploy/opute-host-agent.service": "53961c80896ee755f9dc0b8005edbde159a76b492b1bcf26c8dc7f0e0e30e533"
+ },
+ "gapReason": "packaging parity is M10",
+ "npm": {
+  "bin": {
+   "opute-host-agent": "index.js"
+  },
+  "engines": {
+   "node": ">=18"
+  },
+  "files": [
+   "index.js",
+   "package.json",
+   "README.md"
+  ],
+  "name": "@opute/host-agent",
+  "version": "0.2.3"
+ },
+ "owner": "release",
+ "status": "gap",
+ "surface": "distribution"
+}

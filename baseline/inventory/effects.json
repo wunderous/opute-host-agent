@@ -1,0 +1,204 @@
+{
+ "items": [
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:209",
+    "internal/domain/host/tool.go:280"
+   ],
+   "command": "apt-cache",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/incus_uninstall.go:106",
+    "internal/domain/host/incus_uninstall.go:84",
+    "internal/domain/host/incus_uninstall.go:94",
+    "internal/domain/host/tool.go:364",
+    "internal/domain/host/tool.go:372",
+    "internal/domain/host/tool.go:375",
+    "internal/domain/host/tool.go:82",
+    "internal/domain/host/tool.go:93",
+    "internal/domain/oci/builder.go:66",
+    "internal/domain/oci/builder.go:74",
+    "internal/domain/oci/builder.go:77"
+   ],
+   "command": "apt-get",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:70"
+   ],
+   "command": "bash",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/build_and_push.go:109"
+   ],
+   "command": "buildah",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:240"
+   ],
+   "command": "curl",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:253",
+    "internal/domain/host/tool.go:96"
+   ],
+   "command": "dpkg",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/incus_uninstall.go:151"
+   ],
+   "command": "dpkg-query",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:418",
+    "internal/domain/host/tool.go:445"
+   ],
+   "command": "helm",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "plugins/kubernetes/k3s/cmd/opute-provider-k3s/main.go:1013"
+   ],
+   "command": "incus",
+   "observedInvocations": [
+    "list --format",
+    "query /1.0/profiles/default",
+    "query /1.0/storage-pools"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "tier": "T1-shim-observed"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:270",
+    "internal/domain/host/tool.go:273",
+    "internal/domain/host/tool.go:276"
+   ],
+   "command": "install",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/serving/assignment.go:343"
+   ],
+   "command": "kill",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/llm/ollama.go:100"
+   ],
+   "command": "ollama",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/builder.go:27",
+    "internal/domain/oci/builder.go:47",
+    "internal/domain/oci/container_runtime.go:520"
+   ],
+   "command": "podman",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/incus_uninstall.go:102",
+    "internal/domain/host/incus_uninstall.go:115"
+   ],
+   "command": "rm",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage.go:202"
+   ],
+   "command": "sudo",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/incus_uninstall.go:76",
+    "internal/domain/host/tool.go:124",
+    "internal/domain/llm/server.go:439",
+    "internal/domain/serving/assignment.go:312",
+    "plugins/llm/ollama/cmd/opute-provider-ollama/context.go:307",
+    "plugins/llm/ollama/cmd/opute-provider-ollama/context.go:315"
+   ],
+   "command": "systemctl",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:120"
+   ],
+   "command": "usermod",
+   "observedInvocations": [],
+   "owner": "host",
+   "status": "gap",
+   "tier": "unclassified"
+  }
+ ],
+ "note": "Static scan finds literal command names only. Commands built from variables (for example hostexec wrappers) are found through shim traces as scenarios grow; a command never observed stays a gap.",
+ "owner": "host",
+ "surface": "effects"
+}

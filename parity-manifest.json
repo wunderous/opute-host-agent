@@ -1,0 +1,240 @@
+{
+ "canaries": {
+  "expected": "canaries.json",
+  "results": "evidence/m0/canaries/results.json"
+ },
+ "evidence": {
+  "go-vs-go": {
+   "minRepeat": 20,
+   "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
+   "right": "go",
+   "summary": "evidence/m0/go-vs-go/summary.json"
+  },
+  "go-vs-rust": {
+   "minRepeat": 1,
+   "purpose": "T1 differential parity of the Rust candidate",
+   "right": "rust",
+   "summary": null
+  }
+ },
+ "gates": {
+  "cutover": {
+   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence; later milestones add T2/T3/T4 suites here",
+   "requireCanaries": true,
+   "requireInventory": true,
+   "requirePass": [
+    "go-vs-go",
+    "go-vs-rust"
+   ]
+  },
+  "m0": {
+   "description": "M0 exit: harness proven (Go-vs-Go clean x20, every canary caught), inventory captured with zero unowned gaps, every Rust item present and unverified",
+   "requireCanaries": true,
+   "requireInventory": true,
+   "requirePass": [
+    "go-vs-go"
+   ]
+  }
+ },
+ "goReference": {
+  "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+  "build": "tools/parity/build-go-reference.sh",
+  "note": "CGO_ENABLED=0, -trimpath, -buildvcs=false, fixed ldflags; reproducible for a given Go toolchain"
+ },
+ "items": [
+  {
+   "anchors": [
+    "internal/tools/standalone.go:StandaloneToolDefinitions",
+    "test/contract/standalone_catalog_test.go"
+   ],
+   "id": "catalog.standalone",
+   "owner": "contracts",
+   "scenario": "catalog.standalone",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:StandaloneAllowMutations"
+   ],
+   "id": "catalog.standalone-mutations-enabled",
+   "owner": "contracts",
+   "scenario": "catalog.standalone-mutations-enabled",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/tools/catalog.go",
+    "test/contract/catalog_test.go"
+   ],
+   "id": "catalog.platform",
+   "owner": "contracts",
+   "scenario": "catalog.platform",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "docs/adr/0012-mcp-tool-name-prefix.md",
+    "internal/hostmcp/toolprefix.go"
+   ],
+   "id": "catalog.standalone-prefixed-names",
+   "owner": "contracts",
+   "scenario": "catalog.standalone-prefixed-names",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/cli/cli.go:Run --version"
+   ],
+   "id": "cli.version",
+   "owner": "cli",
+   "scenario": "cli.version",
+   "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/cli/cli.go:printUsage"
+   ],
+   "id": "cli.help",
+   "owner": "cli",
+   "scenario": "cli.help",
+   "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/cli/cli.go:Run",
+    "internal/cli/cli.go:runRecipe",
+    "internal/cli/cli.go:runProvider"
+   ],
+   "id": "cli.usage-errors",
+   "owner": "cli",
+   "scenario": "cli.usage-errors",
+   "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/app/app.go:Check"
+   ],
+   "id": "cli.check.standalone-ok",
+   "owner": "config",
+   "scenario": "cli.check.standalone-ok",
+   "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/app/app.go:Check"
+   ],
+   "id": "cli.check.platform-ok",
+   "owner": "config",
+   "scenario": "cli.check.platform-ok",
+   "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Validate",
+    "test/standalone/isolation_test.go:TestStandaloneInvalidConfigurationExitsBeforeMCP",
+    "test/standalone/transport_cli_test.go:TestDeprecatedTransportFlagIsRejectOnly"
+   ],
+   "id": "startup.fail-closed",
+   "owner": "config",
+   "scenario": "startup.fail-closed",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:handleHealth",
+    "test/compliance/mcp_test.go:TestMCPAuthProtectsMCPButNotHealth"
+   ],
+   "id": "serve.health",
+   "owner": "transport",
+   "scenario": "serve.health",
+   "surface": "http"
+  },
+  {
+   "anchors": [
+    "internal/transport/discover.go",
+    "test/compliance/mcp_test.go:TestMCPDiscoverAndGetHostInfo"
+   ],
+   "id": "mcp.discover",
+   "owner": "transport",
+   "scenario": "mcp.discover",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:handleMCP",
+    "internal/authz/service.go:Authorize"
+   ],
+   "id": "mcp.auth",
+   "owner": "transport",
+   "scenario": "mcp.auth",
+   "surface": "auth"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:handleMCP",
+    "internal/transport/discover.go:validateModernMCPRequest"
+   ],
+   "id": "mcp.transport-rules",
+   "owner": "transport",
+   "scenario": "mcp.transport-rules",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "docs/adr/0011-legacy-handshake-compatibility-gate.md",
+    "internal/transport/discover.go:skipModernValidation"
+   ],
+   "id": "mcp.legacy-handshake.default-off",
+   "owner": "transport",
+   "scenario": "mcp.legacy-handshake.default-off",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "docs/adr/0011-legacy-handshake-compatibility-gate.md",
+    "internal/transport/discover.go:legacyCompatibleMethods"
+   ],
+   "id": "mcp.legacy-handshake.enabled-bounded",
+   "owner": "transport",
+   "scenario": "mcp.legacy-handshake.enabled-bounded",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_unassigned.go:GetHostInfo",
+    "test/compliance/mcp_test.go:TestMCPDiscoverAndGetHostInfo"
+   ],
+   "id": "mcp.get-host-info",
+   "owner": "host",
+   "scenario": "mcp.get-host-info",
+   "surface": "read-only-tools"
+  },
+  {
+   "anchors": [
+    "internal/tools/standalone.go:IsStandaloneMutation",
+    "openspec/specs/host-agent-contract/spec.md:Mutation gate remains closed"
+   ],
+   "id": "admission.standalone-mutation-denied",
+   "owner": "core",
+   "scenario": "admission.standalone-mutation-denied",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/state/store.go:Open",
+    "internal/authz/store.go:OpenStore"
+   ],
+   "id": "state.schema-after-start",
+   "owner": "state",
+   "scenario": "state.schema-after-start",
+   "surface": "durable-state"
+  }
+ ],
+ "rustCandidate": {
+  "binarySha256": null,
+  "note": "No Rust runtime exists yet (M1). Every go-vs-rust item is unverified until one does."
+ },
+ "schemaVersion": 1,
+ "sourceLock": "baseline/source-lock.json",
+ "sourceLockSha256": "18573815b5eaf0a4e0ac41e0bc8dd7d65d4265d1b696f1eee00400da1f4af6f4"
+}

@@ -204,6 +204,10 @@ manual checkbox.
 
 **Closes:** 0.1, 0.2, 0.3, 0.4, 0.5. **Rust runtime code:** none.
 
+**Status:** harness, inventory and verifier are implemented, and the M0 gate passes. See
+[evidence/m0/README.md](../../../evidence/m0/README.md) for results, findings and the
+explicit gaps that remain, including the owner review for task 0.5.
+
 **Scope**
 
 - Build the Go reference reproducibly from the pinned SHA. Record the binary

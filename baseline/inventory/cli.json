@@ -1,0 +1,197 @@
+{
+ "items": [
+  {
+   "observed": {
+    "check": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    }
+   },
+   "owner": "cli",
+   "scenario": "cli.check.platform-ok"
+  },
+  {
+   "observed": {
+    "check": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "configuration ok\n",
+     "timedOut": false
+    }
+   },
+   "owner": "cli",
+   "scenario": "cli.check.standalone-ok"
+  },
+  {
+   "observed": {
+    "help": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "Usage: opute-host-agent [standalone|serve|public-mcp|recipe|provider|help] [flags]\n\n  opute-host-agent                   server-only standalone MCP profile (HTTP)\n  opute-host-agent serve             MCP server only (HTTP)\n  opute-host-agent recipe validate --source ./recipe.yaml\n  opute-host-agent recipe apply --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M\n  opute-host-agent recipe status --run-id RUN_ID\n  opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]\n  opute-host-agent provider install --source ./plugin.yaml --activate\n\nStandalone mode never requires Opute Platform.\n",
+     "timedOut": false
+    },
+    "publicMcpFlags": {
+     "exit": 1,
+     "stderr": "Usage of public-mcp:\n  -artifact-path string\n    \tOpute-owned cloudflared artifact path override\n  -artifact-sha256 string\n    \tpinned cloudflared artifact SHA-256 override\n  -artifact-uri string\n    \tpinned cloudflared artifact URI override\n  -binding-id string\n    \tprovider-issued public exposure binding ID\n  -endpoint string\n    \tstable HTTPS MCP endpoint, ending in /mcp\n  -env-file string\n    \tload Host Agent configuration from a file\n  -local-target string\n    \tHost Agent MCP origin, ending in /mcp; non-loopback targets require --origin-host-id\n  -origin-host-id string\n    \texact enrolled origin Host Agent identity for a non-loopback MCP origin\n  -scope string\n    \tsystemd service scope: user or system (default \"user\")\n  -service-file string\n    \tOpute-owned connector service file override\n  -service-name string\n    \tOpute-owned connector service name override\n  -token-file string\n    \t0600 file containing OPUTE_CLOUDFLARED_TUNNEL_TOKEN\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    },
+    "serveFlags": {
+     "exit": 1,
+     "stderr": "Usage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nflag: help requested",
+     "stdout": "",
+     "timedOut": false
+    }
+   },
+   "owner": "cli",
+   "scenario": "cli.help"
+  },
+  {
+   "observed": {
+    "envFlagMalformed": {
+     "exit": 1,
+     "stderr": "--env requires KEY=VALUE",
+     "stdout": "",
+     "timedOut": false
+    },
+    "providerNoSub": {
+     "exit": 1,
+     "stderr": "provider requires install, validate, status, or reload",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeNoSub": {
+     "exit": 1,
+     "stderr": "recipe requires validate, apply, or status",
+     "stdout": "",
+     "timedOut": false
+    },
+    "recipeValidateNoSource": {
+     "exit": 1,
+     "stderr": "recipe validate requires --source",
+     "stdout": "",
+     "timedOut": false
+    },
+    "unknownCommand": {
+     "exit": 1,
+     "stderr": "unknown command \"bogus\"; use standalone, serve, public-mcp, recipe, provider, or help",
+     "stdout": "",
+     "timedOut": false
+    },
+    "unknownFlag": {
+     "exit": 1,
+     "stderr": "flag provided but not defined: -bogus\nUsage of serve:\n  -check\n    \tvalidate configuration and state access, then exit\n  -env value\n    \tset a KEY=VALUE environment override; repeatable\n  -env-file string\n    \tload KEY=VALUE settings from a file\n  -mode string\n    \tagent profile: standalone or platform\n  -transport string\n    \tMCP transport: http\nflag provided but not defined: -bogus",
+     "stdout": "",
+     "timedOut": false
+    }
+   },
+   "owner": "cli",
+   "scenario": "cli.usage-errors"
+  },
+  {
+   "observed": {
+    "long": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "0.2.3\n",
+     "timedOut": false
+    },
+    "short": {
+     "exit": 0,
+     "stderr": "",
+     "stdout": "0.2.3\n",
+     "timedOut": false
+    }
+   },
+   "owner": "cli",
+   "scenario": "cli.version"
+  },
+  {
+   "observed": {
+    "blankId": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "OPUTE_REMOTE_AGENT_ID is required; the host agent must be onboarded with one canonical id",
+     "stdout": "",
+     "timedOut": false
+    },
+    "cpcTokenRetired": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "OPUTE_CPC_TOKEN is retired; enroll a host resource URL instead of phone-home credentials",
+     "stdout": "",
+     "timedOut": false
+    },
+    "envFileMissing": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "load env file: open env file \"${SANDBOX}/missing.env\": open ${SANDBOX}/missing.env: no such file or directory",
+     "stdout": "",
+     "timedOut": false
+    },
+    "missingId": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "OPUTE_REMOTE_AGENT_ID is required; the host agent must be onboarded with one canonical id",
+     "stdout": "",
+     "timedOut": false
+    },
+    "onboardingRetired": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "OPUTE_ONBOARDING_TOKEN is retired; enroll a host resource URL instead of phone-home credentials",
+     "stdout": "",
+     "timedOut": false
+    },
+    "reverseTunnelRetired": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "OPUTE_REVERSE_TUNNEL is retired; the kernel serves mode-scoped Streamable HTTP POST /mcp",
+     "stdout": "",
+     "timedOut": false
+    },
+    "standaloneWithPlatformUrl": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "standalone mode cannot use platform setting OPUTE_MCP_URL",
+     "stdout": "",
+     "timedOut": false
+    },
+    "transportEnvStdio": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "invalid --transport \"stdio\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "transportFlagWs": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "invalid --transport \"ws\": only Streamable HTTP (http) is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "unsupportedProvider": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "unsupported provider \"docker\": only incus is supported",
+     "stdout": "",
+     "timedOut": false
+    },
+    "wsUrlRetired": {
+     "exit": 1,
+     "listenedBeforeExit": false,
+     "stderr": "OPUTE_HOST_WS_URL is retired; enroll a host resource URL instead of phone-home credentials",
+     "stdout": "",
+     "timedOut": false
+    }
+   },
+   "owner": "config",
+   "scenario": "startup.fail-closed"
+  }
+ ],
+ "owner": "cli",
+ "surface": "cli"
+}
