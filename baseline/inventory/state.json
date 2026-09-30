@@ -1,0 +1,240 @@
+{
+ "files": [
+  {
+   "mode": "0o755",
+   "path": "home",
+   "type": "dir"
+  },
+  {
+   "mode": "0o755",
+   "path": "instance",
+   "type": "dir"
+  },
+  {
+   "mode": "0o644",
+   "path": "server.log",
+   "type": "file"
+  },
+  {
+   "mode": "0o755",
+   "path": "state",
+   "type": "dir"
+  },
+  {
+   "mode": "0o644",
+   "path": "state/authz.sqlite",
+   "type": "file"
+  },
+  {
+   "mode": "0o644",
+   "path": "state/state.db",
+   "type": "file"
+  },
+  {
+   "mode": "0o755",
+   "path": "xdg",
+   "type": "dir"
+  },
+  {
+   "mode": "0o700",
+   "path": "xdg/host-resource-coordinator",
+   "type": "dir"
+  }
+ ],
+ "observedAfterStart": {
+  "state/authz.sqlite": {
+   "objects": [
+    {
+     "name": "sqlite_autoindex_clients_1",
+     "sql": null,
+     "table": "clients",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_codes_1",
+     "sql": null,
+     "table": "codes",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_tokens_1",
+     "sql": null,
+     "table": "tokens",
+     "type": "index"
+    },
+    {
+     "name": "clients",
+     "sql": "CREATE TABLE clients (\n\t\t\tclient_id TEXT PRIMARY KEY,\n\t\t\tsecret_hash TEXT NOT NULL DEFAULT '',\n\t\t\tclient_type TEXT NOT NULL,\n\t\t\tredirect_uris TEXT NOT NULL DEFAULT '[]',\n\t\t\tmetadata_url TEXT NOT NULL DEFAULT '',\n\t\t\tconfidential INTEGER NOT NULL DEFAULT 0,\n\t\t\tcreated_at INTEGER NOT NULL\n\t\t)",
+     "table": "clients",
+     "type": "table"
+    },
+    {
+     "name": "codes",
+     "sql": "CREATE TABLE codes (\n\t\t\tcode TEXT PRIMARY KEY,\n\t\t\tclient_id TEXT NOT NULL,\n\t\t\tresource TEXT NOT NULL,\n\t\t\tcode_challenge TEXT NOT NULL,\n\t\t\tredirect_uri TEXT NOT NULL,\n\t\t\texpires_at INTEGER NOT NULL,\n\t\t\tused INTEGER NOT NULL DEFAULT 0\n\t\t)",
+     "table": "codes",
+     "type": "table"
+    },
+    {
+     "name": "tokens",
+     "sql": "CREATE TABLE tokens (\n\t\t\ttoken_hash TEXT PRIMARY KEY,\n\t\t\tclient_id TEXT NOT NULL,\n\t\t\tresource TEXT NOT NULL,\n\t\t\tscope TEXT NOT NULL,\n\t\t\texpires_at INTEGER NOT NULL,\n\t\t\trevoked INTEGER NOT NULL DEFAULT 0,\n\t\t\tcreated_at INTEGER NOT NULL\n\t\t)",
+     "table": "tokens",
+     "type": "table"
+    }
+   ],
+   "rowCounts": {
+    "clients": 2,
+    "codes": 0,
+    "tokens": 0
+   },
+   "userVersion": 0
+  },
+  "state/state.db": {
+   "objects": [
+    {
+     "name": "sqlite_autoindex_active_capabilities_1",
+     "sql": null,
+     "table": "active_capabilities",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_active_runtimes_1",
+     "sql": null,
+     "table": "active_runtimes",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_capability_invocations_1",
+     "sql": null,
+     "table": "capability_invocations",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_operations_1",
+     "sql": null,
+     "table": "operations",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_plan_runs_1",
+     "sql": null,
+     "table": "plan_runs",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_plan_runs_2",
+     "sql": null,
+     "table": "plan_runs",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_provider_generations_1",
+     "sql": null,
+     "table": "provider_generations",
+     "type": "index"
+    },
+    {
+     "name": "sqlite_autoindex_resource_registry_1",
+     "sql": null,
+     "table": "resource_registry",
+     "type": "index"
+    },
+    {
+     "name": "active_capabilities",
+     "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+     "table": "active_capabilities",
+     "type": "table"
+    },
+    {
+     "name": "active_runtimes",
+     "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+     "table": "active_runtimes",
+     "type": "table"
+    },
+    {
+     "name": "capability_invocations",
+     "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+     "table": "capability_invocations",
+     "type": "table"
+    },
+    {
+     "name": "operations",
+     "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+     "table": "operations",
+     "type": "table"
+    },
+    {
+     "name": "plan_runs",
+     "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+     "table": "plan_runs",
+     "type": "table"
+    },
+    {
+     "name": "provider_generations",
+     "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+     "table": "provider_generations",
+     "type": "table"
+    },
+    {
+     "name": "resource_registry",
+     "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+     "table": "resource_registry",
+     "type": "table"
+    }
+   ],
+   "rowCounts": {
+    "active_capabilities": 0,
+    "active_runtimes": 0,
+    "capability_invocations": 0,
+    "operations": 0,
+    "plan_runs": 0,
+    "provider_generations": 0,
+    "resource_registry": 0
+   },
+   "userVersion": 0
+  }
+ },
+ "owner": "state",
+ "static": [
+  {
+   "anchor": "internal/state/store.go:354",
+   "table": "active_capabilities"
+  },
+  {
+   "anchor": "internal/state/store.go:161",
+   "table": "active_runtimes"
+  },
+  {
+   "anchor": "internal/state/store.go:186",
+   "table": "capability_invocations"
+  },
+  {
+   "anchor": "internal/authz/store.go:90",
+   "table": "clients"
+  },
+  {
+   "anchor": "internal/authz/store.go:99",
+   "table": "codes"
+  },
+  {
+   "anchor": "internal/state/store.go:134",
+   "table": "operations"
+  },
+  {
+   "anchor": "internal/state/store.go:145",
+   "table": "plan_runs"
+  },
+  {
+   "anchor": "internal/state/store.go:173",
+   "table": "provider_generations"
+  },
+  {
+   "anchor": "internal/state/store.go:234",
+   "table": "resource_registry"
+  },
+  {
+   "anchor": "internal/authz/store.go:108",
+   "table": "tokens"
+  }
+ ],
+ "surface": "durable-state"
+}

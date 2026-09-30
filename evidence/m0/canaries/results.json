@@ -1,0 +1,74 @@
+{
+ "canaryFileSha256": "b343ca165e2520dcb5647449d5b3acf6067c0932f1c1cd1159b32b567654acc8",
+ "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+ "harnessSha256": "39c1dcb97d077bfd810942c9e74f970fde9ffd795f6ae088f51002c7b0933101",
+ "results": [
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "d759a54f1b662450f692bba365f67ca6993fe2b11ac36a287aab16e2b9317a9f",
+   "caught": true,
+   "failedScenarios": [
+    "catalog.platform",
+    "catalog.standalone",
+    "catalog.standalone-mutations-enabled",
+    "catalog.standalone-prefixed-names"
+   ],
+   "id": "C1-descriptor-text",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "9dc2330c9e1672d9b77a80033fc6bc60772732b6db74aa0a8847ce8b798443ea",
+   "caught": true,
+   "failedScenarios": [
+    "mcp.auth"
+   ],
+   "id": "C2-auth-status",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "b9122b50c97a09f00eef6c6d7778dc696255bfda806df46e8517eb4ccb646c4e",
+   "caught": true,
+   "failedScenarios": [
+    "mcp.auth",
+    "mcp.get-host-info",
+    "serve.health"
+   ],
+   "id": "C3-extra-argv-token",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "e40237ea398531a636bc716d9b12079b15b1555bc0f527b56ba8a352b713a7b5",
+   "caught": true,
+   "failedScenarios": [
+    "mcp.legacy-handshake.enabled-bounded"
+   ],
+   "id": "C4-legacy-bypass-widened",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "1b7fba4b299e982a0060a6d9dfdf1531b696b75f5c3d188f4ed98514f4982c61",
+   "caught": true,
+   "failedScenarios": [
+    "startup.fail-closed"
+   ],
+   "id": "C5-retired-env-accepted",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "63579b307df8d3e353c8e9934ef3d7391d92646a5f0fa773d515ee4dda7b9a93",
+   "caught": true,
+   "failedScenarios": [
+    "admission.standalone-mutation-denied"
+   ],
+   "id": "C6-mutation-gate-open",
+   "patchApplied": true
+  }
+ ],
+ "schemaVersion": 1,
+ "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b"
+}

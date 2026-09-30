@@ -37,7 +37,7 @@
       "published package and real client first-success results",
       "Host Agent, Platform, release, and deployment owner cutover review"
     ],
-    "verifier": "To be implemented fail closed in task 0.5 before any Rust runtime seam is promoted"
+    "verifier": "tools/parity/parity/verify.py (fail closed; negative tests in tools/parity/tests/test_verify.py)"
   },
   "revisionBehavior": "A Go contract, package, mode, provider, schema, catalog, or transport revision change invalidates affected parity evidence and requires a reviewed source-lock and manifest rebase. A Rust implementation change reruns the affected gates and the whole-agent cutover verifier.",
   "anchors": [
@@ -55,10 +55,24 @@
       "kind": "file",
       "path": "openspec/changes/reimplement-host-agent-in-rust/tasks.md",
       "note": "Implementation and evidence gates"
+    },
+    {
+      "kind": "file",
+      "path": "parity-manifest.json",
+      "note": "Gates, evidence suites and one item per scenario"
+    },
+    {
+      "kind": "file",
+      "path": "tools/parity/parity/verify.py",
+      "note": "Fail-closed verifier"
     }
   ],
-  "verify": null,
-  "verificationStatus": "Not yet enforceable: the manifest and verifier are required by task 0.5 before runtime implementation. This draft records the invariant delta but cannot authorize cutover.",
+  "verify": {
+    "cutover": "make parity-verify-cutover",
+    "m0": "make parity-verify",
+    "manifest": "parity-manifest.json"
+  },
+  "verificationStatus": "Verifier implemented and fail closed. `make parity-verify-cutover` currently FAILS, as intended: no Rust candidate exists, so every go-vs-rust item is unverified. The M0 gate (`make parity-verify`) checks harness self-validation, canaries and inventory. Owner review of this invariant (task 0.5) is still pending, so status stays proposed.",
   "supersedes": [],
   "withdrawn": false
 }

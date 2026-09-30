@@ -1,0 +1,9 @@
+{
+  "description": "Incus reachable with no instances. Every other invocation fails with the default response and is still recorded.",
+  "commands": {
+    "incus": [
+      {"argv": ["list", "--format", "json"], "stdout": "[]"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

@@ -1,0 +1,159 @@
+{
+ "items": [
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "platform",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/platform",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "standalone",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/standalone",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "standalone-mutations",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/standalone-mutations",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "standalone-prefixed",
+    "tools": [
+     "${TOOL_PREFIX}_check_local_llm_prerequisites",
+     "${TOOL_PREFIX}_configure_local_llm_model",
+     "${TOOL_PREFIX}_configure_local_llm_runtime",
+     "${TOOL_PREFIX}_ensure_local_llm_k3s_proxy",
+     "${TOOL_PREFIX}_ensure_local_llm_relay",
+     "${TOOL_PREFIX}_ensure_local_llm_server_binary",
+     "${TOOL_PREFIX}_install_local_llm_model",
+     "${TOOL_PREFIX}_list_local_llm_models",
+     "${TOOL_PREFIX}_probe_local_llm",
+     "${TOOL_PREFIX}_remove_local_llm_k3s_proxy",
+     "${TOOL_PREFIX}_remove_local_llm_model",
+     "${TOOL_PREFIX}_remove_local_llm_relay",
+     "${TOOL_PREFIX}_start_local_llm_runtime",
+     "${TOOL_PREFIX}_stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/standalone-prefixed",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "supports legacy-inventory I-1/I-2: Rust generates descriptors from one source; M0 must extend this per-tool authority check to every descriptor before M3",
+   "evidence": {
+    "canary": "C1-descriptor-text",
+    "method": "patch each source in turn; only incus-tools.json changes tools/list"
+   },
+   "id": "F-6",
+   "kind": "descriptor-authority",
+   "summary": "the published apply_manifest description comes from embedded schemas/incus-tools.json; the same text in internal/tools/catalog.go and schemas/all-tools.json, and a different text in internal/tools/standalone.go, never reach the wire"
+  },
+  {
+   "decision": "membership is contract, order is not; Rust may emit any order",
+   "evidence": {
+    "scenario": "mcp.get-host-info"
+   },
+   "id": "F-2",
+   "kind": "nondeterminism",
+   "summary": "get_host_info.supportedTools order varies between runs (Go map iteration); compared as a set"
+  },
+  {
+   "decision": "reproduce exactly (error text is observable)",
+   "evidence": {
+    "scenario": "startup.fail-closed",
+    "step": "transportEnvStdio"
+   },
+   "id": "F-3",
+   "kind": "message-quirk",
+   "summary": "OPUTE_TRANSPORT=stdio is rejected with the text 'invalid --transport \"stdio\"' even when the value came from the environment"
+  },
+  {
+   "decision": "open: Rust must report one of the same variants; a deterministic order would be an evidenced Go defect fixed in both implementations",
+   "evidence": {
+    "recipes": [
+     "plugins/llm/ollama/recipes/ollama-external.yaml"
+    ]
+   },
+   "id": "F-4",
+   "kind": "nondeterminism",
+   "summary": "recipe validate names a different missing required input between runs (map iteration order)"
+  },
+  {
+   "decision": "open: determine whether tools/call can reach them (hidden surface) or they are provider-conditional; add a scenario before M3",
+   "evidence": {
+    "tools": [
+     "ensure_k3d",
+     "get_cluster_details",
+     "get_cluster_runtime_details",
+     "list_clusters",
+     "uninstall_helm_chart"
+    ]
+   },
+   "id": "F-5",
+   "kind": "unpublished-dispatch",
+   "summary": "dispatch-registered tool names that appear in no captured catalog and are not in CatalogExcludedToolNames"
+  }
+ ]
+}

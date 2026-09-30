@@ -1,0 +1,100 @@
+{
+ "items": [
+  {
+   "anchors": [
+    "internal/authz/service.go:127"
+   ],
+   "owner": "transport",
+   "route": "/.well-known/oauth-authorization-server",
+   "scenarios": [
+    "mcp.auth"
+   ],
+   "status": "covered"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:125"
+   ],
+   "owner": "transport",
+   "route": "/.well-known/oauth-protected-resource",
+   "scenarios": [
+    "mcp.auth"
+   ],
+   "status": "covered"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:126"
+   ],
+   "owner": "transport",
+   "route": "/.well-known/oauth-protected-resource/mcp",
+   "scenarios": [
+    "mcp.auth"
+   ],
+   "status": "covered"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:118"
+   ],
+   "owner": "transport",
+   "route": "/health",
+   "scenarios": [
+    "mcp.auth",
+    "serve.health"
+   ],
+   "status": "covered"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:119"
+   ],
+   "owner": "transport",
+   "route": "/mcp",
+   "scenarios": [
+    "admission.standalone-mutation-denied",
+    "mcp.auth",
+    "mcp.discover",
+    "mcp.get-host-info",
+    "mcp.legacy-handshake.default-off",
+    "mcp.legacy-handshake.enabled-bounded",
+    "mcp.transport-rules",
+    "serve.health",
+    "startup.fail-closed",
+    "state.schema-after-start"
+   ],
+   "status": "covered"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:128"
+   ],
+   "owner": "transport",
+   "route": "/oauth/authorize",
+   "scenarios": [],
+   "status": "gap"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:130"
+   ],
+   "owner": "transport",
+   "route": "/oauth/revoke",
+   "scenarios": [],
+   "status": "gap"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:129"
+   ],
+   "owner": "transport",
+   "route": "/oauth/token",
+   "scenarios": [
+    "mcp.auth"
+   ],
+   "status": "covered"
+  }
+ ],
+ "owner": "transport",
+ "surface": "http"
+}
