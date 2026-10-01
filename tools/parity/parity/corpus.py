@@ -58,6 +58,9 @@ METHODS = [
 # Catalog content is M3's: a successful tools/list is compared by type only.
 CATALOG_MASK_REASON = "catalog content is owned by the M3 catalog scenarios"
 UNKNOWN_TOOL = "parity_no_such_tool"
+# encodeCursor("abc") and encodeCursor("") from the Go SDK (gob, base64url).
+VALID_CURSOR = "In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2FiYwA="
+EMPTY_CURSOR = "In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAD_4AA"
 TASK_ID = "parity-no-such-task"
 
 
@@ -184,19 +187,7 @@ def routing() -> dict:
     for key, data in raw.items():
         _label(steps, f"raw {key}", {"raw": {"data": data}})
     return _scenario("wire.routing", "http", "transport",
-                     ["internal/transport/http.go:NewHTTPServer mux", "net/http ServeMux"], steps,
-                     masks=[{"path": ["steps", "GET /health", "body"], "type": "object",
-                             "reason": "health payload is compared by serve.health"},
-                            {"path": ["steps", "POST /health", "body"], "type": "object",
-                             "reason": "health payload is compared by serve.health"},
-                            *[{"path": ["steps", f"{m} /health?verbose=1", "body"], "type": "object",
-                               "reason": "health payload is compared by serve.health"}
-                              for m in ("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")],
-                            *[{"path": ["steps", f"{m} /health", "body"], "type": "object",
-                               "reason": "health payload is compared by serve.health"}
-                              for m in ("PUT", "DELETE", "PATCH", "OPTIONS")],
-                            {"path": ["steps", "raw absoluteUri", "body"], "type": "object",
-                             "reason": "health payload is compared by serve.health", "optional": True}])
+                     ["internal/transport/http.go:NewHTTPServer mux", "net/http ServeMux"], steps)
 
 
 # --- wire.transport -----------------------------------------------------------
@@ -494,6 +485,19 @@ def origin(profile: str, *, public_opt_in: bool = False) -> dict:
                 if value is not None:
                     hdrs["Origin"] = value
                 _label(steps, f"{method} {okey} @{hkey}", _http("POST", "/mcp", hdrs, body))
+    # An address of this machine that is not loopback: local to the agent's
+    # authorizer, but not to the SDK's DNS-rebinding guard.
+    for method in ("server/discover", "prompts/list"):
+        body = _envelope(method, {"_meta": _meta()})
+        for okey in ("none", "loopback", "hostIp"):
+            hdrs = _headers(method)
+            hdrs["Host"] = "${HOST_IP}:${PORT}"
+            if okey == "loopback":
+                hdrs["Origin"] = "http://127.0.0.1"
+            if okey == "hostIp":
+                hdrs["Origin"] = "http://${HOST_IP}:${PORT}"
+            _label(steps, f"{method} {okey} @hostIp", {**_http("POST", "/mcp", hdrs, body),
+                                                       "requires": ["HOST_IP"]})
     sid = f"wire.origin.{profile}" + (".public-opt-in" if public_opt_in else "")
     env = {"OPUTE_MCP_DISABLE_LOCALHOST_PROTECTION": "true"} if public_opt_in else None
     return _scenario(sid, "mcp-wire", "transport",
@@ -503,9 +507,225 @@ def origin(profile: str, *, public_opt_in: bool = False) -> dict:
                      steps, profile=profile, env=env, prelude=_seed_prelude(profile))
 
 
+# --- wire.framing -------------------------------------------------------------
+
+def _raw(method: str, target: str, headers: list[str], body: str = "", *, proto: str = "HTTP/1.1",
+         close: bool = True, host: bool = True) -> str:
+    lines = [f"{method} {target} {proto}"]
+    if host:
+        lines.append(f"Host: {LOCAL_HOST}")
+    lines += headers
+    if close:
+        lines.append("Connection: close")
+    return "\r\n".join(lines) + "\r\n\r\n" + body
+
+
+def _mcp_headers(method: str = "server/discover") -> list[str]:
+    return ["Content-Type: application/json", "Accept: application/json, text/event-stream",
+            f"MCP-Protocol-Version: {PROTOCOL}", f"Mcp-Method: {method}", f"Authorization: {BEARER}"]
+
+
+def _chunk(body: str, *parts: int) -> str:
+    out, i = [], 0
+    for n in parts:
+        out.append(f"{n:x}\r\n{body[i:i + n]}\r\n")
+        i += n
+    if i < len(body):
+        out.append(f"{len(body) - i:x}\r\n{body[i:]}\r\n")
+    return "".join(out) + "0\r\n\r\n"
+
+
+def framing() -> dict:
+    steps: list[dict] = []
+    body = json.dumps(_envelope("server/discover", {"_meta": _meta()}), separators=(",", ":"))
+    cl = f"Content-Length: {len(body)}"
+    mh = _mcp_headers()
+    cases: dict[str, Any] = {
+        # body framing
+        "cl": _raw("POST", "/mcp", mh + [cl], body),
+        "chunked": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked"], _chunk(body, len(body))),
+        "chunkedSplit": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked"], _chunk(body, 1, 7, 50)),
+        "chunkedExtension": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked"],
+                                 f"{len(body):x};name=value\r\n{body}\r\n0\r\n\r\n"),
+        "chunkedTrailer": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked", "Trailer: X-T"],
+                               f"{len(body):x}\r\n{body}\r\n0\r\nX-T: 1\r\n\r\n"),
+        "chunkedUpperHex": _raw("POST", "/mcp", mh + ["Transfer-Encoding: CHUNKED"],
+                                f"{len(body):X}\r\n{body}\r\n0\r\n\r\n"),
+        "chunkedBadSize": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked"], f"zz\r\n{body}\r\n0\r\n\r\n"),
+        "chunkedMissingCrlf": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked"],
+                                   f"{len(body):x}\r\n{body}XX0\r\n\r\n"),
+        "clAndChunked": _raw("POST", "/mcp", mh + ["Content-Length: 3", "Transfer-Encoding: chunked"],
+                             _chunk(body, len(body))),
+        "clTwiceSame": _raw("POST", "/mcp", mh + [cl, cl], body),
+        "clTwiceDiffer": _raw("POST", "/mcp", mh + [cl, "Content-Length: 3"], body),
+        "clEmpty": _raw("POST", "/mcp", mh + ["Content-Length:"], body),
+        "clPlus": _raw("POST", "/mcp", mh + [f"Content-Length: +{len(body)}"], body),
+        "clNegative": _raw("POST", "/mcp", mh + ["Content-Length: -1"], body),
+        "clHex": _raw("POST", "/mcp", mh + ["Content-Length: 0x10"], body),
+        "clInnerSpace": _raw("POST", "/mcp", mh + ["Content-Length: 1 2"], body),
+        "teGzip": _raw("POST", "/mcp", mh + ["Transfer-Encoding: gzip"], body),
+        "teChunkedGzip": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked, gzip"], body),
+        "teTwice": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked", "Transfer-Encoding: chunked"], body),
+        "teIgnoredOnHttp10": _raw("POST", "/mcp", mh + ["Transfer-Encoding: chunked", cl], body, proto="HTTP/1.0"),
+        "expectContinue": _raw("POST", "/mcp", mh + [cl, "Expect: 100-continue"], body),
+        "expectContinueUnread": _raw("POST", "/health", [cl, "Expect: 100-continue"], body),
+        "expectContinueNoBody": _raw("GET", "/health", ["Expect: 100-continue"]),
+        "expectOther": _raw("GET", "/health", ["Expect: something"]),
+        # header syntax
+        "obsFold": _raw("GET", "/health", ["X-Folded: a", " b"]),
+        "foldFirstLine": "GET /health HTTP/1.1\r\n X-Bad: a\r\nHost: x\r\nConnection: close\r\n\r\n",
+        "noColon": _raw("GET", "/health", ["X-NoColon"]),
+        "spaceBeforeColon": _raw("GET", "/health", ["X-Space : a"]),
+        "ctlInValue": _raw("GET", "/health", ["X-Ctl: a\x01b"]),
+        "delInValue": _raw("GET", "/health", ["X-Del: a\x7fb"]),
+        "obsTextValue": _raw("GET", "/health", ["X-Obs: caf\xe9"]),
+        "emptyKey": _raw("GET", "/health", [": a"]),
+        "badKeyChar": _raw("GET", "/health", ["X(Bad): a"]),
+        "hostWithSpace": _raw("GET", "/health", ["Host: a b"], host=False),
+        "hostEmpty": _raw("GET", "/health", ["Host:"], host=False),
+        "hostIpv6": _raw("GET", "/health", ["Host: [::1]:${PORT}"], host=False),
+        # request line
+        "noProto": "GET /health\r\n\r\n",
+        "doubleSpace": _raw("GET", " /health", []),
+        "relativeUri": _raw("GET", "health", []),
+        "badEscape": _raw("GET", "/%zz", []),
+        "protoTrailing": _raw("GET", "/health", [], proto="HTTP/1.1 x"),
+        "badMethodChar": _raw("G(T", "/health", []),
+        "http20": _raw("GET", "/health", [], proto="HTTP/2.0"),
+        "http09": _raw("GET", "/health", [], proto="HTTP/0.9"),
+        "priStar": _raw("PRI", "*", [], proto="HTTP/2.0"),
+        "lfOnly": "GET /health HTTP/1.1\nHost: 127.0.0.1:${PORT}\nConnection: close\n\n",
+        "uriWithFragment": _raw("GET", "/health#frag", []),
+        "absoluteUriOtherHost": _raw("GET", "http://example.com/health", []),
+        "absoluteUriNoPath": _raw("GET", "http://127.0.0.1:${PORT}", []),
+        "connectAuthority": _raw("CONNECT", "127.0.0.1:${PORT}", []),
+        "connectPath": _raw("CONNECT", "/mcp", []),
+        # connection management
+        "pipelined": _raw("GET", "/health", [], close=False) + _raw("GET", "/nope", []),
+        "http10KeepAlive": _raw("GET", "/health", ["Connection: keep-alive"], proto="HTTP/1.0", close=False)
+                           + _raw("GET", "/nope", [], proto="HTTP/1.0", close=False),
+        "http10Plain": _raw("GET", "/nope", [], proto="HTTP/1.0", close=False),
+        "postThenCrlf": _raw("POST", "/oauth/revoke", ["Content-Length: 0"], close=False)
+                        + "\r\n" + _raw("GET", "/nope", []),
+        "connectionCloseUpper": _raw("GET", "/nope", ["Connection: CLOSE"], close=False),
+        # response framing
+        "longRedirect": _raw("GET", "//" + "a" * 2100, []),
+        "longRedirectHttp10": _raw("GET", "//" + "a" * 2100, [], proto="HTTP/1.0", close=False),
+        "redirectQuery": _raw("GET", "//mcp?a=1&b=%20", []),
+        "redirectEscaped": _raw("GET", "//%6Dcp", []),
+        "redirectNonAscii": _raw("GET", "//caf%C3%A9", []),
+        "redirectSpecialChars": _raw("GET", "//a%22b%3Cc", []),
+    }
+    for key, data in cases.items():
+        _label(steps, f"raw {key}", {"raw": {"data": data}})
+    _label(steps, "raw headerTooLarge", {"raw": {"data": _raw("GET", "/health", ["X-Big: ${PAD}"]),
+                                                  "padTo": (1 << 20) + 8192}})
+    _label(steps, "raw headerJustUnderLimit", {"raw": {"data": _raw("GET", "/nope", ["X-Big: ${PAD}"]),
+                                                        "padTo": (1 << 20)}})
+    return _scenario("wire.framing", "http", "transport",
+                     ["net/http server.go:readRequest", "net/http transfer.go:readTransfer",
+                      "net/http server.go:chunkWriter.writeHeader"], steps)
+
+
+# --- wire.sdk-edges --------------------------------------------------------------
+
+def sdk_edges(legacy: bool) -> dict:
+    steps: list[dict] = []
+    meta = _meta()
+    ci, caps = "io.modelcontextprotocol/clientInfo", "io.modelcontextprotocol/clientCapabilities"
+
+    def call(method: str, params: Any, *, name: str | None = None, modern: bool = True,
+             rid: Any = 1, headers: dict | None = None, with_params: bool = True) -> dict:
+        hdrs = _headers(method, modern=modern, name=name)
+        hdrs.update(headers or {})
+        env = {"jsonrpc": "2.0", "method": method}
+        if with_params:
+            env["params"] = params
+        if rid is not None:
+            env["id"] = rid
+        return _http("POST", "/mcp", hdrs, env)
+
+    cases = {
+        "clientInfoNumber": call("prompts/list", {"_meta": {**meta, ci: 7}}),
+        "clientInfoString": call("prompts/list", {"_meta": {**meta, ci: "x"}}),
+        "clientInfoNameNumber": call("prompts/list", {"_meta": {**meta, ci: {"name": 1, "version": "1"}}}),
+        "clientInfoNull": call("prompts/list", {"_meta": {**meta, ci: None}}),
+        "clientInfoExtraFields": call("prompts/list", {"_meta": {**meta, ci: {"name": "a", "x": [1]}}}),
+        "capabilitiesNull": call("prompts/list", {"_meta": {**meta, caps: None}}),
+        "capabilitiesString": call("prompts/list", {"_meta": {**meta, caps: "x"}}),
+        "capabilitiesArray": call("prompts/list", {"_meta": {**meta, caps: []}}),
+        "capabilitiesExtensionsArray": call("prompts/list", {"_meta": {**meta, caps: {"extensions": []}}}),
+        "logLevelMeta": call("prompts/list", {"_meta": {**meta, "io.modelcontextprotocol/logLevel": "debug"}}),
+        "toolsCallNameNumber": call("tools/call", {"name": 7, "_meta": meta}, name="7"),
+        "toolsCallArgsArray": call("tools/call", {"name": UNKNOWN_TOOL, "arguments": [], "_meta": meta},
+                                   name=UNKNOWN_TOOL),
+        "toolsCallArgsNull": call("tools/call", {"name": UNKNOWN_TOOL, "arguments": None, "_meta": meta},
+                                  name=UNKNOWN_TOOL),
+        "toolsCallNoArgs": call("tools/call", {"name": UNKNOWN_TOOL, "_meta": meta}, name=UNKNOWN_TOOL),
+        "toolsCallPaddedName": call("tools/call", {"name": UNKNOWN_TOOL, "_meta": meta},
+                                    name="  " + UNKNOWN_TOOL + "  "),
+        "promptsGetNamed": call("prompts/get", {"name": "p", "_meta": meta}, name="p"),
+        "promptsGetNameNumber": call("prompts/get", {"name": 3, "_meta": meta}, name="3"),
+        "promptsGetArgsArray": call("prompts/get", {"name": "p", "arguments": [], "_meta": meta}, name="p"),
+        "completionWithRef": call("completion/complete", {"ref": {"type": "ref/prompt", "name": "p"},
+                                                          "argument": {"name": "a", "value": ""}, "_meta": meta}),
+        "completionRefNull": call("completion/complete", {"ref": None, "_meta": meta}),
+        "toolsListCursor": call("tools/list", {"cursor": "bogus", "_meta": meta}),
+        "toolsListValidCursor": call("tools/list", {"cursor": VALID_CURSOR, "_meta": meta}),
+        "promptsListValidCursor": call("prompts/list", {"cursor": VALID_CURSOR, "_meta": meta}),
+        "promptsListEmptyCursor": call("prompts/list", {"cursor": EMPTY_CURSOR, "_meta": meta}),
+        "promptsListTruncatedCursor": call("prompts/list", {"cursor": VALID_CURSOR[:-4], "_meta": meta}),
+        "promptsListCursor": call("prompts/list", {"cursor": "bogus", "_meta": meta}),
+        "notificationWithId": call("notifications/cancelled", {"requestId": 1, "_meta": meta}, rid=5),
+        "progressNoParams": call("notifications/progress", None, with_params=False),
+        "rootsListChanged": call("notifications/roots/list_changed", {"_meta": meta}, rid=None),
+        "rootsListChangedCall": call("notifications/roots/list_changed", {"_meta": meta}),
+        "resourcesUnsubscribe": call("resources/unsubscribe", {"uri": "x", "_meta": meta}),
+        "discoverParamsExtra": call("server/discover", {"_meta": meta, "extra": True}),
+        "discoverIdString": call("server/discover", {"_meta": meta}, rid="abc"),
+    }
+    if legacy:
+        bare = lambda method, params, **kw: call(method, params, modern=False, **kw)
+        cases.update({
+            "initializeV20241105": bare("initialize", {**_params_for("initialize"), "protocolVersion": "2024-11-05"}),
+            "initializeV20260728": bare("initialize", {**_params_for("initialize"), "protocolVersion": "2026-07-28"}),
+            "initializeUnknownVersion": bare("initialize", {**_params_for("initialize"), "protocolVersion": "1999-01-01"}),
+            "initializeVersionNumber": bare("initialize", {**_params_for("initialize"), "protocolVersion": 7}),
+            "initializeNoVersion": bare("initialize", {"capabilities": {}, "clientInfo": {"name": "x", "version": "1"}}),
+            "initializeEmpty": bare("initialize", {}),
+            "initializeParamsNull": bare("initialize", None),
+            "initializeParamsArray": bare("initialize", []),
+            "initializeClientInfoNumber": bare("initialize", {**_params_for("initialize"), "clientInfo": 1}),
+            "initializedWithId": bare("notifications/initialized", {}, rid=3),
+            "pingParamsNull": bare("ping", None),
+            "pingParamsArray": bare("ping", []),
+            "pingParamsString": bare("ping", "x"),
+            "toolsListParamsArray": bare("tools/list", []),
+            "toolsListCursorLegacy": bare("tools/list", {"cursor": "bogus"}),
+            "toolsCallArgsArrayLegacy": bare("tools/call", {"name": UNKNOWN_TOOL, "arguments": []}),
+            "toolsCallParamsArrayLegacy": bare("tools/call", []),
+            "promptsGetNoName": bare("prompts/get", {}),
+            "promptsListOldMeta": bare("prompts/list", {"_meta": {"progressToken": 1}}),
+            "promptsListVersionHeaderOnly": bare("prompts/list", {}, headers={"MCP-Protocol-Version": PROTOCOL}),
+            "promptsListOldHeader": bare("prompts/list", {}, headers={"MCP-Protocol-Version": "2024-11-05"}),
+            "promptsListFutureHeader": bare("prompts/list", {}, headers={"MCP-Protocol-Version": "2099-01-01"}),
+            "cancelledNoParams": bare("notifications/cancelled", None, with_params=False, rid=None),
+        })
+    for key, step in cases.items():
+        _label(steps, key, step)
+    masks = [{"path": ["steps", k, "body", "result", "tools"], "type": "array",
+              "reason": CATALOG_MASK_REASON, "optional": True} for k in cases if "toolsList" in k]
+    suffix = "legacy-on" if legacy else "legacy-off"
+    return _scenario(f"wire.sdk-edges.{suffix}", "mcp-wire", "transport",
+                     ["go-sdk mcp/shared.go:validateRequestMeta", "go-sdk mcp/server.go:ServerSession.handle",
+                      "go-sdk mcp/streamable.go:servePOST"],
+                     steps, env=LEGACY_ENV if legacy else None, masks=masks)
+
+
 def generate() -> list[dict]:
     return [
         routing(), transport(), envelope(), methods(legacy=False), methods(legacy=True),
+        framing(), sdk_edges(False), sdk_edges(True),
         auth("standalone"), auth("platform"),
         origin("standalone"), origin("platform"), origin("standalone", public_opt_in=True),
     ]

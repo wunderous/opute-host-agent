@@ -1149,129 +1149,7 @@
         "as": "stop",
         "stop": {}
       }
-    ],
-    "compare": {
-      "masks": [
-        {
-          "path": [
-            "steps",
-            "GET /health",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "POST /health",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "GET /health?verbose=1",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "POST /health?verbose=1",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "PUT /health?verbose=1",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "DELETE /health?verbose=1",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "PATCH /health?verbose=1",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "OPTIONS /health?verbose=1",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "PUT /health",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "DELETE /health",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "PATCH /health",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "OPTIONS /health",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health"
-        },
-        {
-          "path": [
-            "steps",
-            "raw absoluteUri",
-            "body"
-          ],
-          "type": "object",
-          "reason": "health payload is compared by serve.health",
-          "optional": true
-        }
-      ]
-    }
+    ]
   },
   {
     "id": "wire.transport",
@@ -26065,6 +25943,1864 @@
     }
   },
   {
+    "id": "wire.framing",
+    "surface": "http",
+    "owner": "transport",
+    "anchors": [
+      "net/http server.go:readRequest",
+      "net/http transfer.go:readTransfer",
+      "net/http server.go:chunkWriter.writeHeader"
+    ],
+    "fixture": "incus-empty",
+    "corpusVersion": 1,
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "raw cl",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 299\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw chunked",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n12b\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw chunkedSplit",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n1\r\n{\r\n7\r\n\"jsonrp\r\n32\r\nc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_me\r\nf1\r\nta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw chunkedExtension",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n12b;name=value\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw chunkedTrailer",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nTrailer: X-T\r\nConnection: close\r\n\r\n12b\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\nX-T: 1\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw chunkedUpperHex",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: CHUNKED\r\nConnection: close\r\n\r\n12B\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw chunkedBadSize",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\nzz\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw chunkedMissingCrlf",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n12b\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}XX0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw clAndChunked",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n12b\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}\r\n0\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw clTwiceSame",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 299\r\nContent-Length: 299\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw clTwiceDiffer",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 299\r\nContent-Length: 3\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw clEmpty",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length:\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw clPlus",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: +299\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw clNegative",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: -1\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw clHex",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 0x10\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw clInnerSpace",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 1 2\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw teGzip",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: gzip\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw teChunkedGzip",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked, gzip\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw teTwice",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw teIgnoredOnHttp10",
+        "raw": {
+          "data": "POST /mcp HTTP/1.0\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nTransfer-Encoding: chunked\r\nContent-Length: 299\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw expectContinue",
+        "raw": {
+          "data": "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Type: application/json\r\nAccept: application/json, text/event-stream\r\nMCP-Protocol-Version: 2026-07-28\r\nMcp-Method: server/discover\r\nAuthorization: Bearer ${TOKEN}\r\nContent-Length: 299\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw expectContinueUnread",
+        "raw": {
+          "data": "POST /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Length: 299\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "raw expectContinueNoBody",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw expectOther",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nExpect: something\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw obsFold",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Folded: a\r\n b\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw foldFirstLine",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\n X-Bad: a\r\nHost: x\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw noColon",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-NoColon\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw spaceBeforeColon",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Space : a\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw ctlInValue",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Ctl: a\u0001b\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw delInValue",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Del: ab\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw obsTextValue",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Obs: café\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw emptyKey",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\n: a\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw badKeyChar",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX(Bad): a\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw hostWithSpace",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: a b\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw hostEmpty",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost:\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw hostIpv6",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: [::1]:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw noProto",
+        "raw": {
+          "data": "GET /health\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw doubleSpace",
+        "raw": {
+          "data": "GET  /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw relativeUri",
+        "raw": {
+          "data": "GET health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw badEscape",
+        "raw": {
+          "data": "GET /%zz HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw protoTrailing",
+        "raw": {
+          "data": "GET /health HTTP/1.1 x\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw badMethodChar",
+        "raw": {
+          "data": "G(T /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw http20",
+        "raw": {
+          "data": "GET /health HTTP/2.0\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw http09",
+        "raw": {
+          "data": "GET /health HTTP/0.9\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw priStar",
+        "raw": {
+          "data": "PRI * HTTP/2.0\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw lfOnly",
+        "raw": {
+          "data": "GET /health HTTP/1.1\nHost: 127.0.0.1:${PORT}\nConnection: close\n\n"
+        }
+      },
+      {
+        "as": "raw uriWithFragment",
+        "raw": {
+          "data": "GET /health#frag HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw absoluteUriOtherHost",
+        "raw": {
+          "data": "GET http://example.com/health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw absoluteUriNoPath",
+        "raw": {
+          "data": "GET http://127.0.0.1:${PORT} HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw connectAuthority",
+        "raw": {
+          "data": "CONNECT 127.0.0.1:${PORT} HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw connectPath",
+        "raw": {
+          "data": "CONNECT /mcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw pipelined",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\n\r\nGET /nope HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw http10KeepAlive",
+        "raw": {
+          "data": "GET /health HTTP/1.0\r\nHost: 127.0.0.1:${PORT}\r\nConnection: keep-alive\r\n\r\nGET /nope HTTP/1.0\r\nHost: 127.0.0.1:${PORT}\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw http10Plain",
+        "raw": {
+          "data": "GET /nope HTTP/1.0\r\nHost: 127.0.0.1:${PORT}\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw postThenCrlf",
+        "raw": {
+          "data": "POST /oauth/revoke HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nContent-Length: 0\r\n\r\n\r\nGET /nope HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw connectionCloseUpper",
+        "raw": {
+          "data": "GET /nope HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: CLOSE\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw longRedirect",
+        "raw": {
+          "data": "GET //aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw longRedirectHttp10",
+        "raw": {
+          "data": "GET //aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\r\nHost: 127.0.0.1:${PORT}\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw redirectQuery",
+        "raw": {
+          "data": "GET //mcp?a=1&b=%20 HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw redirectEscaped",
+        "raw": {
+          "data": "GET //%6Dcp HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw redirectNonAscii",
+        "raw": {
+          "data": "GET //caf%C3%A9 HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw redirectSpecialChars",
+        "raw": {
+          "data": "GET //a%22b%3Cc HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n"
+        }
+      },
+      {
+        "as": "raw headerTooLarge",
+        "raw": {
+          "data": "GET /health HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Big: ${PAD}\r\nConnection: close\r\n\r\n",
+          "padTo": 1056768
+        }
+      },
+      {
+        "as": "raw headerJustUnderLimit",
+        "raw": {
+          "data": "GET /nope HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nX-Big: ${PAD}\r\nConnection: close\r\n\r\n",
+          "padTo": 1048576
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "wire.sdk-edges.legacy-off",
+    "surface": "mcp-wire",
+    "owner": "transport",
+    "anchors": [
+      "go-sdk mcp/shared.go:validateRequestMeta",
+      "go-sdk mcp/server.go:ServerSession.handle",
+      "go-sdk mcp/streamable.go:servePOST"
+    ],
+    "fixture": "incus-empty",
+    "corpusVersion": 1,
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "clientInfoNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":7,\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":\"x\",\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoNameNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":1,\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":null,\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoExtraFields",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"a\",\"x\":[1]},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":null}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":\"x\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":[]}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesExtensionsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":[]}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "logLevelMeta",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}},\"io.modelcontextprotocol/logLevel\":\"debug\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallNameNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "7",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":7,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallArgsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "parity_no_such_tool",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"arguments\":[],\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallArgsNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "parity_no_such_tool",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"arguments\":null,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallNoArgs",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "parity_no_such_tool",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallPaddedName",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "  parity_no_such_tool  ",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetNamed",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/get",
+            "Mcp-Name": "p",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{\"name\":\"p\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetNameNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/get",
+            "Mcp-Name": "3",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{\"name\":3,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetArgsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/get",
+            "Mcp-Name": "p",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{\"name\":\"p\",\"arguments\":[],\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "completionWithRef",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "completion/complete",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"completion/complete\",\"params\":{\"ref\":{\"type\":\"ref/prompt\",\"name\":\"p\"},\"argument\":{\"name\":\"a\",\"value\":\"\"},\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "completionRefNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "completion/complete",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"completion/complete\",\"params\":{\"ref\":null,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsListCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{\"cursor\":\"bogus\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsListValidCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2FiYwA=\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListValidCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2FiYwA=\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListEmptyCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAD_4AA\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListTruncatedCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2Fi\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"bogus\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "notificationWithId",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/cancelled",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\",\"params\":{\"requestId\":1,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":5}"
+        }
+      },
+      {
+        "as": "progressNoParams",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/progress",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\",\"id\":1}"
+        }
+      },
+      {
+        "as": "rootsListChanged",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/roots/list_changed",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/roots/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}}}"
+        }
+      },
+      {
+        "as": "rootsListChangedCall",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/roots/list_changed",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/roots/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "resourcesUnsubscribe",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "resources/unsubscribe",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"resources/unsubscribe\",\"params\":{\"uri\":\"x\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "discoverParamsExtra",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}},\"extra\":true},\"id\":1}"
+        }
+      },
+      {
+        "as": "discoverIdString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":\"abc\"}"
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "toolsListCursor",
+            "body",
+            "result",
+            "tools"
+          ],
+          "type": "array",
+          "reason": "catalog content is owned by the M3 catalog scenarios",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "toolsListValidCursor",
+            "body",
+            "result",
+            "tools"
+          ],
+          "type": "array",
+          "reason": "catalog content is owned by the M3 catalog scenarios",
+          "optional": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "wire.sdk-edges.legacy-on",
+    "surface": "mcp-wire",
+    "owner": "transport",
+    "anchors": [
+      "go-sdk mcp/shared.go:validateRequestMeta",
+      "go-sdk mcp/server.go:ServerSession.handle",
+      "go-sdk mcp/streamable.go:servePOST"
+    ],
+    "fixture": "incus-empty",
+    "corpusVersion": 1,
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE": "true"
+          }
+        }
+      },
+      {
+        "as": "clientInfoNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":7,\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":\"x\",\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoNameNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":1,\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":null,\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "clientInfoExtraFields",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"a\",\"x\":[1]},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":null}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":\"x\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":[]}},\"id\":1}"
+        }
+      },
+      {
+        "as": "capabilitiesExtensionsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":[]}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "logLevelMeta",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}},\"io.modelcontextprotocol/logLevel\":\"debug\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallNameNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "7",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":7,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallArgsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "parity_no_such_tool",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"arguments\":[],\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallArgsNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "parity_no_such_tool",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"arguments\":null,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallNoArgs",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "parity_no_such_tool",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallPaddedName",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/call",
+            "Mcp-Name": "  parity_no_such_tool  ",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetNamed",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/get",
+            "Mcp-Name": "p",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{\"name\":\"p\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetNameNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/get",
+            "Mcp-Name": "3",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{\"name\":3,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetArgsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/get",
+            "Mcp-Name": "p",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{\"name\":\"p\",\"arguments\":[],\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "completionWithRef",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "completion/complete",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"completion/complete\",\"params\":{\"ref\":{\"type\":\"ref/prompt\",\"name\":\"p\"},\"argument\":{\"name\":\"a\",\"value\":\"\"},\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "completionRefNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "completion/complete",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"completion/complete\",\"params\":{\"ref\":null,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsListCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{\"cursor\":\"bogus\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsListValidCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "tools/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2FiYwA=\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListValidCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2FiYwA=\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListEmptyCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAD_4AA\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListTruncatedCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"In8DAQEJcGFnZVRva2VuAf-AAAEBAQdMYXN0VUlEAQwAAAAI_4ABA2Fi\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListCursor",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"cursor\":\"bogus\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "notificationWithId",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/cancelled",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\",\"params\":{\"requestId\":1,\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":5}"
+        }
+      },
+      {
+        "as": "progressNoParams",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/progress",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\",\"id\":1}"
+        }
+      },
+      {
+        "as": "rootsListChanged",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/roots/list_changed",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/roots/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}}}"
+        }
+      },
+      {
+        "as": "rootsListChangedCall",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "notifications/roots/list_changed",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/roots/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "resourcesUnsubscribe",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "resources/unsubscribe",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"resources/unsubscribe\",\"params\":{\"uri\":\"x\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "discoverParamsExtra",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}},\"extra\":true},\"id\":1}"
+        }
+      },
+      {
+        "as": "discoverIdString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":\"abc\"}"
+        }
+      },
+      {
+        "as": "initializeV20241105",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"parity\",\"version\":\"1\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeV20260728",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2026-07-28\",\"capabilities\":{},\"clientInfo\":{\"name\":\"parity\",\"version\":\"1\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeUnknownVersion",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"1999-01-01\",\"capabilities\":{},\"clientInfo\":{\"name\":\"parity\",\"version\":\"1\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeVersionNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":7,\"capabilities\":{},\"clientInfo\":{\"name\":\"parity\",\"version\":\"1\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeNoVersion",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"capabilities\":{},\"clientInfo\":{\"name\":\"x\",\"version\":\"1\"}},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeEmpty",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeParamsNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":null,\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeParamsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":[],\"id\":1}"
+        }
+      },
+      {
+        "as": "initializeClientInfoNumber",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":1},\"id\":1}"
+        }
+      },
+      {
+        "as": "initializedWithId",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\",\"params\":{},\"id\":3}"
+        }
+      },
+      {
+        "as": "pingParamsNull",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"params\":null,\"id\":1}"
+        }
+      },
+      {
+        "as": "pingParamsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"params\":[],\"id\":1}"
+        }
+      },
+      {
+        "as": "pingParamsString",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"params\":\"x\",\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsListParamsArray",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":[],\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsListCursorLegacy",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{\"cursor\":\"bogus\"},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallArgsArrayLegacy",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"parity_no_such_tool\",\"arguments\":[]},\"id\":1}"
+        }
+      },
+      {
+        "as": "toolsCallParamsArrayLegacy",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":[],\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsGetNoName",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/get\",\"params\":{},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListOldMeta",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"progressToken\":1}},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListVersionHeaderOnly",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}",
+            "MCP-Protocol-Version": "2026-07-28"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListOldHeader",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}",
+            "MCP-Protocol-Version": "2024-11-05"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{},\"id\":1}"
+        }
+      },
+      {
+        "as": "promptsListFutureHeader",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}",
+            "MCP-Protocol-Version": "2099-01-01"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{},\"id\":1}"
+        }
+      },
+      {
+        "as": "cancelledNoParams",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": "Bearer ${TOKEN}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\"}"
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "toolsListCursor",
+            "body",
+            "result",
+            "tools"
+          ],
+          "type": "array",
+          "reason": "catalog content is owned by the M3 catalog scenarios",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "toolsListValidCursor",
+            "body",
+            "result",
+            "tools"
+          ],
+          "type": "array",
+          "reason": "catalog content is owned by the M3 catalog scenarios",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "toolsListParamsArray",
+            "body",
+            "result",
+            "tools"
+          ],
+          "type": "array",
+          "reason": "catalog content is owned by the M3 catalog scenarios",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "toolsListCursorLegacy",
+            "body",
+            "result",
+            "tools"
+          ],
+          "type": "array",
+          "reason": "catalog content is owned by the M3 catalog scenarios",
+          "optional": true
+        }
+      ]
+    }
+  },
+  {
     "id": "wire.auth.standalone",
     "surface": "auth",
     "owner": "authz",
@@ -32621,6 +34357,124 @@
         }
       },
       {
+        "as": "server/discover none @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "server/discover loopback @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://127.0.0.1"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "server/discover hostIp @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list none @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list loopback @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://127.0.0.1"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list hostIp @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
         "as": "stop",
         "stop": {}
       }
@@ -34547,6 +36401,124 @@
           },
           "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
         }
+      },
+      {
+        "as": "server/discover none @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "server/discover loopback @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://127.0.0.1"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "server/discover hostIp @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list none @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list loopback @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://127.0.0.1"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list hostIp @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
       },
       {
         "as": "stop",
@@ -36476,6 +38448,124 @@
           },
           "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
         }
+      },
+      {
+        "as": "server/discover none @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "server/discover loopback @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://127.0.0.1"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "server/discover hostIp @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list none @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list loopback @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://127.0.0.1"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
+      },
+      {
+        "as": "prompts/list hostIp @hostIp",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "prompts/list",
+            "Authorization": "Bearer ${TOKEN}",
+            "Host": "${HOST_IP}:${PORT}",
+            "Origin": "http://${HOST_IP}:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"prompts/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        },
+        "requires": [
+          "HOST_IP"
+        ]
       },
       {
         "as": "stop",

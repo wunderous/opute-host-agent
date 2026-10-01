@@ -115,6 +115,11 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
     try:
         for index, step in enumerate(scenario["steps"]):
             label = step.get("as", f"step{index}")
+            missing = [v for v in step.get("requires", []) if v not in sandbox.variables]
+            if missing:
+                # Both sides skip identically; the evidence records why.
+                steps[label] = {"skipped": "requires " + ",".join(missing)}
+                continue
             if "cli" in step:
                 spec = step["cli"]
                 steps[label] = agent.run_cli(
@@ -144,7 +149,11 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                     modern=spec.get("modern", True), headers=spec.get("headers"),
                     omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
             elif "raw" in step:
-                data = sandbox.expand(step["raw"]["data"]).encode()
+                spec = step["raw"]
+                data = sandbox.expand(spec["data"]).encode("latin-1")
+                if "padTo" in spec:
+                    filler = spec["padTo"] - (len(data) - len(b"${PAD}"))
+                    data = data.replace(b"${PAD}", b"a" * filler, 1)
                 steps[label] = agent.raw_request(sandbox, data)
             elif "sql" in step:
                 spec = step["sql"]

@@ -50,6 +50,32 @@ PROTOCOL_VERSION = "2026-07-28"
 _PREFIX_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "opute.host-agent.mcp-tool-prefix")
 
 
+_HOST_IP: list[str] = []
+
+
+def host_ip() -> str:
+    """A non-loopback address of this machine, or "" when there is none.
+
+    The agent treats its own interface addresses as local hosts, which is the
+    one case where the SDK's DNS-rebinding guard can fire; steps that need
+    such an address declare `"requires": ["HOST_IP"]`.
+    """
+    if not _HOST_IP:
+        found = ""
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            probe.connect(("10.255.255.255", 1))
+            address = probe.getsockname()[0]
+            if not address.startswith("127."):
+                found = address
+        except OSError:
+            pass
+        finally:
+            probe.close()
+        _HOST_IP.append(found)
+    return _HOST_IP[0]
+
+
 def tool_name_prefix(agent_id: str) -> str:
     agent_id = agent_id.strip()
     if not agent_id:
@@ -130,13 +156,16 @@ class Sandbox:
 
     @property
     def variables(self) -> dict[str, str]:
-        return {
+        variables = {
             "SANDBOX": str(self.root),
             "AGENT_ID": self.agent_id,
             "TOKEN": self.token,
             "PORT": str(self.port),
             "TOOL_PREFIX": tool_name_prefix(self.agent_id),
         }
+        if host_ip():
+            variables["HOST_IP"] = host_ip()
+        return variables
 
     def base_env(self) -> dict[str, str]:
         env = {
@@ -371,11 +400,13 @@ def http_request(sandbox: Sandbox, method: str, path: str, headers: dict[str, st
 
 
 def raw_request(sandbox: Sandbox, data: bytes, timeout: float = 10.0) -> dict:
-    """Send exact bytes and parse one HTTP/1.x response (for framing cases
-    http.client refuses to produce, such as a missing Host header)."""
+    """Send exact bytes and parse every HTTP/1.x response until the server
+    closes (pipelining, 100 Continue, keep-alive). Framing is part of the
+    contract here, so every header except Date is recorded, in order."""
     with socket.create_connection(("127.0.0.1", sandbox.port), timeout=timeout) as conn:
         # No half-close: Go treats a client EOF as a cancelled request.
-        # Every raw case sends "Connection: close" or is rejected by the server.
+        # Every raw case ends with "Connection: close" or a request the
+        # server rejects, so the server closes first.
         conn.sendall(data)
         chunks = []
         try:
@@ -385,36 +416,61 @@ def raw_request(sandbox: Sandbox, data: bytes, timeout: float = 10.0) -> dict:
                     break
                 chunks.append(chunk)
         except (socket.timeout, ConnectionResetError):
-            pass
-    response = b"".join(chunks)
-    head, _, body = response.partition(b"\r\n\r\n")
-    lines = head.decode(errors="replace").split("\r\n")
-    parts = lines[0].split(" ", 2) if lines and lines[0] else []
-    if len(parts) < 2 or not parts[1].isdigit():
-        return {"status": None, "headers": {}, "body": response.decode(errors="replace")}
-    hdrs: dict[str, str] = {}
-    for line in lines[1:]:
-        key, _, value = line.partition(":")
-        if key.lower() in HEADER_ALLOWLIST:
-            hdrs[key.lower()] = value.strip()
-        if key.lower() == "transfer-encoding" and "chunked" in value.lower():
-            body = _dechunk(body)
-    return {"status": int(parts[1]), "headers": hdrs, "body": _decode_body(hdrs, body)}
+            chunks.append(b"<timeout>")
+    stream = b"".join(chunks)
+    responses = []
+    while stream:
+        head, sep, rest = stream.partition(b"\r\n\r\n")
+        lines = head.decode(errors="replace").split("\r\n")
+        parts = lines[0].split(" ", 2) if lines and lines[0] else []
+        if not sep or len(parts) < 2 or not parts[1].isdigit():
+            responses.append({"unparsed": stream.decode(errors="replace")})
+            break
+        headers = []
+        length = None
+        chunked = False
+        for line in lines[1:]:
+            key, _, value = line.partition(":")
+            value = value.strip()
+            if key.lower() == "date":
+                continue
+            headers.append([key, value])
+            if key.lower() == "content-length" and value.isdigit():
+                length = int(value)
+            if key.lower() == "transfer-encoding" and "chunked" in value.lower():
+                chunked = True
+        status = int(parts[1])
+        no_body = status in (204, 304) or 100 <= status < 200
+        if no_body:
+            body, stream = b"", rest
+        elif chunked:
+            body, stream = _dechunk_prefix(rest)
+        elif length is not None:
+            body, stream = rest[:length], rest[length:]
+        else:
+            body, stream = rest, b""
+        hdrs = {k.lower(): v for k, v in headers}
+        responses.append({"statusLine": lines[0], "headers": headers,
+                          "body": _decode_body(hdrs, body)})
+    if len(responses) == 1:
+        return responses[0]
+    return {"responses": responses}
 
 
-def _dechunk(data: bytes) -> bytes:
+def _dechunk_prefix(data: bytes) -> tuple[bytes, bytes]:
     out = bytearray()
     while data:
         size_line, _, rest = data.partition(b"\r\n")
         try:
             size = int(size_line.split(b";")[0], 16)
         except ValueError:
-            break
+            return bytes(out), b""
         if size == 0:
-            break
+            _, _, after = rest.partition(b"\r\n")
+            return bytes(out), after
         out += rest[:size]
         data = rest[size + 2:]
-    return bytes(out)
+    return bytes(out), b""
 
 
 def run_sql(path: Path, statements: list[str]) -> dict:
