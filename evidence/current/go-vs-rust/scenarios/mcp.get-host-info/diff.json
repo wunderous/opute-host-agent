@@ -211,7 +211,7 @@
             "$masked": "non-negative-int"
            },
            "mount": "/",
-           "pressure": "normal",
+           "pressure": "warning",
            "totalBytes": 270553174016
           },
           {
@@ -219,12 +219,12 @@
             "$masked": "non-negative-int"
            },
            "mount": "${SANDBOX}/home",
-           "pressure": "normal",
+           "pressure": "warning",
            "totalBytes": 270553174016
           }
          ],
          "diskMount": "/",
-         "diskPressure": "normal",
+         "diskPressure": "warning",
          "diskTotalBytes": 270553174016,
          "enforcement": "unsupported",
          "memoryAvailableBytes": {
@@ -244,6 +244,18 @@
          },
          "psi": {
           "cpu": {
+           "fullAvg10": {
+            "$masked": "number"
+           },
+           "fullAvg300": {
+            "$masked": "number"
+           },
+           "fullAvg60": {
+            "$masked": "number"
+           },
+           "fullTotalUsec": {
+            "$masked": "number"
+           },
            "someAvg10": {
             "$masked": "number"
            },
@@ -258,6 +270,15 @@
            }
           },
           "io": {
+           "fullAvg10": {
+            "$masked": "number"
+           },
+           "fullAvg300": {
+            "$masked": "number"
+           },
+           "fullAvg60": {
+            "$masked": "number"
+           },
            "fullTotalUsec": {
             "$masked": "number"
            },
@@ -296,7 +317,7 @@
           "diskAvailableBytes": {
            "$masked": "non-negative-int"
           },
-          "diskPressure": "normal",
+          "diskPressure": "warning",
           "effectiveLimits": {
            "cpuCores": 4,
            "diskBytes": 270553174016,
@@ -311,9 +332,21 @@
           "memoryEvents": null,
           "normalInFlight": 0,
           "policyRevision": "opute-host-resource-policy.v2",
-          "pressure": "normal",
+          "pressure": "warning",
           "psi": {
            "cpu": {
+            "fullAvg10": {
+             "$masked": "number"
+            },
+            "fullAvg300": {
+             "$masked": "number"
+            },
+            "fullAvg60": {
+             "$masked": "number"
+            },
+            "fullTotalUsec": {
+             "$masked": "number"
+            },
             "someAvg10": {
              "$masked": "number"
             },
@@ -328,6 +361,15 @@
             }
            },
            "io": {
+            "fullAvg10": {
+             "$masked": "number"
+            },
+            "fullAvg300": {
+             "$masked": "number"
+            },
+            "fullAvg60": {
+             "$masked": "number"
+            },
             "fullTotalUsec": {
              "$masked": "number"
             },
@@ -352,7 +394,7 @@
            "queued": 0
           },
           "queued": 0,
-          "reason": "",
+          "reason": "available disk is low",
           "reservations": {
            "count": 0
           }
@@ -553,7 +595,7 @@
          "$masked": "non-negative-int"
         },
         "mount": "/",
-        "pressure": "normal",
+        "pressure": "warning",
         "totalBytes": 270553174016
        },
        {
@@ -561,12 +603,12 @@
          "$masked": "non-negative-int"
         },
         "mount": "${SANDBOX}/home",
-        "pressure": "normal",
+        "pressure": "warning",
         "totalBytes": 270553174016
        }
       ],
       "diskMount": "/",
-      "diskPressure": "normal",
+      "diskPressure": "warning",
       "diskTotalBytes": 270553174016,
       "enforcement": "unsupported",
       "memoryAvailableBytes": {
@@ -586,6 +628,18 @@
       },
       "psi": {
        "cpu": {
+        "fullAvg10": {
+         "$masked": "number"
+        },
+        "fullAvg300": {
+         "$masked": "number"
+        },
+        "fullAvg60": {
+         "$masked": "number"
+        },
+        "fullTotalUsec": {
+         "$masked": "number"
+        },
         "someAvg10": {
          "$masked": "number"
         },
@@ -600,6 +654,15 @@
         }
        },
        "io": {
+        "fullAvg10": {
+         "$masked": "number"
+        },
+        "fullAvg300": {
+         "$masked": "number"
+        },
+        "fullAvg60": {
+         "$masked": "number"
+        },
         "fullTotalUsec": {
          "$masked": "number"
         },
@@ -638,7 +701,7 @@
        "diskAvailableBytes": {
         "$masked": "non-negative-int"
        },
-       "diskPressure": "normal",
+       "diskPressure": "warning",
        "effectiveLimits": {
         "cpuCores": 4,
         "diskBytes": 270553174016,
@@ -653,9 +716,21 @@
        "memoryEvents": null,
        "normalInFlight": 0,
        "policyRevision": "opute-host-resource-policy.v2",
-       "pressure": "normal",
+       "pressure": "warning",
        "psi": {
         "cpu": {
+         "fullAvg10": {
+          "$masked": "number"
+         },
+         "fullAvg300": {
+          "$masked": "number"
+         },
+         "fullAvg60": {
+          "$masked": "number"
+         },
+         "fullTotalUsec": {
+          "$masked": "number"
+         },
          "someAvg10": {
           "$masked": "number"
          },
@@ -670,6 +745,15 @@
          }
         },
         "io": {
+         "fullAvg10": {
+          "$masked": "number"
+         },
+         "fullAvg300": {
+          "$masked": "number"
+         },
+         "fullAvg60": {
+          "$masked": "number"
+         },
          "fullTotalUsec": {
           "$masked": "number"
          },
@@ -694,7 +778,7 @@
         "queued": 0
        },
        "queued": 0,
-       "reason": "",
+       "reason": "available disk is low",
        "reservations": {
         "count": 0
        }
@@ -729,6 +813,7 @@
    "right": "$len=0"
   }
  ],
+ "divergences": [],
  "maskViolations": {
   "a": [],
   "b": [

@@ -1,6 +1,209 @@
 {
  "diff": [
   {
+   "left": "$len=6",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects"
+   ],
+   "right": "$len=13"
+  },
+  {
+   "left": "sqlite_autoindex_tokens_1",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    2,
+    "name"
+   ],
+   "right": "sqlite_autoindex_consents_1"
+  },
+  {
+   "left": "tokens",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    2,
+    "table"
+   ],
+   "right": "consents"
+  },
+  {
+   "left": "clients",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    3,
+    "name"
+   ],
+   "right": "sqlite_autoindex_pending_authorizations_1"
+  },
+  {
+   "left": "CREATE TABLE clients (\n\t\t\tclient_id TEXT PRIMARY KEY,\n\t\t\tsecret_hash TEXT NOT NULL DEFAULT '',\n\t\t\tclient_type TEXT NOT NULL,\n\t\t\tredirect_uris TEXT NOT NULL DEFAULT '[]',\n\t\t\tmetadata_url TEXT NOT NULL DEFAULT '',\n\t\t\tconfidential INTEGER NOT NULL DEFAULT 0,\n\t\t\tcreated_at INTEGER NOT NULL\n\t\t)",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    3,
+    "sql"
+   ],
+   "right": null
+  },
+  {
+   "left": "clients",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    3,
+    "table"
+   ],
+   "right": "pending_authorizations"
+  },
+  {
+   "left": "table",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    3,
+    "type"
+   ],
+   "right": "index"
+  },
+  {
+   "left": "codes",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    4,
+    "name"
+   ],
+   "right": "sqlite_autoindex_pending_authorizations_2"
+  },
+  {
+   "left": "CREATE TABLE codes (\n\t\t\tcode TEXT PRIMARY KEY,\n\t\t\tclient_id TEXT NOT NULL,\n\t\t\tresource TEXT NOT NULL,\n\t\t\tcode_challenge TEXT NOT NULL,\n\t\t\tredirect_uri TEXT NOT NULL,\n\t\t\texpires_at INTEGER NOT NULL,\n\t\t\tused INTEGER NOT NULL DEFAULT 0\n\t\t)",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    4,
+    "sql"
+   ],
+   "right": null
+  },
+  {
+   "left": "codes",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    4,
+    "table"
+   ],
+   "right": "pending_authorizations"
+  },
+  {
+   "left": "table",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    4,
+    "type"
+   ],
+   "right": "index"
+  },
+  {
+   "left": "tokens",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    5,
+    "name"
+   ],
+   "right": "sqlite_autoindex_schema_migrations_1"
+  },
+  {
+   "left": "CREATE TABLE tokens (\n\t\t\ttoken_hash TEXT PRIMARY KEY,\n\t\t\tclient_id TEXT NOT NULL,\n\t\t\tresource TEXT NOT NULL,\n\t\t\tscope TEXT NOT NULL,\n\t\t\texpires_at INTEGER NOT NULL,\n\t\t\trevoked INTEGER NOT NULL DEFAULT 0,\n\t\t\tcreated_at INTEGER NOT NULL\n\t\t)",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    5,
+    "sql"
+   ],
+   "right": null
+  },
+  {
+   "left": "tokens",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    5,
+    "table"
+   ],
+   "right": "schema_migrations"
+  },
+  {
+   "left": "table",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "objects",
+    5,
+    "type"
+   ],
+   "right": "index"
+  },
+  {
+   "left": 2,
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "rowCounts",
+    "clients"
+   ],
+   "right": 3
+  },
+  {
+   "left": "$absent",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "rowCounts",
+    "consents"
+   ],
+   "right": 0
+  },
+  {
+   "left": "$absent",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "rowCounts",
+    "pending_authorizations"
+   ],
+   "right": 0
+  },
+  {
+   "left": "$absent",
+   "path": [
+    "sqlite",
+    "state/authz.sqlite",
+    "rowCounts",
+    "schema_migrations"
+   ],
+   "right": 1
+  },
+  {
    "left": "$absent",
    "path": [
     "steps",
@@ -95,6 +298,7 @@
    "right": 400
   }
  ],
+ "divergences": [],
  "maskViolations": {
   "a": [],
   "b": []
