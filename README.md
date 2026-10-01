@@ -3,14 +3,17 @@
 This repository is the **new implementation target** for a behavior-preserving
 Rust reimplementation of the Go Host Agent. It holds the contract baseline, the
 OpenSpec change, the differential parity harness, and the Rust agent as it is
-built milestone by milestone. As of M1 the Rust binary matches Go's command line,
-configuration, validation and startup/shutdown lifecycle; it does not yet serve
-MCP (M2+) and is **not** a replacement for the Go agent.
+built milestone by milestone. As of M2 the Rust binary matches Go's command line,
+configuration, lifecycle, HTTP server behaviour, bearer authentication and the
+MCP 2026-07-28 wire contract (including the ADR 0011 legacy gate). It does not
+yet publish the tool catalog (M3) or run tools, tasks and plans (M4+), and it
+does not issue OAuth tokens (deferred, decision D8). It is **not** a
+replacement for the Go agent.
 
 ```sh
 make rust-check     # fmt, clippy -D warnings, unit tests
 make rust-build     # target/release/opute-host-agent
-make parity-m1      # full M1 evidence: harness self-checks, Go vs Rust, Go oracle tests, m1 gate
+make parity-m2      # full M2 evidence: harness self-checks, Go vs Rust, Go oracle tests, m1 and m2 gates
 ```
 
 The source baseline is `wunderous/host-agents` commit

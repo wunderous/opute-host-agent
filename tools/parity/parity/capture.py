@@ -229,6 +229,17 @@ def _findings(catalogs: dict[str, dict]) -> list[dict]:
                     "extend this per-tool authority check to every descriptor before M3",
     })
     findings.append({
+        "id": "F-7",
+        "kind": "inherited-surface",
+        "summary": "the Go agent inherits go-sdk MCPGODEBUG compatibility switches from its environment "
+                   "(disablelocalhostprotection, allowsessionsinstateless, disablecontenttypecheck, "
+                   "noprotocolerrorbody, nowrapinvalidparams, ...); one of them disables the SDK's "
+                   "DNS-rebinding guard",
+        "evidence": {"source": "go-sdk v1.7.0 internal/mcpgodebug, mcp/streamable.go"},
+        "decision": "D9: Rust implements the default behaviour (Go with MCPGODEBUG unset) and does not "
+                    "reproduce the switches; owner to confirm",
+    })
+    findings.append({
         "id": "F-2",
         "kind": "nondeterminism",
         "summary": "get_host_info.supportedTools order varies between runs (Go map iteration); "

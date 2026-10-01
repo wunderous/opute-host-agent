@@ -104,7 +104,8 @@ def _env(step: dict) -> dict:
     return env
 
 
-def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[dict, dict]:
+def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
+            other: agent.Impl | None = None) -> tuple[dict, dict]:
     """Run one scenario on one side. Returns (observation, variables)."""
     fixture = scenario.get("fixture")
     fixture_path = FIXTURE_DIR / "shims" / f"{fixture}.json" if fixture else None
@@ -127,7 +128,10 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                     timeout=spec.get("timeout", 30), probe_port=spec.get("probePort", False))
             elif "serve" in step:
                 spec = step["serve"]
-                server = agent.Server(impl, sandbox, spec.get("argv", ["serve"]), _env(spec))
+                # "impl": "other" runs the opposite side's binary on this
+                # side's state: Go reads what Rust wrote and vice versa.
+                chosen = other if spec.get("impl") == "other" and other is not None else impl
+                server = agent.Server(chosen, sandbox, spec.get("argv", ["serve"]), _env(spec))
                 steps[label] = server.wait_ready(spec.get("timeout", 30), spec.get("readyPort"))
             elif "http" in step:
                 spec = step["http"]
@@ -212,12 +216,12 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
         # Scenarios that use fixed default ports run one side at a time and
         # never overlap another exclusive scenario.
         with _EXCLUSIVE:
-            obs_l, vars_l = execute(left, scenario, "a", run_id)
-            obs_r, vars_r = execute(right, scenario, "b", run_id)
+            obs_l, vars_l = execute(left, scenario, "a", run_id, right)
+            obs_r, vars_r = execute(right, scenario, "b", run_id, left)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            fut_l = pool.submit(execute, left, scenario, "a", run_id)
-            fut_r = pool.submit(execute, right, scenario, "b", run_id)
+            fut_l = pool.submit(execute, left, scenario, "a", run_id, right)
+            fut_r = pool.submit(execute, right, scenario, "b", run_id, left)
             obs_l, vars_l = fut_l.result()
             obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)

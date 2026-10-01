@@ -722,12 +722,48 @@ def sdk_edges(legacy: bool) -> dict:
                      steps, env=LEGACY_ENV if legacy else None, masks=masks)
 
 
+# --- authz.store-cross-read ------------------------------------------------------
+
+def store_cross_read() -> dict:
+    """Each side writes authz.sqlite with its own binary, then the *other*
+    binary serves from it (and revokes in it), then the first binary reads
+    the result back. Go-vs-Rust compares Go->Rust->Go with Rust->Go->Rust."""
+    body = _envelope("server/discover", {"_meta": _meta()})
+    probes: list[dict] = []
+
+    def probe(prefix: str) -> None:
+        for tok in ("oha_parity_valid", "oha_parity_localhost", "oha_parity_wrong_resource",
+                    "oha_parity_wrong_scope", "oha_parity_empty_scope", "oha_parity_expired",
+                    "oha_parity_revoked"):
+            hdrs = _headers("server/discover", auth=f"Bearer {tok}")
+            if tok == "oha_parity_localhost":
+                hdrs["Host"] = LOCAL_HOST.replace("127.0.0.1", "localhost")
+            _label(probes, f"{prefix} {tok}", _http("POST", "/mcp", hdrs, body))
+
+    probes.append({"as": "other", "serve": {"argv": ["serve"], "profile": "standalone", "impl": "other"}})
+    probe("other")
+    _label(probes, "other revoke", _http("POST", "/oauth/revoke",
+                                         {"Content-Type": "application/x-www-form-urlencoded"},
+                                         "token=oha_parity_valid"))
+    probes.append({"as": "otherStop", "stop": {}})
+    probes.append({"as": "own", "serve": {"argv": ["serve"], "profile": "standalone"}})
+    probe("own")
+    doc = _scenario("authz.store-cross-read", "auth", "authz",
+                    ["internal/authz/store.go", "milestones.md M2 E2E 7 (authz state)"],
+                    probes, prelude=_seed_prelude("standalone"), collect=["sqlite"])
+    # The generic scenario wraps a serve/stop pair around the steps; this one
+    # manages its own servers, so drop the outer pair.
+    doc["steps"] = [s for s in doc["steps"] if s["as"] not in ("start", "stop")] + [{"as": "ownStop", "stop": {}}]
+    return doc
+
+
 def generate() -> list[dict]:
     return [
         routing(), transport(), envelope(), methods(legacy=False), methods(legacy=True),
         framing(), sdk_edges(False), sdk_edges(True),
         auth("standalone"), auth("platform"),
         origin("standalone"), origin("platform"), origin("standalone", public_opt_in=True),
+        store_cross_read(),
     ]
 
 

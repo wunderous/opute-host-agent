@@ -38572,5 +38572,302 @@
         "stop": {}
       }
     ]
+  },
+  {
+    "id": "authz.store-cross-read",
+    "surface": "auth",
+    "owner": "authz",
+    "anchors": [
+      "internal/authz/store.go",
+      "milestones.md M2 E2E 7 (authz state)"
+    ],
+    "fixture": "incus-empty",
+    "corpusVersion": 1,
+    "steps": [
+      {
+        "as": "init",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "initStop",
+        "stop": {}
+      },
+      {
+        "as": "seed",
+        "sql": {
+          "db": "${SANDBOX}/state/authz.sqlite",
+          "statements": [
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('9b1c000dbc6f2af32fb166a26b2dade794ec0e453a210d1b5b54cd7c2efbacc5','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','admin',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('b9c7dd4b029a28b3a86ce886060bae82fefd17c44f1d976b7d50fd748e9fa388','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('9a901bcdcfb190749067107c9833e1854f5fd6fd68a2e2a5c669e60aa752ad86','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',1,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e6d9a60bff05f309b80579e5ea5206cc7417ed8dded42391e0ef992a1c93c420','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,1,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('5b5c5a53740a4e64d4fdf6acc1ead704e33a26b9494911208bc59f84b2d6ad68','host-agent-bootstrap','http://example.com/mcp','mcp',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('7b075a52e5bc4a22f68eb90ecea4ef39f3a8d158456113eea26377ea69b50157','host-agent-bootstrap','http://example.com:${PORT}/mcp','mcp',4102444800,0,1)",
+            "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('c38529e90a11e70714742afa7029fe6f97154ed9fd735e83bc4ff1e9545b0ac6','host-agent-bootstrap','https://example.com/mcp','mcp',4102444800,0,1)"
+          ]
+        }
+      },
+      {
+        "as": "other",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone",
+          "impl": "other"
+        }
+      },
+      {
+        "as": "other oha_parity_valid",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_valid"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other oha_parity_localhost",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_localhost",
+            "Host": "localhost:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other oha_parity_wrong_resource",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_wrong_resource"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other oha_parity_wrong_scope",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_wrong_scope"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other oha_parity_empty_scope",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_empty_scope"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other oha_parity_expired",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_expired"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other oha_parity_revoked",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_revoked"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "other revoke",
+        "http": {
+          "method": "POST",
+          "path": "/oauth/revoke",
+          "headers": {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          "body": "token=oha_parity_valid"
+        }
+      },
+      {
+        "as": "otherStop",
+        "stop": {}
+      },
+      {
+        "as": "own",
+        "serve": {
+          "argv": [
+            "serve"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "own oha_parity_valid",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_valid"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "own oha_parity_localhost",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_localhost",
+            "Host": "localhost:${PORT}"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "own oha_parity_wrong_resource",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_wrong_resource"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "own oha_parity_wrong_scope",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_wrong_scope"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "own oha_parity_empty_scope",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_empty_scope"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "own oha_parity_expired",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_expired"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "own oha_parity_revoked",
+        "http": {
+          "method": "POST",
+          "path": "/mcp",
+          "headers": {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
+            "Mcp-Method": "server/discover",
+            "Authorization": "Bearer oha_parity_revoked"
+          },
+          "body": "{\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-parity\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}}}},\"id\":1}"
+        }
+      },
+      {
+        "as": "ownStop",
+        "stop": {}
+      }
+    ],
+    "collect": [
+      "sqlite"
+    ]
   }
 ]

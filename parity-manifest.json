@@ -52,6 +52,26 @@
      ]
     }
    ]
+  },
+  "m2": {
+   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+)",
+   "requireCanaries": true,
+   "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "cli",
+      "config",
+      "lifecycle",
+      "http",
+      "mcp-wire",
+      "auth"
+     ]
+    }
+   ]
   }
  },
  "goReference": {

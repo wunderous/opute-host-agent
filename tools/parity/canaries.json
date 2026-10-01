@@ -75,5 +75,29 @@
     },
     "scenario": "admission.standalone-mutation-denied",
     "mayAlsoFail": []
+  },
+  {
+    "id": "C7-envelope-status",
+    "summary": "a malformed JSON-RPC envelope returns 422 instead of 400",
+    "patch": {
+      "file": "internal/transport/http.go",
+      "old": "http.Error(w, \"invalid json-rpc\", http.StatusBadRequest)",
+      "new": "http.Error(w, \"invalid json-rpc\", http.StatusUnprocessableEntity)"
+    },
+    "scenario": "wire.envelope",
+    "mayAlsoFail": [],
+    "note": "M2: proves the generated wire corpus catches a one-token status change in the agent's own envelope gate."
+  },
+  {
+    "id": "C8-ipv6-loopback-origin",
+    "summary": "http://[::1] is no longer accepted as a loopback Origin",
+    "patch": {
+      "file": "internal/authz/resource.go",
+      "old": "\"http://[::1]\", \"https://[::1]\",",
+      "new": "\"https://[::1]\","
+    },
+    "scenario": "wire.origin.standalone",
+    "mayAlsoFail": [],
+    "note": "M2: proves the Origin x Host matrix catches the loss of one allowed origin form."
   }
 ]
