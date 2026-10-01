@@ -1,163 +1,98 @@
 {
  "diff": [
   {
-   "left": {
-    "id": 1,
-    "jsonrpc": "2.0",
-    "result": {
-     "_meta": {
-      "io.modelcontextprotocol/serverInfo": {
-       "name": "host-agent",
-       "version": "0.2.3"
-      }
-     },
-     "content": [
-      {
-       "text": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
-       "type": "text"
-      }
-     ],
-     "isError": true,
-     "resultType": "complete"
-    }
-   },
+   "left": "$absent",
    "path": [
     "steps",
     "createVm",
-    "body"
+    "body",
+    "error"
    ],
-   "right": "not implemented until milestone M2\n"
-  },
-  {
-   "left": "no-cache, no-transform",
-   "path": [
-    "steps",
-    "createVm",
-    "headers",
-    "cache-control"
-   ],
-   "right": "$absent"
-  },
-  {
-   "left": "application/json",
-   "path": [
-    "steps",
-    "createVm",
-    "headers",
-    "content-type"
-   ],
-   "right": "text/plain; charset=utf-8"
-  },
-  {
-   "left": 200,
-   "path": [
-    "steps",
-    "createVm",
-    "status"
-   ],
-   "right": 501
+   "right": {
+    "code": -32602,
+    "message": "unknown tool \"create_vm\""
+   }
   },
   {
    "left": {
-    "id": 1,
-    "jsonrpc": "2.0",
-    "result": {
-     "_meta": {
-      "io.modelcontextprotocol/serverInfo": {
-       "name": "host-agent",
-       "version": "0.2.3"
-      }
-     },
-     "content": [
-      {
-       "text": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
-       "type": "text"
-      }
-     ],
-     "isError": true,
-     "resultType": "complete"
-    }
-   },
-   "path": [
-    "steps",
-    "deleteVm",
-    "body"
-   ],
-   "right": "not implemented until milestone M2\n"
-  },
-  {
-   "left": "no-cache, no-transform",
-   "path": [
-    "steps",
-    "deleteVm",
-    "headers",
-    "cache-control"
-   ],
-   "right": "$absent"
-  },
-  {
-   "left": "application/json",
-   "path": [
-    "steps",
-    "deleteVm",
-    "headers",
-    "content-type"
-   ],
-   "right": "text/plain; charset=utf-8"
-  },
-  {
-   "left": 200,
-   "path": [
-    "steps",
-    "deleteVm",
-    "status"
-   ],
-   "right": 501
-  },
-  {
-   "left": {
-    "error": {
-     "code": -32602,
-     "message": "unknown tool \"no_such_tool\""
+    "_meta": {
+     "io.modelcontextprotocol/serverInfo": {
+      "name": "host-agent",
+      "version": "0.2.3"
+     }
     },
-    "id": 1,
-    "jsonrpc": "2.0"
+    "content": [
+     {
+      "text": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+      "type": "text"
+     }
+    ],
+    "isError": true,
+    "resultType": "complete"
    },
    "path": [
     "steps",
-    "unknownTool",
-    "body"
-   ],
-   "right": "not implemented until milestone M2\n"
-  },
-  {
-   "left": "no-cache, no-transform",
-   "path": [
-    "steps",
-    "unknownTool",
-    "headers",
-    "cache-control"
+    "createVm",
+    "body",
+    "result"
    ],
    "right": "$absent"
   },
   {
-   "left": "application/json",
+   "left": 200,
    "path": [
     "steps",
-    "unknownTool",
-    "headers",
-    "content-type"
-   ],
-   "right": "text/plain; charset=utf-8"
-  },
-  {
-   "left": 400,
-   "path": [
-    "steps",
-    "unknownTool",
+    "createVm",
     "status"
    ],
-   "right": 501
+   "right": 400
+  },
+  {
+   "left": "$absent",
+   "path": [
+    "steps",
+    "deleteVm",
+    "body",
+    "error"
+   ],
+   "right": {
+    "code": -32602,
+    "message": "unknown tool \"delete_vm\""
+   }
+  },
+  {
+   "left": {
+    "_meta": {
+     "io.modelcontextprotocol/serverInfo": {
+      "name": "host-agent",
+      "version": "0.2.3"
+     }
+    },
+    "content": [
+     {
+      "text": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+      "type": "text"
+     }
+    ],
+    "isError": true,
+    "resultType": "complete"
+   },
+   "path": [
+    "steps",
+    "deleteVm",
+    "body",
+    "result"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": 200,
+   "path": [
+    "steps",
+    "deleteVm",
+    "status"
+   ],
+   "right": 400
   }
  ],
  "maskViolations": {

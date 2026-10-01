@@ -7,7 +7,10 @@
    "owner": "transport",
    "route": "/.well-known/oauth-authorization-server",
    "scenarios": [
-    "mcp.auth"
+    "mcp.auth",
+    "wire.auth.platform",
+    "wire.auth.standalone",
+    "wire.routing"
    ],
    "status": "covered"
   },
@@ -18,7 +21,10 @@
    "owner": "transport",
    "route": "/.well-known/oauth-protected-resource",
    "scenarios": [
-    "mcp.auth"
+    "mcp.auth",
+    "wire.auth.platform",
+    "wire.auth.standalone",
+    "wire.routing"
    ],
    "status": "covered"
   },
@@ -29,7 +35,10 @@
    "owner": "transport",
    "route": "/.well-known/oauth-protected-resource/mcp",
    "scenarios": [
-    "mcp.auth"
+    "mcp.auth",
+    "wire.auth.platform",
+    "wire.auth.standalone",
+    "wire.routing"
    ],
    "status": "covered"
   },
@@ -42,7 +51,9 @@
    "scenarios": [
     "config.validation-matrix",
     "mcp.auth",
-    "serve.health"
+    "serve.health",
+    "wire.framing",
+    "wire.routing"
    ],
    "status": "covered"
   },
@@ -54,6 +65,7 @@
    "route": "/mcp",
    "scenarios": [
     "admission.standalone-mutation-denied",
+    "authz.store-cross-read",
     "cli.dispatch",
     "config.env-precedence",
     "config.validation-matrix",
@@ -65,7 +77,20 @@
     "mcp.transport-rules",
     "serve.health",
     "startup.fail-closed",
-    "state.schema-after-start"
+    "state.schema-after-start",
+    "wire.auth.platform",
+    "wire.auth.standalone",
+    "wire.envelope",
+    "wire.framing",
+    "wire.methods.legacy-off",
+    "wire.methods.legacy-on",
+    "wire.origin.platform",
+    "wire.origin.standalone",
+    "wire.origin.standalone.public-opt-in",
+    "wire.routing",
+    "wire.sdk-edges.legacy-off",
+    "wire.sdk-edges.legacy-on",
+    "wire.transport"
    ],
    "status": "covered"
   },
@@ -84,8 +109,14 @@
    ],
    "owner": "transport",
    "route": "/oauth/revoke",
-   "scenarios": [],
-   "status": "gap"
+   "scenarios": [
+    "authz.store-cross-read",
+    "wire.auth.platform",
+    "wire.auth.standalone",
+    "wire.framing",
+    "wire.routing"
+   ],
+   "status": "covered"
   },
   {
    "anchors": [

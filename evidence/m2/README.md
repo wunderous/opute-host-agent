@@ -10,11 +10,11 @@ toolchain the reference binary was built with, Python 3.11).
 
 | Check | Result |
 | --- | --- |
-| `make rust-check` | fmt, clippy `-D warnings`, __RUST_TESTS__ unit tests: pass |
-| `make parity-test` | __HARNESS_TESTS__ harness tests (comparator, verifier, corpus freshness): pass |
-| Go vs Go, ×20 | __GG__ scenarios clean on all 20 iterations |
-| Canaries | __CANARIES__ caught, each by its named scenario (plus declared co-failures) |
-| **Go vs Rust, ×5** | **__GR_M2__ CLI, config, lifecycle, HTTP, MCP wire and auth items pass** on all 5 iterations. The __GR_FAIL__ failing items are catalog, read-only tools and admission (M3 and M4). |
+| `make rust-check` | fmt, clippy `-D warnings`, 47 unit tests: pass |
+| `make parity-test` | 41 harness tests (comparator, verifier, corpus freshness): pass |
+| Go vs Go, ×20 | 44/44 scenarios clean on all 20 iterations |
+| Canaries | 8/8 caught, each by its named scenario (plus declared co-failures) |
+| **Go vs Rust, ×5** | **37/37 CLI, config, lifecycle, HTTP, MCP wire and auth items pass** on all 5 iterations (38/44 overall: `state.schema-after-start` also passes). The 6 failing items are catalog (4), `get_host_info` (M3) and admission (M4). |
 | Go oracle tests against Rust | `standalone-startup` (M1) and `real-client-modern` (M2, the official go-sdk client) pass against Go and Rust and fail against the `/bin/true` control |
 | `make parity-verify-m1`, `make parity-verify-m2` | **PASS** |
 | `make parity-verify-cutover` | **FAIL, by design** (later-milestone items) |
@@ -22,7 +22,7 @@ toolchain the reference binary was built with, Python 3.11).
 ## The wire corpus
 
 `tools/parity/parity/corpus.py` generates `scenarios/wire.json`
-(__CORPUS__ requests; the harness tests fail if the committed file is stale).
+(2654 requests; the harness tests fail if the committed file is stale).
 Each family varies one dimension exhaustively:
 
 | Scenario | What varies |

@@ -111,6 +111,15 @@
    "summary": "the published apply_manifest description comes from embedded schemas/incus-tools.json; the same text in internal/tools/catalog.go and schemas/all-tools.json, and a different text in internal/tools/standalone.go, never reach the wire"
   },
   {
+   "decision": "D9: Rust implements the default behaviour (Go with MCPGODEBUG unset) and does not reproduce the switches; owner to confirm",
+   "evidence": {
+    "source": "go-sdk v1.7.0 internal/mcpgodebug, mcp/streamable.go"
+   },
+   "id": "F-7",
+   "kind": "inherited-surface",
+   "summary": "the Go agent inherits go-sdk MCPGODEBUG compatibility switches from its environment (disablelocalhostprotection, allowsessionsinstateless, disablecontenttypecheck, noprotocolerrorbody, nowrapinvalidparams, ...); one of them disables the SDK's DNS-rebinding guard"
+  },
+  {
    "decision": "membership is contract, order is not; Rust may emit any order",
    "evidence": {
     "scenario": "mcp.get-host-info"

@@ -5,7 +5,9 @@
     "C3-extra-argv-token": "pass",
     "C4-legacy-bypass-widened": "pass",
     "C5-retired-env-accepted": "pass",
-    "C6-mutation-gate-open": "pass"
+    "C6-mutation-gate-open": "pass",
+    "C7-envelope-status": "pass",
+    "C8-ipv6-loopback-origin": "pass"
   },
   "gate": {
     "failures": [],
@@ -19,6 +21,12 @@
       "go-vs-rust": "fail",
       "owner": "core",
       "surface": "admission"
+    },
+    "authz.store-cross-read": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "authz",
+      "surface": "auth"
     },
     "catalog.platform": {
       "go-vs-go": "pass",
@@ -142,13 +150,13 @@
     },
     "mcp.auth": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "transport",
       "surface": "auth"
     },
     "mcp.discover": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "transport",
       "surface": "mcp-wire"
     },
@@ -160,25 +168,25 @@
     },
     "mcp.legacy-handshake.default-off": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "transport",
       "surface": "mcp-wire"
     },
     "mcp.legacy-handshake.enabled-bounded": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "transport",
       "surface": "mcp-wire"
     },
     "mcp.transport-rules": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "transport",
       "surface": "mcp-wire"
     },
     "serve.health": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "transport",
       "surface": "http"
     },
@@ -190,9 +198,87 @@
     },
     "state.schema-after-start": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "state",
       "surface": "durable-state"
+    },
+    "wire.auth.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "authz",
+      "surface": "auth"
+    },
+    "wire.auth.standalone": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "authz",
+      "surface": "auth"
+    },
+    "wire.envelope": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.framing": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "http"
+    },
+    "wire.methods.legacy-off": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.methods.legacy-on": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.origin.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.origin.standalone": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.origin.standalone.public-opt-in": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.routing": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "http"
+    },
+    "wire.sdk-edges.legacy-off": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.sdk-edges.legacy-on": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "wire.transport": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
     }
   },
   "oracles": "pass",
