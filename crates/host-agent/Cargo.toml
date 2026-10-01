@@ -17,8 +17,10 @@ sha1 = "0.10"
 sha2 = "0.10"
 socket2 = "0.6"
 base64 = "0.22"
+getrandom = "0.2"
 hex = "0.4"
 nix = { version = "0.29", features = ["net", "signal", "process"] }
+ureq = { version = "2", default-features = false, features = ["tls"] }
 tokio = { version = "1", features = ["rt", "net", "signal", "macros", "io-util", "time"] }
 
 [dev-dependencies]

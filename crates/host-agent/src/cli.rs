@@ -52,6 +52,7 @@ pub fn run(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
         "public-mcp" => run_public_mcp(&rest, env, io),
         "recipe" => run_recipe(&rest, env, io),
         "provider" => run_provider(&rest, env, io),
+        "oauth" => run_oauth(&rest, env, io),
         "help" => {
             let _ = io.stdout.write_all(USAGE.as_bytes());
             Ok(())
@@ -280,6 +281,201 @@ fn run_provider(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
     not_yet_implemented(&env, "provider operations", "M7")
 }
 
+const OAUTH_USAGE: &str =
+    "usage: opute-host-agent oauth <command> [--env-file FILE] [--state-dir DIR] [args]
+
+Operator channel for OAuth issuance (see openspec/changes/secure-oauth-issuance).
+It works on the Host Agent state directory; being able to open it is the trust
+boundary. Start the agent once before using it.
+
+  pending                          list authorization requests waiting for approval
+  approve [--once] CODE            approve a request (remembered for OPUTE_OAUTH_CONSENT_DAYS
+                                   days, default 30, unless --once)
+  deny CODE                        deny a request
+  consents                         list remembered approvals
+  revoke-consent CLIENT RESOURCE   forget an approval and revoke the client's tokens for it
+  revoke-client CLIENT             revoke every token issued to a client
+  rotate-secret CLIENT             new secret for host-agent-provider or opute-mcp-host;
+                                   revokes the client's tokens
+";
+
+/// `opute-host-agent oauth ...`: the operator's approval channel.
+/// Moves flags (and the values of `--env-file`/`--state-dir`) ahead of
+/// positional arguments, stopping at `--`.
+fn flags_first(args: &[String]) -> Vec<String> {
+    let (mut flags, mut rest) = (Vec::new(), Vec::new());
+    let mut it = args.iter();
+    while let Some(arg) = it.next() {
+        if arg == "--" {
+            rest.extend(it.by_ref().cloned());
+            break;
+        }
+        if arg.len() > 1 && arg.starts_with('-') {
+            flags.push(arg.clone());
+            let name = arg.trim_start_matches('-');
+            if matches!(name, "env-file" | "state-dir") {
+                if let Some(value) = it.next() {
+                    flags.push(value.clone());
+                }
+            }
+        } else {
+            rest.push(arg.clone());
+        }
+    }
+    if !rest.is_empty() {
+        flags.push("--".into());
+        flags.extend(rest);
+    }
+    flags
+}
+
+fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
+    let Some(sub) = args.first().map(String::as_str) else {
+        let _ = io.stdout.write_all(OAUTH_USAGE.as_bytes());
+        return Err(go_err!("oauth requires a command"));
+    };
+    if matches!(sub, "help" | "-h" | "--help") {
+        let _ = io.stdout.write_all(OAUTH_USAGE.as_bytes());
+        return Ok(());
+    }
+    let fs = FlagSet::new(format!("oauth {sub}"))
+        .string("env-file", "", "load KEY=VALUE settings from a file")
+        .string(
+            "state-dir",
+            "",
+            "Host Agent state directory (default: from configuration)",
+        )
+        .bool("once", false, "approve without remembering consent");
+    // Unlike Go's flag package, accept flags after the positional argument
+    // (`oauth approve CODE --state-dir DIR`); this command is new in Rust.
+    let flags = parse(&fs, &flags_first(&args[1..]), io)?;
+    let env_file = flags.string("env-file");
+    if !env_file.is_empty() {
+        env.load_env_file(&env_file)?;
+    }
+    let dir = {
+        let explicit = flags.string("state-dir");
+        if explicit.is_empty() {
+            let cfg = crate::config::Config::load(&env);
+            if cfg.standalone_state_dir.as_os_str().is_empty() {
+                cfg.instance_root
+            } else {
+                cfg.standalone_state_dir
+            }
+        } else {
+            std::path::PathBuf::from(explicit)
+        }
+    };
+    let conn = crate::store::open_authz_for_operator(&dir)?;
+    let pos = &flags.rest;
+    let need = |n: usize| -> Result<()> {
+        if pos.len() == n {
+            Ok(())
+        } else {
+            Err(go_err!(
+                "oauth {sub} takes {n} argument(s); see `opute-host-agent oauth help`"
+            ))
+        }
+    };
+    let mut out = String::new();
+    match sub {
+        "pending" => {
+            need(0)?;
+            let now = crate::oauth::now();
+            for p in crate::oauth::pending_list(&conn) {
+                out.push_str(&format!(
+                    "{}  {}  {}  {}  expires in {}s\n",
+                    p.user_code,
+                    p.client_id,
+                    p.redirect_uri,
+                    p.resource,
+                    (p.expires_at - now).max(0)
+                ));
+            }
+            if out.is_empty() {
+                out.push_str("no pending authorization requests\n");
+            }
+        }
+        "approve" | "deny" => {
+            need(1)?;
+            let days = if flags.bool("once") {
+                0
+            } else {
+                crate::oauth::consent_days(&env)
+            };
+            let record = crate::oauth::decide(&conn, &pos[0], sub == "approve", days, "cli")
+                .map_err(goerr::Error)?;
+            out.push_str(&format!(
+                "{} {} for {} on {}\n",
+                if sub == "approve" {
+                    "approved"
+                } else {
+                    "denied"
+                },
+                record.user_code,
+                record.client_id,
+                record.resource
+            ));
+        }
+        "consents" => {
+            need(0)?;
+            for (client, resource, expires) in crate::oauth::consent_list(&conn) {
+                out.push_str(&format!("{client}  {resource}  expires_at={expires}\n"));
+            }
+            if out.is_empty() {
+                out.push_str("no remembered approvals\n");
+            }
+        }
+        "revoke-consent" => {
+            need(2)?;
+            let n = crate::oauth::revoke_consent(&conn, &pos[0], &pos[1]).map_err(goerr::Error)?;
+            out.push_str(&format!("revoked consent and {n} token(s)\n"));
+        }
+        "revoke-client" => {
+            need(1)?;
+            let n =
+                crate::oauth::revoke_client_tokens(&conn, &pos[0]).map_err(|e| go_err!("{e}"))?;
+            crate::oauth::audit(
+                "revoke-client",
+                &[("client_id", &pos[0]), ("revoked_tokens", &n.to_string())],
+            );
+            out.push_str(&format!("revoked {n} token(s)\n"));
+        }
+        "rotate-secret" => {
+            need(1)?;
+            let client = pos[0].as_str();
+            if client != crate::oauth::PROVIDER_CLIENT_ID && client != crate::oauth::OPUTE_CLIENT_ID
+            {
+                return Err(go_err!(
+                    "rotate-secret applies to host-agent-provider and opute-mcp-host"
+                ));
+            }
+            crate::oauth::rotate_secret(&conn, &dir, client, "rotate-secret")
+                .map_err(goerr::Error)?;
+            out.push_str(&format!(
+                "rotated {client}; new secret in {}\n",
+                crate::oauth::credential_path(&dir, client).display()
+            ));
+            if client == crate::oauth::OPUTE_CLIENT_ID
+                && !env
+                    .value("OPUTE_HOST_OAUTH_CLIENT_SECRET")
+                    .trim()
+                    .is_empty()
+            {
+                out.push_str("note: OPUTE_HOST_OAUTH_CLIENT_SECRET is set; the agent re-applies it on its next start\n");
+            }
+        }
+        other => {
+            return Err(go_err!(
+                "unknown oauth command {}; see `opute-host-agent oauth help`",
+                quote(other)
+            ));
+        }
+    }
+    let _ = io.stdout.write_all(out.as_bytes());
+    Ok(())
+}
+
 fn run_public_mcp(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
     let fs = FlagSet::new("public-mcp")
         .string("env-file", "", "load Host Agent configuration from a file")
@@ -400,6 +596,19 @@ fn read_tunnel_token(path: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn oauth_flags_may_follow_positionals() {
+        let v = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert_eq!(
+            flags_first(&v(&["ABCD-EFGH", "--state-dir", "/s", "--once"])),
+            v(&["--state-dir", "/s", "--once", "--", "ABCD-EFGH"])
+        );
+        assert_eq!(
+            flags_first(&v(&["--state-dir=/s", "--", "-odd"])),
+            v(&["--state-dir=/s", "--", "-odd"])
+        );
+    }
 
     fn run_capture(
         args: &[&str],

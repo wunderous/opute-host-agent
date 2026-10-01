@@ -14,6 +14,7 @@ mod hostobs;
 mod http1;
 mod identity;
 mod mcpsdk;
+mod oauth;
 mod store;
 mod transport;
 

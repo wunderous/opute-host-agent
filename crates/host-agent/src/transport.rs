@@ -51,15 +51,17 @@ pub struct Server {
     pub bootstrap_token: String,
     pub authz: Mutex<AuthzStore>,
     pub health_observer: Box<dyn Fn() -> Map<String, J> + Send + Sync>,
+    pub grant_backoff: crate::oauth::Backoff,
 }
 
-const ROUTES: [&str; 8] = [
+const ROUTES: [&str; 9] = [
     "/health",
     "/mcp",
     "/.well-known/oauth-protected-resource",
     "/.well-known/oauth-protected-resource/mcp",
     "/.well-known/oauth-authorization-server",
     "/oauth/authorize",
+    "/oauth/authorize/status",
     "/oauth/token",
     "/oauth/revoke",
 ];
@@ -104,10 +106,9 @@ pub async fn route(server: Arc<Server>, req: Request, mut body: Body) -> (Respon
             Response::new(405)
         }
         Some("/oauth/token") if req.method != "POST" => Response::new(405),
-        Some("/oauth/authorize") | Some("/oauth/token") => Response::error(
-            "OAuth token issuance is not available in this build (deferred pending an owner design decision)",
-            501,
-        ),
+        Some("/oauth/authorize") => authorize_endpoint(&server, &req, &mut body).await,
+        Some("/oauth/authorize/status") => authorize_status(&server, &req),
+        Some("/oauth/token") => token_endpoint(&server, &req, &mut body).await,
         Some("/oauth/revoke") => revoke(&server, &req, &mut body).await,
         _ => Response::error("404 page not found", 404),
     };
@@ -507,6 +508,349 @@ async fn revoke(server: &Server, req: &Request, body: &mut Body) -> Response {
         }
     }
     Response::new(200)
+}
+
+// --- OAuth issuance (decision D8: stricter than the Go baseline) ---------------
+
+fn oauth_json(status: u16, value: &J) -> Response {
+    let mut r = json_response(status, value);
+    // RFC 6749 §5.1: token responses are never cached.
+    r.headers.set("Cache-Control", "no-store");
+    r.headers.set("Pragma", "no-cache");
+    r
+}
+
+fn oauth_error(status: u16, code: &str, description: &str) -> Response {
+    oauth_json(
+        status,
+        &json!({"error": code, "error_description": description}),
+    )
+}
+
+/// `Request.BasicAuth`: `Basic base64(id:secret)`, prefix case-insensitive.
+fn basic_auth(req: &Request) -> Option<(String, String)> {
+    use base64::Engine;
+    let auth = req.headers.get("Authorization");
+    if auth.len() < 6 || !auth[..6].eq_ignore_ascii_case("basic ") {
+        return None;
+    }
+    let raw = base64::engine::general_purpose::STANDARD
+        .decode(auth[6..].trim())
+        .ok()?;
+    let text = String::from_utf8(raw).ok()?;
+    let (id, secret) = text.split_once(':')?;
+    Some((id.to_string(), secret.to_string()))
+}
+
+fn remote_ip(req: &Request) -> String {
+    req.remote_addr.ip().to_string()
+}
+
+async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Response {
+    let Ok(post) = parse_form(req, body).await else {
+        return oauth_error(400, "invalid_request", "malformed body");
+    };
+    let grant = first_form(req, &post, "grant_type");
+    let (client_id, secret) = basic_auth(req).unwrap_or_else(|| {
+        (
+            first_form(req, &post, "client_id"),
+            first_form(req, &post, "client_secret"),
+        )
+    });
+    let keys = vec![
+        format!("client:{client_id}"),
+        format!("remote:{}", remote_ip(req)),
+    ];
+    let resource = first_form(req, &post, "resource");
+    let canonical = canonical_mcp_resource(req);
+    let served = |r: &str| r == canonical;
+    let outcome = {
+        let Ok(store) = server.authz.lock() else {
+            return oauth_error(500, "server_error", "store unavailable");
+        };
+        let conn = store.conn();
+        match grant.as_str() {
+            "client_credentials" => {
+                crate::oauth::client_credentials(conn, &client_id, &secret, &resource, &served)
+            }
+            "authorization_code" => crate::oauth::redeem_code(
+                conn,
+                &first_form(req, &post, "code"),
+                &client_id,
+                &first_form(req, &post, "redirect_uri"),
+                &first_form(req, &post, "code_verifier"),
+                &resource,
+            ),
+            _ => crate::oauth::Grant::Error {
+                status: 400,
+                code: "unsupported_grant_type",
+                description: "use authorization_code or client_credentials".into(),
+            },
+        }
+    };
+    match outcome {
+        crate::oauth::Grant::Issued { token, resource } => {
+            crate::oauth::audit(
+                "issue",
+                &[
+                    ("client_id", &client_id),
+                    ("grant", &grant),
+                    ("resource", &resource),
+                    ("outcome", "issued"),
+                    ("remote", &remote_ip(req)),
+                ],
+            );
+            oauth_json(
+                200,
+                &json!({
+                    "access_token": token,
+                    "token_type": "Bearer",
+                    "expires_in": crate::oauth::ACCESS_TOKEN_TTL,
+                    "scope": "mcp",
+                    "resource": resource,
+                }),
+            )
+        }
+        crate::oauth::Grant::Error {
+            status,
+            code,
+            description,
+        } => {
+            // Only failing requests are throttled: secrets and codes carry 256
+            // bits, so slowing a valid grant adds no protection, and behind a
+            // tunnel every caller shares the loopback address.
+            if server.grant_backoff.blocked(&keys) {
+                crate::oauth::audit(
+                    "deny",
+                    &[
+                        ("client_id", &client_id),
+                        ("grant", &grant),
+                        ("resource", &resource),
+                        ("outcome", "backoff"),
+                        ("remote", &remote_ip(req)),
+                    ],
+                );
+                return oauth_error(429, "slow_down", "too many failed requests; retry later");
+            }
+            if status < 500 {
+                server.grant_backoff.fail(&keys);
+            }
+            crate::oauth::audit(
+                "deny",
+                &[
+                    ("client_id", &client_id),
+                    ("grant", &grant),
+                    ("resource", &resource),
+                    ("outcome", code),
+                    ("remote", &remote_ip(req)),
+                ],
+            );
+            let mut r = oauth_error(status, code, &description);
+            if status == 401 {
+                r.headers
+                    .set("WWW-Authenticate", "Basic realm=\"host-agent\"");
+            }
+            r
+        }
+    }
+}
+
+/// `application/x-www-form-urlencoded` encoding of one value.
+fn form_encode(value: &str) -> String {
+    value
+        .bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                (b as char).to_string()
+            }
+            b' ' => "+".to_string(),
+            _ => format!("%{b:02X}"),
+        })
+        .collect()
+}
+
+/// Append query parameters to a redirect URI, keeping its own query.
+fn with_query(uri: &str, params: &[(&str, &str)]) -> String {
+    let (base, fragment) = match uri.split_once('#') {
+        Some((b, _)) => (b, ""),
+        None => (uri, ""),
+    };
+    let mut out = base.to_string();
+    for (k, v) in params {
+        if v.is_empty() && *k == "state" {
+            continue;
+        }
+        out.push(if out.contains('?') { '&' } else { '?' });
+        out.push_str(&format!("{k}={}", form_encode(v)));
+    }
+    out + fragment
+}
+
+fn redirect_to(location: &str) -> Response {
+    let mut r = Response::new(302);
+    r.headers.set("Location", location.to_string());
+    r.headers.set("Cache-Control", "no-store");
+    r
+}
+
+fn html_page(status: u16, html: String) -> Response {
+    let mut r = Response::new(status);
+    for (k, v) in crate::oauth::page_headers() {
+        r.headers.set(k, v);
+    }
+    r.body = html.into_bytes();
+    r
+}
+
+async fn authorize_endpoint(server: &Server, req: &Request, body: &mut Body) -> Response {
+    let Ok(post) = parse_form(req, body).await else {
+        return Response::error("invalid request", 400);
+    };
+    let field = |k: &str| first_form(req, &post, k);
+    let (client_id, redirect_uri, resource) =
+        (field("client_id"), field("redirect_uri"), field("resource"));
+    let (challenge, method, state) = (
+        field("code_challenge"),
+        field("code_challenge_method"),
+        field("state"),
+    );
+    if field("response_type") != "code"
+        || client_id.is_empty()
+        || redirect_uri.is_empty()
+        || resource.is_empty()
+        || challenge.is_empty()
+        || method != "S256"
+    {
+        return Response::error("invalid_request", 400);
+    }
+    if resource != canonical_mcp_resource(req) {
+        return Response::error("invalid_target", 400);
+    }
+    let registered = {
+        let Ok(store) = server.authz.lock() else {
+            return Response::error("server_error", 500);
+        };
+        crate::oauth::client(store.conn(), &client_id)
+            .ok()
+            .flatten()
+    };
+    let client = match registered {
+        Some(c) => c,
+        None if client_id.starts_with("https://") => {
+            let id = client_id.clone();
+            let fetched =
+                tokio::task::spawn_blocking(move || crate::oauth::fetch_client_metadata(&id))
+                    .await
+                    .unwrap_or_else(|_| Err("client metadata fetch failed".into()));
+            let meta = match fetched {
+                Ok(m) => m,
+                Err(e) => return Response::error(&e, 400),
+            };
+            let Ok(store) = server.authz.lock() else {
+                return Response::error("server_error", 500);
+            };
+            if crate::oauth::upsert_metadata_client(store.conn(), &meta).is_err() {
+                return Response::error("server_error", 500);
+            }
+            match crate::oauth::client(store.conn(), &client_id)
+                .ok()
+                .flatten()
+            {
+                Some(c) => c,
+                None => return Response::error("server_error", 500),
+            }
+        }
+        None => return Response::error("unknown client_id", 400),
+    };
+    if client.confidential {
+        return Response::error("unauthorized_client", 400);
+    }
+    if !crate::oauth::redirect_allowed(&client.redirect_uris, &redirect_uri) {
+        return Response::error("invalid redirect_uri", 400);
+    }
+    let request = crate::oauth::AuthorizeRequest {
+        client_id: client.client_id.clone(),
+        redirect_uri: redirect_uri.clone(),
+        resource,
+        code_challenge: challenge,
+        state: state.clone(),
+    };
+    let outcome = {
+        let Ok(store) = server.authz.lock() else {
+            return Response::error("server_error", 500);
+        };
+        crate::oauth::begin_authorization(store.conn(), &request)
+    };
+    let iss = request_origin(req);
+    match outcome {
+        crate::oauth::AuthorizeOutcome::Code(code) => redirect_to(&with_query(
+            &redirect_uri,
+            &[("code", &code), ("iss", &iss), ("state", &state)],
+        )),
+        crate::oauth::AuthorizeOutcome::Pending { id, .. } => {
+            let Ok(store) = server.authz.lock() else {
+                return Response::error("server_error", 500);
+            };
+            match crate::oauth::pending_by_id(store.conn(), &id) {
+                Some(p) => html_page(200, crate::oauth::approval_page(&p, &status_path(&id), "")),
+                None => Response::error("server_error", 500),
+            }
+        }
+        crate::oauth::AuthorizeOutcome::Error(code, _) => redirect_to(&with_query(
+            &redirect_uri,
+            &[("error", code), ("iss", &iss), ("state", &state)],
+        )),
+    }
+}
+
+fn status_path(id: &str) -> String {
+    format!("/oauth/authorize/status?request={}", form_encode(id))
+}
+
+fn authorize_status(server: &Server, req: &Request) -> Response {
+    if req.method != "GET" && req.method != "HEAD" {
+        return Response::new(405);
+    }
+    let id = req.query_get("request");
+    let Ok(store) = server.authz.lock() else {
+        return Response::error("server_error", 500);
+    };
+    let conn = store.conn();
+    let iss = request_origin(req);
+    match crate::oauth::poll(conn, &id) {
+        crate::oauth::StatusOutcome::Pending => match crate::oauth::pending_by_id(conn, &id) {
+            Some(p) => html_page(200, crate::oauth::approval_page(&p, &status_path(&id), "")),
+            None => html_page(404, crate::oauth::approval_page(&unknown_pending(), "", "This authorization request does not exist.")),
+        },
+        crate::oauth::StatusOutcome::Approved { code, redirect_uri, state } => {
+            redirect_to(&with_query(&redirect_uri, &[("code", &code), ("iss", &iss), ("state", &state)]))
+        }
+        crate::oauth::StatusOutcome::Denied { redirect_uri, state } => {
+            redirect_to(&with_query(&redirect_uri, &[("error", "access_denied"), ("iss", &iss), ("state", &state)]))
+        }
+        crate::oauth::StatusOutcome::Expired => html_page(
+            200,
+            crate::oauth::approval_page(&unknown_pending(), "", "This authorization request has expired or was already used. Start again from the application."),
+        ),
+        crate::oauth::StatusOutcome::Unknown => html_page(
+            404,
+            crate::oauth::approval_page(&unknown_pending(), "", "This authorization request does not exist."),
+        ),
+    }
+}
+
+fn unknown_pending() -> crate::oauth::PendingRecord {
+    crate::oauth::PendingRecord {
+        id: String::new(),
+        user_code: String::new(),
+        client_id: String::new(),
+        redirect_uri: String::new(),
+        resource: String::new(),
+        code_challenge: String::new(),
+        state: String::new(),
+        status: String::new(),
+        expires_at: 0,
+    }
 }
 
 // --- /mcp: agent layer -----------------------------------------------------

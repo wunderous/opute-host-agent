@@ -85,7 +85,7 @@ fn new_runtime_with(env: &Env, fault: Option<&str>) -> Result<Runtime> {
 }
 
 /// A Go `log/slog` TextHandler line at INFO level.
-fn log_info(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
+pub(crate) fn log_info(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
     let mut line = format!("time={} level=INFO msg={}", slog_time(), slog_value(msg));
     for (k, v) in attrs {
         line.push_str(&format!(" {k}={}", slog_value(v)));
@@ -280,6 +280,7 @@ fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
         disable_localhost_protection: cfg.disable_localhost_protection,
         bootstrap_token: cfg.mcp_auth_token.trim().to_string(),
         authz: std::sync::Mutex::new(authz),
+        grant_backoff: crate::oauth::Backoff::default(),
         health_observer: Box::new(crate::hostobs::health_observer(
             cfg.env.clone(),
             cfg.instance_id.clone(),

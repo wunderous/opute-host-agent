@@ -320,9 +320,9 @@ beyond what M2 adds.
 [evidence/m2/README.md](../../../evidence/m2/README.md). Three scope changes,
 each recorded there:
 
-- OAuth token issuance (`/oauth/authorize`, `/oauth/token`) is deferred until
-  an owner design decision (D8). The Rust build answers those two routes'
-  method checks like Go and refuses issuance with 501. Bearer validation,
+- OAuth token issuance (`/oauth/authorize`, `/oauth/token`) follows the
+  stricter `secure-oauth-issuance` change (D8), a declared divergence from Go.
+  At the M2 merge Rust refused issuance with 501; that change replaces it. Bearer validation,
   metadata, revocation and the shared token store are in M2 and verified.
 - Item 5's packaged Go tests (`TestPackagedShapeStandaloneHTTPContract`,
   `TestStandaloneHTTPIsolationAndShutdown`) assert catalog contents and a
@@ -766,7 +766,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D5 | Staging Platform identity for M11 | A dedicated `parity-rs-*` ID and tenant | Spec: distinct identity, never inferred. |
 | D6 | Go rebase cadence while Rust is built | Rebase at each milestone exit, not continuously | This bounds churn and keeps evidence attributable. |
 | D7 | Observable legacy surface ([legacy-inventory.md](legacy-inventory.md) class O) | Retire it in Go first through a separate OpenSpec change, then rebase | Rust never builds shims that will be deleted anyway. The parity principle holds because Rust still matches Go exactly, just a newer Go. |
-| D8 | OAuth token issuance (`/oauth/authorize`, `/oauth/token`) | **Decided (owner, 2026-09-30): defer.** Rust does not issue tokens until the issuance design is settled in Go; the parity baseline is then rebased and Rust matches it | The issuance behaviour needs an owner design decision before it is ported. Everything else in the OAuth resource server is ported and verified in M2. |
+| D8 | OAuth token issuance | **Decided (owner, 2026-10-01): Rust diverges.** Rust implements the stricter [`oauth-issuance`](../secure-oauth-issuance/specs/oauth-issuance/spec.md) contract; Go is not changed. Every affected Go-vs-Rust comparison declares the divergence by citing D8, and a Rust contract suite verifies the behaviour | Issuance must be backed by a credential or operator approval. The owner approved deviating from Go where the deviation is an improvement. |
 | D9 | go-sdk `MCPGODEBUG` compatibility flags (finding F-7) | **Do not reproduce; ask the owner** | The Go agent inherits SDK switches (`disablelocalhostprotection`, `allowsessionsinstateless`, `disablecontenttypecheck`, ...) from any process environment. They are undocumented, not part of the Host Agent contract, and one of them disables the DNS-rebinding guard. Rust implements the default behaviour, which is identical to Go with the variable unset. |
 
 ## 7. Risks this plan specifically mitigates
