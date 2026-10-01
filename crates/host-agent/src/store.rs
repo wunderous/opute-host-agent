@@ -265,11 +265,50 @@ impl AuthzStore {
         Ok(())
     }
 
+    /// `Store.tokenByHash`.
+    pub fn token_by_hash(&self, hash: &str) -> std::result::Result<Option<TokenRecord>, String> {
+        let conn = self.conn.as_ref().ok_or("authz store closed")?;
+        let row = conn.query_row(
+            "SELECT token_hash, client_id, resource, scope, expires_at, revoked FROM tokens WHERE token_hash=?",
+            [hash],
+            |r| {
+                Ok(TokenRecord {
+                    resource: r.get(2)?,
+                    scope: r.get(3)?,
+                    expires_at: r.get(4)?,
+                    revoked: r.get::<_, i64>(5)? == 1,
+                })
+            },
+        );
+        match row {
+            Ok(rec) => Ok(Some(rec)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(sqlite_err(e)),
+        }
+    }
+
+    /// `Store.revokeHash`.
+    pub fn revoke_hash(&self, hash: &str) -> std::result::Result<(), String> {
+        let conn = self.conn.as_ref().ok_or("authz store closed")?;
+        conn.execute("UPDATE tokens SET revoked=1 WHERE token_hash=?", [hash])
+            .map_err(sqlite_err)?;
+        Ok(())
+    }
+
     pub fn close(&mut self) {
         if let Some(conn) = self.conn.take() {
             let _ = conn.close();
         }
     }
+}
+
+/// The columns `Authorize` reads from a token row.
+#[derive(Debug)]
+pub struct TokenRecord {
+    pub resource: String,
+    pub scope: String,
+    pub expires_at: i64,
+    pub revoked: bool,
 }
 
 impl Drop for AuthzStore {

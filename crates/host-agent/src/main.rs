@@ -9,8 +9,13 @@ mod cli;
 mod config;
 mod ddl;
 mod goflag;
+mod gojson;
+mod hostobs;
+mod http1;
 mod identity;
+mod mcpsdk;
 mod store;
+mod transport;
 
 use std::io::Write;
 

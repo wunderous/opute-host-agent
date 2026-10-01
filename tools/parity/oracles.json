@@ -21,5 +21,21 @@
       }
     ],
     "note": "The overlay only makes the tests' build helpers honour OPUTE_STANDALONE_BINARY; test bodies are unchanged."
+  },
+  {
+    "id": "real-client-modern",
+    "package": "./test/standalone",
+    "milestone": "M2",
+    "run": "^TestParityRealClientModernHandshake$",
+    "tests": [
+      "TestParityRealClientModernHandshake"
+    ],
+    "overlay": [
+      {
+        "file": "test/standalone/parity_realclient_test.go",
+        "create": "package standalone_test\n\n// Parity oracle (added by tools/parity overlay, never committed upstream):\n// the official go-sdk MCP client, an implementation independent of the\n// agent, drives OPUTE_STANDALONE_BINARY through the 2026-07-28 handshake.\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"os\"\n\t\"os/exec\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\ntype parityBearer struct{ token string }\n\nfunc (b parityBearer) RoundTrip(r *http.Request) (*http.Response, error) {\n\tr = r.Clone(r.Context())\n\tr.Header.Set(\"Authorization\", \"Bearer \"+b.token)\n\treturn http.DefaultTransport.RoundTrip(r)\n}\n\nfunc TestParityRealClientModernHandshake(t *testing.T) {\n\tbinary := os.Getenv(\"OPUTE_STANDALONE_BINARY\")\n\tif binary == \"\" {\n\t\tt.Skip(\"OPUTE_STANDALONE_BINARY not set\")\n\t}\n\tport := freeStandalonePort(t)\n\tctx, cancel := context.WithTimeout(context.Background(), standaloneProcessTimeout)\n\tdefer cancel()\n\tcmd := exec.CommandContext(ctx, binary, \"--mode=standalone\")\n\tcmd.Env = standaloneCleanEnv(\n\t\t\"OPUTE_REMOTE_AGENT_ID=parity-real-client\",\n\t\t\"OPUTE_AGENT_MODE=standalone\",\n\t\t\"OPUTE_INFRA_PROVIDER_ID=incus\",\n\t\t\"OPUTE_STANDALONE_STATE_DIR=\"+t.TempDir(),\n\t\t\"HOST_MCP_BIND_HOST=127.0.0.1\",\n\t\tfmt.Sprintf(\"HOST_MCP_PORT=%d\", port),\n\t\t\"MCP_AUTH_TOKEN=parity-real-client-token\",\n\t)\n\tif err := cmd.Start(); err != nil {\n\t\tt.Fatal(err)\n\t}\n\tdefer func() {\n\t\t_ = cmd.Process.Signal(os.Interrupt)\n\t\t_, _ = cmd.Process.Wait()\n\t}()\n\tbase := fmt.Sprintf(\"http://127.0.0.1:%d\", port)\n\tdeadline := time.Now().Add(standaloneReadyTimeout)\n\tfor {\n\t\tres, err := http.Get(base + \"/health\")\n\t\tif err == nil {\n\t\t\tres.Body.Close()\n\t\t\tif res.StatusCode == http.StatusOK {\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\t\tif time.Now().After(deadline) {\n\t\t\tt.Fatalf(\"agent not ready: %v\", err)\n\t\t}\n\t\ttime.Sleep(100 * time.Millisecond)\n\t}\n\n\tclient := mcp.NewClient(&mcp.Implementation{Name: \"parity-real-client\", Version: \"1\"}, nil)\n\ttransport := &mcp.StreamableClientTransport{\n\t\tEndpoint:   base + \"/mcp\",\n\t\tHTTPClient: &http.Client{Transport: parityBearer{token: \"parity-real-client-token\"}},\n\t}\n\tsession, err := client.Connect(ctx, transport, nil)\n\tif err != nil {\n\t\tt.Fatalf(\"connect: %v\", err)\n\t}\n\tdefer session.Close()\n\tif info := session.InitializeResult(); info == nil || info.ServerInfo == nil ||\n\t\tinfo.ServerInfo.Name != \"host-agent\" || info.ServerInfo.Version == \"\" {\n\t\tt.Fatalf(\"server info = %+v\", info)\n\t}\n\tif _, err := session.ListTools(ctx, nil); err != nil {\n\t\tt.Fatalf(\"tools/list: %v\", err)\n\t}\n\tif _, err := session.CallTool(ctx, &mcp.CallToolParams{Name: \"parity_no_such_tool\", Arguments: map[string]any{}}); err == nil {\n\t\tt.Fatal(\"tools/call of an unknown tool succeeded\")\n\t}\n\n\t// A client without the bearer token is refused.\n\tanonymous := mcp.NewClient(&mcp.Implementation{Name: \"parity-anonymous\", Version: \"1\"}, nil)\n\tif s, err := anonymous.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: base + \"/mcp\"}, nil); err == nil {\n\t\t_ = s.Close()\n\t\tt.Fatal(\"unauthenticated client connected\")\n\t}\n}\n"
+      }
+    ],
+    "note": "T3: the official go-sdk client (independent of the agent) completes the 2026-07-28 discover handshake, lists tools, gets an error for an unknown tool, and is refused without the bearer token. Catalog content is M3's; this checks the handshake and transport only."
   }
 ]

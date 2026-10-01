@@ -1,7 +1,7 @@
 {
- "canaryFileSha256": "b343ca165e2520dcb5647449d5b3acf6067c0932f1c1cd1159b32b567654acc8",
+ "canaryFileSha256": "492c268f540d5640aef85ba860e3051bad0933594ed5615a518528c64d1ae9b4",
  "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
- "harnessSha256": "2d183e8e54e6a613586a0a82eb045dc526355f80e247ed240200947e619aacd6",
+ "harnessSha256": "24b83dcbf0e057ae01fb3aaecabab51ed3fc8d036326fa742c071ebb4f172f21",
  "results": [
   {
    "buildStatus": "ok",
@@ -21,7 +21,10 @@
    "canaryBinarySha256": "9dc2330c9e1672d9b77a80033fc6bc60772732b6db74aa0a8847ce8b798443ea",
    "caught": true,
    "failedScenarios": [
-    "mcp.auth"
+    "authz.store-cross-read",
+    "mcp.auth",
+    "wire.auth.platform",
+    "wire.auth.standalone"
    ],
    "id": "C2-auth-status",
    "patchApplied": true
@@ -33,7 +36,9 @@
    "failedScenarios": [
     "mcp.auth",
     "mcp.get-host-info",
-    "serve.health"
+    "serve.health",
+    "wire.framing",
+    "wire.routing"
    ],
    "id": "C3-extra-argv-token",
    "patchApplied": true
@@ -43,7 +48,8 @@
    "canaryBinarySha256": "e40237ea398531a636bc716d9b12079b15b1555bc0f527b56ba8a352b713a7b5",
    "caught": true,
    "failedScenarios": [
-    "mcp.legacy-handshake.enabled-bounded"
+    "mcp.legacy-handshake.enabled-bounded",
+    "wire.methods.legacy-on"
    ],
    "id": "C4-legacy-bypass-widened",
    "patchApplied": true
@@ -66,6 +72,29 @@
     "admission.standalone-mutation-denied"
    ],
    "id": "C6-mutation-gate-open",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "a54e2d906da54811c739ff627be535121c434547d0079748fc9c06769a79f945",
+   "caught": true,
+   "failedScenarios": [
+    "mcp.transport-rules",
+    "wire.envelope"
+   ],
+   "id": "C7-envelope-status",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "406df807c423ba2f060306f8d2408d1373ae4efe6fa398a61caa99bc8e090ed7",
+   "caught": true,
+   "failedScenarios": [
+    "wire.origin.platform",
+    "wire.origin.standalone",
+    "wire.origin.standalone.public-opt-in"
+   ],
+   "id": "C8-ipv6-loopback-origin",
    "patchApplied": true
   }
  ],

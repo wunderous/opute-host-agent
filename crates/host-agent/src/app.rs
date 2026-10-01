@@ -124,7 +124,7 @@ fn slog_time() -> String {
 }
 
 /// Howard Hinnant's days-to-civil algorithm.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
+pub(crate) fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let z = z + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z.rem_euclid(146_097);
@@ -191,7 +191,7 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
         cfg.standalone_state_dir.clone()
     };
     inject_fault(fault, "authz")?;
-    let mut authz = AuthzStore::open(&authz_dir, &cfg.opute_client_secret)?;
+    let authz = AuthzStore::open(&authz_dir, &cfg.opute_client_secret)?;
 
     let addr = format!("{}:{}", cfg.host_mcp_bind_host, cfg.host_mcp_port);
     if addr.ends_with(":0") {
@@ -199,41 +199,148 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
             "HOST_MCP_PORT must be positive for direct HTTP mode"
         ));
     }
+    let server = std::sync::Arc::new(http_server(&cfg, authz));
     log_info(stderr, "HTTP transport listening", &[("addr", &addr)]);
     inject_fault(fault, "listener")?;
-    let result = serve(&addr);
+    let result = serve(&addr, server.clone());
     // Reverse order: transport has stopped; release authz, then state.
-    authz.close();
+    if let Ok(mut authz) = server.authz.lock() {
+        authz.close();
+    }
     runtime.state.close();
     result
 }
 
-fn serve(addr: &str) -> Result<()> {
+/// `ToolNamePrefix`: the first 8 hex digits of UUIDv5(namespace, agent id).
+pub fn tool_name_prefix(agent_id: &str) -> String {
+    let agent_id = agent_id.trim();
+    if agent_id.is_empty() {
+        return String::new();
+    }
+    let dns: [u8; 16] = [
+        0x6b, 0xa7, 0xb8, 0x10, 0x9d, 0xad, 0x11, 0xd1, 0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30,
+        0xc8,
+    ];
+    let namespace = uuid_v5(&dns, b"opute.host-agent.mcp-tool-prefix");
+    hex::encode(&uuid_v5(&namespace, agent_id.as_bytes())[..4])
+}
+
+fn uuid_v5(namespace: &[u8; 16], name: &[u8]) -> [u8; 16] {
+    use sha1::Digest;
+    let mut h = sha1::Sha1::new();
+    h.update(namespace);
+    h.update(name);
+    let digest = h.finalize();
+    let mut out = [0u8; 16];
+    out.copy_from_slice(&digest[..16]);
+    out[6] = (out[6] & 0x0f) | 0x50;
+    out[8] = (out[8] & 0x3f) | 0x80;
+    out
+}
+
+/// `transport.NewHTTPServer` options as `app.Run` fills them.
+fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
+    let prefix = if cfg.prefix_tool_names {
+        tool_name_prefix(&cfg.remote_agent_id)
+    } else {
+        String::new()
+    };
+    let implementation_name = if prefix.is_empty() {
+        "host-agent".to_string()
+    } else {
+        format!("host-agent-{prefix}")
+    };
+    let identity = cfg.identity.as_ref().ok();
+    crate::transport::Server {
+        instance_id: cfg.instance_id.clone(),
+        local_instance_id: if cfg.agent_mode == "standalone" {
+            cfg.standalone_instance_id.clone()
+        } else {
+            String::new()
+        },
+        agent_id: cfg.remote_agent_id.clone(),
+        tool_prefix: prefix,
+        implementation_name,
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        fingerprint: identity.map(|i| {
+            (
+                i.fingerprint.clone(),
+                i.fingerprint_version.clone(),
+                i.fingerprint_source.clone(),
+            )
+        }),
+        execution_context: identity.map(|i| {
+            (
+                i.execution_context.id.clone(),
+                i.execution_context.kind.clone(),
+                i.execution_context.display_name.clone(),
+            )
+        }),
+        allow_legacy_handshake: cfg.allow_legacy_handshake,
+        disable_localhost_protection: cfg.disable_localhost_protection,
+        bootstrap_token: cfg.mcp_auth_token.trim().to_string(),
+        authz: std::sync::Mutex::new(authz),
+        health_observer: Box::new(crate::hostobs::health_observer(
+            cfg.env.clone(),
+            cfg.instance_id.clone(),
+            cfg.ownership_mode.clone(),
+        )),
+    }
+}
+
+/// Serve until SIGINT or SIGTERM. The runtime runs on its own thread with a
+/// large stack: Go accepts JSON nested 10000 levels deep, and the request
+/// decoder recurses once per level.
+fn serve(addr: &str, server: std::sync::Arc<crate::transport::Server>) -> Result<()> {
     let addrs = resolve_listen_addr(addr)?;
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_io()
-        .enable_time()
-        .build()
+    let addr = addr.to_string();
+    let worker = std::thread::Builder::new()
+        .name("http".into())
+        .stack_size(256 << 20)
+        .spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_io()
+                .enable_time()
+                .build()
+                .map_err(|e| go_err!("start runtime: {e}"))?;
+            rt.block_on(accept_loop(&addrs, &addr, server))
+        })
         .map_err(|e| go_err!("start runtime: {e}"))?;
-    rt.block_on(async move {
-        let listener = tokio::net::TcpListener::from_std(go_listen(&addrs, addr)?)
-            .map_err(|e| go_err!("listen tcp {addr}: {e}"))?;
-        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
-            .map_err(|e| go_err!("install signal handler: {e}"))?;
-        let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .map_err(|e| go_err!("install signal handler: {e}"))?;
-        loop {
-            tokio::select! {
-                _ = sigint.recv() => return Ok(()),
-                _ = sigterm.recv() => return Ok(()),
-                accepted = listener.accept() => {
-                    if let Ok((stream, _)) = accepted {
-                        tokio::spawn(placeholder_response(stream));
+    worker
+        .join()
+        .unwrap_or_else(|_| Err(go_err!("http runtime panicked")))
+}
+
+async fn accept_loop(
+    addrs: &[SocketAddr],
+    addr: &str,
+    server: std::sync::Arc<crate::transport::Server>,
+) -> Result<()> {
+    let listener = tokio::net::TcpListener::from_std(go_listen(addrs, addr)?)
+        .map_err(|e| go_err!("listen tcp {addr}: {e}"))?;
+    let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
+        .map_err(|e| go_err!("install signal handler: {e}"))?;
+    let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        .map_err(|e| go_err!("install signal handler: {e}"))?;
+    let local = tokio::task::LocalSet::new();
+    local
+        .run_until(async move {
+            loop {
+                tokio::select! {
+                    _ = sigint.recv() => return Ok(()),
+                    _ = sigterm.recv() => return Ok(()),
+                    accepted = listener.accept() => {
+                        if let Ok((stream, _)) = accepted {
+                            let server = server.clone();
+                            tokio::task::spawn_local(crate::http1::serve_conn(stream, move |req, body| {
+                                crate::transport::route(server.clone(), req, body)
+                            }));
+                        }
                     }
                 }
             }
-        }
-    })
+        })
+        .await
 }
 
 /// `net.Listen("tcp", addr)` with Go's socket choices (`ipsock_posix.go`):
@@ -314,22 +421,6 @@ fn listen_backlog() -> i32 {
         .and_then(|s| s.trim().parse::<u64>().ok())
         .filter(|&n| n > 0)
         .map_or(128, |n| n.min(i32::MAX as u64) as i32)
-}
-
-/// M1 owns the listener lifecycle only. HTTP routes (`/health`, `/mcp`,
-/// OAuth) arrive in M2; until then every request is answered 501 so a
-/// client never mistakes this build for a working agent.
-async fn placeholder_response(mut stream: tokio::net::TcpStream) {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    let mut buf = [0u8; 4096];
-    let _ = tokio::time::timeout(std::time::Duration::from_secs(2), stream.read(&mut buf)).await;
-    let body = "not implemented until milestone M2\n";
-    let response = format!(
-        "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        body.len()
-    );
-    let _ = stream.write_all(response.as_bytes()).await;
-    let _ = stream.shutdown().await;
 }
 
 #[cfg(test)]

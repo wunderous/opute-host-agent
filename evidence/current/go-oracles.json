@@ -1,5 +1,5 @@
 {
- "oracleFileSha256": "9b9fb002ad30e2db44288bdc4ec3b7675ee03950864f2a8f1a66108da04931d0",
+ "oracleFileSha256": "105ebbee0f32ee8d27a409dc5b94d512c3c187195ccd3baa21f3c9ab3462e051",
  "results": [
   {
    "binary": "go",
@@ -18,7 +18,7 @@
   },
   {
    "binary": "rust",
-   "binarySha256": "ddd408185a9c2a7ddbdc259ed2477e8d64364e4a2b7617619884543eb3a67a53",
+   "binarySha256": "ced0fc0651d670e5bbd1d34e503721ce803376e2be86653caecf6e5b1aab5a80",
    "exit": 0,
    "expectedTests": [
     "TestStandaloneInvalidConfigurationExitsBeforeMCP",
@@ -45,6 +45,45 @@
    ],
    "passed": [],
    "suite": "standalone-startup"
+  },
+  {
+   "binary": "go",
+   "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+   "exit": 0,
+   "expectedTests": [
+    "TestParityRealClientModernHandshake"
+   ],
+   "failed": [],
+   "passed": [
+    "TestParityRealClientModernHandshake"
+   ],
+   "suite": "real-client-modern"
+  },
+  {
+   "binary": "rust",
+   "binarySha256": "ced0fc0651d670e5bbd1d34e503721ce803376e2be86653caecf6e5b1aab5a80",
+   "exit": 0,
+   "expectedTests": [
+    "TestParityRealClientModernHandshake"
+   ],
+   "failed": [],
+   "passed": [
+    "TestParityRealClientModernHandshake"
+   ],
+   "suite": "real-client-modern"
+  },
+  {
+   "binary": "negative-control",
+   "binarySha256": "b860051e15938770f4164177f2fc2d4e1af26b226c9b0c3ea75a36d1be33a3cf",
+   "exit": 1,
+   "expectedTests": [
+    "TestParityRealClientModernHandshake"
+   ],
+   "failed": [
+    "TestParityRealClientModernHandshake"
+   ],
+   "passed": [],
+   "suite": "real-client-modern"
   }
  ],
  "schemaVersion": 1,

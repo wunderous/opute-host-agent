@@ -24,6 +24,11 @@ ORACLE_FILE = runner.TOOLS_DIR / "oracles.json"
 def _apply_overlay(tree: Path, overlay: list[dict]) -> None:
     for patch in overlay:
         target = tree / patch["file"]
+        if "create" in patch:
+            if target.exists():
+                raise SystemExit(f"oracle overlay would overwrite {patch['file']}")
+            target.write_text(patch["create"])
+            continue
         text = target.read_text()
         if text.count(patch["old"]) != 1:
             raise SystemExit(f"oracle overlay anchor for {patch['file']} matched {text.count(patch['old'])} times")

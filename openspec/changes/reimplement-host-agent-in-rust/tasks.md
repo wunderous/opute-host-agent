@@ -59,10 +59,12 @@ Evidence for 1.1, 1.3 and 2.1: [evidence/m1/README.md](../../../evidence/m1/READ
   `OPUTE_REMOTE_AGENT_ID`, standalone/platform defaults, and fail-closed
   startup. Gate: differential CLI and configuration fixtures, including
   missing/ambiguous identity and environment precedence, pass.
-- [ ] 2.2 Implement `/health` and authenticated `/mcp` with the exact supported
+- [x] 2.2 Implement `/health` and authenticated `/mcp` with the exact supported
   auth modes, MCP 2026-07-28 behavior, and the default-off bounded ADR 0011
   legacy handshake exception. Gate: separate-process wire captures compare
   status, headers, discovery, errors, and forbidden legacy method behavior.
+  Evidence: [evidence/m2/README.md](../../../evidence/m2/README.md). OAuth
+  token issuance is deferred by owner decision D8.
 - [ ] 2.3 Implement catalog publication, `tools/list`, read-only host tools,
   structured results, and typed admission. Gate: valid and invalid credentials,
   `get_host_info {}`, resource kind, tenant scope, and default mutation denial

@@ -104,7 +104,8 @@ def _env(step: dict) -> dict:
     return env
 
 
-def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[dict, dict]:
+def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
+            other: agent.Impl | None = None) -> tuple[dict, dict]:
     """Run one scenario on one side. Returns (observation, variables)."""
     fixture = scenario.get("fixture")
     fixture_path = FIXTURE_DIR / "shims" / f"{fixture}.json" if fixture else None
@@ -115,6 +116,11 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
     try:
         for index, step in enumerate(scenario["steps"]):
             label = step.get("as", f"step{index}")
+            missing = [v for v in step.get("requires", []) if v not in sandbox.variables]
+            if missing:
+                # Both sides skip identically; the evidence records why.
+                steps[label] = {"skipped": "requires " + ",".join(missing)}
+                continue
             if "cli" in step:
                 spec = step["cli"]
                 steps[label] = agent.run_cli(
@@ -122,13 +128,21 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                     timeout=spec.get("timeout", 30), probe_port=spec.get("probePort", False))
             elif "serve" in step:
                 spec = step["serve"]
-                server = agent.Server(impl, sandbox, spec.get("argv", ["serve"]), _env(spec))
+                # "impl": "other" runs the opposite side's binary on this
+                # side's state: Go reads what Rust wrote and vice versa.
+                chosen = other if spec.get("impl") == "other" and other is not None else impl
+                server = agent.Server(chosen, sandbox, spec.get("argv", ["serve"]), _env(spec))
                 steps[label] = server.wait_ready(spec.get("timeout", 30), spec.get("readyPort"))
             elif "http" in step:
                 spec = step["http"]
                 body = spec.get("body")
                 raw = json.dumps(body).encode() if isinstance(body, (dict, list)) else (
-                    body.encode() if isinstance(body, str) else None)
+                    sandbox.expand(body).encode() if isinstance(body, str) else None)
+                if raw is not None and "padTo" in spec:
+                    # Grow the body to an exact byte size without storing it in
+                    # the scenario file: ${PAD} becomes the filler.
+                    filler = spec["padTo"] - (len(raw) - len(b"${PAD}"))
+                    raw = raw.replace(b"${PAD}", b"x" * filler, 1)
                 headers = {k: sandbox.expand(v) for k, v in spec.get("headers", {}).items()}
                 steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), spec["path"], headers, raw)
             elif "mcp" in step:
@@ -138,6 +152,17 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                     token=spec.get("token", "${TOKEN}"), name=spec.get("name"),
                     modern=spec.get("modern", True), headers=spec.get("headers"),
                     omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
+            elif "raw" in step:
+                spec = step["raw"]
+                data = sandbox.expand(spec["data"]).encode("latin-1")
+                if "padTo" in spec:
+                    filler = spec["padTo"] - (len(data) - len(b"${PAD}"))
+                    data = data.replace(b"${PAD}", b"a" * filler, 1)
+                steps[label] = agent.raw_request(sandbox, data)
+            elif "sql" in step:
+                spec = step["sql"]
+                steps[label] = agent.run_sql(Path(sandbox.expand(spec["db"])),
+                                             [sandbox.expand(x) for x in spec["statements"]])
             elif "listeners" in step:
                 steps[label] = {"listeners": agent.listeners_of(server.proc.pid)} if server else {"listeners": None}
             elif "write" in step:
@@ -191,12 +216,12 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
         # Scenarios that use fixed default ports run one side at a time and
         # never overlap another exclusive scenario.
         with _EXCLUSIVE:
-            obs_l, vars_l = execute(left, scenario, "a", run_id)
-            obs_r, vars_r = execute(right, scenario, "b", run_id)
+            obs_l, vars_l = execute(left, scenario, "a", run_id, right)
+            obs_r, vars_r = execute(right, scenario, "b", run_id, left)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            fut_l = pool.submit(execute, left, scenario, "a", run_id)
-            fut_r = pool.submit(execute, right, scenario, "b", run_id)
+            fut_l = pool.submit(execute, left, scenario, "a", run_id, right)
+            fut_r = pool.submit(execute, right, scenario, "b", run_id, left)
             obs_l, vars_l = fut_l.result()
             obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)

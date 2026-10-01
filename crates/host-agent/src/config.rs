@@ -43,6 +43,12 @@ impl Env {
         }
     }
 
+    /// Every variable, for child processes (Go's `os.Environ()` after
+    /// `os.Setenv` of the env file).
+    pub fn pairs(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.vars.iter().map(|(k, v)| (k.as_str(), v.as_str()))
+    }
+
     /// `os.Getenv`.
     pub fn get(&self, key: &str) -> String {
         self.vars.get(key).cloned().unwrap_or_default()

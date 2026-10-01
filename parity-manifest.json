@@ -52,6 +52,26 @@
      ]
     }
    ]
+  },
+  "m2": {
+   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+)",
+   "requireCanaries": true,
+   "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "cli",
+      "config",
+      "lifecycle",
+      "http",
+      "mcp-wire",
+      "auth"
+     ]
+    }
+   ]
   }
  },
  "goReference": {
@@ -359,6 +379,156 @@
    "owner": "state",
    "scenario": "state.schema-after-start",
    "surface": "durable-state"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:NewHTTPServer mux",
+    "net/http ServeMux"
+   ],
+   "id": "wire.routing",
+   "owner": "transport",
+   "scenario": "wire.routing",
+   "surface": "http"
+  },
+  {
+   "anchors": [
+    "go-sdk mcp/streamable.go:serveStateless",
+    "internal/transport/http.go:handleMCP"
+   ],
+   "id": "wire.transport",
+   "owner": "transport",
+   "scenario": "wire.transport",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/transport/http.go:handleMCP envelope",
+    "go-sdk internal/jsonrpc2/wire.go"
+   ],
+   "id": "wire.envelope",
+   "owner": "transport",
+   "scenario": "wire.envelope",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/transport/discover.go",
+    "docs/adr/0011 legacy handshake bound",
+    "internal/hostmcp/server.go:HandleExtensionMethod"
+   ],
+   "id": "wire.methods.legacy-off",
+   "owner": "transport",
+   "scenario": "wire.methods.legacy-off",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/transport/discover.go",
+    "docs/adr/0011 legacy handshake bound",
+    "internal/hostmcp/server.go:HandleExtensionMethod"
+   ],
+   "id": "wire.methods.legacy-on",
+   "owner": "transport",
+   "scenario": "wire.methods.legacy-on",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "net/http server.go:readRequest",
+    "net/http transfer.go:readTransfer",
+    "net/http server.go:chunkWriter.writeHeader"
+   ],
+   "id": "wire.framing",
+   "owner": "transport",
+   "scenario": "wire.framing",
+   "surface": "http"
+  },
+  {
+   "anchors": [
+    "go-sdk mcp/shared.go:validateRequestMeta",
+    "go-sdk mcp/server.go:ServerSession.handle",
+    "go-sdk mcp/streamable.go:servePOST"
+   ],
+   "id": "wire.sdk-edges.legacy-off",
+   "owner": "transport",
+   "scenario": "wire.sdk-edges.legacy-off",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "go-sdk mcp/shared.go:validateRequestMeta",
+    "go-sdk mcp/server.go:ServerSession.handle",
+    "go-sdk mcp/streamable.go:servePOST"
+   ],
+   "id": "wire.sdk-edges.legacy-on",
+   "owner": "transport",
+   "scenario": "wire.sdk-edges.legacy-on",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:Authorize",
+    "internal/authz/service.go:handleRevoke",
+    "internal/authz/resource.go:CanonicalMCPResource"
+   ],
+   "id": "wire.auth.standalone",
+   "owner": "authz",
+   "scenario": "wire.auth.standalone",
+   "surface": "auth"
+  },
+  {
+   "anchors": [
+    "internal/authz/service.go:Authorize",
+    "internal/authz/service.go:handleRevoke",
+    "internal/authz/resource.go:CanonicalMCPResource"
+   ],
+   "id": "wire.auth.platform",
+   "owner": "authz",
+   "scenario": "wire.auth.platform",
+   "surface": "auth"
+  },
+  {
+   "anchors": [
+    "internal/authz/resource.go:OriginAllowed",
+    "internal/transport/http.go:mcpHandlerForRequest",
+    "go-sdk mcp/streamable.go DNS rebinding protection"
+   ],
+   "id": "wire.origin.standalone",
+   "owner": "transport",
+   "scenario": "wire.origin.standalone",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/authz/resource.go:OriginAllowed",
+    "internal/transport/http.go:mcpHandlerForRequest",
+    "go-sdk mcp/streamable.go DNS rebinding protection"
+   ],
+   "id": "wire.origin.platform",
+   "owner": "transport",
+   "scenario": "wire.origin.platform",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/authz/resource.go:OriginAllowed",
+    "internal/transport/http.go:mcpHandlerForRequest",
+    "go-sdk mcp/streamable.go DNS rebinding protection"
+   ],
+   "id": "wire.origin.standalone.public-opt-in",
+   "owner": "transport",
+   "scenario": "wire.origin.standalone.public-opt-in",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/authz/store.go",
+    "milestones.md M2 E2E 7 (authz state)"
+   ],
+   "id": "authz.store-cross-read",
+   "owner": "authz",
+   "scenario": "authz.store-cross-read",
+   "surface": "auth"
   }
  ],
  "oracles": {
@@ -366,7 +536,7 @@
   "suites": "tools/parity/oracles.json"
  },
  "rustCandidate": {
-  "binarySha256": "ddd408185a9c2a7ddbdc259ed2477e8d64364e4a2b7617619884543eb3a67a53",
+  "binarySha256": "ced0fc0651d670e5bbd1d34e503721ce803376e2be86653caecf6e5b1aab5a80",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

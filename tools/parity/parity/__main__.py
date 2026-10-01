@@ -51,11 +51,16 @@ def main(argv: list[str] | None = None) -> int:
     orc.add_argument("--binary", action="append", required=True, help="LABEL=PATH (repeatable)")
     orc.add_argument("--out", required=True, type=Path)
 
+    sub.add_parser("corpus", help="regenerate scenarios/wire.json from parity/corpus.py")
     man = sub.add_parser("manifest", help="sync derived manifest fields from scenarios and the source lock")
     man.add_argument("--go", type=Path, help="Go reference binary whose hash to record")
     man.add_argument("--rust", type=Path, help="Rust candidate binary whose hash to record")
 
     args = parser.parse_args(argv)
+    if args.command == "corpus":
+        from . import corpus
+        print(f"wire corpus v{corpus.VERSION}: {corpus.write()} steps -> {corpus.OUT_FILE.name}")
+        return 0
     if args.command == "oracle":
         from . import oracle
         binaries = {i.label: i.binary for i in map(_impl, args.binary)}

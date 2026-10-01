@@ -24,8 +24,12 @@
       "new": "\tif err != nil || !ok || record.Revoked || time.Now().Unix() > record.ExpiresAt {\n\t\treturn Decision{Status: http.StatusForbidden,"
     },
     "scenario": "mcp.auth",
-    "mayAlsoFail": [],
-    "note": "The status==0 fallback in internal/transport/http.go is a dead branch because authz.Authorize always sets a status; the first canary draft patched it and was not caught."
+    "mayAlsoFail": [
+      "authz.store-cross-read",
+      "wire.auth.platform",
+      "wire.auth.standalone"
+    ],
+    "note": "The status==0 fallback in internal/transport/http.go is a dead branch because authz.Authorize always sets a status; the first canary draft patched it and was not caught. M2: the wire corpus observes the same mutation in authz.store-cross-read, wire.auth.platform, wire.auth.standalone."
   },
   {
     "id": "C3-extra-argv-token",
@@ -37,11 +41,13 @@
     },
     "scenario": "mcp.get-host-info",
     "mayAlsoFail": [
-      "serve.health",
       "admission.standalone-mutation-denied",
-      "mcp.auth"
+      "mcp.auth",
+      "serve.health",
+      "wire.framing",
+      "wire.routing"
     ],
-    "note": "/health reports VM counts from incus list, so health-reading scenarios also change."
+    "note": "/health reports VM counts from incus list, so health-reading scenarios also change. M2: the wire corpus observes the same mutation in wire.framing, wire.routing."
   },
   {
     "id": "C4-legacy-bypass-widened",
@@ -52,7 +58,10 @@
       "new": "\t\"prompts/get\":               {},\n\t\"tasks/get\":                 {},\n}"
     },
     "scenario": "mcp.legacy-handshake.enabled-bounded",
-    "mayAlsoFail": []
+    "mayAlsoFail": [
+      "wire.methods.legacy-on"
+    ],
+    "note": "M2: the wire corpus observes the same mutation in wire.methods.legacy-on."
   },
   {
     "id": "C5-retired-env-accepted",
@@ -75,5 +84,34 @@
     },
     "scenario": "admission.standalone-mutation-denied",
     "mayAlsoFail": []
+  },
+  {
+    "id": "C7-envelope-status",
+    "summary": "a malformed JSON-RPC envelope returns 422 instead of 400",
+    "patch": {
+      "file": "internal/transport/http.go",
+      "old": "http.Error(w, \"invalid json-rpc\", http.StatusBadRequest)",
+      "new": "http.Error(w, \"invalid json-rpc\", http.StatusUnprocessableEntity)"
+    },
+    "scenario": "wire.envelope",
+    "mayAlsoFail": [
+      "mcp.transport-rules"
+    ],
+    "note": "M2: proves the generated wire corpus catches a one-token status change in the agent's own envelope gate."
+  },
+  {
+    "id": "C8-ipv6-loopback-origin",
+    "summary": "http://[::1] is no longer accepted as a loopback Origin",
+    "patch": {
+      "file": "internal/authz/resource.go",
+      "old": "\"http://[::1]\", \"https://[::1]\",",
+      "new": "\"https://[::1]\","
+    },
+    "scenario": "wire.origin.standalone",
+    "mayAlsoFail": [
+      "wire.origin.platform",
+      "wire.origin.standalone.public-opt-in"
+    ],
+    "note": "M2: proves the Origin x Host matrix catches the loss of one allowed origin form."
   }
 ]
