@@ -128,7 +128,12 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                 spec = step["http"]
                 body = spec.get("body")
                 raw = json.dumps(body).encode() if isinstance(body, (dict, list)) else (
-                    body.encode() if isinstance(body, str) else None)
+                    sandbox.expand(body).encode() if isinstance(body, str) else None)
+                if raw is not None and "padTo" in spec:
+                    # Grow the body to an exact byte size without storing it in
+                    # the scenario file: ${PAD} becomes the filler.
+                    filler = spec["padTo"] - (len(raw) - len(b"${PAD}"))
+                    raw = raw.replace(b"${PAD}", b"x" * filler, 1)
                 headers = {k: sandbox.expand(v) for k, v in spec.get("headers", {}).items()}
                 steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), spec["path"], headers, raw)
             elif "mcp" in step:
@@ -138,6 +143,13 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str) -> tuple[d
                     token=spec.get("token", "${TOKEN}"), name=spec.get("name"),
                     modern=spec.get("modern", True), headers=spec.get("headers"),
                     omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
+            elif "raw" in step:
+                data = sandbox.expand(step["raw"]["data"]).encode()
+                steps[label] = agent.raw_request(sandbox, data)
+            elif "sql" in step:
+                spec = step["sql"]
+                steps[label] = agent.run_sql(Path(sandbox.expand(spec["db"])),
+                                             [sandbox.expand(x) for x in spec["statements"]])
             elif "listeners" in step:
                 steps[label] = {"listeners": agent.listeners_of(server.proc.pid)} if server else {"listeners": None}
             elif "write" in step:

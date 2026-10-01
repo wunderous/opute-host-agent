@@ -33,6 +33,7 @@ HEADER_ALLOWLIST = (
     "allow",
     "cache-control",
     "content-type",
+    "location",
     "mcp-protocol-version",
     "mcp-session-id",
     "www-authenticate",
@@ -367,6 +368,65 @@ def http_request(sandbox: Sandbox, method: str, path: str, headers: dict[str, st
         return {"status": resp.status, "headers": hdrs, "body": _decode_body(hdrs, raw)}
     finally:
         conn.close()
+
+
+def raw_request(sandbox: Sandbox, data: bytes, timeout: float = 10.0) -> dict:
+    """Send exact bytes and parse one HTTP/1.x response (for framing cases
+    http.client refuses to produce, such as a missing Host header)."""
+    with socket.create_connection(("127.0.0.1", sandbox.port), timeout=timeout) as conn:
+        # No half-close: Go treats a client EOF as a cancelled request.
+        # Every raw case sends "Connection: close" or is rejected by the server.
+        conn.sendall(data)
+        chunks = []
+        try:
+            while True:
+                chunk = conn.recv(65536)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+        except (socket.timeout, ConnectionResetError):
+            pass
+    response = b"".join(chunks)
+    head, _, body = response.partition(b"\r\n\r\n")
+    lines = head.decode(errors="replace").split("\r\n")
+    parts = lines[0].split(" ", 2) if lines and lines[0] else []
+    if len(parts) < 2 or not parts[1].isdigit():
+        return {"status": None, "headers": {}, "body": response.decode(errors="replace")}
+    hdrs: dict[str, str] = {}
+    for line in lines[1:]:
+        key, _, value = line.partition(":")
+        if key.lower() in HEADER_ALLOWLIST:
+            hdrs[key.lower()] = value.strip()
+        if key.lower() == "transfer-encoding" and "chunked" in value.lower():
+            body = _dechunk(body)
+    return {"status": int(parts[1]), "headers": hdrs, "body": _decode_body(hdrs, body)}
+
+
+def _dechunk(data: bytes) -> bytes:
+    out = bytearray()
+    while data:
+        size_line, _, rest = data.partition(b"\r\n")
+        try:
+            size = int(size_line.split(b";")[0], 16)
+        except ValueError:
+            break
+        if size == 0:
+            break
+        out += rest[:size]
+        data = rest[size + 2:]
+    return bytes(out)
+
+
+def run_sql(path: Path, statements: list[str]) -> dict:
+    """Seed a SQLite file the agent owns (only while the agent is stopped)."""
+    conn = sqlite3.connect(path)
+    try:
+        for statement in statements:
+            conn.execute(statement)
+        conn.commit()
+    finally:
+        conn.close()
+    return {"sql": len(statements)}
 
 
 def _decode_body(headers: dict[str, str], raw: bytes) -> Any:
