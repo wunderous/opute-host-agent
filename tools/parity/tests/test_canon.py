@@ -109,3 +109,21 @@ class DivergenceTest(unittest.TestCase):
         for scenario in runner.load_scenarios():
             for did in scenario.get("compare", {}).get("divergences", []):
                 self.assertIn(did, rules, scenario["id"])
+
+
+class OmitemptyTest(unittest.TestCase):
+    RULE = {"path": ["psi", "*"], "keys": ["someAvg10"], "zero": 0, "reason": "omitempty"}
+
+    def test_absent_equals_zero(self):
+        a = canon.apply_omitempty({"psi": {"io": {}}}, [self.RULE])
+        b = canon.apply_omitempty({"psi": {"io": {"someAvg10": 0}}}, [self.RULE])
+        self.assertEqual(canon.diff(a, b), [])
+
+    def test_nonzero_still_differs(self):
+        a = canon.apply_omitempty({"psi": {"io": {}}}, [self.RULE])
+        b = canon.apply_omitempty({"psi": {"io": {"someAvg10": 0.5}}}, [self.RULE])
+        self.assertNotEqual(canon.diff(a, b), [])
+
+    def test_rule_needs_reason(self):
+        with self.assertRaises(canon.MaskError):
+            canon.apply_omitempty({}, [{**self.RULE, "reason": ""}])

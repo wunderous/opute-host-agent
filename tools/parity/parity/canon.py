@@ -204,10 +204,28 @@ def diff(left: Any, right: Any, path: Path | None = None, limit: int = 200) -> l
     return out
 
 
+def apply_omitempty(doc: Any, rules: Iterable[dict]) -> Any:
+    """Go `omitempty` fields: absent and the zero value encode the same
+    information, so fill each listed key with its zero value where absent.
+    A rule needs a reason; it never hides a non-zero value."""
+    for rule in rules:
+        if not str(rule.get("reason", "")).strip():
+            raise MaskError(f"omitempty rule {rule.get('path')} has no reason")
+
+        def fill(obj: Any, _rule=rule) -> Any:
+            if isinstance(obj, dict):
+                return {**{k: _rule["zero"] for k in _rule["keys"]}, **obj}
+            return obj
+
+        doc, _ = _apply_at(doc, list(rule["path"]), fill)
+    return doc
+
+
 def normalize(observation: Any, spec: dict, variables: dict[str, str]) -> tuple[Any, list[dict]]:
-    """Full pipeline for one side: substitute → parse embedded → sets → masks."""
+    """Full pipeline for one side: substitute → parse embedded → omitempty → sets → masks."""
     doc = substitute(copy.deepcopy(observation), variables)
     doc = parse_embedded(doc, spec.get("parseJson", []))
+    doc = apply_omitempty(doc, spec.get("omitempty", []))
     doc = apply_sets(doc, spec.get("sets", []))
     return apply_masks(doc, spec.get("masks", []))
 
