@@ -35,7 +35,7 @@ from typing import Any
 
 from . import agent
 
-VERSION = 1
+VERSION = 2
 OUT_FILE = Path(__file__).resolve().parent.parent / "scenarios" / "wire.json"
 
 PROTOCOL = agent.PROTOCOL_VERSION
@@ -133,7 +133,8 @@ def _http(method: str, path: str, headers: dict | None = None, body: Any = None,
 def _scenario(sid: str, surface: str, owner: str, anchors: list[str], steps: list[dict],
               *, profile: str = "standalone", env: dict | None = None,
               argv: list[str] | None = None, masks: list[dict] | None = None,
-              collect: list[str] | None = None, prelude: list[dict] | None = None) -> dict:
+              collect: list[str] | None = None, prelude: list[dict] | None = None,
+              divergences: list[str] | None = None) -> dict:
     serve: dict[str, Any] = {"argv": argv or (["serve", "--mode=platform"] if profile == "platform" else ["serve"]),
                              "profile": profile}
     if env:
@@ -145,6 +146,8 @@ def _scenario(sid: str, surface: str, owner: str, anchors: list[str], steps: lis
         doc["collect"] = collect
     if masks:
         doc["compare"] = {"masks": masks}
+    if divergences:
+        doc.setdefault("compare", {})["divergences"] = divergences
     return doc
 
 
@@ -389,10 +392,23 @@ SEEDED = {
 }
 
 
+# Decision D8: Rust adds issuance tables and owns the built-in client rows.
+AUTHZ_DIVERGENCES = ["D8.authz-tables", "D8.authz-row-counts"]
+
+# The seeded store is one this build has already migrated (oauth-issuance.v1),
+# so the one-time revocation of earlier tokens does not apply to the seeded
+# rows; the Rust contract suite covers that revocation. The DDL is Rust's own,
+# byte for byte, and Go ignores the table.
+MIGRATED = [
+    "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+    "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
+]
+
+
 def _seed_prelude(profile: str) -> list[dict]:
     """Start once so the agent creates authz.sqlite, then seed token rows."""
     argv = ["serve", "--mode=platform"] if profile == "platform" else ["serve"]
-    rows = [
+    rows = MIGRATED + [
         "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) "
         f"VALUES('{_hash(tok)}','host-agent-bootstrap','{res}','{scope}',{exp},{rev},1)"
         for tok, (res, scope, exp, rev) in SEEDED.items()
@@ -453,7 +469,8 @@ def auth(profile: str) -> dict:
     return _scenario(f"wire.auth.{profile}", "auth", "authz",
                      ["internal/authz/service.go:Authorize", "internal/authz/service.go:handleRevoke",
                       "internal/authz/resource.go:CanonicalMCPResource"],
-                     steps, profile=profile, prelude=_seed_prelude(profile), collect=["sqlite"])
+                     steps, profile=profile, prelude=_seed_prelude(profile), collect=["sqlite"],
+                     divergences=AUTHZ_DIVERGENCES)
 
 
 # --- wire.origin.* ------------------------------------------------------------

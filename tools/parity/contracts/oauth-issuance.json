@@ -1,0 +1,3416 @@
+{
+ "suite": "oauth-issuance",
+ "decision": "D8",
+ "spec": "openspec/changes/secure-oauth-issuance/specs/oauth-issuance/spec.md",
+ "note": "Single-implementation contract for the declared divergence D8. Scenarios name the spec requirement and scenario they verify. Public-binding audiences and in-process self-probe tokens arrive with M8 (tasks 4.3); the Go-opens-migrated-store scenario is covered by the Go-vs-Rust authz.store-cross-read twin scenario.",
+ "scenarios": [
+  {
+   "id": "cc.no-secret",
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "client_credentials without a secret",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "noSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "host-agent-provider"
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noSecretPlatform",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "opute-mcp-host"
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "emptyPostSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "host-agent-provider",
+       "client_secret": ""
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "wrongBasic",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "ohs_wrong"
+      ]
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "wrongPost",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "host-agent-provider",
+       "client_secret": "ohs_wrong"
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "cc.unknown-client",
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "client_credentials without a secret",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "unknownBasic",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "nobody",
+       "x"
+      ]
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "unknownNoSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "nobody"
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "cc.confidential-without-hash",
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "Confidential client with no registered secret",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {}
+    },
+    {
+     "as": "addClient",
+     "sql": {
+      "statements": [
+       "INSERT INTO clients(client_id, secret_hash, client_type, redirect_uris, metadata_url, confidential, created_at) VALUES('contract-nohash', '', 'confidential', '[]', '', 1, 1)"
+      ]
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "anySecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "contract-nohash",
+       "anything"
+      ]
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "emptySecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "contract-nohash",
+       ""
+      ]
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "postSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "contract-nohash",
+       "client_secret": "anything"
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "cc.public-client",
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "Public client cannot use client_credentials",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {}
+    },
+    {
+     "as": "addCimdClient",
+     "sql": {
+      "statements": [
+       "INSERT INTO clients(client_id, secret_hash, client_type, redirect_uris, metadata_url, confidential, created_at) VALUES('https://app.example/client.json', '', 'cimd', '[\"https://app.example/cb\"]', 'https://app.example/client.json', 0, 1)"
+      ]
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "bootstrap",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "host-agent-bootstrap"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "unauthorized_client",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "bootstrapWithSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-bootstrap",
+       "x"
+      ]
+     },
+     "expect": {
+      "status": {
+       "$in": [
+        400,
+        401
+       ]
+      },
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "cimd",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "https://app.example/client.json"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "unauthorized_client",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "bootstrapIsPublic",
+     "query": {
+      "sql": "SELECT client_type, confidential, secret_hash FROM clients WHERE client_id='host-agent-bootstrap'"
+     },
+     "expect": {
+      "rows.0": [
+       "public",
+       0,
+       ""
+      ]
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "authorize.unapproved",
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "Unapproved authorization request",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "pollPending",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      },
+      "text": {
+       "$contains": "${USER_CODE}"
+      }
+     }
+    },
+    {
+     "as": "pollAgain",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "pendingRow",
+     "query": {
+      "sql": "SELECT status FROM pending_authorizations WHERE id='${REQUEST_ID}'"
+     },
+     "expect": {
+      "value": "pending"
+     }
+    },
+    {
+     "as": "noCodes",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM codes"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "credentials.first-start",
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "specScenario": "First start provisions credentials",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "dir",
+     "file": {
+      "path": "${SANDBOX}/state/credentials"
+     },
+     "expect": {
+      "type": "dir",
+      "mode": "0o700"
+     }
+    },
+    {
+     "as": "providerFile",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "expect": {
+      "mode": "0o600",
+      "json.client_id": "host-agent-provider",
+      "json.client_secret": {
+       "$re": "^ohs_[0-9a-f]{64}$"
+      }
+     },
+     "capture": {
+      "PROVIDER_SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "platformFile",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+     },
+     "expect": {
+      "mode": "0o600",
+      "json.client_id": "opute-mcp-host",
+      "json.client_secret": {
+       "$re": "^ohs_[0-9a-f]{64}$"
+      }
+     },
+     "capture": {
+      "PLATFORM_SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "providerHash",
+     "query": {
+      "sql": "SELECT secret_hash FROM clients WHERE client_id='host-agent-provider'"
+     },
+     "expect": {
+      "value": {
+       "$sha256Of": "${PROVIDER_SECRET}"
+      }
+     }
+    },
+    {
+     "as": "platformHash",
+     "query": {
+      "sql": "SELECT secret_hash FROM clients WHERE client_id='opute-mcp-host'"
+     },
+     "expect": {
+      "value": {
+       "$sha256Of": "${PLATFORM_SECRET}"
+      }
+     }
+    },
+    {
+     "as": "noPlaintext",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM clients WHERE secret_hash IN ('${PROVIDER_SECRET}', '${PLATFORM_SECRET}')"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "providerGrant",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${PROVIDER_SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "json.token_type": "Bearer",
+      "json.resource": "http://127.0.0.1:${PORT}/mcp",
+      "headers.cache-control": "no-store"
+     }
+    },
+    {
+     "as": "platformGrant",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "client_id": "opute-mcp-host",
+       "client_secret": "${PLATFORM_SECRET}"
+      }
+     },
+     "expect": {
+      "status": 200
+     }
+    },
+    {
+     "as": "log",
+     "log": {},
+     "expect": {
+      "text": {
+       "$notContains": [
+        "${PROVIDER_SECRET}",
+        "${PLATFORM_SECRET}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "credentials.operator-secret",
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "specScenario": "Operator-configured Platform secret wins",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_HOST_OAUTH_CLIENT_SECRET": "contract-operator-secret"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "noPlatformFile",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+     },
+     "expect": {
+      "exists": false
+     }
+    },
+    {
+     "as": "providerFile",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "expect": {
+      "mode": "0o600"
+     }
+    },
+    {
+     "as": "operatorSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "opute-mcp-host",
+       "contract-operator-secret"
+      ]
+     },
+     "expect": {
+      "status": 200
+     }
+    },
+    {
+     "as": "otherSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "opute-mcp-host",
+       "contract-operator-secretx"
+      ]
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "credentials.rotation",
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "specScenario": "Rotation revokes outstanding tokens",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "read-host-agent-provider",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "capture": {
+      "OLD_SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "grant",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${OLD_SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "OLD_TOKEN": {
+       "from": "json.access_token"
+      }
+     }
+    },
+    {
+     "as": "tokenWorks",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${OLD_TOKEN}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": {
+       "$ne": 401
+      }
+     }
+    },
+    {
+     "as": "rotate",
+     "cli": {
+      "argv": [
+       "oauth",
+       "rotate-secret",
+       "host-agent-provider",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "newFile",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "expect": {
+      "mode": "0o600",
+      "json.client_secret": {
+       "$ne": "${OLD_SECRET}"
+      }
+     },
+     "capture": {
+      "NEW_SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "oldTokenRevoked",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${OLD_TOKEN}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "oldSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${OLD_SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "newSecret",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${NEW_SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 200
+     }
+    },
+    {
+     "as": "oneLive",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE client_id='host-agent-provider' AND revoked=0"
+     },
+     "expect": {
+      "value": 1
+     }
+    },
+    {
+     "as": "rotateBootstrapRefused",
+     "cli": {
+      "argv": [
+       "oauth",
+       "rotate-secret",
+       "host-agent-bootstrap",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": {
+       "$ne": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "provider.colocated-bearer",
+   "requirement": "Provider access paths",
+   "specScenario": "Co-located callback",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "bootstrapBearer",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": {
+       "$ne": 401
+      }
+     }
+    },
+    {
+     "as": "noGrant",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "provider.public-without-credential",
+   "requirement": "Provider access paths",
+   "specScenario": "Provider without the credential",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "publicNoAuth",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "headers": {
+       "Host": "example.com",
+       "X-Forwarded-Proto": "https"
+      },
+      "form": {
+       "grant_type": "client_credentials",
+       "client_id": "host-agent-provider",
+       "resource": "https://example.com/mcp"
+      }
+     },
+     "expect": {
+      "status": 401,
+      "json.error": "invalid_client",
+      "headers.www-authenticate": {
+       "$prefix": "Basic"
+      },
+      "headers.cache-control": "no-store",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "approval.cli-approve",
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Operator approves from the CLI",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.cache-control": "no-store",
+      "headers.x-frame-options": "DENY",
+      "headers.content-security-policy": {
+       "$contains": "frame-ancestors 'none'"
+      },
+      "headers.referrer-policy": "no-referrer",
+      "headers.location": {
+       "$absent": true
+      },
+      "text": {
+       "$notContains": [
+        "<form",
+        "<button",
+        "<input",
+        "approve=",
+        "decision="
+       ]
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "pending",
+     "cli": {
+      "argv": [
+       "oauth",
+       "pending",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "approve",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--once",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     },
+     "capture": {
+      "CODE": {
+       "from": "redirect.query.code"
+      }
+     }
+    },
+    {
+     "as": "codeOnce",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "wrongVerifier",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "authorization_code",
+       "client_id": "host-agent-bootstrap",
+       "code": "${CODE}",
+       "code_verifier": "contract-verifier-wrong-0123456789abcdefghijklmnopqrstuv",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "invalid_grant"
+     }
+    },
+    {
+     "as": "burned",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM codes WHERE used=0"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "authorize2",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "approve2",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--once",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect2",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     },
+     "capture": {
+      "CODE": {
+       "from": "redirect.query.code"
+      }
+     }
+    },
+    {
+     "as": "wrongRedirect",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "authorization_code",
+       "client_id": "host-agent-bootstrap",
+       "code": "${CODE}",
+       "code_verifier": "contract-verifier-0123456789abcdefghijklmnopqrstuvwxyzABCDEFG",
+       "redirect_uri": "http://127.0.0.1:49153/other",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "invalid_grant"
+     }
+    },
+    {
+     "as": "authorize3",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "approve3",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--once",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect3",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     },
+     "capture": {
+      "CODE": {
+       "from": "redirect.query.code"
+      }
+     }
+    },
+    {
+     "as": "redeem",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "authorization_code",
+       "client_id": "host-agent-bootstrap",
+       "code": "${CODE}",
+       "code_verifier": "contract-verifier-0123456789abcdefghijklmnopqrstuvwxyzABCDEFG",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "json.resource": "http://127.0.0.1:${PORT}/mcp",
+      "json.token_type": "Bearer"
+     },
+     "capture": {
+      "ACCESS": {
+       "from": "json.access_token"
+      }
+     }
+    },
+    {
+     "as": "replay",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "authorization_code",
+       "client_id": "host-agent-bootstrap",
+       "code": "${CODE}",
+       "code_verifier": "contract-verifier-0123456789abcdefghijklmnopqrstuvwxyzABCDEFG",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "invalid_grant",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "tokenWorks",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${ACCESS}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": {
+       "$ne": 401
+      }
+     }
+    },
+    {
+     "as": "decidedBy",
+     "query": {
+      "sql": "SELECT decided_by FROM pending_authorizations WHERE id='${REQUEST_ID}'"
+     },
+     "expect": {
+      "value": "cli"
+     }
+    }
+   ]
+  },
+  {
+   "id": "approval.deny",
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Operator denies",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "deny",
+     "cli": {
+      "argv": [
+       "oauth",
+       "deny",
+       "${USER_CODE}",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "denied",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.error": "access_denied",
+      "redirect.query.state": "st-1",
+      "redirect.query.code": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noCodes",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM codes"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "approveAfterDeny",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": {
+       "$ne": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "approval.expiry",
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Request expires",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "expiryWindow",
+     "query": {
+      "sql": "SELECT expires_at - created_at FROM pending_authorizations WHERE id='${REQUEST_ID}'"
+     },
+     "expect": {
+      "value": {
+       "$in": [
+        599,
+        600
+       ]
+      }
+     }
+    },
+    {
+     "as": "age",
+     "sql": {
+      "statements": [
+       "UPDATE pending_authorizations SET expires_at=1 WHERE id='${REQUEST_ID}'"
+      ]
+     }
+    },
+    {
+     "as": "expiredPage",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      },
+      "text": {
+       "$contains": "expired"
+      }
+     }
+    },
+    {
+     "as": "marked",
+     "query": {
+      "sql": "SELECT status FROM pending_authorizations WHERE id='${REQUEST_ID}'"
+     },
+     "expect": {
+      "value": "expired"
+     }
+    },
+    {
+     "as": "lateApprove",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": {
+       "$ne": 0
+      }
+     }
+    },
+    {
+     "as": "stillNoCode",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "approval.not-over-http",
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Approval is not reachable over HTTP",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "statusPOST",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "user_code": "${USER_CODE}"
+      },
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}"
+      },
+      "form": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "decision": "approve",
+       "user_code": "${USER_CODE}"
+      }
+     },
+     "expect": {
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "statusPUT",
+     "http": {
+      "method": "PUT",
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "user_code": "${USER_CODE}"
+      },
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}"
+      },
+      "form": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "decision": "approve",
+       "user_code": "${USER_CODE}"
+      }
+     },
+     "expect": {
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "statusPATCH",
+     "http": {
+      "method": "PATCH",
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "user_code": "${USER_CODE}"
+      },
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}"
+      },
+      "form": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "decision": "approve",
+       "user_code": "${USER_CODE}"
+      }
+     },
+     "expect": {
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "statusDELETE",
+     "http": {
+      "method": "DELETE",
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "user_code": "${USER_CODE}"
+      },
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}"
+      },
+      "form": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "decision": "approve",
+       "user_code": "${USER_CODE}"
+      }
+     },
+     "expect": {
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "getWithApprove",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}"
+      },
+      "query": {
+       "request": "${REQUEST_ID}",
+       "approve": "1",
+       "decision": "approve",
+       "user_code": "${USER_CODE}"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "reAuthorizePost",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp",
+       "approve": "1",
+       "user_code": "${USER_CODE}",
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "stillPending",
+     "query": {
+      "sql": "SELECT status, decided_by FROM pending_authorizations WHERE id='${REQUEST_ID}'"
+     },
+     "expect": {
+      "rows.0": [
+       "pending",
+       ""
+      ]
+     }
+    },
+    {
+     "as": "noConsent",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM consents"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "approval.remembered-consent",
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Remembered consent",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "approve",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     },
+     "capture": {
+      "CODE": {
+       "from": "redirect.query.code"
+      }
+     }
+    },
+    {
+     "as": "redeem",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "authorization_code",
+       "client_id": "host-agent-bootstrap",
+       "code": "${CODE}",
+       "code_verifier": "contract-verifier-0123456789abcdefghijklmnopqrstuvwxyzABCDEFG",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "ACCESS": {
+       "from": "json.access_token"
+      }
+     }
+    },
+    {
+     "as": "consentDays",
+     "query": {
+      "sql": "SELECT expires_at - granted_at FROM consents WHERE client_id='host-agent-bootstrap'"
+     },
+     "expect": {
+      "value": 2592000
+     }
+    },
+    {
+     "as": "again",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     }
+    },
+    {
+     "as": "consents",
+     "cli": {
+      "argv": [
+       "oauth",
+       "consents",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "revoke",
+     "cli": {
+      "argv": [
+       "oauth",
+       "revoke-consent",
+       "host-agent-bootstrap",
+       "http://127.0.0.1:${PORT}/mcp",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "tokenRevoked",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${ACCESS}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "pendingAgain",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "approval.once-and-disabled",
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Remembered consent",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "approveOnce",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--once",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     }
+    },
+    {
+     "as": "pendingAfterOnce",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "approveConsentOff",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ],
+      "env": {
+       "OPUTE_OAUTH_CONSENT_DAYS": "0"
+      }
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect2",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     }
+    },
+    {
+     "as": "noConsent",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM consents"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "pendingAfterDisabled",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "audience.arbitrary-host",
+   "requirement": "Issued tokens name only resources this agent serves",
+   "specScenario": "Minting for an arbitrary host",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "read-host-agent-provider",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "capture": {
+      "SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "unrelated",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "https://unrelated.example/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "invalid_target",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "otherPort",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:1/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "invalid_target",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "otherPath",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/other"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "json.error": "invalid_target",
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "missing",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": ""
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "json.access_token": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "authorizeUnrelated",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "https://unrelated.example/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noTokens",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE 1=1"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "noPending",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM pending_authorizations"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "redirect.exact-and-loopback",
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "Redirect prefix trick",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "prefixTrick",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1.attacker.example/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "userinfoTrick",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1@attacker.example/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "otherPath",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback/../x",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "httpsScheme",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "https://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "foreignHost",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://attacker.example/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noPending",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM pending_authorizations"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "anyLoopbackPort",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:61000/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "localhostNoPort",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://localhost/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "cimd.refuses-local-metadata",
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "CIMD DNS rebinding",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "loopbackMetadata",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "https://127.0.0.1/client.json",
+       "redirect_uri": "https://127.0.0.1/cb",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "localhostMetadata",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "https://localhost/client.json",
+       "redirect_uri": "https://localhost/cb",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "metadataAddress",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "https://169.254.169.254/client.json",
+       "redirect_uri": "https://169.254.169.254/cb",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "privateAddress",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "https://10.0.0.1/client.json",
+       "redirect_uri": "https://10.0.0.1/cb",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 400,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "noClients",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM clients WHERE client_id LIKE 'https://%'"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "abuse.pending-flood",
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "Pending request flood",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "p1",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "p2",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "p3",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "p4",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.query.error": "temporarily_unavailable",
+      "redirect.query.code": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "capped",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM pending_authorizations WHERE client_id='host-agent-bootstrap'"
+     },
+     "expect": {
+      "value": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "abuse.backoff-only-failures",
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "Failures from a shared address do not lock out a valid client",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "read-host-agent-provider",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "capture": {
+      "SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "flood",
+     "repeat": {
+      "times": 8,
+      "http": {
+       "method": "POST",
+       "path": "/oauth/token",
+       "basic": [
+        "host-agent-provider",
+        "ohs_wrong"
+       ],
+       "form": {
+        "grant_type": "client_credentials",
+        "resource": "http://127.0.0.1:${PORT}/mcp"
+       }
+      }
+     },
+     "expect": {
+      "statuses.0": 401,
+      "statuses.7": 429,
+      "last.json.error": "slow_down"
+     }
+    },
+    {
+     "as": "validStillServed",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 200
+     }
+    },
+    {
+     "as": "failingStillLimited",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "ohs_wrong"
+      ]
+     },
+     "expect": {
+      "status": 429,
+      "json.error": "slow_down"
+     }
+    }
+   ]
+  },
+  {
+   "id": "audit.issuance-line",
+   "requirement": "Issuance is audited without secrets",
+   "specScenario": "Audit line content",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "read-host-agent-provider",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "capture": {
+      "SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "grant",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "ACCESS": {
+       "from": "json.access_token"
+      }
+     }
+    },
+    {
+     "as": "denied",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "ohs_wrong-secret-value"
+      ]
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "authorize",
+     "http": {
+      "method": "GET",
+      "path": "/oauth/authorize",
+      "query": {
+       "response_type": "code",
+       "client_id": "host-agent-bootstrap",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "code_challenge": "pP2NfDIBXE9XpKn7fCjM1ftxyzUxTvXWlvd43UgOQM8",
+       "code_challenge_method": "S256",
+       "state": "st-1",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "headers.location": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "REQUEST_ID": {
+       "from": "text",
+       "regex": "request=([0-9a-f]+)"
+      },
+      "USER_CODE": {
+       "from": "text",
+       "regex": "oauth approve ([A-Z0-9]{4}-[A-Z0-9]{4})"
+      }
+     }
+    },
+    {
+     "as": "approve",
+     "cli": {
+      "argv": [
+       "oauth",
+       "approve",
+       "${USER_CODE}",
+       "--once",
+       "--state-dir",
+       "${SANDBOX}/state"
+      ]
+     },
+     "expect": {
+      "exit": 0
+     }
+    },
+    {
+     "as": "redirect",
+     "http": {
+      "path": "/oauth/authorize/status",
+      "query": {
+       "request": "${REQUEST_ID}"
+      }
+     },
+     "expect": {
+      "status": 302,
+      "redirect.base": "http://127.0.0.1:49152/callback",
+      "redirect.query.state": "st-1",
+      "redirect.query.iss": "http://127.0.0.1:${PORT}",
+      "redirect.query.code": {
+       "$re": "^.{20,}$"
+      }
+     },
+     "capture": {
+      "CODE": {
+       "from": "redirect.query.code"
+      }
+     }
+    },
+    {
+     "as": "redeem",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "authorization_code",
+       "client_id": "host-agent-bootstrap",
+       "code": "${CODE}",
+       "code_verifier": "contract-verifier-0123456789abcdefghijklmnopqrstuvwxyzABCDEFG",
+       "redirect_uri": "http://127.0.0.1:49152/callback",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      }
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "ACCESS2": {
+       "from": "json.access_token"
+      }
+     }
+    },
+    {
+     "as": "log",
+     "log": {},
+     "expect": {
+      "text": {
+       "$re": "msg=oauth event=issue client_id=host-agent-provider grant=client_credentials resource=http://127\\.0\\.0\\.1:\\d+/mcp outcome=issued remote=127\\.0\\.0\\.1",
+       "$contains": [
+        "event=deny client_id=host-agent-provider grant=client_credentials",
+        "outcome=invalid_client",
+        "event=issue client_id=host-agent-bootstrap grant=authorization_code"
+       ],
+       "$notContains": [
+        "${SECRET}",
+        "${ACCESS}",
+        "${ACCESS2}",
+        "${CODE}",
+        "contract-verifier-0123456789abcdefghijklmnopqrstuvwxyzABCDEFG",
+        "ohs_wrong-secret-value"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "migration.revokes-live-tokens",
+   "requirement": "Migration revokes pre-existing tokens",
+   "specScenario": "Upgrade with live tokens",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {}
+    },
+    {
+     "as": "preMigrationStore",
+     "sql": {
+      "statements": [
+       "DELETE FROM schema_migrations",
+       "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('a81d61b611027119cbfb4afba49f74acfc20f7d6ba3ace2bb997c2331591f6b3', 'opute-mcp-host', 'http://127.0.0.1:${PORT}/mcp', 'mcp', 4102444800, 0, 1)"
+      ]
+     }
+    },
+    {
+     "as": "validBefore",
+     "query": {
+      "sql": "SELECT revoked FROM tokens WHERE token_hash='a81d61b611027119cbfb4afba49f74acfc20f7d6ba3ace2bb997c2331591f6b3'"
+     },
+     "expect": {
+      "value": 0
+     }
+    },
+    {
+     "as": "upgrade",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "liveTokenRejected",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer oha_contract_live_token",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "bootstrapBearer",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${TOKEN}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": {
+       "$ne": 401
+      }
+     }
+    },
+    {
+     "as": "log",
+     "log": {},
+     "expect": {
+      "text": {
+       "$contains": "event=migrate migration=oauth-issuance.v1 revoked_tokens=1"
+      }
+     }
+    },
+    {
+     "as": "recorded",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM schema_migrations WHERE id='oauth-issuance.v1'"
+     },
+     "expect": {
+      "value": 1
+     }
+    },
+    {
+     "as": "noRowDeleted",
+     "query": {
+      "sql": "SELECT COUNT(*) FROM tokens WHERE token_hash='a81d61b611027119cbfb4afba49f74acfc20f7d6ba3ace2bb997c2331591f6b3'"
+     },
+     "expect": {
+      "value": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "migration.idempotent",
+   "requirement": "Migration revokes pre-existing tokens",
+   "specScenario": "Idempotent migration",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "before",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "capture": {
+      "BEFORE": {
+       "from": "text"
+      }
+     }
+    },
+    {
+     "as": "platformBefore",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+     },
+     "capture": {
+      "PBEFORE": {
+       "from": "text"
+      }
+     }
+    },
+    {
+     "as": "read-host-agent-provider",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "capture": {
+      "SECRET": {
+       "from": "json.client_secret"
+      }
+     }
+    },
+    {
+     "as": "grant",
+     "http": {
+      "method": "POST",
+      "path": "/oauth/token",
+      "form": {
+       "grant_type": "client_credentials",
+       "resource": "http://127.0.0.1:${PORT}/mcp"
+      },
+      "basic": [
+       "host-agent-provider",
+       "${SECRET}"
+      ]
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "ACCESS": {
+       "from": "json.access_token"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {}
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "log",
+     "log": {},
+     "expect": {
+      "text": {
+       "$notContains": [
+        "event=migrate",
+        "event=provision",
+        "event=rotate-secret"
+       ]
+      }
+     }
+    },
+    {
+     "as": "after",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
+     },
+     "expect": {
+      "text": "${BEFORE}"
+     }
+    },
+    {
+     "as": "platformAfter",
+     "file": {
+      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+     },
+     "expect": {
+      "text": "${PBEFORE}"
+     }
+    },
+    {
+     "as": "tokenSurvives",
+     "http": {
+      "method": "POST",
+      "path": "/mcp",
+      "headers": {
+       "Authorization": "Bearer ${ACCESS}",
+       "Content-Type": "application/json",
+       "Accept": "application/json, text/event-stream"
+      },
+      "body": "{}"
+     },
+     "expect": {
+      "status": {
+       "$ne": 401
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

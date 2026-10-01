@@ -1,0 +1,197 @@
+[
+ {
+  "id": "K1-empty-secret",
+  "summary": "client_credentials accepts an empty client secret",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "        || client_secret.is_empty()\n        || !digest_eq(&sha256_hex(client_secret), &record.secret_hash)",
+   "new": "        || !(client_secret.is_empty() || digest_eq(&sha256_hex(client_secret), &record.secret_hash))"
+  },
+  "scenario": "cc.no-secret",
+  "mayAlsoFail": [
+   "provider.public-without-credential"
+  ]
+ },
+ {
+  "id": "K2-public-client-credentials",
+  "summary": "public clients may use client_credentials",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "    if !record.confidential || record.client_type == \"public\" {",
+   "new": "    if false {"
+  },
+  "scenario": "cc.public-client",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K3-any-audience",
+  "summary": "client_credentials binds any requested resource",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "    if !served(resource) {",
+   "new": "    if resource.is_empty() && !served(resource) {"
+  },
+  "scenario": "audience.arbitrary-host",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K4-implicit-consent",
+  "summary": "authorization codes are issued without an operator decision",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "    if consented {",
+   "new": "    if consented || true {"
+  },
+  "scenario": "authorize.unapproved",
+  "mayAlsoFail": [
+   "abuse.pending-flood",
+   "approval.cli-approve",
+   "approval.deny",
+   "approval.expiry",
+   "approval.not-over-http",
+   "approval.once-and-disabled",
+   "approval.remembered-consent",
+   "audit.issuance-line",
+   "redirect.exact-and-loopback"
+  ]
+ },
+ {
+  "id": "K5-redirect-prefix",
+  "summary": "redirect URIs match on a scheme-and-host prefix",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "    if registered.iter().any(|r| r == requested) {",
+   "new": "    if registered.iter().any(|r| requested.starts_with(r.split('/').take(3).collect::<Vec<_>>().join(\"/\").as_str())) {"
+  },
+  "scenario": "redirect.exact-and-loopback",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K6-credential-mode",
+  "summary": "credential files are written world-readable",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": ".mode(0o600)",
+   "new": ".mode(0o644)"
+  },
+  "scenario": "credentials.first-start",
+  "mayAlsoFail": [
+   "credentials.operator-secret",
+   "credentials.rotation"
+  ]
+ },
+ {
+  "id": "K7-rotation-keeps-tokens",
+  "summary": "secret rotation leaves the client's tokens valid",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "    let revoked = revoke_client_tokens(conn, client_id).map_err(|e| e.to_string())?;",
+   "new": "    let revoked = 0;"
+  },
+  "scenario": "credentials.rotation",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K8-migration-keeps-tokens",
+  "summary": "the issuance migration revokes nothing",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "\"UPDATE tokens SET revoked=1 WHERE revoked=0\"",
+   "new": "\"UPDATE tokens SET revoked=1 WHERE 0\""
+  },
+  "scenario": "migration.revokes-live-tokens",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K9-code-replay",
+  "summary": "authorization codes can be redeemed more than once",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "\"UPDATE codes SET used=1 WHERE code=? AND used=0\"",
+   "new": "\"UPDATE codes SET used=0 WHERE code=?\""
+  },
+  "scenario": "approval.cli-approve",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K10-audit-secret",
+  "summary": "denied grants log the presented client secret",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/transport.rs",
+   "old": "                    (\"outcome\", code),",
+   "new": "                    (\"outcome\", code),\n                    (\"client_secret\", &secret),"
+  },
+  "scenario": "audit.issuance-line",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K11-backoff-blocks-valid",
+  "summary": "backoff refuses valid grants as well as failing ones",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/transport.rs",
+   "old": "    let resource = first_form(req, &post, \"resource\");",
+   "new": "    if server.grant_backoff.blocked(&keys) {\n        return oauth_error(429, \"slow_down\", \"too many failed requests; retry later\");\n    }\n    let resource = first_form(req, &post, \"resource\");"
+  },
+  "scenario": "abuse.backoff-only-failures",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K12-framable-page",
+  "summary": "the approval page may be framed by the same origin",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "        (\"X-Frame-Options\", \"DENY\"),",
+   "new": "        (\"X-Frame-Options\", \"SAMEORIGIN\"),"
+  },
+  "scenario": "approval.cli-approve",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K13-pending-cap",
+  "summary": "one more pending request per client is allowed",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "const MAX_PENDING_PER_CLIENT: i64 = 3;",
+   "new": "const MAX_PENDING_PER_CLIENT: i64 = 4;"
+  },
+  "scenario": "abuse.pending-flood",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K14-long-pending",
+  "summary": "pending requests live longer than ten minutes",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/oauth.rs",
+   "old": "const PENDING_TTL: i64 = 600;",
+   "new": "const PENDING_TTL: i64 = 601;"
+  },
+  "scenario": "approval.expiry",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K15-http-approval-route",
+  "summary": "the status route approves a pending request named in its query",
+  "contract": "oauth-issuance",
+  "patch": {
+   "file": "crates/host-agent/src/transport.rs",
+   "old": "    let id = req.query_get(\"request\");",
+   "new": "    let id = req.query_get(\"request\");\n    if req.query_get(\"approve\") == \"1\" {\n        if let Ok(store) = server.authz.lock() {\n            let _ = crate::oauth::decide(store.conn(), &req.query_get(\"user_code\"), true, 0, \"http\");\n        }\n    }"
+  },
+  "scenario": "approval.not-over-http",
+  "mayAlsoFail": []
+ }
+]

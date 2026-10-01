@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from parity import canaries, canon, oracle, runner, verify
+from parity import canaries, canon, contract, oracle, runner, verify
 
 GO_SHA = "a" * 64
 RUST_SHA = "b" * 64
@@ -37,6 +37,7 @@ class Tree:
             "sourceLock": "baseline/source-lock.json",
             "sourceLockSha256": _sha(lock_bytes),
             "goReference": {"binarySha256": GO_SHA},
+            "decisions": {"D8": {"status": "approved"}},
             "rustCandidate": {"binarySha256": RUST_SHA},
             "evidence": {
                 "go-vs-go": {"summary": "evidence/gg/summary.json", "right": "go", "minRepeat": 2},
@@ -50,7 +51,10 @@ class Tree:
                             "requireInventory": True},
                 "m1": {"requirePass": ["go-vs-go", {"suite": "go-vs-rust", "surfaces": ["cli", "config", "lifecycle"]}],
                        "requireCanaries": True, "requireInventory": True, "requireOracles": True},
+                "issuance": {"requireContracts": ["oauth-issuance"]},
             },
+            "contracts": {"oauth-issuance": {"results": "evidence/contracts/oauth-issuance/summary.json"}},
+            "rustCanaries": {"results": "evidence/rust-canaries.json"},
             "items": [{"id": s["id"], "scenario": s["id"], "surface": s["surface"], "owner": s["owner"]}
                       for s in self.scenarios],
         }
@@ -58,24 +62,34 @@ class Tree:
         self.write_inventory()
         self.write_canaries()
         self.write_oracles()
+        self.write_contracts()
         self.save()
 
     def save(self) -> None:
         (self.root / "parity-manifest.json").write_text(json.dumps(self.manifest))
 
     def write_bundle(self, rel: str, right_label: str, right_sha: str, repeat: int,
-                     dirty: set[str] = frozenset()) -> None:
+                     dirty: set[str] = frozenset(), divergences: dict[str, list] | None = None) -> None:
+        """`divergences` overrides the recorded divergences per scenario id;
+        by default Go-vs-Rust records each declared one, not stale."""
         bundle = self.root / rel
+        registry = canon.load_divergences(runner.DIVERGENCE_FILE)
         items = {}
         for s in self.scenarios:
             sdir = bundle / "scenarios" / s["id"]
             sdir.mkdir(parents=True, exist_ok=True)
             bad = s["id"] in dirty
+            recorded = [] if right_label != "rust" else [
+                {"id": d, "decision": registry[d]["decision"], "stale": False}
+                for d in s.get("compare", {}).get("divergences", [])]
+            if divergences and s["id"] in divergences:
+                recorded = divergences[s["id"]]
             files = {
                 "a.json.gz": gzip.compress(b"{}", mtime=0),
                 "b.json.gz": gzip.compress(b"{}", mtime=0),
                 "diff.json": json.dumps({"diff": [{"path": ["x"], "left": 1, "right": 2}] if bad else [],
-                                         "maskViolations": {"a": [], "b": []}}).encode(),
+                                         "maskViolations": {"a": [], "b": []},
+                                         "divergences": recorded}).encode(),
                 "iterations.json": json.dumps([{"iteration": i, "diffCount": int(bad), "maskViolations": 0}
                                                for i in range(repeat)]).encode(),
             }
@@ -126,8 +140,37 @@ class Tree:
                "oracleFileSha256": runner.sha256_file(oracle.ORACLE_FILE), "results": results}
         (self.root / "evidence/oracles.json").write_text(json.dumps(doc))
 
-    def rust_evidence(self, dirty: set[str] = frozenset()) -> None:
-        self.write_bundle("evidence/gr", "rust", RUST_SHA, repeat=1, dirty=dirty)
+    def write_contracts(self, failing: str | None = None, missing: str | None = None,
+                        uncaught: str | None = None, baseline_red: bool = False,
+                        contract_sha: str | None = None) -> None:
+        doc = contract.load("oauth-issuance")
+        bundle = self.root / "evidence/contracts/oauth-issuance"
+        items = {}
+        for sc in doc["scenarios"]:
+            if sc["id"] == missing:
+                continue
+            data = gzip.compress(b"{}", mtime=0)
+            (bundle / "scenarios" / sc["id"]).mkdir(parents=True, exist_ok=True)
+            (bundle / "scenarios" / sc["id"] / "observation.json.gz").write_bytes(data)
+            failures = ["x: status = 200, want 401"] if sc["id"] == failing else []
+            items[sc["id"]] = {"status": "pass", "failures": failures,
+                               "files": {"observation.json.gz": _sha(data)}}
+        sha = contract_sha or contract.contract_sha256("oauth-issuance")
+        summary = {"suite": "oauth-issuance", "items": items,
+                   "provenance": {"impl": {"label": "rust", "binarySha256": RUST_SHA}, "contractSha256": sha}}
+        (bundle / "summary.json").write_text(json.dumps(summary))
+        expected = json.loads(contract.RUST_CANARY_FILE.read_text())
+        results = [{"id": c["id"], "patchApplied": True,
+                    "failedScenarios": [] if c["id"] == uncaught else [c["scenario"]]} for c in expected]
+        doc = {"rustBinarySha256": RUST_SHA, "canaryFileSha256": runner.sha256_file(contract.RUST_CANARY_FILE),
+               "contractSha256": {"oauth-issuance": contract.contract_sha256("oauth-issuance")},
+               "baselineFailures": {"oauth-issuance": ["cc.no-secret"] if baseline_red else []},
+               "results": results}
+        (self.root / "evidence/rust-canaries.json").write_text(json.dumps(doc))
+
+    def rust_evidence(self, dirty: set[str] = frozenset(),
+                      divergences: dict[str, list] | None = None) -> None:
+        self.write_bundle("evidence/gr", "rust", RUST_SHA, repeat=1, dirty=dirty, divergences=divergences)
         self.manifest["evidence"]["go-vs-rust"]["summary"] = "evidence/gr/summary.json"
         self.save()
 
@@ -251,6 +294,85 @@ class VerifyTest(unittest.TestCase):
         own = next(s["id"] for s in self.tree.scenarios if s["surface"] == "lifecycle")
         self.tree.rust_evidence(dirty={own})
         self.assertGate(False, "m1")
+
+    # --- declared divergences (decision D8) ---
+
+    def _diverging(self) -> dict:
+        return next(s for s in self.tree.scenarios
+                    if s["surface"] == "lifecycle" and s.get("compare", {}).get("divergences"))
+
+    def test_declared_divergences_pass(self):
+        self.tree.rust_evidence()
+        self.assertGate(True, "m1")
+
+    def test_stale_divergence_fails(self):
+        s = self._diverging()
+        recorded = [{"id": d, "decision": "D8", "stale": True} for d in s["compare"]["divergences"]]
+        self.tree.rust_evidence(divergences={s["id"]: recorded})
+        self.assertGate(False, "m1")
+
+    def test_unapproved_decision_fails(self):
+        self.tree.manifest["decisions"]["D8"]["status"] = "proposed"
+        self.tree.rust_evidence()
+        self.assertGate(False, "m1")
+
+    def test_dropped_declaration_fails(self):
+        s = self._diverging()
+        self.tree.rust_evidence(divergences={s["id"]: []})
+        self.assertGate(False, "m1")
+
+    def test_divergence_never_applies_go_vs_go(self):
+        s = self._diverging()
+        self.tree.write_bundle("evidence/gg", "go", GO_SHA, repeat=2, divergences={
+            s["id"]: [{"id": d, "decision": "D8", "stale": False} for d in s["compare"]["divergences"]]})
+        self.assertGate(False, "m0")
+
+    def test_stale_iteration_fails(self):
+        s = self._diverging()
+        self.tree.rust_evidence()
+        sdir = self.tree.root / "evidence/gr/scenarios" / s["id"]
+        data = json.dumps([{"iteration": 0, "diffCount": 0, "maskViolations": 0,
+                            "staleDivergences": 1}]).encode()
+        (sdir / "iterations.json").write_bytes(data)
+        summary = json.loads((self.tree.root / "evidence/gr/summary.json").read_text())
+        summary["items"][s["id"]]["files"]["iterations.json"] = _sha(data)
+        (self.tree.root / "evidence/gr/summary.json").write_text(json.dumps(summary))
+        self.assertGate(False, "m1")
+
+    # --- contract suites and Rust canaries ---
+
+    def test_contracts_pass(self):
+        self.assertGate(True, "issuance")
+
+    def test_failing_contract_scenario_fails(self):
+        self.tree.write_contracts(failing="cc.no-secret")
+        self.assertGate(False, "issuance")
+
+    def test_missing_contract_scenario_fails(self):
+        self.tree.write_contracts(missing="approval.deny")
+        self.assertGate(False, "issuance")
+
+    def test_stale_contract_fails(self):
+        self.tree.write_contracts(contract_sha="0" * 64)
+        self.assertGate(False, "issuance")
+
+    def test_contract_for_other_binary_fails(self):
+        self.tree.manifest["rustCandidate"]["binarySha256"] = "d" * 64
+        self.tree.save()
+        self.assertGate(False, "issuance")
+
+    def test_uncaught_rust_canary_fails(self):
+        self.tree.write_contracts(uncaught="K1-empty-secret")
+        self.assertGate(False, "issuance")
+
+    def test_red_unpatched_baseline_fails(self):
+        self.tree.write_contracts(baseline_red=True)
+        self.assertGate(False, "issuance")
+
+    def test_contract_decision_must_be_approved(self):
+        del self.tree.manifest["decisions"]["D8"]
+        self.tree.save()
+        self.assertGate(False, "issuance")
 
     def test_scoped_gate_requires_rust_evidence(self):
         self.assertGate(False, "m1")

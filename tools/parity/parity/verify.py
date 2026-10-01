@@ -126,9 +126,42 @@ def _check_suite(root: Path, manifest: dict, suite_name: str, suite: dict, lock:
         clean = (not diff.get("diff")
                  and not any(diff.get("maskViolations", {}).values())
                  and len(iters) >= min_repeat
-                 and all(i.get("diffCount") == 0 and i.get("maskViolations") == 0 for i in iters))
+                 and all(i.get("diffCount") == 0 and i.get("maskViolations") == 0
+                         and not i.get("staleDivergences") for i in iters))
+        if not _check_divergences(manifest, suite_name, sid, expected_right, scenario,
+                                  diff.get("divergences") or [], report):
+            clean = False
         statuses[sid] = PASS if clean else FAIL
     return statuses
+
+
+def _check_divergences(manifest: dict, suite_name: str, sid: str, right: str | None,
+                       scenario: dict, recorded: list, report: Report) -> bool:
+    """Declared divergences: Go-vs-Rust only, every declaration applied, each
+    citing an approved decision, none stale."""
+    ok = True
+    declared = set(scenario.get("compare", {}).get("divergences", []))
+    applied = {d.get("id") for d in recorded}
+    if right != "rust":
+        if applied:
+            report.problem(f"{suite_name}/{sid}: divergences applied outside Go-vs-Rust", suite_name)
+            return False
+        return True
+    if applied != declared:
+        report.problem(f"{suite_name}/{sid}: recorded divergences {sorted(applied)} "
+                       f"differ from declared {sorted(declared)}", suite_name)
+        ok = False
+    decisions = manifest.get("decisions", {})
+    for d in recorded:
+        if (decisions.get(d.get("decision")) or {}).get("status") != "approved":
+            report.problem(f"{suite_name}/{sid}: divergence {d.get('id')} cites "
+                           f"unapproved decision {d.get('decision')!r}", suite_name)
+            ok = False
+        if d.get("stale"):
+            report.problem(f"{suite_name}/{sid}: divergence {d.get('id')} is stale "
+                           "(both sides agree; remove the declaration)", suite_name)
+            ok = False
+    return ok
 
 
 def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report) -> dict[str, str]:
@@ -193,6 +226,83 @@ def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report) -> st
         control = rows.get(oracle_mod.NEGATIVE_CONTROL[0])
         if control is None or control.get("exit") == 0:
             report.problem(f"oracles/{suite}: negative control did not fail (overlay may not run the binary)", "oracles")
+            ok = False
+    return PASS if ok else FAIL
+
+
+def _check_contracts(root: Path, manifest: dict, names: list[str], report: Report) -> str:
+    """Single-implementation contract suites for declared divergences, and the
+    Rust canaries that prove each suite can fail."""
+    from . import contract as contract_mod
+    rust_sha = (manifest.get("rustCandidate") or {}).get("binarySha256")
+    decisions = manifest.get("decisions", {})
+    ok = True
+    for name in names:
+        spec = (manifest.get("contracts") or {}).get(name)
+        if not spec:
+            report.problem(f"contracts/{name}: not declared in the manifest", "contracts")
+            ok = False
+            continue
+        summary, err = _load(root / spec["results"])
+        if err:
+            report.problem(f"contracts/{name}: {err}", "contracts")
+            ok = False
+            continue
+        try:
+            doc = contract_mod.load(name)
+        except (OSError, ValueError) as exc:
+            report.problem(f"contracts/{name}: {exc}", "contracts")
+            ok = False
+            continue
+        if (decisions.get(doc.get("decision")) or {}).get("status") != "approved":
+            report.problem(f"contracts/{name}: decision {doc.get('decision')!r} is not approved", "contracts")
+            ok = False
+        prov = summary.get("provenance", {})
+        if prov.get("impl", {}).get("label") != "rust" or not rust_sha or prov["impl"].get("binarySha256") != rust_sha:
+            report.problem(f"contracts/{name}: stale: not run against the recorded Rust candidate", "contracts")
+            ok = False
+            continue
+        if prov.get("contractSha256") != contract_mod.contract_sha256(name):
+            report.problem(f"contracts/{name}: stale: contract or harness changed since the run", "contracts")
+            ok = False
+            continue
+        bundle = (root / spec["results"]).parent
+        items = summary.get("items", {})
+        for scenario in doc["scenarios"]:
+            item = items.get(scenario["id"])
+            if item is None:
+                report.problem(f"contracts/{name}/{scenario['id']}: no result", "contracts")
+                ok = False
+                continue
+            for fname, digest in (item.get("files") or {}).items():
+                fpath = bundle / "scenarios" / scenario["id"] / fname
+                if not fpath.exists() or _sha(fpath) != digest:
+                    report.problem(f"contracts/{name}/{scenario['id']}: evidence file {fname} missing or modified", "contracts")
+                    ok = False
+            if not item.get("files") or item.get("failures") != []:
+                report.problem(f"contracts/{name}/{scenario['id']}: fails {item.get('failures')}", "contracts")
+                ok = False
+    canaries, err = _load(root / manifest["rustCanaries"]["results"]) if manifest.get("rustCanaries") else (None, "no Rust canary results")
+    if err:
+        report.problem(f"rust-canaries: {err}", "contracts")
+        return FAIL
+    expected = json.loads(contract_mod.RUST_CANARY_FILE.read_text())
+    if (canaries.get("rustBinarySha256") != rust_sha
+            or canaries.get("canaryFileSha256") != runner.sha256_file(contract_mod.RUST_CANARY_FILE)
+            or any(canaries.get("contractSha256", {}).get(c["contract"]) != contract_mod.contract_sha256(c["contract"])
+                   for c in expected)):
+        report.problem("rust-canaries: stale results (Rust candidate, canary list or contract changed)", "contracts")
+        return FAIL
+    if any(canaries.get("baselineFailures", {}).values()):
+        report.problem("rust-canaries: the unpatched Rust candidate failed its contract", "contracts")
+        ok = False
+    results = {r["id"]: r for r in canaries.get("results", [])}
+    for canary in expected:
+        result = results.get(canary["id"])
+        failed = set((result or {}).get("failedScenarios", []))
+        if (result is None or not result.get("patchApplied") or canary["scenario"] not in failed
+                or not failed <= set(canary.get("mayAlsoFail", [])) | {canary["scenario"]}):
+            report.problem(f"rust-canary {canary['id']}: not caught cleanly by {canary['scenario']}", "contracts")
             ok = False
     return PASS if ok else FAIL
 
@@ -284,6 +394,11 @@ def verify(manifest_path: Path, gate: str) -> dict:
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
+    contracts = None
+    if rules.get("requireContracts"):
+        contracts = _check_contracts(root, manifest, rules["requireContracts"], report)
+        if contracts != PASS:
+            failures.append(f"contracts {contracts}")
     required_suites = {r if isinstance(r, str) else r["suite"] for r in rules.get("requirePass", [])}
     scopes = {"global"} | required_suites | set(rules.get("requireNotFail", []))
     if rules.get("requireOracles"):
@@ -292,6 +407,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.add("canaries")
     if rules.get("requireInventory"):
         scopes.add("inventory")
+    if rules.get("requireContracts"):
+        scopes.add("contracts")
     gating = [text for scope, text in report.problems if scope in scopes]
     if gating:
         failures.append(f"{len(gating)} provenance/evidence problem(s)")
@@ -302,6 +419,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "canaries": canaries,
         "inventory": inventory,
         "oracles": oracles,
+        "contracts": contracts,
     }
 
 
@@ -322,6 +440,8 @@ def render(report: dict) -> str:
         lines.append(f"  inventory    {report['inventory']}")
     if report.get("oracles"):
         lines.append(f"  go oracles   {report['oracles']}")
+    if report.get("contracts"):
+        lines.append(f"  contracts    {report['contracts']}")
     for p in report.get("problems", [])[:20]:
         lines.append(f"  problem: {p}")
     for f in gate.get("failures", []):

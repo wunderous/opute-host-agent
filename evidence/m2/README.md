@@ -72,11 +72,11 @@ comparison, not only status and body.
 
 ## Scope changes and open items
 
-- **OAuth token issuance (decision D8).** `/oauth/authorize` and
-  `/oauth/token` keep Go's method checks; issuance itself answers 501 until
-  the owner's design decision lands in Go and the baseline is rebased. Those
-  routes are owned gaps in the inventory, and the corpus does not exercise
-  issuance.
+- **OAuth token issuance (decision D8).** At the M2 merge, issuance answered
+  501. The owner then approved a Rust-only divergence: issuance follows the
+  `secure-oauth-issuance` change, verified by its own contract suite rather
+  than Go parity. See [../oauth-issuance/README.md](../oauth-issuance/README.md).
+  The corpus does not exercise issuance.
 - **MCPGODEBUG (finding F-7, decision D9).** The Go agent inherits the SDK's
   compatibility switches from its environment. Rust implements the default
   behaviour and does not reproduce them, pending the owner's confirmation.

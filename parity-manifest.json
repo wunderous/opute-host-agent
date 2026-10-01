@@ -3,6 +3,22 @@
   "expected": "canaries.json",
   "results": "evidence/current/canaries.json"
  },
+ "contracts": {
+  "oauth-issuance": {
+   "decision": "D8",
+   "results": "evidence/current/contracts/oauth-issuance/summary.json"
+  }
+ },
+ "decisions": {
+  "D8": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/secure-oauth-issuance",
+   "date": "2026-10-01",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
+   "status": "approved",
+   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
+  }
+ },
  "evidence": {
   "go-vs-go": {
    "minRepeat": 20,
@@ -21,6 +37,9 @@
   "cutover": {
    "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence; later milestones add T2/T3/T4 suites here",
    "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance"
+   ],
    "requireInventory": true,
    "requireOracles": true,
    "requirePass": [
@@ -54,8 +73,11 @@
    ]
   },
   "m2": {
-   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+)",
+   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
    "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance"
+   ],
    "requireInventory": true,
    "requireOracles": true,
    "requirePass": [
@@ -535,8 +557,12 @@
   "results": "evidence/current/go-oracles.json",
   "suites": "tools/parity/oracles.json"
  },
+ "rustCanaries": {
+  "expected": "tools/parity/rust-canaries.json",
+  "results": "evidence/current/rust-canaries.json"
+ },
  "rustCandidate": {
-  "binarySha256": "ced0fc0651d670e5bbd1d34e503721ce803376e2be86653caecf6e5b1aab5a80",
+  "binarySha256": "8485062e9080e0cbb95ce3c7a75e3afc845ff63e712453ec22b49019cbf835d3",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

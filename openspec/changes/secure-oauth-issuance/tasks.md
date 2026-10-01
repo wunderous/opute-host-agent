@@ -1,15 +1,16 @@
 ## 1. Harness: declared divergences and contract suites
 
-- [ ] 1.1 `compare.divergences` (path, decision, reason). Dropped from
-  Go-vs-Rust only. The verifier checks that each cited decision is approved in
-  `parity-manifest.json` and that each declared path still differs (stale
-  check).
-- [ ] 1.2 Contract scenarios (`"contract": true`) run against one
-  implementation, with `expect` assertions on status, headers, body fields,
-  store rows and file modes. `parity contract` writes a hashed evidence
-  bundle.
-- [ ] 1.3 A Rust canary mechanism: patched Rust builds must turn the named
-  contract scenario red.
+- [x] 1.1 `compare.divergences`: ids defined in `tools/parity/divergences.json`
+  (decision, reason, path, drop rule). Applied to Go-vs-Rust only. The
+  verifier checks that each cited decision is approved in
+  `parity-manifest.json`, that every declaration was applied, and that none
+  is stale.
+- [x] 1.2 Contract suites (`tools/parity/contracts/*.json`) run against one
+  implementation, with `expect` assertions on status, headers, JSON fields,
+  CLI exit, store rows, file modes and logs, and `capture` for chained
+  values. `parity contract` writes a hashed evidence bundle.
+- [x] 1.3 Rust canaries (`tools/parity/rust-canaries.json`): patched Rust
+  builds must turn the named contract scenario red.
 
 ## 2. Rust: credentialed client_credentials
 
@@ -41,7 +42,7 @@
   code, client, redirect and PKCE checks, resource bound to the request.
 - [x] 3.4 CLI `opute-host-agent oauth pending|approve|deny|consents|revoke-client|rotate-secret`.
 - [x] 3.5 Remembered consent (default 30 days, `0` disables), with revocation.
-- [ ] 3.6 Client ID metadata documents fetched over HTTPS from the vetted
+- [x] 3.6 Client ID metadata documents fetched over HTTPS from the vetted
   address, with no redirects, size and time limits, and SSRF rules.
 
 ## 4. Later milestones
@@ -56,9 +57,10 @@
 
 ## 5. Evidence
 
-- [ ] 5.1 An `oauth-issuance` contract suite covering every flow and negative
-  case in the spec, with Rust canaries caught.
-- [ ] 5.2 The M2 corpus stays Go-vs-Rust clean outside declared D8 paths,
+- [x] 5.1 An `oauth-issuance` contract suite covering every flow and negative
+  case in the spec that exists before M8, with Rust canaries caught. The
+  public-binding audience and self-probe scenarios join the suite with 4.3.
+- [x] 5.2 The M2 corpus stays Go-vs-Rust clean outside declared D8 paths,
   and the store cross-read still passes.
 - [ ] 5.3 The go-sdk real client completes an approved authorization against
   Rust.

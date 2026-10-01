@@ -68,3 +68,44 @@ class CanonTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DivergenceTest(unittest.TestCase):
+    REGISTRY = {
+        "files": {"id": "files", "decision": "D8", "reason": "r", "path": ["files"],
+                  "drop": {"field": "path", "prefix": "state/credentials"}},
+        "rows": {"id": "rows", "decision": "D8", "reason": "r", "path": ["rows"], "dropKeys": ["new"]},
+        "log": {"id": "log", "decision": "D8", "reason": "r", "path": ["steps", "*", "stderr"],
+                "dropLines": {"contains": "msg=oauth "}},
+    }
+
+    def test_drops_only_declared_content_from_both_sides(self):
+        a = {"files": [{"path": "state/state.db"}], "rows": {"clients": 2},
+             "steps": {"s": {"stderr": "x\nlisten"}}}
+        b = {"files": [{"path": "state/credentials"}, {"path": "state/state.db"}],
+             "rows": {"clients": 2, "new": 0}, "steps": {"s": {"stderr": "x\nlevel=INFO msg=oauth event=migrate\nlisten"}}}
+        a2, b2, rec = canon.apply_divergences(a, b, ["files", "rows", "log"], self.REGISTRY)
+        self.assertEqual(canon.diff(a2, b2), [])
+        self.assertEqual([r["stale"] for r in rec], [False, False, False])
+
+    def test_undeclared_difference_survives(self):
+        a = {"files": [{"path": "state/state.db", "mode": "0o644"}]}
+        b = {"files": [{"path": "state/state.db", "mode": "0o600"}, {"path": "state/credentials/x"}]}
+        a2, b2, _ = canon.apply_divergences(a, b, ["files"], self.REGISTRY)
+        self.assertNotEqual(canon.diff(a2, b2), [])
+
+    def test_identical_removal_is_stale(self):
+        a = {"rows": {"clients": 2}}
+        _, _, rec = canon.apply_divergences(a, dict(a), ["rows"], self.REGISTRY)
+        self.assertTrue(rec[0]["stale"])
+
+    def test_undefined_divergence_is_an_error(self):
+        with self.assertRaises(canon.DivergenceError):
+            canon.apply_divergences({}, {}, ["nope"], self.REGISTRY)
+
+    def test_registry_file_is_valid(self):
+        from parity import runner
+        rules = canon.load_divergences(runner.DIVERGENCE_FILE)
+        for scenario in runner.load_scenarios():
+            for did in scenario.get("compare", {}).get("divergences", []):
+                self.assertIn(did, rules, scenario["id"])

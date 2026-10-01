@@ -42,10 +42,9 @@ defence in depth, never the gate.
 
 ### 3.1 Confidential clients and secrets
 
-- `clients.secret_hash` is required for `client_credentials`. A client with
-  an empty hash, or one that is not confidential, gets `invalid_client` (401),
-  whatever secret it sends. There is no "no secret configured, so accept"
-  branch anywhere.
+- `clients.secret_hash` is required for `client_credentials`. A
+  confidential client with an empty hash gets `invalid_client` (401),
+  whatever secret it sends. A public client gets `unauthorized_client` (400).
 - Secrets are 256-bit random values, encoded as `ohs_` + 64 hex. Only
   SHA-256 hashes are stored. Comparison is constant time on the hashes.
 - Client authentication accepts `client_secret_basic` and
@@ -227,9 +226,9 @@ Migration (idempotent, on open):
 | Preserve | A-1..A-7, S-4..S-6, T-*, unauthenticated `/health`, bearer validation semantics | M2 wire corpus stays Go-vs-Rust clean outside declared divergences |
 | Strengthen | A-3: "an OAuth access token issued for this resource" now means issued *to an authenticated client or an approved request* | `oauth-issuance` contract suite |
 | Strengthen | A-5: the issuing request may only name a served resource | `invalid_target` cases |
-| Introduce | O-1 no issuing path without a credential or operator approval | canary: re-allowing an empty secret hash must turn the corpus red |
-| Introduce | O-2 operator approval only via channels unreachable by the requester | canary: an approve route on the HTTP listener must turn the corpus red |
-| Introduce | O-3 secrets live only as hashes in the store and in 0600 files | file-mode and grep checks in E2E |
+| Introduce | O-1 no issuing path without a credential or operator approval | canary K1: accepting an empty secret turns the contract suite red |
+| Introduce | O-2 operator approval only via channels unreachable by the requester | canary K15: an approve route on the HTTP listener turns the contract suite red |
+| Introduce | O-3 secrets live only as hashes in the store and in 0600 files | contract file-mode, hash-only and log-scan checks |
 | Diverge (D8) | Go's `client_credentials` and `/oauth/authorize` behaviour is not reproduced | divergence declarations cite D8; stale-divergence check |
 
 ## 6. Declared divergence in the parity harness
@@ -237,20 +236,28 @@ Migration (idempotent, on open):
 Rust intentionally differs from Go here, so Go-vs-Rust evidence must neither
 hide the difference nor fail on it forever.
 
-- **Divergence declarations.** A scenario may carry `compare.divergences`:
-  exact comparison paths, each with a `decision` id and a `reason`. The
-  comparator drops those paths from the Go-vs-Rust diff and records them in
-  the evidence bundle. They never apply to Go-vs-Go. The verifier fails if a
-  declaration cites a decision that `parity-manifest.json` does not list as
-  approved, or if a declared path no longer differs (a stale divergence).
-- **Contract suite.** Scenarios with `"contract": true` run against one
-  implementation and assert expected values (`expect` steps: status, header
-  and body fields, store rows, file modes). The `oauth-issuance` suite runs
-  every flow in §2 and every negative case in the spec against Rust. A gate
-  requires it to pass.
-- **Canaries for Rust.** Mutating the Rust build must turn the contract
-  suite red. The mutations are: accepting an empty secret hash, adding an
-  HTTP approval route, and accepting any resource.
+- **Divergence declarations.** Each divergent difference is defined once in
+  `tools/parity/divergences.json` (id, `decision`, `reason`, a path, and what
+  to drop there: list items by field, object keys, or log lines) and named
+  by id in a scenario's `compare.divergences`. The comparator drops that
+  content from both sides of a Go-vs-Rust comparison and records each
+  declaration in the evidence bundle. Declarations never apply to Go-vs-Go.
+  The verifier fails if a declaration cites a decision that
+  `parity-manifest.json` does not list as approved, if a declared divergence
+  was not applied, or if it is stale (the dropped content is identical on
+  both sides).
+- **Contract suite.** `tools/parity/contracts/oauth-issuance.json` runs
+  against one implementation and asserts expected values (status, header
+  and JSON fields, CLI exit, store rows, file modes, log content). Steps can
+  capture values (a provisioned secret, a user code, a code) for later
+  steps. The suite runs every flow in §2 and every negative case in the
+  spec against Rust, and the `m2` and `cutover` gates require it to pass.
+- **Canaries for Rust.** `tools/parity/rust-canaries.json` patches the Rust
+  source; each patched build must turn its named contract scenario red,
+  while the unpatched build stays green. The mutations include accepting an
+  empty secret, an HTTP approval route, accepting any resource, implicit
+  consent, prefix redirect matching, world-readable credential files, code
+  replay, and a secret in the audit log.
 
 ## 7. Rollback and data preservation
 

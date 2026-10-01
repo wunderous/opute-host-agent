@@ -322,8 +322,11 @@ each recorded there:
 
 - OAuth token issuance (`/oauth/authorize`, `/oauth/token`) follows the
   stricter `secure-oauth-issuance` change (D8), a declared divergence from Go.
-  At the M2 merge Rust refused issuance with 501; that change replaces it. Bearer validation,
-  metadata, revocation and the shared token store are in M2 and verified.
+  At the M2 merge Rust refused issuance with 501; that change replaces it,
+  with its own Rust contract suite and Rust canaries in the `m2` gate (see
+  [evidence/oauth-issuance/README.md](../../../evidence/oauth-issuance/README.md)).
+  Bearer validation, metadata, revocation and the shared token store stay
+  under Go parity.
 - Item 5's packaged Go tests (`TestPackagedShapeStandaloneHTTPContract`,
   `TestStandaloneHTTPIsolationAndShutdown`) assert catalog contents and a
   task round trip, so they move to M4. The `test/compliance` assertions that

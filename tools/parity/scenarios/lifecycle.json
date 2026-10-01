@@ -34,7 +34,15 @@
           "signal": "SIGINT"
         }
       }
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.credential-files",
+        "D8.audit-server-log",
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   },
   {
     "id": "lifecycle.serve-platform-sigterm",
@@ -70,7 +78,15 @@
           "signal": "SIGTERM"
         }
       }
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.credential-files",
+        "D8.audit-server-log",
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   },
   {
     "id": "lifecycle.restart-reopens-state",
@@ -112,7 +128,14 @@
         "as": "secondStop",
         "stop": {}
       }
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.credential-files",
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   },
   {
     "id": "lifecycle.fault-injection",
@@ -261,7 +284,13 @@
           }
         }
       }
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.credential-files",
+        "D8.audit-step-stderr"
+      ]
+    }
   },
   {
     "id": "defaults.bind-host",

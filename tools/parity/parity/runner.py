@@ -26,6 +26,7 @@ TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 SCENARIO_DIR = TOOLS_DIR / "scenarios"
 FIXTURE_DIR = TOOLS_DIR / "fixtures"
+DIVERGENCE_FILE = TOOLS_DIR / "divergences.json"
 OBSERVING_MODULES = ("agent", "canon", "runner", "shims")
 
 # Environment profiles. Values may use ${AGENT_ID}, ${PORT}, ${TOKEN} and
@@ -68,7 +69,8 @@ def harness_sha256() -> str:
     capture and canary drivers only read evidence, so they are excluded.
     """
     digest = hashlib.sha256()
-    files = [TOOLS_DIR / "parity" / f"{m}.py" for m in OBSERVING_MODULES] + sorted(FIXTURE_DIR.rglob("*.json"))
+    files = ([TOOLS_DIR / "parity" / f"{m}.py" for m in OBSERVING_MODULES]
+             + sorted(FIXTURE_DIR.rglob("*.json")) + [DIVERGENCE_FILE])
     for path in files:
         digest.update(str(path.relative_to(TOOLS_DIR)).encode() + b"\0")
         digest.update(path.read_bytes() + b"\0")
@@ -226,6 +228,10 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
             obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)
     norm_r, viol_r = canon.normalize(obs_r, spec, vars_r)
+    divergences: list[dict] = []
+    if cross_implementation(left, right):
+        norm_l, norm_r, divergences = canon.apply_divergences(
+            norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE))
     differences = canon.diff(norm_l, norm_r)
     return {
         "raw": {"a": {"observation": obs_l, "variables": vars_l},
@@ -233,7 +239,17 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
         "normalized": {"a": norm_l, "b": norm_r},
         "diff": differences,
         "maskViolations": {"a": viol_l, "b": viol_r},
+        "divergences": divergences,
     }
+
+
+def cross_implementation(left: agent.Impl, right: agent.Impl) -> bool:
+    """Declared divergences apply only between Go and a Rust build."""
+    return left.label.startswith("rust") != right.label.startswith("rust")
+
+
+def stale_divergences(outcome: dict) -> int:
+    return sum(1 for d in outcome.get("divergences", []) if d["stale"])
 
 
 def _gz(data: Any) -> bytes:
@@ -258,10 +274,12 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
         for sid, i, outcome in pool.map(job, jobs):
             results[sid].append({"iteration": i, "diffCount": len(outcome["diff"]),
-                                 "maskViolations": sum(len(v) for v in outcome["maskViolations"].values())})
+                                 "maskViolations": sum(len(v) for v in outcome["maskViolations"].values()),
+                                 "staleDivergences": stale_divergences(outcome)})
             if sid not in last or i >= last[sid]["iteration"]:
                 last[sid] = {"iteration": i, **outcome}
-            failed = outcome["diff"] or any(outcome["maskViolations"].values())
+            failed = (outcome["diff"] or any(outcome["maskViolations"].values())
+                      or stale_divergences(outcome))
             if failed and (sid not in first_failure or i < first_failure[sid]["iteration"]):
                 first_failure[sid] = {"iteration": i, **outcome}
 
@@ -276,7 +294,8 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
             "a.json.gz": _gz(outcome["raw"]["a"]),
             "b.json.gz": _gz(outcome["raw"]["b"]),
             "diff.json": canon.canonical_json({
-                "diff": outcome["diff"], "maskViolations": outcome["maskViolations"]}).encode(),
+                "diff": outcome["diff"], "maskViolations": outcome["maskViolations"],
+                "divergences": outcome["divergences"]}).encode(),
             "iterations.json": canon.canonical_json(iterations).encode(),
         }
         # Keep the first failing iteration too: a flake that the last
@@ -285,17 +304,20 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
         if failure is not None:
             files["first-failure.json.gz"] = _gz({
                 "iteration": failure["iteration"], "diff": failure["diff"],
-                "maskViolations": failure["maskViolations"], "raw": failure["raw"]})
+                "maskViolations": failure["maskViolations"], "divergences": failure["divergences"],
+                "raw": failure["raw"]})
         hashes = {}
         for name, data in files.items():
             (sdir / name).write_bytes(data)
             hashes[name] = sha256_bytes(data)
-        clean = all(r["diffCount"] == 0 and r["maskViolations"] == 0 for r in iterations)
+        clean = all(r["diffCount"] == 0 and r["maskViolations"] == 0 and not r["staleDivergences"]
+                    for r in iterations)
         summary_items[sid] = {
             "status": "pass" if clean else "fail",
             "iterations": len(iterations),
             "failingIterations": [r["iteration"] for r in iterations
-                                  if r["diffCount"] or r["maskViolations"]],
+                                  if r["diffCount"] or r["maskViolations"] or r["staleDivergences"]],
+            "divergences": sorted({d["id"] for d in outcome["divergences"]}),
             "scenarioFile": scenario["_file"],
             "scenarioSha256": scenario["_sha256"],
             "files": hashes,
