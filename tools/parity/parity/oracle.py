@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 
 from . import agent, canon, runner
@@ -56,7 +57,11 @@ def run(src: Path, binaries: dict[str, Path], out_path: Path) -> dict:
         for suite in spec:
             _apply_overlay(tree, suite.get("overlay", []))
             for label, binary in binaries.items():
-                env = {**os.environ, "OPUTE_STANDALONE_BINARY": str(binary), "CGO_ENABLED": "0"}
+                sandbox = agent.Sandbox(label, f"oracle-{uuid.uuid4().hex}",
+                                        runner.FIXTURE_DIR / "shims" / "incus-empty.json")
+                env = {**os.environ, "OPUTE_STANDALONE_BINARY": str(binary), "CGO_ENABLED": "0",
+                       "PARITY_AGENT_ID": sandbox.agent_id, "PARITY_BEARER_TOKEN": sandbox.token,
+                       "PARITY_SANDBOX": str(sandbox.root)}
                 env = {k: v for k, v in env.items() if not (k.startswith("OPUTE_") and k != "OPUTE_STANDALONE_BINARY")}
                 proc = subprocess.run(
                     ["go", "test", suite["package"], "-count=1", "-v", "-run", suite["run"]],
@@ -69,6 +74,7 @@ def run(src: Path, binaries: dict[str, Path], out_path: Path) -> dict:
                     "suite": suite["id"],
                     "binary": label,
                     "binarySha256": agent.Impl(label, binary).sha256(),
+                    "agentId": sandbox.agent_id,
                     "exit": proc.returncode,
                     "passed": passed,
                     "failed": failed,
@@ -76,6 +82,7 @@ def run(src: Path, binaries: dict[str, Path], out_path: Path) -> dict:
                 })
                 status = "PASS" if proc.returncode == 0 and set(suite["tests"]) <= set(passed) else "FAIL"
                 print(f"{suite['id']} [{label}]: {status} passed={passed} failed={failed}")
+                shutil.rmtree(sandbox.root)
     finally:
         subprocess.run(["git", "-C", str(src), "worktree", "remove", "--force", str(tree)], capture_output=True)
         shutil.rmtree(work, ignore_errors=True)

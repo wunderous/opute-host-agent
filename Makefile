@@ -1,6 +1,9 @@
 .PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
+# Keep reference builds, patched canaries and client oracles on the same
+# selected Go standard-library contract, even on hosts with a newer Go.
+export GOTOOLCHAIN := $(shell python3 -c 'import json; print(json.load(open("baseline/source-lock.json"))["goToolchain"])')
 
 spec-validate:
 	$(OPENSPEC) validate --all --strict
@@ -50,9 +53,9 @@ parity-canaries:
 parity-oracles:
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/evidence/current/go-oracles.json
 
-# Declared divergences (decisions D8, D10): the Rust contract suites, and
+# Declared divergences (decisions D8, D10, D11): the Rust contract suites, and
 # patched Rust builds that must turn them red.
-CONTRACT_SUITES := oauth-issuance standalone-read-only-gate
+CONTRACT_SUITES := oauth-issuance standalone-read-only-gate reject-without-audit-writes
 
 parity-contracts:
 	for s in $(CONTRACT_SUITES); do \

@@ -46,6 +46,32 @@ pub fn look_path(env: &Env, name: &str) -> Option<PathBuf> {
     None
 }
 
+/// Go's `configureCommandEnvironment`: restore the user bus only for
+/// user-scoped systemctl/systemd-run commands. Standalone startup may lack
+/// the login shell's bus variables even when the user's manager is running.
+fn command_environment(env: &Env, argv: &[String]) -> Env {
+    let mut result = env.clone();
+    let program = argv.first().map(String::as_str).unwrap_or("");
+    let systemd = ["systemctl", "systemd-run"]
+        .iter()
+        .any(|name| program == *name || program.ends_with(&format!("/{name}")));
+    if !systemd || !argv.iter().skip(1).any(|arg| arg == "--user") {
+        return result;
+    }
+    let mut runtime_dir = env.get("XDG_RUNTIME_DIR");
+    if runtime_dir.is_empty() {
+        runtime_dir = format!("/run/user/{}", nix::unistd::getuid());
+        result.set("XDG_RUNTIME_DIR", &runtime_dir);
+    }
+    if env.get("DBUS_SESSION_BUS_ADDRESS").is_empty() {
+        result.set(
+            "DBUS_SESSION_BUS_ADDRESS",
+            &format!("unix:path={}/bus", runtime_dir.trim_end_matches('/')),
+        );
+    }
+    result
+}
+
 /// `RunCommandContext` without streaming: start failures and timeouts are
 /// results, not errors, exactly as in Go.
 pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResult {
@@ -71,10 +97,11 @@ pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResu
             ),
         };
     };
+    let command_env = command_environment(env, argv);
     let mut cmd = Command::new(&program);
     cmd.args(&argv[1..])
         .env_clear()
-        .envs(env.pairs())
+        .envs(command_env.pairs())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -1423,5 +1450,64 @@ mod tests {
     fn durations_print_like_go() {
         assert_eq!(go_duration(Duration::from_secs(45)), "45s");
         assert_eq!(go_duration(Duration::from_secs(120)), "2m0s");
+    }
+
+    #[test]
+    fn user_systemd_child_restores_bus_without_changing_agent_environment() {
+        let dir = tempfile::tempdir().unwrap();
+        for name in ["systemctl", "systemd-run"] {
+            let program = dir.path().join(name);
+            std::fs::write(
+                &program,
+                "#!/bin/sh\nprintf '%s\\n%s\\n' \"$XDG_RUNTIME_DIR\" \"$DBUS_SESSION_BUS_ADDRESS\"\n",
+            )
+            .unwrap();
+            std::fs::set_permissions(&program, std::fs::Permissions::from_mode(0o700)).unwrap();
+            let env = Env::from_pairs([("PATH", "/usr/bin:/bin")]);
+            let result = run_command(
+                &env,
+                &[program.to_string_lossy().into_owned(), "--user".into()],
+                Duration::from_secs(5),
+            );
+            let runtime = format!("/run/user/{}", nix::unistd::getuid());
+            assert_eq!(result.exit_code, 0);
+            assert_eq!(
+                result.stdout,
+                format!("{runtime}\nunix:path={runtime}/bus\n")
+            );
+            assert_eq!(env.get("XDG_RUNTIME_DIR"), "");
+            assert_eq!(env.get("DBUS_SESSION_BUS_ADDRESS"), "");
+        }
+    }
+
+    #[test]
+    fn user_bus_preserves_explicit_values_and_does_not_affect_other_commands() {
+        let env = Env::from_pairs([
+            ("XDG_RUNTIME_DIR", "/custom/runtime/"),
+            ("DBUS_SESSION_BUS_ADDRESS", "unix:path=/explicit/bus"),
+        ]);
+        let argv = vec!["/usr/bin/systemctl".into(), "--user".into(), "show".into()];
+        let configured = command_environment(&env, &argv);
+        assert_eq!(configured.get("XDG_RUNTIME_DIR"), "/custom/runtime/");
+        assert_eq!(
+            configured.get("DBUS_SESSION_BUS_ADDRESS"),
+            "unix:path=/explicit/bus"
+        );
+        let env = Env::from_pairs([("XDG_RUNTIME_DIR", "/custom/runtime/")]);
+        assert_eq!(
+            command_environment(&env, &argv).get("DBUS_SESSION_BUS_ADDRESS"),
+            "unix:path=/custom/runtime/bus"
+        );
+        for argv in [
+            vec!["systemctl".into(), "show".into()],
+            vec!["systemd-run".into(), "true".into()],
+            vec!["incus".into(), "--user".into()],
+            vec![],
+        ] {
+            assert_eq!(
+                command_environment(&env, &argv).get("DBUS_SESSION_BUS_ADDRESS"),
+                ""
+            );
+        }
     }
 }

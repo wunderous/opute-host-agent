@@ -3,22 +3,24 @@
 This repository is the **new implementation target** for a behavior-preserving
 Rust reimplementation of the Go Host Agent. It holds the contract baseline, the
 OpenSpec change, the differential parity harness, and the Rust agent as it is
-built milestone by milestone. As of M2 the Rust binary matches Go's command line,
-configuration, lifecycle, HTTP server behaviour, bearer authentication and the
-MCP 2026-07-28 wire contract (including the ADR 0011 legacy gate). It does not
-yet publish the tool catalog (M3) or run tools, tasks and plans (M4+), and it
-does not issue OAuth tokens (deferred, decision D8). It is **not** a
-replacement for the Go agent.
+built milestone by milestone. Through M3 the Rust binary implements Go's command
+line, configuration, lifecycle, HTTP server behavior, bearer authentication,
+MCP 2026-07-28 wire contract (including the ADR 0011 legacy gate), catalog and
+read-only host tools. Owner-approved Rust divergences cover OAuth issuance
+(D8), the standalone read-only gate (D10), and zero audit writes for rejected
+calls (D11). Full admission, tasks, plans, providers and mutations remain later
+milestones. The whole-agent cutover gate remains closed.
 
 ```sh
 make rust-check     # fmt, clippy -D warnings, unit tests
 make rust-build     # target/release/opute-host-agent
-make parity-m2      # full M2 evidence: harness self-checks, Go vs Rust, Go oracle tests, m1 and m2 gates
+make parity-m3      # harness checks, Go vs Rust, real MCP client, D8/D10/D11 contracts and canaries
 ```
 
 The source baseline is `wunderous/host-agents` commit
 `ace7013df17528fee1bed13a1d70a132d6c5eb9b` (tree
-`ac17cfb298f789095e7a3af2219837e3490f798a`); see
+`ac17cfb298f789095e7a3af2219837e3490f798a`), built with the pinned Go 1.25.4
+toolchain; see
 [source-lock.json](baseline/source-lock.json). The pinned tree and its typed
 contracts/tests are the behavioral reference. A release catalog snapshot is
 useful evidence, but the catalog exposed by `tools/list` also depends on mode
@@ -61,4 +63,4 @@ make spec-validate
 ```
 
 This validates document structure only. It does not prove Rust parity or
-authorize a cutover. No Git remote or deployment target is configured here.
+authorize a cutover.

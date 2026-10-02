@@ -13,6 +13,10 @@
    "decision": "D8",
    "results": "evidence/current/contracts/oauth-issuance/summary.json"
   },
+  "reject-without-audit-writes": {
+   "decision": "D11",
+   "results": "evidence/current/contracts/reject-without-audit-writes/summary.json"
+  },
   "standalone-read-only-gate": {
    "decision": "D10",
    "results": "evidence/current/contracts/standalone-read-only-gate/summary.json"
@@ -26,6 +30,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D10)",
    "status": "approved",
    "summary": "With standalone mutations disabled, Rust runs only tools whose effect is read instead of Go's enumerated gate list"
+  },
+  "D11": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/reject-without-audit-writes",
+   "date": "2026-10-02",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D11)",
+   "status": "approved",
+   "summary": "Rust rejects enumerated invalid MCP calls without invocation audit writes; Go remains unchanged"
   },
   "D8": {
    "approvedBy": "owner",
@@ -56,7 +68,8 @@
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
-    "standalone-read-only-gate"
+    "standalone-read-only-gate",
+    "reject-without-audit-writes"
    ],
    "requireInventory": true,
    "requireNoGaps": true,
@@ -119,7 +132,8 @@
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
-    "standalone-read-only-gate"
+    "standalone-read-only-gate",
+    "reject-without-audit-writes"
    ],
    "requireInventory": true,
    "requireOracles": true,
@@ -670,6 +684,16 @@
   },
   {
    "anchors": [
+    "internal/capability/adapters.go:adapter.Invoke",
+    "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
+   ],
+   "id": "rejection.schema-invalid-no-audit",
+   "owner": "capability",
+   "scenario": "rejection.schema-invalid-no-audit",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
     "internal/transport/http.go:NewHTTPServer mux",
     "net/http ServeMux"
    ],
@@ -828,11 +852,11 @@
   "results": "evidence/current/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "b17b57a1c0b2fcc72888fecd34d06a2f97b6bbe3bc5ae1d4654d3480859fee9d",
+  "binarySha256": "6524dc94464a7a897f5b2e3eebaad6b159ce1c7de330692166dbd5bb591e9252",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
  "schemaVersion": 1,
  "sourceLock": "baseline/source-lock.json",
- "sourceLockSha256": "18573815b5eaf0a4e0ac41e0bc8dd7d65d4265d1b696f1eee00400da1f4af6f4"
+ "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6"
 }

@@ -1060,6 +1060,37 @@
             "${SANDBOX}/home"
           ],
           "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "tasks",
+            "current"
+          ],
+          "type": "non-negative-int",
+          "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked."
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "tasks",
+            "current"
+          ],
+          "type": "non-negative-int",
+          "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked."
         }
       ],
       "omitempty": [

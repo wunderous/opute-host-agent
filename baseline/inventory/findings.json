@@ -139,17 +139,6 @@
    "summary": "OPUTE_TRANSPORT=stdio is rejected with the text 'invalid --transport \"stdio\"' even when the value came from the environment"
   },
   {
-   "decision": "open: Rust must report one of the same variants; a deterministic order would be an evidenced Go defect fixed in both implementations",
-   "evidence": {
-    "recipes": [
-     "plugins/llm/ollama/recipes/ollama-external.yaml"
-    ]
-   },
-   "id": "F-4",
-   "kind": "nondeterminism",
-   "summary": "recipe validate names a different missing required input between runs (map iteration order)"
-  },
-  {
    "decision": "open: determine whether tools/call can reach them (hidden surface) or they are provider-conditional; add a scenario before M3",
    "evidence": {
     "tools": [

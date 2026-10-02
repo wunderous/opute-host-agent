@@ -17,6 +17,10 @@ url="$(read_lock sourceRepository)"
 commit="$(read_lock sourceCommit)"
 tree="$(read_lock sourceTree)"
 version="$(read_lock publishedPackage)"; version="${version##*@}"
+# The standard library is part of the observable HTTP contract. Go 1.26,
+# for example, changes ServeMux path-cleaning redirects from 301 to 307.
+# Do not silently build the pinned reference with the machine's newer Go.
+export GOTOOLCHAIN="$(read_lock goToolchain)"
 
 if [ ! -d "$work/.git" ]; then
   mkdir -p "$work"

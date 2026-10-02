@@ -527,15 +527,20 @@ mod tests {
         for (stage, expected) in cases {
             let dir = tempfile::tempdir().unwrap();
             let env = env(dir.path(), &[]);
+            // Resolving identity can cache WSL host evidence before any
+            // lifecycle resource is acquired. Account for that baseline;
+            // coordinator/state/authz failures must still leave exactly
+            // their declared files and close every acquired resource.
+            let _ = Config::load(&env);
+            let mut expected_files = listing(dir.path());
+            expected_files.extend(expected.iter().map(|s| s.to_string()));
+            expected_files.sort();
+            expected_files.dedup();
             let mut sink = Vec::new();
             let err = run_with(&env, &mut sink, Some(stage)).unwrap_err();
             assert_eq!(err.0, format!("injected fault at {stage}"));
             assert!(sink.is_empty(), "{stage}: no listener log before failure");
-            assert_eq!(
-                listing(dir.path()),
-                expected.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
-                "{stage}"
-            );
+            assert_eq!(listing(dir.path()), expected_files, "{stage}");
         }
     }
 
