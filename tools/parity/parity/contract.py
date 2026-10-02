@@ -258,6 +258,8 @@ def execute(impl: agent.Impl, scenario: dict, run_id: str) -> tuple[dict, list[s
                     result = _sweep(ctx, step["sweep"])
                 elif "trace" in step:
                     result = _trace(ctx)
+                elif "state" in step:
+                    result = sandbox.durable_snapshot()
                 elif "repeat" in step:
                     spec = step["repeat"]
                     results = [_http(ctx, spec["http"]) for _ in range(spec["times"])]

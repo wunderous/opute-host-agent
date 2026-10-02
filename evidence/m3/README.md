@@ -4,21 +4,21 @@ This file records M3 from
 [milestones.md](../../openspec/changes/reimplement-host-agent-in-rust/milestones.md)
 (tasks 1.2 and the read-only part of 2.3). The evidence is in
 [`evidence/current/`](../current/). Reproduce it with `make parity-m3`
-(Rust 1.94.1, Go 1.24.7 with the go1.25.4 toolchain the reference binary was
-built with, Python 3.11).
+(2026-10-02 refresh: Rust 1.93.1, pinned Go 1.25.4, Python 3.14 on
+Ubuntu-26.04 under WSL2).
 
 ## Gate results
 
 | Check | Result |
 | --- | --- |
-| `make rust-check` | fmt, clippy `-D warnings`, 73 unit tests: pass |
-| `make parity-test` | 71 harness tests (comparator, omitempty, one-of masks, substitution, divergences, verifier, contracts, corpus freshness): pass |
+| `make rust-check` | fmt, clippy `-D warnings`, 75 unit tests: pass |
+| `make parity-test` | 73 harness tests (comparator, omitempty, one-of masks, substitution, divergences, verifier, contracts, corpus freshness, rejection state snapshots): pass |
 | `catalog-source --check` (in `make parity-ci`) | the committed `crates/host-agent/catalog/source.json` equals a fresh export from the pinned Go tree |
-| Go vs Go, ×20 | 66/66 scenarios clean on all 20 iterations |
+| Go vs Go, ×20 | 67/67 scenarios clean on all 20 iterations |
 | Canaries | 10/10 caught, each by its named scenario (plus declared co-failures); C9 and C10 are new |
-| **Go vs Rust, ×5** | **66/66 scenarios pass on all 5 iterations, on every surface** (admission, auth, catalog, cli, config, durable-state, host-read, http, lifecycle, mcp-wire, read-only-tools), outside the declared D8 divergences |
+| **Go vs Rust, ×5** | **67/67 scenarios pass on all 5 iterations, on every surface** (admission, auth, catalog, cli, config, durable-state, host-read, http, lifecycle, mcp-wire, read-only-tools), outside the declared D8/D11 divergences |
 | Go oracle tests against Rust | `standalone-startup` (M1), `real-client-modern` (M2) and `real-client-catalog` (M3, the go-sdk client lists the catalog and calls read-only tools) pass against Go and Rust and fail against the `/bin/true` control |
-| Declared-divergence contract suites and Rust canaries | D8 `oauth-issuance` 24/24, D10 `standalone-read-only-gate` 8/8; 20/20 Rust canaries caught ([D8](../oauth-issuance/README.md), [D10](../standalone-gate/README.md)) |
+| Declared-divergence contract suites and Rust canaries | D8 `oauth-issuance` 24/24, D10 `standalone-read-only-gate` 8/8, D11 `reject-without-audit-writes` 3/3; 21/21 Rust canaries caught ([D8](../oauth-issuance/README.md), [D10](../standalone-gate/README.md), [local E2E and D11](../local-e2e/README.md)) |
 | `make parity-verify-m1` … `parity-verify-m3` | **PASS** |
 | `make parity-verify-cutover` | **FAIL, by design**: 80 owned inventory gaps (no covering scenario yet) remain; see below |
 
@@ -156,10 +156,9 @@ New canaries: **C9** (`vm-release-default`) and **C10**
   operations) arrive with their domains.
 - **Provider catalog cells** (installed providers) stay the owned inventory
   gap for M7.
-- **Real hosts (T2):** Ubuntu x64/arm64 and WSL2 runs are not available in
-  this environment. `get_host_info` and `detect_host_platform` are compared
-  live on the CI host only; WSL detection is covered by unit tests, because
-  the agent refuses to start with WSL markers in a fixture environment.
+- **Real hosts (T2):** the 2026-10-02 refresh runs locally on Ubuntu-26.04
+  under WSL2, with isolated state and Incus fixtures. This does not complete
+  the full Ubuntu x64/arm64 deployment and external-effect matrix.
 - **Decision D10 (standalone read-only gate).** After M3 the owner approved
   a Rust-only gate: with standalone mutations disabled, Rust runs only tools
   whose effect is `read`. It is specified in
@@ -171,3 +170,22 @@ New canaries: **C9** (`vm-release-default`) and **C10**
 - **Declared D8 divergences** now also cover
   `admission.standalone-mutation-denied` and `state.schema-after-start`,
   whose state schema includes the D8 credential tables.
+
+- **Decision D11 (zero rejection audit writes).** The owner approved a
+  Rust-only rejection contract on 2026-10-02. A schema-invalid Go call
+  creates a `capability_invocations` audit row; Rust preserves all existing
+  rows and creates none. The new differential scenario declares only that
+  count difference. Three Rust contracts compare complete logical SQLite
+  contents after every rejection, command traces, subsequent reads and
+  restart. K21 injects an audit write and is caught in all three modes.
+
+## Local validation refresh
+
+The [local E2E report](../local-e2e/README.md) records the three completed
+flows and provenance. Rust now restores the user bus environment for
+`systemctl --user` and `systemd-run --user`, preserving Go's enforcement
+observations. The live `system.tasks.current` counter has explicit,
+presence-required non-negative-integer masks because it is sampled at
+different times. Enforcement verdicts and limits still compare exactly.
+The Go compiler is pinned in `baseline/source-lock.json` so installed
+toolchain updates cannot silently change reference HTTP behavior.

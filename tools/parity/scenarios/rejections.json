@@ -1,0 +1,48 @@
+[
+ {
+  "id": "rejection.schema-invalid-no-audit",
+  "surface": "admission",
+  "owner": "capability",
+  "anchors": [
+   "internal/capability/adapters.go:adapter.Invoke",
+   "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
+  ],
+  "fixture": "incus-empty",
+  "collect": [
+   "trace",
+   "sqlite"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "profile": "standalone"
+    }
+   },
+   {
+    "as": "invalid",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": "yes"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "divergences": [
+    "D8.authz-tables",
+    "D8.authz-row-counts",
+    "D11.rejected-invocation-count"
+   ]
+  }
+ }
+]

@@ -1,12 +1,14 @@
 {
  "baselineFailures": {
   "oauth-issuance": [],
+  "reject-without-audit-writes": [],
   "standalone-read-only-gate": []
  },
- "canaryFileSha256": "77d45f919093e1455dd1788999ede3d6adcea982ddd533edbce621405f981ad3",
+ "canaryFileSha256": "f710e9db7e7901a21d9958a228780759393eaab5f47514166c1246edd69b4c15",
  "contractSha256": {
-  "oauth-issuance": "b804f347f20b6077a91a8a2ecb482a949a8407870c6a5c81258c9562a2b743de",
-  "standalone-read-only-gate": "410d81333b7456a255615737f00abafb99ea6faae3986dfd379b61da78c7e76f"
+  "oauth-issuance": "ca3ced96795f82144258cabed190cd215c8739730fefcd5724915d4ed08373e7",
+  "reject-without-audit-writes": "b71a7a58b15034bd45be5bf9074596ff3ca6202344178805fc56ad95d2c5dc46",
+  "standalone-read-only-gate": "9071c6893be1ef3d1067d64bbb280ed690ca42753f2d4bdadef388ceeb60204a"
  },
  "results": [
   {
@@ -223,8 +225,20 @@
    ],
    "id": "K20-gate-refuses-reads",
    "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "reject-without-audit-writes",
+   "failedScenarios": [
+    "reject.platform",
+    "reject.standalone",
+    "reject.standalone-mutations-enabled"
+   ],
+   "id": "K21-rejected-call-audit-write",
+   "patchApplied": true
   }
  ],
- "rustBinarySha256": "b17b57a1c0b2fcc72888fecd34d06a2f97b6bbe3bc5ae1d4654d3480859fee9d",
+ "rustBinarySha256": "6524dc94464a7a897f5b2e3eebaad6b159ce1c7de330692166dbd5bb591e9252",
  "schemaVersion": 1
 }

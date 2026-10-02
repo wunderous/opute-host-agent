@@ -258,5 +258,20 @@
   },
   "scenario": "gate.published-read-not-refused",
   "mayAlsoFail": []
+ },
+ {
+  "id": "K21-rejected-call-audit-write",
+  "summary": "schema-invalid arguments leave an invocation audit row",
+  "contract": "reject-without-audit-writes",
+  "scenario": "reject.standalone",
+  "mayAlsoFail": [
+   "reject.standalone-mutations-enabled",
+   "reject.platform"
+  ],
+  "patch": {
+   "file": "crates/host-agent/src/tools.rs",
+   "old": "        let message = format!(\"invalid capability arguments: {e}\");",
+   "new": "        let conn = rusqlite::Connection::open(std::path::Path::new(&server.host.env.get(\"OPUTE_STANDALONE_STATE_DIR\")).join(\"state.db\")).unwrap();\n        conn.execute(\"INSERT INTO capability_invocations(invocation_id,operation_id,capability_version,catalog_revision,authorization,arguments_json,result_json,observation_json,terminal_status,created_at) VALUES ('rejected-audit','',1,'','','{}','{}','{}','failed','2026-10-02T00:00:00Z')\", []).unwrap();\n        let message = format!(\"invalid capability arguments: {e}\");"
+  }
  }
 ]

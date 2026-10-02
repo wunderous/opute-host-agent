@@ -1,0 +1,1174 @@
+{
+ "suite": "reject-without-audit-writes",
+ "decision": "D11",
+ "spec": "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md",
+ "scenarios": [
+  {
+   "id": "reject.standalone",
+   "requirement": "Rejected MCP calls leave no audit writes or execution effects",
+   "specScenario": "Restart after rejection",
+   "steps": [
+    {
+     "as": "provision",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stopBeforeSeed",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "acceptedHistory",
+     "sql": {
+      "db": "${SANDBOX}/state/state.db",
+      "statements": [
+       "INSERT INTO capability_invocations(invocation_id,operation_id,capability_version,catalog_revision,authorization,arguments_json,result_json,observation_json,terminal_status,created_at) VALUES ('historical-accepted','op-historical',1,'sha256:historic','approved','{}','{}','{}','completed','2026-09-28T00:00:00Z')"
+      ]
+     },
+     "expect": {
+      "sql": 1
+     }
+    },
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "initialList",
+     "mcp": {
+      "method": "tools/list"
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "INITIAL_REVISION": {
+       "from": "body.result.tools.0._meta.catalogRevision"
+      }
+     }
+    },
+    {
+     "as": "initial",
+     "state": {},
+     "expect": {
+      "count": 2
+     },
+     "capture": {
+      "BEFORE": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "missing-credential",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      },
+      "token": null
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "missing-credential-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "missing-credential-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "invalid-credential",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      },
+      "token": "wrong-token"
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "invalid-credential-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "invalid-credential-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed-arguments",
+     "mcp": {
+      "method": "tools/call",
+      "name": "list_vms",
+      "params": {
+       "name": "list_vms",
+       "arguments": {
+        "fast": "yes"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "invalid_arguments"
+     }
+    },
+    {
+     "as": "malformed-arguments-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "malformed-arguments-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "undecodable-arguments",
+     "mcp": {
+      "method": "tools/call",
+      "name": "list_vms",
+      "params": {
+       "name": "list_vms",
+       "arguments": "not-an-object"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.content.0.text": {
+       "$prefix": "Error: invalid arguments:"
+      }
+     }
+    },
+    {
+     "as": "undecodable-arguments-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "undecodable-arguments-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-tool",
+     "mcp": {
+      "method": "tools/call",
+      "name": "reject_no_such_tool",
+      "params": {
+       "name": "reject_no_such_tool",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 400,
+      "body.error.code": -32602
+     }
+    },
+    {
+     "as": "unknown-tool-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "unknown-tool-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "stale-revision",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {},
+       "_meta": {
+        "catalogRevision": "sha256:stale"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "catalog_revision_stale"
+     }
+    },
+    {
+     "as": "stale-revision-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "stale-revision-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "mutation-denied",
+     "mcp": {
+      "method": "tools/call",
+      "name": "create_vm",
+      "params": {
+       "name": "create_vm",
+       "arguments": {
+        "name": "x"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.content.0.text": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     }
+    },
+    {
+     "as": "mutation-denied-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "mutation-denied-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "discover",
+     "mcp": {
+      "method": "server/discover"
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "complete",
+      "body.result._meta": {
+       "io.modelcontextprotocol/serverInfo": {
+        "name": "host-agent",
+        "version": "0.2.3"
+       }
+      }
+     }
+    },
+    {
+     "as": "list",
+     "mcp": {
+      "method": "tools/list"
+     },
+     "expect": {
+      "status": 200,
+      "body.result.tools.0._meta.catalogRevision": "${INITIAL_REVISION}"
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    },
+    {
+     "as": "catalog",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_capability_catalog",
+      "params": {
+       "name": "get_capability_catalog",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.structuredContent.catalogRevision": "${INITIAL_REVISION}"
+     }
+    },
+    {
+     "as": "afterAcceptedRead",
+     "state": {},
+     "expect": {
+      "count": 2
+     },
+     "capture": {
+      "AFTER_READ": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "reopened",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${AFTER_READ}"
+     }
+    },
+    {
+     "as": "readAfterRestart",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    }
+   ]
+  },
+  {
+   "id": "reject.standalone-mutations-enabled",
+   "requirement": "Rejected MCP calls leave no audit writes or execution effects",
+   "specScenario": "Restart after rejection",
+   "steps": [
+    {
+     "as": "provision",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stopBeforeSeed",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "acceptedHistory",
+     "sql": {
+      "db": "${SANDBOX}/state/state.db",
+      "statements": [
+       "INSERT INTO capability_invocations(invocation_id,operation_id,capability_version,catalog_revision,authorization,arguments_json,result_json,observation_json,terminal_status,created_at) VALUES ('historical-accepted','op-historical',1,'sha256:historic','approved','{}','{}','{}','completed','2026-09-28T00:00:00Z')"
+      ]
+     },
+     "expect": {
+      "sql": 1
+     }
+    },
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "initialList",
+     "mcp": {
+      "method": "tools/list"
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "INITIAL_REVISION": {
+       "from": "body.result.tools.0._meta.catalogRevision"
+      }
+     }
+    },
+    {
+     "as": "initial",
+     "state": {},
+     "expect": {
+      "count": 2
+     },
+     "capture": {
+      "BEFORE": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "missing-credential",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      },
+      "token": null
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "missing-credential-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "missing-credential-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "invalid-credential",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      },
+      "token": "wrong-token"
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "invalid-credential-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "invalid-credential-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed-arguments",
+     "mcp": {
+      "method": "tools/call",
+      "name": "list_vms",
+      "params": {
+       "name": "list_vms",
+       "arguments": {
+        "fast": "yes"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "invalid_arguments"
+     }
+    },
+    {
+     "as": "malformed-arguments-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "malformed-arguments-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "undecodable-arguments",
+     "mcp": {
+      "method": "tools/call",
+      "name": "list_vms",
+      "params": {
+       "name": "list_vms",
+       "arguments": "not-an-object"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.content.0.text": {
+       "$prefix": "Error: invalid arguments:"
+      }
+     }
+    },
+    {
+     "as": "undecodable-arguments-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "undecodable-arguments-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-tool",
+     "mcp": {
+      "method": "tools/call",
+      "name": "reject_no_such_tool",
+      "params": {
+       "name": "reject_no_such_tool",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 400,
+      "body.error.code": -32602
+     }
+    },
+    {
+     "as": "unknown-tool-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "unknown-tool-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "stale-revision",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {},
+       "_meta": {
+        "catalogRevision": "sha256:stale"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "catalog_revision_stale"
+     }
+    },
+    {
+     "as": "stale-revision-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "stale-revision-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "discover",
+     "mcp": {
+      "method": "server/discover"
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "complete",
+      "body.result._meta": {
+       "io.modelcontextprotocol/serverInfo": {
+        "name": "host-agent",
+        "version": "0.2.3"
+       }
+      }
+     }
+    },
+    {
+     "as": "list",
+     "mcp": {
+      "method": "tools/list"
+     },
+     "expect": {
+      "status": 200,
+      "body.result.tools.0._meta.catalogRevision": "${INITIAL_REVISION}"
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    },
+    {
+     "as": "catalog",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_capability_catalog",
+      "params": {
+       "name": "get_capability_catalog",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.structuredContent.catalogRevision": "${INITIAL_REVISION}"
+     }
+    },
+    {
+     "as": "afterAcceptedRead",
+     "state": {},
+     "expect": {
+      "count": 2
+     },
+     "capture": {
+      "AFTER_READ": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "reopened",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${AFTER_READ}"
+     }
+    },
+    {
+     "as": "readAfterRestart",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    }
+   ]
+  },
+  {
+   "id": "reject.platform",
+   "requirement": "Rejected MCP calls leave no audit writes or execution effects",
+   "specScenario": "Restart after rejection",
+   "steps": [
+    {
+     "as": "provision",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stopBeforeSeed",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "acceptedHistory",
+     "sql": {
+      "db": "${SANDBOX}/state/state.db",
+      "statements": [
+       "INSERT INTO capability_invocations(invocation_id,operation_id,capability_version,catalog_revision,authorization,arguments_json,result_json,observation_json,terminal_status,created_at) VALUES ('historical-accepted','op-historical',1,'sha256:historic','approved','{}','{}','{}','completed','2026-09-28T00:00:00Z')"
+      ]
+     },
+     "expect": {
+      "sql": 1
+     }
+    },
+    {
+     "as": "start",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "initialList",
+     "mcp": {
+      "method": "tools/list"
+     },
+     "expect": {
+      "status": 200
+     },
+     "capture": {
+      "INITIAL_REVISION": {
+       "from": "body.result.tools.0._meta.catalogRevision"
+      }
+     }
+    },
+    {
+     "as": "initial",
+     "state": {},
+     "expect": {
+      "count": 2
+     },
+     "capture": {
+      "BEFORE": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "missing-credential",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      },
+      "token": null
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "missing-credential-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "missing-credential-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "invalid-credential",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      },
+      "token": "wrong-token"
+     },
+     "expect": {
+      "status": 401
+     }
+    },
+    {
+     "as": "invalid-credential-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "invalid-credential-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed-arguments",
+     "mcp": {
+      "method": "tools/call",
+      "name": "list_vms",
+      "params": {
+       "name": "list_vms",
+       "arguments": {
+        "fast": "yes"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "invalid_arguments"
+     }
+    },
+    {
+     "as": "malformed-arguments-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "malformed-arguments-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "undecodable-arguments",
+     "mcp": {
+      "method": "tools/call",
+      "name": "list_vms",
+      "params": {
+       "name": "list_vms",
+       "arguments": "not-an-object"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.content.0.text": {
+       "$prefix": "Error: invalid arguments:"
+      }
+     }
+    },
+    {
+     "as": "undecodable-arguments-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "undecodable-arguments-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-tool",
+     "mcp": {
+      "method": "tools/call",
+      "name": "reject_no_such_tool",
+      "params": {
+       "name": "reject_no_such_tool",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 400,
+      "body.error.code": -32602
+     }
+    },
+    {
+     "as": "unknown-tool-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "unknown-tool-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "stale-revision",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {},
+       "_meta": {
+        "catalogRevision": "sha256:stale"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "catalog_revision_stale"
+     }
+    },
+    {
+     "as": "stale-revision-state",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "stale-revision-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "discover",
+     "mcp": {
+      "method": "server/discover"
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "complete",
+      "body.result._meta": {
+       "io.modelcontextprotocol/serverInfo": {
+        "name": "host-agent",
+        "version": "0.2.3"
+       }
+      }
+     }
+    },
+    {
+     "as": "list",
+     "mcp": {
+      "method": "tools/list"
+     },
+     "expect": {
+      "status": 200,
+      "body.result.tools.0._meta.catalogRevision": "${INITIAL_REVISION}"
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    },
+    {
+     "as": "catalog",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_capability_catalog",
+      "params": {
+       "name": "get_capability_catalog",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.structuredContent.catalogRevision": "${INITIAL_REVISION}"
+     }
+    },
+    {
+     "as": "afterAcceptedRead",
+     "state": {},
+     "expect": {
+      "count": 2
+     },
+     "capture": {
+      "AFTER_READ": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "reopened",
+     "state": {},
+     "expect": {
+      "count": 2,
+      "digest": "${AFTER_READ}"
+     }
+    },
+    {
+     "as": "readAfterRestart",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    }
+   ]
+  }
+ ]
+}

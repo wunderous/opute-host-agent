@@ -244,6 +244,34 @@ class Sandbox:
             }
         return out
 
+    def durable_snapshot(self) -> dict[str, Any]:
+        """Fingerprint every SQLite schema and row, without exposing values.
+
+        Logical contents are compared: WAL/checkpoint bytes are not durable
+        semantics. Include table names and row contents, so an UPDATE with
+        unchanged row counts cannot pass the rejected-call contract.
+        """
+        import hashlib
+
+        databases = {}
+        for relative, schema in self.sqlite_schemas().items():
+            conn = sqlite3.connect(f"file:{self.root / relative}?mode=ro", uri=True)
+            try:
+                contents = {}
+                for obj in schema["objects"]:
+                    if obj["type"] != "table":
+                        continue
+                    name = obj["name"].replace('"', '""')
+                    contents[obj["name"]] = sorted(
+                        repr(row) for row in conn.execute(f'SELECT * FROM "{name}"'))
+                payload = json.dumps({"schema": schema, "rows": contents}, sort_keys=True)
+                databases[relative] = hashlib.sha256(payload.encode()).hexdigest()
+            finally:
+                conn.close()
+        payload = json.dumps(databases, sort_keys=True)
+        return {"digest": hashlib.sha256(payload.encode()).hexdigest(),
+                "count": len(databases), "databases": databases}
+
 
 def run_cli(impl: Impl, sandbox: Sandbox, argv: list[str], env: dict[str, Any],
             timeout: float = 30.0, probe_port: bool = False) -> dict:
