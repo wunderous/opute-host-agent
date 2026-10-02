@@ -44,6 +44,16 @@ class CanonTest(unittest.TestCase):
         with self.assertRaises(canon.MaskError):
             canon.normalize({"t": 1}, {"masks": [{"path": ["t"], "type": "regex", "reason": "x"}]}, {})
 
+    def test_one_of_mask_accepts_only_declared_values(self):
+        spec = {"masks": [{"path": ["m"], "type": "one-of", "values": ["/", "${SANDBOX}/home"], "reason": "tie"}]}
+        left, lv = canon.normalize({"m": "/"}, spec, {})
+        right, rv = canon.normalize({"m": "/tmp/sb/home"}, spec, {"SANDBOX": "/tmp/sb"})
+        self.assertEqual((left, lv, rv), (right, [], []))
+        _, violations = canon.normalize({"m": "/var"}, spec, {})
+        self.assertEqual(violations[0]["value"], "/var")
+        with self.assertRaises(canon.MaskError):
+            canon.normalize({"m": "/"}, {"masks": [{"path": ["m"], "type": "one-of", "values": ["/"], "reason": "x"}]}, {})
+
     def test_substitution_is_exact_and_longest_first(self):
         doc = canon.substitute(
             {"p": "/tmp/sb/home", "id": "agent-a", "k": "agent-a-extra"},

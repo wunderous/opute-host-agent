@@ -140,12 +140,21 @@ def apply_masks(doc: Any, masks: Iterable[dict]) -> tuple[Any, list[dict]]:
     violations: list[dict] = []
     for mask in masks:
         kind = mask.get("type")
-        if kind not in MASK_TYPES:
+        if kind not in MASK_TYPES and kind != "one-of":
             raise MaskError(f"unknown mask type {kind!r}")
         if not str(mask.get("reason", "")).strip():
             raise MaskError(f"mask {mask.get('path')} has no reason")
         path = list(mask["path"])
-        check = MASK_TYPES[kind]
+        if kind == "one-of":
+            # A value chosen by a race between equal candidates: any declared
+            # candidate is accepted, anything else is a violation.
+            values = mask.get("values")
+            if not isinstance(values, list) or len(values) < 2:
+                raise MaskError(f"one-of mask {path} needs at least two values")
+            check = (lambda v, _values=tuple(json.dumps(x, sort_keys=True) for x in values):
+                     json.dumps(v, sort_keys=True) in _values)
+        else:
+            check = MASK_TYPES[kind]
 
         def fn(value: Any, _kind=kind, _check=check, _path=path) -> Any:
             if _check(value):
