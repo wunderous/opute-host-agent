@@ -1,14 +1,17 @@
 {
   "canaries": {
     "C1-descriptor-text": "pass",
+    "C10-schema-type-text": "pass",
     "C2-auth-status": "pass",
     "C3-extra-argv-token": "pass",
     "C4-legacy-bypass-widened": "pass",
     "C5-retired-env-accepted": "pass",
     "C6-mutation-gate-open": "pass",
     "C7-envelope-status": "pass",
-    "C8-ipv6-loopback-origin": "pass"
+    "C8-ipv6-loopback-origin": "pass",
+    "C9-vm-release-default": "pass"
   },
+  "contracts": null,
   "gate": {
     "failures": [],
     "name": "m1",
@@ -18,7 +21,7 @@
   "items": {
     "admission.standalone-mutation-denied": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "core",
       "surface": "admission"
     },
@@ -30,25 +33,25 @@
     },
     "catalog.platform": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "contracts",
       "surface": "catalog"
     },
     "catalog.standalone": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "contracts",
       "surface": "catalog"
     },
     "catalog.standalone-mutations-enabled": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "contracts",
       "surface": "catalog"
     },
     "catalog.standalone-prefixed-names": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "contracts",
       "surface": "catalog"
     },
@@ -124,6 +127,138 @@
       "owner": "config",
       "surface": "lifecycle"
     },
+    "host-read.call-envelope": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "host-read.capability-catalog.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "contracts",
+      "surface": "catalog"
+    },
+    "host-read.capability-catalog.standalone": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "contracts",
+      "surface": "catalog"
+    },
+    "host-read.detect-platform.native": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.host-capacity": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.host-info.absent": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.host-info.inventory-mix": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.host-info.list-fails": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.host-info.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.host-info.storage-zfs": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.lifecycle-without-tasks.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
+    "host-read.list-vms.absent": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.empty": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.inventory-mix": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.list-fails": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.malformed": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.ownership-enforced": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.list-vms.two-containers": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "host",
+      "surface": "host-read"
+    },
+    "host-read.standalone-mutation-set-denied": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "authz",
+      "surface": "auth"
+    },
+    "host-read.standalone-mutation-set-denied.prefixed": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "authz",
+      "surface": "auth"
+    },
+    "host-read.task-boundary.platform": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "transport",
+      "surface": "mcp-wire"
+    },
     "lifecycle.fault-injection": {
       "go-vs-go": "pass",
       "go-vs-rust": "pass",
@@ -162,7 +297,7 @@
     },
     "mcp.get-host-info": {
       "go-vs-go": "pass",
-      "go-vs-rust": "fail",
+      "go-vs-rust": "pass",
       "owner": "host",
       "surface": "read-only-tools"
     },

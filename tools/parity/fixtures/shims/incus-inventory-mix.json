@@ -1,0 +1,107 @@
+{
+  "description": "Mixed incus inventory for M3 read-only tools: running and stopped VMs and containers, limits from config, expanded config and devices, state-derived memory, owner labels, agent probes, guest CPU counts, instance state queries, and a dir storage pool for root disk quota support.",
+  "commands": {
+    "incus": [
+      {
+        "argv": [
+          "list",
+          "--format",
+          "json"
+        ],
+        "stdout": "[{\"name\": \"vm-a\", \"status\": \"Running\", \"type\": \"virtual-machine\", \"config\": {\"limits.cpu\": \"2\", \"limits.memory\": \"4GiB\", \"image.release\": \"noble\", \"user.opute.host_agent_instance\": \"standalone\"}, \"devices\": {\"root\": {\"type\": \"disk\", \"path\": \"/\", \"pool\": \"pool1\", \"size\": \"20GiB\"}}, \"state\": {\"network\": {\"enp5s0\": {\"addresses\": [{\"address\": \"10.42.0.5\", \"family\": \"inet\", \"scope\": \"global\"}, {\"address\": \"fe80::1\", \"family\": \"inet6\", \"scope\": \"link\"}]}}, \"memory\": {\"usage\": 1073741824}}}, {\"name\": \"vm-b\", \"status\": \"Stopped\", \"type\": \"virtual machine\", \"config\": {\"user.opute.host_agent_instance\": \"other-agent\"}, \"expanded_config\": {\"limits.cpu\": \"1\", \"limits.memory\": \"1.5GB\"}, \"expanded_devices\": {\"root\": {\"type\": \"disk\", \"size\": 5368709120}}}, {\"name\": \"ct-c\", \"status\": \"RUNNING\", \"type\": \"container\", \"config\": {\"limits.disk\": \"10GB\"}, \"state\": {\"memory\": {\"usage\": \"536870912\"}, \"network\": {\"eth0\": {\"addresses\": [{\"address\": \"192.168.1.20\", \"family\": \"inet\", \"scope\": \"global\"}, {\"address\": \"192.168.1.20\", \"family\": \"inet\", \"scope\": \"global\"}]}}}}, {\"name\": \"ct-d\", \"status\": \"Frozen\", \"type\": \"container\", \"config\": {\"limits.memory\": \"512m\"}, \"state\": null}, {\"name\": \"\", \"status\": \"Running\", \"type\": \"container\"}, {\"name\": \"img-e\", \"status\": \"Running\", \"type\": \"image\"}, null]"
+      },
+      {
+        "argv": [
+          "exec",
+          "vm-a",
+          "--",
+          "true"
+        ]
+      },
+      {
+        "argv": [
+          "exec",
+          "ct-c",
+          "--",
+          "true"
+        ],
+        "exit": 1,
+        "stderr": "Error: Instance is not running\n"
+      },
+      {
+        "argv": [
+          "exec",
+          "vm-a",
+          "--",
+          "nproc"
+        ],
+        "stdout": "2"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/instances/vm-a/state"
+        ],
+        "stdout": "{\"network\": {\"enp5s0\": {\"addresses\": [{\"address\": \"10.42.0.5\", \"family\": \"inet\", \"scope\": \"global\"}, {\"address\": \"203.0.113.9\", \"family\": \"inet\", \"scope\": \"global\"}]}, \"lo\": {\"addresses\": [{\"address\": \"127.0.0.1\", \"family\": \"inet\", \"scope\": \"local\"}]}}}"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/instances/ct-c/state"
+        ],
+        "stdout": "{\"network\": {\"eth0\": {\"addresses\": [{\"address\": \"192.168.1.20\", \"family\": \"inet\", \"scope\": \"global\"}]}}}"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/instances/vm-b/state"
+        ],
+        "stdout": "{\"network\":null}"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/instances/ct-d/state"
+        ],
+        "exit": 1,
+        "stderr": "Error: not found\n"
+      },
+      {
+        "argv": [
+          "config",
+          "get",
+          "vm-a",
+          "user.opute.host_agent_instance"
+        ],
+        "stdout": "standalone"
+      },
+      {
+        "argv": [
+          "config",
+          "get",
+          "ct-c",
+          "user.opute.host_agent_instance"
+        ],
+        "stdout": "other-agent"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/profiles/default"
+        ],
+        "stdout": "{\"devices\": {\"root\": {\"type\": \"disk\", \"path\": \"/\", \"pool\": \"pool1\"}}}"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/storage-pools/pool1"
+        ],
+        "stdout": "{\"name\": \"pool1\", \"driver\": \"dir\", \"config\": {\"source\": \"/var/lib/incus/storage-pools/pool1\"}}"
+      }
+    ]
+  },
+  "default": {
+    "exit": 1,
+    "stderr": "unsupported parity shim invocation\n"
+  }
+}

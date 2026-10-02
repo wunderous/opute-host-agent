@@ -1,0 +1,37 @@
+[
+ {
+  "id": "D8.credential-files",
+  "decision": "D8",
+  "reason": "Rust provisions client secrets under <state>/credentials (oauth-issuance: provisioned credentials)",
+  "path": ["files"],
+  "drop": {"field": "path", "prefix": "state/credentials"}
+ },
+ {
+  "id": "D8.authz-tables",
+  "decision": "D8",
+  "reason": "Rust adds the pending_authorizations, consents and schema_migrations tables to authz.sqlite (oauth-issuance: operator approval, migration)",
+  "path": ["sqlite", "state/authz.sqlite", "objects"],
+  "drop": {"field": "table", "in": ["pending_authorizations", "consents", "schema_migrations"]}
+ },
+ {
+  "id": "D8.authz-row-counts",
+  "decision": "D8",
+  "reason": "Rust owns the built-in client rows (adds host-agent-provider) and the new tables' rows (oauth-issuance)",
+  "path": ["sqlite", "state/authz.sqlite", "rowCounts"],
+  "dropKeys": ["clients", "pending_authorizations", "consents", "schema_migrations"]
+ },
+ {
+  "id": "D8.audit-server-log",
+  "decision": "D8",
+  "reason": "Rust writes one oauth audit line per issuance decision, provisioning and migration (oauth-issuance: audit)",
+  "path": ["serverLog"],
+  "dropLines": {"contains": "msg=oauth "}
+ },
+ {
+  "id": "D8.audit-step-stderr",
+  "decision": "D8",
+  "reason": "Rust writes one oauth audit line per issuance decision, provisioning and migration (oauth-issuance: audit)",
+  "path": ["steps", "*", "stderr"],
+  "dropLines": {"contains": "msg=oauth "}
+ }
+]

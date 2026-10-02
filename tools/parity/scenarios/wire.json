@@ -8,7 +8,7 @@
       "net/http ServeMux"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -1160,7 +1160,7 @@
       "internal/transport/http.go:handleMCP"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -4158,7 +4158,7 @@
       "go-sdk internal/jsonrpc2/wire.go"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -5513,7 +5513,7 @@
       "internal/hostmcp/server.go:HandleExtensionMethod"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -15731,7 +15731,7 @@
       "internal/hostmcp/server.go:HandleExtensionMethod"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -25952,7 +25952,7 @@
       "net/http server.go:chunkWriter.writeHeader"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -26365,7 +26365,7 @@
       "go-sdk mcp/streamable.go:servePOST"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -26923,7 +26923,7 @@
       "go-sdk mcp/streamable.go:servePOST"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "start",
@@ -27810,7 +27810,7 @@
       "internal/authz/resource.go:CanonicalMCPResource"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "init",
@@ -27830,6 +27830,8 @@
         "sql": {
           "db": "${SANDBOX}/state/authz.sqlite",
           "statements": [
+            "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+            "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",
@@ -30115,7 +30117,13 @@
     ],
     "collect": [
       "sqlite"
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   },
   {
     "id": "wire.auth.platform",
@@ -30127,7 +30135,7 @@
       "internal/authz/resource.go:CanonicalMCPResource"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "init",
@@ -30148,6 +30156,8 @@
         "sql": {
           "db": "${SANDBOX}/state/authz.sqlite",
           "statements": [
+            "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+            "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",
@@ -32434,7 +32444,13 @@
     ],
     "collect": [
       "sqlite"
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   },
   {
     "id": "wire.origin.standalone",
@@ -32446,7 +32462,7 @@
       "go-sdk mcp/streamable.go DNS rebinding protection"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "init",
@@ -32466,6 +32482,8 @@
         "sql": {
           "db": "${SANDBOX}/state/authz.sqlite",
           "statements": [
+            "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+            "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",
@@ -34490,7 +34508,7 @@
       "go-sdk mcp/streamable.go DNS rebinding protection"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "init",
@@ -34511,6 +34529,8 @@
         "sql": {
           "db": "${SANDBOX}/state/authz.sqlite",
           "statements": [
+            "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+            "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",
@@ -36536,7 +36556,7 @@
       "go-sdk mcp/streamable.go DNS rebinding protection"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "init",
@@ -36556,6 +36576,8 @@
         "sql": {
           "db": "${SANDBOX}/state/authz.sqlite",
           "statements": [
+            "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+            "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",
@@ -38582,7 +38604,7 @@
       "milestones.md M2 E2E 7 (authz state)"
     ],
     "fixture": "incus-empty",
-    "corpusVersion": 1,
+    "corpusVersion": 2,
     "steps": [
       {
         "as": "init",
@@ -38602,6 +38624,8 @@
         "sql": {
           "db": "${SANDBOX}/state/authz.sqlite",
           "statements": [
+            "CREATE TABLE IF NOT EXISTS schema_migrations (\n  id TEXT PRIMARY KEY,\n  applied_at INTEGER NOT NULL\n)",
+            "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES('oauth-issuance.v1', 1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98','host-agent-bootstrap','http://127.0.0.1:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('8b0a6c12a181ef5f025d66882ba99f9083c7023995183cb0c866b4ebc721bae9','host-agent-bootstrap','http://localhost:${PORT}/mcp','mcp',4102444800,0,1)",
             "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('e00564b75ae125eba634d1eb9d1fb358c573c2e9bee8a143350a939cc0fcfe7b','host-agent-bootstrap','http://127.0.0.1:1/mcp','mcp',4102444800,0,1)",

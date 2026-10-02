@@ -174,6 +174,37 @@ impl StateStore {
         Ok(())
     }
 
+    /// `Store.UpsertResource` for a parsed, tenant-checked URI.
+    pub fn upsert_resource(
+        &self,
+        uri: &crate::resource::Uri,
+        coordinates_json: &str,
+    ) -> std::result::Result<(), String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let now = crate::hostobs::rfc3339_nano_now();
+        conn.execute(
+            "INSERT INTO resource_registry(
+        uri, resource_type, tenant_id, resource_id, coordinates_json, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(uri) DO UPDATE SET
+        resource_type=excluded.resource_type, tenant_id=excluded.tenant_id,
+        resource_id=excluded.resource_id, coordinates_json=excluded.coordinates_json,
+        status=excluded.status, updated_at=excluded.updated_at",
+            rusqlite::params![
+                uri.to_string(),
+                uri.resource_type,
+                uri.tenant_id,
+                uri.resource_id,
+                coordinates_json,
+                "active",
+                now,
+                now
+            ],
+        )
+        .map_err(sqlite_err)?;
+        Ok(())
+    }
+
     /// Close explicitly so the WAL is checkpointed and removed, as Go's
     /// `db.Close` does; a leftover `-wal` file would be an observable diff.
     pub fn close(&mut self) {
@@ -189,8 +220,33 @@ impl Drop for StateStore {
     }
 }
 
-const BOOTSTRAP_CLIENT_ID: &str = "host-agent-bootstrap";
-const OPUTE_CLIENT_ID: &str = "opute-mcp-host";
+/// Open `authz.sqlite` for the operator CLI without running the server's
+/// preparation: the CLI must never provision or rotate secrets as a side
+/// effect of a different environment.
+pub fn open_authz_for_operator(dir: &Path) -> Result<Connection> {
+    let path = dir.join("authz.sqlite");
+    if !path.exists() {
+        return Err(go_err!(
+            "no authz store at {}; start the Host Agent once, or pass --state-dir",
+            path.display()
+        ));
+    }
+    let conn = open(&path, &["busy_timeout = 5000", "foreign_keys = ON"]).map_err(goerr::Error)?;
+    let ready: bool = conn
+        .query_row(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'",
+            [],
+            |_| Ok(()),
+        )
+        .is_ok();
+    if !ready {
+        return Err(go_err!(
+            "the authz store at {} predates OAuth issuance; start the Host Agent once to migrate it",
+            path.display()
+        ));
+    }
+    Ok(conn)
+}
 
 pub struct AuthzStore {
     conn: Option<Connection>,
@@ -217,52 +273,17 @@ impl AuthzStore {
         conn.execute_batch(ddl::AUTHZ_INIT)
             .map_err(|e| go_err!("init authz store: {}", sqlite_err(e)))?;
         let store = AuthzStore { conn: Some(conn) };
-        store
-            .upsert_client(
-                BOOTSTRAP_CLIENT_ID,
-                "",
-                "bootstrap",
-                &["http://127.0.0.1/callback", "http://localhost/callback"],
-            )
-            .map_err(goerr::Error)?;
-        let secret_hash = if opute_secret.trim().is_empty() {
-            String::new()
-        } else {
-            hex::encode(<sha2::Sha256 as sha2::Digest>::digest(opute_secret.trim()))
-        };
-        store
-            .upsert_client(
-                OPUTE_CLIENT_ID,
-                &secret_hash,
-                "confidential",
-                &["https://127.0.0.1/oauth/callback"],
-            )
-            .map_err(goerr::Error)?;
+        // Issuance contract (decision D8): the built-in client rows, their
+        // provisioned secrets, and the one-time revocation of earlier tokens.
+        // Go re-registers the built-ins on every open; here `prepare` owns
+        // them so a restart never resets a provisioned secret.
+        crate::oauth::prepare(store.conn(), &dir, opute_secret)
+            .map_err(|e| go_err!("prepare oauth issuance: {e}"))?;
         Ok(store)
     }
 
-    fn upsert_client(
-        &self,
-        id: &str,
-        secret_hash: &str,
-        kind: &str,
-        redirects: &[&str],
-    ) -> std::result::Result<(), String> {
-        let conn = self.conn.as_ref().expect("open store");
-        let redirects = serde_json::to_string(redirects).expect("string slice serializes");
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs() as i64)
-            .unwrap_or(0);
-        conn.execute(
-            "INSERT INTO clients(client_id, secret_hash, client_type, redirect_uris, metadata_url, confidential, created_at)
-		VALUES(?,?,?,?,?,?,?)
-		ON CONFLICT(client_id) DO UPDATE SET secret_hash=excluded.secret_hash, client_type=excluded.client_type,
-			redirect_uris=excluded.redirect_uris, metadata_url=excluded.metadata_url, confidential=excluded.confidential",
-            rusqlite::params![id, secret_hash, kind, redirects, "", 1, now],
-        )
-        .map_err(sqlite_err)?;
-        Ok(())
+    pub(crate) fn conn(&self) -> &Connection {
+        self.conn.as_ref().expect("open store")
     }
 
     /// `Store.tokenByHash`.
@@ -399,6 +420,21 @@ mod tests {
     }
 
     #[test]
+    fn authz_restart_keeps_provisioned_secrets() {
+        let dir = tempfile::tempdir().unwrap();
+        AuthzStore::open(dir.path(), "").unwrap().close();
+        let read = || {
+            ["opute-mcp-host", "host-agent-provider"].map(|c| {
+                std::fs::read_to_string(dir.path().join("credentials").join(format!("{c}.json")))
+                    .unwrap()
+            })
+        };
+        let before = read();
+        AuthzStore::open(dir.path(), "").unwrap().close();
+        assert_eq!(read(), before);
+    }
+
+    #[test]
     fn authz_open_registers_builtin_clients_once() {
         let dir = tempfile::tempdir().unwrap();
         AuthzStore::open(dir.path(), "").unwrap().close();
@@ -407,7 +443,8 @@ mod tests {
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM clients", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(count, 2);
+        // Go's two built-ins plus host-agent-provider (oauth-issuance, D8).
+        assert_eq!(count, 3);
         let hash: String = conn
             .query_row(
                 "SELECT secret_hash FROM clients WHERE client_id='opute-mcp-host'",

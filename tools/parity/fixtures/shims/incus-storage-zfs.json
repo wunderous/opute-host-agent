@@ -1,0 +1,40 @@
+{
+  "description": "Empty inventory; the default profile has no root pool and storage-pools lists a zfs pool, so root disk quotas are enforced.",
+  "commands": {
+    "incus": [
+      {
+        "argv": [
+          "list",
+          "--format",
+          "json"
+        ],
+        "stdout": "[]"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/profiles/default"
+        ],
+        "stdout": "{\"devices\":{}}"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/storage-pools"
+        ],
+        "stdout": "[\"/1.0/storage-pools/fast\",\"/1.0/storage-pools/slow\"]"
+      },
+      {
+        "argv": [
+          "query",
+          "/1.0/storage-pools/fast"
+        ],
+        "stdout": "{\"name\":\"fast\",\"driver\":\"zfs\",\"config\":{}}"
+      }
+    ]
+  },
+  "default": {
+    "exit": 1,
+    "stderr": "unsupported parity shim invocation\n"
+  }
+}

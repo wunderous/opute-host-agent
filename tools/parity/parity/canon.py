@@ -67,7 +67,14 @@ def substitute(value: Any, variables: dict[str, str]) -> Any:
     def walk(v: Any) -> Any:
         if isinstance(v, str):
             for lit, name in ordered:
-                if lit in v:
+                if lit not in v:
+                    continue
+                if lit.isdigit():
+                    # A numeric literal (a port) is replaced only where it is
+                    # not part of a longer number, such as a byte count that
+                    # happens to contain the port's digits.
+                    v = re.sub(r"(?<![0-9])" + lit + r"(?![0-9])", "${" + name + "}", v)
+                else:
                     v = v.replace(lit, "${" + name + "}")
             return v
         if isinstance(v, list):
@@ -133,12 +140,21 @@ def apply_masks(doc: Any, masks: Iterable[dict]) -> tuple[Any, list[dict]]:
     violations: list[dict] = []
     for mask in masks:
         kind = mask.get("type")
-        if kind not in MASK_TYPES:
+        if kind not in MASK_TYPES and kind != "one-of":
             raise MaskError(f"unknown mask type {kind!r}")
         if not str(mask.get("reason", "")).strip():
             raise MaskError(f"mask {mask.get('path')} has no reason")
         path = list(mask["path"])
-        check = MASK_TYPES[kind]
+        if kind == "one-of":
+            # A value chosen by a race between equal candidates: any declared
+            # candidate is accepted, anything else is a violation.
+            values = mask.get("values")
+            if not isinstance(values, list) or len(values) < 2:
+                raise MaskError(f"one-of mask {path} needs at least two values")
+            check = (lambda v, _values=tuple(json.dumps(x, sort_keys=True) for x in values):
+                     json.dumps(v, sort_keys=True) in _values)
+        else:
+            check = MASK_TYPES[kind]
 
         def fn(value: Any, _kind=kind, _check=check, _path=path) -> Any:
             if _check(value):
@@ -204,9 +220,119 @@ def diff(left: Any, right: Any, path: Path | None = None, limit: int = 200) -> l
     return out
 
 
+def apply_omitempty(doc: Any, rules: Iterable[dict]) -> Any:
+    """Go `omitempty` fields: absent and the zero value encode the same
+    information, so fill each listed key with its zero value where absent.
+    A rule needs a reason; it never hides a non-zero value."""
+    for rule in rules:
+        if not str(rule.get("reason", "")).strip():
+            raise MaskError(f"omitempty rule {rule.get('path')} has no reason")
+
+        def fill(obj: Any, _rule=rule) -> Any:
+            if isinstance(obj, dict):
+                return {**{k: _rule["zero"] for k in _rule["keys"]}, **obj}
+            return obj
+
+        doc, _ = _apply_at(doc, list(rule["path"]), fill)
+    return doc
+
+
 def normalize(observation: Any, spec: dict, variables: dict[str, str]) -> tuple[Any, list[dict]]:
-    """Full pipeline for one side: substitute → parse embedded → sets → masks."""
+    """Full pipeline for one side: substitute → parse embedded → omitempty → sets → masks."""
     doc = substitute(copy.deepcopy(observation), variables)
     doc = parse_embedded(doc, spec.get("parseJson", []))
+    doc = apply_omitempty(doc, spec.get("omitempty", []))
     doc = apply_sets(doc, spec.get("sets", []))
     return apply_masks(doc, spec.get("masks", []))
+
+
+# --- declared divergences -------------------------------------------------------
+#
+# A divergence is an approved, intentional difference between Go and Rust
+# (milestones.md decision table). It is declared by id in a scenario's
+# `compare.divergences` and defined once in tools/parity/divergences.json.
+# Rules remove the same D8-owned content from both sides before the diff and
+# apply only when the two sides are different implementations. A rule whose
+# removed content is identical on both sides is stale: it hides nothing, so it
+# must be deleted.
+
+
+class DivergenceError(ValueError):
+    pass
+
+
+def _drop_matches(item: Any, rule: dict) -> bool:
+    if not isinstance(item, dict):
+        return False
+    value = item.get(rule["field"])
+    if "prefix" in rule:
+        return isinstance(value, str) and value.startswith(rule["prefix"])
+    if "in" in rule:
+        return value in rule["in"]
+    raise DivergenceError(f"drop rule needs prefix or in: {rule}")
+
+
+def _split(value: Any, rule: dict) -> tuple[Any, Any]:
+    """Return (kept, removed) for one addressed value."""
+    if "drop" in rule:
+        if not isinstance(value, list):
+            return value, []
+        kept = [x for x in value if not _drop_matches(x, rule["drop"])]
+        removed = [x for x in value if _drop_matches(x, rule["drop"])]
+        return kept, removed
+    if "dropKeys" in rule:
+        if not isinstance(value, dict):
+            return value, {}
+        keys = set(rule["dropKeys"])
+        return ({k: v for k, v in value.items() if k not in keys},
+                {k: v for k, v in value.items() if k in keys})
+    if "dropLines" in rule:
+        if not isinstance(value, str):
+            return value, []
+        needle = rule["dropLines"]["contains"]
+        lines = value.split("\n")
+        return ("\n".join(x for x in lines if needle not in x),
+                [x for x in lines if needle in x])
+    raise DivergenceError(f"divergence {rule.get('id')} has no drop, dropKeys or dropLines")
+
+
+def load_divergences(path: Any) -> dict[str, dict]:
+    rules = {}
+    for rule in json.loads(path.read_text()):
+        for key in ("id", "decision", "reason", "path"):
+            if not rule.get(key):
+                raise DivergenceError(f"divergence {rule.get('id')!r} has no {key}")
+        if sum(k in rule for k in ("drop", "dropKeys", "dropLines")) != 1:
+            raise DivergenceError(f"divergence {rule['id']} needs exactly one of drop, dropKeys, dropLines")
+        if rule["id"] in rules:
+            raise DivergenceError(f"duplicate divergence {rule['id']}")
+        rules[rule["id"]] = rule
+    return rules
+
+
+def apply_divergences(left: Any, right: Any, ids: Iterable[str],
+                      registry: dict[str, dict]) -> tuple[Any, Any, list[dict]]:
+    """Remove declared divergent content from both sides.
+
+    Returns the reduced documents and one record per declaration with the
+    decision it cites and whether it is stale.
+    """
+    records = []
+    for did in ids:
+        rule = registry.get(did)
+        if rule is None:
+            raise DivergenceError(f"undefined divergence {did!r}")
+        removed: dict[str, list] = {"a": [], "b": []}
+
+        def take(side: str) -> Callable[[Any], Any]:
+            def fn(value: Any) -> Any:
+                kept, gone = _split(value, rule)
+                removed[side].append(gone)
+                return kept
+            return fn
+
+        left, _ = _apply_at(left, list(rule["path"]), take("a"))
+        right, _ = _apply_at(right, list(rule["path"]), take("b"))
+        records.append({"id": did, "decision": rule["decision"],
+                        "stale": _set_key(removed["a"]) == _set_key(removed["b"])})
+    return left, right, records

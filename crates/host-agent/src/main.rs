@@ -5,6 +5,7 @@
 #[macro_use]
 mod goerr;
 mod app;
+mod catalog;
 mod cli;
 mod config;
 mod ddl;
@@ -13,8 +14,13 @@ mod gojson;
 mod hostobs;
 mod http1;
 mod identity;
+mod incus;
 mod mcpsdk;
+mod oauth;
+mod resource;
+mod schema;
 mod store;
+mod tools;
 mod transport;
 
 use std::io::Write;

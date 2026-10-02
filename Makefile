@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-corpus parity-ci
+.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 
@@ -50,6 +50,19 @@ parity-canaries:
 parity-oracles:
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/evidence/current/go-oracles.json
 
+# Declared divergences (decisions D8, D10): the Rust contract suites, and
+# patched Rust builds that must turn them red.
+CONTRACT_SUITES := oauth-issuance standalone-read-only-gate
+
+parity-contracts:
+	for s in $(CONTRACT_SUITES); do \
+		(rm -rf evidence/current/contracts/$$s && \
+		$(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s --out $(CURDIR)/evidence/current/contracts/$$s) || exit 1; \
+	done
+
+parity-rust-canaries:
+	$(PARITY) rust-canaries --rust $(RUST_BIN) --out $(CURDIR)/evidence/current/rust-canaries.json
+
 parity-manifest:
 	$(PARITY) manifest --go $(GO_REF) $(if $(wildcard $(RUST_BIN)),--rust $(RUST_BIN))
 
@@ -62,8 +75,15 @@ parity-verify-m1:
 parity-verify-m2:
 	$(PARITY) verify --gate m2 --report $(CURDIR)/evidence/current/verify-m2.json
 
+parity-verify-m3:
+	$(PARITY) verify --gate m3 --report $(CURDIR)/evidence/current/verify-m3.json
+
 parity-verify-cutover:
 	$(PARITY) verify --gate cutover
+
+# Regenerate the Rust catalog source from the pinned Go tree (M3).
+catalog-source:
+	$(PARITY) catalog-source --go-src $(GO_SRC)
 
 # Regenerate scenarios/wire.json from parity/corpus.py (the harness tests fail
 # when the committed corpus is stale).
@@ -74,11 +94,15 @@ parity-m0: parity-test go-reference parity-manifest parity-capture parity-go-vs-
 
 parity-m1: rust-check rust-build parity-m0 parity-go-vs-rust parity-oracles parity-verify-m1
 
-parity-m2: parity-m1 parity-verify-m2
+parity-m2: parity-m1 parity-contracts parity-rust-canaries parity-verify-m2
 
-# CI: verify the committed evidence, then re-prove M1 and M2 parity with a
-# freshly built Rust binary (fails on any diff in those surfaces).
+parity-m3: parity-m2 parity-verify-m3
+
+# CI: verify the committed evidence, then re-prove parity on every surface
+# with a freshly built Rust binary (fails on any diff).
 parity-ci: parity-test go-reference rust-build
-	$(PARITY) verify --gate m2
-	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --surfaces cli,config,lifecycle,http,mcp-wire,auth --out $(CURDIR)/.parity/ci-go-vs-rust
+	$(PARITY) catalog-source --go-src $(GO_SRC) --check
+	$(PARITY) verify --gate m3
+	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --out $(CURDIR)/.parity/ci-go-vs-rust
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/.parity/ci-go-oracles.json
+	for s in $(CONTRACT_SUITES); do ($(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s) || exit 1; done

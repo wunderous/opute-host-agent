@@ -1023,6 +1023,149 @@
           ],
           "type": "number",
           "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskMount"
+          ],
+          "type": "one-of",
+          "values": [
+            "/",
+            "${SANDBOX}/home"
+          ],
+          "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskMount"
+          ],
+          "type": "one-of",
+          "values": [
+            "/",
+            "${SANDBOX}/home"
+          ],
+          "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)"
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
         }
       ]
     }
@@ -1098,6 +1241,10 @@
         [
           "trace"
         ]
+      ],
+      "divergences": [
+        "D8.authz-tables",
+        "D8.authz-row-counts"
       ]
     }
   },
@@ -1135,6 +1282,13 @@
         "as": "stop",
         "stop": {}
       }
-    ]
+    ],
+    "compare": {
+      "divergences": [
+        "D8.credential-files",
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   }
 ]

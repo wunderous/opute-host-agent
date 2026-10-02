@@ -16,10 +16,7 @@ use std::time::{Duration, Instant};
 use serde_json::{json, Map, Value as J};
 
 use crate::config::Env;
-use crate::gojson::{self, Node, Value};
-
-const DISCOVERY_TIMEOUT: Duration = Duration::from_secs(45);
-const OWNER_LABEL: &str = "user.opute.host_agent_instance";
+use crate::gojson;
 
 pub struct CommandResult {
     pub exit_code: i32,
@@ -200,156 +197,27 @@ pub fn detect_capabilities(env: &Env) -> J {
     })
 }
 
-fn provider_binary(env: &Env) -> String {
-    for key in ["OPUTE_INCUS_BINARY_PATH", "OPUTE_VM_BINARY_PATH"] {
-        let v = env.get(key).trim().to_string();
-        if !v.is_empty() {
-            return v;
-        }
-    }
-    for path in ["/usr/bin/incus", "/snap/bin/incus"] {
-        if Path::new(path).exists() {
-            return path.into();
-        }
-    }
-    "incus".into()
-}
-
-/// Go's typed decode of one `incusListItem`; any type mismatch makes the
-/// whole list "invalid JSON".
-struct ListItem {
-    name: String,
-    status: String,
-    kind: String,
-    owner: String,
-}
-
-fn string_field(item: &Node, key: &str) -> Result<String, ()> {
-    gojson::go_string(item.field(key))
-}
-
-fn string_map_value(item: &Node, key: &str, label: &str) -> Result<String, ()> {
-    match item.field(key).map(|n| &n.value) {
-        None | Some(Value::Null) => Ok(String::new()),
-        Some(Value::Object(members)) => {
-            let mut found = String::new();
-            for (k, v) in members {
-                let s = gojson::go_string(Some(v))?;
-                if k == label {
-                    found = s;
-                }
-            }
-            Ok(found.trim().to_string())
-        }
-        _ => Err(()),
-    }
-}
-
-fn check_object_of_objects(item: &Node, key: &str) -> Result<(), ()> {
-    match item.field(key).map(|n| &n.value) {
-        None | Some(Value::Null) => Ok(()),
-        Some(Value::Object(members)) => members
-            .iter()
-            .all(|(_, v)| matches!(v.value, Value::Object(_) | Value::Null))
-            .then_some(())
-            .ok_or(()),
-        _ => Err(()),
-    }
-}
-
-fn decode_items(stdout: &str) -> Result<Vec<ListItem>, ()> {
-    let doc = gojson::parse(stdout.as_bytes()).map_err(|_| ())?;
-    let items = match &doc.value {
-        Value::Null => return Ok(Vec::new()),
-        Value::Array(items) => items,
-        _ => return Err(()),
-    };
-    let mut out = Vec::new();
-    for item in items {
-        match &item.value {
-            Value::Null => continue,
-            Value::Object(_) => {}
-            _ => return Err(()),
-        }
-        check_object_of_objects(item, "devices")?;
-        check_object_of_objects(item, "expanded_devices")?;
-        if !matches!(
-            item.field("state").map(|n| &n.value),
-            None | Some(Value::Null) | Some(Value::Object(_))
-        ) {
-            return Err(());
-        }
-        let config_owner = string_map_value(item, "config", OWNER_LABEL)?;
-        let expanded_owner = string_map_value(item, "expanded_config", OWNER_LABEL)?;
-        out.push(ListItem {
-            name: string_field(item, "name")?,
-            status: string_field(item, "status")?,
-            kind: string_field(item, "type")?,
-            owner: if config_owner.is_empty() {
-                expanded_owner
-            } else {
-                config_owner
-            },
-        });
-    }
-    Ok(out)
-}
-
-/// `VMInventoryCapacity` counts (the two `/health` reports). The error is
-/// the provider's own message, as Go reports it.
-pub fn vm_capacity(
-    env: &Env,
-    instance_id: &str,
-    ownership_mode: &str,
-) -> Result<(i64, i64), String> {
-    let binary = provider_binary(env);
-    if look_path(env, &binary).is_none() {
-        return Err(format!(
-            "virtualization_stack_absent: the incus virtualization stack is not installed on this host; install it with {}",
-            "install_incus_stack"
-        ));
-    }
-    let argv: Vec<String> = [binary.as_str(), "list", "--format", "json"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    let res = run_command(env, &argv, DISCOVERY_TIMEOUT);
-    if res.exit_code != 0 {
-        let message = [res.stderr.trim(), res.stdout.trim()]
-            .into_iter()
-            .find(|s| !s.is_empty())
-            .unwrap_or("incus list failed");
-        return Err(message.to_string());
-    }
-    let items =
-        decode_items(&res.stdout).map_err(|_| "incus list returned invalid JSON".to_string())?;
-    let enforce = !instance_id.trim().is_empty() && ownership_mode == "enforce";
-    let (mut total, mut running) = (0, 0);
-    for item in items {
-        if item.name.is_empty() {
-            continue;
-        }
-        let kind = item.kind.trim().to_lowercase();
-        let is_vm = kind == "virtual-machine" || kind == "virtual machine" || kind == "container";
-        if !is_vm || (enforce && item.owner != instance_id) {
-            continue;
-        }
-        total += 1;
-        if item.status.eq_ignore_ascii_case("running") {
-            running += 1;
-        }
-    }
-    Ok((running, total))
-}
-
 /// The `HealthObserver` closure from `internal/app/app.go`.
 pub fn health_observer(
     env: Env,
     instance_id: String,
     ownership_mode: String,
 ) -> impl Fn() -> Map<String, J> {
+    let incus = crate::incus::Incus {
+        binary: crate::incus::provider_binary(&env),
+        env: env.clone(),
+        instance_id,
+        ownership_mode,
+        agent_id: String::new(),
+        tenant_id: String::new(),
+    };
     move || {
-        let capacity = vm_capacity(&env, &instance_id, &ownership_mode);
+        let capacity = incus.inventory_capacity().map(|c| {
+            (
+                c["runningVmCount"].as_i64().unwrap_or(0),
+                c["totalVmCount"].as_i64().unwrap_or(0),
+            )
+        });
         let mut result = Map::new();
         result.insert(
             "capabilities".into(),
@@ -363,21 +231,1192 @@ pub fn health_observer(
     }
 }
 
+// --- host system metadata (heartbeat.ReadHostSystemStats) ---------------------------
+
+/// `heartbeat.PressureStall`: one kernel PSI reading.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PressureStall {
+    pub some_avg10: f64,
+    pub some_avg60: f64,
+    pub some_avg300: f64,
+    pub some_total_usec: i64,
+    pub full_avg10: f64,
+    pub full_avg60: f64,
+    pub full_avg300: f64,
+    pub full_total_usec: i64,
+}
+
+/// PSI readings as their struct encodes (`omitempty` on every field).
+pub fn stalls_json(stalls: &std::collections::BTreeMap<String, PressureStall>) -> J {
+    let mut out = Map::new();
+    for (resource, s) in stalls {
+        let mut m = Map::new();
+        for (k, v) in [
+            ("someAvg10", s.some_avg10),
+            ("someAvg60", s.some_avg60),
+            ("someAvg300", s.some_avg300),
+            ("fullAvg10", s.full_avg10),
+            ("fullAvg60", s.full_avg60),
+            ("fullAvg300", s.full_avg300),
+        ] {
+            if v != 0.0 {
+                m.insert(k.into(), gojson::float_value(v));
+            }
+        }
+        for (k, v) in [
+            ("someTotalUsec", s.some_total_usec),
+            ("fullTotalUsec", s.full_total_usec),
+        ] {
+            if v != 0 {
+                m.insert(k.into(), J::from(v));
+            }
+        }
+        out.insert(resource.clone(), J::Object(m));
+    }
+    J::Object(out)
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DiskStats {
+    pub mount: String,
+    pub total_bytes: i64,
+    pub available_bytes: i64,
+    pub pressure: String,
+}
+
+/// `heartbeat.HostSystemStats`.
+#[derive(Clone, Debug, Default)]
+pub struct HostSystemStats {
+    pub cpu_count: i64,
+    pub cpu_quota_cores: f64,
+    pub cpu_load: [f64; 3],
+    pub memory_total_bytes: i64,
+    pub memory_free_bytes: i64,
+    pub memory_available_bytes: i64,
+    pub memory_used_bytes: i64,
+    pub memory_limit_bytes: i64,
+    pub memory_usage_bytes: i64,
+    pub memory_pressure: String,
+    pub memory_events: Option<std::collections::BTreeMap<String, i64>>,
+    pub pressure_stalls: Option<std::collections::BTreeMap<String, PressureStall>>,
+    pub cgroup_controllers: Vec<String>,
+    pub cgroup_enforcement: String,
+    pub tasks_current: i64,
+    pub tasks_limit: i64,
+    pub disk_total_bytes: i64,
+    pub disk_available_bytes: i64,
+    pub disk_pressure: String,
+    pub disk_mount: String,
+    pub disk_filesystems: Vec<DiskStats>,
+}
+
+fn ratio_pressure(available: i64, total: i64, critical: f64, warning: f64) -> String {
+    if total <= 0 {
+        return "unknown".into();
+    }
+    let ratio = available as f64 / total as f64;
+    if ratio < critical {
+        "critical".into()
+    } else if ratio < warning {
+        "warning".into()
+    } else {
+        "normal".into()
+    }
+}
+
+/// `strconv.ParseFloat` for the forms the kernel writes.
+fn parse_f64(s: &str) -> Option<f64> {
+    s.parse::<f64>().ok()
+}
+
+fn read_trimmed(path: &Path) -> Option<String> {
+    std::fs::read_to_string(path)
+        .ok()
+        .map(|s| s.trim().to_string())
+}
+
+const CGROUP_ROOT: &str = "/sys/fs/cgroup";
+
+/// `filepath.Clean` for absolute paths.
+fn clean_path(p: &str) -> String {
+    let mut parts: Vec<&str> = Vec::new();
+    for seg in p.split('/') {
+        match seg {
+            "" | "." => {}
+            ".." => {
+                parts.pop();
+            }
+            s => parts.push(s),
+        }
+    }
+    format!("/{}", parts.join("/"))
+}
+
+/// `currentCgroupDirectories`: this process's cgroup and its ancestors,
+/// then the mount root.
+pub fn current_cgroup_directories() -> Vec<PathBuf> {
+    let Ok(contents) = std::fs::read_to_string("/proc/self/cgroup") else {
+        return vec![PathBuf::from(CGROUP_ROOT)];
+    };
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    let mut add = |root: &str, relative: &str| {
+        let relative = relative.trim().trim_start_matches('/');
+        let relative = if relative.is_empty() { "." } else { relative };
+        let candidate = clean_path(&format!("{root}/{relative}"));
+        let base = clean_path(root);
+        if !(candidate == base || candidate.starts_with(&format!("{base}/"))) {
+            return;
+        }
+        let candidate = PathBuf::from(candidate);
+        if !dirs.contains(&candidate) {
+            dirs.push(candidate);
+        }
+    };
+    let add_hierarchy = |root: &str, relative: &str, add: &mut dyn FnMut(&str, &str)| {
+        let mut relative = relative.trim().trim_matches('/').to_string();
+        if relative.is_empty() {
+            add(root, ".");
+            return;
+        }
+        loop {
+            add(root, &relative);
+            let parent = match relative.rfind('/') {
+                Some(i) => relative[..i].trim_matches('/').to_string(),
+                None => String::new(),
+            };
+            if parent.is_empty() || parent == relative {
+                add(root, ".");
+                return;
+            }
+            relative = parent;
+        }
+    };
+    for line in contents.split('\n') {
+        let parts: Vec<&str> = line.splitn(3, ':').collect();
+        if parts.len() != 3 {
+            continue;
+        }
+        if parts[0] == "0" {
+            add_hierarchy(CGROUP_ROOT, parts[2], &mut add);
+            continue;
+        }
+        for controller in parts[1].trim().split(',') {
+            let controller = controller.trim();
+            if controller.is_empty() {
+                continue;
+            }
+            add_hierarchy(&format!("{CGROUP_ROOT}/{controller}"), parts[2], &mut add);
+        }
+    }
+    add(CGROUP_ROOT, ".");
+    dirs
+}
+
+fn read_cpu_quota_cores(dirs: &[PathBuf]) -> f64 {
+    let mut effective = 0.0;
+    for dir in dirs {
+        if let Some(contents) = read_trimmed(&dir.join("cpu.max")) {
+            let fields: Vec<&str> = contents.split_whitespace().collect();
+            if fields.len() >= 2 && fields[0] != "max" {
+                if let (Some(q), Some(p)) = (parse_f64(fields[0]), parse_f64(fields[1])) {
+                    if q > 0.0 && p > 0.0 {
+                        let cores = q / p;
+                        if effective == 0.0 || cores < effective {
+                            effective = cores;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if effective > 0.0 {
+        return effective;
+    }
+    let file = |name: &str| {
+        dirs.iter()
+            .find_map(|d| read_trimmed(&d.join(name)).and_then(|s| parse_f64(&s)))
+            .unwrap_or(0.0)
+    };
+    let (quota, period) = (file("cpu.cfs_quota_us"), file("cpu.cfs_period_us"));
+    if quota <= 0.0 || period <= 0.0 {
+        0.0
+    } else {
+        quota / period
+    }
+}
+
+fn read_memory_limit(dirs: &[PathBuf]) -> i64 {
+    let mut effective = 0;
+    for dir in dirs {
+        for name in ["memory.max", "memory.limit_in_bytes"] {
+            let Some(value) = read_trimmed(&dir.join(name)) else {
+                continue;
+            };
+            if value.is_empty() || value == "max" {
+                continue;
+            }
+            if let Ok(parsed) = value.parse::<i64>() {
+                if parsed > 0 && (effective == 0 || parsed < effective) {
+                    effective = parsed;
+                }
+            }
+        }
+    }
+    effective
+}
+
+fn read_memory_usage(dirs: &[PathBuf]) -> i64 {
+    for dir in dirs {
+        for name in ["memory.current", "memory.usage_in_bytes"] {
+            if let Some(v) = read_trimmed(&dir.join(name)).and_then(|s| s.parse::<i64>().ok()) {
+                if v >= 0 {
+                    return v;
+                }
+            }
+        }
+    }
+    0
+}
+
+fn read_pressure_stalls() -> Option<std::collections::BTreeMap<String, PressureStall>> {
+    let mut out = std::collections::BTreeMap::new();
+    for resource in ["cpu", "memory", "io"] {
+        let Ok(contents) = std::fs::read_to_string(format!("/proc/pressure/{resource}")) else {
+            continue;
+        };
+        let mut stall = PressureStall::default();
+        for line in contents.split('\n') {
+            let fields: Vec<&str> = line.split_whitespace().collect();
+            if fields.len() < 2 {
+                continue;
+            }
+            let full = fields[0] == "full";
+            if fields[0] != "some" && !full {
+                continue;
+            }
+            for field in &fields[1..] {
+                let Some((key, value)) = field.split_once('=') else {
+                    continue;
+                };
+                let Some(value) = parse_f64(value).filter(|v| v.is_finite()) else {
+                    continue;
+                };
+                match (key, full) {
+                    ("avg10", false) => stall.some_avg10 = value,
+                    ("avg10", true) => stall.full_avg10 = value,
+                    ("avg60", false) => stall.some_avg60 = value,
+                    ("avg60", true) => stall.full_avg60 = value,
+                    ("avg300", false) => stall.some_avg300 = value,
+                    ("avg300", true) => stall.full_avg300 = value,
+                    ("total", false) => stall.some_total_usec = value as i64,
+                    ("total", true) => stall.full_total_usec = value as i64,
+                    _ => {}
+                }
+            }
+        }
+        if stall != PressureStall::default() {
+            out.insert(resource.to_string(), stall);
+        }
+    }
+    (!out.is_empty()).then_some(out)
+}
+
+fn read_memory_events(dirs: &[PathBuf]) -> Option<std::collections::BTreeMap<String, i64>> {
+    for dir in dirs {
+        let Ok(contents) = std::fs::read_to_string(dir.join("memory.events")) else {
+            continue;
+        };
+        let mut out = std::collections::BTreeMap::new();
+        for line in contents.split('\n') {
+            let fields: Vec<&str> = line.split_whitespace().collect();
+            if fields.len() != 2 {
+                continue;
+            }
+            if let Ok(v) = fields[1].parse::<i64>() {
+                if v >= 0 {
+                    out.insert(fields[0].to_string(), v);
+                }
+            }
+        }
+        if !out.is_empty() {
+            return Some(out);
+        }
+    }
+    None
+}
+
+fn read_cgroup_enforcement(dirs: &[PathBuf]) -> (Vec<String>, String) {
+    for dir in dirs {
+        if let Ok(raw) = std::fs::read_to_string(dir.join("cgroup.controllers")) {
+            let controllers: Vec<String> = raw.split_whitespace().map(str::to_string).collect();
+            if controllers.is_empty() {
+                return (controllers, "unknown".into());
+            }
+            let has = |c: &str| controllers.iter().any(|x| x == c);
+            let exists = |n: &str| dir.join(n).exists();
+            if has("memory")
+                && has("cpu")
+                && exists("memory.max")
+                && exists("memory.current")
+                && exists("cpu.max")
+            {
+                return (controllers, "enforced".into());
+            }
+            return (controllers, "unknown".into());
+        }
+        if dir.join("memory.limit_in_bytes").exists() && dir.join("cpu.cfs_quota_us").exists() {
+            return (vec!["cpu".into(), "memory".into()], "enforced".into());
+        }
+    }
+    (Vec::new(), "unsupported".into())
+}
+
+fn read_cgroup_tasks(dirs: &[PathBuf]) -> (i64, i64) {
+    let mut current = 0;
+    for dir in dirs {
+        let Some(text) = read_trimmed(&dir.join("pids.current")) else {
+            continue;
+        };
+        if text == "max" {
+            break;
+        }
+        if let Ok(v) = text.parse::<i64>() {
+            if v >= 0 {
+                current = v;
+                break;
+            }
+        }
+    }
+    let mut limit = 0;
+    for dir in dirs {
+        let Some(text) = read_trimmed(&dir.join("pids.max")) else {
+            continue;
+        };
+        if text == "max" {
+            continue;
+        }
+        if let Ok(v) = text.parse::<i64>() {
+            if v > 0 && (limit == 0 || v < limit) {
+                limit = v;
+            }
+        }
+    }
+    (current, limit)
+}
+
+fn read_meminfo() -> Option<(i64, i64)> {
+    let contents = std::fs::read_to_string("/proc/meminfo").ok()?;
+    let kb = |line: &str| {
+        line.split_whitespace()
+            .nth(1)
+            .and_then(|v| v.parse::<i64>().ok())
+            .unwrap_or(0)
+    };
+    let (mut total, mut available) = (0, 0);
+    for line in contents.lines() {
+        if line.starts_with("MemTotal:") {
+            total = kb(line);
+        } else if line.starts_with("MemAvailable:") {
+            available = kb(line);
+        }
+    }
+    if total <= 0 {
+        return None;
+    }
+    Some((total * 1024, available.max(0) * 1024))
+}
+
+fn read_load_average() -> [f64; 3] {
+    let Ok(contents) = std::fs::read_to_string("/proc/loadavg") else {
+        return [0.0; 3];
+    };
+    let fields: Vec<&str> = contents.split_whitespace().collect();
+    if fields.len() < 3 {
+        return [0.0; 3];
+    }
+    let mut out = [0.0; 3];
+    for i in 0..3 {
+        match parse_f64(fields[i]) {
+            Some(v) if v.is_finite() && v >= 0.0 => out[i] = v,
+            _ => return [0.0; 3],
+        }
+    }
+    out
+}
+
+/// `defaultDiskPaths`: the root filesystem and the user's home.
+pub fn default_disk_paths(env: &Env) -> Vec<String> {
+    let mut paths = vec!["/".to_string()];
+    let home = env.get("HOME");
+    if !home.trim().is_empty() {
+        paths.push(clean_path(home.trim()));
+    }
+    paths
+}
+
+fn read_disk_stats(paths: &[String]) -> Vec<DiskStats> {
+    let mut seen = Vec::new();
+    let mut out = Vec::new();
+    for path in paths {
+        let trimmed = path.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let path = if trimmed.starts_with('/') {
+            clean_path(trimmed)
+        } else {
+            trimmed.to_string()
+        };
+        if path == "." || seen.contains(&path) {
+            continue;
+        }
+        seen.push(path.clone());
+        let Ok(st) = nix::sys::statfs::statfs(path.as_str()) else {
+            continue;
+        };
+        if st.blocks() == 0 {
+            continue;
+        }
+        // f_bsize's type differs between targets (i64 on x86_64 Linux).
+        #[allow(clippy::unnecessary_cast)]
+        let block_size = st.block_size() as i64;
+        let total = st.blocks() as i64 * block_size;
+        let available = st.blocks_available() as i64 * block_size;
+        if total <= 0 || available < 0 {
+            continue;
+        }
+        out.push(DiskStats {
+            pressure: ratio_pressure(available, total, 0.05, 0.10),
+            mount: path,
+            total_bytes: total,
+            available_bytes: available,
+        });
+    }
+    out
+}
+
+/// `runtime.NumCPU`: the CPUs in this process's affinity mask.
+fn num_cpu() -> i64 {
+    let Ok(set) = nix::sched::sched_getaffinity(nix::unistd::Pid::from_raw(0)) else {
+        return 1;
+    };
+    let n = (0..nix::sched::CpuSet::count())
+        .filter(|&i| set.is_set(i).unwrap_or(false))
+        .count() as i64;
+    n.max(1)
+}
+
+impl HostSystemStats {
+    /// `ReadHostSystemStatsForPaths`.
+    pub fn read(paths: &[String]) -> HostSystemStats {
+        let dirs = current_cgroup_directories();
+        let mut stats = HostSystemStats {
+            cpu_count: num_cpu(),
+            ..HostSystemStats::default()
+        };
+        if let Some((total, free)) = read_meminfo() {
+            stats.memory_total_bytes = total;
+            stats.memory_free_bytes = free;
+            stats.memory_available_bytes = free;
+            stats.memory_used_bytes = (total - free).max(0);
+            stats.memory_pressure = ratio_pressure(free, total, 0.10, 0.20);
+        }
+        stats.cpu_quota_cores = read_cpu_quota_cores(&dirs);
+        stats.cpu_load = read_load_average();
+        stats.memory_limit_bytes = read_memory_limit(&dirs);
+        stats.memory_usage_bytes = read_memory_usage(&dirs);
+        stats.memory_events = read_memory_events(&dirs);
+        stats.pressure_stalls = read_pressure_stalls();
+        (stats.cgroup_controllers, stats.cgroup_enforcement) = read_cgroup_enforcement(&dirs);
+        (stats.tasks_current, stats.tasks_limit) = read_cgroup_tasks(&dirs);
+        stats.disk_filesystems = read_disk_stats(paths);
+        for disk in &stats.disk_filesystems {
+            if stats.disk_mount.is_empty() || disk.available_bytes < stats.disk_available_bytes {
+                stats.disk_mount = disk.mount.clone();
+                stats.disk_total_bytes = disk.total_bytes;
+                stats.disk_available_bytes = disk.available_bytes;
+                stats.disk_pressure = disk.pressure.clone();
+            }
+        }
+        stats
+    }
+
+    /// `systemMetadata`: the JSON-safe snapshot (`nil` when empty).
+    pub fn metadata(&self) -> Option<Map<String, J>> {
+        let mut m = Map::new();
+        let int = |m: &mut Map<String, J>, k: &str, v: i64| {
+            if v > 0 {
+                m.insert(k.into(), J::from(v));
+            }
+        };
+        int(&mut m, "cpuCount", self.cpu_count);
+        int(&mut m, "memoryTotalBytes", self.memory_total_bytes);
+        int(&mut m, "memoryFreeBytes", self.memory_free_bytes);
+        int(&mut m, "memoryAvailableBytes", self.memory_available_bytes);
+        for (k, v) in [
+            ("cpuQuotaCores", self.cpu_quota_cores),
+            ("cpuLoad1m", self.cpu_load[0]),
+            ("cpuLoad5m", self.cpu_load[1]),
+            ("cpuLoad15m", self.cpu_load[2]),
+        ] {
+            if v > 0.0 {
+                m.insert(k.into(), gojson::float_value(v));
+            }
+        }
+        int(&mut m, "memoryUsedBytes", self.memory_used_bytes);
+        int(&mut m, "memoryLimitBytes", self.memory_limit_bytes);
+        int(&mut m, "memoryUsageBytes", self.memory_usage_bytes);
+        if !self.memory_pressure.is_empty() {
+            m.insert(
+                "memoryPressure".into(),
+                J::from(self.memory_pressure.clone()),
+            );
+        }
+        if self.memory_limit_bytes > 0 || self.memory_usage_bytes > 0 {
+            m.insert(
+                "cgroupMemory".into(),
+                json!({"limitBytes": self.memory_limit_bytes, "usageBytes": self.memory_usage_bytes}),
+            );
+        }
+        if let Some(events) = self.memory_events.as_ref().filter(|e| !e.is_empty()) {
+            m.insert("memoryEvents".into(), json!(events));
+        }
+        if let Some(stalls) = self.pressure_stalls.as_ref().filter(|s| !s.is_empty()) {
+            m.insert("psi".into(), stalls_json(stalls));
+        }
+        if !self.cgroup_controllers.is_empty() {
+            m.insert("cgroupControllers".into(), json!(self.cgroup_controllers));
+        }
+        if !self.cgroup_enforcement.is_empty() {
+            m.insert(
+                "enforcement".into(),
+                J::from(self.cgroup_enforcement.clone()),
+            );
+        }
+        if self.tasks_current > 0 || self.tasks_limit > 0 {
+            m.insert(
+                "tasks".into(),
+                json!({"current": self.tasks_current, "limit": self.tasks_limit}),
+            );
+        }
+        int(&mut m, "diskTotalBytes", self.disk_total_bytes);
+        int(&mut m, "diskAvailableBytes", self.disk_available_bytes);
+        if !self.disk_pressure.is_empty() {
+            m.insert("diskPressure".into(), J::from(self.disk_pressure.clone()));
+        }
+        if !self.disk_mount.is_empty() {
+            m.insert("diskMount".into(), J::from(self.disk_mount.clone()));
+        }
+        if !self.disk_filesystems.is_empty() {
+            let list: Vec<J> = self
+                .disk_filesystems
+                .iter()
+                .map(|d| {
+                    json!({"mount": d.mount, "totalBytes": d.total_bytes,
+                           "availableBytes": d.available_bytes, "pressure": d.pressure})
+                })
+                .collect();
+            m.insert("diskFilesystems".into(), J::Array(list));
+        }
+        (!m.is_empty()).then_some(m)
+    }
+}
+
+// --- time ---------------------------------------------------------------------------
+
+/// `time.Now().UTC().Format(time.RFC3339)`.
+pub fn rfc3339_now() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let (y, mo, d) = crate::app::civil_from_days(secs.div_euclid(86_400));
+    let rem = secs.rem_euclid(86_400);
+    format!(
+        "{y:04}-{mo:02}-{d:02}T{:02}:{:02}:{:02}Z",
+        rem / 3600,
+        (rem % 3600) / 60,
+        rem % 60
+    )
+}
+
+/// `time.Now().UTC().Format(time.RFC3339Nano)`: trailing zeros trimmed.
+pub fn rfc3339_nano_now() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    let secs = now.as_secs() as i64;
+    let (y, mo, d) = crate::app::civil_from_days(secs.div_euclid(86_400));
+    let rem = secs.rem_euclid(86_400);
+    let mut frac = format!("{:09}", now.subsec_nanos());
+    while frac.ends_with('0') {
+        frac.pop();
+    }
+    let frac = if frac.is_empty() {
+        String::new()
+    } else {
+        format!(".{frac}")
+    };
+    format!(
+        "{y:04}-{mo:02}-{d:02}T{:02}:{:02}:{:02}{frac}Z",
+        rem / 3600,
+        (rem % 3600) / 60,
+        rem % 60
+    )
+}
+
+/// `time.Parse(time.RFC3339Nano, s)` for the forms the agent writes.
+pub fn parse_rfc3339(s: &str) -> Option<std::time::SystemTime> {
+    let b = s.as_bytes();
+    if b.len() < 20
+        || b[4] != b'-'
+        || b[7] != b'-'
+        || b[10] != b'T'
+        || b[13] != b':'
+        || b[16] != b':'
+    {
+        return None;
+    }
+    let num = |r: std::ops::Range<usize>| s.get(r)?.parse::<i64>().ok();
+    let (y, mo, d, h, mi, se) = (
+        num(0..4)?,
+        num(5..7)?,
+        num(8..10)?,
+        num(11..13)?,
+        num(14..16)?,
+        num(17..19)?,
+    );
+    let mut rest = &s[19..];
+    let mut nanos = 0i64;
+    if let Some(frac) = rest.strip_prefix('.') {
+        let digits: String = frac.chars().take_while(char::is_ascii_digit).collect();
+        if digits.is_empty() || digits.len() > 9 {
+            return None;
+        }
+        nanos = format!("{digits:0<9}").parse().ok()?;
+        rest = &frac[digits.len()..];
+    }
+    let offset = match rest {
+        "Z" => 0,
+        tz if tz.len() == 6 && (tz.starts_with('+') || tz.starts_with('-')) => {
+            let sign = if tz.starts_with('-') { -1 } else { 1 };
+            sign * (tz.get(1..3)?.parse::<i64>().ok()? * 3600
+                + tz.get(4..6)?.parse::<i64>().ok()? * 60)
+        }
+        _ => return None,
+    };
+    // days_from_civil
+    let yy = if mo <= 2 { y - 1 } else { y };
+    let era = yy.div_euclid(400);
+    let yoe = yy - era * 400;
+    let mp = (mo + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    let secs = days * 86_400 + h * 3600 + mi * 60 + se - offset;
+    let base = std::time::UNIX_EPOCH;
+    if secs >= 0 {
+        Some(base + Duration::new(secs as u64, nanos as u32))
+    } else {
+        base.checked_sub(Duration::from_secs((-secs) as u64))
+            .map(|t| t + Duration::from_nanos(nanos as u64))
+    }
+}
+
+// --- workload enforcement probe (host.ObserveHostResourceEnforcement) --------------
+
+const SYSTEMCTL: &str = "/usr/bin/systemctl";
+const SYSTEMD_RUN: &str = "/usr/bin/systemd-run";
+const WORKLOAD_SLICE: &str = "opute-workload.slice";
+
+fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, String> {
+    output
+        .split('\n')
+        .filter_map(|line| line.split_once('='))
+        .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
+        .collect()
+}
+
+fn parse_systemd_limit(value: &str) -> Option<i64> {
+    let mut value = value.trim().to_lowercase();
+    if value.is_empty() || value == "max" || value == "infinity" || value == "inf" {
+        return None;
+    }
+    let mut multiplier: i64 = 1;
+    for (suffix, factor) in [
+        ("k", 1i64 << 10),
+        ("m", 1 << 20),
+        ("g", 1 << 30),
+        ("t", 1 << 40),
+    ] {
+        if let Some(stripped) = value.strip_suffix(suffix) {
+            value = stripped.trim().to_string();
+            multiplier = factor;
+            break;
+        }
+    }
+    let parsed: i64 = value.parse().ok()?;
+    if parsed <= 0 || parsed > i64::MAX / multiplier {
+        return None;
+    }
+    Some(parsed * multiplier)
+}
+
+/// `parseSystemdMicroseconds`: `us`, `ms` or `s` suffixes, else a plain limit.
+fn parse_systemd_microseconds(value: &str) -> Option<i64> {
+    let value = value.trim().to_lowercase();
+    if value.is_empty() || value == "max" || value == "infinity" || value == "inf" {
+        return None;
+    }
+    for (suffix, multiplier) in [("us", 1f64), ("ms", 1_000.0), ("s", 1_000_000.0)] {
+        let Some(number) = value.strip_suffix(suffix) else {
+            continue;
+        };
+        let parsed: f64 = number.trim().parse().ok()?;
+        if parsed <= 0.0 || parsed > i64::MAX as f64 / multiplier {
+            return None;
+        }
+        return Some((parsed * multiplier) as i64);
+    }
+    parse_systemd_limit(&value)
+}
+
+fn workload_properties_enforced(p: &std::collections::BTreeMap<String, String>) -> bool {
+    let get = |k: &str| p.get(k).map(String::as_str).unwrap_or("");
+    let limits: [(&str, i64); 6] = [
+        ("MemoryHigh", 10 << 30),
+        ("MemoryMax", 11 << 30),
+        ("MemorySwapMax", 1 << 30),
+        ("CPUQuotaPerSecUSec", 6_000_000),
+        ("CPUWeight", 100),
+        ("TasksMax", 4096),
+    ];
+    limits.iter().all(|(name, maximum)| {
+        let value = if *name == "CPUQuotaPerSecUSec" {
+            parse_systemd_microseconds(get(name))
+        } else {
+            parse_systemd_limit(get(name))
+        };
+        value.is_some_and(|v| v > 0 && v <= *maximum)
+    })
+}
+
+fn cgroup_controls_available(control_group: &str) -> bool {
+    let group = control_group.trim();
+    if group.is_empty() || !group.starts_with('/') {
+        return false;
+    }
+    let path = clean_path(&format!("{CGROUP_ROOT}/{}", group.trim_start_matches('/')));
+    if !(path == CGROUP_ROOT || path.starts_with(&format!("{CGROUP_ROOT}/"))) {
+        return false;
+    }
+    ["memory.max", "cpu.max", "pids.max"]
+        .iter()
+        .all(|n| Path::new(&path).join(n).exists())
+}
+
+fn systemd_scopes() -> Vec<&'static str> {
+    if let Ok(v) = std::fs::read_to_string("/proc/self/cgroup") {
+        if v.contains("/user.slice/") {
+            return vec!["user"];
+        }
+        if v.contains("/system.slice/") {
+            return vec!["system"];
+        }
+    }
+    vec!["user", "system"]
+}
+
+/// `ObserveHostResourceEnforcement`: whether the workload slice's limits are
+/// configured and its cgroup controls exist. Like Go, it may start a no-op
+/// member of the slice so systemd materializes the cgroup.
+pub fn observe_enforcement(env: &Env) -> String {
+    let run = |argv: Vec<String>| run_command(env, &argv, Duration::from_secs(5));
+    for scope in systemd_scopes() {
+        let systemctl = |args: &[&str]| {
+            let mut argv = vec![SYSTEMCTL.to_string()];
+            if scope == "user" {
+                argv.push("--user".into());
+            }
+            argv.extend(args.iter().map(|s| s.to_string()));
+            let res = run(argv);
+            (res.exit_code == 0).then(|| parse_systemd_properties(&res.stdout))
+        };
+        let Some(properties) = systemctl(&[
+            "show",
+            WORKLOAD_SLICE,
+            "--property=ControlGroup,MemoryHigh,MemoryMax,MemorySwapMax,CPUQuotaPerSecUSec,CPUWeight,TasksMax",
+        ]) else {
+            continue;
+        };
+        if !workload_properties_enforced(&properties) {
+            continue;
+        }
+        if cgroup_controls_available(
+            properties
+                .get("ControlGroup")
+                .map(String::as_str)
+                .unwrap_or(""),
+        ) {
+            return "enforced".into();
+        }
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let mut probe = vec![SYSTEMD_RUN.to_string()];
+        if scope == "user" {
+            probe.push("--user".into());
+        }
+        probe.extend([
+            format!("--unit=opute-host-resource-probe-{nanos}"),
+            "--wait".into(),
+            "--collect".into(),
+            "--pipe".into(),
+            format!("--property=Slice={WORKLOAD_SLICE}"),
+            "/usr/bin/true".into(),
+        ]);
+        if run(probe).exit_code != 0 {
+            continue;
+        }
+        if let Some(refreshed) = systemctl(&["show", WORKLOAD_SLICE, "--property=ControlGroup"]) {
+            if cgroup_controls_available(
+                refreshed
+                    .get("ControlGroup")
+                    .map(String::as_str)
+                    .unwrap_or(""),
+            ) {
+                return "enforced".into();
+            }
+        }
+    }
+    "unknown".into()
+}
+
+// --- host platform (pkg/hostplatform) ---------------------------------------------
+
+/// Go's `runtime.GOARCH` for this build.
+fn go_arch() -> &'static str {
+    match std::env::consts::ARCH {
+        "x86_64" => "amd64",
+        "aarch64" => "arm64",
+        "x86" => "386",
+        "arm" => "arm",
+        "riscv64" => "riscv64",
+        "powerpc64" => "ppc64le",
+        "s390x" => "s390x",
+        other => other,
+    }
+}
+
+fn parse_os_release(text: &str) -> std::collections::BTreeMap<String, String> {
+    let mut values = std::collections::BTreeMap::new();
+    for line in text.lines() {
+        let Some((key, value)) = line.trim().split_once('=') else {
+            continue;
+        };
+        if key.starts_with('#') {
+            continue;
+        }
+        let value = value.trim().trim_matches(|c| c == '"' || c == '\'');
+        values.insert(key.trim().to_string(), value.to_string());
+    }
+    values
+}
+
+fn parse_cpuinfo(text: &str) -> (String, String) {
+    let (mut vendor, mut model, mut implementer, mut part) =
+        (String::new(), String::new(), String::new(), String::new());
+    for line in text.lines() {
+        let Some((key, value)) = line.split_once(':') else {
+            continue;
+        };
+        let (key, value) = (key.trim(), value.trim());
+        match key {
+            "model name" | "Model" | "Hardware" | "cpu" if model.is_empty() => model = value.into(),
+            "vendor_id" if vendor.is_empty() => vendor = value.into(),
+            "CPU implementer" => implementer = value.into(),
+            "CPU part" => part = value.into(),
+            _ => {}
+        }
+    }
+    if vendor.is_empty() && !implementer.is_empty() {
+        vendor = match implementer.trim().to_lowercase().as_str() {
+            "0x41" => "ARM".into(),
+            "0x61" => "Apple".into(),
+            "0x4e" => "NVIDIA".into(),
+            "0x51" => "Qualcomm".into(),
+            "0xc0" => "Ampere".into(),
+            _ => implementer.clone(),
+        };
+    }
+    if model.is_empty() && !part.is_empty() {
+        model = format!("ARM part {part}");
+    }
+    (vendor, model)
+}
+
+/// `(?i)\bApple\s+(M\d+)(?:\s+(Pro|Max|Ultra))?`
+fn apple_silicon(model: &str) -> Option<(String, String)> {
+    let re = regex::Regex::new(r"(?i)\bApple\s+(M\d+)(?:\s+(Pro|Max|Ultra))?").ok()?;
+    let caps = re.captures(model)?;
+    let series = caps.get(1)?.as_str().to_uppercase();
+    let variant = caps
+        .get(2)
+        .map(|m| {
+            let lower = m.as_str().to_lowercase();
+            let mut chars = lower.chars();
+            chars
+                .next()
+                .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+                .unwrap_or_default()
+        })
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "base".into());
+    Some((series, variant))
+}
+
+/// `wslVersion`: None for native Linux, else the WSL generation (0 when the
+/// markers are ambiguous).
+fn wsl_version(release: &str, version: &str, interop: bool, distro: &str) -> Option<i64> {
+    let haystack = format!("{release} {version}").to_lowercase();
+    let microsoft = haystack.contains("microsoft");
+    if !microsoft && !interop && distro.is_empty() {
+        None
+    } else if haystack.contains("wsl2")
+        || (microsoft && (haystack.contains("microsoft-standard") || interop))
+    {
+        Some(2)
+    } else if microsoft {
+        Some(1)
+    } else {
+        Some(0)
+    }
+}
+
+/// `hostplatform.Detect` on Linux: collected signals, then `Classify`.
+pub fn detect_platform(env: &Env) -> J {
+    let mut sources: Vec<&str> = Vec::new();
+    let mut read = |path: &'static str| {
+        std::fs::read_to_string(path)
+            .ok()
+            .inspect(|_| sources.push(path))
+    };
+    let kernel_release = read("/proc/sys/kernel/osrelease")
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    let kernel_version = read("/proc/version")
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    let os_release = read("/etc/os-release")
+        .map(|s| parse_os_release(&s))
+        .unwrap_or_default();
+    let (vendor, model) = read("/proc/cpuinfo")
+        .map(|s| parse_cpuinfo(&s))
+        .unwrap_or_default();
+    let wsl_distro = env.get("WSL_DISTRO_NAME").trim().to_string();
+    let mut wsl_interop = false;
+    if !env.get("WSL_INTEROP").trim().is_empty() {
+        wsl_interop = true;
+        sources.push("env:WSL_INTEROP");
+    }
+    if Path::new("/proc/sys/fs/binfmt_misc/WSLInterop").exists() {
+        wsl_interop = true;
+        sources.push("/proc/sys/fs/binfmt_misc/WSLInterop");
+    }
+    let first = |a: Option<&String>, b: Option<&String>| {
+        [a, b]
+            .into_iter()
+            .flatten()
+            .map(|v| v.trim())
+            .find(|v| !v.is_empty())
+            .unwrap_or("")
+            .to_string()
+    };
+    let arch = go_arch();
+    let mut cpu = Map::new();
+    cpu.insert("architecture".into(), J::from(arch));
+    let mut family = match arch {
+        "amd64" => "x86-64",
+        "386" => "x86",
+        "arm64" => "arm64",
+        "arm" => "arm",
+        _ => "unknown",
+    }
+    .to_string();
+    let mut vendor = vendor.trim().to_string();
+    let model = model.trim().to_string();
+    let mut series_variant = None;
+    if let Some((series, variant)) = apple_silicon(&model) {
+        family = "apple-silicon".into();
+        if vendor.is_empty() {
+            vendor = "Apple".into();
+        }
+        series_variant = Some((series, variant));
+    }
+    cpu.insert("family".into(), J::from(family));
+    if !vendor.is_empty() {
+        cpu.insert("vendor".into(), J::from(vendor));
+    }
+    if !model.is_empty() {
+        cpu.insert("model".into(), J::from(model));
+    }
+    if let Some((series, variant)) = series_variant {
+        cpu.insert("series".into(), J::from(series));
+        cpu.insert("variant".into(), J::from(variant));
+    }
+    let cores = num_cpu();
+    if cores != 0 {
+        cpu.insert("logicalCores".into(), J::from(cores));
+    }
+    let mut out = Map::new();
+    out.insert("contractVersion".into(), J::from("host-platform.v1"));
+    out.insert("os".into(), J::from("linux"));
+    let wsl = wsl_version(&kernel_release, &kernel_version, wsl_interop, &wsl_distro);
+    out.insert(
+        "kind".into(),
+        J::from(match wsl {
+            None => "linux",
+            Some(1) => "wsl1",
+            Some(_) => "wsl2",
+        }),
+    );
+    if !kernel_release.is_empty() {
+        out.insert("kernel".into(), J::from(kernel_release.clone()));
+    }
+    if !kernel_version.is_empty() {
+        out.insert("kernelVersion".into(), J::from(kernel_version.clone()));
+    }
+    let distribution = first(os_release.get("NAME"), os_release.get("ID"));
+    if !distribution.is_empty() {
+        out.insert("distribution".into(), J::from(distribution));
+    }
+    let version = first(os_release.get("VERSION_ID"), os_release.get("VERSION"));
+    if !version.is_empty() {
+        out.insert("distributionVersion".into(), J::from(version));
+    }
+    if let Some(v) = wsl {
+        let mut w = Map::new();
+        w.insert("version".into(), J::from(v));
+        if !wsl_distro.is_empty() {
+            w.insert("distro".into(), J::from(wsl_distro.clone()));
+        }
+        w.insert("interop".into(), J::Bool(wsl_interop));
+        out.insert("wsl".into(), J::Object(w));
+    }
+    out.insert("cpu".into(), J::Object(cpu));
+    if !sources.is_empty() {
+        out.insert("evidence".into(), json!(sources));
+    }
+    J::Object(out)
+}
+
+// --- agent installation (host.describeAgentInstallation) ----------------------------
+
+pub fn agent_installation(
+    env: &Env,
+    agent_id: &str,
+    instance_id: &str,
+    instance_root: &str,
+    mcp_port: i64,
+) -> J {
+    let mut m = Map::new();
+    let put = |m: &mut Map<String, J>, k: &str, v: String| {
+        if !v.is_empty() {
+            m.insert(k.into(), J::from(v));
+        }
+    };
+    put(&mut m, "agentId", agent_id.trim().to_string());
+    put(&mut m, "instanceId", instance_id.trim().to_string());
+    let instance_root = instance_root.trim().to_string();
+    put(&mut m, "instanceRoot", instance_root.clone());
+    let home = env.get("HOME").trim().to_string();
+    let home = if home.is_empty() {
+        nix::unistd::User::from_uid(nix::unistd::geteuid())
+            .ok()
+            .flatten()
+            .map(|u| u.dir.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    } else {
+        home
+    };
+    if !instance_root.is_empty() {
+        let candidate = Path::new(&instance_root).join("host-agent.env");
+        if std::fs::metadata(&candidate).is_ok_and(|m| m.is_file()) {
+            put(
+                &mut m,
+                "environmentFile",
+                candidate.to_string_lossy().into_owned(),
+            );
+        }
+    }
+    if !home.is_empty() {
+        put(&mut m, "homeDir", home.clone());
+        put(
+            &mut m,
+            "providerRoot",
+            format!("{home}/.local/share/opute/providers"),
+        );
+    }
+    let system = nix::unistd::geteuid().is_root();
+    put(
+        &mut m,
+        "serviceScope",
+        if system { "system" } else { "user" }.into(),
+    );
+    if system {
+        put(&mut m, "serviceUnitDir", "/etc/systemd/system".into());
+        put(&mut m, "serviceWantedBy", "multi-user.target".into());
+    } else {
+        if !home.is_empty() {
+            put(
+                &mut m,
+                "serviceUnitDir",
+                format!("{home}/.config/systemd/user"),
+            );
+        }
+        put(&mut m, "serviceWantedBy", "default.target".into());
+    }
+    if mcp_port > 0 {
+        put(
+            &mut m,
+            "mcpEndpoint",
+            format!("http://127.0.0.1:{mcp_port}/mcp"),
+        );
+    }
+    J::Object(m)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn decode_counts_and_type_strictness() {
-        let ok = r#"[{"name":"a","status":"Running","type":"container"},
-                     {"name":"","status":"Running","type":"container"},
-                     {"name":"b","status":"Stopped","type":"virtual-machine","config":{"user.opute.host_agent_instance":"x"}}]"#;
-        let items = decode_items(ok).unwrap();
-        assert_eq!(items.len(), 3);
-        assert_eq!(items[2].owner, "x");
-        assert!(decode_items(r#"[{"name":1}]"#).is_err());
-        assert!(decode_items(r#"[{"name":"a","config":{"k":1}}]"#).is_err());
-        assert!(decode_items("null").unwrap().is_empty());
+    fn platform_classification_matches_hostplatform() {
+        assert_eq!(wsl_version("6.8.0-45-generic", "", false, ""), None);
+        assert_eq!(
+            wsl_version("5.15.153.1-microsoft-standard-WSL2", "", false, ""),
+            Some(2)
+        );
+        assert_eq!(wsl_version("4.4.0-19041-Microsoft", "", false, ""), Some(1));
+        assert_eq!(wsl_version("4.4.0-19041-Microsoft", "", true, ""), Some(2));
+        assert_eq!(wsl_version("6.1.0", "", false, "Ubuntu"), Some(0));
+        let (vendor, model) = parse_cpuinfo("CPU implementer\t: 0x41\nCPU part\t: 0xd0c\n");
+        assert_eq!((vendor.as_str(), model.as_str()), ("ARM", "ARM part 0xd0c"));
+        let (vendor, model) =
+            parse_cpuinfo("vendor_id\t: GenuineIntel\nmodel name\t: Xeon\nmodel name\t: other\n");
+        assert_eq!((vendor.as_str(), model.as_str()), ("GenuineIntel", "Xeon"));
+        assert_eq!(
+            apple_silicon("Apple M2 max chip"),
+            Some(("M2".into(), "Max".into()))
+        );
+        assert_eq!(
+            apple_silicon("Apple M1"),
+            Some(("M1".into(), "base".into()))
+        );
+        let release = parse_os_release("# c\nNAME=\"Ubuntu\"\nVERSION_ID='24.04'\n");
+        assert_eq!(release.get("NAME").map(String::as_str), Some("Ubuntu"));
+        assert_eq!(release.get("VERSION_ID").map(String::as_str), Some("24.04"));
     }
 
     #[test]

@@ -320,10 +320,13 @@ beyond what M2 adds.
 [evidence/m2/README.md](../../../evidence/m2/README.md). Three scope changes,
 each recorded there:
 
-- OAuth token issuance (`/oauth/authorize`, `/oauth/token`) is deferred until
-  an owner design decision (D8). The Rust build answers those two routes'
-  method checks like Go and refuses issuance with 501. Bearer validation,
-  metadata, revocation and the shared token store are in M2 and verified.
+- OAuth token issuance (`/oauth/authorize`, `/oauth/token`) follows the
+  stricter `secure-oauth-issuance` change (D8), a declared divergence from Go.
+  At the M2 merge Rust refused issuance with 501; that change replaces it,
+  with its own Rust contract suite and Rust canaries in the `m2` gate (see
+  [evidence/oauth-issuance/README.md](../../../evidence/oauth-issuance/README.md)).
+  Bearer validation, metadata, revocation and the shared token store stay
+  under Go parity.
 - Item 5's packaged Go tests (`TestPackagedShapeStandaloneHTTPContract`,
   `TestStandaloneHTTPIsolationAndShutdown`) assert catalog contents and a
   task round trip, so they move to M4. The `test/compliance` assertions that
@@ -410,6 +413,31 @@ file inspection, probes, capacity and heartbeat projections).
 
 **Exit gate:** every catalog cell is identical; read-only scenarios green; X2
 and X5 green.
+
+**Status:** implemented; the `m3` gate passes. See
+[evidence/m3/README.md](../../../evidence/m3/README.md). Scope changes, each
+recorded there:
+
+- Catalog cells are the four Go publishes without installed providers
+  (standalone, standalone with the mutation gate open, platform, prefixed
+  names). Provider cells stay the owned inventory gap for M7.
+- Read-only tools in M3 are those that need neither resource binding nor
+  workload admission: `get_capability_catalog`, `get_host_info`,
+  `get_host_capacity`, `list_vms`, `detect_host_platform`. Resource-bound
+  reads (`get_vm_info` and every tool with a declared resource argument) need
+  M4 binding; `normal`-class reads (`inspect_host_file`,
+  `probe_http_endpoint`, ...) are refused by Go's admission when workload
+  enforcement is unverified, so they arrive with M4 admission; domain reads
+  (Kubernetes, PostgreSQL, OCI, LLM, recipes, plans, operations) arrive with
+  their domains. Until then each fails closed with a typed `not_implemented`
+  capability error; `tools/list` is unaffected.
+- Durable invocation evidence (`capability_invocations`) needs the
+  schema-derived redaction of M5, and reservations need M4 admission. M3
+  scenarios compare results, typed errors and command traces; the X2
+  scenarios also check that rejected calls write no rows on either side.
+- Real-host runs (T2: Ubuntu x64/arm64, WSL2) are not available in this
+  environment; `get_host_info` and `detect_host_platform` are compared live
+  on the CI host only.
 
 ---
 
@@ -766,8 +794,9 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D5 | Staging Platform identity for M11 | A dedicated `parity-rs-*` ID and tenant | Spec: distinct identity, never inferred. |
 | D6 | Go rebase cadence while Rust is built | Rebase at each milestone exit, not continuously | This bounds churn and keeps evidence attributable. |
 | D7 | Observable legacy surface ([legacy-inventory.md](legacy-inventory.md) class O) | Retire it in Go first through a separate OpenSpec change, then rebase | Rust never builds shims that will be deleted anyway. The parity principle holds because Rust still matches Go exactly, just a newer Go. |
-| D8 | OAuth token issuance (`/oauth/authorize`, `/oauth/token`) | **Decided (owner, 2026-09-30): defer.** Rust does not issue tokens until the issuance design is settled in Go; the parity baseline is then rebased and Rust matches it | The issuance behaviour needs an owner design decision before it is ported. Everything else in the OAuth resource server is ported and verified in M2. |
+| D8 | OAuth token issuance | **Decided (owner, 2026-10-01): Rust diverges.** Rust implements the stricter [`oauth-issuance`](../secure-oauth-issuance/specs/oauth-issuance/spec.md) contract; Go is not changed. Every affected Go-vs-Rust comparison declares the divergence by citing D8, and a Rust contract suite verifies the behaviour | Issuance must be backed by a credential or operator approval. The owner approved deviating from Go where the deviation is an improvement. |
 | D9 | go-sdk `MCPGODEBUG` compatibility flags (finding F-7) | **Do not reproduce; ask the owner** | The Go agent inherits SDK switches (`disablelocalhostprotection`, `allowsessionsinstateless`, `disablecontenttypecheck`, ...) from any process environment. They are undocumented, not part of the Host Agent contract, and one of them disables the DNS-rebinding guard. Rust implements the default behaviour, which is identical to Go with the variable unset. |
+| D10 | Standalone mutation gate | **Decided (owner, 2026-10-02): Rust diverges.** With standalone mutations disabled, Rust runs only tools whose catalog effect is `read` ([`standalone-read-only-gate`](../standalone-read-only-gate/specs/standalone-read-only-gate/spec.md)); Go is not changed. The catalog stays under Go parity, and a Rust contract suite with canaries verifies the gate | The gate derives from the same effect classification clients see, and fails closed when an effect is not known to be `read`. |
 
 ## 7. Risks this plan specifically mitigates
 

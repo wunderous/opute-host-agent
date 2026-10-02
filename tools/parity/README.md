@@ -26,7 +26,9 @@ make parity-go-vs-go    # every scenario, Go vs Go, 20 times
 make parity-canaries    # build broken Go variants and prove each is caught
 make parity-manifest    # sync parity-manifest.json items with the scenarios
 make parity-verify      # fail-closed M0 gate
-make parity-verify-cutover   # the whole-agent gate (fails until Rust has evidence)
+make parity-verify-cutover   # the whole-agent gate (fails until Rust has evidence and no inventory gaps remain)
+make parity-contracts   # Rust contract suite for declared divergences (D8)
+make parity-rust-canaries    # patched Rust builds that must turn a contract red
 make parity-m0          # all of the above, in order
 ```
 
@@ -52,6 +54,10 @@ cd tools/parity && python3 -m parity run \
 | `scenarios/*.json` | Versioned scenarios; the same file runs against Go and Rust |
 | `fixtures/shims/*.json` | Scripted host-tool responses |
 | `canaries.json` | Canary patches and the scenario each must turn red |
+| `divergences.json` | Declared divergences: approved Go-vs-Rust differences, by id |
+| `parity/contract.py` | Single-implementation contract suites and Rust canaries |
+| `contracts/*.json` | Contract suites; each names its decision and spec |
+| `rust-canaries.json` | Rust source patches and the contract scenario each must turn red |
 
 ## Comparison rules
 
@@ -65,8 +71,27 @@ cd tools/parity && python3 -m parity run \
   `non-negative-int`, `number`, ...) and a reason. A value of the wrong type,
   or a mask path that matches nothing, is a violation and fails the scenario.
   Regex masks over payloads do not exist.
-- **Harness hash.** `agent`, `canon`, `runner`, `shims` and the fixtures are
-  hashed into every bundle. Changing them invalidates existing evidence.
+- **Declared divergences.** An approved, intentional difference (a decision
+  in the milestones table, registered under `decisions` in
+  `parity-manifest.json`) is defined once in `divergences.json` and named by
+  id in a scenario's `compare.divergences`. Each rule drops the same content
+  from both sides before the diff (list items by field, object keys, or log
+  lines), and only between Go and a Rust build, never Go vs Go. A rule that
+  drops identical content on both sides is **stale** and fails the scenario,
+  so declarations are removed as soon as they stop hiding a difference. The
+  verifier rejects a divergence that cites an unapproved decision, or one
+  that is declared but not recorded.
+- **Contract suites.** A divergence still needs an oracle. A contract suite
+  runs against one implementation and asserts the specified outcome (status,
+  headers, JSON fields, CLI exit, file modes, store rows, log content).
+  Steps can `capture` values such as a provisioned secret or a user code;
+  an expectation that names an undefined variable fails. Rust canaries
+  prove each scenario can fail: every patch must turn its named scenario
+  red, and only its declared co-failures with it, while the unpatched build
+  stays green.
+- **Harness hash.** `agent`, `canon`, `runner`, `shims`, the fixtures and
+  `divergences.json` are hashed into every bundle. Contract evidence is
+  keyed to `contract.py`, `agent.py` and the suite file. Changing them invalidates existing evidence.
 - **Status is derived.** The verifier recomputes every status from the hashed
   diff and iteration files. A summary's own `status` field is never trusted.
 

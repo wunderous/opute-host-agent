@@ -104,7 +104,7 @@ pub fn canonical_key(key: &str) -> String {
         .collect()
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Request {
     pub method: String,
     pub request_uri: String,
@@ -116,6 +116,7 @@ pub struct Request {
     pub headers: Headers,
     pub host: String,
     pub local_addr: SocketAddr,
+    pub remote_addr: SocketAddr,
     framing: Framing,
     expects_continue: bool,
 }
@@ -465,6 +466,7 @@ async fn read_request(
     reader: &mut BufReader<OwnedReadHalf>,
     last_method_post: bool,
     local_addr: SocketAddr,
+    remote_addr: SocketAddr,
 ) -> Result<Request, ReadError> {
     if last_method_post {
         // RFC 7230 section 3 tolerance for old buggy clients.
@@ -612,6 +614,7 @@ async fn read_request(
         headers,
         host,
         local_addr,
+        remote_addr,
         framing,
         expects_continue: expect.eq_ignore_ascii_case("100-continue"),
     })
@@ -1149,7 +1152,7 @@ where
     H: Fn(Request, Body) -> F,
     F: Future<Output = (Response, Body)>,
 {
-    let Ok(local) = stream.local_addr() else {
+    let (Ok(local), Ok(remote)) = (stream.local_addr(), stream.peer_addr()) else {
         return;
     };
     let (read_half, write_half) = stream.into_split();
@@ -1157,7 +1160,7 @@ where
     let mut writer = write_half;
     let mut last_post = false;
     loop {
-        let req = match read_request(&mut reader, last_post, local).await {
+        let req = match read_request(&mut reader, last_post, local, remote).await {
             Ok(req) => req,
             Err(err) => {
                 let reply = match err {

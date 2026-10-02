@@ -44,6 +44,16 @@ class CanonTest(unittest.TestCase):
         with self.assertRaises(canon.MaskError):
             canon.normalize({"t": 1}, {"masks": [{"path": ["t"], "type": "regex", "reason": "x"}]}, {})
 
+    def test_one_of_mask_accepts_only_declared_values(self):
+        spec = {"masks": [{"path": ["m"], "type": "one-of", "values": ["/", "${SANDBOX}/home"], "reason": "tie"}]}
+        left, lv = canon.normalize({"m": "/"}, spec, {})
+        right, rv = canon.normalize({"m": "/tmp/sb/home"}, spec, {"SANDBOX": "/tmp/sb"})
+        self.assertEqual((left, lv, rv), (right, [], []))
+        _, violations = canon.normalize({"m": "/var"}, spec, {})
+        self.assertEqual(violations[0]["value"], "/var")
+        with self.assertRaises(canon.MaskError):
+            canon.normalize({"m": "/"}, {"masks": [{"path": ["m"], "type": "one-of", "values": ["/"], "reason": "x"}]}, {})
+
     def test_substitution_is_exact_and_longest_first(self):
         doc = canon.substitute(
             {"p": "/tmp/sb/home", "id": "agent-a", "k": "agent-a-extra"},
@@ -68,3 +78,72 @@ class CanonTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DivergenceTest(unittest.TestCase):
+    REGISTRY = {
+        "files": {"id": "files", "decision": "D8", "reason": "r", "path": ["files"],
+                  "drop": {"field": "path", "prefix": "state/credentials"}},
+        "rows": {"id": "rows", "decision": "D8", "reason": "r", "path": ["rows"], "dropKeys": ["new"]},
+        "log": {"id": "log", "decision": "D8", "reason": "r", "path": ["steps", "*", "stderr"],
+                "dropLines": {"contains": "msg=oauth "}},
+    }
+
+    def test_drops_only_declared_content_from_both_sides(self):
+        a = {"files": [{"path": "state/state.db"}], "rows": {"clients": 2},
+             "steps": {"s": {"stderr": "x\nlisten"}}}
+        b = {"files": [{"path": "state/credentials"}, {"path": "state/state.db"}],
+             "rows": {"clients": 2, "new": 0}, "steps": {"s": {"stderr": "x\nlevel=INFO msg=oauth event=migrate\nlisten"}}}
+        a2, b2, rec = canon.apply_divergences(a, b, ["files", "rows", "log"], self.REGISTRY)
+        self.assertEqual(canon.diff(a2, b2), [])
+        self.assertEqual([r["stale"] for r in rec], [False, False, False])
+
+    def test_undeclared_difference_survives(self):
+        a = {"files": [{"path": "state/state.db", "mode": "0o644"}]}
+        b = {"files": [{"path": "state/state.db", "mode": "0o600"}, {"path": "state/credentials/x"}]}
+        a2, b2, _ = canon.apply_divergences(a, b, ["files"], self.REGISTRY)
+        self.assertNotEqual(canon.diff(a2, b2), [])
+
+    def test_identical_removal_is_stale(self):
+        a = {"rows": {"clients": 2}}
+        _, _, rec = canon.apply_divergences(a, dict(a), ["rows"], self.REGISTRY)
+        self.assertTrue(rec[0]["stale"])
+
+    def test_undefined_divergence_is_an_error(self):
+        with self.assertRaises(canon.DivergenceError):
+            canon.apply_divergences({}, {}, ["nope"], self.REGISTRY)
+
+    def test_registry_file_is_valid(self):
+        from parity import runner
+        rules = canon.load_divergences(runner.DIVERGENCE_FILE)
+        for scenario in runner.load_scenarios():
+            for did in scenario.get("compare", {}).get("divergences", []):
+                self.assertIn(did, rules, scenario["id"])
+
+
+class OmitemptyTest(unittest.TestCase):
+    RULE = {"path": ["psi", "*"], "keys": ["someAvg10"], "zero": 0, "reason": "omitempty"}
+
+    def test_absent_equals_zero(self):
+        a = canon.apply_omitempty({"psi": {"io": {}}}, [self.RULE])
+        b = canon.apply_omitempty({"psi": {"io": {"someAvg10": 0}}}, [self.RULE])
+        self.assertEqual(canon.diff(a, b), [])
+
+    def test_nonzero_still_differs(self):
+        a = canon.apply_omitempty({"psi": {"io": {}}}, [self.RULE])
+        b = canon.apply_omitempty({"psi": {"io": {"someAvg10": 0.5}}}, [self.RULE])
+        self.assertNotEqual(canon.diff(a, b), [])
+
+    def test_rule_needs_reason(self):
+        with self.assertRaises(canon.MaskError):
+            canon.apply_omitempty({}, [{**self.RULE, "reason": ""}])
+
+
+class SubstituteTest(unittest.TestCase):
+    def test_port_inside_a_longer_number_is_kept(self):
+        text = '{"totalBytes":270553174016,"endpoint":"http://127.0.0.1:27055/mcp"}'
+        out = canon.substitute(text, {"PORT": "27055"})
+        self.assertEqual(out, '{"totalBytes":270553174016,"endpoint":"http://127.0.0.1:${PORT}/mcp"}')
+
+    def test_longer_literals_first(self):
+        self.assertEqual(canon.substitute("/tmp/a/b", {"SANDBOX": "/tmp/a", "X": "/tmp"}), "${SANDBOX}/b")

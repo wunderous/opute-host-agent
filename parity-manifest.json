@@ -3,6 +3,39 @@
   "expected": "canaries.json",
   "results": "evidence/current/canaries.json"
  },
+ "catalogRevisions": {
+  "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
+  "platform": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
+  "standalone": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
+ },
+ "contracts": {
+  "oauth-issuance": {
+   "decision": "D8",
+   "results": "evidence/current/contracts/oauth-issuance/summary.json"
+  },
+  "standalone-read-only-gate": {
+   "decision": "D10",
+   "results": "evidence/current/contracts/standalone-read-only-gate/summary.json"
+  }
+ },
+ "decisions": {
+  "D10": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/standalone-read-only-gate",
+   "date": "2026-10-02",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D10)",
+   "status": "approved",
+   "summary": "With standalone mutations disabled, Rust runs only tools whose effect is read instead of Go's enumerated gate list"
+  },
+  "D8": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/secure-oauth-issuance",
+   "date": "2026-10-01",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
+   "status": "approved",
+   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
+  }
+ },
  "evidence": {
   "go-vs-go": {
    "minRepeat": 20,
@@ -19,9 +52,14 @@
  },
  "gates": {
   "cutover": {
-   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence; later milestones add T2/T3/T4 suites here",
+   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here",
    "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate"
+   ],
    "requireInventory": true,
+   "requireNoGaps": true,
    "requireOracles": true,
    "requirePass": [
     "go-vs-go",
@@ -54,8 +92,11 @@
    ]
   },
   "m2": {
-   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+)",
+   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
    "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance"
+   ],
    "requireInventory": true,
    "requireOracles": true,
    "requirePass": [
@@ -69,6 +110,35 @@
       "http",
       "mcp-wire",
       "auth"
+     ]
+    }
+   ]
+  },
+  "m3": {
+   "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate"
+   ],
+   "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "read-only-tools"
      ]
     }
    ]
@@ -211,6 +281,224 @@
    "owner": "config",
    "scenario": "config.validation-matrix",
    "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.inventory-mix",
+   "owner": "host",
+   "scenario": "host-read.list-vms.inventory-mix",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.two-containers",
+   "owner": "host",
+   "scenario": "host-read.list-vms.two-containers",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.empty",
+   "owner": "host",
+   "scenario": "host-read.list-vms.empty",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.malformed",
+   "owner": "host",
+   "scenario": "host-read.list-vms.malformed",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.list-fails",
+   "owner": "host",
+   "scenario": "host-read.list-vms.list-fails",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.absent",
+   "owner": "host",
+   "scenario": "host-read.list-vms.absent",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go",
+    "internal/domain/incus/incus_ownership.go"
+   ],
+   "id": "host-read.list-vms.ownership-enforced",
+   "owner": "host",
+   "scenario": "host-read.list-vms.ownership-enforced",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.platform",
+   "owner": "host",
+   "scenario": "host-read.list-vms.platform",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.inventory-mix",
+   "owner": "host",
+   "scenario": "host-read.host-info.inventory-mix",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.storage-zfs",
+   "owner": "host",
+   "scenario": "host-read.host-info.storage-zfs",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.absent",
+   "owner": "host",
+   "scenario": "host-read.host-info.absent",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.list-fails",
+   "owner": "host",
+   "scenario": "host-read.host-info.list-fails",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost"
+   ],
+   "id": "host-read.host-info.platform",
+   "owner": "host",
+   "scenario": "host-read.host-info.platform",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "pkg/hostplatform/detect.go",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-read.detect-platform.native",
+   "owner": "host",
+   "scenario": "host-read.detect-platform.native",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_resource.go",
+    "internal/resource/service.go:capacitySnapshot"
+   ],
+   "id": "host-read.host-capacity",
+   "owner": "host",
+   "scenario": "host-read.host-capacity",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/plan_run.go:handleGetCapabilityCatalog"
+   ],
+   "id": "host-read.capability-catalog.standalone",
+   "owner": "contracts",
+   "scenario": "host-read.capability-catalog.standalone",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/plan_run.go:handleGetCapabilityCatalog"
+   ],
+   "id": "host-read.capability-catalog.platform",
+   "owner": "contracts",
+   "scenario": "host-read.capability-catalog.platform",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall"
+   ],
+   "id": "host-read.call-envelope",
+   "owner": "transport",
+   "scenario": "host-read.call-envelope",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:missingTasksCapabilityError"
+   ],
+   "id": "host-read.task-boundary.platform",
+   "owner": "transport",
+   "scenario": "host-read.task-boundary.platform",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:dispatchLifecycleTool"
+   ],
+   "id": "host-read.lifecycle-without-tasks.platform",
+   "owner": "transport",
+   "scenario": "host-read.lifecycle-without-tasks.platform",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/tools/standalone.go:IsStandaloneMutation"
+   ],
+   "id": "host-read.standalone-mutation-set-denied",
+   "owner": "authz",
+   "scenario": "host-read.standalone-mutation-set-denied",
+   "surface": "auth"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/toolprefix.go"
+   ],
+   "id": "host-read.standalone-mutation-set-denied.prefixed",
+   "owner": "authz",
+   "scenario": "host-read.standalone-mutation-set-denied.prefixed",
+   "surface": "auth"
   },
   {
    "anchors": [
@@ -535,8 +823,12 @@
   "results": "evidence/current/go-oracles.json",
   "suites": "tools/parity/oracles.json"
  },
+ "rustCanaries": {
+  "expected": "tools/parity/rust-canaries.json",
+  "results": "evidence/current/rust-canaries.json"
+ },
  "rustCandidate": {
-  "binarySha256": "ced0fc0651d670e5bbd1d34e503721ce803376e2be86653caecf6e5b1aab5a80",
+  "binarySha256": "b17b57a1c0b2fcc72888fecd34d06a2f97b6bbe3bc5ae1d4654d3480859fee9d",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

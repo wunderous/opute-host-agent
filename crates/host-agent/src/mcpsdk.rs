@@ -46,8 +46,20 @@ const META_SERVER_INFO: &str = "io.modelcontextprotocol/serverInfo";
 pub struct Sdk<'a> {
     pub implementation_name: &'a str,
     pub version: &'a str,
-    /// Published tool names, sorted (catalog content arrives in M3).
+    /// The published `tools/list` entries, sorted by wire name.
     pub tools: &'a [J],
+    /// The registered tool handler (the Go server's `handleToolCall`).
+    pub call_tool: &'a dyn Fn(&str, Option<&Node>) -> ToolCallOutcome,
+}
+
+/// What a registered tool handler returned.
+pub enum ToolCallOutcome {
+    /// No tool is registered under this name.
+    Unknown,
+    /// A `CallToolResult` (the handler returned a result, possibly an error result).
+    Result(J),
+    /// The handler returned an error: a JSON-RPC error response.
+    Protocol(i64, String, Option<J>),
 }
 
 // --- segmentio typed decoding ------------------------------------------------
@@ -967,7 +979,25 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
                 .and_then(|p| p.field("name"))
                 .and_then(|n| n.as_str())
                 .unwrap_or("");
-            return Err(rpc_err(-32602, format!("unknown tool {}", quote(name))));
+            match (sdk.call_tool)(name, params.as_ref()) {
+                ToolCallOutcome::Unknown => {
+                    return Err(rpc_err(-32602, format!("unknown tool {}", quote(name))))
+                }
+                ToolCallOutcome::Protocol(code, message, data) => {
+                    return Err(RpcError {
+                        code,
+                        message,
+                        data,
+                    })
+                }
+                ToolCallOutcome::Result(mut result) => {
+                    // callTool: a nil Content is sent as [] rather than null.
+                    if let Some(obj) = result.as_object_mut() {
+                        obj.entry("content").or_insert_with(|| J::Array(Vec::new()));
+                    }
+                    result
+                }
+            }
         }
         "prompts/get" => {
             let params = unmarshal_params("prompts/get", raw, &GET_PROMPT_PARAMS, false)?;

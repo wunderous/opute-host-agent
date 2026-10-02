@@ -51,12 +51,51 @@ def main(argv: list[str] | None = None) -> int:
     orc.add_argument("--binary", action="append", required=True, help="LABEL=PATH (repeatable)")
     orc.add_argument("--out", required=True, type=Path)
 
+    con = sub.add_parser("contract", help="run a single-implementation contract suite")
+    con.add_argument("--impl", required=True, help="LABEL=PATH")
+    con.add_argument("--suite", required=True)
+    con.add_argument("--out", type=Path)
+    con.add_argument("--workers", type=int, default=6)
+    con.add_argument("scenarios", nargs="*")
+
+    rc = sub.add_parser("rust-canaries", help="patched Rust builds must turn their contract scenario red")
+    rc.add_argument("--rust", required=True, type=Path, help="unpatched Rust candidate binary")
+    rc.add_argument("--out", required=True, type=Path)
+    rc.add_argument("--workers", type=int, default=6)
+
+    cs = sub.add_parser("catalog-source", help="regenerate crates/host-agent/catalog/source.json from the pinned Go tree")
+    cs.add_argument("--go-src", required=True, type=Path)
+    cs.add_argument("--check", action="store_true", help="fail if the committed file is stale")
+
     sub.add_parser("corpus", help="regenerate scenarios/wire.json from parity/corpus.py")
     man = sub.add_parser("manifest", help="sync derived manifest fields from scenarios and the source lock")
     man.add_argument("--go", type=Path, help="Go reference binary whose hash to record")
     man.add_argument("--rust", type=Path, help="Rust candidate binary whose hash to record")
 
     args = parser.parse_args(argv)
+    if args.command == "contract":
+        from . import contract
+        summary = contract.run_suite(_impl(args.impl), args.suite, args.out, args.scenarios or None, args.workers)
+        failed = [k for k, v in summary["items"].items() if v["status"] != "pass"]
+        for key, item in sorted(summary["items"].items()):
+            print(f"{item['status']:4}  {key}")
+            for failure in item["failures"]:
+                print(f"        {failure}")
+        print(f"{len(summary['items']) - len(failed)}/{len(summary['items'])} contract scenarios pass")
+        return 1 if failed else 0
+    if args.command == "rust-canaries":
+        from . import contract
+        doc = contract.run_rust_canaries(args.rust.resolve(), args.out, args.workers)
+        clean = not any(doc["baselineFailures"].values())
+        return 0 if clean and all(r.get("caught") for r in doc["results"]) else 1
+    if args.command == "catalog-source":
+        from . import catalog_source
+        if args.check:
+            fresh = catalog_source.check(args.go_src.resolve())
+            print("catalog source is " + ("current" if fresh else "STALE: run make catalog-source"))
+            return 0 if fresh else 1
+        print(f"wrote {catalog_source.write(args.go_src.resolve())}")
+        return 0
     if args.command == "corpus":
         from . import corpus
         print(f"wire corpus v{corpus.VERSION}: {corpus.write()} steps -> {corpus.OUT_FILE.name}")

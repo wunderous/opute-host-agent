@@ -26,6 +26,7 @@ TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 SCENARIO_DIR = TOOLS_DIR / "scenarios"
 FIXTURE_DIR = TOOLS_DIR / "fixtures"
+DIVERGENCE_FILE = TOOLS_DIR / "divergences.json"
 OBSERVING_MODULES = ("agent", "canon", "runner", "shims")
 
 # Environment profiles. Values may use ${AGENT_ID}, ${PORT}, ${TOKEN} and
@@ -68,7 +69,8 @@ def harness_sha256() -> str:
     capture and canary drivers only read evidence, so they are excluded.
     """
     digest = hashlib.sha256()
-    files = [TOOLS_DIR / "parity" / f"{m}.py" for m in OBSERVING_MODULES] + sorted(FIXTURE_DIR.rglob("*.json"))
+    files = ([TOOLS_DIR / "parity" / f"{m}.py" for m in OBSERVING_MODULES]
+             + sorted(FIXTURE_DIR.rglob("*.json")) + [DIVERGENCE_FILE])
     for path in files:
         digest.update(str(path.relative_to(TOOLS_DIR)).encode() + b"\0")
         digest.update(path.read_bytes() + b"\0")
@@ -96,6 +98,16 @@ def load_scenarios(ids: list[str] | None = None) -> list[dict]:
         if missing:
             raise ValueError(f"unknown scenarios: {sorted(missing)}")
     return scenarios
+
+
+def _expand_all(sandbox: agent.Sandbox, value: Any) -> Any:
+    if isinstance(value, str):
+        return sandbox.expand(value)
+    if isinstance(value, list):
+        return [_expand_all(sandbox, v) for v in value]
+    if isinstance(value, dict):
+        return {k: _expand_all(sandbox, v) for k, v in value.items()}
+    return value
 
 
 def _env(step: dict) -> dict:
@@ -147,9 +159,12 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), spec["path"], headers, raw)
             elif "mcp" in step:
                 spec = step["mcp"]
+                # "expand": run variables (for example ${TOOL_PREFIX}) in the
+                # tool name and params are replaced by this side's values.
+                expand = (lambda v: _expand_all(sandbox, v)) if spec.get("expand") else (lambda v: v)
                 steps[label] = agent.mcp_call(
-                    sandbox, spec["method"], spec.get("params"),
-                    token=spec.get("token", "${TOKEN}"), name=spec.get("name"),
+                    sandbox, spec["method"], expand(spec.get("params")),
+                    token=spec.get("token", "${TOKEN}"), name=expand(spec.get("name")),
                     modern=spec.get("modern", True), headers=spec.get("headers"),
                     omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
             elif "raw" in step:
@@ -210,6 +225,29 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
 _EXCLUSIVE = threading.Lock()
 
 
+X2_TABLES = ("operations", "plan_runs", "capability_invocations")
+
+
+def invariant_violations(scenario: dict, observation: dict) -> list[dict]:
+    """Cross-cutting invariants a scenario declares (milestones.md 2.6).
+
+    They hold on each side on its own; equality with the other side is not
+    enough. X2: rejected calls have no effects, so the shim trace is empty and
+    the state store records no operations, plan runs or invocations.
+    """
+    violations = []
+    if "X2" in scenario.get("invariants", []):
+        if observation.get("trace"):
+            violations.append({"invariant": "X2", "reason": "shim trace is not empty",
+                               "value": observation["trace"][:5]})
+        for db, schema in (observation.get("sqlite") or {}).items():
+            for table in X2_TABLES:
+                count = (schema.get("rowCounts") or {}).get(table)
+                if count:
+                    violations.append({"invariant": "X2", "reason": f"{db} {table} has {count} rows"})
+    return violations
+
+
 def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: str) -> dict:
     spec = scenario.get("compare", {})
     if scenario.get("exclusive"):
@@ -226,6 +264,12 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
             obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)
     norm_r, viol_r = canon.normalize(obs_r, spec, vars_r)
+    viol_l += invariant_violations(scenario, obs_l)
+    viol_r += invariant_violations(scenario, obs_r)
+    divergences: list[dict] = []
+    if cross_implementation(left, right):
+        norm_l, norm_r, divergences = canon.apply_divergences(
+            norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE))
     differences = canon.diff(norm_l, norm_r)
     return {
         "raw": {"a": {"observation": obs_l, "variables": vars_l},
@@ -233,7 +277,17 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
         "normalized": {"a": norm_l, "b": norm_r},
         "diff": differences,
         "maskViolations": {"a": viol_l, "b": viol_r},
+        "divergences": divergences,
     }
+
+
+def cross_implementation(left: agent.Impl, right: agent.Impl) -> bool:
+    """Declared divergences apply only between Go and a Rust build."""
+    return left.label.startswith("rust") != right.label.startswith("rust")
+
+
+def stale_divergences(outcome: dict) -> int:
+    return sum(1 for d in outcome.get("divergences", []) if d["stale"])
 
 
 def _gz(data: Any) -> bytes:
@@ -258,10 +312,12 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
         for sid, i, outcome in pool.map(job, jobs):
             results[sid].append({"iteration": i, "diffCount": len(outcome["diff"]),
-                                 "maskViolations": sum(len(v) for v in outcome["maskViolations"].values())})
+                                 "maskViolations": sum(len(v) for v in outcome["maskViolations"].values()),
+                                 "staleDivergences": stale_divergences(outcome)})
             if sid not in last or i >= last[sid]["iteration"]:
                 last[sid] = {"iteration": i, **outcome}
-            failed = outcome["diff"] or any(outcome["maskViolations"].values())
+            failed = (outcome["diff"] or any(outcome["maskViolations"].values())
+                      or stale_divergences(outcome))
             if failed and (sid not in first_failure or i < first_failure[sid]["iteration"]):
                 first_failure[sid] = {"iteration": i, **outcome}
 
@@ -276,7 +332,8 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
             "a.json.gz": _gz(outcome["raw"]["a"]),
             "b.json.gz": _gz(outcome["raw"]["b"]),
             "diff.json": canon.canonical_json({
-                "diff": outcome["diff"], "maskViolations": outcome["maskViolations"]}).encode(),
+                "diff": outcome["diff"], "maskViolations": outcome["maskViolations"],
+                "divergences": outcome["divergences"]}).encode(),
             "iterations.json": canon.canonical_json(iterations).encode(),
         }
         # Keep the first failing iteration too: a flake that the last
@@ -285,17 +342,20 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
         if failure is not None:
             files["first-failure.json.gz"] = _gz({
                 "iteration": failure["iteration"], "diff": failure["diff"],
-                "maskViolations": failure["maskViolations"], "raw": failure["raw"]})
+                "maskViolations": failure["maskViolations"], "divergences": failure["divergences"],
+                "raw": failure["raw"]})
         hashes = {}
         for name, data in files.items():
             (sdir / name).write_bytes(data)
             hashes[name] = sha256_bytes(data)
-        clean = all(r["diffCount"] == 0 and r["maskViolations"] == 0 for r in iterations)
+        clean = all(r["diffCount"] == 0 and r["maskViolations"] == 0 and not r["staleDivergences"]
+                    for r in iterations)
         summary_items[sid] = {
             "status": "pass" if clean else "fail",
             "iterations": len(iterations),
             "failingIterations": [r["iteration"] for r in iterations
-                                  if r["diffCount"] or r["maskViolations"]],
+                                  if r["diffCount"] or r["maskViolations"] or r["staleDivergences"]],
+            "divergences": sorted({d["id"] for d in outcome["divergences"]}),
             "scenarioFile": scenario["_file"],
             "scenarioSha256": scenario["_sha256"],
             "files": hashes,

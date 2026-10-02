@@ -1,0 +1,230 @@
+{
+ "baselineFailures": {
+  "oauth-issuance": [],
+  "standalone-read-only-gate": []
+ },
+ "canaryFileSha256": "77d45f919093e1455dd1788999ede3d6adcea982ddd533edbce621405f981ad3",
+ "contractSha256": {
+  "oauth-issuance": "b804f347f20b6077a91a8a2ecb482a949a8407870c6a5c81258c9562a2b743de",
+  "standalone-read-only-gate": "410d81333b7456a255615737f00abafb99ea6faae3986dfd379b61da78c7e76f"
+ },
+ "results": [
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "cc.no-secret",
+    "provider.public-without-credential"
+   ],
+   "id": "K1-empty-secret",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "cc.public-client"
+   ],
+   "id": "K2-public-client-credentials",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "audience.arbitrary-host"
+   ],
+   "id": "K3-any-audience",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "abuse.pending-flood",
+    "approval.cli-approve",
+    "approval.deny",
+    "approval.expiry",
+    "approval.not-over-http",
+    "approval.once-and-disabled",
+    "approval.remembered-consent",
+    "audit.issuance-line",
+    "authorize.unapproved",
+    "redirect.exact-and-loopback"
+   ],
+   "id": "K4-implicit-consent",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "redirect.exact-and-loopback"
+   ],
+   "id": "K5-redirect-prefix",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "credentials.first-start",
+    "credentials.operator-secret",
+    "credentials.rotation"
+   ],
+   "id": "K6-credential-mode",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "credentials.rotation"
+   ],
+   "id": "K7-rotation-keeps-tokens",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "migration.revokes-live-tokens"
+   ],
+   "id": "K8-migration-keeps-tokens",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.cli-approve"
+   ],
+   "id": "K9-code-replay",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "audit.issuance-line"
+   ],
+   "id": "K10-audit-secret",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "abuse.backoff-only-failures"
+   ],
+   "id": "K11-backoff-blocks-valid",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.cli-approve"
+   ],
+   "id": "K12-framable-page",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "abuse.pending-flood"
+   ],
+   "id": "K13-pending-cap",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.expiry"
+   ],
+   "id": "K14-long-pending",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.not-over-http"
+   ],
+   "id": "K15-http-approval-route",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.published-non-read-refused",
+    "gate.refused-leaves-no-trace",
+    "gate.unpublished-without-declared-read"
+   ],
+   "id": "K16-gate-name-list",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.refused-leaves-no-trace",
+    "gate.unpublished-without-declared-read"
+   ],
+   "id": "K17-inferred-read-unpublished",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.mutations-allowed"
+   ],
+   "id": "K18-gate-ignores-allow",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.platform-unaffected"
+   ],
+   "id": "K19-gate-in-platform",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.published-read-not-refused"
+   ],
+   "id": "K20-gate-refuses-reads",
+   "patchApplied": true
+  }
+ ],
+ "rustBinarySha256": "b17b57a1c0b2fcc72888fecd34d06a2f97b6bbe3bc5ae1d4654d3480859fee9d",
+ "schemaVersion": 1
+}

@@ -66,7 +66,7 @@ pub struct Runtime {
     pub config: Config,
     // Field order is drop order: state is released before anything declared
     // later in `run` (which is dropped first because locals drop in reverse).
-    pub state: StateStore,
+    pub state: std::sync::Arc<std::sync::Mutex<StateStore>>,
 }
 
 /// `app.NewRuntime` for M1: validation, coordinator lock dir, state store.
@@ -81,11 +81,14 @@ fn new_runtime_with(env: &Env, fault: Option<&str>) -> Result<Runtime> {
     goerr::mkdir_all(&cfg.host_resource_lock_dir, 0o700)?;
     inject_fault(fault, "state")?;
     let state = StateStore::open(&cfg.standalone_state_dir)?;
-    Ok(Runtime { config: cfg, state })
+    Ok(Runtime {
+        config: cfg,
+        state: std::sync::Arc::new(std::sync::Mutex::new(state)),
+    })
 }
 
 /// A Go `log/slog` TextHandler line at INFO level.
-fn log_info(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
+pub(crate) fn log_info(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
     let mut line = format!("time={} level=INFO msg={}", slog_time(), slog_value(msg));
     for (k, v) in attrs {
         line.push_str(&format!(" {k}={}", slog_value(v)));
@@ -183,7 +186,7 @@ pub fn run(env: &Env, stderr: &mut dyn Write) -> Result<()> {
 }
 
 fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()> {
-    let mut runtime = new_runtime_with(env, fault)?;
+    let runtime = new_runtime_with(env, fault)?;
     let cfg = runtime.config.clone();
     let authz_dir = if cfg.standalone_state_dir.as_os_str().is_empty() {
         cfg.instance_root.clone()
@@ -199,7 +202,7 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
             "HOST_MCP_PORT must be positive for direct HTTP mode"
         ));
     }
-    let server = std::sync::Arc::new(http_server(&cfg, authz));
+    let server = std::sync::Arc::new(http_server(&cfg, authz, runtime.state.clone()));
     log_info(stderr, "HTTP transport listening", &[("addr", &addr)]);
     inject_fault(fault, "listener")?;
     let result = serve(&addr, server.clone());
@@ -207,7 +210,9 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
     if let Ok(mut authz) = server.authz.lock() {
         authz.close();
     }
-    runtime.state.close();
+    if let Ok(mut state) = runtime.state.lock() {
+        state.close();
+    }
     result
 }
 
@@ -239,7 +244,11 @@ fn uuid_v5(namespace: &[u8; 16], name: &[u8]) -> [u8; 16] {
 }
 
 /// `transport.NewHTTPServer` options as `app.Run` fills them.
-fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
+fn http_server(
+    cfg: &Config,
+    authz: AuthzStore,
+    state: std::sync::Arc<std::sync::Mutex<StateStore>>,
+) -> crate::transport::Server {
     let prefix = if cfg.prefix_tool_names {
         tool_name_prefix(&cfg.remote_agent_id)
     } else {
@@ -251,6 +260,9 @@ fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
         format!("host-agent-{prefix}")
     };
     let identity = cfg.identity.as_ref().ok();
+    let standalone = cfg.agent_mode == "standalone";
+    let catalog = crate::catalog::for_mode(standalone);
+    let prefix_for_tools = prefix.clone();
     crate::transport::Server {
         instance_id: cfg.instance_id.clone(),
         local_instance_id: if cfg.agent_mode == "standalone" {
@@ -280,6 +292,40 @@ fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
         disable_localhost_protection: cfg.disable_localhost_protection,
         bootstrap_token: cfg.mcp_auth_token.trim().to_string(),
         authz: std::sync::Mutex::new(authz),
+        grant_backoff: crate::oauth::Backoff::default(),
+        catalog,
+        published_tools: crate::catalog::published_tools(catalog, &prefix_for_tools),
+        standalone,
+        allow_mutations: cfg.standalone_allow_mutations,
+        host: crate::tools::Host {
+            env: cfg.env.clone(),
+            incus: crate::incus::Incus {
+                binary: crate::incus::provider_binary(&cfg.env),
+                env: cfg.env.clone(),
+                instance_id: cfg.instance_id.clone(),
+                ownership_mode: cfg.ownership_mode.clone(),
+                agent_id: cfg.remote_agent_id.clone(),
+                tenant_id: cfg.tenant_id.clone(),
+            },
+            coordinator: crate::resource::Coordinator {
+                lock_dir: cfg.host_resource_lock_dir.clone(),
+                disk_paths: cfg.host_resource_disk_paths.clone(),
+                policy_revision: cfg.host_resource_policy_revision.clone(),
+                min_available_memory_bytes: cfg.host_resource_min_memory_bytes,
+                min_available_disk_bytes: cfg.host_resource_min_disk_bytes,
+                cpu_capacity_cores: cfg.host_resource_cpu_capacity,
+                memory_capacity_bytes: cfg.host_resource_memory_capacity,
+                disk_capacity_bytes: cfg.host_resource_disk_capacity,
+                task_capacity: cfg.host_resource_task_capacity,
+                enforcement_env: cfg.env.clone(),
+            },
+            state,
+            tenant_id: cfg.tenant_id.clone(),
+            agent_id: cfg.remote_agent_id.clone(),
+            instance_id: cfg.instance_id.clone(),
+            instance_root: cfg.instance_root.to_string_lossy().into_owned(),
+            mcp_port: cfg.host_mcp_port,
+        },
         health_observer: Box::new(crate::hostobs::health_observer(
             cfg.env.clone(),
             cfg.instance_id.clone(),
