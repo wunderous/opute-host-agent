@@ -978,6 +978,11 @@ pub fn internal() -> &'static Snapshot {
     INTERNAL.get_or_init(|| build(&source().provider_id, &canonicalize(&source().internal)))
 }
 
+/// `HostToolNamesForProvider`: the host catalog's tool names.
+pub fn host_tool_names() -> Vec<String> {
+    source().host.iter().map(|d| d.name.clone()).collect()
+}
+
 /// `WireToolName`.
 pub fn wire_name(prefix: &str, name: &str) -> String {
     let (prefix, name) = (prefix.trim(), name.trim());

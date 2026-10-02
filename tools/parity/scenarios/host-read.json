@@ -1,0 +1,5405 @@
+[
+  {
+    "id": "host-read.list-vms.inventory-mix",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-inventory-mix",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFastString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": "true"
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.two-containers",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-two-containers",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFastString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": "true"
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.empty",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFastString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": "true"
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.malformed",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-malformed",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFastString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": "true"
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.list-fails",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-list-fails",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFastString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": "true"
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.absent",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-absent",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFastString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": "true"
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.ownership-enforced",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go",
+      "internal/domain/incus/incus_ownership.go"
+    ],
+    "fixture": "incus-inventory-mix",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+          }
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "listFast",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {
+              "fast": true
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.list-vms.platform",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/incus/incus_inventory.go:ListVMs",
+      "internal/tools/dispatch_incus.go"
+    ],
+    "fixture": "incus-inventory-mix",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "listFull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.host-info.inventory-mix",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/host/host_service.go:DescribeHost",
+      "internal/domain/incus/incus_storage_quota.go",
+      "internal/heartbeat/capacity.go"
+    ],
+    "fixture": "incus-inventory-mix",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "hostInfo",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_info",
+          "params": {
+            "name": "get_host_info",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "parseJson": [
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text"
+        ]
+      ],
+      "sets": [
+        [
+          "trace"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text",
+          "$json",
+          "supportedTools"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "structuredContent",
+          "supportedTools"
+        ]
+      ],
+      "notes": "Go emits supportedTools in map-iteration order (nondeterministic across runs); membership is the contract, order is not. Recorded as inventory finding F-2.",
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.host-info.storage-zfs",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/host/host_service.go:DescribeHost",
+      "internal/domain/incus/incus_storage_quota.go",
+      "internal/heartbeat/capacity.go"
+    ],
+    "fixture": "incus-storage-zfs",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "hostInfo",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_info",
+          "params": {
+            "name": "get_host_info",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "parseJson": [
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text"
+        ]
+      ],
+      "sets": [
+        [
+          "trace"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text",
+          "$json",
+          "supportedTools"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "structuredContent",
+          "supportedTools"
+        ]
+      ],
+      "notes": "Go emits supportedTools in map-iteration order (nondeterministic across runs); membership is the contract, order is not. Recorded as inventory finding F-2.",
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.host-info.absent",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/host/host_service.go:DescribeHost",
+      "internal/domain/incus/incus_storage_quota.go",
+      "internal/heartbeat/capacity.go"
+    ],
+    "fixture": "incus-absent",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "hostInfo",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_info",
+          "params": {
+            "name": "get_host_info",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "parseJson": [
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text"
+        ]
+      ],
+      "sets": [
+        [
+          "trace"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text",
+          "$json",
+          "supportedTools"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "structuredContent",
+          "supportedTools"
+        ]
+      ],
+      "notes": "Go emits supportedTools in map-iteration order (nondeterministic across runs); membership is the contract, order is not. Recorded as inventory finding F-2.",
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.host-info.list-fails",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/host/host_service.go:DescribeHost",
+      "internal/domain/incus/incus_storage_quota.go",
+      "internal/heartbeat/capacity.go"
+    ],
+    "fixture": "incus-list-fails",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "hostInfo",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_info",
+          "params": {
+            "name": "get_host_info",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "parseJson": [
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text"
+        ]
+      ],
+      "sets": [
+        [
+          "trace"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text",
+          "$json",
+          "supportedTools"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "structuredContent",
+          "supportedTools"
+        ]
+      ],
+      "notes": "Go emits supportedTools in map-iteration order (nondeterministic across runs); membership is the contract, order is not. Recorded as inventory finding F-2.",
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.host-info.platform",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/domain/host/host_service.go:DescribeHost"
+    ],
+    "fixture": "incus-inventory-mix",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "hostInfo",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_info",
+          "params": {
+            "name": "get_host_info",
+            "arguments": {
+              "ignored": [
+                1,
+                2
+              ]
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "parseJson": [
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text"
+        ]
+      ],
+      "sets": [
+        [
+          "trace"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "content",
+          "*",
+          "text",
+          "$json",
+          "supportedTools"
+        ],
+        [
+          "steps",
+          "hostInfo",
+          "body",
+          "result",
+          "structuredContent",
+          "supportedTools"
+        ]
+      ],
+      "notes": "Go emits supportedTools in map-iteration order (nondeterministic across runs); membership is the contract, order is not. Recorded as inventory finding F-2.",
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cgroupMemory",
+            "usageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad1m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad5m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "cpuLoad15m"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "diskFilesystems",
+            "*",
+            "availableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryFreeBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsageBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "memoryUsedBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract"
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "content",
+            0,
+            "text",
+            "$json",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        },
+        {
+          "path": [
+            "steps",
+            "hostInfo",
+            "body",
+            "result",
+            "structuredContent",
+            "system",
+            "resourceAdmission",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.host-capacity",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "internal/tools/dispatch_resource.go",
+      "internal/resource/service.go:capacitySnapshot"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "capacity",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_capacity",
+          "params": {
+            "name": "get_host_capacity",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "tasksCurrent"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "memoryEvents",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "capacity",
+            "body",
+            "result",
+            "structuredContent",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.capability-catalog.standalone",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": [
+      "internal/hostmcp/plan_run.go:handleGetCapabilityCatalog"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "catalog",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_capability_catalog",
+          "params": {
+            "name": "get_capability_catalog",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.capability-catalog.platform",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": [
+      "internal/hostmcp/plan_run.go:handleGetCapabilityCatalog"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "catalog",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_capability_catalog",
+          "params": {
+            "name": "get_capability_catalog",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.call-envelope",
+    "surface": "mcp-wire",
+    "owner": "transport",
+    "anchors": [
+      "internal/hostmcp/server.go:handleToolCall"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "argsArray",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": [
+              1
+            ]
+          }
+        }
+      },
+      {
+        "as": "argsString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": "x"
+          }
+        }
+      },
+      {
+        "as": "argsNumber",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": 3
+          }
+        }
+      },
+      {
+        "as": "argsBool",
+        "mcp": {
+          "method": "tools/call",
+          "name": "list_vms",
+          "params": {
+            "name": "list_vms",
+            "arguments": true
+          }
+        }
+      },
+      {
+        "as": "argsNull",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_capacity",
+          "params": {
+            "name": "get_host_capacity",
+            "arguments": null
+          }
+        }
+      },
+      {
+        "as": "staleRevision",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_capability_catalog",
+          "params": {
+            "name": "get_capability_catalog",
+            "arguments": {},
+            "_meta": {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "opute-parity",
+                "version": "1"
+              },
+              "io.modelcontextprotocol/clientCapabilities": {
+                "extensions": {
+                  "io.modelcontextprotocol/tasks": {}
+                }
+              },
+              "catalogRevision": "sha256:0000"
+            }
+          }
+        }
+      },
+      {
+        "as": "blankRevision",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_capability_catalog",
+          "params": {
+            "name": "get_capability_catalog",
+            "arguments": {},
+            "_meta": {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "opute-parity",
+                "version": "1"
+              },
+              "io.modelcontextprotocol/clientCapabilities": {
+                "extensions": {
+                  "io.modelcontextprotocol/tasks": {}
+                }
+              },
+              "catalogRevision": "  "
+            }
+          }
+        }
+      },
+      {
+        "as": "revisionNotString",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_capability_catalog",
+          "params": {
+            "name": "get_capability_catalog",
+            "arguments": {},
+            "_meta": {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "opute-parity",
+                "version": "1"
+              },
+              "io.modelcontextprotocol/clientCapabilities": {
+                "extensions": {
+                  "io.modelcontextprotocol/tasks": {}
+                }
+              },
+              "catalogRevision": 7
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "checkedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "memoryAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "diskAvailableBytes"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "currentUsage",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "psi",
+            "*",
+            "*"
+          ],
+          "type": "number",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "tasksCurrent"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "memoryEvents",
+            "*"
+          ],
+          "type": "non-negative-int",
+          "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+          "optional": true
+        }
+      ],
+      "omitempty": [
+        {
+          "path": [
+            "steps",
+            "argsNull",
+            "body",
+            "result",
+            "structuredContent",
+            "psi",
+            "*"
+          ],
+          "keys": [
+            "someAvg10",
+            "someAvg60",
+            "someAvg300",
+            "someTotalUsec",
+            "fullAvg10",
+            "fullAvg60",
+            "fullAvg300",
+            "fullTotalUsec"
+          ],
+          "zero": 0,
+          "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-read.task-boundary.platform",
+    "surface": "mcp-wire",
+    "owner": "transport",
+    "anchors": [
+      "internal/hostmcp/server.go:missingTasksCapabilityError"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
+        "as": "taskAwareNoCapability",
+        "mcp": {
+          "method": "tools/call",
+          "name": "configure_network",
+          "params": {
+            "name": "configure_network",
+            "arguments": {},
+            "_meta": {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "opute-parity",
+                "version": "1"
+              },
+              "io.modelcontextprotocol/clientCapabilities": {}
+            }
+          }
+        }
+      },
+      {
+        "as": "requestInputNoCapability",
+        "mcp": {
+          "method": "tools/call",
+          "name": "request_task_input",
+          "params": {
+            "name": "request_task_input",
+            "arguments": {
+              "prompt": "x"
+            },
+            "_meta": {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "opute-parity",
+                "version": "1"
+              },
+              "io.modelcontextprotocol/clientCapabilities": {}
+            }
+          }
+        }
+      },
+      {
+        "as": "lifecycleNoCapability",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_capability_catalog",
+          "params": {
+            "name": "get_capability_catalog",
+            "arguments": {},
+            "_meta": {
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+              "io.modelcontextprotocol/clientInfo": {
+                "name": "opute-parity",
+                "version": "1"
+              },
+              "io.modelcontextprotocol/clientCapabilities": {}
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.standalone-mutation-set-denied",
+    "surface": "auth",
+    "owner": "authz",
+    "anchors": [
+      "internal/hostmcp/server.go:handleToolCall",
+      "internal/tools/standalone.go:IsStandaloneMutation"
+    ],
+    "fixture": "incus-inventory-mix",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "deny apply_manifest",
+        "mcp": {
+          "method": "tools/call",
+          "name": "apply_manifest",
+          "params": {
+            "name": "apply_manifest",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny build_and_push_oci_image",
+        "mcp": {
+          "method": "tools/call",
+          "name": "build_and_push_oci_image",
+          "params": {
+            "name": "build_and_push_oci_image",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny cancel_operation",
+        "mcp": {
+          "method": "tools/call",
+          "name": "cancel_operation",
+          "params": {
+            "name": "cancel_operation",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny cleanup_container_storage",
+        "mcp": {
+          "method": "tools/call",
+          "name": "cleanup_container_storage",
+          "params": {
+            "name": "cleanup_container_storage",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny compact_wsl_disk",
+        "mcp": {
+          "method": "tools/call",
+          "name": "compact_wsl_disk",
+          "params": {
+            "name": "compact_wsl_disk",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny configure_agent_connection",
+        "mcp": {
+          "method": "tools/call",
+          "name": "configure_agent_connection",
+          "params": {
+            "name": "configure_agent_connection",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny configure_local_llm_model",
+        "mcp": {
+          "method": "tools/call",
+          "name": "configure_local_llm_model",
+          "params": {
+            "name": "configure_local_llm_model",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny configure_local_llm_runtime",
+        "mcp": {
+          "method": "tools/call",
+          "name": "configure_local_llm_runtime",
+          "params": {
+            "name": "configure_local_llm_runtime",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny configure_oci_storage",
+        "mcp": {
+          "method": "tools/call",
+          "name": "configure_oci_storage",
+          "params": {
+            "name": "configure_oci_storage",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny configure_service_domain",
+        "mcp": {
+          "method": "tools/call",
+          "name": "configure_service_domain",
+          "params": {
+            "name": "configure_service_domain",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny create_vm",
+        "mcp": {
+          "method": "tools/call",
+          "name": "create_vm",
+          "params": {
+            "name": "create_vm",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny delete_k8s_resource",
+        "mcp": {
+          "method": "tools/call",
+          "name": "delete_k8s_resource",
+          "params": {
+            "name": "delete_k8s_resource",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny delete_oci_registry",
+        "mcp": {
+          "method": "tools/call",
+          "name": "delete_oci_registry",
+          "params": {
+            "name": "delete_oci_registry",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny delete_postgresql",
+        "mcp": {
+          "method": "tools/call",
+          "name": "delete_postgresql",
+          "params": {
+            "name": "delete_postgresql",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny delete_vm",
+        "mcp": {
+          "method": "tools/call",
+          "name": "delete_vm",
+          "params": {
+            "name": "delete_vm",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_host_artifact",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_host_artifact",
+          "params": {
+            "name": "ensure_host_artifact",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_host_file",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_host_file",
+          "params": {
+            "name": "ensure_host_file",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_host_service_supervisor",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_host_service_supervisor",
+          "params": {
+            "name": "ensure_host_service_supervisor",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_host_tool",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_host_tool",
+          "params": {
+            "name": "ensure_host_tool",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_local_llm_k3s_proxy",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_local_llm_k3s_proxy",
+          "params": {
+            "name": "ensure_local_llm_k3s_proxy",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_local_llm_relay",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_local_llm_relay",
+          "params": {
+            "name": "ensure_local_llm_relay",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_local_llm_server_binary",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_local_llm_server_binary",
+          "params": {
+            "name": "ensure_local_llm_server_binary",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_oci_builder",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_oci_builder",
+          "params": {
+            "name": "ensure_oci_builder",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_public_mcp_quick_tunnel",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_public_mcp_quick_tunnel",
+          "params": {
+            "name": "ensure_public_mcp_quick_tunnel",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_public_mcp_tunnel",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_public_mcp_tunnel",
+          "params": {
+            "name": "ensure_public_mcp_tunnel",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny ensure_sqlite_database",
+        "mcp": {
+          "method": "tools/call",
+          "name": "ensure_sqlite_database",
+          "params": {
+            "name": "ensure_sqlite_database",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny extract_host_archive",
+        "mcp": {
+          "method": "tools/call",
+          "name": "extract_host_archive",
+          "params": {
+            "name": "extract_host_archive",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny garbage_collect_cluster_registry",
+        "mcp": {
+          "method": "tools/call",
+          "name": "garbage_collect_cluster_registry",
+          "params": {
+            "name": "garbage_collect_cluster_registry",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny install_incus_stack",
+        "mcp": {
+          "method": "tools/call",
+          "name": "install_incus_stack",
+          "params": {
+            "name": "install_incus_stack",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny install_local_llm_model",
+        "mcp": {
+          "method": "tools/call",
+          "name": "install_local_llm_model",
+          "params": {
+            "name": "install_local_llm_model",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny install_oci_registry",
+        "mcp": {
+          "method": "tools/call",
+          "name": "install_oci_registry",
+          "params": {
+            "name": "install_oci_registry",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny install_postgresql",
+        "mcp": {
+          "method": "tools/call",
+          "name": "install_postgresql",
+          "params": {
+            "name": "install_postgresql",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny opute.provider.install",
+        "mcp": {
+          "method": "tools/call",
+          "name": "opute.provider.install",
+          "params": {
+            "name": "opute.provider.install",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny opute.provider.reload",
+        "mcp": {
+          "method": "tools/call",
+          "name": "opute.provider.reload",
+          "params": {
+            "name": "opute.provider.reload",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny opute.provider.teardown",
+        "mcp": {
+          "method": "tools/call",
+          "name": "opute.provider.teardown",
+          "params": {
+            "name": "opute.provider.teardown",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny prepare_host_agent_artifacts",
+        "mcp": {
+          "method": "tools/call",
+          "name": "prepare_host_agent_artifacts",
+          "params": {
+            "name": "prepare_host_agent_artifacts",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny probe_gpu_container",
+        "mcp": {
+          "method": "tools/call",
+          "name": "probe_gpu_container",
+          "params": {
+            "name": "probe_gpu_container",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny provision_container",
+        "mcp": {
+          "method": "tools/call",
+          "name": "provision_container",
+          "params": {
+            "name": "provision_container",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny provision_vm",
+        "mcp": {
+          "method": "tools/call",
+          "name": "provision_vm",
+          "params": {
+            "name": "provision_vm",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny prune_unused_cluster_images",
+        "mcp": {
+          "method": "tools/call",
+          "name": "prune_unused_cluster_images",
+          "params": {
+            "name": "prune_unused_cluster_images",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny put_k8s_secret",
+        "mcp": {
+          "method": "tools/call",
+          "name": "put_k8s_secret",
+          "params": {
+            "name": "put_k8s_secret",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny reconcile_host_resource_policy",
+        "mcp": {
+          "method": "tools/call",
+          "name": "reconcile_host_resource_policy",
+          "params": {
+            "name": "reconcile_host_resource_policy",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny reconcile_postgresql_service",
+        "mcp": {
+          "method": "tools/call",
+          "name": "reconcile_postgresql_service",
+          "params": {
+            "name": "reconcile_postgresql_service",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny reconcile_serving_assignment",
+        "mcp": {
+          "method": "tools/call",
+          "name": "reconcile_serving_assignment",
+          "params": {
+            "name": "reconcile_serving_assignment",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny release_postgresql_service_relay",
+        "mcp": {
+          "method": "tools/call",
+          "name": "release_postgresql_service_relay",
+          "params": {
+            "name": "release_postgresql_service_relay",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_host_file",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_host_file",
+          "params": {
+            "name": "remove_host_file",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_local_llm_k3s_proxy",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_local_llm_k3s_proxy",
+          "params": {
+            "name": "remove_local_llm_k3s_proxy",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_local_llm_model",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_local_llm_model",
+          "params": {
+            "name": "remove_local_llm_model",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_local_llm_relay",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_local_llm_relay",
+          "params": {
+            "name": "remove_local_llm_relay",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_postgresql_service",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_postgresql_service",
+          "params": {
+            "name": "remove_postgresql_service",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_public_mcp_quick_tunnel",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_public_mcp_quick_tunnel",
+          "params": {
+            "name": "remove_public_mcp_quick_tunnel",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_service_domain",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_service_domain",
+          "params": {
+            "name": "remove_service_domain",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny remove_sqlite_database",
+        "mcp": {
+          "method": "tools/call",
+          "name": "remove_sqlite_database",
+          "params": {
+            "name": "remove_sqlite_database",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny reset_incus_stack",
+        "mcp": {
+          "method": "tools/call",
+          "name": "reset_incus_stack",
+          "params": {
+            "name": "reset_incus_stack",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny restart_host_service",
+        "mcp": {
+          "method": "tools/call",
+          "name": "restart_host_service",
+          "params": {
+            "name": "restart_host_service",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny restart_vm",
+        "mcp": {
+          "method": "tools/call",
+          "name": "restart_vm",
+          "params": {
+            "name": "restart_vm",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny run_host_command",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_command",
+          "params": {
+            "name": "run_host_command",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny run_host_local_recipe",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_local_recipe",
+          "params": {
+            "name": "run_host_local_recipe",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny run_host_plan",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny run_runtime_recipe",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_runtime_recipe",
+          "params": {
+            "name": "run_runtime_recipe",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny run_sql",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_sql",
+          "params": {
+            "name": "run_sql",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny run_tunnel_recipe",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_tunnel_recipe",
+          "params": {
+            "name": "run_tunnel_recipe",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny set_host_service_state",
+        "mcp": {
+          "method": "tools/call",
+          "name": "set_host_service_state",
+          "params": {
+            "name": "set_host_service_state",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny stage_build_context",
+        "mcp": {
+          "method": "tools/call",
+          "name": "stage_build_context",
+          "params": {
+            "name": "stage_build_context",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny start_local_llm_runtime",
+        "mcp": {
+          "method": "tools/call",
+          "name": "start_local_llm_runtime",
+          "params": {
+            "name": "start_local_llm_runtime",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny start_vm",
+        "mcp": {
+          "method": "tools/call",
+          "name": "start_vm",
+          "params": {
+            "name": "start_vm",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny stop_local_llm_runtime",
+        "mcp": {
+          "method": "tools/call",
+          "name": "stop_local_llm_runtime",
+          "params": {
+            "name": "stop_local_llm_runtime",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny stop_vm",
+        "mcp": {
+          "method": "tools/call",
+          "name": "stop_vm",
+          "params": {
+            "name": "stop_vm",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny trim_guest_storage",
+        "mcp": {
+          "method": "tools/call",
+          "name": "trim_guest_storage",
+          "params": {
+            "name": "trim_guest_storage",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny uninstall_incus_stack",
+        "mcp": {
+          "method": "tools/call",
+          "name": "uninstall_incus_stack",
+          "params": {
+            "name": "uninstall_incus_stack",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny update_vm_resources",
+        "mcp": {
+          "method": "tools/call",
+          "name": "update_vm_resources",
+          "params": {
+            "name": "update_vm_resources",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
+    "id": "host-read.standalone-mutation-set-denied.prefixed",
+    "surface": "auth",
+    "owner": "authz",
+    "anchors": [
+      "internal/hostmcp/toolprefix.go"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_MCP_PREFIX_TOOL_NAMES": "true"
+          }
+        }
+      },
+      {
+        "as": "deny apply_manifest",
+        "mcp": {
+          "method": "tools/call",
+          "expand": true,
+          "name": "${TOOL_PREFIX}_apply_manifest",
+          "params": {
+            "name": "${TOOL_PREFIX}_apply_manifest",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny build_and_push_oci_image",
+        "mcp": {
+          "method": "tools/call",
+          "expand": true,
+          "name": "${TOOL_PREFIX}_build_and_push_oci_image",
+          "params": {
+            "name": "${TOOL_PREFIX}_build_and_push_oci_image",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny cancel_operation",
+        "mcp": {
+          "method": "tools/call",
+          "expand": true,
+          "name": "${TOOL_PREFIX}_cancel_operation",
+          "params": {
+            "name": "${TOOL_PREFIX}_cancel_operation",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny cleanup_container_storage",
+        "mcp": {
+          "method": "tools/call",
+          "expand": true,
+          "name": "${TOOL_PREFIX}_cleanup_container_storage",
+          "params": {
+            "name": "${TOOL_PREFIX}_cleanup_container_storage",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "deny compact_wsl_disk",
+        "mcp": {
+          "method": "tools/call",
+          "expand": true,
+          "name": "${TOOL_PREFIX}_compact_wsl_disk",
+          "params": {
+            "name": "${TOOL_PREFIX}_compact_wsl_disk",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "unprefixed",
+        "mcp": {
+          "method": "tools/call",
+          "name": "apply_manifest",
+          "params": {
+            "name": "apply_manifest",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  }
+]

@@ -57,6 +57,7 @@ pub struct Server {
     pub published_tools: Vec<J>,
     pub standalone: bool,
     pub allow_mutations: bool,
+    pub host: crate::tools::Host,
 }
 
 const ROUTES: [&str; 9] = [
@@ -1268,9 +1269,11 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         crate::mcpsdk::serve(&sdk, req, raw, protected)
     };
     let mut response = if method == "tools/call" {
+        let (mut req, mut raw) = (req.clone(), raw.clone());
+        rewrite_tool_call_name(server, &mut req, &mut raw);
         // Tool handlers read the host and run commands; keep them off the
         // connection-serving thread.
-        let (server, req, raw) = (Arc::clone(server), req.clone(), raw.clone());
+        let server = Arc::clone(server);
         tokio::task::spawn_blocking(move || serve(&server, &req, &raw))
             .await
             .unwrap_or_else(|_| Response::error("internal error", 500))
@@ -1282,6 +1285,54 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         response.headers.del("Content-Length");
     }
     response
+}
+
+/// `ResolveIncomingToolCallName`: with prefixing on, an unprefixed catalog
+/// name is mapped to its wire name so callers can keep using catalog names.
+fn resolve_tool_name(server: &Server, name: &str) -> String {
+    let name = name.trim();
+    let prefix = server.tool_prefix.as_str();
+    if prefix.is_empty() || name.is_empty() || name.starts_with(&format!("{prefix}_")) {
+        return name.to_string();
+    }
+    if server.catalog.tools.iter().any(|d| d.name == name) {
+        return crate::catalog::wire_name(prefix, name);
+    }
+    name.to_string()
+}
+
+/// `rewriteIncomingToolCallName`: the body is decoded into a map, the name
+/// replaced, and the map re-encoded (sorted keys, float64 numbers); the
+/// `Mcp-Name` header follows when it was empty or named the same tool.
+fn rewrite_tool_call_name(server: &Server, req: &mut Request, raw: &mut Vec<u8>) {
+    let Ok(doc) = crate::gojson::parse(raw) else {
+        return;
+    };
+    let J::Object(mut envelope) = go_any(&doc) else {
+        return;
+    };
+    let Some(J::Object(mut params)) = envelope.get("params").cloned() else {
+        return;
+    };
+    let Some(name) = params.get("name").and_then(J::as_str).map(str::to_string) else {
+        return;
+    };
+    if name.trim().is_empty() {
+        return;
+    }
+    let resolved = resolve_tool_name(server, &name);
+    if resolved.is_empty() || resolved == name {
+        return;
+    }
+    params.insert("name".into(), J::from(resolved.clone()));
+    envelope.insert("params".into(), J::Object(params));
+    let mut out = String::new();
+    crate::gojson::encode(&J::Object(envelope), &mut out);
+    *raw = out.into_bytes();
+    let header = req.headers.get("Mcp-Name").to_string();
+    if header.is_empty() || header == name {
+        req.headers.set("Mcp-Name", resolved);
+    }
 }
 
 /// `normalizeTaskCreationResponse`: a task-creating tools/call result is

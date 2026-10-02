@@ -174,6 +174,37 @@ impl StateStore {
         Ok(())
     }
 
+    /// `Store.UpsertResource` for a parsed, tenant-checked URI.
+    pub fn upsert_resource(
+        &self,
+        uri: &crate::resource::Uri,
+        coordinates_json: &str,
+    ) -> std::result::Result<(), String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let now = crate::hostobs::rfc3339_nano_now();
+        conn.execute(
+            "INSERT INTO resource_registry(
+        uri, resource_type, tenant_id, resource_id, coordinates_json, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(uri) DO UPDATE SET
+        resource_type=excluded.resource_type, tenant_id=excluded.tenant_id,
+        resource_id=excluded.resource_id, coordinates_json=excluded.coordinates_json,
+        status=excluded.status, updated_at=excluded.updated_at",
+            rusqlite::params![
+                uri.to_string(),
+                uri.resource_type,
+                uri.tenant_id,
+                uri.resource_id,
+                coordinates_json,
+                "active",
+                now,
+                now
+            ],
+        )
+        .map_err(sqlite_err)?;
+        Ok(())
+    }
+
     /// Close explicitly so the WAL is checkpointed and removed, as Go's
     /// `db.Close` does; a leftover `-wal` file would be an observable diff.
     pub fn close(&mut self) {

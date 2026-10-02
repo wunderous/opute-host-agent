@@ -159,8 +159,10 @@ fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
 /// Placeholder for the host operations later milestones implement. It runs
 /// only after the same argument and configuration validation Go performs.
 fn not_yet_implemented(env: &Env, what: &str, milestone: &str) -> Result<()> {
-    let mut runtime = app::new_runtime(env)?;
-    runtime.state.close();
+    let runtime = app::new_runtime(env)?;
+    if let Ok(mut state) = runtime.state.lock() {
+        state.close();
+    }
     Err(go_err!(
         "{what} is not implemented in this build yet (planned in {milestone})"
     ))

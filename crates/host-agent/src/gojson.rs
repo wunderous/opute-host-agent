@@ -380,6 +380,88 @@ pub fn encode_float(f: f64, out: &mut String) {
     }
 }
 
+/// The Go type a JSON value was marshalled from, as far as member order is
+/// concerned: struct fields marshal in declaration order, map keys sorted.
+pub enum Shape {
+    /// `any` or a type with no nested structs: map semantics throughout.
+    Any,
+    /// A struct: fields in this order (absent fields were omitted).
+    Struct(&'static [(&'static str, Shape)]),
+    /// A map whose values all have one shape.
+    Map(&'static Shape),
+    /// A `map[string]any` holding some struct-typed values.
+    Keys(&'static [(&'static str, Shape)]),
+    /// A slice.
+    List(&'static Shape),
+}
+
+/// `json.Marshal` of `value` as the Go type `shape` describes.
+pub fn encode_shaped(value: &serde_json::Value, shape: &Shape, out: &mut String) {
+    use serde_json::Value as J;
+    let member = |out: &mut String, first: &mut bool, k: &str, v: &J, s: &Shape| {
+        if !*first {
+            out.push(',');
+        }
+        *first = false;
+        encode_string(k, out);
+        out.push(':');
+        encode_shaped(v, s, out);
+    };
+    match (shape, value) {
+        (Shape::Struct(fields), J::Object(map)) => {
+            out.push('{');
+            let mut first = true;
+            for (k, s) in fields.iter() {
+                if let Some(v) = map.get(*k) {
+                    member(out, &mut first, k, v, s);
+                }
+            }
+            out.push('}');
+        }
+        (Shape::Map(s), J::Object(map)) => {
+            out.push('{');
+            let mut first = true;
+            for (k, v) in map {
+                member(out, &mut first, k, v, s);
+            }
+            out.push('}');
+        }
+        (Shape::Keys(fields), J::Object(map)) => {
+            out.push('{');
+            let mut first = true;
+            for (k, v) in map {
+                let s = fields
+                    .iter()
+                    .find(|(f, _)| f == k)
+                    .map_or(&Shape::Any, |(_, s)| s);
+                member(out, &mut first, k, v, s);
+            }
+            out.push('}');
+        }
+        (Shape::List(s), J::Array(items)) => {
+            out.push('[');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                encode_shaped(item, s, out);
+            }
+            out.push(']');
+        }
+        _ => encode(value, out),
+    }
+}
+
+/// A float64 as a JSON value: integral values stay integers, so the value
+/// encodes exactly as Go writes it.
+pub fn float_value(f: f64) -> serde_json::Value {
+    if f.fract() == 0.0 && f.abs() < 9.007_199_254_740_992e15 {
+        serde_json::Value::from(f as i64)
+    } else {
+        serde_json::Number::from_f64(f).map_or(serde_json::Value::Null, serde_json::Value::Number)
+    }
+}
+
 /// `json.Marshal` of a value decoded into `any`: object keys sorted (as Go
 /// sorts map keys), numbers as float64 unless they are exact integers.
 pub fn encode(v: &serde_json::Value, out: &mut String) {

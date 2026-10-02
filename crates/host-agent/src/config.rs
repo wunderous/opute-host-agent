@@ -163,6 +163,8 @@ pub struct Config {
     pub host_resource_memory_capacity: i64,
     pub host_resource_disk_capacity: i64,
     pub host_resource_task_capacity: i64,
+    pub host_resource_disk_paths: Vec<String>,
+    pub host_resource_policy_revision: String,
     pub allow_legacy_handshake: bool,
     pub prefix_tool_names: bool,
     pub disable_localhost_protection: bool,
@@ -333,6 +335,25 @@ impl Config {
                         .join("host-resource-coordinator")
                         .to_string_lossy(),
                 ),
+            ),
+            host_resource_disk_paths: {
+                // envPathsOr: comma-separated, blanks dropped, "/" by default.
+                let paths: Vec<String> = env
+                    .value("OPUTE_HOST_RESOURCE_DISK_PATHS")
+                    .trim()
+                    .split(',')
+                    .map(|p| p.trim().to_string())
+                    .filter(|p| !p.is_empty())
+                    .collect();
+                if paths.is_empty() {
+                    vec!["/".to_string()]
+                } else {
+                    paths
+                }
+            },
+            host_resource_policy_revision: env.value_or(
+                "OPUTE_HOST_RESOURCE_POLICY_REVISION",
+                crate::resource::POLICY_REVISION,
             ),
             host_resource_max_normal: env_int_or(env, "OPUTE_HOST_MAX_NORMAL_OPERATIONS", 2),
             host_resource_max_heavy: env_int_or(env, "OPUTE_HOST_MAX_HEAVY_OPERATIONS", 1),

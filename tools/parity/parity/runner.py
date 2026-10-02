@@ -100,6 +100,16 @@ def load_scenarios(ids: list[str] | None = None) -> list[dict]:
     return scenarios
 
 
+def _expand_all(sandbox: agent.Sandbox, value: Any) -> Any:
+    if isinstance(value, str):
+        return sandbox.expand(value)
+    if isinstance(value, list):
+        return [_expand_all(sandbox, v) for v in value]
+    if isinstance(value, dict):
+        return {k: _expand_all(sandbox, v) for k, v in value.items()}
+    return value
+
+
 def _env(step: dict) -> dict:
     env = dict(PROFILES[step.get("profile", "empty")])
     env.update(step.get("env", {}))
@@ -149,9 +159,12 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), spec["path"], headers, raw)
             elif "mcp" in step:
                 spec = step["mcp"]
+                # "expand": run variables (for example ${TOOL_PREFIX}) in the
+                # tool name and params are replaced by this side's values.
+                expand = (lambda v: _expand_all(sandbox, v)) if spec.get("expand") else (lambda v: v)
                 steps[label] = agent.mcp_call(
-                    sandbox, spec["method"], spec.get("params"),
-                    token=spec.get("token", "${TOKEN}"), name=spec.get("name"),
+                    sandbox, spec["method"], expand(spec.get("params")),
+                    token=spec.get("token", "${TOKEN}"), name=expand(spec.get("name")),
                     modern=spec.get("modern", True), headers=spec.get("headers"),
                     omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
             elif "raw" in step:

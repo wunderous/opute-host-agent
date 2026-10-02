@@ -1,0 +1,19 @@
+{
+  "description": "incus list returns JSON whose types do not match the inventory contract.",
+  "commands": {
+    "incus": [
+      {
+        "argv": [
+          "list",
+          "--format",
+          "json"
+        ],
+        "stdout": "[{\"name\":\"x\",\"config\":{\"limits.cpu\":2}}]"
+      }
+    ]
+  },
+  "default": {
+    "exit": 1,
+    "stderr": "unsupported parity shim invocation\n"
+  }
+}
