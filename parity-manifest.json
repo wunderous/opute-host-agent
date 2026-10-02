@@ -40,12 +40,13 @@
  },
  "gates": {
   "cutover": {
-   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence; later milestones add T2/T3/T4 suites here",
+   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance"
    ],
    "requireInventory": true,
+   "requireNoGaps": true,
    "requireOracles": true,
    "requirePass": [
     "go-vs-go",

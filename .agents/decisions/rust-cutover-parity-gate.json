@@ -72,7 +72,7 @@
     "m0": "make parity-verify",
     "manifest": "parity-manifest.json"
   },
-  "verificationStatus": "Verifier implemented and fail closed. `make parity-verify-cutover` currently FAILS, as intended: no Rust candidate exists, so every go-vs-rust item is unverified. The M0 gate (`make parity-verify`) checks harness self-validation, canaries and inventory. Owner review of this invariant (task 0.5) is still pending, so status stays proposed.",
+  "verificationStatus": "Verifier implemented and fail closed. `make parity-verify-cutover` currently FAILS, as intended: it requires an inventory with no gaps (`requireNoGaps`), and owned gaps with no covering scenario remain, so passing every existing scenario is not enough. The M0 gate (`make parity-verify`) checks harness self-validation, canaries and inventory. Owner review of this invariant (task 0.5) is still pending, so status stays proposed.",
   "supersedes": [],
   "withdrawn": false
 }

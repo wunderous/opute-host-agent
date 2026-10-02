@@ -1,5 +1,5 @@
 {
- "oracleFileSha256": "105ebbee0f32ee8d27a409dc5b94d512c3c187195ccd3baa21f3c9ab3462e051",
+ "oracleFileSha256": "5baf029e10375470a5b37cd69daa590e12aac807a04c7c05abd3de262b6a3c3b",
  "results": [
   {
    "binary": "go",
@@ -18,7 +18,7 @@
   },
   {
    "binary": "rust",
-   "binarySha256": "8485062e9080e0cbb95ce3c7a75e3afc845ff63e712453ec22b49019cbf835d3",
+   "binarySha256": "173f44048bceeb881df0a26fd9f4ad81f0ebb9b7295e9eeefdea18db2cdf1533",
    "exit": 0,
    "expectedTests": [
     "TestStandaloneInvalidConfigurationExitsBeforeMCP",
@@ -61,7 +61,7 @@
   },
   {
    "binary": "rust",
-   "binarySha256": "8485062e9080e0cbb95ce3c7a75e3afc845ff63e712453ec22b49019cbf835d3",
+   "binarySha256": "173f44048bceeb881df0a26fd9f4ad81f0ebb9b7295e9eeefdea18db2cdf1533",
    "exit": 0,
    "expectedTests": [
     "TestParityRealClientModernHandshake"
@@ -84,6 +84,45 @@
    ],
    "passed": [],
    "suite": "real-client-modern"
+  },
+  {
+   "binary": "go",
+   "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+   "exit": 0,
+   "expectedTests": [
+    "TestParityRealClientCatalogAndReadTools"
+   ],
+   "failed": [],
+   "passed": [
+    "TestParityRealClientCatalogAndReadTools"
+   ],
+   "suite": "real-client-catalog"
+  },
+  {
+   "binary": "rust",
+   "binarySha256": "173f44048bceeb881df0a26fd9f4ad81f0ebb9b7295e9eeefdea18db2cdf1533",
+   "exit": 0,
+   "expectedTests": [
+    "TestParityRealClientCatalogAndReadTools"
+   ],
+   "failed": [],
+   "passed": [
+    "TestParityRealClientCatalogAndReadTools"
+   ],
+   "suite": "real-client-catalog"
+  },
+  {
+   "binary": "negative-control",
+   "binarySha256": "b860051e15938770f4164177f2fc2d4e1af26b226c9b0c3ea75a36d1be33a3cf",
+   "exit": 1,
+   "expectedTests": [
+    "TestParityRealClientCatalogAndReadTools"
+   ],
+   "failed": [
+    "TestParityRealClientCatalogAndReadTools"
+   ],
+   "passed": [],
+   "suite": "real-client-catalog"
   }
  ],
  "schemaVersion": 1,

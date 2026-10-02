@@ -26,7 +26,7 @@ make parity-go-vs-go    # every scenario, Go vs Go, 20 times
 make parity-canaries    # build broken Go variants and prove each is caught
 make parity-manifest    # sync parity-manifest.json items with the scenarios
 make parity-verify      # fail-closed M0 gate
-make parity-verify-cutover   # the whole-agent gate (fails until Rust has evidence)
+make parity-verify-cutover   # the whole-agent gate (fails until Rust has evidence and no inventory gaps remain)
 make parity-contracts   # Rust contract suite for declared divergences (D8)
 make parity-rust-canaries    # patched Rust builds that must turn a contract red
 make parity-m0          # all of the above, in order

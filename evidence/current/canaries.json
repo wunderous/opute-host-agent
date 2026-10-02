@@ -1,7 +1,7 @@
 {
- "canaryFileSha256": "492c268f540d5640aef85ba860e3051bad0933594ed5615a518528c64d1ae9b4",
+ "canaryFileSha256": "52679988b060e51d5caae4519f63933dddb17b67842f7b6d6a61d9fc6dfe54f1",
  "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
- "harnessSha256": "af71d792b17a9e2cd9d34cf45618c3d38e443e376ff29a40ffd06a33649e0ee0",
+ "harnessSha256": "6fd33d64d46076cc80c5e8b838752ebd1ec077fa3c745229ef86359fc14b6f16",
  "results": [
   {
    "buildStatus": "ok",
@@ -11,7 +11,11 @@
     "catalog.platform",
     "catalog.standalone",
     "catalog.standalone-mutations-enabled",
-    "catalog.standalone-prefixed-names"
+    "catalog.standalone-prefixed-names",
+    "host-read.call-envelope",
+    "host-read.capability-catalog.platform",
+    "host-read.capability-catalog.standalone",
+    "host-read.lifecycle-without-tasks.platform"
    ],
    "id": "C1-descriptor-text",
    "patchApplied": true
@@ -34,6 +38,17 @@
    "canaryBinarySha256": "b9122b50c97a09f00eef6c6d7778dc696255bfda806df46e8517eb4ccb646c4e",
    "caught": true,
    "failedScenarios": [
+    "host-read.host-info.inventory-mix",
+    "host-read.host-info.list-fails",
+    "host-read.host-info.platform",
+    "host-read.host-info.storage-zfs",
+    "host-read.list-vms.empty",
+    "host-read.list-vms.inventory-mix",
+    "host-read.list-vms.list-fails",
+    "host-read.list-vms.malformed",
+    "host-read.list-vms.ownership-enforced",
+    "host-read.list-vms.platform",
+    "host-read.list-vms.two-containers",
     "mcp.auth",
     "mcp.get-host-info",
     "serve.health",
@@ -69,7 +84,9 @@
    "canaryBinarySha256": "63579b307df8d3e353c8e9934ef3d7391d92646a5f0fa773d515ee4dda7b9a93",
    "caught": true,
    "failedScenarios": [
-    "admission.standalone-mutation-denied"
+    "admission.standalone-mutation-denied",
+    "host-read.standalone-mutation-set-denied",
+    "host-read.standalone-mutation-set-denied.prefixed"
    ],
    "id": "C6-mutation-gate-open",
    "patchApplied": true
@@ -95,6 +112,33 @@
     "wire.origin.standalone.public-opt-in"
    ],
    "id": "C8-ipv6-loopback-origin",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "a16b252d9c645bc093b26ea88644705c1a7be39070c0762eee221d7079e6d77e",
+   "caught": true,
+   "failedScenarios": [
+    "host-read.list-vms.inventory-mix",
+    "host-read.list-vms.platform",
+    "host-read.list-vms.two-containers"
+   ],
+   "id": "C9-vm-release-default",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "9689ff52c3e1dd7cf98bb97556d151838ab747043bec8ae46ff3b3923ab1f87d",
+   "caught": true,
+   "failedScenarios": [
+    "host-read.list-vms.absent",
+    "host-read.list-vms.empty",
+    "host-read.list-vms.inventory-mix",
+    "host-read.list-vms.list-fails",
+    "host-read.list-vms.malformed",
+    "host-read.list-vms.two-containers"
+   ],
+   "id": "C10-schema-type-text",
    "patchApplied": true
   }
  ],

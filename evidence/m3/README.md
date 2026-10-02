@@ -11,16 +11,16 @@ built with, Python 3.11).
 
 | Check | Result |
 | --- | --- |
-| `make rust-check` | fmt, clippy `-D warnings`, @RUST_TESTS@ unit tests: pass |
-| `make parity-test` | @HARNESS_TESTS@ harness tests (comparator, omitempty, substitution, divergences, verifier, contracts, corpus freshness): pass |
+| `make rust-check` | fmt, clippy `-D warnings`, 72 unit tests: pass |
+| `make parity-test` | 68 harness tests (comparator, omitempty, substitution, divergences, verifier, contracts, corpus freshness): pass |
 | `catalog-source --check` (in `make parity-ci`) | the committed `crates/host-agent/catalog/source.json` equals a fresh export from the pinned Go tree |
-| Go vs Go, ×20 | @GOGO@ |
-| Canaries | @CANARIES@ |
-| **Go vs Rust, ×5** | @GORUST@ |
+| Go vs Go, ×20 | 66/66 scenarios clean on all 20 iterations |
+| Canaries | 10/10 caught, each by its named scenario (plus declared co-failures); C9 and C10 are new |
+| **Go vs Rust, ×5** | **66/66 scenarios pass on all 5 iterations, on every surface** (admission, auth, catalog, cli, config, durable-state, host-read, http, lifecycle, mcp-wire, read-only-tools), outside the declared D8 divergences |
 | Go oracle tests against Rust | `standalone-startup` (M1), `real-client-modern` (M2) and `real-client-catalog` (M3, the go-sdk client lists the catalog and calls read-only tools) pass against Go and Rust and fail against the `/bin/true` control |
-| D8 contract suite and Rust canaries | @CONTRACTS@ |
+| D8 contract suite and Rust canaries | 24/24 contract scenarios; 15/15 Rust canaries caught ([details](../oauth-issuance/README.md)) |
 | `make parity-verify-m1` … `parity-verify-m3` | **PASS** |
-| `make parity-verify-cutover` | **FAIL, by design** (later-milestone items) |
+| `make parity-verify-cutover` | **FAIL, by design**: 80 owned inventory gaps (no covering scenario yet) remain; see below |
 
 ## One catalog source
 
@@ -128,7 +128,13 @@ New canaries: **C9** (`vm-release-default`) and **C10**
    `compare.omitempty` rules (each with a reason).
 6. **Port substitution inside numbers.** The harness replaced a port's digits
    inside an unrelated number; substitution now respects digit boundaries.
-7. **Nondeterministic export.** Go appends some definitions in map order; the
+7. **The cutover gate was not fail closed.** With every existing scenario
+   green, `parity-verify-cutover` passed, although the inventory still lists
+   80 owned Go behaviours that no scenario covers yet. Before M3 a
+   failing scenario hid this. The cutover gate now also requires
+   `requireNoGaps`: zero inventory gaps, owned or not. Verifier tests cover
+   the gaps case and a missing gap count.
+8. **Nondeterministic export.** Go appends some definitions in map order; the
    export sorts them.
 
 ## Scope changes and open items

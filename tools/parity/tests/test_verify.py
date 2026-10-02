@@ -48,7 +48,7 @@ class Tree:
             "gates": {
                 "m0": {"requirePass": ["go-vs-go"], "requireCanaries": True, "requireInventory": True},
                 "cutover": {"requirePass": ["go-vs-go", "go-vs-rust"], "requireCanaries": True,
-                            "requireInventory": True},
+                            "requireInventory": True, "requireNoGaps": True},
                 "m1": {"requirePass": ["go-vs-go", {"suite": "go-vs-rust", "surfaces": ["cli", "config", "lifecycle"]}],
                        "requireCanaries": True, "requireInventory": True, "requireOracles": True},
                 "issuance": {"requireContracts": ["oauth-issuance"]},
@@ -105,9 +105,10 @@ class Tree:
                    "items": items}
         (bundle / "summary.json").write_text(json.dumps(summary))
 
-    def write_inventory(self) -> None:
+    def write_inventory(self, gaps: int = 0) -> None:
         inv = self.root / "baseline/inventory"
-        gaps = json.dumps({"count": 0, "unownedCount": 0, "items": []}).encode()
+        gaps = json.dumps({"count": gaps, "unownedCount": 0,
+                           "items": [{"id": f"gap-{i}", "owner": "later"} for i in range(gaps)]}).encode()
         (inv / "gaps.json").write_bytes(gaps)
         index = {"sourceCommit": self.lock["sourceCommit"], "sourceTree": self.lock["sourceTree"],
                  "goBinarySha256": GO_SHA, "files": {"gaps.json": _sha(gaps)}}
@@ -198,6 +199,22 @@ class VerifyTest(unittest.TestCase):
         self.assertTrue(all(r["go-vs-rust"] == "unverified" for r in report["items"].values()))
 
     def test_cutover_fails_without_rust_evidence(self):
+        self.assertGate(False, "cutover")
+
+    def test_cutover_passes_with_clean_rust_evidence_and_no_gaps(self):
+        self.tree.rust_evidence()
+        self.assertGate(True, "cutover")
+
+    def test_cutover_fails_while_owned_gaps_remain(self):
+        self.tree.rust_evidence()
+        self.tree.write_inventory(gaps=3)
+        report = self.assertGate(False, "cutover")
+        self.assertIn("inventory gaps remain: 3", report["gate"]["failures"])
+        self.assertGate(True, "m0")
+
+    def test_cutover_fails_when_gap_count_is_missing(self):
+        self.tree.rust_evidence()
+        (self.tree.root / "baseline/inventory/gaps.json").write_text('{"unownedCount": 0}')
         self.assertGate(False, "cutover")
 
     def test_missing_summary_fails(self):

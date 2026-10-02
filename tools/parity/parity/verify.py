@@ -391,6 +391,13 @@ def verify(manifest_path: Path, gate: str) -> dict:
             failures.append(f"canaries not all caught: {bad or 'none recorded'}")
     if rules.get("requireInventory") and inventory != PASS:
         failures.append(f"inventory {inventory}")
+    if rules.get("requireNoGaps"):
+        # Owned gaps are allowed while milestones are in flight, never at
+        # cutover: passing scenarios only prove the surfaces they cover.
+        gaps, err = _load(root / "baseline/inventory/gaps.json")
+        count = None if err else gaps.get("count")
+        if not isinstance(count, int) or count != 0:
+            failures.append(f"inventory gaps remain: {count if isinstance(count, int) else 'unknown'}")
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")

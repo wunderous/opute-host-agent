@@ -1,32 +1,28 @@
 {
  "items": {
   "admission.standalone-mutation-denied": {
-   "divergences": [],
-   "failingIterations": [
-    0,
-    1,
-    2,
-    3,
-    4
+   "divergences": [
+    "D8.authz-row-counts",
+    "D8.authz-tables"
    ],
+   "failingIterations": [],
    "files": {
-    "a.json.gz": "2fb83327e3768d696b1d72fa192f2ddd1c5aa30bb21eb3b666f1d6438077e951",
-    "b.json.gz": "9f153fa038cf46c7398207b4e5d72f9759da7b81352b68e71bca129ca10b651a",
-    "diff.json": "450362df88ff8d78cba7615106e6337941c329a6af42d34ac8f259f13c1da346",
-    "first-failure.json.gz": "7858c0b15d954635ebe3643b35b9b5bd1e97648456d3155f92d424616236ca2f",
-    "iterations.json": "8cd6b95cd973d5dbd8e229e7f5c5d560652305c9adc607ab49fe5a2ffc2726a7"
+    "a.json.gz": "2cb24ebcf9f5d1f761d7a8f26033053a7c33bf0858e00cce4583925a906d62e9",
+    "b.json.gz": "55881eb94fa2417396983a287530bc28d8be8fc1ab0b15c1b032b0cca3bd9ee4",
+    "diff.json": "f187561d669fa54d1071ab93e900d22a99e9c66412d88bccee0b5157b418ac35",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/mcp.json",
-   "scenarioSha256": "3a150ca4552aa7dddbbfdda3cdd14a11334a8cb3480f6eb3d060ad1bacf26377",
-   "status": "fail"
+   "scenarioSha256": "58ec1378f0a3efc89b79cec13cbece38f70fa70d06d7c0ad2518d27bc5ac909c",
+   "status": "pass"
   },
   "authz.store-cross-read": {
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "636db0d7b25af9ca485ee4ac8c0af833e0ddb58c00bfa87eaf7a760911993505",
-    "b.json.gz": "33489b0436616e0d882bb4077dd599b800fd04035a9c42143ef1b7f13ffefae3",
+    "a.json.gz": "4d264338cc19bd9a16ea1299aa4e06745bc5a5578b9632b7264453c6e738e5b7",
+    "b.json.gz": "93f39d674867dab502d36d3a3c4cfc49a85a89e4cfecdb7e0af3f855f4bec541",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -37,94 +33,66 @@
   },
   "catalog.platform": {
    "divergences": [],
-   "failingIterations": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
+   "failingIterations": [],
    "files": {
-    "a.json.gz": "aae2698fd8ac81664c9de66c37dc4581c595a5d62f89f318e40afa81900c1991",
-    "b.json.gz": "327b3db2267069cb0417495c7f9592861d5507b239907c4ef71bff54d37adb9d",
-    "diff.json": "c3fff23359d15743194a6bdd640a6354b9858110e82e8d081aea563963660f19",
-    "first-failure.json.gz": "da5fff949aa6d2266a88e9a37073cfc5fc3c131adb97414334bd7a0a3df41d51",
-    "iterations.json": "09d17b2d443390176d8344ae39552686d1ac10fc4bf27f6b66ed82a6d5cf01d9"
+    "a.json.gz": "0f84a4b33609f3e12477a5932d024d4240c38fb4bda9e406061d4c19eaa4f6e8",
+    "b.json.gz": "e4c9e8c43b98a76f2fc2202275a196683690e05598ef16eb52c59cdd2ffde892",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/catalog.json",
    "scenarioSha256": "7e35e82c1133f362a43d09e43310fedead7e76e9878e74cb4587afe9ce9e86ab",
-   "status": "fail"
+   "status": "pass"
   },
   "catalog.standalone": {
    "divergences": [],
-   "failingIterations": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
+   "failingIterations": [],
    "files": {
-    "a.json.gz": "105acd109244a0d8a87d82745949959c69a9d9f52c553348fdc3e37cc80a9dc1",
-    "b.json.gz": "d4057bbacccde7982016e0ed87cb239bf90c9dc0c9b1e984e5e8d9e3dd9782e1",
-    "diff.json": "e92b8366ca06019ceba0c894d78b0b78a06861ed0e7fe1386652804c3d007091",
-    "first-failure.json.gz": "e1c13e0247eb431ac51b34bb82dca92331a6e462420a19039e8f7dbde4c93856",
-    "iterations.json": "09d17b2d443390176d8344ae39552686d1ac10fc4bf27f6b66ed82a6d5cf01d9"
+    "a.json.gz": "826896060005e8033814fd6832f67b0e5263dfba46edd1d9d6d02cbea7679af8",
+    "b.json.gz": "08ae3f43c2c60e17e57cfb6021bb1ee302b11f0bd7f575f3789dc31ef6caa8c4",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/catalog.json",
    "scenarioSha256": "9ac3657d18968397e92f61ff89cee4d359eaab89b5d71a1e35ccf19ffed16b32",
-   "status": "fail"
+   "status": "pass"
   },
   "catalog.standalone-mutations-enabled": {
    "divergences": [],
-   "failingIterations": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
+   "failingIterations": [],
    "files": {
-    "a.json.gz": "0153390fdaeddd66ad6b62237d3ae3606255e8483ad01024545da2e7ddbdb75e",
-    "b.json.gz": "221a5ecb385762b719d788489efb69bc79e964296c03f30f1f7a4d2c59fb8faa",
-    "diff.json": "e92b8366ca06019ceba0c894d78b0b78a06861ed0e7fe1386652804c3d007091",
-    "first-failure.json.gz": "5c8e012c0119d45493887c4d261500c4a2234e7b7a94b0644bbb69943d6b7537",
-    "iterations.json": "09d17b2d443390176d8344ae39552686d1ac10fc4bf27f6b66ed82a6d5cf01d9"
+    "a.json.gz": "62292de07485c8dca1f2168d3d640cc73b3c89bcb828d42112be8843349361b8",
+    "b.json.gz": "9cce35712c2b581c3d2606b1c99d50f3f94783a3b39463db5f534056581b068c",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/catalog.json",
    "scenarioSha256": "481e3cb416368b2e7d381a7e4a5fd12a1e10e10f966c69ba1e8974c4d1abd316",
-   "status": "fail"
+   "status": "pass"
   },
   "catalog.standalone-prefixed-names": {
    "divergences": [],
-   "failingIterations": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
+   "failingIterations": [],
    "files": {
-    "a.json.gz": "733986d72c0c6995886d93166fc269a07fddbba9269a7bfe37a91bfccfdbb0a3",
-    "b.json.gz": "7a469562d8431546565fa66f7d66449afb6266c287be362cd038b3d682d50398",
-    "diff.json": "e92b8366ca06019ceba0c894d78b0b78a06861ed0e7fe1386652804c3d007091",
-    "first-failure.json.gz": "55dc4d145acb004c7b281a7bd125266581ad5da2210f8b63a98df7ab6063e97c",
-    "iterations.json": "09d17b2d443390176d8344ae39552686d1ac10fc4bf27f6b66ed82a6d5cf01d9"
+    "a.json.gz": "bd0260c96a1b3512d86c4c408c1ba74172e00a0a20ca8376fd4fa6751a589720",
+    "b.json.gz": "c18e3978529163c4f96dcbbab0545db85db5131bbaee4d7c9be77bbfd20ec60f",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/catalog.json",
    "scenarioSha256": "614b65a7e7460b28fc4c30dd6707a784da225166b4b55c62af167c2533d3f4b2",
-   "status": "fail"
+   "status": "pass"
   },
   "cli.check.platform-ok": {
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "35e3c13424943a33677f6d3dec95a468242d57721286651a3d755f254a3f2af5",
-    "b.json.gz": "e992e7c35ab882c84c8155570175722a0d86743a44fc205354cbfaeaa5d50d45",
+    "a.json.gz": "2e0a6a4db64f04357c0bb662c37993938415e44c91581361fece440e353cd7ea",
+    "b.json.gz": "4017428e2da9d8b908008535a90e27a46d81c3be295cf8debf6178257edd1499",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -137,8 +105,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "1b893bbd0651d81972cd8251b119e5e29e6aa7ca0858139ebb6161a6a66802ce",
-    "b.json.gz": "95ebc231f82a02f18aefe62e5294092fd87cc60affe4840925db21e18bdd9232",
+    "a.json.gz": "c0d8ee9c91d3311e69a722b0c47ef3db5126395d88decdf70bfc661bdff86fc1",
+    "b.json.gz": "29246f4d9e607210b0ffd808574dd3c3f245fa5b80bba91a8a0bafbe761bb6f6",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -151,8 +119,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "cdc005c343cbb012778e3cb1d7634e92e7afa23b99f908bbd8f169dd23e431ef",
-    "b.json.gz": "68058ed6809088ffccd00ba40345421d231810345a0e3e97664b7f3f78d92ec6",
+    "a.json.gz": "b89ac2b7eeeb2dacc46f847b05e69e907871fe8cbfbc34b7d2619fa1083789af",
+    "b.json.gz": "d22b193f4e4b8eb620c5f546bf7015055cff01977ea0939b63706d8f5eba7c8e",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -165,8 +133,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "1099ae875e800ca9db7c572fab20852b0d8da3d4a897e8c68849eca1d75576f1",
-    "b.json.gz": "6212d725e4408627b893152fd1903f82f3f15c7174d2d55182d6edc7e58e52a2",
+    "a.json.gz": "6026c8a5b5ccac0dc407a8d683d3eccdf5140dd69bbee5c9239c1521e8b070a4",
+    "b.json.gz": "4d39fe60f8f3accc05a873e3e6899a874fa2145626ee1be05550048d9d49300a",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -179,8 +147,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "d26759556ea494bf6f50f32e0b4fd9f0efa3583ed2ee8167443cbe714e77e3d8",
-    "b.json.gz": "4d16f3fbeb3a05e080d82cc277d955b19ff9bed9550d868832137c968ce80c82",
+    "a.json.gz": "779253865899322ed93e46a37b0be0d88d6cd5765aa0430566483883fafa6bbb",
+    "b.json.gz": "7f89496626f86faed30594b0ed97d485f1795b8ff7a6fb2e1600316bc086823b",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -193,8 +161,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "eb7782f5cfb4b9d9204293344af2e4808688f319fa8416644458d3e97260ce1c",
-    "b.json.gz": "d1524dc7d3371af5581a858a42c4f9aa0620ececb3724389d2b2b09a4b1e061a",
+    "a.json.gz": "1e5b463f42ed45971f722de86fce911ac9e41c416d543c50a3880212216ca39d",
+    "b.json.gz": "96f6f3295fd6fc7c0bac6f723bf2bb8d30e1860cdef8f4cf188c0d199e2884e2",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -207,8 +175,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "f18d9b8e73b3028506f1dfc6061669211475b774b586e9e7ee6a6cd2e12ef676",
-    "b.json.gz": "078073b4afe32ac6bd31aa90de6504e9072a20e6e05fc2ad9201fabf90aaba3c",
+    "a.json.gz": "e41d655cb392f537ec2c0b504a033deebf75cc6394ac5c93d1b832ef1938c989",
+    "b.json.gz": "679a3cfa365d6fd77e226ff3e8e555d7c845dc8b7cbeb8a8091be037f6f07840",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -221,8 +189,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "e05725f47db6bf79a235c55c09877509dd6cb1a54232e933f383ac4f3c4daacc",
-    "b.json.gz": "8b4d55660206c466b1f6b3482ec23e5f19f09a5c1babd6fd569ef0628d386d64",
+    "a.json.gz": "066e39ec6c09c27af77d0d88b95ffbef1c4799d21d77b4cd6049336998e8a428",
+    "b.json.gz": "350d8239b6921eba48ddf699f8434f66bdfe6decf5fa0751cfe9e08ff39b9119",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -235,8 +203,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "fd5c1e821ade92255f6bf0c0631c5f2f2f2355de8f3cb16766017d113fefc3e4",
-    "b.json.gz": "968349def1eaba497130070b9cfd2549973e4e631b5bce197f71d8a14328ed14",
+    "a.json.gz": "8ffff85f6543df55f329cb07867fc23806c5fab4eec73717c071c6b5eec9d826",
+    "b.json.gz": "40918bacd2145520347afe536c4e6fcc8dcd995ae58e686f628552780d1b48ce",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -249,8 +217,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "300867fa2a99e7e7a87c6aaf2ae3349295b0983166ebe30ed493f72710aad908",
-    "b.json.gz": "007f5cd8f110f2278a2feb5f0fbd44e9ccfc56324ffab5e56749a21751896338",
+    "a.json.gz": "76eb33a960c78da8b647b3f823cdbbe0bd8ade0ff7220f52e0a1da453cc777b6",
+    "b.json.gz": "fb4fc90b1da3916f33a61d506bb0dd147ceb64136992e032b7aa2f6c76a9785f",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -263,8 +231,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "542027291bee048cf434e512fd84dba147d9147f97b26a26ec70be1e4b19e43d",
-    "b.json.gz": "2d0cbbbaca86e31e85dcec5dcd0a34f90b477311c5f1d5dfa79550f6c619956f",
+    "a.json.gz": "fc47be0f5ea8617e978e0a71e29fb6eb892d2d71d589ead22fd7c1c9ece7faec",
+    "b.json.gz": "3f6e8724e3232482cefe16db32a7a6f18d83421d5ca49d08b9bfb826cb39426a",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -277,14 +245,331 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "f05a820d2346fcd0980e5c93f86ff3ce70a5d57cde36d4a6c3edbb70b36ba5bc",
-    "b.json.gz": "bbaa04e336321e56eeaa1500b9488a20adb9f5c090940cb2111be2c2620c6a27",
+    "a.json.gz": "dc2cc01cb8393b462769281d5eef3f0572f2986b27429015c9cee7dc33424aa5",
+    "b.json.gz": "526faa1db119bc5cfc1adbed558835bfbc04baf10f003b01027f1a31ea217f86",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/lifecycle.json",
    "scenarioSha256": "488beb127c52b52bce8be43c0486dd893c5dfa3803d7fc56559a968262a54594",
+   "status": "pass"
+  },
+  "host-read.call-envelope": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "da438d3e729b8f0171e4fbbeadf1e4fdf3d08d2975fc9dd62751d649fa2f9943",
+    "b.json.gz": "4d87cca8da6ce8a270f841d1ffb53885756883c5afdc42f82a57d2baf51fe3d8",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "f13d5101b398d41600862f72f183f7d003e7b61c13d1b3a2ca83e350534c0ef2",
+   "status": "pass"
+  },
+  "host-read.capability-catalog.platform": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "2b00241679c4b1691079426a82d64e398ef5feb805ea5f558410a6777ec4e971",
+    "b.json.gz": "5e13fec2332dc62f38309564cc63f2cbdf97e2c94c6d7cce7b535e238dce546a",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "dedfd0522f8b6d7a09ddd14a595ad5510ba8656a700a0b9d058a124243f9998f",
+   "status": "pass"
+  },
+  "host-read.capability-catalog.standalone": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "64a1909f8b74b1ad9f7ce6c9ca7e69052d1822552735e7eda32fadb9cd54d6e9",
+    "b.json.gz": "e5d077f7d3c4c61315c35cfd2178003056d97ae6d74a5859b23ab09252fae17f",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "5d5a06266e6fc21e11c203458f4514717ac2b376fcfeec2ca3c23dc021bee1d1",
+   "status": "pass"
+  },
+  "host-read.detect-platform.native": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "de27c2783fea5c93b5986c32f7a3f3d9698d15c3aeda8c4f619bf4a63d52bd33",
+    "b.json.gz": "b3415c4d799073fc3bed54f618cea85eb7e0db2e0c26d6b2a433ca4d5da69a0b",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "c98fc1cdd3bb2022ffec3c1bd056f8e4b7de3ef8d83aa782c5771911b0faf096",
+   "status": "pass"
+  },
+  "host-read.host-capacity": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "93ab0445acbd5a8b8cedb9cf153b380056c31656603705bbe750bd12906620b4",
+    "b.json.gz": "e1db7cad1c499dabf4fa6dce0ec3ae73d303575d9d7e771da55a4f2fd38a59a9",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "0a2317f2799a4fd1538b108ceae6784d99b9eb735a938be8877855e8e8d19d23",
+   "status": "pass"
+  },
+  "host-read.host-info.absent": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "a9c399e1a50a77c4ac95995a2dfd60dde2037975bdcefe8449e2065dd6d1debe",
+    "b.json.gz": "87be43cacc22cae2520e4c256f78621e33d142ebb04c1e7e6827fae2da3869da",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "461f77afe4529420c0ad492f0755a7ca7bfb00c4e92f95d1c089391dc3352106",
+   "status": "pass"
+  },
+  "host-read.host-info.inventory-mix": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "5a56a5ff0c88940f1b031318102971cb70a6217b5ef3e1d63b41f7363edd6ed4",
+    "b.json.gz": "9df0af23c05668e7b15c85b31efe1daa64baa32c1518e6f6a8cb8d349020bc9e",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "7deb2d0943bab4af61a296d4dc0dbd5018b10fa15ca135494ad38e69b20602a9",
+   "status": "pass"
+  },
+  "host-read.host-info.list-fails": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "ab7119093b1618a4a1e29eff8ea1edbde52cf9fcf27cd7cc60c68e3881fb4a27",
+    "b.json.gz": "594b998769149d2de7db444cc1dac5837063b574bdc4075308f35819c4ffbda9",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "cb10a98ca6b4a70b1e69c1d2eab63c6ad6a8badc25b0bd90f7e7ffa784660002",
+   "status": "pass"
+  },
+  "host-read.host-info.platform": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "04a245f4fe0f5bfa495f2d715d731d60901abacc8c9af33b5e2141a498000bbd",
+    "b.json.gz": "d12835109dccaaa7fe498c1c4cb2f0d2e1338c8278c746fdcd4f61a64e4bd5fb",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "0f82f29616cb548b9e45d406366d68fd8ec7e301775ddd1bc9a3916aa6f992fb",
+   "status": "pass"
+  },
+  "host-read.host-info.storage-zfs": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "5ba8e5746ff2f788d655601a8de9b80228adc1e53783824057214cf0dbc1ceb9",
+    "b.json.gz": "1a6a2b603a82f52a01455cead62113e14e0001b7a1d7ece4e8351b160da4b068",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "fde959c032a5bc1e99bda522d7b43aff2719156c0d71eeb4078b0bb428cbe938",
+   "status": "pass"
+  },
+  "host-read.lifecycle-without-tasks.platform": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "bd2c63538a64abe123195573b62bb209d35e30ba7b152145b8736f394215c85c",
+    "b.json.gz": "046e2d9d803ef022b66f5d44781e37c9897a88d05ddb4051272e90f0bdc6dd6b",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "dd2228071ef55cc7cdc3311d4a3c3e498c4bd22502dc847aae33edce9302d614",
+   "status": "pass"
+  },
+  "host-read.list-vms.absent": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "523ef842a882fb8541b638160bc54a450885172aa141296eed1bd161a2bfcf3d",
+    "b.json.gz": "e5a166676d50098d7c1064e045c3d1dab8d9ca19c200488fe97a9a33500ad290",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "fd61c662b8d4f7d27d8e371eca7ebfbc6ffdb9b4ea74b030e5364ec4c6703b02",
+   "status": "pass"
+  },
+  "host-read.list-vms.empty": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "0b83c044a8b8103b971b48a217e675fc77cc42cf0adad0a94bac6ef3f5fafcf9",
+    "b.json.gz": "d766b908e359788d5637531e83c1ccac2a2ca8c2c4f1dcfb4ab96fbed9546fac",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "f86ca2a319689584731d03b6771bb5c7913e1d81168fa2f9d0f7f782c072ae70",
+   "status": "pass"
+  },
+  "host-read.list-vms.inventory-mix": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "7ff690f4873679b7f90ade5dc5956e17af921b6ee99af2445e75407b92c7c417",
+    "b.json.gz": "1671d9be9352cd2bdee1a77a9b2fcfc688682b27b04b93506be6ce249523c41d",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "8f05c22c2a853a571aba4f9a80f8d2f5d00a078d5e662709065e9d81b426ddf2",
+   "status": "pass"
+  },
+  "host-read.list-vms.list-fails": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "3d5e71728b8765f7bcae3236732dfaae951ee856f4f5adc9df9a3cf88b7e7d18",
+    "b.json.gz": "21a4f393bca6c1f4e8c1cb1b4df1f873027eac602afae97706540dde4fa1f3d0",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "6528e4b2614e1d19f6b4217df7986616297dcb3c8fc592101f119ee4e09e51be",
+   "status": "pass"
+  },
+  "host-read.list-vms.malformed": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "2e4004a6f4c44824f3ee7f23dde86fafde9c5fdac115f3f230e3d939616faee4",
+    "b.json.gz": "eaecc288f415923b13c06fde062fd341ffc544b24d82630bfff7e3a16c683990",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "449f1541dbbc2c19c8e8f5a968879668ab55836bc3c754e25752a4bbc25fc534",
+   "status": "pass"
+  },
+  "host-read.list-vms.ownership-enforced": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "3e2806c5109e9e0ce9d15392e651f4dcaaea5d4bc59c79c8be2e0ba029da8ccd",
+    "b.json.gz": "f42019aa303442eceb5240e2be454052e8378791c5017afe1691e08e419949a8",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "5b91d293cff225baffa3975a8efa6ee993d0c8ab12f1267fca7f5593672265db",
+   "status": "pass"
+  },
+  "host-read.list-vms.platform": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "6079c098ddb9a2927905c49aba7ad025d0b3d9daee94943d9e244e9ec7670727",
+    "b.json.gz": "3548fef5cd97c0d0028a8be4ffcdb40ee13f4fab1457819e73ff5244f2569fee",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "13d6a29d1bb1222ad8d8160d967df5a08737fd89641a37a21b5f945e21aadf1d",
+   "status": "pass"
+  },
+  "host-read.list-vms.two-containers": {
+   "divergences": [],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "26f93cb9071f87541a93fd50efd2415c320d7e6563b2afb2496f4c2b5320c678",
+    "b.json.gz": "12c8a743bb91742443c6a4b881108991ff06e63156f6426cdd3e82fc5fce04a3",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "d3749561ff1cf9862eef62a2c68dc39f8a5d1462d0d287ff9fa8ced4a352ea6b",
+   "status": "pass"
+  },
+  "host-read.standalone-mutation-set-denied": {
+   "divergences": [
+    "D8.authz-row-counts",
+    "D8.authz-tables"
+   ],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "fd6f54d06bfaae1b505747088980c2fcb35a9b49e5e280b7d0f77be6048028d4",
+    "b.json.gz": "3789482cf9fd0a879bf1e3db340ac52c52f09e3c3f75a659a4c8256bc368e607",
+    "diff.json": "f187561d669fa54d1071ab93e900d22a99e9c66412d88bccee0b5157b418ac35",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "2d42cf5fcffe2a4a69bff4f38210b9ca164cd91d78a8df610e4c20a37aea82bb",
+   "status": "pass"
+  },
+  "host-read.standalone-mutation-set-denied.prefixed": {
+   "divergences": [
+    "D8.authz-row-counts",
+    "D8.authz-tables"
+   ],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "22661e849f3ab971a28a49d660cef0f2f9bc7a821f73ffbaa5fb5c0b12214841",
+    "b.json.gz": "daec126da7f89b15a819b366546f094f4c6e166291781d44a0c7696b7c4ea5e6",
+    "diff.json": "f187561d669fa54d1071ab93e900d22a99e9c66412d88bccee0b5157b418ac35",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "9634b5b2254c7c1ef814f4f5b856b100782447ec394060e3f7cca3e97198721a",
+   "status": "pass"
+  },
+  "host-read.task-boundary.platform": {
+   "divergences": [
+    "D8.authz-row-counts",
+    "D8.authz-tables"
+   ],
+   "failingIterations": [],
+   "files": {
+    "a.json.gz": "b7e5368abda4cafa6c316fa46334d0e8927979f1a160ee8326f6e19e928ef2a4",
+    "b.json.gz": "fba13b4d8674f0f2fd4e701f8fad46bba4cb4ca5027d821f313cead9c4c32cef",
+    "diff.json": "f187561d669fa54d1071ab93e900d22a99e9c66412d88bccee0b5157b418ac35",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
+   },
+   "iterations": 5,
+   "scenarioFile": "tools/parity/scenarios/host-read.json",
+   "scenarioSha256": "2a6f8450c16a4ba1f3312a3be5512150b9bcc62e97c88d68d23f0da82c01436a",
    "status": "pass"
   },
   "lifecycle.fault-injection": {
@@ -294,8 +579,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "0ed212cc6b7359b5a3678887fb7503d87e2b0219a613b66d2f8a07c2f77209e3",
-    "b.json.gz": "39ee22ac00afe68815fcbf683043a1ce8d5feb65f02b3d0d4f0b754a2f8aaa61",
+    "a.json.gz": "a1b2f90255588504066c019b894deecf747df4d2b902de4c434ad5b4f3441580",
+    "b.json.gz": "27a337af23479767158dcecad4aa96e5a5d8800304c021f3b4187316cd32591e",
     "diff.json": "1a5def3a4179ce25da16be205dafe8fd6907bd04c1a0886289349dd678faf4c2",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -312,8 +597,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "4136561dee4d417ded4d302994f0bb76fc94fc6ca9a0a19d24d379e35b85d3e8",
-    "b.json.gz": "942dbf53c1db73e66fd0cb1b022a39a97fab0574fbfe11e688f171ccfa14cf04",
+    "a.json.gz": "d5102b5e7982a2eecd94df34db5c4a7816ca2c495376ec0e94e4b3e3de1b31ab",
+    "b.json.gz": "2ac1263091f591de7ce9f0ec31695137ff3fb3d07aae7bb50a1f5e4ff2beb284",
     "diff.json": "e99cddfad1baf4b39d019f0905b4780d0de74bb1051518d16ae1652f5b06d9c2",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -331,8 +616,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "a99c5ca8c10649e82c8ce143cc62bc61eb1af9fdc4d2a3093462003d404f2db5",
-    "b.json.gz": "7b565da21b32c815c2fbc7aca12c501f58dd8496c2c31d1e6921727ae1b1cbc3",
+    "a.json.gz": "fcce036406af1ddcda9b1a393b2b3ef870d01b9d0ee83d17ea38aedbe2dfab1b",
+    "b.json.gz": "378119be32418b30ee5eeea0e25777e07bc0ec138d1a9492da3a2ecd150ee6fd",
     "diff.json": "f19884a64cab1364d34f8009b3fc0b07071b27bf8f5da30fd4c8c19af5383049",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -350,8 +635,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "bd8be08849b729e3e4172e93d0779a1ae32afc95c9ac198bdb89df93fe8d1bfa",
-    "b.json.gz": "349d9981675038b14f2b69c96ec150e342d1c5c58f64d5107a4b507ae252869d",
+    "a.json.gz": "93cf45fc7e08a10ce8482fb2f7f85dc353814ed3c525b037adec3d693dee5a63",
+    "b.json.gz": "ff9ce59d3f04d0862d05afcdf28156763fe9cd0cbc353a859f9780203363f4fa",
     "diff.json": "f19884a64cab1364d34f8009b3fc0b07071b27bf8f5da30fd4c8c19af5383049",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -364,8 +649,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "c1f0af4f70084d541bc55127d84af19b217ab9ccac155150f8b7ac421bc37cdc",
-    "b.json.gz": "e79bed8b370ac92339fdcde63e5f83c85ccd20a1965664ffa28eee92d1f2c0a0",
+    "a.json.gz": "8fec14a6ad414e2b90051fa370915c83f7f466920b7d221e471630c5bed86c67",
+    "b.json.gz": "f3968144ca22380e6e25d2480b25a11781fb789be9951bf46eb994c6269af522",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -378,8 +663,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "2a980ef0ea95e908523486725665f9c94b7d133a7a2a432df97de3db0ecb06c7",
-    "b.json.gz": "e626ee6bcdfe2f53940c05b05eb1cfd57e98da4651b49f4d8babada0fda8fbee",
+    "a.json.gz": "76f0e2209d2d8eea5e90acc73881df26af3df6df3e9c033c1d3ba1258c993fe7",
+    "b.json.gz": "67bbd2cb23b2d3ac087150b9101f410b92cc0b314a0190e73442dea0f5e939e1",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -390,31 +675,24 @@
   },
   "mcp.get-host-info": {
    "divergences": [],
-   "failingIterations": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
+   "failingIterations": [],
    "files": {
-    "a.json.gz": "abfa9be76ba1be026f75d8679c8647cb9844775c3d9258717d9fc8b290bd64b1",
-    "b.json.gz": "a9b899e465c5fedfed315596d9354236be96bd0208c50fbe79ff30bad2c62b59",
-    "diff.json": "28f50080c974661b64e7ae0d0771f8b54912f2935b805ee4b6307172bc54fc25",
-    "first-failure.json.gz": "a6f354fada076f03087cc710f273455564d7baf86650306fe113a40e67c3db8b",
-    "iterations.json": "6f4b98b5b29fe3cbf3aff9547f339e04321ff23b7237722c1e13f715a41d1029"
+    "a.json.gz": "736df4504819da0ecd4f142f31b8921cb44d834432196604dca12f9c4bb39f8d",
+    "b.json.gz": "557fbae275cc2a2fa0f63807394c7057df7a5edcdc21945b1ff6895d9833826f",
+    "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
+    "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
    "iterations": 5,
    "scenarioFile": "tools/parity/scenarios/mcp.json",
    "scenarioSha256": "acafad775e8695e047217722465df2d4512275e8a283373ca8c834ed32813be4",
-   "status": "fail"
+   "status": "pass"
   },
   "mcp.legacy-handshake.default-off": {
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "7db9f70d4045b3ac5a107e9140f5941d1459ae620c22c1c1358b600f48d03459",
-    "b.json.gz": "f0e96c90c09d811d7361ac4b03306fd36733e7052707b5c355c0e595732e6495",
+    "a.json.gz": "2af7886750c4dc489601b6452f19500be9b9f0998769dd40a4b3b293990e1fb9",
+    "b.json.gz": "a11d6f6b9ab9c59d3ed335e9a3cd70d170c88233a987a4b787d1bb77f8464b0f",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -427,8 +705,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "6044de37b1a0121975084c95a9c65db458e878dadc1cf778e174b54671b52e94",
-    "b.json.gz": "888fc976e8bf381a23b75c48a7becf1d200a8a516a11a7fc1795ffd2765efa64",
+    "a.json.gz": "b662d1902195e343dfd63917952fc6e1a6149f1d17bb24908b4d90396aedb9d3",
+    "b.json.gz": "fddcc13e1e12cedd883ac99533f3e20b3204ef6336165e2617b7e5807e719d8b",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -441,8 +719,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "74c43cc48e6b8e2357ebc4cb3eb7b9333d7ebb0a2aa558a314aa1ba9c6d837ca",
-    "b.json.gz": "9a6fd1b9ea237dbb0e13ad9275ac752930c67a9a1c147af3af87e58170a2ed0a",
+    "a.json.gz": "6afc0088dab7727ad8dd861da1e7f116b682a723fde280927836455301dfc794",
+    "b.json.gz": "813ed0e6a40611fb2b9520384e72bf9b8879616c8961c62b5cbb0383e0b08f33",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -455,8 +733,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "e7b0ad2da118cb7585e00da3a03061961bc0930cfa17d73f7e651ef1615a7ca4",
-    "b.json.gz": "407ddcb650865b7c3506a99197b9689d09fcfaae4267a5ed0aba34d8e071cd1d",
+    "a.json.gz": "92f817dd571fdd57317df9a4468e4354d79312178a987fee30a6ab3a01e31475",
+    "b.json.gz": "87a94d28add85f5b62d54678a8b73c55bc8c16957dce9bceeb761c1431dfc099",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -469,8 +747,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "1c27d19e94bae65814c171be8e444b4d478935ebf9a00ff0cb7150080b608358",
-    "b.json.gz": "f8cfe5df0df627c77bdc19f70ceac3bdd727ab5a20653cdd4e2724616c8eddf2",
+    "a.json.gz": "01c5e07aac8a46c36c5faba98a8e33f9ef8538e9566fae3f53a7679a116026b9",
+    "b.json.gz": "5a8b498640a0b9cc57a106dc0b6cff5f0853a6d0db56ba286f3741b2db65af6f",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -487,8 +765,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "c9a513081021a9e6c432a18fc17922c463950835cef97b3d17b7585aff1ddde6",
-    "b.json.gz": "694ed06dbe69484e253c27c9877ef174cf89e23f571381f707b9e32ad289ef05",
+    "a.json.gz": "802decb7ab66c757b0b19a780438f9ee766a4c34eb277877762eb2243ac92b73",
+    "b.json.gz": "d5ae20327c9df27e7452ff09e6ec800edfb1ab87fc2a783b57e96840863c9b7a",
     "diff.json": "e99cddfad1baf4b39d019f0905b4780d0de74bb1051518d16ae1652f5b06d9c2",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -504,8 +782,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "ef87170456dcfce03525b05968b1a95f8c64c0839157c8f259cb193812b29057",
-    "b.json.gz": "82f786757cef83b0862fb220ae5c1706dc4fff0b8901f0aebee9f254b634f1fe",
+    "a.json.gz": "4d9ca08dfd7b78db7d4dce0f6153fb24e967d9e630f17c88c99dbe24f7e0d49a",
+    "b.json.gz": "23eca48ef854c5e43efd2e76793c4b074e76c418638727f177ee5e429e2a7560",
     "diff.json": "f187561d669fa54d1071ab93e900d22a99e9c66412d88bccee0b5157b418ac35",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -521,8 +799,8 @@
    ],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "4bdadc5ed85e6975fceb207261647273f91f3d0d8b4b83509011a3cb043e802f",
-    "b.json.gz": "e350717372a8758b793c7caac97317ec309a77e77ee71672ed0fc0351231392d",
+    "a.json.gz": "dc7aa781e198f7f02df514c7bfb0b76fe2a0df8b0d3fec0d495ef802b458ac45",
+    "b.json.gz": "89d5482dbee6429b068c902ac36b74c990f3be3d3144b4178ce0f836db6e92ea",
     "diff.json": "f187561d669fa54d1071ab93e900d22a99e9c66412d88bccee0b5157b418ac35",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -535,8 +813,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "eeb0212104ef58e4883e5baf3c0bef168b3b9f89877f6fef3486a9fdf2837e48",
-    "b.json.gz": "a9b74e2a933b9d2cdb8a725558019f9fe95e7eb6cea63e4bc01ddc7e103a740f",
+    "a.json.gz": "c9dbc8ee371607af1c7b811bbf2c3e33cf8b4f00156445a3c6e0652e51a63db7",
+    "b.json.gz": "d91f8ce9fa3a08a9f154c8e0164d5e76a8ef6126a29f445d286b1682826718fb",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -549,8 +827,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "e7e339734d4efab571a09dcea50f4ffdc7d4df2fd55d836cb5f6938a889bada9",
-    "b.json.gz": "b06e75e268d6614a41955f36ac8de2d7c0ce4e53f312dd1acc3ae5d56a2c945b",
+    "a.json.gz": "6bbf18ef11e431f8b38359ee110b288a6908775acdd9feda3512064edeac94bd",
+    "b.json.gz": "80c561d9de328d85f55c3ce4abc6202ceef289c7d35b00ca13c92ab4b03630c8",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -563,8 +841,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "fa60a47d696f422357b9332a5b760cf5a90002a08fce955dcc0c5fe858f9e95a",
-    "b.json.gz": "c6624340edd652331aa1f65dc0e9a0ab0fe2017d9016517a89bc82401c0fd46a",
+    "a.json.gz": "5402555f656587d2754037da0810e46acc4815e03968f71708425ef2cebf5a20",
+    "b.json.gz": "763372aa79e9d77194f167bd66c2347a1e02bf72a8c33b9a7f43f5218ec0546d",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -577,8 +855,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "eb11147ca521bbb5ad9822424d546ded2e9a731c6dc546268f5c86e9a718bdd1",
-    "b.json.gz": "2a9afe395414ca463dc59b6e2128ea85e92f2530a34c1f4d8d2e547e22b2189e",
+    "a.json.gz": "86fa3452361708e749cfdc0d9286322be2b6cb2301c3e8c7d29e29b98e8379f5",
+    "b.json.gz": "c0c81a3b4b87c1e3c5dd19087d487d8c92e6ae1ff93f46f4935d767a71647816",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -591,8 +869,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "f85e1fbebe0072ce3aa440185dededa4ae086341ba17373a9df1bb2116fda9fc",
-    "b.json.gz": "f6a66e1d4479fb2d284b312efc50cf1323cb8365c724df60009e6b709cc92d2d",
+    "a.json.gz": "2d7c76f9099c0afd388432fd571e1a1a11f53a03f5f3930884682a5ec8e93d9e",
+    "b.json.gz": "06fb359e34aea4aeeca36b8b14b8d7fc7d39468ccc89794a1616d3590dbe7bfd",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -605,8 +883,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "a0ba20b10a53f93ffb6a688c7d367dce23b63ab4e5854a8617aa0b0c279cd533",
-    "b.json.gz": "53374bfb69bb1ef957b1017e972c33ebbdd514b51a917b5126ac4bc68d45aa6e",
+    "a.json.gz": "cdae0ba4cd620ee15cbf86c5a9144c4a6123807fff5020c26407cd7a8b0aeafb",
+    "b.json.gz": "2206e5de14631de526f0db7cbafd9466bca6e6eeb7d50053ca6b5c6409ef0772",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -619,8 +897,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "dd9f31997ae06b50f545e56f0ef1206955fb411935f6d8c5e46aec81123a5fbb",
-    "b.json.gz": "8a9aa1749cdc3669a64ac382009e2c98bba29a9ba0aacf4451dc593ca757fce4",
+    "a.json.gz": "2a1cf432581dc7f37067fafe42489af043fec46a23558023403ac7494d25e222",
+    "b.json.gz": "11d0b436d56cb92cd8f231c4ef8e127cc2d3eb364df17958e4f225d833420cf6",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -633,8 +911,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "a5a52dc5f7ef19268de2734695d74cb7f63cfbe33dd1797bff5eec5df203f93f",
-    "b.json.gz": "beb324293ef0e71da1312012711819e20c6faae63a4c433ff88966da277e8ccc",
+    "a.json.gz": "428562a681db8ae596c7b00a5be6e1f6492797d02c22331638f02f8de665368c",
+    "b.json.gz": "4e24b4bd5de3dea3e99cb3a31ad3f5844b1fb2b41b74c1c530ad8753e95275fc",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -647,8 +925,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "e9a6a0c8322bf674f64e0b3860d81b46cfb261952a41d3f40349971de479c881",
-    "b.json.gz": "1b7645986cac9260401e049fef904fd866731a28a93ead0534074e639d9a610d",
+    "a.json.gz": "c4bb9d9698a328a515937415b9bb30009e81da04ae01a12f6cfacc49741dfbc3",
+    "b.json.gz": "bdc9c1de445b2bf9acf9da996c48f7ea401468c462b6bebd111d4376f8114b3c",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -661,8 +939,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "a15ff287122c12e43b64c2b40534345851d3e66c172dfea36572e274e6752865",
-    "b.json.gz": "3670fcc83d058f91bf943fbc885677f326da358593eaeb0570b9e6f118ea2991",
+    "a.json.gz": "1ce906a7921194cdba6ee19573f2617b5129d79b5b0dd90142ad82c415b2671d",
+    "b.json.gz": "82946b0afa674cb668fe4b8a6a622a576a54c8c7ead8c5bf508186ef7218b0a7",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -675,8 +953,8 @@
    "divergences": [],
    "failingIterations": [],
    "files": {
-    "a.json.gz": "3ea5929c3b045c14199078cf594b84b0d1b74f096bffe2eac3a620fce5053e7e",
-    "b.json.gz": "b4a2c296945948ea5d073bf54aa12f3e68ae2c54ccd3668c1bf072648958cdd9",
+    "a.json.gz": "b75e6773ba24a19e520e8b3249747b24d2f7ac26c4ec86c47803091f3a424e58",
+    "b.json.gz": "3ecd46783618df2b8895de29bdd3eb325eaad1d32508dcd76c0307e35ed60778",
     "diff.json": "e973d6870d4622427077ec1d5d6b1363b5d5cf9f1d68d23d1d33c0aea1fdd2a8",
     "iterations.json": "0ef41189609afe54ad274d0d79a6fe9815613cf69c32a43e996cacd00430b446"
    },
@@ -687,20 +965,20 @@
   }
  },
  "provenance": {
-  "durationSeconds": 92.3,
-  "harnessSha256": "af71d792b17a9e2cd9d34cf45618c3d38e443e376ff29a40ffd06a33649e0ee0",
+  "durationSeconds": 124.1,
+  "harnessSha256": "6fd33d64d46076cc80c5e8b838752ebd1ec077fa3c745229ef86359fc14b6f16",
   "left": {
    "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
    "label": "go"
   },
   "repeat": 5,
   "right": {
-   "binarySha256": "8485062e9080e0cbb95ce3c7a75e3afc845ff63e712453ec22b49019cbf835d3",
+   "binarySha256": "173f44048bceeb881df0a26fd9f4ad81f0ebb9b7295e9eeefdea18db2cdf1533",
    "label": "rust"
   },
   "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
   "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
-  "startedAt": "2026-10-01T08:35:37Z"
+  "startedAt": "2026-10-02T03:27:13Z"
  },
  "schemaVersion": 1,
  "suite": "go-vs-rust"
