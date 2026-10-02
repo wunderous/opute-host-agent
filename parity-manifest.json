@@ -236,6 +236,205 @@
   },
   {
    "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.inventory-mix",
+   "owner": "host",
+   "scenario": "host-read.list-vms.inventory-mix",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.two-containers",
+   "owner": "host",
+   "scenario": "host-read.list-vms.two-containers",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.empty",
+   "owner": "host",
+   "scenario": "host-read.list-vms.empty",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.malformed",
+   "owner": "host",
+   "scenario": "host-read.list-vms.malformed",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.list-fails",
+   "owner": "host",
+   "scenario": "host-read.list-vms.list-fails",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.absent",
+   "owner": "host",
+   "scenario": "host-read.list-vms.absent",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go",
+    "internal/domain/incus/incus_ownership.go"
+   ],
+   "id": "host-read.list-vms.ownership-enforced",
+   "owner": "host",
+   "scenario": "host-read.list-vms.ownership-enforced",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_inventory.go:ListVMs",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "host-read.list-vms.platform",
+   "owner": "host",
+   "scenario": "host-read.list-vms.platform",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.inventory-mix",
+   "owner": "host",
+   "scenario": "host-read.host-info.inventory-mix",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.storage-zfs",
+   "owner": "host",
+   "scenario": "host-read.host-info.storage-zfs",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.absent",
+   "owner": "host",
+   "scenario": "host-read.host-info.absent",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/heartbeat/capacity.go"
+   ],
+   "id": "host-read.host-info.list-fails",
+   "owner": "host",
+   "scenario": "host-read.host-info.list-fails",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DescribeHost"
+   ],
+   "id": "host-read.host-info.platform",
+   "owner": "host",
+   "scenario": "host-read.host-info.platform",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_resource.go",
+    "internal/resource/service.go:capacitySnapshot"
+   ],
+   "id": "host-read.host-capacity",
+   "owner": "host",
+   "scenario": "host-read.host-capacity",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/plan_run.go:handleGetCapabilityCatalog"
+   ],
+   "id": "host-read.capability-catalog.standalone",
+   "owner": "contracts",
+   "scenario": "host-read.capability-catalog.standalone",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/plan_run.go:handleGetCapabilityCatalog"
+   ],
+   "id": "host-read.capability-catalog.platform",
+   "owner": "contracts",
+   "scenario": "host-read.capability-catalog.platform",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall"
+   ],
+   "id": "host-read.call-envelope",
+   "owner": "transport",
+   "scenario": "host-read.call-envelope",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:missingTasksCapabilityError"
+   ],
+   "id": "host-read.task-boundary.platform",
+   "owner": "transport",
+   "scenario": "host-read.task-boundary.platform",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/tools/standalone.go:IsStandaloneMutation"
+   ],
+   "id": "host-read.standalone-mutation-set-denied",
+   "owner": "authz",
+   "scenario": "host-read.standalone-mutation-set-denied",
+   "surface": "auth"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/toolprefix.go"
+   ],
+   "id": "host-read.standalone-mutation-set-denied.prefixed",
+   "owner": "authz",
+   "scenario": "host-read.standalone-mutation-set-denied.prefixed",
+   "surface": "auth"
+  },
+  {
+   "anchors": [
     "internal/app/app.go:Run",
     "internal/app/runtime.go:NewRuntime"
    ],
