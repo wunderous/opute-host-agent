@@ -11,7 +11,11 @@
     "mayAlsoFail": [
       "catalog.platform",
       "catalog.standalone-mutations-enabled",
-      "catalog.standalone-prefixed-names"
+      "catalog.standalone-prefixed-names",
+      "host-read.call-envelope",
+      "host-read.capability-catalog.platform",
+      "host-read.capability-catalog.standalone",
+      "host-read.lifecycle-without-tasks.platform"
     ],
     "note": "The published description comes from the embedded schemas/incus-tools.json. The same text in catalog.go:682 and all-tools.json, and a different text in standalone.go:479, never reach the wire for this tool (finding F-6; first canary draft patched catalog.go and was not caught)."
   },
@@ -42,6 +46,17 @@
     "scenario": "mcp.get-host-info",
     "mayAlsoFail": [
       "admission.standalone-mutation-denied",
+      "host-read.host-info.inventory-mix",
+      "host-read.host-info.list-fails",
+      "host-read.host-info.platform",
+      "host-read.host-info.storage-zfs",
+      "host-read.list-vms.empty",
+      "host-read.list-vms.inventory-mix",
+      "host-read.list-vms.list-fails",
+      "host-read.list-vms.malformed",
+      "host-read.list-vms.ownership-enforced",
+      "host-read.list-vms.platform",
+      "host-read.list-vms.two-containers",
       "mcp.auth",
       "serve.health",
       "wire.framing",
@@ -83,7 +98,10 @@
       "new": "(dynamicEffect != \"\" && dynamicEffect != \"read\")) && false {"
     },
     "scenario": "admission.standalone-mutation-denied",
-    "mayAlsoFail": []
+    "mayAlsoFail": [
+      "host-read.standalone-mutation-set-denied",
+      "host-read.standalone-mutation-set-denied.prefixed"
+    ]
   },
   {
     "id": "C7-envelope-status",
@@ -123,7 +141,10 @@
       "new": "\treturn \"unspecified\"\n}\n\nfunc normalizeIncusMemory"
     },
     "scenario": "host-read.list-vms.inventory-mix",
-    "mayAlsoFail": [],
+    "mayAlsoFail": [
+      "host-read.list-vms.platform",
+      "host-read.list-vms.two-containers"
+    ],
     "note": "M3: list_vms maps every instance; ct-c and ct-d carry no image.release."
   },
   {
@@ -135,7 +156,13 @@
       "new": "return fmt.Errorf(\"expected a boolean, got %T\", value)"
     },
     "scenario": "host-read.list-vms.inventory-mix",
-    "mayAlsoFail": [],
+    "mayAlsoFail": [
+      "host-read.list-vms.absent",
+      "host-read.list-vms.empty",
+      "host-read.list-vms.list-fails",
+      "host-read.list-vms.malformed",
+      "host-read.list-vms.two-containers"
+    ],
     "note": "M3: the listFastString step sends fast=\"true\"; the declarative gate's error text is contract."
   }
 ]
