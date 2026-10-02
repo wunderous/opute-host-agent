@@ -99,9 +99,21 @@
    ],
    "command": "incus",
    "observedInvocations": [
+    "config get",
+    "exec ct-c",
+    "exec vm-a",
+    "exec worker-01",
     "list --format",
+    "query /1.0/instances/ct-c/state",
+    "query /1.0/instances/ct-d/state",
+    "query /1.0/instances/vm-a/state",
+    "query /1.0/instances/vm-b/state",
+    "query /1.0/instances/worker-01/state",
+    "query /1.0/instances/worker-02/state",
     "query /1.0/profiles/default",
-    "query /1.0/storage-pools"
+    "query /1.0/storage-pools",
+    "query /1.0/storage-pools/fast",
+    "query /1.0/storage-pools/pool1"
    ],
    "owner": "host",
    "status": "covered",
