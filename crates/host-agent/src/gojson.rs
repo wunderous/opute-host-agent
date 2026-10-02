@@ -328,6 +328,102 @@ pub fn go_string(node: Option<&Node>) -> Result<String, ()> {
     }
 }
 
+// --- encoding ----------------------------------------------------------------------
+
+/// Appends `s` as a JSON string the way `encoding/json` does with HTML
+/// escaping on (the default for `json.Marshal`): `<`, `>` and `&` become
+/// `\u003c`, `\u003e`, `\u0026`; U+2028 and U+2029 are escaped; `\b` and
+/// `\f` use their short forms (Go 1.22+); other controls use `\u00XX`.
+pub fn encode_string(s: &str, out: &mut String) {
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '\u{8}' => out.push_str("\\b"),
+            '\u{c}' => out.push_str("\\f"),
+            '<' | '>' | '&' | '\u{2028}' | '\u{2029}' => {
+                out.push_str(&format!("\\u{:04x}", c as u32));
+            }
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+}
+
+/// `encoding/json`'s float64 formatting: shortest round-trip digits, plain
+/// notation for 1e-6 <= |f| < 1e21, otherwise exponent form with `e-7`
+/// (not `e-07`) and `e+21`.
+pub fn encode_float(f: f64, out: &mut String) {
+    let abs = f.abs();
+    if abs == 0.0 || (1e-6..1e21).contains(&abs) {
+        out.push_str(&format!("{f}"));
+        return;
+    }
+    let text = format!("{f:e}");
+    match text.split_once('e') {
+        Some((mantissa, exp)) if !exp.starts_with('-') => {
+            out.push_str(mantissa);
+            out.push_str("e+");
+            out.push_str(&format!("{exp:0>2}"));
+        }
+        Some((mantissa, exp)) => {
+            out.push_str(mantissa);
+            out.push('e');
+            out.push_str(exp);
+        }
+        None => out.push_str(&text),
+    }
+}
+
+/// `json.Marshal` of a value decoded into `any`: object keys sorted (as Go
+/// sorts map keys), numbers as float64 unless they are exact integers.
+pub fn encode(v: &serde_json::Value, out: &mut String) {
+    use serde_json::Value as J;
+    match v {
+        J::Null => out.push_str("null"),
+        J::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
+        J::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                out.push_str(&i.to_string());
+            } else if let Some(u) = n.as_u64() {
+                out.push_str(&u.to_string());
+            } else {
+                encode_float(n.as_f64().unwrap_or(0.0), out);
+            }
+        }
+        J::String(s) => encode_string(s, out),
+        J::Array(items) => {
+            out.push('[');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                encode(item, out);
+            }
+            out.push(']');
+        }
+        J::Object(map) => {
+            // serde_json's default map is ordered by key bytes, which is the
+            // order encoding/json uses for map keys.
+            out.push('{');
+            for (i, (key, value)) in map.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                encode_string(key, out);
+                out.push(':');
+                encode(value, out);
+            }
+            out.push('}');
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -364,6 +460,34 @@ mod tests {
     fn raw_bytes_are_preserved() {
         let n = parse(br#"{"params": {"a" : 1}}"#).unwrap();
         assert_eq!(n.key("params").unwrap().raw, br#"{"a" : 1}"#);
+    }
+
+    #[test]
+    fn encodes_like_encoding_json() {
+        let mut s = String::new();
+        encode_string("a<b>&\u{2028}\u{8}\u{c}\u{1}\"\\\n", &mut s);
+        assert_eq!(s, r#""a\u003cb\u003e\u0026\u2028\b\f\u0001\"\\\n""#);
+        let f = |x: f64| {
+            let mut s = String::new();
+            encode_float(x, &mut s);
+            s
+        };
+        assert_eq!(f(0.25), "0.25");
+        assert_eq!(f(2.0), "2");
+        assert_eq!(f(1e21), "1e+21");
+        assert_eq!(f(1e-7), "1e-7");
+        assert_eq!(f(123456789.0), "123456789");
+        assert_eq!(f(-1.5e-10), "-1.5e-10");
+        // Checked against go1.25 encoding/json.
+        assert_eq!(f(1e20), "100000000000000000000");
+        assert_eq!(f(0.000001), "0.000001");
+        assert_eq!(f(5e-324), "5e-324");
+        assert_eq!(f(f64::MAX), "1.7976931348623157e+308");
+        let v: serde_json::Value =
+            serde_json::from_str(r#"{"b":[1,2.5,null],"a":{"z":true,"y":"x"}}"#).unwrap();
+        let mut s = String::new();
+        encode(&v, &mut s);
+        assert_eq!(s, r#"{"a":{"y":"x","z":true},"b":[1,2.5,null]}"#);
     }
 
     #[test]

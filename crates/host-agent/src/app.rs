@@ -251,6 +251,9 @@ fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
         format!("host-agent-{prefix}")
     };
     let identity = cfg.identity.as_ref().ok();
+    let standalone = cfg.agent_mode == "standalone";
+    let catalog = crate::catalog::for_mode(standalone);
+    let prefix_for_tools = prefix.clone();
     crate::transport::Server {
         instance_id: cfg.instance_id.clone(),
         local_instance_id: if cfg.agent_mode == "standalone" {
@@ -281,6 +284,10 @@ fn http_server(cfg: &Config, authz: AuthzStore) -> crate::transport::Server {
         bootstrap_token: cfg.mcp_auth_token.trim().to_string(),
         authz: std::sync::Mutex::new(authz),
         grant_backoff: crate::oauth::Backoff::default(),
+        catalog,
+        published_tools: crate::catalog::published_tools(catalog, &prefix_for_tools),
+        standalone,
+        allow_mutations: cfg.standalone_allow_mutations,
         health_observer: Box::new(crate::hostobs::health_observer(
             cfg.env.clone(),
             cfg.instance_id.clone(),

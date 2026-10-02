@@ -104,7 +104,7 @@ pub fn canonical_key(key: &str) -> String {
         .collect()
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Request {
     pub method: String,
     pub request_uri: String,

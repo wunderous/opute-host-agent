@@ -52,6 +52,11 @@ pub struct Server {
     pub authz: Mutex<AuthzStore>,
     pub health_observer: Box<dyn Fn() -> Map<String, J> + Send + Sync>,
     pub grant_backoff: crate::oauth::Backoff,
+    /// The catalog for this mode, and its `tools/list` projection.
+    pub catalog: &'static crate::catalog::Snapshot,
+    pub published_tools: Vec<J>,
+    pub standalone: bool,
+    pub allow_mutations: bool,
 }
 
 const ROUTES: [&str; 9] = [
@@ -882,7 +887,7 @@ fn agent_id_value(id: Option<&Node>) -> J {
 }
 
 /// A decoded `any`, re-encoded the way Go's `json.Marshal` prints it.
-fn go_any(n: &Node) -> J {
+pub(crate) fn go_any(n: &Node) -> J {
     match &n.value {
         Value::Null => J::Null,
         Value::Bool(b) => J::Bool(*b),
@@ -1179,7 +1184,7 @@ fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
     }
 }
 
-async fn mcp(server: &Server, req: &Request, body: &mut Body) -> Response {
+async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
     match req.method.as_str() {
         "OPTIONS" => return Response::new(204),
         "POST" => {}
@@ -1252,12 +1257,26 @@ async fn mcp(server: &Server, req: &Request, body: &mut Body) -> Response {
         };
     }
     let protected = !server.disable_localhost_protection && is_local_host_address(req.host.trim());
-    let sdk = crate::mcpsdk::Sdk {
-        implementation_name: &server.implementation_name,
-        version: &server.version,
-        tools: &[],
+    let serve = move |server: &Server, req: &Request, raw: &[u8]| {
+        let call = |name: &str, params: Option<&Node>| crate::tools::call(server, name, params);
+        let sdk = crate::mcpsdk::Sdk {
+            implementation_name: &server.implementation_name,
+            version: &server.version,
+            tools: &server.published_tools,
+            call_tool: &call,
+        };
+        crate::mcpsdk::serve(&sdk, req, raw, protected)
     };
-    let mut response = crate::mcpsdk::serve(&sdk, req, &raw, protected);
+    let mut response = if method == "tools/call" {
+        // Tool handlers read the host and run commands; keep them off the
+        // connection-serving thread.
+        let (server, req, raw) = (Arc::clone(server), req.clone(), raw.clone());
+        tokio::task::spawn_blocking(move || serve(&server, &req, &raw))
+            .await
+            .unwrap_or_else(|_| Response::error("internal error", 500))
+    } else {
+        serve(server, req, &raw)
+    };
     if method == "tools/call" {
         response.body = normalize_task_creation(&response.body);
         response.headers.del("Content-Length");

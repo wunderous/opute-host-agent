@@ -63,6 +63,10 @@ def main(argv: list[str] | None = None) -> int:
     rc.add_argument("--out", required=True, type=Path)
     rc.add_argument("--workers", type=int, default=6)
 
+    cs = sub.add_parser("catalog-source", help="regenerate crates/host-agent/catalog/source.json from the pinned Go tree")
+    cs.add_argument("--go-src", required=True, type=Path)
+    cs.add_argument("--check", action="store_true", help="fail if the committed file is stale")
+
     sub.add_parser("corpus", help="regenerate scenarios/wire.json from parity/corpus.py")
     man = sub.add_parser("manifest", help="sync derived manifest fields from scenarios and the source lock")
     man.add_argument("--go", type=Path, help="Go reference binary whose hash to record")
@@ -84,6 +88,14 @@ def main(argv: list[str] | None = None) -> int:
         doc = contract.run_rust_canaries(args.rust.resolve(), args.out, args.workers)
         clean = not any(doc["baselineFailures"].values())
         return 0 if clean and all(r.get("caught") for r in doc["results"]) else 1
+    if args.command == "catalog-source":
+        from . import catalog_source
+        if args.check:
+            fresh = catalog_source.check(args.go_src.resolve())
+            print("catalog source is " + ("current" if fresh else "STALE: run make catalog-source"))
+            return 0 if fresh else 1
+        print(f"wrote {catalog_source.write(args.go_src.resolve())}")
+        return 0
     if args.command == "corpus":
         from . import corpus
         print(f"wire corpus v{corpus.VERSION}: {corpus.write()} steps -> {corpus.OUT_FILE.name}")
