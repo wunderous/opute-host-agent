@@ -1093,6 +1093,224 @@ pub fn observe_enforcement(env: &Env) -> String {
     "unknown".into()
 }
 
+// --- host platform (pkg/hostplatform) ---------------------------------------------
+
+/// Go's `runtime.GOARCH` for this build.
+fn go_arch() -> &'static str {
+    match std::env::consts::ARCH {
+        "x86_64" => "amd64",
+        "aarch64" => "arm64",
+        "x86" => "386",
+        "arm" => "arm",
+        "riscv64" => "riscv64",
+        "powerpc64" => "ppc64le",
+        "s390x" => "s390x",
+        other => other,
+    }
+}
+
+fn parse_os_release(text: &str) -> std::collections::BTreeMap<String, String> {
+    let mut values = std::collections::BTreeMap::new();
+    for line in text.lines() {
+        let Some((key, value)) = line.trim().split_once('=') else {
+            continue;
+        };
+        if key.starts_with('#') {
+            continue;
+        }
+        let value = value.trim().trim_matches(|c| c == '"' || c == '\'');
+        values.insert(key.trim().to_string(), value.to_string());
+    }
+    values
+}
+
+fn parse_cpuinfo(text: &str) -> (String, String) {
+    let (mut vendor, mut model, mut implementer, mut part) =
+        (String::new(), String::new(), String::new(), String::new());
+    for line in text.lines() {
+        let Some((key, value)) = line.split_once(':') else {
+            continue;
+        };
+        let (key, value) = (key.trim(), value.trim());
+        match key {
+            "model name" | "Model" | "Hardware" | "cpu" if model.is_empty() => model = value.into(),
+            "vendor_id" if vendor.is_empty() => vendor = value.into(),
+            "CPU implementer" => implementer = value.into(),
+            "CPU part" => part = value.into(),
+            _ => {}
+        }
+    }
+    if vendor.is_empty() && !implementer.is_empty() {
+        vendor = match implementer.trim().to_lowercase().as_str() {
+            "0x41" => "ARM".into(),
+            "0x61" => "Apple".into(),
+            "0x4e" => "NVIDIA".into(),
+            "0x51" => "Qualcomm".into(),
+            "0xc0" => "Ampere".into(),
+            _ => implementer.clone(),
+        };
+    }
+    if model.is_empty() && !part.is_empty() {
+        model = format!("ARM part {part}");
+    }
+    (vendor, model)
+}
+
+/// `(?i)\bApple\s+(M\d+)(?:\s+(Pro|Max|Ultra))?`
+fn apple_silicon(model: &str) -> Option<(String, String)> {
+    let re = regex::Regex::new(r"(?i)\bApple\s+(M\d+)(?:\s+(Pro|Max|Ultra))?").ok()?;
+    let caps = re.captures(model)?;
+    let series = caps.get(1)?.as_str().to_uppercase();
+    let variant = caps
+        .get(2)
+        .map(|m| {
+            let lower = m.as_str().to_lowercase();
+            let mut chars = lower.chars();
+            chars
+                .next()
+                .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+                .unwrap_or_default()
+        })
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "base".into());
+    Some((series, variant))
+}
+
+/// `wslVersion`: None for native Linux, else the WSL generation (0 when the
+/// markers are ambiguous).
+fn wsl_version(release: &str, version: &str, interop: bool, distro: &str) -> Option<i64> {
+    let haystack = format!("{release} {version}").to_lowercase();
+    let microsoft = haystack.contains("microsoft");
+    if !microsoft && !interop && distro.is_empty() {
+        None
+    } else if haystack.contains("wsl2")
+        || (microsoft && (haystack.contains("microsoft-standard") || interop))
+    {
+        Some(2)
+    } else if microsoft {
+        Some(1)
+    } else {
+        Some(0)
+    }
+}
+
+/// `hostplatform.Detect` on Linux: collected signals, then `Classify`.
+pub fn detect_platform(env: &Env) -> J {
+    let mut sources: Vec<&str> = Vec::new();
+    let mut read = |path: &'static str| {
+        std::fs::read_to_string(path)
+            .ok()
+            .inspect(|_| sources.push(path))
+    };
+    let kernel_release = read("/proc/sys/kernel/osrelease")
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    let kernel_version = read("/proc/version")
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    let os_release = read("/etc/os-release")
+        .map(|s| parse_os_release(&s))
+        .unwrap_or_default();
+    let (vendor, model) = read("/proc/cpuinfo")
+        .map(|s| parse_cpuinfo(&s))
+        .unwrap_or_default();
+    let wsl_distro = env.get("WSL_DISTRO_NAME").trim().to_string();
+    let mut wsl_interop = false;
+    if !env.get("WSL_INTEROP").trim().is_empty() {
+        wsl_interop = true;
+        sources.push("env:WSL_INTEROP");
+    }
+    if Path::new("/proc/sys/fs/binfmt_misc/WSLInterop").exists() {
+        wsl_interop = true;
+        sources.push("/proc/sys/fs/binfmt_misc/WSLInterop");
+    }
+    let first = |a: Option<&String>, b: Option<&String>| {
+        [a, b]
+            .into_iter()
+            .flatten()
+            .map(|v| v.trim())
+            .find(|v| !v.is_empty())
+            .unwrap_or("")
+            .to_string()
+    };
+    let arch = go_arch();
+    let mut cpu = Map::new();
+    cpu.insert("architecture".into(), J::from(arch));
+    let mut family = match arch {
+        "amd64" => "x86-64",
+        "386" => "x86",
+        "arm64" => "arm64",
+        "arm" => "arm",
+        _ => "unknown",
+    }
+    .to_string();
+    let mut vendor = vendor.trim().to_string();
+    let model = model.trim().to_string();
+    let mut series_variant = None;
+    if let Some((series, variant)) = apple_silicon(&model) {
+        family = "apple-silicon".into();
+        if vendor.is_empty() {
+            vendor = "Apple".into();
+        }
+        series_variant = Some((series, variant));
+    }
+    cpu.insert("family".into(), J::from(family));
+    if !vendor.is_empty() {
+        cpu.insert("vendor".into(), J::from(vendor));
+    }
+    if !model.is_empty() {
+        cpu.insert("model".into(), J::from(model));
+    }
+    if let Some((series, variant)) = series_variant {
+        cpu.insert("series".into(), J::from(series));
+        cpu.insert("variant".into(), J::from(variant));
+    }
+    let cores = num_cpu();
+    if cores != 0 {
+        cpu.insert("logicalCores".into(), J::from(cores));
+    }
+    let mut out = Map::new();
+    out.insert("contractVersion".into(), J::from("host-platform.v1"));
+    out.insert("os".into(), J::from("linux"));
+    let wsl = wsl_version(&kernel_release, &kernel_version, wsl_interop, &wsl_distro);
+    out.insert(
+        "kind".into(),
+        J::from(match wsl {
+            None => "linux",
+            Some(1) => "wsl1",
+            Some(_) => "wsl2",
+        }),
+    );
+    if !kernel_release.is_empty() {
+        out.insert("kernel".into(), J::from(kernel_release.clone()));
+    }
+    if !kernel_version.is_empty() {
+        out.insert("kernelVersion".into(), J::from(kernel_version.clone()));
+    }
+    let distribution = first(os_release.get("NAME"), os_release.get("ID"));
+    if !distribution.is_empty() {
+        out.insert("distribution".into(), J::from(distribution));
+    }
+    let version = first(os_release.get("VERSION_ID"), os_release.get("VERSION"));
+    if !version.is_empty() {
+        out.insert("distributionVersion".into(), J::from(version));
+    }
+    if let Some(v) = wsl {
+        let mut w = Map::new();
+        w.insert("version".into(), J::from(v));
+        if !wsl_distro.is_empty() {
+            w.insert("distro".into(), J::from(wsl_distro.clone()));
+        }
+        w.insert("interop".into(), J::Bool(wsl_interop));
+        out.insert("wsl".into(), J::Object(w));
+    }
+    out.insert("cpu".into(), J::Object(cpu));
+    if !sources.is_empty() {
+        out.insert("evidence".into(), json!(sources));
+    }
+    J::Object(out)
+}
+
 // --- agent installation (host.describeAgentInstallation) ----------------------------
 
 pub fn agent_installation(
@@ -1172,6 +1390,34 @@ pub fn agent_installation(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn platform_classification_matches_hostplatform() {
+        assert_eq!(wsl_version("6.8.0-45-generic", "", false, ""), None);
+        assert_eq!(
+            wsl_version("5.15.153.1-microsoft-standard-WSL2", "", false, ""),
+            Some(2)
+        );
+        assert_eq!(wsl_version("4.4.0-19041-Microsoft", "", false, ""), Some(1));
+        assert_eq!(wsl_version("4.4.0-19041-Microsoft", "", true, ""), Some(2));
+        assert_eq!(wsl_version("6.1.0", "", false, "Ubuntu"), Some(0));
+        let (vendor, model) = parse_cpuinfo("CPU implementer\t: 0x41\nCPU part\t: 0xd0c\n");
+        assert_eq!((vendor.as_str(), model.as_str()), ("ARM", "ARM part 0xd0c"));
+        let (vendor, model) =
+            parse_cpuinfo("vendor_id\t: GenuineIntel\nmodel name\t: Xeon\nmodel name\t: other\n");
+        assert_eq!((vendor.as_str(), model.as_str()), ("GenuineIntel", "Xeon"));
+        assert_eq!(
+            apple_silicon("Apple M2 max chip"),
+            Some(("M2".into(), "Max".into()))
+        );
+        assert_eq!(
+            apple_silicon("Apple M1"),
+            Some(("M1".into(), "base".into()))
+        );
+        let release = parse_os_release("# c\nNAME=\"Ubuntu\"\nVERSION_ID='24.04'\n");
+        assert_eq!(release.get("NAME").map(String::as_str), Some("Ubuntu"));
+        assert_eq!(release.get("VERSION_ID").map(String::as_str), Some("24.04"));
+    }
 
     #[test]
     fn durations_print_like_go() {

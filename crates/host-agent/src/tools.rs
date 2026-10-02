@@ -188,6 +188,15 @@ fn dispatch(server: &Server, name: &str, args: &Map<String, J>) -> J {
                 .list_vms(fast, &register)
                 .map(|v| structured_with_text(&v, &VM_LIST))
         },
+        "detect_host_platform" => |host, _| {
+            let platform = crate::hostobs::detect_platform(&host.env);
+            let text = format!(
+                "Host platform detected: {} on {}.",
+                platform["kind"].as_str().unwrap_or(""),
+                platform["cpu"]["architecture"].as_str().unwrap_or("")
+            );
+            Ok(json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}))
+        },
         "get_host_capacity" => |host, _| {
             Ok(json!({
                 "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],

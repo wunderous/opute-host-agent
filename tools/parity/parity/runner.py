@@ -225,6 +225,29 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
 _EXCLUSIVE = threading.Lock()
 
 
+X2_TABLES = ("operations", "plan_runs", "capability_invocations")
+
+
+def invariant_violations(scenario: dict, observation: dict) -> list[dict]:
+    """Cross-cutting invariants a scenario declares (milestones.md 2.6).
+
+    They hold on each side on its own; equality with the other side is not
+    enough. X2: rejected calls have no effects, so the shim trace is empty and
+    the state store records no operations, plan runs or invocations.
+    """
+    violations = []
+    if "X2" in scenario.get("invariants", []):
+        if observation.get("trace"):
+            violations.append({"invariant": "X2", "reason": "shim trace is not empty",
+                               "value": observation["trace"][:5]})
+        for db, schema in (observation.get("sqlite") or {}).items():
+            for table in X2_TABLES:
+                count = (schema.get("rowCounts") or {}).get(table)
+                if count:
+                    violations.append({"invariant": "X2", "reason": f"{db} {table} has {count} rows"})
+    return violations
+
+
 def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: str) -> dict:
     spec = scenario.get("compare", {})
     if scenario.get("exclusive"):
@@ -241,6 +264,8 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
             obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)
     norm_r, viol_r = canon.normalize(obs_r, spec, vars_r)
+    viol_l += invariant_violations(scenario, obs_l)
+    viol_r += invariant_violations(scenario, obs_r)
     divergences: list[dict] = []
     if cross_implementation(left, right):
         norm_l, norm_r, divergences = canon.apply_divergences(

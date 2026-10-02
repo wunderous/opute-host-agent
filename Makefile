@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 
@@ -71,6 +71,9 @@ parity-verify-m1:
 parity-verify-m2:
 	$(PARITY) verify --gate m2 --report $(CURDIR)/evidence/current/verify-m2.json
 
+parity-verify-m3:
+	$(PARITY) verify --gate m3 --report $(CURDIR)/evidence/current/verify-m3.json
+
 parity-verify-cutover:
 	$(PARITY) verify --gate cutover
 
@@ -89,11 +92,13 @@ parity-m1: rust-check rust-build parity-m0 parity-go-vs-rust parity-oracles pari
 
 parity-m2: parity-m1 parity-contracts parity-rust-canaries parity-verify-m2
 
-# CI: verify the committed evidence, then re-prove M1 and M2 parity with a
-# freshly built Rust binary (fails on any diff in those surfaces).
+parity-m3: parity-m2 parity-verify-m3
+
+# CI: verify the committed evidence, then re-prove parity on every surface
+# with a freshly built Rust binary (fails on any diff).
 parity-ci: parity-test go-reference rust-build
 	$(PARITY) catalog-source --go-src $(GO_SRC) --check
-	$(PARITY) verify --gate m2
-	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --surfaces cli,config,lifecycle,http,mcp-wire,auth --out $(CURDIR)/.parity/ci-go-vs-rust
+	$(PARITY) verify --gate m3
+	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --out $(CURDIR)/.parity/ci-go-vs-rust
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/.parity/ci-go-oracles.json
 	$(PARITY) contract --impl rust=$(RUST_BIN) --suite oauth-issuance

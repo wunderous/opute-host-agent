@@ -127,3 +127,13 @@ class OmitemptyTest(unittest.TestCase):
     def test_rule_needs_reason(self):
         with self.assertRaises(canon.MaskError):
             canon.apply_omitempty({}, [{**self.RULE, "reason": ""}])
+
+
+class SubstituteTest(unittest.TestCase):
+    def test_port_inside_a_longer_number_is_kept(self):
+        text = '{"totalBytes":270553174016,"endpoint":"http://127.0.0.1:27055/mcp"}'
+        out = canon.substitute(text, {"PORT": "27055"})
+        self.assertEqual(out, '{"totalBytes":270553174016,"endpoint":"http://127.0.0.1:${PORT}/mcp"}')
+
+    def test_longer_literals_first(self):
+        self.assertEqual(canon.substitute("/tmp/a/b", {"SANDBOX": "/tmp/a", "X": "/tmp"}), "${SANDBOX}/b")

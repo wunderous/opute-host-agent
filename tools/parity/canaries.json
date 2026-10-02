@@ -113,5 +113,29 @@
       "wire.origin.standalone.public-opt-in"
     ],
     "note": "M2: proves the Origin x Host matrix catches the loss of one allowed origin form."
+  },
+  {
+    "id": "C9-vm-release-default",
+    "summary": "VM inventory reports a different release when an instance has no image.release",
+    "patch": {
+      "file": "internal/domain/incus/incus_inventory.go",
+      "old": "\treturn \"unknown\"\n}\n\nfunc normalizeIncusMemory",
+      "new": "\treturn \"unspecified\"\n}\n\nfunc normalizeIncusMemory"
+    },
+    "scenario": "host-read.list-vms.inventory-mix",
+    "mayAlsoFail": [],
+    "note": "M3: list_vms maps every instance; ct-c and ct-d carry no image.release."
+  },
+  {
+    "id": "C10-schema-type-text",
+    "summary": "capability argument validation words a boolean type error differently",
+    "patch": {
+      "file": "internal/plan/schema.go",
+      "old": "return fmt.Errorf(\"expected boolean, got %T\", value)",
+      "new": "return fmt.Errorf(\"expected a boolean, got %T\", value)"
+    },
+    "scenario": "host-read.list-vms.inventory-mix",
+    "mayAlsoFail": [],
+    "note": "M3: the listFastString step sends fast=\"true\"; the declarative gate's error text is contract."
   }
 ]

@@ -67,7 +67,14 @@ def substitute(value: Any, variables: dict[str, str]) -> Any:
     def walk(v: Any) -> Any:
         if isinstance(v, str):
             for lit, name in ordered:
-                if lit in v:
+                if lit not in v:
+                    continue
+                if lit.isdigit():
+                    # A numeric literal (a port) is replaced only where it is
+                    # not part of a longer number, such as a byte count that
+                    # happens to contain the port's digits.
+                    v = re.sub(r"(?<![0-9])" + lit + r"(?![0-9])", "${" + name + "}", v)
+                else:
                     v = v.replace(lit, "${" + name + "}")
             return v
         if isinstance(v, list):

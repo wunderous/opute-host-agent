@@ -3881,6 +3881,59 @@
     }
   },
   {
+    "id": "host-read.detect-platform.native",
+    "surface": "host-read",
+    "owner": "host",
+    "anchors": [
+      "pkg/hostplatform/detect.go",
+      "internal/tools/dispatch_host.go"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone"
+        }
+      },
+      {
+        "as": "platform",
+        "mcp": {
+          "method": "tools/call",
+          "name": "detect_host_platform",
+          "params": {
+            "name": "detect_host_platform",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "platformArgs",
+        "mcp": {
+          "method": "tools/call",
+          "name": "detect_host_platform",
+          "params": {
+            "name": "detect_host_platform",
+            "arguments": {
+              "extra": true
+            }
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ]
+  },
+  {
     "id": "host-read.host-capacity",
     "surface": "host-read",
     "owner": "host",
@@ -4412,7 +4465,8 @@
     ],
     "fixture": "incus-empty",
     "collect": [
-      "trace"
+      "trace",
+      "sqlite"
     ],
     "steps": [
       {
@@ -4466,6 +4520,54 @@
         }
       },
       {
+        "as": "unknownTool",
+        "mcp": {
+          "method": "tools/call",
+          "name": "no_such_tool",
+          "params": {
+            "name": "no_such_tool",
+            "arguments": {}
+          }
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "invariants": [
+      "X2"
+    ],
+    "compare": {
+      "divergences": [
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
+  },
+  {
+    "id": "host-read.lifecycle-without-tasks.platform",
+    "surface": "mcp-wire",
+    "owner": "transport",
+    "anchors": [
+      "internal/hostmcp/server.go:dispatchLifecycleTool"
+    ],
+    "fixture": "incus-empty",
+    "collect": [
+      "trace"
+    ],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=platform"
+          ],
+          "profile": "platform"
+        }
+      },
+      {
         "as": "lifecycleNoCapability",
         "mcp": {
           "method": "tools/call",
@@ -4500,7 +4602,8 @@
     ],
     "fixture": "incus-inventory-mix",
     "collect": [
-      "trace"
+      "trace",
+      "sqlite"
     ],
     "steps": [
       {
@@ -5298,7 +5401,16 @@
         "as": "stop",
         "stop": {}
       }
-    ]
+    ],
+    "invariants": [
+      "X2"
+    ],
+    "compare": {
+      "divergences": [
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   },
   {
     "id": "host-read.standalone-mutation-set-denied.prefixed",
@@ -5309,7 +5421,8 @@
     ],
     "fixture": "incus-empty",
     "collect": [
-      "trace"
+      "trace",
+      "sqlite"
     ],
     "steps": [
       {
@@ -5400,6 +5513,15 @@
         "as": "stop",
         "stop": {}
       }
-    ]
+    ],
+    "invariants": [
+      "X2"
+    ],
+    "compare": {
+      "divergences": [
+        "D8.authz-tables",
+        "D8.authz-row-counts"
+      ]
+    }
   }
 ]

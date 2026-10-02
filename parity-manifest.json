@@ -3,6 +3,11 @@
   "expected": "canaries.json",
   "results": "evidence/current/canaries.json"
  },
+ "catalogRevisions": {
+  "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
+  "platform": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
+  "standalone": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
+ },
  "contracts": {
   "oauth-issuance": {
    "decision": "D8",
@@ -91,6 +96,34 @@
       "http",
       "mcp-wire",
       "auth"
+     ]
+    }
+   ]
+  },
+  "m3": {
+   "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 contract suite and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance"
+   ],
+   "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "read-only-tools"
      ]
     }
    ]
@@ -370,6 +403,16 @@
   },
   {
    "anchors": [
+    "pkg/hostplatform/detect.go",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-read.detect-platform.native",
+   "owner": "host",
+   "scenario": "host-read.detect-platform.native",
+   "surface": "host-read"
+  },
+  {
+   "anchors": [
     "internal/tools/dispatch_resource.go",
     "internal/resource/service.go:capacitySnapshot"
    ],
@@ -412,6 +455,15 @@
    "id": "host-read.task-boundary.platform",
    "owner": "transport",
    "scenario": "host-read.task-boundary.platform",
+   "surface": "mcp-wire"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:dispatchLifecycleTool"
+   ],
+   "id": "host-read.lifecycle-without-tasks.platform",
+   "owner": "transport",
+   "scenario": "host-read.lifecycle-without-tasks.platform",
    "surface": "mcp-wire"
   },
   {

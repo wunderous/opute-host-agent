@@ -1031,6 +1031,22 @@ mod tests {
         assert!(for_mode(true).revision.starts_with("sha256:"));
     }
 
+    /// X5: a catalog change needs a reviewed manifest update.
+    #[test]
+    fn revisions_match_manifest() {
+        let manifest: J =
+            serde_json::from_str(include_str!("../../../parity-manifest.json")).unwrap();
+        let recorded = &manifest["catalogRevisions"];
+        assert_eq!(
+            recorded["standalone"].as_str(),
+            Some(for_mode(true).revision.as_str())
+        );
+        assert_eq!(
+            recorded["platform"].as_str(),
+            Some(for_mode(false).revision.as_str())
+        );
+    }
+
     #[test]
     fn wire_names_round_trip() {
         assert_eq!(
