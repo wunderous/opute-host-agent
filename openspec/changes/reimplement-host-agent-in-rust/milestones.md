@@ -414,6 +414,31 @@ file inspection, probes, capacity and heartbeat projections).
 **Exit gate:** every catalog cell is identical; read-only scenarios green; X2
 and X5 green.
 
+**Status:** implemented; the `m3` gate passes. See
+[evidence/m3/README.md](../../../evidence/m3/README.md). Scope changes, each
+recorded there:
+
+- Catalog cells are the four Go publishes without installed providers
+  (standalone, standalone with the mutation gate open, platform, prefixed
+  names). Provider cells stay the owned inventory gap for M7.
+- Read-only tools in M3 are those that need neither resource binding nor
+  workload admission: `get_capability_catalog`, `get_host_info`,
+  `get_host_capacity`, `list_vms`, `detect_host_platform`. Resource-bound
+  reads (`get_vm_info` and every tool with a declared resource argument) need
+  M4 binding; `normal`-class reads (`inspect_host_file`,
+  `probe_http_endpoint`, ...) are refused by Go's admission when workload
+  enforcement is unverified, so they arrive with M4 admission; domain reads
+  (Kubernetes, PostgreSQL, OCI, LLM, recipes, plans, operations) arrive with
+  their domains. Until then each fails closed with a typed `not_implemented`
+  capability error; `tools/list` is unaffected.
+- Durable invocation evidence (`capability_invocations`) needs the
+  schema-derived redaction of M5, and reservations need M4 admission. M3
+  scenarios compare results, typed errors and command traces; the X2
+  scenarios also check that rejected calls write no rows on either side.
+- Real-host runs (T2: Ubuntu x64/arm64, WSL2) are not available in this
+  environment; `get_host_info` and `detect_host_platform` are compared live
+  on the CI host only.
+
 ---
 
 ### M4: Admission, resource identity, host resource control, tasks

@@ -41,7 +41,7 @@ defines the differential end-to-end harness and evidence each one requires.
   host, and transport modules or crates justified by actual dependency edges.
   Add reproducible formatting, lint, unit-test, and build commands. Gate: no
   Go package-by-package translation or speculative public trait layer.
-- [ ] 1.2 Import or generate versioned descriptors and schemas from the
+- [x] 1.2 Import or generate versioned descriptors and schemas from the
   pinned authoritative contracts. One descriptor source must drive Rust
   validation, MCP publication, and parity comparison. Gate: deterministic
   generation and a failing diff for any unreviewed contract drift.
@@ -51,7 +51,9 @@ defines the differential end-to-end harness and evidence each one requires.
   MCP endpoint.
 
 Evidence for 1.1, 1.3 and 2.1: [evidence/m1/README.md](../../../evidence/m1/README.md)
-(`make parity-verify-m1`). Task 1.2 (generated descriptors) is part of M3.
+(`make parity-verify-m1`). Evidence for 1.2: [evidence/m3/README.md](../../../evidence/m3/README.md)
+(`make catalog-source` regenerates the committed source from the pinned Go
+tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
 
 ## 2. Prove identity, transport, and read-only parity
 
@@ -69,6 +71,10 @@ Evidence for 1.1, 1.3 and 2.1: [evidence/m1/README.md](../../../evidence/m1/READ
   structured results, and typed admission. Gate: valid and invalid credentials,
   `get_host_info {}`, resource kind, tenant scope, and default mutation denial
   match Go in isolated fixtures; no mutation is used to satisfy this gate.
+  Progress: catalog publication, `tools/list`, the read-only host tools,
+  structured results and default mutation denial are done in M3
+  ([evidence/m3/README.md](../../../evidence/m3/README.md)). Typed admission,
+  resource binding and tenant scope remain open for M4.
 
 ## 3. Prove provider and task lifecycle parity
 
