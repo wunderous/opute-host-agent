@@ -164,7 +164,7 @@ class Tree:
         results = [{"id": c["id"], "patchApplied": True,
                     "failedScenarios": [] if c["id"] == uncaught else [c["scenario"]]} for c in expected]
         doc = {"rustBinarySha256": RUST_SHA, "canaryFileSha256": runner.sha256_file(contract.RUST_CANARY_FILE),
-               "contractSha256": {"oauth-issuance": contract.contract_sha256("oauth-issuance")},
+               "contractSha256": {c["contract"]: contract.contract_sha256(c["contract"]) for c in expected},
                "baselineFailures": {"oauth-issuance": ["cc.no-secret"] if baseline_red else []},
                "results": results}
         (self.root / "evidence/rust-canaries.json").write_text(json.dumps(doc))

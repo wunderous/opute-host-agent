@@ -50,11 +50,15 @@ parity-canaries:
 parity-oracles:
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/evidence/current/go-oracles.json
 
-# Declared divergences (decision D8): the Rust contract suite, and patched
-# Rust builds that must turn it red.
+# Declared divergences (decisions D8, D10): the Rust contract suites, and
+# patched Rust builds that must turn them red.
+CONTRACT_SUITES := oauth-issuance standalone-read-only-gate
+
 parity-contracts:
-	rm -rf evidence/current/contracts/oauth-issuance
-	$(PARITY) contract --impl rust=$(RUST_BIN) --suite oauth-issuance --out $(CURDIR)/evidence/current/contracts/oauth-issuance
+	for s in $(CONTRACT_SUITES); do \
+		rm -rf evidence/current/contracts/$$s && \
+		$(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s --out $(CURDIR)/evidence/current/contracts/$$s || exit 1; \
+	done
 
 parity-rust-canaries:
 	$(PARITY) rust-canaries --rust $(RUST_BIN) --out $(CURDIR)/evidence/current/rust-canaries.json
@@ -101,4 +105,4 @@ parity-ci: parity-test go-reference rust-build
 	$(PARITY) verify --gate m3
 	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --out $(CURDIR)/.parity/ci-go-vs-rust
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/.parity/ci-go-oracles.json
-	$(PARITY) contract --impl rust=$(RUST_BIN) --suite oauth-issuance
+	for s in $(CONTRACT_SUITES); do $(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s || exit 1; done

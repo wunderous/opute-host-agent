@@ -12,6 +12,10 @@
   "oauth-issuance": {
    "decision": "D8",
    "results": "evidence/current/contracts/oauth-issuance/summary.json"
+  },
+  "standalone-read-only-gate": {
+   "decision": "D10",
+   "results": "evidence/current/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -22,6 +26,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
    "status": "approved",
    "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
+  },
+  "D10": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/standalone-read-only-gate",
+   "date": "2026-10-02",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D10)",
+   "status": "approved",
+   "summary": "With standalone mutations disabled, Rust runs only tools whose effect is read instead of Go's enumerated gate list"
   }
  },
  "evidence": {
@@ -43,7 +55,8 @@
    "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here",
    "requireCanaries": true,
    "requireContracts": [
-    "oauth-issuance"
+    "oauth-issuance",
+    "standalone-read-only-gate"
    ],
    "requireInventory": true,
    "requireNoGaps": true,
@@ -102,10 +115,11 @@
    ]
   },
   "m3": {
-   "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 contract suite and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
+   "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
    "requireCanaries": true,
    "requireContracts": [
-    "oauth-issuance"
+    "oauth-issuance",
+    "standalone-read-only-gate"
    ],
    "requireInventory": true,
    "requireOracles": true,

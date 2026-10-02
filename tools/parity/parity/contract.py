@@ -5,7 +5,8 @@ content from the Go-vs-Rust comparison, so the diverging behaviour needs its
 own oracle. A contract suite (tools/parity/contracts/<suite>.json) runs each
 scenario against one implementation in a fresh sandbox and asserts the
 specified outcome: status, headers, JSON fields, CLI output, files and modes,
-store rows, and log content.
+store rows, log content, MCP results, catalog sweeps (call every tool the
+agent publishes with a given effect) and the shim trace.
 
 Steps may `capture` values (a provisioned secret, a user code, an
 authorization code) into ${NAME} variables for later steps. An `expect` that
@@ -158,6 +159,61 @@ def _file(ctx: Context, spec: dict) -> dict:
     return out
 
 
+def _mcp(ctx: Context, spec: dict) -> dict:
+    params = dict(ctx.expand(spec.get("params") or {}))
+    if "_meta" in params:  # extra _meta keys ride on a modern client's metadata
+        params["_meta"] = {**agent.modern_meta(), **params["_meta"]}
+    return agent.mcp_call(ctx.sandbox, spec["method"], params,
+                          token=spec.get("token", "${TOKEN}"), name=ctx.expand(spec.get("name")))
+
+
+def _list_tools(ctx: Context) -> list[dict]:
+    tools: list[dict] = []
+    cursor = None
+    for _ in range(100):
+        resp = agent.mcp_call(ctx.sandbox, "tools/list", {"cursor": cursor} if cursor else {})
+        result = (resp.get("body") or {}).get("result") if isinstance(resp.get("body"), dict) else None
+        if not isinstance(result, dict):
+            raise ValueError(f"tools/list failed: {_short(resp)}")
+        tools.extend(result.get("tools") or [])
+        cursor = result.get("nextCursor")
+        if not cursor:
+            return tools
+    raise ValueError("tools/list did not terminate")
+
+
+def _sweep(ctx: Context, spec: dict) -> dict:
+    """Call every selected tool once and sort it by whether the result is the
+    expected refusal. Tools are selected from the agent's own tools/list by
+    published effect (`_meta.capability.privilege`), or named explicitly."""
+    published = {t["name"]: t for t in _list_tools(ctx)}
+    if "names" in spec:
+        names = list(spec["names"])
+    else:
+        want = spec["privilege"]
+
+        def privilege(tool: dict) -> Any:
+            return ((tool.get("_meta") or {}).get("capability") or {}).get("privilege", _MISSING)
+        names = sorted(n for n, t in published.items() if _check(privilege(t), want) is None)
+    refusal = ctx.expand(spec["refusal"])
+    refused, other = [], []
+    for name in names:
+        params = {"name": name, "arguments": spec.get("arguments", {}), **ctx.expand(spec.get("params", {}))}
+        resp = agent.mcp_call(ctx.sandbox, "tools/call", params, name=name)
+        body = resp.get("body")
+        result = body.get("result") if isinstance(body, dict) else None
+        content = (result or {}).get("content") or [{}]
+        text = content[0].get("text") if isinstance(content[0], dict) else None
+        (refused if (result or {}).get("isError") and text == refusal else other).append(name)
+    return {"selected": len(names), "refused": refused, "notRefused": other,
+            "published": sorted(n for n in names if n in published)}
+
+
+def _trace(ctx: Context) -> dict:
+    entries = ctx.sandbox.trace()
+    return {"count": len(entries), "first": entries[:5]}
+
+
 def execute(impl: agent.Impl, scenario: dict, run_id: str) -> tuple[dict, list[str]]:
     sandbox = agent.Sandbox(side="c", run_id=run_id, fixture=runner.FIXTURE_DIR / "shims" / "incus-empty.json")
     ctx = Context(sandbox)
@@ -196,6 +252,12 @@ def execute(impl: agent.Impl, scenario: dict, run_id: str) -> tuple[dict, list[s
                     log = sandbox.root / "server.log"
                     time.sleep(0.05)  # let the agent flush its last line
                     result = {"text": agent._strip_log_prefix(log.read_text(errors="replace")) if log.exists() else ""}
+                elif "mcp" in step:
+                    result = _mcp(ctx, step["mcp"])
+                elif "sweep" in step:
+                    result = _sweep(ctx, step["sweep"])
+                elif "trace" in step:
+                    result = _trace(ctx)
                 elif "repeat" in step:
                     spec = step["repeat"]
                     results = [_http(ctx, spec["http"]) for _ in range(spec["times"])]
@@ -286,6 +348,8 @@ def _op(op: str, actual: Any, arg: Any) -> str | None:
         return None if text.startswith(arg) else f"= {_short(actual)}, want prefix {arg!r}"
     if op == "$sha256Of":
         return None if actual == hashlib.sha256(arg.encode()).hexdigest() else "is not sha256 of the value"
+    if op == "$min":
+        return None if isinstance(actual, (int, float)) and actual >= arg else f"= {_short(actual)}, want >= {arg}"
     if op == "$in":
         return None if actual in arg else f"= {_short(actual)}, want one of {arg!r}"
     raise ValueError(f"unknown matcher {op}")

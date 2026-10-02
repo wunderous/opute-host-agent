@@ -117,7 +117,12 @@ pub fn call(server: &Server, wire: &str, params: Option<&Node>) -> ToolCallOutco
         Ok(a) => a,
         Err(e) => return ToolCallOutcome::Result(error_result(&format!("invalid arguments: {e}"))),
     };
-    if server.standalone && catalog::is_standalone_mutation(&name) && !server.allow_mutations {
+    // Decision D10 (standalone-read-only-gate): with mutations disabled,
+    // standalone runs read tools only.
+    if server.standalone
+        && !server.allow_mutations
+        && !catalog::standalone_read_only(server.catalog, &name)
+    {
         return ToolCallOutcome::Result(error_result(
             "standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
         ));

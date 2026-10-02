@@ -1,0 +1,414 @@
+{
+ "suite": "standalone-read-only-gate",
+ "decision": "D10",
+ "spec": "openspec/changes/standalone-read-only-gate/specs/standalone-read-only-gate/spec.md",
+ "note": "Single-implementation contract for the declared divergence D10. Sweeps select tools from the agent's own tools/list by published effect; the catalog itself stays under Go parity (catalog.* scenarios, X5), so the selection is the Go catalog. The unpublished names are the pinned internal definitions the standalone catalog does not publish (a harness test keeps the list in sync with crates/host-agent/catalog/source.json).",
+ "scenarios": [
+  {
+   "id": "gate.published-non-read-refused",
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Published non-read tool",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "sweep",
+     "sweep": {
+      "privilege": {
+       "$ne": "read"
+      },
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "selected": 87,
+      "notRefused": []
+     }
+    },
+    {
+     "as": "trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "rows",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT (SELECT count(*) FROM operations)+(SELECT count(*) FROM plan_runs)+(SELECT count(*) FROM capability_invocations)"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.published-read-not-refused",
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Published read tool",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "sweep",
+     "sweep": {
+      "privilege": "read",
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "selected": 55,
+      "refused": []
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.unpublished-without-declared-read",
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Unpublished tool without a declared read effect",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "sweep",
+     "sweep": {
+      "names": [
+       "agent_shell",
+       "configure_host_network",
+       "ensure_host_firewall_rule",
+       "ensure_sql_connector",
+       "exec_command",
+       "install_sql_forward_sidecar",
+       "release_sql_connector"
+      ],
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "published": [],
+      "refused": [
+       "agent_shell",
+       "configure_host_network",
+       "ensure_host_firewall_rule",
+       "ensure_sql_connector",
+       "exec_command",
+       "install_sql_forward_sidecar",
+       "release_sql_connector"
+      ],
+      "notRefused": []
+     }
+    },
+    {
+     "as": "trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "rows",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT (SELECT count(*) FROM operations)+(SELECT count(*) FROM plan_runs)+(SELECT count(*) FROM capability_invocations)"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.unpublished-with-declared-read",
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Unpublished tool with a declared read effect",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "sweep",
+     "sweep": {
+      "names": [
+       "get_sql_connector_status"
+      ],
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "published": [],
+      "refused": [],
+      "notRefused": [
+       "get_sql_connector_status"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.mutations-allowed",
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Mutations allowed",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "published",
+     "sweep": {
+      "privilege": {
+       "$ne": "read"
+      },
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "selected": 87,
+      "refused": []
+     }
+    },
+    {
+     "as": "unpublished",
+     "sweep": {
+      "names": [
+       "agent_shell",
+       "configure_host_network",
+       "ensure_host_firewall_rule",
+       "ensure_sql_connector",
+       "exec_command",
+       "get_sql_connector_status",
+       "install_sql_forward_sidecar",
+       "release_sql_connector"
+      ],
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "refused": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.platform-unaffected",
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Platform mode",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "published",
+     "sweep": {
+      "privilege": {
+       "$ne": "read"
+      },
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     },
+     "expect": {
+      "selected": {
+       "$min": 1
+      },
+      "refused": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.refused-leaves-no-trace",
+   "requirement": "The gate refuses before any effect",
+   "specScenario": "Refused call leaves no trace",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "published",
+     "sweep": {
+      "privilege": {
+       "$ne": "read"
+      },
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+      "arguments": {
+       "uri": "vm:default:vm-a",
+       "command": "true",
+       "name": "vm-a"
+      }
+     },
+     "expect": {
+      "notRefused": []
+     }
+    },
+    {
+     "as": "unpublished",
+     "sweep": {
+      "names": [
+       "agent_shell",
+       "configure_host_network",
+       "ensure_host_firewall_rule",
+       "ensure_sql_connector",
+       "exec_command",
+       "install_sql_forward_sidecar",
+       "release_sql_connector"
+      ],
+      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+      "arguments": {
+       "command": "true"
+      }
+     },
+     "expect": {
+      "notRefused": []
+     }
+    },
+    {
+     "as": "trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "rows",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT (SELECT count(*) FROM operations)+(SELECT count(*) FROM plan_runs)+(SELECT count(*) FROM capability_invocations)"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate.stale-revision-first",
+   "requirement": "The gate refuses before any effect",
+   "specScenario": "Stale catalog revision still wins",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stale",
+     "mcp": {
+      "method": "tools/call",
+      "name": "run_instance_command",
+      "params": {
+       "name": "run_instance_command",
+       "arguments": {},
+       "_meta": {
+        "catalogRevision": "sha256:stale"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.structuredContent.code": "catalog_revision_stale"
+     }
+    },
+    {
+     "as": "undecodable",
+     "mcp": {
+      "method": "tools/call",
+      "name": "run_instance_command",
+      "params": {
+       "name": "run_instance_command",
+       "arguments": "not-an-object"
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": true,
+      "body.result.content.0.text": {
+       "$prefix": "Error: invalid arguments: "
+      }
+     }
+    },
+    {
+     "as": "trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "rows",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT (SELECT count(*) FROM operations)+(SELECT count(*) FROM plan_runs)+(SELECT count(*) FROM capability_invocations)"
+     },
+     "expect": {
+      "value": 0
+     }
+    }
+   ]
+  }
+ ]
+}

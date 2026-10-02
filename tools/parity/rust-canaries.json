@@ -193,5 +193,70 @@
   },
   "scenario": "approval.not-over-http",
   "mayAlsoFail": []
+ },
+ {
+  "id": "K16-gate-name-list",
+  "summary": "the standalone gate refuses only the enumerated mutation list",
+  "contract": "standalone-read-only-gate",
+  "patch": {
+   "file": "crates/host-agent/src/catalog.rs",
+   "old": "        return false;\n    }\n    if let Some(d) = catalog.tools.iter().find(|d| d.name == name) {",
+   "new": "        return false;\n    }\n    if !name.is_empty() {\n        return true;\n    }\n    if let Some(d) = catalog.tools.iter().find(|d| d.name == name) {"
+  },
+  "scenario": "gate.published-non-read-refused",
+  "mayAlsoFail": [
+   "gate.refused-leaves-no-trace",
+   "gate.unpublished-without-declared-read"
+  ]
+ },
+ {
+  "id": "K17-inferred-read-unpublished",
+  "summary": "an unpublished tool passes on an inferred read effect",
+  "contract": "standalone-read-only-gate",
+  "patch": {
+   "file": "crates/host-agent/src/catalog.rs",
+   "old": "        .and_then(declared_effect)\n        .is_some_and(|e| e == \"read\")",
+   "new": "        .map(effect)\n        .is_some_and(|e| e == \"read\")"
+  },
+  "scenario": "gate.unpublished-without-declared-read",
+  "mayAlsoFail": [
+   "gate.refused-leaves-no-trace"
+  ]
+ },
+ {
+  "id": "K18-gate-ignores-allow",
+  "summary": "the gate stays closed with mutations allowed",
+  "contract": "standalone-read-only-gate",
+  "patch": {
+   "file": "crates/host-agent/src/tools.rs",
+   "old": "        && !server.allow_mutations\n        && !catalog::standalone_read_only",
+   "new": "        && !catalog::standalone_read_only"
+  },
+  "scenario": "gate.mutations-allowed",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K19-gate-in-platform",
+  "summary": "the standalone gate also applies in platform mode",
+  "contract": "standalone-read-only-gate",
+  "patch": {
+   "file": "crates/host-agent/src/tools.rs",
+   "old": "    if server.standalone\n        && !server.allow_mutations\n        && !catalog::standalone_read_only",
+   "new": "    if !server.allow_mutations\n        && !catalog::standalone_read_only"
+  },
+  "scenario": "gate.platform-unaffected",
+  "mayAlsoFail": []
+ },
+ {
+  "id": "K20-gate-refuses-reads",
+  "summary": "the gate refuses published read tools",
+  "contract": "standalone-read-only-gate",
+  "patch": {
+   "file": "crates/host-agent/src/catalog.rs",
+   "old": "        return d.effect == \"read\";",
+   "new": "        return d.effect == \"read\" && d.name.is_empty();"
+  },
+  "scenario": "gate.published-read-not-refused",
+  "mayAlsoFail": []
  }
 ]

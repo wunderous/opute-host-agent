@@ -488,18 +488,25 @@ fn result_types(meta: Option<&Map<String, J>>) -> Vec<ResultType> {
 }
 
 fn effect(def: &Definition) -> String {
+    declared_effect(def).unwrap_or_else(|| "read".to_string())
+}
+
+/// The effect a definition declares: its own metadata, its registration, the
+/// residual effects, then its standalone classification. `effect` falls back
+/// to `read` when nothing is declared; the D10 gate does not.
+fn declared_effect(def: &Definition) -> Option<String> {
     let declared = meta_string(def.meta.as_ref(), "effect", "");
     if !declared.is_empty() {
-        return declared;
+        return Some(declared);
     }
     if let Some(e) = registration(&def.name)
         .and_then(|r| r.get("effect"))
         .and_then(J::as_str)
     {
-        return e.to_string();
+        return Some(e.to_string());
     }
     if let Some(e) = source().residual_effects.get(&def.name).and_then(J::as_str) {
-        return e.to_string();
+        return Some(e.to_string());
     }
     let classification = standalone_metadata(&def.name)
         .and_then(|m| m.get("opute"))
@@ -508,9 +515,29 @@ fn effect(def: &Definition) -> String {
         .map(str::trim)
         .unwrap_or("");
     match classification {
-        "" | "read_only" => "read".to_string(),
-        other => other.to_string(),
+        "" => None,
+        "read_only" => Some("read".to_string()),
+        other => Some(other.to_string()),
     }
+}
+
+/// Decision D10 (`standalone-read-only-gate`): whether a standalone server
+/// with mutations disabled may run `name`. A tool the catalog publishes runs
+/// only when its published effect is `read`; a tool it does not publish runs
+/// only when a `read` effect is declared, never inferred.
+pub fn standalone_read_only(catalog: &Snapshot, name: &str) -> bool {
+    if is_standalone_mutation(name) {
+        return false;
+    }
+    if let Some(d) = catalog.tools.iter().find(|d| d.name == name) {
+        return d.effect == "read";
+    }
+    source()
+        .internal
+        .iter()
+        .find(|d| d.name == name)
+        .and_then(declared_effect)
+        .is_some_and(|e| e == "read")
 }
 
 fn descriptor(provider: &str, def: &Definition) -> Descriptor {
@@ -1062,5 +1089,61 @@ mod tests {
         assert!(parse_cost(&json!({"class": 3})).is_none());
         let c = parse_cost(&json!({"CPUCORES": 0.5, "tasks": 2})).unwrap();
         assert_eq!((c.cpu_cores, c.tasks), (0.5, 2));
+    }
+
+    /// D10: with mutations disabled, standalone runs exactly the tools whose
+    /// effect is read, and internal tools only with a declared read effect.
+    #[test]
+    fn standalone_read_only_gate() {
+        let cat = for_mode(true);
+        for d in &cat.tools {
+            assert_eq!(
+                standalone_read_only(cat, &d.name),
+                d.effect == "read",
+                "{}",
+                d.name
+            );
+            if is_standalone_mutation(&d.name) {
+                assert!(!standalone_read_only(cat, &d.name), "{}", d.name);
+            }
+        }
+        for name in [
+            "get_host_info",
+            "list_vms",
+            "get_host_capacity",
+            "detect_host_platform",
+            "get_capability_catalog",
+        ] {
+            assert!(standalone_read_only(cat, name), "{name}");
+        }
+        let internal: Vec<(&str, bool)> = internal()
+            .tools
+            .iter()
+            .filter(|d| !cat.tools.iter().any(|t| t.name == d.name))
+            .map(|d| (d.name.as_str(), standalone_read_only(cat, &d.name)))
+            .collect();
+        for (name, allowed) in &internal {
+            // Inferred `read` (nothing declared) is refused.
+            let declared = source()
+                .internal
+                .iter()
+                .find(|d| d.name == *name)
+                .and_then(declared_effect);
+            assert_eq!(*allowed, declared.as_deref() == Some("read"), "{name}");
+        }
+        assert!(internal
+            .iter()
+            .any(|(n, a)| *n == "configure_host_network" && !a));
+        assert!(internal.iter().any(|(n, a)| *n == "exec_command" && !a));
+        assert!(!standalone_read_only(cat, "no_such_tool"));
+        let allowed = cat
+            .tools
+            .iter()
+            .filter(|d| standalone_read_only(cat, &d.name))
+            .count();
+        assert_eq!(
+            allowed,
+            cat.tools.iter().filter(|d| d.effect == "read").count()
+        );
     }
 }
