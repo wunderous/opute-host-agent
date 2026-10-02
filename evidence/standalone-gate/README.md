@@ -78,7 +78,14 @@ definitions. A new internal tool therefore cannot go untested.
 
 ## Results
 
-@RESULTS@
+| Check | Result |
+| --- | --- |
+| Contract suite `standalone-read-only-gate` against the Rust candidate | **8/8 pass** |
+| Rust canaries K16–K20 | **5/5 caught**, each by its named scenario (plus declared co-failures); unpatched build green |
+| All Rust canaries (D8 and D10) | 20/20 caught |
+| Unit test `catalog::tests::standalone_read_only_gate` | pass (73 crate tests in total) |
+| Go vs Rust, every surface, ×5 | 66/66; catalog revisions unchanged |
+| `make parity-verify-m3` | **PASS** (the gate requires both contract suites) |
 
 ## Notes
 

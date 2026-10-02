@@ -11,14 +11,14 @@ built with, Python 3.11).
 
 | Check | Result |
 | --- | --- |
-| `make rust-check` | fmt, clippy `-D warnings`, 72 unit tests: pass |
-| `make parity-test` | 68 harness tests (comparator, omitempty, substitution, divergences, verifier, contracts, corpus freshness): pass |
+| `make rust-check` | fmt, clippy `-D warnings`, 73 unit tests: pass |
+| `make parity-test` | 71 harness tests (comparator, omitempty, one-of masks, substitution, divergences, verifier, contracts, corpus freshness): pass |
 | `catalog-source --check` (in `make parity-ci`) | the committed `crates/host-agent/catalog/source.json` equals a fresh export from the pinned Go tree |
 | Go vs Go, ×20 | 66/66 scenarios clean on all 20 iterations |
 | Canaries | 10/10 caught, each by its named scenario (plus declared co-failures); C9 and C10 are new |
 | **Go vs Rust, ×5** | **66/66 scenarios pass on all 5 iterations, on every surface** (admission, auth, catalog, cli, config, durable-state, host-read, http, lifecycle, mcp-wire, read-only-tools), outside the declared D8 divergences |
 | Go oracle tests against Rust | `standalone-startup` (M1), `real-client-modern` (M2) and `real-client-catalog` (M3, the go-sdk client lists the catalog and calls read-only tools) pass against Go and Rust and fail against the `/bin/true` control |
-| D8 contract suite and Rust canaries | 24/24 contract scenarios; 15/15 Rust canaries caught ([details](../oauth-issuance/README.md)) |
+| Declared-divergence contract suites and Rust canaries | D8 `oauth-issuance` 24/24, D10 `standalone-read-only-gate` 8/8; 20/20 Rust canaries caught ([D8](../oauth-issuance/README.md), [D10](../standalone-gate/README.md)) |
 | `make parity-verify-m1` … `parity-verify-m3` | **PASS** |
 | `make parity-verify-cutover` | **FAIL, by design**: 80 owned inventory gaps (no covering scenario yet) remain; see below |
 
@@ -134,7 +134,12 @@ New canaries: **C9** (`vm-release-default`) and **C10**
    failing scenario hid this. The cutover gate now also requires
    `requireNoGaps`: zero inventory gaps, owned or not. Verifier tests cover
    the gaps case and a missing gap count.
-8. **Nondeterministic export.** Go appends some definitions in map order; the
+8. **A racing disk mount.** `get_host_info` reports the default disk path
+   (`/` or `$HOME`) with the fewest available bytes. In the sandbox both
+   are the same filesystem, so Go and Rust alike pick either one, depending
+   on concurrent writes (2 of 96 stressed runs). A `one-of` mask accepts
+   exactly the declared candidates, and 144 stressed runs are clean.
+9. **Nondeterministic export.** Go appends some definitions in map order; the
    export sorts them.
 
 ## Scope changes and open items
@@ -155,6 +160,14 @@ New canaries: **C9** (`vm-release-default`) and **C10**
   this environment. `get_host_info` and `detect_host_platform` are compared
   live on the CI host only; WSL detection is covered by unit tests, because
   the agent refuses to start with WSL markers in a fixture environment.
+- **Decision D10 (standalone read-only gate).** After M3 the owner approved
+  a Rust-only gate: with standalone mutations disabled, Rust runs only tools
+  whose effect is `read`. It is specified in
+  [`standalone-read-only-gate`](../../openspec/changes/standalone-read-only-gate/proposal.md)
+  and verified by its own contract suite and canaries
+  ([evidence](../standalone-gate/README.md)). The `m3` and cutover gates
+  require that suite. Go-vs-Rust comparisons are unaffected: no twin scenario
+  calls a tool that the two gates treat differently.
 - **Declared D8 divergences** now also cover
   `admission.standalone-mutation-denied` and `state.schema-after-start`,
   whose state schema includes the D8 credential tables.

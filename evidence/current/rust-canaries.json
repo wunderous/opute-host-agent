@@ -1,10 +1,12 @@
 {
  "baselineFailures": {
-  "oauth-issuance": []
+  "oauth-issuance": [],
+  "standalone-read-only-gate": []
  },
- "canaryFileSha256": "d7573d1f21513ca08a626b346275c80211676a459f27f52bbaa9fd0c78f8fcdc",
+ "canaryFileSha256": "77d45f919093e1455dd1788999ede3d6adcea982ddd533edbce621405f981ad3",
  "contractSha256": {
-  "oauth-issuance": "77f78f53474c737859af5c54bc0e85695ab0a30fa4320ffd29251774e7b4c162"
+  "oauth-issuance": "b804f347f20b6077a91a8a2ecb482a949a8407870c6a5c81258c9562a2b743de",
+  "standalone-read-only-gate": "410d81333b7456a255615737f00abafb99ea6faae3986dfd379b61da78c7e76f"
  },
  "results": [
   {
@@ -168,8 +170,61 @@
    ],
    "id": "K15-http-approval-route",
    "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.published-non-read-refused",
+    "gate.refused-leaves-no-trace",
+    "gate.unpublished-without-declared-read"
+   ],
+   "id": "K16-gate-name-list",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.refused-leaves-no-trace",
+    "gate.unpublished-without-declared-read"
+   ],
+   "id": "K17-inferred-read-unpublished",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.mutations-allowed"
+   ],
+   "id": "K18-gate-ignores-allow",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.platform-unaffected"
+   ],
+   "id": "K19-gate-in-platform",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.published-read-not-refused"
+   ],
+   "id": "K20-gate-refuses-reads",
+   "patchApplied": true
   }
  ],
- "rustBinarySha256": "173f44048bceeb881df0a26fd9f4ad81f0ebb9b7295e9eeefdea18db2cdf1533",
+ "rustBinarySha256": "b17b57a1c0b2fcc72888fecd34d06a2f97b6bbe3bc5ae1d4654d3480859fee9d",
  "schemaVersion": 1
 }

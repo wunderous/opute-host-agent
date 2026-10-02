@@ -11,14 +11,18 @@
 
 ## 2. Harness and evidence
 
-- [ ] 2.1 Decision D10 in `parity-manifest.json` and the milestones decision
+- [x] 2.1 Decision D10 in `parity-manifest.json` and the milestones decision
   table.
-- [ ] 2.2 Contract suite `standalone-read-only-gate`: sweep the published
+- [x] 2.2 Contract suite `standalone-read-only-gate`: sweep the published
   catalog (every non-read tool refused, every read tool not refused), the
   unpublished tools, mutations allowed, stale revision precedence, and no
   state rows afterwards.
-- [ ] 2.3 Rust canaries: a name-list gate, an inferred-read gate for
-  unpublished tools, and a gate that ignores the mutation list must each turn
-  the suite red.
-- [ ] 2.4 Go-vs-Rust stays green on every surface, and the catalog revisions
+- [x] 2.3 Rust canaries K16-K20: a name-list gate, an inferred read for
+  unpublished tools, a gate that ignores the allow flag, a gate in platform
+  mode, and a gate that refuses reads each turn the suite red. Go's list is
+  kept as an explicit refusal; every tool on it has a non-read effect (unit
+  test), so no canary can isolate that line.
+
+Evidence: [evidence/standalone-gate/README.md](../../../evidence/standalone-gate/README.md).
+- [x] 2.4 Go-vs-Rust stays green on every surface, and the catalog revisions
   are unchanged.

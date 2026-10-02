@@ -19,14 +19,6 @@
   }
  },
  "decisions": {
-  "D8": {
-   "approvedBy": "owner",
-   "change": "openspec/changes/secure-oauth-issuance",
-   "date": "2026-10-01",
-   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
-   "status": "approved",
-   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
-  },
   "D10": {
    "approvedBy": "owner",
    "change": "openspec/changes/standalone-read-only-gate",
@@ -34,6 +26,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D10)",
    "status": "approved",
    "summary": "With standalone mutations disabled, Rust runs only tools whose effect is read instead of Go's enumerated gate list"
+  },
+  "D8": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/secure-oauth-issuance",
+   "date": "2026-10-01",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
+   "status": "approved",
+   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
   }
  },
  "evidence": {
@@ -828,7 +828,7 @@
   "results": "evidence/current/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "173f44048bceeb881df0a26fd9f4ad81f0ebb9b7295e9eeefdea18db2cdf1533",
+  "binarySha256": "b17b57a1c0b2fcc72888fecd34d06a2f97b6bbe3bc5ae1d4654d3480859fee9d",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
