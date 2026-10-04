@@ -29,6 +29,7 @@ use std::collections::BTreeMap;
 /// `tools.BoundResource`.
 #[derive(Clone, Debug)]
 pub struct Bound {
+    pub argument: String,
     pub uri: String,
     pub coordinates: Map<String, J>,
 }
@@ -308,6 +309,7 @@ pub fn resolve_binding(
             )));
         };
         binding.resources.push(Bound {
+            argument: argument.to_string(),
             uri: parsed.to_string(),
             coordinates,
         });
@@ -415,10 +417,12 @@ mod tests {
         let binding = Binding {
             resources: vec![
                 Bound {
+                    argument: "uri".into(),
                     uri: String::new(),
                     coordinates: first,
                 },
                 Bound {
+                    argument: "uri".into(),
                     uri: "vm:t:web-1".into(),
                     coordinates: second,
                 },

@@ -10,6 +10,7 @@
 
 use crate::admission::{self, Binding};
 use crate::catalog;
+use crate::evidence::{redact_for_delivery, redact_for_storage};
 use crate::gojson::{Node, Value};
 use crate::mcpsdk::ToolCallOutcome;
 use crate::transport::Server;
@@ -179,27 +180,92 @@ fn create_input_task(server: &Arc<Server>, args: &Map<String, J>) -> J {
         json!({"type": response_type, "prompt": prompt}),
     );
     let desc = "Waiting for operator input...";
+    let tool_args = redact_task_args(server, "request_task_input", args);
     // The continuation lives inside the registry the server owns; a weak
     // reference keeps it from holding the server alive.
     let owner = Arc::downgrade(server);
-    let rec = server
-        .tasks
-        .create_with_input(inputs, move |task_id, responses| {
+    let rec = server.tasks.create_with_input(
+        "request_task_input",
+        desc,
+        tool_args,
+        inputs,
+        move |task_id, responses| {
             if let Some(server) = owner.upgrade() {
                 let response = responses.get("response").cloned().unwrap_or(J::Null);
-                server.tasks.complete(
-                    task_id,
-                    crate::tasks::ToolResult {
-                        structured_content: Some(json!({"response": response})),
-                        ..Default::default()
-                    },
-                );
+                let tool_result = crate::tasks::ToolResult {
+                    structured_content: Some(json!({"response": response})),
+                    ..Default::default()
+                };
+                server.tasks.complete(task_id, tool_result.clone());
+                let _ = server.host.state.lock().map(|state| {
+                    state.complete_operation(task_id, &tool_result_json(&tool_result))
+                });
+                if let Some(completed) = server.tasks.get(task_id) {
+                    persist_task(&server, &completed);
+                }
             }
-        });
+        },
+    );
+    let _ = server
+        .host
+        .state
+        .lock()
+        .map(|state| state.create_operation(&rec.task_id, "request_task_input", desc));
+    persist_task(server, &rec);
     json!({
         "content": [{"type": "text", "text": desc}],
         "structuredContent": rec.create_result(),
     })
+}
+
+/// `json.Marshal` of a Go `tasks.ToolResult`: `content`, `structuredContent`
+/// and `isError` are all `omitempty`, and this is the exact value Go's
+/// `_ = s.state.Complete(taskID, tr)` persists as `result_json`.
+fn tool_result_json(result: &crate::tasks::ToolResult) -> J {
+    let mut out = Map::new();
+    if let Some(content) = result.content.as_ref().filter(|c| !c.is_empty()) {
+        out.insert("content".into(), J::Array(content.clone()));
+    }
+    if let Some(structured) = result
+        .structured_content
+        .as_ref()
+        .filter(|v| **v != J::Null)
+    {
+        out.insert("structuredContent".into(), structured.clone());
+    }
+    if result.is_error {
+        out.insert("isError".into(), J::Bool(true));
+    }
+    J::Object(out)
+}
+
+/// `persistTask`: best-effort, exactly as Go's own
+/// `_ = s.state.SaveTaskSnapshot(...)`. A durability failure here must never
+/// fail the in-memory task that `server.tasks` already tracks; only a crash
+/// before this write loses the snapshot, a risk Go's design accepts too.
+pub(crate) fn persist_task(server: &Server, snapshot: &crate::tasks::Snapshot) {
+    let mut doc = snapshot.get_result();
+    if let J::Object(map) = &mut doc {
+        map.insert("toolName".into(), J::from(snapshot.tool_name.clone()));
+        map.insert("toolArgs".into(), snapshot.tool_args.clone());
+        if !snapshot.description.is_empty() {
+            map.insert("description".into(), J::from(snapshot.description.clone()));
+        }
+    }
+    if let Ok(state) = server.host.state.lock() {
+        // D12: refused task-aware calls have only an in-memory task handle.
+        // Cancellation and terminal snapshot writes must not materialize an
+        // operation that admission never accepted.
+        if !matches!(state.get_operation(&snapshot.task_id), Ok(Some(_))) {
+            return;
+        }
+        let _ = state.save_registry_task_snapshot(
+            &snapshot.task_id,
+            &snapshot.tool_name,
+            &snapshot.description,
+            &doc,
+        );
+    }
 }
 
 /// `createAsyncTask`: the call returns a task handle at once and the
@@ -214,10 +280,11 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
     // Cancellation is cooperative, as in Go: the work runs to completion
     // even when the task is cancelled first, and the registry discards the
     // late result (a cancelled task stays cancelled).
-    let (rec, _cancelled) = server.tasks.create();
+    let tool_args = redact_task_args(server, name, &args);
+    let (rec, _cancelled) = server.tasks.create(name, &desc, tool_args);
     let worker = Arc::clone(server);
     let (task_id, name) = (rec.task_id.clone(), name.to_string());
-    std::thread::spawn(move || {
+    let handle = std::thread::spawn(move || {
         let result = dispatch(&worker, &name, &args, Some((&name, &task_id)));
         let content: Vec<J> = result
             .get("content")
@@ -228,23 +295,55 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
             .map(|c| json!({"type": "text", "text": c.get("text").cloned().unwrap_or(J::Null)}))
             .collect();
         let structured = redact_task_result(&worker, &name, result.get("structuredContent"));
-        worker.tasks.complete(
-            &task_id,
-            crate::tasks::ToolResult {
-                content: (!content.is_empty()).then_some(content),
-                structured_content: structured,
-                is_error: result.get("isError") == Some(&J::Bool(true)),
-            },
-        );
+        let tool_result = crate::tasks::ToolResult {
+            content: (!content.is_empty()).then_some(content),
+            structured_content: structured,
+            is_error: result.get("isError") == Some(&J::Bool(true)),
+        };
+        worker.tasks.complete(&task_id, tool_result.clone());
+        let _ = worker
+            .host
+            .state
+            .lock()
+            .map(|state| state.complete_operation(&task_id, &tool_result_json(&tool_result)));
+        if let Some(completed) = worker.tasks.get(&task_id) {
+            persist_task(&worker, &completed);
+        }
     });
+    if let Ok(mut workers) = server.task_workers.lock() {
+        workers.retain(|worker| !worker.is_finished());
+        workers.push(handle);
+    }
     json!({
         "content": [{"type": "text", "text": desc}],
         "structuredContent": rec.create_result(),
     })
 }
 
-/// `redactTaskResult`: the stored result is projected through the
-/// capability's output schema so `writeOnly` values never reach task state.
+/// `redactTaskArgs`: a persisted task snapshot's `toolArgs` is an echo of
+/// the caller's own input, so D13's stricter storage projection costs
+/// nothing here -- the caller already holds whatever they sent -- while
+/// still ensuring a secret argument never carries into `state.db`.
+fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
+    let descriptor = server
+        .catalog
+        .tools
+        .iter()
+        .chain(catalog::internal().tools.iter())
+        .find(|d| d.name == name);
+    let Some(descriptor) = descriptor else {
+        return json!({"redacted": true});
+    };
+    let schema = descriptor.input_schema.as_object();
+    redact_for_storage(&J::Object(args.clone()), schema)
+}
+
+/// `redactTaskResult`: this becomes the task's own completed result --
+/// delivered through `tasks/get`, live and after a restart -- so it uses
+/// the delivery projection, not the stricter storage one: a `writeOnly`
+/// value still never reaches task state, but open/undeclared content
+/// reaches the caller exactly as Go returns it, since the caller already
+/// owns it and this is its one delivery channel.
 fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<J> {
     let descriptor = server
         .catalog
@@ -256,45 +355,7 @@ fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<
         return Some(json!({"redacted": true}));
     };
     let schema = descriptor.output_schema.as_ref().and_then(J::as_object);
-    value.map(|v| redact_by_schema(v, schema))
-}
-
-/// `redactEvidenceBySchema`.
-fn redact_by_schema(value: &J, schema: Option<&Map<String, J>>) -> J {
-    if schema.and_then(|s| s.get("writeOnly")) == Some(&J::Bool(true)) {
-        return J::from("[redacted]");
-    }
-    match value {
-        J::Object(object) => {
-            let properties = schema
-                .and_then(|s| s.get("properties"))
-                .and_then(J::as_object);
-            let additional = schema
-                .and_then(|s| s.get("additionalProperties"))
-                .and_then(J::as_object);
-            let out = object
-                .iter()
-                .map(|(key, child)| {
-                    let child_schema = properties
-                        .and_then(|p| p.get(key))
-                        .and_then(J::as_object)
-                        .or(additional);
-                    (key.clone(), redact_by_schema(child, child_schema))
-                })
-                .collect();
-            J::Object(out)
-        }
-        J::Array(items) => {
-            let item_schema = schema.and_then(|s| s.get("items")).and_then(J::as_object);
-            J::Array(
-                items
-                    .iter()
-                    .map(|i| redact_by_schema(i, item_schema))
-                    .collect(),
-            )
-        }
-        other => other.clone(),
-    }
+    value.map(|v| redact_for_delivery(v, schema))
 }
 
 /// `isLifecycleTool`: transport-owned operations routed before tasks.
@@ -347,9 +408,119 @@ fn dispatch(
         Ok(r) => r,
         Err(refusal) => return refusal.render(),
     };
+    if let Some((_, task_id)) = identity {
+        if let Some(snapshot) = server.tasks.get(task_id) {
+            let _ = server
+                .host
+                .state
+                .lock()
+                .map(|state| state.create_operation(task_id, name, &snapshot.description));
+            persist_task(server, &snapshot);
+        }
+    }
     let result = invoke(server, name, args, &binding);
+    // Schema-invalid arguments are an owner-approved reject-without-audit
+    // divergence (D11). Admission refusals returned above never get here.
+    let code = result
+        .pointer("/structuredContent/code")
+        .and_then(J::as_str);
+    if code != Some("invalid_arguments") {
+        record_invocation(server, name, args, &binding, &reservation, &result);
+    }
     admission::release(server, &reservation);
     result
+}
+
+/// Go's recordCapabilityInvocation for the built-in compatibility adapters.
+/// The raw MCP text is deliberately absent from durable evidence.
+fn record_invocation(
+    server: &Server,
+    name: &str,
+    args: &Map<String, J>,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+    result: &J,
+) {
+    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
+        return;
+    };
+    let invalid_result = result
+        .pointer("/structuredContent/code")
+        .and_then(J::as_str)
+        == Some("invalid_result");
+    let is_error = result.get("isError") == Some(&J::Bool(true));
+    let status = if invalid_result {
+        "invalid_result"
+    } else if is_error {
+        "error"
+    } else {
+        "success"
+    };
+    let structured = redact_for_storage(
+        result.get("structuredContent").unwrap_or(&J::Null),
+        descriptor.output_schema.as_ref().and_then(J::as_object),
+    );
+    let mut envelope = json!({"isError": is_error, "structured": structured, "content": []});
+    let mut observation = json!({
+        "schemaVersion": "opute-capability-observation.v1",
+        "operationId": name, "capabilityVersion": 1,
+        "catalogRevision": server.catalog.revision, "status": status,
+    });
+    if invalid_result {
+        envelope["error"] = json!({"owner": "capability", "code": "invalid_result",
+                                   "message": "capability invocation failed"});
+    } else {
+        if is_error {
+            observation["retryability"] = J::from("capability");
+        }
+        if result
+            .get("structuredContent")
+            .is_some_and(|v| !v.is_null())
+        {
+            observation["structured"] = structured;
+        }
+    }
+    let mut execution_binding = json!({
+        "schemaVersion": "opute-capability-execution-binding.v1",
+        "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
+        "authorization": "admitted", "catalogRevision": server.catalog.revision,
+        "reservationId": reservation.id,
+        "resourcePolicyRevision": crate::resource::POLICY_REVISION,
+    });
+    if !binding.resources.is_empty() {
+        let resources: Vec<J> = binding
+            .resources
+            .iter()
+            .filter_map(|bound| {
+                let uri = crate::resource::Uri::parse(&bound.uri).ok()?;
+                Some(json!({"argument": bound.argument, "uri": bound.uri,
+                        "resourceType": uri.resource_type, "tenantId": uri.tenant_id,
+                        "resourceId": uri.resource_id, "coordinates": bound.coordinates}))
+            })
+            .collect();
+        execution_binding["resources"] = J::from(resources);
+    }
+    let record = crate::store::CapabilityInvocationRecord {
+        invocation_id: crate::tasks::new_task_id(),
+        operation_id: name.into(),
+        capability_version: 1,
+        catalog_revision: server.catalog.revision.clone(),
+        authorization: "admitted".into(),
+        arguments_json: redact_for_storage(
+            &J::Object(args.clone()),
+            descriptor.input_schema.as_object(),
+        )
+        .to_string(),
+        binding_json: execution_binding.to_string(),
+        result_json: envelope.to_string(),
+        observation_json: observation.to_string(),
+        terminal_status: if invalid_result { "error" } else { status }.into(),
+        ..Default::default()
+    };
+    // Go treats a failed audit write as best-effort; execution has completed.
+    if let Ok(state) = server.host.state.lock() {
+        let _ = state.record_capability_invocation(&record);
+    }
 }
 
 type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
@@ -467,6 +638,10 @@ fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding)
 }
 
 use crate::gojson::Shape;
+
+#[cfg(test)]
+#[path = "evidence_fixture.rs"]
+mod evidence_fixture;
 
 /// `host.HTTPObservation`.
 const HTTP_OBSERVATION: Shape = Shape::Struct(&[
@@ -813,8 +988,152 @@ mod tests {
         .unwrap();
         let value = json!({"token": "t", "items": [{"secret": "s", "keep": 1}], "other": 2});
         assert_eq!(
-            redact_by_schema(&value, Some(&schema)),
-            json!({"token": "[redacted]", "items": [{"secret": "[redacted]", "keep": 1}], "other": 2})
+            redact_for_storage(&value, Some(&schema)),
+            // D13: "keep" has no `properties` entry and no typed
+            // `additionalProperties` schema on the inner item, so it is
+            // redacted too -- only "other" is covered, via the top-level
+            // object `additionalProperties` schema.
+            json!({"token": "[redacted]", "items": [{"secret": "[redacted]", "keep": "[redacted]"}], "other": 2})
+        );
+    }
+
+    /// D13 (`redact-unmarked-projections`): the storage projection. A value
+    /// reached with no `properties` entry, no typed `additionalProperties`
+    /// schema -- even a bare `additionalProperties: true` -- or with no
+    /// enclosing schema at all, must be replaced rather than copied, so no
+    /// unmarked content ever reaches a durable sink verbatim.
+    #[test]
+    fn redaction_for_storage_fails_closed_on_unmarked_content() {
+        // No schema at all for this call.
+        assert_eq!(
+            redact_for_storage(&json!({"a": 1}), None),
+            json!("[redacted]")
+        );
+
+        // additionalProperties: true admits the key but gives it no type.
+        let open_schema: Map<String, J> =
+            serde_json::from_value(json!({"additionalProperties": true})).unwrap();
+        assert_eq!(
+            redact_for_storage(&json!({"a": 1}), Some(&open_schema)),
+            json!({"a": "[redacted]"})
+        );
+
+        // A typed additionalProperties schema still projects normally.
+        let typed_schema: Map<String, J> =
+            serde_json::from_value(json!({"additionalProperties": {"writeOnly": true}})).unwrap();
+        assert_eq!(
+            redact_for_storage(&json!({"a": 1}), Some(&typed_schema)),
+            json!({"a": "[redacted]"})
+        );
+
+        // An array with no `items` schema redacts every element.
+        let no_items_schema: Map<String, J> = serde_json::from_value(json!({})).unwrap();
+        assert_eq!(
+            redact_for_storage(&json!([1, {"a": 1}]), Some(&no_items_schema)),
+            json!(["[redacted]", "[redacted]"])
+        );
+
+        // properties-covered, non-write-only content is unaffected.
+        let covered_schema: Map<String, J> =
+            serde_json::from_value(json!({"properties": {"a": {}}})).unwrap();
+        assert_eq!(
+            redact_for_storage(&json!({"a": 1}), Some(&covered_schema)),
+            json!({"a": 1})
+        );
+    }
+
+    /// The delivery projection is Go's original, unchanged behavior: the
+    /// caller already owns this data, so only `writeOnly` is ever hidden.
+    /// An open-schema diagnostic field (no `properties` entry, a bare
+    /// `additionalProperties: true`, or no enclosing schema at all) passes
+    /// through exactly as Go returns it -- the opposite of the storage
+    /// projection above, proven here on the identical inputs.
+    #[test]
+    fn redaction_for_delivery_passes_through_unmarked_content() {
+        // No schema at all for this call: nothing to hide.
+        assert_eq!(redact_for_delivery(&json!({"a": 1}), None), json!({"a": 1}));
+
+        // additionalProperties: true: the open diagnostic field survives.
+        let open_schema: Map<String, J> =
+            serde_json::from_value(json!({"additionalProperties": true})).unwrap();
+        assert_eq!(
+            redact_for_delivery(&json!({"a": 1}), Some(&open_schema)),
+            json!({"a": 1})
+        );
+
+        // writeOnly is still hidden even though everything else passes.
+        let schema: Map<String, J> = serde_json::from_value(json!({
+            "additionalProperties": true,
+            "properties": {"token": {"writeOnly": true}},
+        }))
+        .unwrap();
+        assert_eq!(
+            redact_for_delivery(&json!({"token": "t", "diagnostic": "open"}), Some(&schema)),
+            json!({"token": "[redacted]", "diagnostic": "open"})
+        );
+    }
+
+    /// X3 for the one new sink M5 adds: a persisted task snapshot's
+    /// `toolArgs`. Walks the real pinned catalog (not a synthetic schema),
+    /// finds every task-aware tool with a top-level `writeOnly` input
+    /// property, and proves a unique canary placed in that property never
+    /// survives `redact_for_storage` -- the exact function `redact_task_args`
+    /// calls before a snapshot reaches `state.db`. This does not cover the
+    /// other X3 sinks (WAL/SHM bytes, logs, stdout/stderr, HTTP responses):
+    /// only the in-process redaction step for task persistence.
+    #[test]
+    fn every_task_aware_tools_write_only_fields_are_redacted() {
+        let mut checked = 0;
+        for standalone in [false, true] {
+            let snapshot = catalog::for_mode(standalone);
+            for descriptor in &snapshot.tools {
+                if !catalog::is_task_aware(&descriptor.name) {
+                    continue;
+                }
+                let Some(props) = descriptor
+                    .input_schema
+                    .get("properties")
+                    .and_then(J::as_object)
+                else {
+                    continue;
+                };
+                let write_only_fields: Vec<&String> = props
+                    .iter()
+                    .filter(|(_, v)| v.get("writeOnly") == Some(&J::Bool(true)))
+                    .map(|(k, _)| k)
+                    .collect();
+                if write_only_fields.is_empty() {
+                    continue;
+                }
+                let canaries: Vec<(String, String)> = write_only_fields
+                    .iter()
+                    .map(|f| ((*f).clone(), format!("CANARY-{}-{f}", descriptor.name)))
+                    .collect();
+                let mut args = Map::new();
+                for (field, canary) in &canaries {
+                    args.insert(field.clone(), J::from(canary.clone()));
+                }
+                let schema = descriptor.input_schema.as_object();
+                let redacted = redact_for_storage(&J::Object(args), schema);
+                let serialized = redacted.to_string();
+                for (field, canary) in &canaries {
+                    assert!(
+                        !serialized.contains(canary.as_str()),
+                        "{}'s write-only field {field:?} leaked into redacted task \
+                         args: {serialized}",
+                        descriptor.name,
+                    );
+                }
+                checked += 1;
+            }
+        }
+        // If the catalog ever stops pairing a task-aware tool with a
+        // write-only field, this test would pass vacuously; fail loudly
+        // instead so the gap in X3 coverage is visible rather than silent.
+        assert!(
+            checked > 0,
+            "no task-aware tool with a write-only input field was found in \
+             either catalog mode -- update or remove this test"
         );
     }
 }

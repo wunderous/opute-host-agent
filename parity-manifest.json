@@ -51,6 +51,14 @@
    "status": "approved",
    "summary": "Rust refuses task-aware calls at binding or admission before any durable operation record; Go persists the operation first (server.go:1642-1652)"
   },
+  "D13": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/redact-unmarked-projections",
+   "date": "2026-10-04",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D13)",
+   "status": "approved",
+   "summary": "Rust's redact_for_storage fails closed on any unmarked/open-schema durable content, replacing it with a redaction marker; Go's pinned reference persists it verbatim. Delivery to a caller (tasks/get, live or restored) is unaffected by this divergence."
+  },
   "D8": {
    "approvedBy": "owner",
    "change": "openspec/changes/secure-oauth-issuance",
@@ -85,6 +93,7 @@
     "refuse-before-operation-record"
    ],
    "requireInventory": true,
+   "requireM5": true,
    "requireNoGaps": true,
    "requireOracles": true,
    "requirePass": [
@@ -196,6 +205,43 @@
     "refuse-before-operation-record"
    ],
    "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "read-only-tools",
+      "tasks"
+     ]
+    }
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
+  },
+  "m5": {
+   "description": "M5 exit: M1-M4 regression gates plus all six provenance-bound durable-state and redaction validations; missing evidence fails closed.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
    "requireOracles": true,
    "requirePass": [
     "go-vs-go",
@@ -1084,6 +1130,26 @@
    "surface": "auth"
   }
  ],
+ "m5Evidence": {
+  "crash": {
+   "summary": "evidence/m5/crash/summary.json"
+  },
+  "cross-read": {
+   "summary": "evidence/m5/cross-read/summary.json"
+  },
+  "migration": {
+   "summary": "evidence/m5/migration/summary.json"
+  },
+  "secrets": {
+   "summary": "evidence/m5/secrets/summary.json"
+  },
+  "shape": {
+   "summary": "evidence/m5/shape/summary.json"
+  },
+  "unknown-projection": {
+   "summary": "evidence/m5/unknown-projection/summary.json"
+  }
+ },
  "oracles": {
   "results": "evidence/current/go-oracles.json",
   "suites": "tools/parity/oracles.json"
@@ -1093,7 +1159,7 @@
   "results": "evidence/current/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "668569815e87d05c6b5a8bc8fcad3acdb12a3b8f7858a5e9a7134fa1bfd398be",
+  "binarySha256": "6190965ceb251bf4da854df84a1359898daca7696229f865326d3b31121363fa",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

@@ -39,6 +39,8 @@ MASK_TYPES: dict[str, Callable[[Any], bool]] = {
     "nonempty-string": lambda v: isinstance(v, str) and v != "",
     "rfc3339": lambda v: isinstance(v, str) and bool(_RFC3339.match(v)),
     "uuid": lambda v: isinstance(v, str) and bool(_UUID.match(v)),
+    "host-reservation-id": lambda v: isinstance(v, str) and bool(
+        re.fullmatch(r"host-reservation-[1-9][0-9]*-[1-9][0-9]*", v)),
     "hex": lambda v: isinstance(v, str) and bool(_HEX.match(v)),
     "int": _is_int,
     "non-negative-int": lambda v: _is_int(v) and v >= 0,
@@ -71,9 +73,12 @@ def substitute(value: Any, variables: dict[str, str]) -> Any:
                     continue
                 if lit.isdigit():
                     # A numeric literal (a port) is replaced only where it is
-                    # not part of a longer number, such as a byte count that
-                    # happens to contain the port's digits.
-                    v = re.sub(r"(?<![0-9])" + lit + r"(?![0-9])", "${" + name + "}", v)
+                    # not part of a longer token: a byte count that happens
+                    # to contain the port's digits, or -- since the port is
+                    # itself a decimal string -- a hex hash whose digit run
+                    # coincidentally matches it, flanked by a-f letters that
+                    # a digit-only boundary would not catch.
+                    v = re.sub(r"(?<![0-9a-zA-Z])" + lit + r"(?![0-9a-zA-Z])", "${" + name + "}", v)
                 else:
                     v = v.replace(lit, "${" + name + "}")
             return v
@@ -135,6 +140,17 @@ def parse_embedded(doc: Any, paths: Iterable[Path]) -> Any:
     return doc
 
 
+#: D13's storage-projection redaction marker (`crates/host-agent/src/
+#: evidence.rs`'s `redact_for_storage`). A live-value mask accepts this
+#: marker as automatically satisfying its declared type: a field that is
+#: both masked (because its real value is volatile) and redacted (because
+#: its schema does not cover it) would otherwise record a permanent mask
+#: violation before any divergence ever runs -- masks apply per side during
+#: `normalize()`, strictly before `apply_divergences` sees the combined
+#: pair, so a later divergence declaration cannot retroactively clear it.
+REDACTED_MARKER = "[redacted]"
+
+
 def apply_masks(doc: Any, masks: Iterable[dict]) -> tuple[Any, list[dict]]:
     """Apply typed masks. Returns the masked doc and a list of violations."""
     violations: list[dict] = []
@@ -157,7 +173,7 @@ def apply_masks(doc: Any, masks: Iterable[dict]) -> tuple[Any, list[dict]]:
             check = MASK_TYPES[kind]
 
         def fn(value: Any, _kind=kind, _check=check, _path=path) -> Any:
-            if _check(value):
+            if _check(value) or value == REDACTED_MARKER:
                 return {"$masked": _kind}
             violations.append({"path": _path, "type": _kind, "value": value})
             return {"$maskViolation": _kind, "value": value}
@@ -272,6 +288,72 @@ def _drop_matches(item: Any, rule: dict) -> bool:
     raise DivergenceError(f"drop rule needs prefix or in: {rule}")
 
 
+def _matches_redacted(value: Any, literal: Any) -> bool:
+    """A redacted leaf, bare or wrapped. A field that is both scenario-masked
+    (a live, non-deterministic value) and redacted never reaches `diff` as
+    the bare literal: masks run before divergences, so a value that fails
+    its declared type check -- because it is now `literal`, not the typed
+    value the mask expects -- is wrapped by `apply_masks` as
+    `{"$maskViolation": kind, "value": literal}` instead."""
+    if value == literal:
+        return True
+    return (
+        isinstance(value, dict)
+        and set(value) == {"$maskViolation", "value"}
+        and value["value"] == literal
+    )
+
+
+def _drop_value_deep_paired(left: Any, right: Any, literal: Any) -> tuple[Any, Any, list, list]:
+    """Recursively drop, from both sides together, every dict entry or list
+    element whose *right*-side value is a redacted leaf (see
+    `_matches_redacted`), at any depth, independent of key name or
+    position. The matching left-side entry is dropped too, so both sides
+    converge to the same residual shape; unlike a per-side drop (which only
+    removes identically-named content), this lets one side's declared
+    behavior change (always producing `literal`) hide the other side's
+    differing, non-redacted content at that spot.
+    """
+    removed_left: list = []
+    removed_right: list = []
+
+    def walk(a: Any, b: Any) -> tuple[Any, Any]:
+        if isinstance(b, dict):
+            left_dict = a if isinstance(a, dict) else {}
+            kept_a, kept_b = {}, {}
+            for key in dict.fromkeys([*left_dict, *b]):
+                in_a, in_b = key in left_dict, key in b
+                av, bv = left_dict.get(key), b.get(key)
+                if in_b and _matches_redacted(bv, literal):
+                    removed_left.append({key: av} if in_a else None)
+                    removed_right.append({key: bv})
+                    continue
+                na, nb = walk(av, bv)
+                if in_a:
+                    kept_a[key] = na
+                if in_b:
+                    kept_b[key] = nb
+            return kept_a, kept_b
+        if isinstance(b, list):
+            left_list = a if isinstance(a, list) else []
+            out_a, out_b = [], []
+            for i, bv in enumerate(b):
+                av = left_list[i] if i < len(left_list) else None
+                if _matches_redacted(bv, literal):
+                    removed_left.append(av if i < len(left_list) else None)
+                    removed_right.append(bv)
+                    continue
+                na, nb = walk(av, bv)
+                out_b.append(nb)
+                if i < len(left_list):
+                    out_a.append(na)
+            return out_a, out_b
+        return a, b
+
+    new_left, new_right = walk(left, right)
+    return new_left, new_right, removed_left, removed_right
+
+
 def _split(value: Any, rule: dict) -> tuple[Any, Any]:
     """Return (kept, removed) for one addressed value."""
     if "drop" in rule:
@@ -302,8 +384,8 @@ def load_divergences(path: Any) -> dict[str, dict]:
         for key in ("id", "decision", "reason", "path"):
             if not rule.get(key):
                 raise DivergenceError(f"divergence {rule.get('id')!r} has no {key}")
-        if sum(k in rule for k in ("drop", "dropKeys", "dropLines")) != 1:
-            raise DivergenceError(f"divergence {rule['id']} needs exactly one of drop, dropKeys, dropLines")
+        if sum(k in rule for k in ("drop", "dropKeys", "dropLines", "dropValueDeep")) != 1:
+            raise DivergenceError(f"divergence {rule['id']} needs exactly one of drop, dropKeys, dropLines, dropValueDeep")
         if rule["id"] in rules:
             raise DivergenceError(f"duplicate divergence {rule['id']}")
         rules[rule["id"]] = rule
@@ -322,6 +404,20 @@ def apply_divergences(left: Any, right: Any, ids: Iterable[str],
         rule = registry.get(did)
         if rule is None:
             raise DivergenceError(f"undefined divergence {did!r}")
+        if "dropValueDeep" in rule:
+            captured_left: list = []
+            captured_right: list = []
+            _apply_at(left, list(rule["path"]), lambda v: captured_left.append(v) or v)
+            _apply_at(right, list(rule["path"]), lambda v: captured_right.append(v) or v)
+            sub_left = captured_left[0] if captured_left else None
+            sub_right = captured_right[0] if captured_right else None
+            new_left, new_right, removed_left, removed_right = _drop_value_deep_paired(
+                sub_left, sub_right, rule["dropValueDeep"])
+            left, _ = _apply_at(left, list(rule["path"]), lambda _v, _n=new_left: _n)
+            right, _ = _apply_at(right, list(rule["path"]), lambda _v, _n=new_right: _n)
+            records.append({"id": did, "decision": rule["decision"],
+                            "stale": _set_key(removed_left) == _set_key(removed_right)})
+            continue
         removed: dict[str, list] = {"a": [], "b": []}
 
         def take(side: str) -> Callable[[Any], Any]:

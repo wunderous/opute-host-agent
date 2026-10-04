@@ -1,0 +1,9 @@
+{
+  "description": "D13 (evidence-redaction) contract fixture: a single VM whose status field carries a canary, mirroring parity.unknown_projection's result-unmarked case. get_vm_info's state object declares additionalProperties: true with no further typing, so this value must be redacted before it reaches a durable sink.",
+  "commands": {
+    "incus": [
+      {"argv": ["list", "--format", "json"], "stdout": "[{\"name\": \"probe\", \"type\": \"virtual-machine\", \"status\": \"M5_UNMARKED_FIELD_CANARY_7e35d8bc\", \"config\": {\"user.opute.host_agent_instance\": \"standalone\"}}]"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

@@ -38,7 +38,7 @@ class Tree:
             "sourceLockSha256": _sha(lock_bytes),
             "goReference": {"binarySha256": GO_SHA},
             "decisions": {"D8": {"status": "approved"}, "D11": {"status": "approved"},
-                          "D12": {"status": "approved"}},
+                          "D12": {"status": "approved"}, "D13": {"status": "approved"}},
             "rustCandidate": {"binarySha256": RUST_SHA},
             "evidence": {
                 "go-vs-go": {"summary": "evidence/gg/summary.json", "right": "go", "minRepeat": 2},
@@ -241,6 +241,14 @@ class VerifyTest(unittest.TestCase):
     def test_wrong_go_binary_is_stale(self):
         self.tree.manifest["goReference"]["binarySha256"] = "c" * 64
         self.tree.save()
+        self.assertGate(False)
+
+    def test_mid_run_change_cannot_be_blessed_by_final_hash(self):
+        self.assertGate(True)
+        path = self.tree.root / "evidence/gg/summary.json"
+        doc = json.loads(path.read_text())
+        doc["provenance"]["changedDuringRun"] = True
+        path.write_text(json.dumps(doc))
         self.assertGate(False)
 
     def test_changed_source_lock_is_stale(self):

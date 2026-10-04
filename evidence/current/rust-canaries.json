@@ -1,16 +1,18 @@
 {
  "baselineFailures": {
+  "evidence-redaction": [],
   "oauth-issuance": [],
   "refuse-before-operation-record": [],
   "reject-without-audit-writes": [],
   "standalone-read-only-gate": []
  },
- "canaryFileSha256": "dbd772107d71fb9990173f056d2691adbdadd6a08e7c4937abf1766b67d895f8",
+ "canaryFileSha256": "8be3b145ea9bd0fcf873a8a69e2c4a17f32aea4941525e30d529b8851af5b269",
  "contractSha256": {
-  "oauth-issuance": "9d42b624b214d4d90dbb6959f7edf9071cab15f3abe3e78bd361ad91db13a8cd",
-  "refuse-before-operation-record": "a8b2cf56218e4cd98bdc2b13aaaafcb64a943a303e957bac6033b4f68d188e5a",
-  "reject-without-audit-writes": "42335fe84a65d23373a1b875f9e038bb7b7d0a4227a7dcaf73898f4e207c6b5f",
-  "standalone-read-only-gate": "6307bb9b3fbc881e260caf729fc2190e54fd9057cf5474fb85d2e6283a6a85d0"
+  "evidence-redaction": "70e5ffd9cc410049a42ba6282fb84ba9513d3a5fa42aa546b97f19d3600ea24c",
+  "oauth-issuance": "9355274317508aa6db9f04fef3f0420b5e4be86a8ebb04d1dd172798e91fecda",
+  "refuse-before-operation-record": "4dcef1bcea3f795f0416e2034f46db9afa587c9f6efe63819956797ae57f4f0e",
+  "reject-without-audit-writes": "c5e670ea4133b07d820a7dd5979cc47ea37ae6640819803b69bfe6b2672b09e4",
+  "standalone-read-only-gate": "1706942f0c9ea6889dda666c1060b466c51bb0f591bfbdfbff3998ab132ae310"
  },
  "results": [
   {
@@ -260,8 +262,20 @@
    ],
    "id": "K23-coordinator-refusal-operation-row",
    "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "evidence-redaction",
+   "failedScenarios": [
+    "arg.unmarked",
+    "result.unmarked",
+    "task.unmarked"
+   ],
+   "id": "K24-unmarked-passthrough",
+   "patchApplied": true
   }
  ],
- "rustBinarySha256": "668569815e87d05c6b5a8bc8fcad3acdb12a3b8f7858a5e9a7134fa1bfd398be",
+ "rustBinarySha256": "6190965ceb251bf4da854df84a1359898daca7696229f865326d3b31121363fa",
  "schemaVersion": 1
 }

@@ -69,6 +69,49 @@ def main(argv: list[str] | None = None) -> int:
     cs.add_argument("--go-src", required=True, type=Path)
     cs.add_argument("--check", action="store_true", help="fail if the committed file is stale")
 
+    cr = sub.add_parser("crash", help="legacy mid-shim diagnostic; does not establish M5 crash acceptance")
+    cr.add_argument("--go", required=True, type=Path)
+    cr.add_argument("--rust", required=True, type=Path)
+    cr.add_argument("--seeds", type=int, default=5)
+    cr.add_argument("--mode", default="mid-shim")
+    cr.add_argument("--out", required=True, type=Path)
+
+    sc = sub.add_parser("storage-crash", help="M5: SIGKILL at actual SQLite operation, task and plan write checkpoints")
+    sc.add_argument("--go", required=True, type=Path)
+    sc.add_argument("--rust", required=True, type=Path)
+    sc.add_argument("--seeds", type=int, default=200)
+    sc.add_argument("--workers", type=int, default=4)
+    sc.add_argument("--out", required=True, type=Path)
+
+    ss = sub.add_parser("secret-sweep", help="M5: catalog-derived secrets across durable storage and supported MCP task responses")
+    ss.add_argument("--go", required=True, type=Path)
+    ss.add_argument("--rust", required=True, type=Path)
+    ss.add_argument("--out", required=True, type=Path)
+
+    sp = sub.add_parser("shape", help="M5: compare full database schemas and rows across the wire matrix")
+    sp.add_argument("--go", required=True, type=Path)
+    sp.add_argument("--rust", required=True, type=Path)
+    sp.add_argument("--out", required=True, type=Path)
+    sp.add_argument("--repeat", type=int, default=5)
+    sp.add_argument("--workers", type=int, default=6)
+    sp.add_argument("scenarios", nargs="*")
+
+    mg = sub.add_parser("migration", help="M5: released and pre-column-addition state.db upgrades")
+    mg.add_argument("--go", required=True, type=Path)
+    mg.add_argument("--rust", required=True, type=Path)
+    mg.add_argument("--repeats", type=int, default=3)
+    mg.add_argument("--out", required=True, type=Path)
+
+    xr = sub.add_parser("cross-read", help="M5: one side writes, the other starts cold on a copy and reads it back")
+    xr.add_argument("--go", required=True, type=Path)
+    xr.add_argument("--rust", required=True, type=Path)
+    xr.add_argument("--out", required=True, type=Path)
+
+    up = sub.add_parser("unknown-projection", help="M5: unmarked/open-schema fields must fail closed (D13)")
+    up.add_argument("--go", required=True, type=Path)
+    up.add_argument("--rust", required=True, type=Path)
+    up.add_argument("--out", required=True, type=Path)
+
     sub.add_parser("corpus", help="regenerate scenarios/wire.json from parity/corpus.py")
     man = sub.add_parser("manifest", help="sync derived manifest fields from scenarios and the source lock")
     man.add_argument("--go", type=Path, help="Go reference binary whose hash to record")
@@ -123,6 +166,53 @@ def main(argv: list[str] | None = None) -> int:
         manifest = json.loads(args.manifest.read_text()) if args.manifest.exists() else {}
         waived = {c for gate in manifest.get("gates", {}).values() for c in gate.get("waivedCanaries", {})}
         return 0 if all(r.get("caught") or r["id"] in waived for r in doc["results"]) else 1
+    if args.command == "crash":
+        from . import crash
+        summary = crash.run(agent.Impl("go", args.go.resolve()),
+                             agent.Impl("rust", args.rust.resolve()),
+                             args.seeds, args.out, mode=args.mode)
+        print(f"crash injection: {summary['passed']}/{summary['seeds']} seeds recovered identically")
+        return 0 if summary["failed"] == 0 else 1
+    if args.command == "migration":
+        from . import migration
+        summary = migration.run(agent.Impl("go", args.go.resolve()),
+                                  agent.Impl("rust", args.rust.resolve()),
+                                  args.out, repeats=args.repeats)
+        print(f"older-state migration: {summary['passed']}/{summary['total']} runs identical")
+        return 0 if summary["failed"] == 0 else 1
+    if args.command == "storage-crash":
+        from . import storage_crash
+        summary = storage_crash.run(agent.Impl("go", args.go.resolve()),
+                                    agent.Impl("rust", args.rust.resolve()), args.seeds,
+                                    args.out, workers=args.workers)
+        print(f"storage crash recovery: {summary['passed']}/{summary['seeds']} seeds identical")
+        return 0 if summary["failed"] == 0 and not summary["provenance"]["changedDuringRun"] else 1
+    if args.command == "secret-sweep":
+        from . import secret_sweep
+        summary = secret_sweep.run(agent.Impl("go", args.go.resolve()), agent.Impl("rust", args.rust.resolve()), args.out)
+        print(f"secret sweep: {summary['fieldCount']} marked fields; {len(summary['failures'])} failures")
+        return 0 if not summary["failures"] and not summary["provenance"]["changedDuringRun"] else 1
+    if args.command == "shape":
+        from . import shape
+        summary = shape.run(agent.Impl("go", args.go.resolve()),
+                            agent.Impl("rust", args.rust.resolve()), args.out,
+                            repeats=args.repeat, workers=args.workers, ids=args.scenarios or None)
+        print(f"database shape: {summary['passed']}/{summary['total']} runs identical")
+        return 0 if summary["failed"] == 0 and not summary["provenance"]["changedDuringRun"] else 1
+    if args.command == "cross-read":
+        from . import cross_read
+        summary = cross_read.run(agent.Impl("go", args.go.resolve()),
+                                   agent.Impl("rust", args.rust.resolve()),
+                                   args.out)
+        print(f"cross-read: {summary['passed']}/{len(summary['directions'])} directions identical "
+              f"(failed: {summary['failedDirections']})")
+        return 0 if summary["failed"] == 0 else 1
+    if args.command == "unknown-projection":
+        from . import unknown_projection
+        summary = unknown_projection.run(agent.Impl("go", args.go.resolve()),
+                                          agent.Impl("rust", args.rust.resolve()), args.out)
+        print(f"unknown projection: {len(summary['failures'])} failures across {len(summary['cases'])} cases")
+        return 0 if not summary["failures"] and not summary["provenance"]["changedDuringRun"] else 1
     if args.command == "capture":
         from . import capture
         index = capture.write(capture.capture(args.go.resolve(), args.go_src.resolve()))

@@ -70,6 +70,22 @@
   }
  },
  {
+  "id": "D8.authz-rows",
+  "decision": "D8",
+  "reason": "Rust owns the built-in client rows (adds host-agent-provider) and the new tables' rows (oauth-issuance); the sqliteRows full-content shape-parity check (M5) is as out of scope here as the existing D8.authz-row-counts decision already made for rowCounts.",
+  "path": [
+   "sqliteRows",
+   "state/authz.sqlite",
+   "tables"
+  ],
+  "dropKeys": [
+   "clients",
+   "pending_authorizations",
+   "consents",
+   "schema_migrations"
+  ]
+ },
+ {
   "id": "D11.rejected-invocation-count",
   "decision": "D11",
   "reason": "Owner-approved reject-without-audit-writes: Go audits schema-invalid calls; Rust writes no rejected-call invocation record. The Rust contract fingerprints every database row.",
@@ -94,5 +110,31 @@
   "dropKeys": [
    "operations"
   ]
+ },
+ {
+  "id": "D12.refused-task-operation-row",
+  "decision": "D12",
+  "reason": "The approved refusal contract omits precisely the refused task handle operation row in Rust. X2 independently requires Rust tables to be empty; no admitted row is exempted.",
+  "path": [
+   "sqliteRows",
+   "state/state.db",
+   "tables",
+   "operations"
+  ],
+  "dropKeys": [
+   "${TASK_ID}",
+   "${TASK_B}"
+  ]
+ },
+ {
+  "id": "D13.redacted-structured-content",
+  "decision": "D13",
+  "reason": "Rust's redact_for_storage (redact-unmarked-projections) replaces every unmarked/open-schema leaf under a durable row's structured content with the literal \"[redacted]\", recursively, regardless of field name or depth -- get_host_info's capacity/system/rootDiskQuota, get_vm_info's state, and similar open diagnostic objects across other capabilities' structured observations. Go's pinned reference persists the real value at the same positions; this is the declared, unchanged baseline, not a parity gap. dropValueDeep removes any such redacted leaf from both sides, converging them before comparison.",
+  "path": [
+   "sqliteRows",
+   "state/state.db",
+   "tables"
+  ],
+  "dropValueDeep": "[redacted]"
  }
 ]

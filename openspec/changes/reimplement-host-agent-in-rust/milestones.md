@@ -524,6 +524,23 @@ rationale. Scope changes, each recorded there:
 
 ### M5: Durable state and schema-derived redaction
 
+**Status:** in progress, not done. Operations/plan storage, provider-generation
+and invocation storage methods, task persistence, restart restoration and shared
+schema redaction are implemented. The pinned Go legacy status projection is
+preserved, accepted workers drain before stores close, and D12 refusals create
+no operation row. The admitted-task cross-read matrix passes all 18 checks;
+refused-task full-row comparisons pass with the approved D12 difference and
+an independent Rust no-write invariant. `make parity-verify-m5` now fails closed
+on every missing named validation and on stale regression evidence. Accepted
+built-in calls now persist invocation audit envelopes and schema-projected
+observations. The full database-shape corpus passes 420/420 checks, cross-read
+passes 18/18, and older-release migration passes 6/6 against the current
+candidate; all three are independently accepted by the M5 verifier.
+Varied crash recovery, full secret sink sweeps, unknown projection, final state
+shape evidence and fresh regression gates remain open. See
+[evidence/m5/README.md](../../../evidence/m5/README.md) and its implementation
+refresh for the verified scope.
+
 **Closes:** 4.3. **Depends on:** M4.
 
 **Recommendation:** keep the Rust SQLite schema, file layout, and file modes
@@ -845,6 +862,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D10 | Standalone mutation gate | **Decided (owner, 2026-10-02): Rust diverges.** With standalone mutations disabled, Rust runs only tools whose catalog effect is `read` ([`standalone-read-only-gate`](../standalone-read-only-gate/specs/standalone-read-only-gate/spec.md)); Go is not changed. The catalog stays under Go parity, and a Rust contract suite with canaries verifies the gate | The gate derives from the same effect classification clients see, and fails closed when an effect is not known to be `read`. |
 | D11 | Audit writes for rejected calls | **Decided (owner, 2026-10-02): Rust diverges.** The enumerated invalid MCP requests and closed standalone gate leave no audit writes ([`reject-without-audit-writes`](../reject-without-audit-writes/specs/reject-without-audit-writes/spec.md)); Go is not changed. The invocation count is the only declared state difference, and the Rust contract fingerprints every database row before and after rejection and restart | Rejected work must produce neither execution effects nor durable audit writes. Startup provisioning, accepted calls and D8 OAuth auditing keep their existing contracts. |
 | D12 | Operation record for task-aware calls refused at binding or admission | **Decided (owner, 2026-10-02): Rust diverges.** Go's `createAsyncTask` persists an `operations` row before resolving the binding and admitting the call (`server.go:1642-1652`); Rust refuses first and records nothing durable ([`refuse-before-operation-record`](../refuse-before-operation-record/specs/refuse-before-operation-record/spec.md)). The task wire (`working`, then `completed` with the same typed error) is unchanged. The `operations` row count is the only declared difference, and a Rust contract suite with canaries verifies it | A refused call must not leave a durable operation that never ran; this extends X2 to the task path. |
+| D13 | Unmarked-field projection (M5) | **Decided (owner, 2026-10-04): approve the stricter durable-projection contract, implemented as two named policies.** The owner chose the long-term-correct behavior over carrying Go's gap forward, then a second finding sharpened the implementation: Go's pinned `redactTaskResult` already runs a task-aware tool's *delivered* result through the same schema projection as its durable copy, so a single stricter function would also have hidden open-schema content from a caller's own `tasks/get` result -- a real functionality loss with no security benefit, since that caller already owns the data. `crates/host-agent/src/evidence.rs` now exposes `redact_for_delivery` (Go's original behavior, unchanged: only `writeOnly` is ever hidden from a caller) and `redact_for_storage` (D13's stricter, fail-closed default: an unmarked/open-schema value -- no `properties` entry, no typed `additionalProperties`, including a bare `additionalProperties: true` -- is redacted before it reaches a durable sink). `redact_task_result` (what `tasks/get` returns, live and after restart) uses delivery; `redact_task_args` and the `capability_invocations` audit row use storage. The Go agent is unchanged. Declared and specified in [`redact-unmarked-projections`](../redact-unmarked-projections/proposal.md) (new `evidence-redaction` capability), verified by its own contract suite with Rust canaries, same shape as D8. See [the owner decision record](../../../evidence/m5/unknown-projection/owner-decision.md) for the two options weighed. | Matching Go and Rust alone did not satisfy the current never-persist-unmarked-field text, and the owner judged Go's gap not worth preserving. A single blanket policy would have silently traded a storage-only hardening for a caller-visible regression; splitting by destination (delivered vs. durable) gets the security improvement without that cost. Changing durable retention (not what a capability accepts or returns) is exactly the kind of improvement D8 already set precedent for declaring rather than silently porting. |
 
 ## 7. Risks this plan specifically mitigates
 

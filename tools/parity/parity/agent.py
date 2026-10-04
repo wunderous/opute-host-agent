@@ -249,6 +249,52 @@ class Sandbox:
             }
         return out
 
+    def sqlite_rows(self) -> dict[str, Any]:
+        """Every row of every table in every SQLite database the agent
+        created, as plain typed JSON (not `repr()` strings): the M5
+        shape-parity check diffs this structurally against the other side,
+        with masks for timestamps and `canon.substitute` for per-side random
+        identity (task/operation/run ids) already extracted into
+        `self.variables`.
+
+        Rows are keyed by their single-column primary key, not left as a
+        bare list: Go and Rust insert rows in different orders whenever more
+        than one row exists (for example, authz.sqlite's built-in clients,
+        D8), and `canon.diff` compares lists by index, so an order
+        difference alone would cascade into spurious diffs on every field of
+        every row after the first mismatch. A table with no single-column
+        primary key (sqlite_master reports composite keys as separate
+        `pk` ranks) falls back to a list; such a table needs its own
+        `canon` set declaration if row order is not meaningful for it.
+        """
+        out: dict[str, Any] = {}
+        for relative, schema in self.sqlite_schemas().items():
+            conn = sqlite3.connect(f"file:{self.root / relative}?mode=ro", uri=True)
+            conn.row_factory = sqlite3.Row
+            try:
+                tables = {}
+                for obj in schema["objects"]:
+                    if obj["type"] != "table" or obj["name"].startswith("sqlite_"):
+                        continue
+                    name = obj["name"].replace('"', '""')
+                    rows = [dict(row) for row in conn.execute(f'SELECT * FROM "{name}"')]
+                    # PRAGMA table_info's `pk` column is the column's 1-based
+                    # position within the primary key, not a boolean: a
+                    # composite key's first column also reports 1, so this
+                    # must count every column with pk > 0, not just rank 1.
+                    pk_cols = [
+                        r[1] for r in conn.execute(f'PRAGMA table_info("{name}")')
+                        if r[5] > 0
+                    ]
+                    if len(pk_cols) == 1 and all(pk_cols[0] in r for r in rows):
+                        tables[obj["name"]] = {str(r[pk_cols[0]]): r for r in rows}
+                    else:
+                        tables[obj["name"]] = rows
+                out[relative] = {"userVersion": schema["userVersion"], "tables": tables}
+            finally:
+                conn.close()
+        return out
+
     def durable_snapshot(self) -> dict[str, Any]:
         """Fingerprint every SQLite schema and row, without exposing values.
 
@@ -347,7 +393,7 @@ class Server:
         while time.monotonic() < deadline:
             if self.proc.poll() is not None:
                 return {"ready": False, "exit": self.proc.returncode}
-            if port_open(port):
+            if any(address.rsplit(":", 1)[-1] == str(port) for address in listeners_of(self.proc.pid)) and port_open(port):
                 return {"ready": True}
             time.sleep(0.02)
         return {"ready": False, "timedOut": True}

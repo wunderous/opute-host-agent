@@ -202,10 +202,18 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
             "HOST_MCP_PORT must be positive for direct HTTP mode"
         ));
     }
-    let server = std::sync::Arc::new(http_server(&cfg, authz, runtime.state.clone()));
+    let server = std::sync::Arc::new(http_server(&cfg, authz, runtime.state.clone())?);
     log_info(stderr, "HTTP transport listening", &[("addr", &addr)]);
     inject_fault(fault, "listener")?;
     let result = serve(&addr, server.clone());
+    // HTTP has stopped accepting requests. Drain accepted task workers before
+    // checkpointing/closing the store; a terminal in-memory task may still
+    // have its final operation and snapshot writes pending.
+    if let Ok(mut workers) = server.task_workers.lock() {
+        for worker in workers.drain(..) {
+            let _ = worker.join();
+        }
+    }
     // Reverse order: transport has stopped; release authz, then state.
     if let Ok(mut authz) = server.authz.lock() {
         authz.close();
@@ -244,11 +252,11 @@ fn uuid_v5(namespace: &[u8; 16], name: &[u8]) -> [u8; 16] {
 }
 
 /// `transport.NewHTTPServer` options as `app.Run` fills them.
-fn http_server(
+pub(crate) fn http_server(
     cfg: &Config,
     authz: AuthzStore,
     state: std::sync::Arc<std::sync::Mutex<StateStore>>,
-) -> crate::transport::Server {
+) -> Result<crate::transport::Server> {
     let prefix = if cfg.prefix_tool_names {
         tool_name_prefix(&cfg.remote_agent_id)
     } else {
@@ -263,7 +271,20 @@ fn http_server(
     let standalone = cfg.agent_mode == "standalone";
     let catalog = crate::catalog::for_mode(standalone);
     let prefix_for_tools = prefix.clone();
-    crate::transport::Server {
+    // `restoreTasks`: rebuild the in-memory registry from the durable
+    // snapshots before anything can observe it. Admission's reservation
+    // reclaim for terminal tasks after a restart (Go's
+    // `reclaimTerminalTaskReservations`) is a separate, not-yet-ported gap.
+    let tasks = crate::tasks::Registry::default();
+    let snapshots = state
+        .lock()
+        .map_err(|_| go_err!("restore MCP tasks: state store lock poisoned"))?
+        .list_task_snapshots()
+        .map_err(|e| go_err!("restore MCP tasks: {e}"))?;
+    for snapshot in &snapshots {
+        tasks.restore_snapshot(snapshot);
+    }
+    Ok(crate::transport::Server {
         instance_id: cfg.instance_id.clone(),
         local_instance_id: if cfg.agent_mode == "standalone" {
             cfg.standalone_instance_id.clone()
@@ -337,13 +358,14 @@ fn http_server(
             instance_root: cfg.instance_root.to_string_lossy().into_owned(),
             mcp_port: cfg.host_mcp_port,
         },
-        tasks: crate::tasks::Registry::default(),
+        tasks,
+        task_workers: std::sync::Mutex::new(Vec::new()),
         health_observer: Box::new(crate::hostobs::health_observer(
             cfg.env.clone(),
             cfg.instance_id.clone(),
             cfg.ownership_mode.clone(),
         )),
-    }
+    })
 }
 
 /// Serve until SIGINT or SIGTERM. The runtime runs on its own thread with a
