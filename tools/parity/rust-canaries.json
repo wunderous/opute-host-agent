@@ -299,5 +299,20 @@
    "old": "    let reservation = match admission::admit(server, name, args, &binding, identity) {\n        Ok(r) => r,\n        Err(refusal) => return refusal.render(),\n    };",
    "new": "    let reservation = match admission::admit(server, name, args, &binding, identity) {\n        Ok(r) => r,\n        Err(refusal) => {\n            if let Some((_, task_id)) = identity {\n                let conn = rusqlite::Connection::open(std::path::Path::new(&server.host.env.get(\"OPUTE_STANDALONE_STATE_DIR\")).join(\"state.db\")).unwrap();\n                conn.execute(\"INSERT INTO operations(operation_id,tool_name,status,created_at,updated_at) VALUES (?1,?2,'completed','2026-10-02T00:00:00Z','2026-10-02T00:00:00Z')\", rusqlite::params![task_id, name]).unwrap();\n            }\n            return refusal.render();\n        }\n    };"
   }
+ },
+ {
+  "id": "K24-unmarked-passthrough",
+  "summary": "unmarked/open-schema content is persisted verbatim instead of redacted (D13 revert)",
+  "contract": "evidence-redaction",
+  "patch": {
+   "file": "crates/host-agent/src/evidence.rs",
+   "old": "    let Some(schema) = schema else {\n        return J::from(\"[redacted]\");\n    };",
+   "new": "    let Some(schema) = schema else {\n        return value.clone();\n    };"
+  },
+  "scenario": "arg.unmarked",
+  "mayAlsoFail": [
+   "task.unmarked",
+   "result.unmarked"
+  ]
  }
 ]

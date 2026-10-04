@@ -1,0 +1,251 @@
+{
+ "suite": "evidence-redaction",
+ "decision": "D13",
+ "spec": "openspec/changes/redact-unmarked-projections/specs/evidence-redaction/spec.md",
+ "note": "Single-implementation contract for the declared divergence D13. Reuses the exact canary and cases parity.unknown_projection established as a real, both-implementations leak before this change (evidence/m5/unknown-projection/outcomes.json); asserts only the Rust side, since Go is the pinned, unchanged baseline these scenarios intentionally diverge from.",
+ "scenarios": [
+  {
+   "id": "arg.unmarked",
+   "requirement": "Durable projection fails closed on unmarked content",
+   "specScenario": "Argument outside the declared schema",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "call",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {
+        "unmarked": "M5_UNMARKED_FIELD_CANARY_7e35d8bc"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "argumentsRow",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT arguments_json FROM capability_invocations ORDER BY created_at DESC LIMIT 1"
+     },
+     "expect": {
+      "value": {
+       "$notContains": "M5_UNMARKED_FIELD_CANARY_7e35d8bc",
+       "$contains": "[redacted]"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "task.unmarked",
+   "requirement": "Durable projection fails closed on unmarked content",
+   "specScenario": "Argument outside the declared schema",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "call",
+     "mcp": {
+      "method": "tools/call",
+      "name": "request_task_input",
+      "params": {
+       "name": "request_task_input",
+       "arguments": {
+        "prompt": "Continue?",
+        "responseType": "boolean",
+        "unmarked": "M5_UNMARKED_FIELD_CANARY_7e35d8bc"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "input_required"
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "snapshotRow",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT task_snapshot_json FROM operations ORDER BY updated_at DESC LIMIT 1"
+     },
+     "expect": {
+      "value": {
+       "$notContains": "M5_UNMARKED_FIELD_CANARY_7e35d8bc",
+       "$contains": "[redacted]"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "result.unmarked",
+   "requirement": "Durable projection fails closed on unmarked content",
+   "specScenario": "Open-schema structured result",
+   "fixture": "incus-unmarked-canary",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "call",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_vm_info",
+      "params": {
+       "name": "get_vm_info",
+       "arguments": {
+        "uri": "vm:local:probe",
+        "fast": true
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.state.incusStatus": "M5_UNMARKED_FIELD_CANARY_7e35d8bc"
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "resultRow",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT result_json FROM capability_invocations ORDER BY created_at DESC LIMIT 1"
+     },
+     "expect": {
+      "value": {
+       "$notContains": "M5_UNMARKED_FIELD_CANARY_7e35d8bc",
+       "$contains": "[redacted]"
+      }
+     }
+    },
+    {
+     "as": "observationRow",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT observation_json FROM capability_invocations ORDER BY created_at DESC LIMIT 1"
+     },
+     "expect": {
+      "value": {
+       "$notContains": "M5_UNMARKED_FIELD_CANARY_7e35d8bc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "covered.unaffected",
+   "requirement": "Durable projection fails closed on unmarked content",
+   "specScenario": "Schema-covered content is unaffected",
+   "steps": [
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "call",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     },
+     "capture": {
+      "HOSTNAME": {
+       "from": "body.result.structuredContent.hostName"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "resultRow",
+     "query": {
+      "db": "${SANDBOX}/state/state.db",
+      "sql": "SELECT json_extract(result_json, '$.structured.hostName') FROM capability_invocations ORDER BY created_at DESC LIMIT 1"
+     },
+     "expect": {
+      "value": "${HOSTNAME}"
+     }
+    }
+   ]
+  }
+ ]
+}

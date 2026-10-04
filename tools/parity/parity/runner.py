@@ -10,6 +10,8 @@ re-checks.
 from __future__ import annotations
 
 import concurrent.futures
+import contextlib
+import fcntl
 import gzip
 import hashlib
 import json
@@ -158,7 +160,29 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
     return result
 
 
+@contextlib.contextmanager
+def exclusive_ports(scenario: dict):
+    if not scenario.get("exclusive"):
+        yield
+        return
+    lock_path = Path.home() / ".cache/opute-parity/default-ports.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with _EXCLUSIVE, lock_path.open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
+            other: agent.Impl | None = None) -> tuple[dict, dict]:
+    # Capture and every twin/shape driver share the same OS-level lease.
+    with exclusive_ports(scenario):
+        return _execute(impl, scenario, side, run_id, other)
+
+
+def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
             other: agent.Impl | None = None) -> tuple[dict, dict]:
     """Run one scenario on one side. Returns (observation, variables)."""
     fixture = scenario.get("fixture")
@@ -301,6 +325,8 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
         observation["files"] = sandbox.files()
     if "sqlite" in collect:
         observation["sqlite"] = sandbox.sqlite_schemas()
+    if "sqliteRows" in collect:
+        observation["sqliteRows"] = sandbox.sqlite_rows()
     if "serverLog" in collect:
         log = sandbox.root / "server.log"
         observation["serverLog"] = agent._strip_log_prefix(log.read_text(errors="replace")) if log.exists() else None
@@ -321,6 +347,11 @@ def invariant_violations(scenario: dict, observation: dict, label: str = "") -> 
     the state store records no operations, plan runs or invocations.
     """
     violations = []
+    # Equal harness failures are not parity. Disk exhaustion or a driver
+    # exception on both sides must fail even when no scenario mask happens
+    # to require a missing field.
+    if observation.get("_executionError"):
+        violations.append({"invariant": "EXECUTION", "reason": observation["_executionError"]})
     if "NO_ORPHANS" in scenario.get("invariants", []):
         if "orphans" not in observation:
             violations.append({"invariant": "NO_ORPHANS", "reason": "scenario does not collect orphans"})
@@ -350,7 +381,11 @@ def invariant_violations(scenario: dict, observation: dict, label: str = "") -> 
         # writes on a rejected call, recorded as a Go gap by an approved
         # decision. It exempts only the Go side; Rust is always held to X2.
         gaps = scenario.get("x2GoGaps", {}) if label.startswith("go") else {}
-        for db, schema in (observation.get("sqlite") or {}).items():
+        databases = dict(observation.get("sqlite") or {})
+        for db, dump in (observation.get("sqliteRows") or {}).items():
+            databases[db] = {"rowCounts": {table: len(rows)
+                                          for table, rows in dump.get("tables", {}).items()}}
+        for db, schema in databases.items():
             for table in X2_TABLES:
                 count = (schema.get("rowCounts") or {}).get(table)
                 if count and table not in gaps:
@@ -375,11 +410,10 @@ def _execute_safe(impl: agent.Impl, scenario: dict, side: str, run_id: str,
 def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: str) -> dict:
     spec = scenario.get("compare", {})
     if scenario.get("exclusive"):
-        # Scenarios that use fixed default ports run one side at a time and
-        # never overlap another exclusive scenario.
-        with _EXCLUSIVE:
-            obs_l, vars_l = _execute_safe(left, scenario, "a", run_id, right)
-            obs_r, vars_r = _execute_safe(right, scenario, "b", run_id, left)
+        # Fixed-port sides run serially. execute() holds the cross-process
+        # lease, including when a source inventory uses execute() directly.
+        obs_l, vars_l = _execute_safe(left, scenario, "a", run_id, right)
+        obs_r, vars_r = _execute_safe(right, scenario, "b", run_id, left)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             fut_l = pool.submit(_execute_safe, left, scenario, "a", run_id, right)
@@ -428,6 +462,8 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
     last: dict[str, dict] = {}
     first_failure: dict[str, dict] = {}
     started = time.time()
+    started_harness_sha = harness_sha256()
+    started_binary_shas = (left.sha256(), right.sha256())
 
     def job(item: tuple[dict, int]) -> tuple[str, int, dict]:
         scenario, i = item
@@ -489,9 +525,11 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
         "schemaVersion": 1,
         "suite": suite,
         "provenance": {
-            "left": {"label": left.label, "binarySha256": left.sha256()},
-            "right": {"label": right.label, "binarySha256": right.sha256()},
-            "harnessSha256": harness_sha256(),
+            "left": {"label": left.label, "binarySha256": started_binary_shas[0]},
+            "right": {"label": right.label, "binarySha256": started_binary_shas[1]},
+            "harnessSha256": started_harness_sha,
+            "changedDuringRun": (started_harness_sha != harness_sha256()
+                                 or started_binary_shas != (left.sha256(), right.sha256())),
             "sourceCommit": (source_lock or {}).get("sourceCommit"),
             "sourceTree": (source_lock or {}).get("sourceTree"),
             "repeat": repeat,

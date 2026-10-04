@@ -1,0 +1,74 @@
+{
+  "cases": [
+    "operation-create.BEFORE",
+    "operation-create.AFTER",
+    "operation-complete.BEFORE",
+    "operation-complete.AFTER",
+    "operation-fail.BEFORE",
+    "operation-fail.AFTER",
+    "operation-cancel.BEFORE",
+    "operation-cancel.AFTER",
+    "task-snapshot.BEFORE",
+    "task-snapshot.AFTER",
+    "plan-update.BEFORE",
+    "plan-update.AFTER",
+    "plan-complete-first.BEFORE",
+    "plan-complete-first.AFTER",
+    "plan-complete-last.BEFORE",
+    "plan-complete-last.AFTER"
+  ],
+  "failed": 0,
+  "failedSeeds": [],
+  "files": {
+    "outcomes.json.gz": "57484c45dfdbca2d6e4d28ddbaedb7e60807b36657e6b65866c569374dca4fd7"
+  },
+  "passed": 200,
+  "provenance": {
+    "changedDuringRun": false,
+    "driverSha256": "1dec03c9e53123c28e8abc5fb715d96657755422a25b5b4d1b9a4e3408e3e25c",
+    "fixtures": {
+      "builderSha256": "b46ffa16f48bdf4c4b16fde8de88bbd49e36421b0ad50909af9f05a74dd49545",
+      "go": {
+        "binarySha256": "e606b1aa00ed91f74b619da39a5e1ea6eec4a34f60200de60ae364acb8179327",
+        "command": [
+          "/home/houman/github/opute/host-agent/.parity/bin/go-state-fixture"
+        ]
+      },
+      "goFixtureSha256": "44b14ec8ee84ddcc8d6ec005cf0768e33e3ccc7e1ff3e6eb516d2e7717ce17b7",
+      "goStoreSha256": "3ee128ec4ca1dab42fd296057a145995dc14a88810d2f11bb3b523896cea3c0b",
+      "rust": {
+        "binarySha256": "9a15312bb22af1c72907a5525c083866e0e3535844bc28ad52d1729c8c2da764",
+        "command": [
+          "/home/houman/github/opute/host-agent/.parity/bin/rust-state-fixture-9a15312bb22af1c72907a5525c083866e0e3535844bc28ad52d1729c8c2da764",
+          "--exact",
+          "state_fixture::crash_writer",
+          "--ignored",
+          "--nocapture",
+          "--test-threads=1"
+        ]
+      },
+      "rustFixtureSha256": "99e388307d8ab2319e08873c1b032500854de7969e100c5b9d76850ff747a01c",
+      "rustStoreSha256": "86558694a105ce2ef3e957361656f9b285c29ad06939a3db95aa3ccf83625cdd",
+      "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+      "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a"
+    },
+    "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+    "harnessSha256": "5c72a2df72c3731cd4c2dd5f52d9133541f71b9a0453a6c7e8477b9ae9cad539",
+    "rustBinarySha256": "6190965ceb251bf4da854df84a1359898daca7696229f865326d3b31121363fa",
+    "sourceLock": {
+      "capturedOn": "2026-09-28",
+      "goModule": "github.com/wunderous/host-agents",
+      "goToolchain": "go1.25.4",
+      "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+      "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+      "publicCatalogToolCount": 142,
+      "publishedPackage": "@opute/host-agent@0.2.3",
+      "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers.",
+      "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+      "sourceRepository": "https://github.com/wunderous/host-agents",
+      "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+      "staticAllToolsSchemaCount": 115
+    }
+  },
+  "seeds": 200
+}

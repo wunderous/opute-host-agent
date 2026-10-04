@@ -10,6 +10,7 @@ mod catalog;
 mod cli;
 mod config;
 mod ddl;
+mod evidence;
 mod goflag;
 mod gojson;
 mod hostobs;
@@ -21,6 +22,8 @@ mod mcpsdk;
 mod oauth;
 mod resource;
 mod schema;
+#[cfg(test)]
+mod state_fixture;
 mod store;
 mod tasks;
 mod tools;

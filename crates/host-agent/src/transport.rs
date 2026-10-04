@@ -60,6 +60,9 @@ pub struct Server {
     pub host: crate::tools::Host,
     /// The MCP Tasks registry.
     pub tasks: crate::tasks::Registry,
+    /// Accepted task workers must finish their durable writes before state
+    /// closes, like Go's asyncTaskStartWG.
+    pub task_workers: Mutex<Vec<std::thread::JoinHandle<()>>>,
 }
 
 const ROUTES: [&str; 9] = [
@@ -1140,8 +1143,9 @@ fn validate_modern(req: &Request, method: &str, raw: &[u8]) -> Result<(), Protoc
     Ok(())
 }
 
-/// `HandleExtensionMethod` for the M2 surface. Task state belongs to M4: with
-/// no task store every id is unknown, which is what an empty Go state reports.
+/// `HandleExtensionMethod` for the M2 surface. Task lifecycle is M4's
+/// in-memory registry (`server.tasks`); the durable mirror into `state`
+/// (M5) is best-effort, exactly as Go's own `_ = s.state.X(...)` calls.
 fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
     let task_id = || {
         gojson::parse(raw)
@@ -1166,7 +1170,15 @@ fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
         "tasks/cancel" => {
             let id = task_id();
             match server.tasks.cancel(&id) {
-                Some(_) => Ok(json!({"resultType": "complete"})),
+                Some(snapshot) => {
+                    let _ = server
+                        .host
+                        .state
+                        .lock()
+                        .map(|state| state.cancel_operation(&id));
+                    crate::tools::persist_task(server, &snapshot);
+                    Ok(json!({"resultType": "complete"}))
+                }
                 None => Err(ExtError::Plain(format!("cannot cancel task: {id}"))),
             }
         }
@@ -1191,7 +1203,10 @@ fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
             match server.tasks.update(&id, &responses) {
                 None => Err(ExtError::Plain(format!("task not found: {id}"))),
                 Some((_, false)) => Err(ExtError::Plain(format!("task cannot accept input: {id}"))),
-                Some((_, true)) => Ok(json!({"resultType": "complete"})),
+                Some((snapshot, true)) => {
+                    crate::tools::persist_task(server, &snapshot);
+                    Ok(json!({"resultType": "complete"}))
+                }
             }
         }
         "resources/list" | "resources/read" | "tasks/list" => {

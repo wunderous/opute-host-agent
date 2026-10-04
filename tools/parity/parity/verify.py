@@ -73,6 +73,8 @@ def _check_suite(root: Path, manifest: dict, suite_name: str, suite: dict, lock:
         report.problem(f"{suite_name}: malformed summary", suite_name)
         return statuses
     stale = []
+    if prov.get("changedDuringRun"):
+        stale.append("harness or binary changed during evidence production")
     if prov.get("sourceCommit") != lock["sourceCommit"] or prov.get("sourceTree") != lock["sourceTree"]:
         stale.append("Go source revision differs from source lock")
     go_sha = manifest["goReference"]["binarySha256"]
@@ -376,6 +378,13 @@ def verify(manifest_path: Path, gate: str) -> dict:
             report.problem(f"item {item['id']} has no owner")
 
     failures: list[str] = []
+    m5 = None
+    if rules.get("requireM5"):
+        from . import m5_verify
+        m5 = m5_verify.check(root, manifest, lock, report, _load, _sha)
+        for requirement, status in m5.items():
+            if status != PASS:
+                failures.append(f"M5 {requirement}: {status}")
     for req in rules.get("requirePass", []):
         suite = req if isinstance(req, str) else req["suite"]
         surfaces = None if isinstance(req, str) else set(req.get("surfaces", []))
@@ -415,6 +424,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
             failures.append(f"contracts {contracts}")
     required_suites = {r if isinstance(r, str) else r["suite"] for r in rules.get("requirePass", [])}
     scopes = {"global"} | required_suites | set(rules.get("requireNotFail", []))
+    if rules.get("requireM5"):
+        scopes.update(f"m5:{requirement}" for requirement in m5)
     if rules.get("requireOracles"):
         scopes.add("oracles")
     if rules.get("requireCanaries"):
@@ -434,6 +445,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "inventory": inventory,
         "oracles": oracles,
         "contracts": contracts,
+        "m5": m5,
     }
 
 
@@ -456,6 +468,8 @@ def render(report: dict) -> str:
         lines.append(f"  go oracles   {report['oracles']}")
     if report.get("contracts"):
         lines.append(f"  contracts    {report['contracts']}")
+    for requirement, status in (report.get("m5") or {}).items():
+        lines.append(f"  M5 {requirement:18} {status}")
     for p in report.get("problems", [])[:20]:
         lines.append(f"  problem: {p}")
     for f in gate.get("failures", []):

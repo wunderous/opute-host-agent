@@ -87,7 +87,27 @@ class DivergenceTest(unittest.TestCase):
         "rows": {"id": "rows", "decision": "D8", "reason": "r", "path": ["rows"], "dropKeys": ["new"]},
         "log": {"id": "log", "decision": "D8", "reason": "r", "path": ["steps", "*", "stderr"],
                 "dropLines": {"contains": "msg=oauth "}},
+        "redacted": {"id": "redacted", "decision": "D13", "reason": "r", "path": ["result"],
+                     "dropValueDeep": "[redacted]"},
     }
+
+    def test_drop_value_deep_removes_matching_leaves_at_any_depth(self):
+        a = {"result": {"hostName": "h", "capacity": {"totalVmCount": 2, "totalContainerCount": 1}}}
+        b = {"result": {"hostName": "h", "capacity": {"totalVmCount": "[redacted]", "totalContainerCount": "[redacted]"}}}
+        a2, b2, rec = canon.apply_divergences(a, b, ["redacted"], self.REGISTRY)
+        self.assertEqual(canon.diff(a2, b2), [])
+        self.assertFalse(rec[0]["stale"])
+
+    def test_drop_value_deep_is_stale_when_nothing_matches(self):
+        a = {"result": {"hostName": "h"}}
+        _, _, rec = canon.apply_divergences(a, dict(a), ["redacted"], self.REGISTRY)
+        self.assertTrue(rec[0]["stale"])
+
+    def test_drop_value_deep_leaves_a_real_difference_undeclared(self):
+        a = {"result": {"hostName": "a"}}
+        b = {"result": {"hostName": "b"}}
+        a2, b2, _ = canon.apply_divergences(a, b, ["redacted"], self.REGISTRY)
+        self.assertNotEqual(canon.diff(a2, b2), [])
 
     def test_drops_only_declared_content_from_both_sides(self):
         a = {"files": [{"path": "state/state.db"}], "rows": {"clients": 2},
@@ -147,3 +167,10 @@ class SubstituteTest(unittest.TestCase):
 
     def test_longer_literals_first(self):
         self.assertEqual(canon.substitute("/tmp/a/b", {"SANDBOX": "/tmp/a", "X": "/tmp"}), "${SANDBOX}/b")
+
+    def test_port_inside_a_hex_hash_is_kept(self):
+        # A hex digest's digit run can coincidentally equal the port string,
+        # flanked by a-f letters rather than digits -- the digit-only
+        # boundary check alone would still match and corrupt the hash.
+        text = "d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98"
+        self.assertEqual(canon.substitute(text, {"PORT": "20331"}), text)

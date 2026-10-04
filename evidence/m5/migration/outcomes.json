@@ -1,0 +1,3200 @@
+{
+  "pre-column-additions.0": {
+    "diff": [],
+    "failures": [],
+    "raw": {
+      "go": {
+        "fixture": {
+          "case": "pre-column-additions",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:26"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:26"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL, recipe_id TEXT NOT NULL DEFAULT '', recipe_version TEXT NOT NULL DEFAULT '', recipe_hash TEXT NOT NULL DEFAULT '', run_id TEXT NOT NULL DEFAULT '', input_bindings_json TEXT NOT NULL DEFAULT '{}', observation_json TEXT NOT NULL DEFAULT '{}', activated_at TEXT NOT NULL DEFAULT '')",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT, task_snapshot_json TEXT NOT NULL DEFAULT '')",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT, recipe_json TEXT NOT NULL DEFAULT '',\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    , descriptor_json TEXT NOT NULL DEFAULT '', manifest_json TEXT NOT NULL DEFAULT '')",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 0
+          },
+          "userVersion": 0
+        }
+      },
+      "rust": {
+        "fixture": {
+          "case": "pre-column-additions",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:27"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:27"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL, recipe_id TEXT NOT NULL DEFAULT '', recipe_version TEXT NOT NULL DEFAULT '', recipe_hash TEXT NOT NULL DEFAULT '', run_id TEXT NOT NULL DEFAULT '', input_bindings_json TEXT NOT NULL DEFAULT '{}', observation_json TEXT NOT NULL DEFAULT '{}', activated_at TEXT NOT NULL DEFAULT '')",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT, task_snapshot_json TEXT NOT NULL DEFAULT '')",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT, recipe_json TEXT NOT NULL DEFAULT '',\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    , descriptor_json TEXT NOT NULL DEFAULT '', manifest_json TEXT NOT NULL DEFAULT '')",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 0
+          },
+          "userVersion": 0
+        }
+      }
+    }
+  },
+  "pre-column-additions.1": {
+    "diff": [],
+    "failures": [],
+    "raw": {
+      "go": {
+        "fixture": {
+          "case": "pre-column-additions",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:27"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:27"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL, recipe_id TEXT NOT NULL DEFAULT '', recipe_version TEXT NOT NULL DEFAULT '', recipe_hash TEXT NOT NULL DEFAULT '', run_id TEXT NOT NULL DEFAULT '', input_bindings_json TEXT NOT NULL DEFAULT '{}', observation_json TEXT NOT NULL DEFAULT '{}', activated_at TEXT NOT NULL DEFAULT '')",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT, task_snapshot_json TEXT NOT NULL DEFAULT '')",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT, recipe_json TEXT NOT NULL DEFAULT '',\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    , descriptor_json TEXT NOT NULL DEFAULT '', manifest_json TEXT NOT NULL DEFAULT '')",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 0
+          },
+          "userVersion": 0
+        }
+      },
+      "rust": {
+        "fixture": {
+          "case": "pre-column-additions",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:28"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:28"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL, recipe_id TEXT NOT NULL DEFAULT '', recipe_version TEXT NOT NULL DEFAULT '', recipe_hash TEXT NOT NULL DEFAULT '', run_id TEXT NOT NULL DEFAULT '', input_bindings_json TEXT NOT NULL DEFAULT '{}', observation_json TEXT NOT NULL DEFAULT '{}', activated_at TEXT NOT NULL DEFAULT '')",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT, task_snapshot_json TEXT NOT NULL DEFAULT '')",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT, recipe_json TEXT NOT NULL DEFAULT '',\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    , descriptor_json TEXT NOT NULL DEFAULT '', manifest_json TEXT NOT NULL DEFAULT '')",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 0
+          },
+          "userVersion": 0
+        }
+      }
+    }
+  },
+  "pre-column-additions.2": {
+    "diff": [],
+    "failures": [],
+    "raw": {
+      "go": {
+        "fixture": {
+          "case": "pre-column-additions",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:29"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:29"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL, recipe_id TEXT NOT NULL DEFAULT '', recipe_version TEXT NOT NULL DEFAULT '', recipe_hash TEXT NOT NULL DEFAULT '', run_id TEXT NOT NULL DEFAULT '', input_bindings_json TEXT NOT NULL DEFAULT '{}', observation_json TEXT NOT NULL DEFAULT '{}', activated_at TEXT NOT NULL DEFAULT '')",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT, task_snapshot_json TEXT NOT NULL DEFAULT '')",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT, recipe_json TEXT NOT NULL DEFAULT '',\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    , descriptor_json TEXT NOT NULL DEFAULT '', manifest_json TEXT NOT NULL DEFAULT '')",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 0
+          },
+          "userVersion": 0
+        }
+      },
+      "rust": {
+        "fixture": {
+          "case": "pre-column-additions",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "",
+                "recipe_id": "",
+                "recipe_version": "",
+                "run_id": "",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:30"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:30"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL, recipe_id TEXT NOT NULL DEFAULT '', recipe_version TEXT NOT NULL DEFAULT '', recipe_hash TEXT NOT NULL DEFAULT '', run_id TEXT NOT NULL DEFAULT '', input_bindings_json TEXT NOT NULL DEFAULT '{}', observation_json TEXT NOT NULL DEFAULT '{}', activated_at TEXT NOT NULL DEFAULT '')",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT, task_snapshot_json TEXT NOT NULL DEFAULT '')",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT, recipe_json TEXT NOT NULL DEFAULT '',\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    , descriptor_json TEXT NOT NULL DEFAULT '', manifest_json TEXT NOT NULL DEFAULT '')",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 0
+          },
+          "userVersion": 0
+        }
+      }
+    }
+  },
+  "released-v0.2.2.0": {
+    "diff": [],
+    "failures": [],
+    "raw": {
+      "go": {
+        "fixture": {
+          "case": "released-v0.2.2",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "{}",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:22"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:22"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "{}",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "{}",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {
+              "container:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "container",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "container:local:fixture"
+              },
+              "vm:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "vm",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "vm:local:fixture"
+              }
+            }
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 2
+          },
+          "userVersion": 0
+        }
+      },
+      "rust": {
+        "fixture": {
+          "case": "released-v0.2.2",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "{}",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:23"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:23"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "{}",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "{}",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {
+              "container:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "container",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "container:local:fixture"
+              },
+              "vm:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "vm",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "vm:local:fixture"
+              }
+            }
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 2
+          },
+          "userVersion": 0
+        }
+      }
+    }
+  },
+  "released-v0.2.2.1": {
+    "diff": [],
+    "failures": [],
+    "raw": {
+      "go": {
+        "fixture": {
+          "case": "released-v0.2.2",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "{}",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:23"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:23"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "{}",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "{}",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {
+              "container:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "container",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "container:local:fixture"
+              },
+              "vm:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "vm",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "vm:local:fixture"
+              }
+            }
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 2
+          },
+          "userVersion": 0
+        }
+      },
+      "rust": {
+        "fixture": {
+          "case": "released-v0.2.2",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "{}",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:24"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:24"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "{}",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "{}",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {
+              "container:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "container",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "container:local:fixture"
+              },
+              "vm:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "vm",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "vm:local:fixture"
+              }
+            }
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 2
+          },
+          "userVersion": 0
+        }
+      }
+    }
+  },
+  "released-v0.2.2.2": {
+    "diff": [],
+    "failures": [],
+    "raw": {
+      "go": {
+        "fixture": {
+          "case": "released-v0.2.2",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "{}",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:25"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:25"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "{}",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "{}",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {
+              "container:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "container",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "container:local:fixture"
+              },
+              "vm:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "vm",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "vm:local:fixture"
+              }
+            }
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 2
+          },
+          "userVersion": 0
+        }
+      },
+      "rust": {
+        "fixture": {
+          "case": "released-v0.2.2",
+          "releaseFixtureSha256": "1e5bd36a05066d2b5366a231479da9e9c67e0d7e188ce408c5b85678868f4ef5"
+        },
+        "rows": {
+          "tables": {
+            "active_capabilities": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "provider": "ollama",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "active_runtimes": {
+              "llm-serving": {
+                "activated_at": "2026-10-04T00:00:00Z",
+                "capability": "llm-serving",
+                "input_bindings_json": "{}",
+                "observation_json": "{}",
+                "recipe_hash": "sha256:fixture",
+                "recipe_id": "r1",
+                "recipe_version": "1",
+                "run_id": "run-completed",
+                "runtime": "ollama",
+                "serving_contract": "openai-chat.v1"
+              }
+            },
+            "capability_invocations": {
+              "i1": {
+                "arguments_json": "{}",
+                "authorization": "admitted",
+                "binding_json": "{}",
+                "capability_version": 1,
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "generation_id": null,
+                "invocation_id": "i1",
+                "observation_json": "{}",
+                "operation_id": "fixture.op",
+                "result_json": "{}",
+                "terminal_status": "completed"
+              }
+            },
+            "operations": {
+              "op-cancelled": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-cancelled",
+                "result_json": "{\"redacted\":true}",
+                "status": "cancelled",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-completed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-completed",
+                "result_json": "{\"redacted\":true}",
+                "status": "completed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-failed": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-failed",
+                "result_json": "{\"redacted\":true}",
+                "status": "failed",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "op-working": {
+                "created_at": "2026-10-04T00:00:00Z",
+                "description": "preserved",
+                "error_message": null,
+                "operation_id": "op-working",
+                "result_json": "{\"redacted\":true}",
+                "status": "unknown",
+                "task_snapshot_json": "",
+                "tool_name": "fixture",
+                "updated_at": "2026-10-04 17:48:25"
+              }
+            },
+            "plan_runs": {
+              "run-completed": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-completed",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-completed",
+                "state_json": "{}",
+                "status": "completed",
+                "updated_at": "2026-10-04T00:00:00Z"
+              },
+              "run-running": {
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "document_hash": "sha256:fixture",
+                "error_message": null,
+                "generation": 2,
+                "idempotency_key": "fixture",
+                "plan_id": "plan-running",
+                "plan_json": "{}",
+                "recipe_json": "{}",
+                "run_id": "run-running",
+                "state_json": "{}",
+                "status": "unknown",
+                "updated_at": "2026-10-04 17:48:25"
+              }
+            },
+            "provider_generations": {
+              "g1": {
+                "active_at": "",
+                "catalog_revision": "sha256:catalog",
+                "created_at": "2026-10-04T00:00:00Z",
+                "descriptor_json": "{}",
+                "endpoint": "http://127.0.0.1:1/mcp",
+                "generation_id": "g1",
+                "manifest_hash": "sha256:fixture",
+                "manifest_json": "{}",
+                "provider_id": "fixture",
+                "provider_version": "1",
+                "status": "candidate"
+              }
+            },
+            "resource_registry": {
+              "container:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "container",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "container:local:fixture"
+              },
+              "vm:local:fixture": {
+                "coordinates_json": "{\"instanceName\":\"fixture\"}",
+                "created_at": "2026-10-04T00:00:00Z",
+                "resource_id": "fixture",
+                "resource_type": "vm",
+                "status": "active",
+                "tenant_id": "local",
+                "updated_at": "2026-10-04T00:00:00Z",
+                "uri": "vm:local:fixture"
+              }
+            }
+          },
+          "userVersion": 0
+        },
+        "schema": {
+          "objects": [
+            {
+              "name": "sqlite_autoindex_active_capabilities_1",
+              "sql": null,
+              "table": "active_capabilities",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_active_runtimes_1",
+              "sql": null,
+              "table": "active_runtimes",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_capability_invocations_1",
+              "sql": null,
+              "table": "capability_invocations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_operations_1",
+              "sql": null,
+              "table": "operations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_1",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_plan_runs_2",
+              "sql": null,
+              "table": "plan_runs",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_provider_generations_1",
+              "sql": null,
+              "table": "provider_generations",
+              "type": "index"
+            },
+            {
+              "name": "sqlite_autoindex_resource_registry_1",
+              "sql": null,
+              "table": "resource_registry",
+              "type": "index"
+            },
+            {
+              "name": "active_capabilities",
+              "sql": "CREATE TABLE active_capabilities (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_capabilities",
+              "type": "table"
+            },
+            {
+              "name": "active_runtimes",
+              "sql": "CREATE TABLE active_runtimes (\n        capability TEXT PRIMARY KEY,\n        serving_contract TEXT NOT NULL,\n        runtime TEXT NOT NULL,\n        recipe_id TEXT NOT NULL,\n        recipe_version TEXT NOT NULL,\n        recipe_hash TEXT NOT NULL,\n        run_id TEXT NOT NULL,\n        input_bindings_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        activated_at TEXT NOT NULL\n    )",
+              "table": "active_runtimes",
+              "type": "table"
+            },
+            {
+              "name": "capability_invocations",
+              "sql": "CREATE TABLE capability_invocations (\n        invocation_id TEXT PRIMARY KEY,\n        operation_id TEXT NOT NULL,\n        capability_version INTEGER NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        generation_id TEXT,\n        authorization TEXT NOT NULL,\n        arguments_json TEXT NOT NULL,\n        result_json TEXT NOT NULL,\n        observation_json TEXT NOT NULL,\n        terminal_status TEXT NOT NULL,\n        created_at TEXT NOT NULL\n    , binding_json TEXT NOT NULL DEFAULT '')",
+              "table": "capability_invocations",
+              "type": "table"
+            },
+            {
+              "name": "operations",
+              "sql": "CREATE TABLE operations (\n        operation_id TEXT PRIMARY KEY,\n        tool_name TEXT NOT NULL,\n        status TEXT NOT NULL,\n        description TEXT,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        result_json TEXT,\n        error_message TEXT,\n        task_snapshot_json TEXT NOT NULL DEFAULT ''\n    )",
+              "table": "operations",
+              "type": "table"
+            },
+            {
+              "name": "plan_runs",
+              "sql": "CREATE TABLE plan_runs (\n        run_id TEXT PRIMARY KEY,\n        plan_id TEXT NOT NULL,\n        generation INTEGER NOT NULL,\n        idempotency_key TEXT NOT NULL,\n        document_hash TEXT NOT NULL,\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        plan_json TEXT NOT NULL,\n        recipe_json TEXT NOT NULL DEFAULT '',\n        state_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        error_message TEXT,\n        UNIQUE(plan_id, generation, idempotency_key)\n    )",
+              "table": "plan_runs",
+              "type": "table"
+            },
+            {
+              "name": "provider_generations",
+              "sql": "CREATE TABLE provider_generations (\n        generation_id TEXT PRIMARY KEY,\n        provider_id TEXT NOT NULL,\n        provider_version TEXT NOT NULL,\n        manifest_hash TEXT NOT NULL,\n        endpoint TEXT NOT NULL,\n        descriptor_json TEXT NOT NULL DEFAULT '',\n        manifest_json TEXT NOT NULL DEFAULT '',\n        catalog_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        active_at TEXT\n    )",
+              "table": "provider_generations",
+              "type": "table"
+            },
+            {
+              "name": "resource_registry",
+              "sql": "CREATE TABLE resource_registry (\n        uri TEXT PRIMARY KEY,\n        resource_type TEXT NOT NULL,\n        tenant_id TEXT NOT NULL,\n        resource_id TEXT NOT NULL,\n        coordinates_json TEXT NOT NULL,\n        status TEXT NOT NULL DEFAULT 'active',\n        created_at TEXT NOT NULL,\n        updated_at TEXT NOT NULL\n    )",
+              "table": "resource_registry",
+              "type": "table"
+            }
+          ],
+          "rowCounts": {
+            "active_capabilities": 1,
+            "active_runtimes": 1,
+            "capability_invocations": 1,
+            "operations": 4,
+            "plan_runs": 2,
+            "provider_generations": 1,
+            "resource_registry": 2
+          },
+          "userVersion": 0
+        }
+      }
+    }
+  }
+}

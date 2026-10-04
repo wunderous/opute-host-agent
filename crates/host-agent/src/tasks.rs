@@ -1,8 +1,10 @@
 //! The MCP Tasks registry (`internal/tasks.Registry`).
 //!
 //! Task handles live in memory for the life of the process, exactly as Go's
-//! registry does. Go additionally mirrors each record into the durable
-//! operation store; that projection belongs to M5 and is not written here.
+//! registry does. Go's `internal/hostmcp` mirrors each transition into the
+//! durable operation store from the call site, not from inside
+//! `internal/tasks` itself; the M5 persistence calls in `tools.rs` and
+//! `transport.rs` follow that same separation.
 //!
 //! State machine:
 //!
@@ -38,6 +40,11 @@ type Resume = Box<dyn FnOnce(Map<String, J>) + Send>;
 
 struct Record {
     task_id: String,
+    tool_name: String,
+    description: String,
+    /// Already redacted at creation time (Go's `redactTaskArgs`, before the
+    /// record exists): the raw call arguments never reach this struct.
+    tool_args: J,
     status: &'static str,
     status_message: String,
     created_at: String,
@@ -52,9 +59,16 @@ struct Record {
 }
 
 /// A stable snapshot of a record, safe to hold after the lock is released.
+/// `tool_name`/`description` are carried here (not just on `Record`) so the
+/// M5 persistence layer can build a durable snapshot without re-locking the
+/// registry: Go's `persistTask` reads them off the same `*tasks.Record` it
+/// already has in hand.
 #[derive(Clone, Debug)]
 pub struct Snapshot {
     pub task_id: String,
+    pub tool_name: String,
+    pub description: String,
+    pub tool_args: J,
     pub status: &'static str,
     status_message: String,
     created_at: String,
@@ -70,6 +84,9 @@ impl Record {
     fn snapshot(&self) -> Snapshot {
         Snapshot {
             task_id: self.task_id.clone(),
+            tool_name: self.tool_name.clone(),
+            description: self.description.clone(),
+            tool_args: self.tool_args.clone(),
             status: self.status,
             status_message: self.status_message.clone(),
             created_at: self.created_at.clone(),
@@ -92,7 +109,7 @@ impl Record {
 }
 
 /// `uuid.NewString()`: a random (version 4) UUID.
-fn new_task_id() -> String {
+pub(crate) fn new_task_id() -> String {
     let mut b = [0u8; 16];
     getrandom::getrandom(&mut b).expect("random task id");
     b[6] = (b[6] & 0x0f) | 0x40;
@@ -114,10 +131,13 @@ pub struct Registry {
 }
 
 impl Registry {
-    fn new_record() -> Record {
+    fn new_record(tool_name: &str, description: &str, tool_args: J) -> Record {
         let now = crate::hostobs::rfc3339_now();
         Record {
             task_id: new_task_id(),
+            tool_name: tool_name.to_string(),
+            description: description.to_string(),
+            tool_args,
             status: "working",
             status_message: String::new(),
             created_at: now.clone(),
@@ -138,8 +158,13 @@ impl Registry {
 
     /// `CreateWithCancel`: a working task. The returned flag is the task's
     /// cancellation signal (Go's context cancel).
-    pub fn create(&self) -> (Snapshot, Arc<AtomicBool>) {
-        let rec = Self::new_record();
+    pub fn create(
+        &self,
+        tool_name: &str,
+        description: &str,
+        tool_args: J,
+    ) -> (Snapshot, Arc<AtomicBool>) {
+        let rec = Self::new_record(tool_name, description, tool_args);
         let (snapshot, cancelled) = (rec.snapshot(), Arc::clone(&rec.cancelled));
         self.lock().insert(rec.task_id.clone(), rec);
         (snapshot, cancelled)
@@ -150,10 +175,13 @@ impl Registry {
     /// responses.
     pub fn create_with_input(
         &self,
+        tool_name: &str,
+        description: &str,
+        tool_args: J,
         input_requests: Map<String, J>,
         resume: impl FnOnce(&str, Map<String, J>) + Send + 'static,
     ) -> Snapshot {
-        let mut rec = Self::new_record();
+        let mut rec = Self::new_record(tool_name, description, tool_args);
         rec.status = "input_required";
         rec.status_message = "The task requires input before it can continue.".into();
         rec.input_requests = Some(input_requests);
@@ -166,6 +194,80 @@ impl Registry {
 
     pub fn get(&self, task_id: &str) -> Option<Snapshot> {
         self.lock().get(task_id).map(Record::snapshot)
+    }
+
+    /// `RestoreSnapshot`: rebuilds an in-memory record from a durable
+    /// `task_snapshots` row written by `persist_task`. A snapshot captured
+    /// mid-flight (status `working`) crashed before reaching a terminal
+    /// state, so it comes back `failed`, never silently resumed as still
+    /// working and never invented as `completed` -- this is the invariant
+    /// the M5 crash-injection corpus checks. Host-plan tasks additionally
+    /// need their resume continuation reattached by the caller; that is
+    /// M6's plan executor, not this registry.
+    pub fn restore_snapshot(&self, snapshot: &J) -> bool {
+        let Some(obj) = snapshot.as_object() else {
+            return false;
+        };
+        let task_id = obj.get("taskId").and_then(J::as_str).unwrap_or_default();
+        let tool_name = obj.get("toolName").and_then(J::as_str).unwrap_or_default();
+        if task_id.is_empty() || tool_name.is_empty() {
+            return false;
+        }
+        let description = obj
+            .get("description")
+            .and_then(J::as_str)
+            .unwrap_or_default();
+        let mut tasks = self.lock();
+        if tasks.get(task_id).is_some_and(|r| r.status == "working") {
+            return true;
+        }
+        let tool_args = obj.get("toolArgs").cloned().unwrap_or(J::Null);
+        let mut rec = Self::new_record(tool_name, description, tool_args);
+        rec.task_id = task_id.to_string();
+        if let Some(created) = non_empty_str(obj, "createdAt") {
+            rec.created_at = created.to_string();
+        }
+        if let Some(updated) = non_empty_str(obj, "lastUpdatedAt") {
+            rec.last_updated_at = updated.to_string();
+        }
+        if let Some(ttl) = obj.get("ttlMs").and_then(J::as_i64) {
+            rec.ttl_ms = ttl;
+        }
+        if let Some(poll) = obj.get("pollIntervalMs").and_then(J::as_i64) {
+            rec.poll_interval_ms = poll;
+        }
+        rec.status_message = obj
+            .get("statusMessage")
+            .and_then(J::as_str)
+            .unwrap_or_default()
+            .to_string();
+        match obj.get("status").and_then(J::as_str).unwrap_or_default() {
+            "completed" => {
+                rec.status = "completed";
+                if let Some(result) = obj.get("result") {
+                    rec.tool_result = Some(tool_result_from_json(result));
+                }
+            }
+            "cancelled" => rec.status = "cancelled",
+            "failed" => rec.status = "failed",
+            "input_required" => {
+                rec.status = "input_required";
+                if let Some(J::Object(requests)) = obj.get("inputRequests") {
+                    rec.input_requests = Some(requests.clone());
+                }
+                if let Some(J::Object(request)) = obj.get("inputRequest") {
+                    rec.input_request = Some(request.clone());
+                }
+            }
+            // Includes `working`: a task snapshotted mid-flight never
+            // resumes after a restart, in Rust or in Go.
+            _ => {
+                rec.status = "failed";
+                rec.status_message = "The Host Agent restarted before the task completed.".into();
+            }
+        }
+        tasks.insert(rec.task_id.clone(), rec);
+        true
     }
 
     /// `Complete`: only a working task completes.
@@ -239,6 +341,27 @@ impl Registry {
             resume(accepted);
         }
         Some((snapshot, true))
+    }
+}
+
+fn non_empty_str<'a>(obj: &'a Map<String, J>, key: &str) -> Option<&'a str> {
+    obj.get(key).and_then(J::as_str).filter(|s| !s.is_empty())
+}
+
+/// The inverse of `tools::tool_result_json`: Go's
+/// `json.Unmarshal(encoded, &toolResult)` on a persisted `result` field.
+fn tool_result_from_json(value: &J) -> ToolResult {
+    ToolResult {
+        content: value
+            .get("content")
+            .and_then(J::as_array)
+            .filter(|a| !a.is_empty())
+            .cloned(),
+        structured_content: value
+            .get("structuredContent")
+            .filter(|v| **v != J::Null)
+            .cloned(),
+        is_error: value.get("isError").and_then(J::as_bool).unwrap_or(false),
     }
 }
 
@@ -329,16 +452,22 @@ mod tests {
         let registry = Arc::new(Registry::default());
         let (tx, rx) = mpsc::channel();
         let r = Arc::clone(&registry);
-        let rec = registry.create_with_input(inputs(), move |id, accepted| {
-            tx.send(accepted.clone()).unwrap();
-            r.complete(
-                id,
-                ToolResult {
-                    structured_content: Some(json!({"response": accepted["response"]})),
-                    ..Default::default()
-                },
-            );
-        });
+        let rec = registry.create_with_input(
+            "request_task_input",
+            "Waiting...",
+            json!({}),
+            inputs(),
+            move |id, accepted| {
+                tx.send(accepted.clone()).unwrap();
+                r.complete(
+                    id,
+                    ToolResult {
+                        structured_content: Some(json!({"response": accepted["response"]})),
+                        ..Default::default()
+                    },
+                );
+            },
+        );
         let got = rec.get_result();
         assert_eq!(got["status"], "input_required");
         assert_eq!(got["inputRequests"]["response"]["prompt"], "Name?");
@@ -366,7 +495,7 @@ mod tests {
     #[test]
     fn cancel_is_terminal_and_signals_work() {
         let registry = Registry::default();
-        let (rec, cancelled) = registry.create();
+        let (rec, cancelled) = registry.create("test_tool", "Running test_tool...", json!({}));
         let snapshot = registry.cancel(&rec.task_id).unwrap();
         assert!(cancelled.load(Ordering::SeqCst));
         assert_eq!(snapshot.status, "cancelled");
@@ -382,7 +511,7 @@ mod tests {
     #[test]
     fn failure_projects_a_jsonrpc_error() {
         let registry = Registry::default();
-        let (rec, _) = registry.create();
+        let (rec, _) = registry.create("test_tool", "Running test_tool...", json!({}));
         registry.fail(&rec.task_id, "boom");
         let got = registry.get(&rec.task_id).unwrap().get_result();
         assert_eq!(got["error"], json!({"code": -32603, "message": "boom"}));
@@ -390,5 +519,84 @@ mod tests {
         assert_eq!(handle["resultType"], "task");
         assert_eq!(handle["ttlMs"], DEFAULT_TTL_MS);
         assert_eq!(handle["pollIntervalMs"], POLL_INTERVAL_MS);
+    }
+
+    /// Builds the same document `tools::persist_task` writes to
+    /// `task_snapshots`, for testing `restore_snapshot` without a live
+    /// `StateStore`.
+    fn snapshot_doc(snapshot: &Snapshot) -> J {
+        let mut doc = snapshot.get_result();
+        if let J::Object(map) = &mut doc {
+            map.insert("toolName".into(), J::from(snapshot.tool_name.clone()));
+            map.insert("description".into(), J::from(snapshot.description.clone()));
+            map.insert("toolArgs".into(), snapshot.tool_args.clone());
+        }
+        doc
+    }
+
+    #[test]
+    fn restore_completed_task_preserves_result() {
+        let source = Registry::default();
+        let (rec, _) = source.create("probe_http_endpoint", "Running probe...", json!({}));
+        source.complete(
+            &rec.task_id,
+            ToolResult {
+                structured_content: Some(json!({"status": 200})),
+                ..Default::default()
+            },
+        );
+        let doc = snapshot_doc(&source.get(&rec.task_id).unwrap());
+
+        let restored = Registry::default();
+        assert!(restored.restore_snapshot(&doc));
+        let got = restored.get(&rec.task_id).unwrap().get_result();
+        assert_eq!(got["status"], "completed");
+        assert_eq!(got["result"]["structuredContent"], json!({"status": 200}));
+    }
+
+    /// Mirrors Go's `TestRestoreSnapshot` crash-safety case: a task that was
+    /// still `working` when its last snapshot was written crashed before
+    /// reaching a terminal state, so it comes back `failed`, never resumed
+    /// as `working` and never invented as `completed`.
+    #[test]
+    fn restore_working_task_comes_back_failed() {
+        let source = Registry::default();
+        let (rec, _) = source.create("run_host_plan", "Running a plan...", json!({}));
+        let doc = snapshot_doc(&source.get(&rec.task_id).unwrap());
+        assert_eq!(doc["status"], "working");
+
+        let restored = Registry::default();
+        assert!(restored.restore_snapshot(&doc));
+        let got = restored.get(&rec.task_id).unwrap().get_result();
+        assert_eq!(got["status"], "failed");
+        assert_eq!(
+            got["error"]["message"],
+            "The Host Agent restarted before the task completed."
+        );
+    }
+
+    #[test]
+    fn restore_input_required_task_preserves_requests() {
+        let source = Registry::default();
+        let rec = source.create_with_input(
+            "request_task_input",
+            "Waiting for operator input...",
+            json!({}),
+            inputs(),
+            |_, _| {},
+        );
+        let doc = snapshot_doc(&rec);
+
+        let restored = Registry::default();
+        assert!(restored.restore_snapshot(&doc));
+        let got = restored.get(&rec.task_id).unwrap().get_result();
+        assert_eq!(got["status"], "input_required");
+        assert_eq!(got["inputRequests"]["response"]["prompt"], "Name?");
+    }
+
+    #[test]
+    fn restore_rejects_a_snapshot_missing_identity() {
+        let restored = Registry::default();
+        assert!(!restored.restore_snapshot(&json!({"status": "completed"})));
     }
 }
