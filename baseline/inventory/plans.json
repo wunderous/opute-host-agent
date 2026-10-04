@@ -54,10 +54,21 @@
   },
   {
    "cliValidate": {
-    "exit": 1,
-    "stderr": "recipe operation failed: Error: required recipe input \"endpoint\" is missing",
-    "stdout": "",
-    "timedOut": false
+    "nondeterministic": true,
+    "variants": [
+     {
+      "exit": 1,
+      "stderr": "recipe operation failed: Error: required recipe input \"endpoint\" is missing",
+      "stdout": "",
+      "timedOut": false
+     },
+     {
+      "exit": 1,
+      "stderr": "recipe operation failed: Error: required recipe input \"model\" is missing",
+      "stdout": "",
+      "timedOut": false
+     }
+    ]
    },
    "gapReason": "plan execution parity (node states, retry, compensation) is M6",
    "owner": "core",

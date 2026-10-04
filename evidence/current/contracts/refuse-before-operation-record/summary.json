@@ -1,0 +1,43 @@
+{
+ "decision": "D12",
+ "items": {
+  "refuse.binding-platform": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "14d8f20cff49c42a197503641b7df74f44f97e0f9247f04f909a97b70f1fc167"
+   },
+   "requirement": "Task-aware calls refused at admission leave no durable record",
+   "specScenario": "Restart after refused tasks",
+   "status": "pass"
+  },
+  "refuse.binding-standalone": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "3296b22ac194582be23a412faa5d32dd9b6d090722161f67f4d3790dc1146c03"
+   },
+   "requirement": "Task-aware calls refused at admission leave no durable record",
+   "specScenario": "Binding refused for a task-aware call",
+   "status": "pass"
+  },
+  "refuse.coordinator": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "9878b4399cf93f8d35684996033e076c804f7deca34a63d82a9280888f139bbc"
+   },
+   "requirement": "Task-aware calls refused at admission leave no durable record",
+   "specScenario": "Unknown target refused for a task-aware call",
+   "status": "pass"
+  }
+ },
+ "provenance": {
+  "contractSha256": "a8b2cf56218e4cd98bdc2b13aaaafcb64a943a303e957bac6033b4f68d188e5a",
+  "durationSeconds": 1.5,
+  "impl": {
+   "binarySha256": "705d6859516bfcf6319ff1a4df84b7a4e3d15379a4083358a69dd43636e29f5c",
+   "label": "rust"
+  },
+  "startedAt": "2026-10-04T00:34:00Z"
+ },
+ "schemaVersion": 1,
+ "suite": "refuse-before-operation-record"
+}

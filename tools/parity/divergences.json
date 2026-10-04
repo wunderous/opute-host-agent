@@ -81,5 +81,18 @@
   "dropKeys": [
    "capability_invocations"
   ]
+ },
+ {
+  "id": "D12.refused-task-operation-count",
+  "decision": "D12",
+  "reason": "Owner-approved refuse-before-operation-record: Go persists an operation row for a task-aware call before DispatchTool resolves its binding (internal/hostmcp/server.go:1644-1652), so a call refused at admission leaves a row and breaks X2; Rust records nothing durable for it. The wire task and its typed error are unchanged. The Rust contract fingerprints every database row.",
+  "path": [
+   "sqlite",
+   "state/state.db",
+   "rowCounts"
+  ],
+  "dropKeys": [
+   "operations"
+  ]
  }
 ]

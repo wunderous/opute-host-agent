@@ -165,6 +165,9 @@ pub struct Config {
     pub host_resource_task_capacity: i64,
     pub host_resource_disk_paths: Vec<String>,
     pub host_resource_policy_revision: String,
+    /// : refuse non-control admission while workload
+    /// cgroup enforcement is unverified.
+    pub host_resource_fail_closed: bool,
     pub allow_legacy_handshake: bool,
     pub prefix_tool_names: bool,
     pub disable_localhost_protection: bool,
@@ -291,7 +294,6 @@ impl Config {
         let enforcement = env
             .value_or("OPUTE_HOST_RESOURCE_ENFORCEMENT", "fail-closed")
             .to_lowercase();
-        let _ = enforcement;
         let ownership = if env
             .value("OPUTE_INCUS_OWNERSHIP_MODE")
             .trim()
@@ -355,6 +357,8 @@ impl Config {
                 "OPUTE_HOST_RESOURCE_POLICY_REVISION",
                 crate::resource::POLICY_REVISION,
             ),
+            host_resource_fail_closed: enforcement == "fail-closed"
+                || env.value("OPUTE_HOST_RESOURCE_FAIL_CLOSED") == "true",
             host_resource_max_normal: env_int_or(env, "OPUTE_HOST_MAX_NORMAL_OPERATIONS", 2),
             host_resource_max_heavy: env_int_or(env, "OPUTE_HOST_MAX_HEAVY_OPERATIONS", 1),
             host_resource_max_queued: env_int_or(env, "OPUTE_HOST_MAX_QUEUED_OPERATIONS", 16),

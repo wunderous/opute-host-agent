@@ -165,5 +165,53 @@
       "rejection.schema-invalid-no-audit"
     ],
     "note": "M3: the listFastString step sends fast=\"true\"; the declarative gate's error text is contract."
+  },
+  {
+    "id": "C11-normal-slot-limit",
+    "summary": "the coordinator admits one normal call more than OPUTE_HOST_MAX_NORMAL_OPERATIONS",
+    "patch": {
+      "file": "internal/resource/service.go",
+      "old": "classCounts.normal+normalActive >= c.config.MaxNormal",
+      "new": "classCounts.normal+normalActive > c.config.MaxNormal"
+    },
+    "scenario": "admission.saturation.normal-class",
+    "mayAlsoFail": [],
+    "note": "M4: two gated normal calls hold both slots; the third must be refused with host_capacity_saturated."
+  },
+  {
+    "id": "C12-enforcement-fail-open",
+    "summary": "admission no longer fails closed when workload cgroup enforcement is unverified",
+    "patch": {
+      "file": "internal/resource/service.go",
+      "old": "if c.config.FailClosedOnUnknown && request.Class != ClassControl && pressure.CgroupEnforcement != EnforcementEnforced {",
+      "new": "if false && c.config.FailClosedOnUnknown && request.Class != ClassControl && pressure.CgroupEnforcement != EnforcementEnforced {"
+    },
+    "scenario": "admission.enforcement.default-policy",
+    "mayAlsoFail": [],
+    "note": "M4: with the default policy on an unverified host every non-control call is refused with host_resource_enforcement_unknown."
+  },
+  {
+    "id": "C13-release-keeps-lease",
+    "summary": "releasing a reservation leaves its lease in place until the TTL expires",
+    "patch": {
+      "file": "internal/resource/service.go",
+      "old": "\tdelete(records, reservation.ID)\n\treturn c.writeReservations(records)",
+      "new": "\treturn c.writeReservations(records)"
+    },
+    "scenario": "admission.saturation.normal-class",
+    "mayAlsoFail": [],
+    "note": "M4: after the gated calls finish and release, a normal call must be admitted again."
+  },
+  {
+    "id": "C14-late-result-overwrites-cancel",
+    "summary": "a cancelled task is overwritten by its late result",
+    "patch": {
+      "file": "internal/tasks/registry.go",
+      "old": "\tif !ok || rec.Status != StatusWorking {\n\t\treturn\n\t}\n\trec.Status = StatusCompleted",
+      "new": "\tif !ok || rec.Status == StatusCompleted {\n\t\treturn\n\t}\n\trec.Status = StatusCompleted"
+    },
+    "scenario": "tasks.cancel.mid-shim",
+    "mayAlsoFail": [],
+    "note": "M4: cancellation is cooperative; the work still finishes, and the task must stay cancelled."
   }
 ]

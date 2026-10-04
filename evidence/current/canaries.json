@@ -1,7 +1,7 @@
 {
- "canaryFileSha256": "e61179e5eff2a80315e9c886614e820668630a6696eaae85af70751290b028c0",
+ "canaryFileSha256": "98fe888abaea81b9c95812909add550a34392a0c98396bf595604f5ed2e1cd23",
  "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
- "harnessSha256": "ead19dbb1ae877be72f54e620e3a3bc6127297c324b8b5752ac6c34a4df6cc64",
+ "harnessSha256": "9f48e5201b10f94b7d52e8609a23611af97f31c7eafb47abed6a8db4f0718a2e",
  "results": [
   {
    "buildStatus": "ok",
@@ -140,6 +140,42 @@
     "rejection.schema-invalid-no-audit"
    ],
    "id": "C10-schema-type-text",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "7128f101a7186e6b13a529d7a332d0dec33664a9519c90e1ed32b1631480fa39",
+   "caught": true,
+   "failedScenarios": [
+    "admission.saturation.normal-class"
+   ],
+   "id": "C11-normal-slot-limit",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "097db0e37b19855ddc20bc9c4ff708dc63f7c2e9b473feea5e36621c61d9c61f",
+   "caught": false,
+   "failedScenarios": [],
+   "id": "C12-enforcement-fail-open",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "130d6bab6f2c48626422653572012312ab21c4de0fa7d75652660676a13bdb2a",
+   "caught": true,
+   "failedScenarios": [
+    "admission.saturation.normal-class"
+   ],
+   "id": "C13-release-keeps-lease",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "043e6a906b5bd15ea24768154c8c7bad9ea30554d8eb37cb531de8c4e8a9698c",
+   "caught": false,
+   "failedScenarios": [],
+   "id": "C14-late-result-overwrites-cancel",
    "patchApplied": true
   }
  ],

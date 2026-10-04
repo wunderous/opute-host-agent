@@ -1,0 +1,9 @@
+{
+  "description": "M4 cancellation: `incus list` blocks on the one-shot gate \"list\" and then reports no instances, so a task-aware call is cancelled while its resource binding is mid-shim and then fails binding without any further Incus invocation.",
+  "commands": {
+    "incus": [
+      {"argv": ["list", "--format", "json"], "stdout": "[]", "gate": "list"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

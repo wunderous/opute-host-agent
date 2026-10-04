@@ -164,7 +164,8 @@ def _check_divergences(manifest: dict, suite_name: str, sid: str, right: str | N
     return ok
 
 
-def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report) -> dict[str, str]:
+def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report,
+                     waived: dict[str, str] | None = None) -> dict[str, str]:
     """A canary passes (for the harness) only when its expected scenario failed."""
     out: dict[str, str] = {}
     spec = dict(manifest.get("canaries", {}))
@@ -192,7 +193,12 @@ def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report) -> d
         others_clean = set(result.get("failedScenarios", [])) <= set(canary.get("mayAlsoFail", [])) | {canary["scenario"]}
         out[canary["id"]] = PASS if caught and others_clean and result.get("patchApplied") else FAIL
         if not caught:
-            report.problem(f"canary {canary['id']}: scenario {canary['scenario']} stayed green (harness gap)", "canaries")
+            reason = (waived or {}).get(canary["id"])
+            scope = "waivedCanaries" if reason else "canaries"
+            msg = f"canary {canary['id']}: scenario {canary['scenario']} stayed green (harness gap)"
+            if reason:
+                msg += f" -- waived: {reason}"
+            report.problem(msg, scope)
     return out
 
 
@@ -345,11 +351,12 @@ def verify(manifest_path: Path, gate: str) -> dict:
         report.problem("manifest is not keyed to the current source lock (rebase required)")
     if gate not in manifest.get("gates", {}):
         return {"gate": {"name": gate, "pass": False}, "problems": [f"unknown gate {gate}"], "items": {}}
+    rules = manifest["gates"][gate]
 
     scenarios = {s["id"]: s for s in runner.load_scenarios()}
     suites = {name: _check_suite(root, manifest, name, suite, lock, scenarios, report)
               for name, suite in manifest.get("evidence", {}).items()}
-    canaries = _check_canaries(root, manifest, lock, report)
+    canaries = _check_canaries(root, manifest, lock, report, rules.get("waivedCanaries", {}))
     inventory = _check_inventory(root, lock, manifest, report)
 
     for item in manifest.get("items", []):
@@ -368,7 +375,6 @@ def verify(manifest_path: Path, gate: str) -> dict:
         if not item.get("owner"):
             report.problem(f"item {item['id']} has no owner")
 
-    rules = manifest["gates"][gate]
     failures: list[str] = []
     for req in rules.get("requirePass", []):
         suite = req if isinstance(req, str) else req["suite"]
@@ -386,7 +392,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         if bad:
             failures.append(f"{suite}: {len(bad)} item(s) fail")
     if rules.get("requireCanaries"):
-        bad = [c for c, s in canaries.items() if s != PASS]
+        waived = rules.get("waivedCanaries", {})
+        bad = [c for c, s in canaries.items() if s != PASS and c not in waived]
         if bad or not canaries:
             failures.append(f"canaries not all caught: {bad or 'none recorded'}")
     if rules.get("requireInventory") and inventory != PASS:

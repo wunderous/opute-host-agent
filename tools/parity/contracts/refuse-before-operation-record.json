@@ -1,0 +1,1405 @@
+{
+ "suite": "refuse-before-operation-record",
+ "decision": "D12",
+ "spec": "openspec/changes/refuse-before-operation-record/specs/refuse-before-operation-record/spec.md",
+ "scenarios": [
+  {
+   "id": "refuse.binding-standalone",
+   "requirement": "Task-aware calls refused at admission leave no durable record",
+   "specScenario": "Binding refused for a task-aware call",
+   "fixture": "incus-empty",
+   "steps": [
+    {
+     "as": "provision",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stopBeforeSeed",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "acceptedHistory",
+     "sql": {
+      "db": "${SANDBOX}/state/state.db",
+      "statements": [
+       "INSERT INTO operations(operation_id,tool_name,status,description,created_at,updated_at,result_json,error_message) VALUES ('op-historical','start_vm','completed','accepted history','2026-09-28T00:00:00Z','2026-09-28T00:00:00Z','{}','')"
+      ]
+     },
+     "expect": {
+      "sql": 1
+     }
+    },
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "hostInfoBefore",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "initial",
+     "state": {},
+     "capture": {
+      "BEFORE": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "missing-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "missing",
+     "mcp": {
+      "method": "tools/call",
+      "name": "start_vm",
+      "params": {
+       "name": "start_vm",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_MISSING": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "missing-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_MISSING}",
+      "params": {
+       "taskId": "${T_MISSING}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "missing-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "missing-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed",
+     "mcp": {
+      "method": "tools/call",
+      "name": "stop_vm",
+      "params": {
+       "name": "stop_vm",
+       "arguments": {
+        "uri": "web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_MALFORMED": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "malformed-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_MALFORMED}",
+      "params": {
+       "taskId": "${T_MALFORMED}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "malformed-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "malformed-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "foreign-tenant-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "foreign-tenant",
+     "mcp": {
+      "method": "tools/call",
+      "name": "restart_vm",
+      "params": {
+       "name": "restart_vm",
+       "arguments": {
+        "uri": "vm:other-tenant:web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_FOREIGN_TENANT": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "foreign-tenant-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_FOREIGN_TENANT}",
+      "params": {
+       "taskId": "${T_FOREIGN_TENANT}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "foreign-tenant-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "foreign-tenant-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "wrong-kind-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "wrong-kind",
+     "mcp": {
+      "method": "tools/call",
+      "name": "delete_vm",
+      "params": {
+       "name": "delete_vm",
+       "arguments": {
+        "uri": "host:local:web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_WRONG_KIND": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "wrong-kind-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_WRONG_KIND}",
+      "params": {
+       "taskId": "${T_WRONG_KIND}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "wrong-kind-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "wrong-kind-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "cluster-foreign-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "cluster-foreign",
+     "mcp": {
+      "method": "tools/call",
+      "name": "apply_manifest",
+      "params": {
+       "name": "apply_manifest",
+       "arguments": {
+        "uri": "cluster:other-tenant:k3s",
+        "manifest": "{}"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_CLUSTER_FOREIGN": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "cluster-foreign-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_CLUSTER_FOREIGN}",
+      "params": {
+       "taskId": "${T_CLUSTER_FOREIGN}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "cluster-foreign-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "cluster-foreign-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-target-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-target",
+     "mcp": {
+      "method": "tools/call",
+      "name": "start_vm",
+      "params": {
+       "name": "start_vm",
+       "arguments": {
+        "uri": "container:local:ghost"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_UNKNOWN_TARGET": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "unknown-target-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_UNKNOWN_TARGET}",
+      "params": {
+       "taskId": "${T_UNKNOWN_TARGET}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "unknown-target-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "unknown-target-trace",
+     "trace": {},
+     "expect": {
+      "verbs": {
+       "$in": [
+        [
+         "incus list"
+        ],
+        [
+         "incus query"
+        ],
+        [
+         "incus list",
+         "incus query"
+        ]
+       ]
+      }
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    },
+    {
+     "as": "afterRead",
+     "state": {},
+     "capture": {
+      "AFTER_READ": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "reopened",
+     "state": {},
+     "expect": {
+      "digest": "${AFTER_READ}"
+     }
+    },
+    {
+     "as": "readAfterRestart",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "refuse.binding-platform",
+   "requirement": "Task-aware calls refused at admission leave no durable record",
+   "specScenario": "Restart after refused tasks",
+   "fixture": "incus-empty",
+   "steps": [
+    {
+     "as": "provision",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stopBeforeSeed",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "acceptedHistory",
+     "sql": {
+      "db": "${SANDBOX}/state/state.db",
+      "statements": [
+       "INSERT INTO operations(operation_id,tool_name,status,description,created_at,updated_at,result_json,error_message) VALUES ('op-historical','start_vm','completed','accepted history','2026-09-28T00:00:00Z','2026-09-28T00:00:00Z','{}','')"
+      ]
+     },
+     "expect": {
+      "sql": 1
+     }
+    },
+    {
+     "as": "start",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "hostInfoBefore",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "initial",
+     "state": {},
+     "capture": {
+      "BEFORE": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "missing-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "missing",
+     "mcp": {
+      "method": "tools/call",
+      "name": "start_vm",
+      "params": {
+       "name": "start_vm",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_MISSING": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "missing-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_MISSING}",
+      "params": {
+       "taskId": "${T_MISSING}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "missing-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "missing-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "malformed",
+     "mcp": {
+      "method": "tools/call",
+      "name": "stop_vm",
+      "params": {
+       "name": "stop_vm",
+       "arguments": {
+        "uri": "web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_MALFORMED": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "malformed-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_MALFORMED}",
+      "params": {
+       "taskId": "${T_MALFORMED}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "malformed-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "malformed-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "foreign-tenant-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "foreign-tenant",
+     "mcp": {
+      "method": "tools/call",
+      "name": "restart_vm",
+      "params": {
+       "name": "restart_vm",
+       "arguments": {
+        "uri": "vm:other-tenant:web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_FOREIGN_TENANT": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "foreign-tenant-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_FOREIGN_TENANT}",
+      "params": {
+       "taskId": "${T_FOREIGN_TENANT}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "foreign-tenant-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "foreign-tenant-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "wrong-kind-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "wrong-kind",
+     "mcp": {
+      "method": "tools/call",
+      "name": "delete_vm",
+      "params": {
+       "name": "delete_vm",
+       "arguments": {
+        "uri": "host:local:web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_WRONG_KIND": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "wrong-kind-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_WRONG_KIND}",
+      "params": {
+       "taskId": "${T_WRONG_KIND}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "wrong-kind-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "wrong-kind-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "cluster-foreign-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "cluster-foreign",
+     "mcp": {
+      "method": "tools/call",
+      "name": "apply_manifest",
+      "params": {
+       "name": "apply_manifest",
+       "arguments": {
+        "uri": "cluster:other-tenant:k3s",
+        "manifest": "{}"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_CLUSTER_FOREIGN": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "cluster-foreign-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_CLUSTER_FOREIGN}",
+      "params": {
+       "taskId": "${T_CLUSTER_FOREIGN}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "cluster-foreign-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "cluster-foreign-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-target-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "unknown-target",
+     "mcp": {
+      "method": "tools/call",
+      "name": "start_vm",
+      "params": {
+       "name": "start_vm",
+       "arguments": {
+        "uri": "container:local:ghost"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_UNKNOWN_TARGET": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "unknown-target-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_UNKNOWN_TARGET}",
+      "params": {
+       "taskId": "${T_UNKNOWN_TARGET}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "resource_binding"
+     }
+    },
+    {
+     "as": "unknown-target-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "unknown-target-trace",
+     "trace": {},
+     "expect": {
+      "verbs": {
+       "$in": [
+        [
+         "incus list"
+        ],
+        [
+         "incus query"
+        ],
+        [
+         "incus list",
+         "incus query"
+        ]
+       ]
+      }
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    },
+    {
+     "as": "afterRead",
+     "state": {},
+     "capture": {
+      "AFTER_READ": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "platform"
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "reopened",
+     "state": {},
+     "expect": {
+      "digest": "${AFTER_READ}"
+     }
+    },
+    {
+     "as": "readAfterRestart",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "refuse.coordinator",
+   "requirement": "Task-aware calls refused at admission leave no durable record",
+   "specScenario": "Unknown target refused for a task-aware call",
+   "fixture": "incus-admission",
+   "steps": [
+    {
+     "as": "provision",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+       "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+       "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES": "9223372036854775807"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "stopBeforeSeed",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "acceptedHistory",
+     "sql": {
+      "db": "${SANDBOX}/state/state.db",
+      "statements": [
+       "INSERT INTO operations(operation_id,tool_name,status,description,created_at,updated_at,result_json,error_message) VALUES ('op-historical','start_vm','completed','accepted history','2026-09-28T00:00:00Z','2026-09-28T00:00:00Z','{}','')"
+      ]
+     },
+     "expect": {
+      "sql": 1
+     }
+    },
+    {
+     "as": "start",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+       "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+       "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES": "9223372036854775807"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "hostInfoBefore",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "adoptWeb1",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_vm_info",
+      "params": {
+       "name": "get_vm_info",
+       "arguments": {
+        "uri": "vm:local:web1",
+        "fast": true
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    },
+    {
+     "as": "initial",
+     "state": {},
+     "capture": {
+      "BEFORE": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "saturated-mark",
+     "trace": {
+      "mark": true
+     },
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "saturated",
+     "mcp": {
+      "method": "tools/call",
+      "name": "start_vm",
+      "params": {
+       "name": "start_vm",
+       "arguments": {
+        "uri": "vm:local:web1"
+       }
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.resultType": "task",
+      "body.result.status": "working"
+     },
+     "capture": {
+      "T_SATURATED": {
+       "from": "body.result.taskId"
+      }
+     }
+    },
+    {
+     "as": "saturated-task",
+     "mcp": {
+      "method": "tasks/get",
+      "name": "${T_SATURATED}",
+      "params": {
+       "taskId": "${T_SATURATED}"
+      },
+      "until": {
+       "path": "body.result.status",
+       "in": [
+        "completed",
+        "failed",
+        "cancelled"
+       ]
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.status": "completed",
+      "body.result.result.isError": true,
+      "body.result.result.structuredContent.code": "host_capacity_saturated"
+     }
+    },
+    {
+     "as": "saturated-state",
+     "state": {},
+     "expect": {
+      "digest": "${BEFORE}"
+     }
+    },
+    {
+     "as": "saturated-trace",
+     "trace": {},
+     "expect": {
+      "count": 0
+     }
+    },
+    {
+     "as": "hostInfo",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      },
+      "body.result.structuredContent.uri": "host:local:${AGENT_ID}"
+     }
+    },
+    {
+     "as": "afterRead",
+     "state": {},
+     "capture": {
+      "AFTER_READ": {
+       "from": "digest"
+      }
+     }
+    },
+    {
+     "as": "stop",
+     "stop": {},
+     "expect": {
+      "exit": 0,
+      "killed": false
+     }
+    },
+    {
+     "as": "restart",
+     "serve": {
+      "profile": "standalone",
+      "env": {
+       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+       "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+       "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES": "9223372036854775807"
+      }
+     },
+     "expect": {
+      "ready": true
+     }
+    },
+    {
+     "as": "reopened",
+     "state": {},
+     "expect": {
+      "digest": "${AFTER_READ}"
+     }
+    },
+    {
+     "as": "readAfterRestart",
+     "mcp": {
+      "method": "tools/call",
+      "name": "get_host_info",
+      "params": {
+       "name": "get_host_info",
+       "arguments": {}
+      }
+     },
+     "expect": {
+      "status": 200,
+      "body.result.isError": {
+       "$absent": true
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

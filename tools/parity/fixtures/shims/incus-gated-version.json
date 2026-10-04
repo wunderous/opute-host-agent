@@ -1,0 +1,10 @@
+{
+  "description": "M4 saturation: `incus version` blocks on the one-shot gate \"probe\" until the scenario releases it, so a normal-class probe_incus_gpu call holds its admission lease while a second call is evaluated.",
+  "commands": {
+    "incus": [
+      {"argv": ["list", "--format", "json"], "stdout": "[]"},
+      {"argv": ["version"], "stdout": "Client version: 7.2\nServer version: 7.2", "gate": "probe"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

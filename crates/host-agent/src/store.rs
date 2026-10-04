@@ -9,6 +9,7 @@
 use std::path::Path;
 
 use rusqlite::{Connection, OpenFlags};
+use serde_json::{Map, Value as J};
 
 use crate::ddl;
 use crate::goerr::{self, Result};
@@ -89,6 +90,9 @@ fn ensure_column(
     }
     Ok(())
 }
+
+/// A registry record: its status and provider-native coordinates.
+pub type ResourceRecord = (String, Map<String, J>);
 
 pub struct StateStore {
     conn: Option<Connection>,
@@ -203,6 +207,51 @@ impl StateStore {
         )
         .map_err(sqlite_err)?;
         Ok(())
+    }
+
+    /// `Store.GetResource`: the record's status and coordinates, or `None`
+    /// when the registry has never seen the URI.
+    pub fn get_resource(
+        &self,
+        uri: &crate::resource::Uri,
+    ) -> std::result::Result<Option<ResourceRecord>, String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let row = conn.query_row(
+            "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status
+        FROM resource_registry WHERE uri = ?",
+            [uri.to_string()],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                    r.get::<_, String>(4)?,
+                    r.get::<_, String>(5)?,
+                ))
+            },
+        );
+        let (stored, kind, tenant, id, coordinates, status) = match row {
+            Ok(row) => row,
+            Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
+            Err(e) => return Err(sqlite_err(e)),
+        };
+        let coordinates = match serde_json::from_str::<J>(&coordinates) {
+            Ok(J::Object(m)) => m,
+            Ok(J::Null) => Map::new(),
+            Ok(_) | Err(_) => return Err("decode resource coordinates: invalid JSON".into()),
+        };
+        if tenant != uri.tenant_id
+            || kind != uri.resource_type
+            || id != uri.resource_id
+            || stored != uri.to_string()
+        {
+            return Err(format!(
+                "resource registry record does not match URI {}",
+                crate::goerr::quote(&uri.to_string())
+            ));
+        }
+        Ok(Some((status, coordinates)))
     }
 
     /// Close explicitly so the WAL is checkpointed and removed, as Go's

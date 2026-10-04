@@ -160,11 +160,20 @@ def _file(ctx: Context, spec: dict) -> dict:
 
 
 def _mcp(ctx: Context, spec: dict) -> dict:
+    """One MCP request. "until": {"path": dotted, "in": [...]} repeats it
+    (every 50 ms, up to "timeout" seconds) until the value at path is listed,
+    for polling a task to a terminal state; the last response is the result."""
     params = dict(ctx.expand(spec.get("params") or {}))
     if "_meta" in params:  # extra _meta keys ride on a modern client's metadata
         params["_meta"] = {**agent.modern_meta(), **params["_meta"]}
-    return agent.mcp_call(ctx.sandbox, spec["method"], params,
-                          token=spec.get("token", "${TOKEN}"), name=ctx.expand(spec.get("name")))
+    until = spec.get("until")
+    deadline = time.monotonic() + spec.get("timeout", 30)
+    while True:
+        resp = agent.mcp_call(ctx.sandbox, spec["method"], params,
+                              token=spec.get("token", "${TOKEN}"), name=ctx.expand(spec.get("name")))
+        if not until or _resolve(resp, until["path"]) in until["in"] or time.monotonic() > deadline:
+            return resp
+        time.sleep(0.05)
 
 
 def _list_tools(ctx: Context) -> list[dict]:
@@ -209,13 +218,21 @@ def _sweep(ctx: Context, spec: dict) -> dict:
             "published": sorted(n for n in names if n in published)}
 
 
-def _trace(ctx: Context) -> dict:
+def _trace(ctx: Context, spec: dict) -> dict:
+    """The shim trace: its length, first entries, and the distinct leading
+    (cmd, argv[0]) pairs as "verbs" (["incus list", ...]). {"mark": true}
+    starts the trace over: later trace steps see only entries after it."""
     entries = ctx.sandbox.trace()
-    return {"count": len(entries), "first": entries[:5]}
+    if spec.get("mark"):
+        ctx.trace_mark = len(entries)
+    entries = entries[getattr(ctx, "trace_mark", 0):]
+    verbs = sorted({" ".join([e.get("cmd", "")] + e.get("argv", [])[:1]) for e in entries})
+    return {"count": len(entries), "first": entries[:5], "verbs": verbs}
 
 
 def execute(impl: agent.Impl, scenario: dict, run_id: str) -> tuple[dict, list[str]]:
-    sandbox = agent.Sandbox(side="c", run_id=run_id, fixture=runner.FIXTURE_DIR / "shims" / "incus-empty.json")
+    fixture = runner.FIXTURE_DIR / "shims" / f"{scenario.get('fixture', 'incus-empty')}.json"
+    sandbox = agent.Sandbox(side="c", run_id=run_id, fixture=fixture)
     ctx = Context(sandbox)
     steps: dict[str, Any] = {}
     failures: list[str] = []
@@ -257,7 +274,7 @@ def execute(impl: agent.Impl, scenario: dict, run_id: str) -> tuple[dict, list[s
                 elif "sweep" in step:
                     result = _sweep(ctx, step["sweep"])
                 elif "trace" in step:
-                    result = _trace(ctx)
+                    result = _trace(ctx, step["trace"])
                 elif "state" in step:
                     result = sandbox.durable_snapshot()
                 elif "repeat" in step:

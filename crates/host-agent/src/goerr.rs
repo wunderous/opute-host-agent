@@ -136,6 +136,16 @@ pub fn quote(s: &str) -> String {
     out
 }
 
+/// Go `strconv.ParseFloat(s, 64)` for decimal input (signs, exponents,
+/// `inf`, `infinity`, `nan`). Hexadecimal floats and digit separators are
+/// rejected here; no capacity argument uses them.
+pub fn parse_float(s: &str) -> Option<f64> {
+    if s.is_empty() || s.contains(['_', 'x', 'X', 'p', 'P']) {
+        return None;
+    }
+    s.parse::<f64>().ok()
+}
+
 /// Go `strconv.Atoi` result: the value Go would produce plus whether it
 /// reported an error. On overflow Go returns the clamped value with an error.
 pub fn atoi(s: &str) -> (i64, bool) {

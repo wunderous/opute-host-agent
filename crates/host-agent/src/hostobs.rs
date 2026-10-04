@@ -869,9 +869,12 @@ pub fn rfc3339_now() -> String {
 
 /// `time.Now().UTC().Format(time.RFC3339Nano)`: trailing zeros trimmed.
 pub fn rfc3339_nano_now() -> String {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default();
+    rfc3339_nano(std::time::SystemTime::now())
+}
+
+/// `t.UTC().Format(time.RFC3339Nano)`.
+pub fn rfc3339_nano(t: std::time::SystemTime) -> String {
+    let now = t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
     let secs = now.as_secs() as i64;
     let (y, mo, d) = crate::app::civil_from_days(secs.div_euclid(86_400));
     let rem = secs.rem_euclid(86_400);

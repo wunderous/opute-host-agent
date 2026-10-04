@@ -4,6 +4,7 @@
 // Declared first: the go_err! macro is textually scoped.
 #[macro_use]
 mod goerr;
+mod admission;
 mod app;
 mod catalog;
 mod cli;
@@ -12,6 +13,7 @@ mod ddl;
 mod goflag;
 mod gojson;
 mod hostobs;
+mod hostread;
 mod http1;
 mod identity;
 mod incus;
@@ -20,6 +22,7 @@ mod oauth;
 mod resource;
 mod schema;
 mod store;
+mod tasks;
 mod tools;
 mod transport;
 

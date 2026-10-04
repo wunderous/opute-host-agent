@@ -485,6 +485,25 @@ impl Incus {
         Ok(json!({"vms": vms}))
     }
 
+    /// `GetVMInfo`.
+    pub fn get_vm_info(
+        &self,
+        vm: &str,
+        fast: bool,
+        register: &dyn Fn(&str, Map<String, J>),
+    ) -> Result<J, String> {
+        let vm = vm.trim();
+        if vm.is_empty() {
+            return Err("vmName is required".into());
+        }
+        self.assert_ownership(vm, "get_vm_info")?;
+        let items = self.list()?;
+        match items.iter().find(|i| i.name == vm) {
+            Some(item) => Ok(self.map_item(item, fast, register)),
+            None => Err(format!("VM '{vm}' not found")),
+        }
+    }
+
     // --- root disk quota (incus_storage_quota.go) -----------------------------------
 
     fn query(&self, path: &str, fallback: &str) -> Result<String, String> {

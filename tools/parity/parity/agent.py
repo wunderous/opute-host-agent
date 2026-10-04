@@ -150,6 +150,7 @@ class Sandbox:
         for sub in ("home", "xdg", "state", "instance", "shims"):
             (self.root / sub).mkdir()
         self.trace_path = self.root / "trace.jsonl"
+        self.captured: dict[str, str] = {}
         self.shim_names: list[str] = []
         if self.fixture:
             self.shim_names = shims.install(self.root / "shims", self.fixture, self.trace_path)
@@ -165,6 +166,10 @@ class Sandbox:
         }
         if host_ip():
             variables["HOST_IP"] = host_ip()
+        # Values a scenario captured from a response (a task ID, say). They
+        # are per-side literals like the agent ID: normalization replaces
+        # them with ${NAME}, and later steps may expand them.
+        variables.update(self.captured)
         return variables
 
     def base_env(self) -> dict[str, str]:
@@ -199,7 +204,7 @@ class Sandbox:
     def files(self) -> list[dict]:
         """Files the agent created, with type and permission bits."""
         out = []
-        skip = {self.root / "shims", self.trace_path}
+        skip = {self.root / "shims", self.root / "gates", self.root / "pids", self.trace_path}
         for path in sorted(self.root.rglob("*")):
             if any(path == s or s in path.parents for s in skip):
                 continue
@@ -415,7 +420,7 @@ def modern_meta(client_name: str = "opute-parity", client_version: str = "1") ->
 
 
 def http_request(sandbox: Sandbox, method: str, path: str, headers: dict[str, str] | None = None,
-                 body: bytes | None = None, timeout: float = 30.0) -> dict:
+                 body: bytes | None = None, timeout: float = 300.0) -> dict:
     conn = http.client.HTTPConnection("127.0.0.1", sandbox.port, timeout=timeout)
     try:
         conn.request(method, path, body=body, headers=headers or {})
@@ -535,11 +540,16 @@ def _decode_body(headers: dict[str, str], raw: bytes) -> Any:
 def mcp_call(sandbox: Sandbox, method: str, params: dict | None = None, *,
              token: str | None = "${TOKEN}", name: str | None = None,
              modern: bool = True, headers: dict[str, str] | None = None,
-             omit_headers: list[str] | None = None, request_id: Any = 1) -> dict:
-    """One JSON-RPC request over Streamable HTTP, as a 2026-07-28 client sends it."""
+             omit_headers: list[str] | None = None, request_id: Any = 1,
+             meta: dict | None = None) -> dict:
+    """One JSON-RPC request over Streamable HTTP, as a 2026-07-28 client sends it.
+
+    `meta` adds keys (for example catalogRevision) to the modern _meta."""
     params = dict(params or {})
     if modern:
         params.setdefault("_meta", modern_meta())
+    if meta:
+        params["_meta"] = {**params.get("_meta", {}), **meta}
     envelope = {"jsonrpc": "2.0", "method": method, "params": params}
     if request_id is not None:
         envelope["id"] = request_id

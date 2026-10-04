@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 # Keep reference builds, patched canaries and client oracles on the same
@@ -53,9 +53,9 @@ parity-canaries:
 parity-oracles:
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/evidence/current/go-oracles.json
 
-# Declared divergences (decisions D8, D10, D11): the Rust contract suites, and
+# Declared divergences (decisions D8, D10, D11, D12): the Rust contract suites, and
 # patched Rust builds that must turn them red.
-CONTRACT_SUITES := oauth-issuance standalone-read-only-gate reject-without-audit-writes
+CONTRACT_SUITES := oauth-issuance standalone-read-only-gate reject-without-audit-writes refuse-before-operation-record
 
 parity-contracts:
 	for s in $(CONTRACT_SUITES); do \
@@ -81,6 +81,9 @@ parity-verify-m2:
 parity-verify-m3:
 	$(PARITY) verify --gate m3 --report $(CURDIR)/evidence/current/verify-m3.json
 
+parity-verify-m4:
+	$(PARITY) verify --gate m4 --report $(CURDIR)/evidence/current/verify-m4.json
+
 parity-verify-cutover:
 	$(PARITY) verify --gate cutover
 
@@ -101,11 +104,13 @@ parity-m2: parity-m1 parity-contracts parity-rust-canaries parity-verify-m2
 
 parity-m3: parity-m2 parity-verify-m3
 
+parity-m4: parity-m3 parity-verify-m4
+
 # CI: verify the committed evidence, then re-prove parity on every surface
 # with a freshly built Rust binary (fails on any diff).
 parity-ci: parity-test go-reference rust-build
 	$(PARITY) catalog-source --go-src $(GO_SRC) --check
-	$(PARITY) verify --gate m3
+	$(PARITY) verify --gate m4
 	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --out $(CURDIR)/.parity/ci-go-vs-rust
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/.parity/ci-go-oracles.json
 	for s in $(CONTRACT_SUITES); do ($(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s) || exit 1; done
