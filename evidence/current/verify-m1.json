@@ -2,6 +2,10 @@
   "canaries": {
     "C1-descriptor-text": "pass",
     "C10-schema-type-text": "pass",
+    "C11-normal-slot-limit": "pass",
+    "C12-enforcement-fail-open": "fail",
+    "C13-release-keeps-lease": "pass",
+    "C14-late-result-overwrites-cancel": "fail",
     "C2-auth-status": "pass",
     "C3-extra-argv-token": "pass",
     "C4-legacy-bypass-widened": "pass",
@@ -19,6 +23,72 @@
   },
   "inventory": "pass",
   "items": {
+    "admission.binding.canonical-uri": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.catalog-revision.stale": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.enforcement.default-policy": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.headroom.min-disk": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.headroom.min-memory": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.matrix.binding": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.matrix.gate-closed": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.matrix.stale-revision": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.matrix.unknown-target": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.normal-reads.host": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
+    "admission.saturation.normal-class": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "admission"
+    },
     "admission.standalone-mutation-denied": {
       "go-vs-go": "pass",
       "go-vs-rust": "pass",
@@ -343,6 +413,42 @@
       "owner": "state",
       "surface": "durable-state"
     },
+    "tasks.async.binding-failure": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "tasks"
+    },
+    "tasks.cancel.after-completion": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "tasks"
+    },
+    "tasks.cancel.before-start": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "tasks"
+    },
+    "tasks.cancel.mid-shim": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "tasks"
+    },
+    "tasks.input-required.cancel": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "tasks"
+    },
+    "tasks.input-required.round-trip": {
+      "go-vs-go": "pass",
+      "go-vs-rust": "pass",
+      "owner": "core",
+      "surface": "tasks"
+    },
     "wire.auth.platform": {
       "go-vs-go": "pass",
       "go-vs-rust": "pass",
@@ -423,5 +529,8 @@
     }
   },
   "oracles": "pass",
-  "problems": []
+  "problems": [
+    "[waivedCanaries] canary C12-enforcement-fail-open: scenario admission.enforcement.default-policy stayed green (harness gap) -- waived: environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "[waivedCanaries] canary C14-late-result-overwrites-cancel: scenario tasks.cancel.mid-shim stayed green (harness gap) -- waived: no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+  ]
 }

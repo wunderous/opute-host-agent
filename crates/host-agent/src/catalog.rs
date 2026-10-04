@@ -101,6 +101,15 @@ pub fn is_task_aware(name: &str) -> bool {
         || source().task_aware.iter().any(|n| n == name)
 }
 
+/// `RegisteredAdmissionClass`: the class a capability declared at its
+/// registration site, if it has one.
+pub fn admission_class(name: &str) -> Option<String> {
+    registration(name)?
+        .get("admissionClass")
+        .and_then(J::as_str)
+        .map(str::to_string)
+}
+
 /// `StandaloneToolMetadata`.
 pub fn standalone_metadata(name: &str) -> Option<&'static J> {
     registration(name)?.get("standaloneMetadata")

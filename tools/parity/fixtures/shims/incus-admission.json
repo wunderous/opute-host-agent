@@ -1,0 +1,13 @@
+{
+  "description": "M4 admission: one VM and one container for canonical-URI binding and adoption, and an Incus 7.2 version string for the normal-class probe_incus_gpu read. Every other invocation fails with the default response and is still recorded.",
+  "commands": {
+    "incus": [
+      {
+        "argv": ["list", "--format", "json"],
+        "stdout": "[{\"name\": \"web1\", \"status\": \"Running\", \"type\": \"virtual-machine\", \"config\": {\"limits.cpu\": \"2\", \"limits.memory\": \"2GiB\"}}, {\"name\": \"box1\", \"status\": \"Stopped\", \"type\": \"container\", \"config\": {}}]"
+      },
+      {"argv": ["version"], "stdout": "Client version: 7.2\nServer version: 7.2"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

@@ -67,14 +67,15 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   status, headers, discovery, errors, and forbidden legacy method behavior.
   Evidence: [evidence/m2/README.md](../../../evidence/m2/README.md). OAuth
   token issuance is deferred by owner decision D8.
-- [ ] 2.3 Implement catalog publication, `tools/list`, read-only host tools,
+- [x] 2.3 Implement catalog publication, `tools/list`, read-only host tools,
   structured results, and typed admission. Gate: valid and invalid credentials,
   `get_host_info {}`, resource kind, tenant scope, and default mutation denial
   match Go in isolated fixtures; no mutation is used to satisfy this gate.
-  Progress: catalog publication, `tools/list`, the read-only host tools,
-  structured results and default mutation denial are done in M3
-  ([evidence/m3/README.md](../../../evidence/m3/README.md)). Typed admission,
-  resource binding and tenant scope remain open for M4.
+  Evidence: catalog, read-only tools and default mutation denial in
+  [evidence/m3/README.md](../../../evidence/m3/README.md); typed admission,
+  canonical resource kinds, tenant scope and the admission matrix in
+  [evidence/m4/README.md](../../../evidence/m4/README.md). Refused task-aware
+  calls write no operation record, by owner decision D12.
 
 ## 3. Prove provider and task lifecycle parity
 
@@ -86,6 +87,12 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
   cancellation, stale revision, callback rejection, and reverse-order cleanup.
+  Progress: the admission part (stale catalog revision, the host resource
+  coordinator, reservation leases), the task bridge for built-in tools
+  (`tasks/get`, `input_required`, cooperative cancellation) and timeouts are
+  done in M4 ([evidence/m4/README.md](../../../evidence/m4/README.md)).
+  Provider generations, callback routing, readiness, replacement during
+  in-flight work and bounded disposal remain open for M7.
 - [ ] 3.3 Port every supported provider integration and conditional catalog
   projection behind neutral typed contracts. Gate: the equivalent configured
   Go and Rust fixture has no missing, extra, or differently shaped tool; an

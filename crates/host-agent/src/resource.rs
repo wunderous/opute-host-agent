@@ -3,8 +3,10 @@
 //! `Uri` is Go's `resourceid.URI`: an opaque, tenant-scoped identity
 //! `type:tenant:id`. The registry upsert is `state.Store.UpsertResource`.
 //! `Coordinator` reports the admission snapshot `get_host_info` embeds
-//! (`resource.Coordinator.Metadata`); reservation and admission decisions
-//! themselves arrive with M4.
+//! (`resource.Coordinator.Metadata`) and makes the admission decision
+//! (`Coordinator.Admit`/`Release`): a reservation is a record in the
+//! host-wide `reservations.json`, guarded by an exclusive `flock` on
+//! `reservations.lock`, so co-resident agents (Go or Rust) share one budget.
 
 use crate::hostobs::{HostSystemStats, PressureStall};
 use serde_json::{json, Map, Value as J};
@@ -157,6 +159,349 @@ pub struct Coordinator {
     pub task_capacity: i64,
     /// The environment the host domain's workload-slice probe runs with.
     pub enforcement_env: crate::config::Env,
+    pub max_normal: i64,
+    pub max_heavy: i64,
+    /// `FailClosedOnUnknown`.
+    pub fail_closed: bool,
+}
+
+/// `ReservationTTL`: how long a crashed holder's record can outlive it.
+pub const RESERVATION_TTL: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+
+/// `resource.AdmissionRequest`: an explicit, typed cost and ownership request.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct AdmissionRequest {
+    pub cpu_cores: f64,
+    pub memory_bytes: i64,
+    pub disk_bytes: i64,
+    pub tasks: i64,
+    pub class: String,
+    pub operation: String,
+    pub agent_id: String,
+    pub operation_id: String,
+    pub task_id: String,
+    pub resource_uri: String,
+}
+
+impl AdmissionRequest {
+    /// Go's JSON field order; `omitempty` fields dropped when zero.
+    fn to_json(&self) -> J {
+        let mut m = Map::new();
+        if self.cpu_cores != 0.0 {
+            m.insert(
+                "cpuCores".into(),
+                crate::gojson::float_value(self.cpu_cores),
+            );
+        }
+        for (k, v) in [
+            ("memoryBytes", self.memory_bytes),
+            ("diskBytes", self.disk_bytes),
+            ("tasks", self.tasks),
+        ] {
+            if v != 0 {
+                m.insert(k.into(), J::from(v));
+            }
+        }
+        m.insert("class".into(), J::from(self.class.clone()));
+        m.insert("operation".into(), J::from(self.operation.clone()));
+        m.insert("agentId".into(), J::from(self.agent_id.clone()));
+        for (k, v) in [
+            ("operationId", &self.operation_id),
+            ("taskId", &self.task_id),
+            ("resourceUri", &self.resource_uri),
+        ] {
+            if !v.is_empty() {
+                m.insert(k.into(), J::from(v.clone()));
+            }
+        }
+        J::Object(m)
+    }
+
+    fn from_json(v: &J) -> AdmissionRequest {
+        let s = |k: &str| v.get(k).and_then(J::as_str).unwrap_or("").to_string();
+        let i = |k: &str| v.get(k).and_then(J::as_i64).unwrap_or(0);
+        AdmissionRequest {
+            cpu_cores: v.get("cpuCores").and_then(J::as_f64).unwrap_or(0.0),
+            memory_bytes: i("memoryBytes"),
+            disk_bytes: i("diskBytes"),
+            tasks: i("tasks"),
+            class: s("class"),
+            operation: s("operation"),
+            agent_id: s("agentId"),
+            operation_id: s("operationId"),
+            task_id: s("taskId"),
+            resource_uri: s("resourceUri"),
+        }
+    }
+}
+
+/// `DefaultCostForClass`.
+pub fn default_cost_for_class(class: &str) -> AdmissionRequest {
+    let (cpu_cores, memory_bytes, tasks) = match class {
+        "heavy" => (2.0, 2 << 30, 8),
+        "normal" => (0.25, 256 << 20, 1),
+        _ => {
+            return AdmissionRequest {
+                class: "control".into(),
+                ..Default::default()
+            }
+        }
+    };
+    AdmissionRequest {
+        class: class.into(),
+        cpu_cores,
+        memory_bytes,
+        tasks,
+        ..Default::default()
+    }
+}
+
+/// `ResolveArgumentCost`: descriptor-declared argument paths (cpuCores,
+/// memoryBytes, diskBytes, tasks) override the static cost. A missing
+/// argument keeps the default; a malformed one fails closed.
+pub fn resolve_argument_cost(
+    mut base: AdmissionRequest,
+    args: &Map<String, J>,
+    bindings: &[String; 4],
+) -> Result<AdmissionRequest, AdmitError> {
+    type Parse = fn(&J) -> Result<f64, String>;
+    let rows: [(&str, Parse); 4] = [
+        ("cpuCores", positive_number),
+        ("memoryBytes", positive_capacity),
+        ("diskBytes", positive_capacity),
+        ("tasks", positive_integer),
+    ];
+    for (i, (field, parse)) in rows.into_iter().enumerate() {
+        let path = bindings[i].trim();
+        if path.is_empty() {
+            continue;
+        }
+        let quoted = crate::goerr::quote(path);
+        let malformed = path.starts_with('.') || path.ends_with('.');
+        if malformed {
+            let reason = format!("argument binding path {quoted} is not a non-empty object path");
+            return Err(AdmitError::request(
+                "host_resource_binding_invalid",
+                field,
+                &reason,
+            ));
+        }
+        if path
+            .split('.')
+            .any(|s| s.is_empty() || s.contains(['[', ']', '/']))
+        {
+            let reason = format!("argument binding path {quoted} is not a supported object path");
+            return Err(AdmitError::request(
+                "host_resource_binding_invalid",
+                field,
+                &reason,
+            ));
+        }
+        let Some(value) = argument_at_path(args, path) else {
+            continue;
+        };
+        let parsed = parse(value).map_err(|e| {
+            AdmitError::request(
+                "host_resource_argument_invalid",
+                field,
+                &format!("argument {quoted}: {e}"),
+            )
+        })?;
+        match i {
+            0 => base.cpu_cores = parsed,
+            1 => base.memory_bytes = parsed as i64,
+            2 => base.disk_bytes = parsed as i64,
+            _ => base.tasks = parsed as i64,
+        }
+    }
+    Ok(base)
+}
+
+/// `argumentAtPath`: a dotted path through nested objects.
+pub fn argument_at_path<'a>(args: &'a Map<String, J>, path: &str) -> Option<&'a J> {
+    let mut segments = path.split('.');
+    let mut current = args.get(segments.next()?)?;
+    for segment in segments {
+        current = current.as_object()?.get(segment)?;
+    }
+    Some(current)
+}
+
+const MAX_INT64: f64 = i64::MAX as f64;
+
+fn number_value(value: &J) -> Result<f64, String> {
+    let number = value.as_f64().ok_or("must be numeric")?;
+    if !number.is_finite() {
+        return Err("must be finite".into());
+    }
+    if number < 0.0 {
+        return Err("value cannot be negative".into());
+    }
+    Ok(number)
+}
+
+fn positive_number(value: &J) -> Result<f64, String> {
+    let number = number_value(value)?;
+    if number <= 0.0 {
+        return Err("value must be greater than zero".into());
+    }
+    Ok(number)
+}
+
+fn positive_integer(value: &J) -> Result<f64, String> {
+    let number = positive_number(value)?;
+    if number.trunc() != number {
+        return Err("value must be an integer".into());
+    }
+    if number > MAX_INT64 {
+        return Err("value exceeds the supported integer range".into());
+    }
+    Ok(number)
+}
+
+fn positive_capacity(value: &J) -> Result<f64, String> {
+    let bytes = match value {
+        J::String(s) => capacity_string_bytes(s)?,
+        _ => {
+            let parsed = number_value(value)
+                .map_err(|_| "must be a capacity string or integer byte count")?;
+            if parsed.trunc() != parsed {
+                return Err("byte count must be an integer".into());
+            }
+            parsed
+        }
+    };
+    if bytes <= 0.0 {
+        return Err("value must be greater than zero".into());
+    }
+    if bytes.is_infinite() || bytes > MAX_INT64 || bytes.trunc() != bytes {
+        return Err("capacity exceeds the supported byte range".into());
+    }
+    Ok(bytes)
+}
+
+fn capacity_string_bytes(value: &str) -> Result<f64, String> {
+    const UNITS: &[(&str, f64)] = &[
+        ("TIB", (1u64 << 40) as f64),
+        ("TB", 1e12),
+        ("TI", (1u64 << 40) as f64),
+        ("T", (1u64 << 40) as f64),
+        ("GIB", (1u64 << 30) as f64),
+        ("GB", 1e9),
+        ("GI", (1u64 << 30) as f64),
+        ("G", (1u64 << 30) as f64),
+        ("MIB", (1u64 << 20) as f64),
+        ("MB", 1e6),
+        ("MI", (1u64 << 20) as f64),
+        ("M", (1u64 << 20) as f64),
+        ("KIB", 1024.0),
+        ("KB", 1e3),
+        ("KI", 1024.0),
+        ("K", 1024.0),
+        ("B", 1.0),
+    ];
+    let normalized = value.trim().to_uppercase();
+    if normalized.is_empty() {
+        return Err("must not be empty".into());
+    }
+    let (number_text, multiplier) = UNITS
+        .iter()
+        .find_map(|(suffix, m)| normalized.strip_suffix(suffix).map(|n| (n.trim(), *m)))
+        .unwrap_or((normalized.as_str(), 1.0));
+    let number = crate::goerr::parse_float(number_text)
+        .filter(|n| n.is_finite())
+        .ok_or("must be a valid capacity")?;
+    if number <= 0.0 {
+        return Err("value must be greater than zero".into());
+    }
+    let bytes = number * multiplier;
+    if bytes.is_infinite() || bytes > MAX_INT64 || bytes.trunc() != bytes {
+        return Err("capacity must resolve to an integer number of bytes".into());
+    }
+    Ok(bytes)
+}
+
+/// The typed admission failures `tools.ErrorResult` renders with
+/// `owner: "admission"`; `Other` is an untyped error (I/O, a corrupt file).
+#[derive(Clone, Debug, PartialEq)]
+pub enum AdmitError {
+    /// `resource.RequestError`.
+    Request {
+        code: String,
+        field: String,
+        reason: String,
+    },
+    /// `resource.AdmissionError`: a retryable capacity refusal.
+    Admission {
+        code: String,
+        class: String,
+        pressure: String,
+        reason: String,
+        retry_after_ms: i64,
+    },
+    Other(String),
+}
+
+impl AdmitError {
+    pub fn request(code: &str, field: &str, reason: &str) -> AdmitError {
+        AdmitError::Request {
+            code: code.into(),
+            field: field.into(),
+            reason: reason.into(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdmitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AdmitError::Request { code, reason, .. } => write!(f, "{code}: {reason}"),
+            AdmitError::Admission {
+                code,
+                class,
+                pressure,
+                reason,
+                retry_after_ms,
+            } => write!(
+                f,
+                "{code}: class={class} pressure={pressure} reason={reason} retryAfterMs={retry_after_ms}"
+            ),
+            AdmitError::Other(message) => f.write_str(message),
+        }
+    }
+}
+
+/// A durable ownership handle. `control` is the zero-cost lease that never
+/// touches the reservation file.
+#[derive(Clone, Debug)]
+pub struct Reservation {
+    pub id: String,
+    pub request: AdmissionRequest,
+}
+
+static RESERVATION_SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// `sameReservationOwner`: an empty identity on both sides matches.
+fn same_owner(left: &AdmissionRequest, right: &AdmissionRequest) -> bool {
+    left.agent_id == right.agent_id
+        && left.task_id == right.task_id
+        && left.operation_id == right.operation_id
+}
+
+type Records = Map<String, J>;
+
+/// `removeExpired`: a lease whose `expiresAt` is not after now is gone.
+fn remove_expired(records: &mut Records) -> bool {
+    let now = std::time::SystemTime::now();
+    let before = records.len();
+    records.retain(|_, record| {
+        record
+            .get("expiresAt")
+            .and_then(J::as_str)
+            .and_then(crate::hostobs::parse_rfc3339)
+            .is_none_or(|t| t > now)
+    });
+    records.len() != before
 }
 
 /// `PressureSnapshot`.
@@ -181,6 +526,45 @@ fn normalize_enforcement(value: &str) -> &'static str {
         "unsupported" => "unsupported",
         "unknown" => "unknown",
         _ => "",
+    }
+}
+
+/// The refusals `Coordinator.Admit` makes before it weighs capacity: heavy
+/// work under critical pressure, then (fail closed) any non-control work
+/// while workload cgroup enforcement is not verified.
+fn pre_capacity_refusal(
+    class: &str,
+    pressure: &str,
+    pressure_reason: &'static str,
+    enforcement: &str,
+    fail_closed: bool,
+) -> Option<(&'static str, &'static str)> {
+    if class == "heavy" && pressure == "critical" {
+        return Some(("host_resource_pressure", pressure_reason));
+    }
+    if fail_closed && class != "control" && enforcement != "enforced" {
+        return Some((
+            "host_resource_enforcement_unknown",
+            "workload cgroup enforcement is not verified",
+        ));
+    }
+    None
+}
+
+/// The class slots in `fits`: heavy work runs alone, normal work up to
+/// `max_normal` at a time and never beside heavy work; control is unlimited.
+fn class_slot_free(
+    class: &str,
+    held: &[AdmissionRequest],
+    max_normal: i64,
+    max_heavy: i64,
+) -> bool {
+    let heavy = held.iter().filter(|r| r.class == "heavy").count() as i64;
+    let normal = held.iter().filter(|r| r.class == "normal").count() as i64;
+    match class {
+        "heavy" => heavy < max_heavy && normal == 0,
+        "normal" => heavy == 0 && normal < max_normal,
+        _ => true,
     }
 }
 
@@ -232,26 +616,277 @@ impl Coordinator {
         }
     }
 
-    /// Durable reservations (`reservations.json`); this build holds none of
-    /// its own, but another co-resident agent's are counted.
-    fn reservation_totals(&self) -> J {
+    /// `reservationLock.acquire`: blocks until the host-wide lock is held.
+    fn lock(&self, exclusive: bool) -> Result<nix::fcntl::Flock<std::fs::File>, AdmitError> {
+        use std::os::unix::fs::OpenOptionsExt;
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .mode(0o600)
+            .open(self.lock_dir.join("reservations.lock"))
+            .map_err(|e| AdmitError::Other(e.to_string()))?;
+        let arg = if exclusive {
+            nix::fcntl::FlockArg::LockExclusive
+        } else {
+            nix::fcntl::FlockArg::LockShared
+        };
+        nix::fcntl::Flock::lock(file, arg)
+            .map_err(|(_, errno)| AdmitError::Other(errno.desc().to_lowercase()))
+    }
+
+    fn read_records(&self) -> Result<Records, AdmitError> {
+        let raw = match std::fs::read(self.lock_dir.join("reservations.json")) {
+            Ok(raw) => raw,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Records::new()),
+            Err(e) => return Err(AdmitError::Other(e.to_string())),
+        };
+        if raw.is_empty() {
+            return Ok(Records::new());
+        }
+        match serde_json::from_slice::<J>(&raw) {
+            Ok(J::Object(records)) => Ok(records),
+            Ok(J::Null) => Ok(Records::new()),
+            Ok(_) | Err(_) => Err(AdmitError::Other(
+                "read host resource reservations: invalid reservation file".into(),
+            )),
+        }
+    }
+
+    /// Temp file + rename, mode 0600; the file is removed once empty.
+    fn write_records(&self, records: &Records) -> Result<(), AdmitError> {
         let path = self.lock_dir.join("reservations.json");
-        let records: Map<String, J> = std::fs::read(&path)
-            .ok()
-            .and_then(|b| serde_json::from_slice::<J>(&b).ok())
-            .and_then(|v| v.as_object().cloned())
-            .unwrap_or_default();
+        if records.is_empty() {
+            return match std::fs::remove_file(&path) {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+                    Err(AdmitError::Other(e.to_string()))
+                }
+                _ => Ok(()),
+            };
+        }
+        use std::os::unix::fs::OpenOptionsExt;
+        let raw = serde_json::to_vec_pretty(&J::Object(records.clone()))
+            .map_err(|e| AdmitError::Other(e.to_string()))?;
+        let tmp = self.lock_dir.join("reservations.json.tmp");
+        let write = || -> std::io::Result<()> {
+            use std::io::Write;
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .truncate(true)
+                .write(true)
+                .mode(0o600)
+                .open(&tmp)?;
+            file.write_all(&raw)?;
+            std::fs::rename(&tmp, &path)
+        };
+        write().map_err(|e| AdmitError::Other(e.to_string()))
+    }
+
+    /// `effectiveLimits`: observed limits capped by the configured capacity.
+    fn effective_limits(&self, stats: &HostSystemStats) -> (f64, i64, i64, i64) {
+        let mut cpu = stats.cpu_quota_cores;
+        if cpu <= 0.0 {
+            cpu = stats.cpu_count as f64;
+        }
+        let mut memory = stats.memory_limit_bytes;
+        if memory <= 0 {
+            memory = stats.memory_total_bytes;
+        }
+        let mut disk = stats.disk_total_bytes;
+        let mut tasks = stats.tasks_limit;
+        if self.cpu_capacity_cores > 0.0 && (cpu <= 0.0 || self.cpu_capacity_cores < cpu) {
+            cpu = self.cpu_capacity_cores;
+        }
+        if self.memory_capacity_bytes > 0 && (memory <= 0 || self.memory_capacity_bytes < memory) {
+            memory = self.memory_capacity_bytes;
+        }
+        if self.disk_capacity_bytes > 0 && (disk <= 0 || self.disk_capacity_bytes < disk) {
+            disk = self.disk_capacity_bytes;
+        }
+        if self.task_capacity > 0 && (tasks <= 0 || self.task_capacity < tasks) {
+            tasks = self.task_capacity;
+        }
+        (cpu, memory, disk, tasks)
+    }
+
+    /// `fits`. The server only ever reserves through `Admit`, so Go's
+    /// in-process active counters are always zero there and the persisted
+    /// records are the whole picture.
+    fn fits(&self, request: &AdmissionRequest, records: &Records, pressure: &Pressure) -> bool {
+        let requests: Vec<AdmissionRequest> = records
+            .values()
+            .map(|r| AdmissionRequest::from_json(r.get("request").unwrap_or(&J::Null)))
+            .collect();
+        if !class_slot_free(&request.class, &requests, self.max_normal, self.max_heavy) {
+            return false;
+        }
+        let stats = HostSystemStats::read(&self.disk_paths);
+        let (cpu, memory, disk, tasks) = self.effective_limits(&stats);
+        let total_cpu: f64 = requests.iter().map(|r| r.cpu_cores).sum();
+        let total = |f: fn(&AdmissionRequest) -> i64| requests.iter().map(f).sum::<i64>();
+        if cpu > 0.0 && total_cpu + request.cpu_cores > cpu {
+            return false;
+        }
+        if memory > 0 {
+            let used = stats.memory_used_bytes.max(stats.memory_usage_bytes);
+            let available = memory - used;
+            if available < 0 || total(|r| r.memory_bytes) + request.memory_bytes > available {
+                return false;
+            }
+        }
+        if disk > 0 {
+            let available = disk - (stats.disk_total_bytes - stats.disk_available_bytes);
+            if available < 0 || total(|r| r.disk_bytes) + request.disk_bytes > available {
+                return false;
+            }
+        }
+        if tasks > 0 && total(|r| r.tasks) + request.tasks + stats.tasks_current > tasks {
+            return false;
+        }
+        if self.min_available_memory_bytes > 0
+            && pressure.memory_available > 0
+            && pressure.memory_available < self.min_available_memory_bytes
+        {
+            return false;
+        }
+        if self.min_available_disk_bytes > 0
+            && pressure.disk_available > 0
+            && pressure.disk_available < self.min_available_disk_bytes
+        {
+            return false;
+        }
+        true
+    }
+
+    /// `Coordinator.Admit`: validate, then under the host lock drop expired
+    /// leases, refuse on pressure, unverified enforcement or capacity, and
+    /// persist the new reservation.
+    pub fn admit(&self, mut request: AdmissionRequest) -> Result<Reservation, AdmitError> {
+        if request.class.is_empty() {
+            request.class = "normal".into();
+        }
+        for (field, negative) in [
+            ("cpuCores", request.cpu_cores < 0.0),
+            ("memoryBytes", request.memory_bytes < 0),
+            ("diskBytes", request.disk_bytes < 0),
+            ("tasks", request.tasks < 0),
+        ] {
+            if negative {
+                return Err(AdmitError::request(
+                    "host_resource_request_invalid",
+                    field,
+                    "resource cost cannot be negative",
+                ));
+            }
+        }
+        if !matches!(request.class.as_str(), "control" | "normal" | "heavy") {
+            return Err(AdmitError::request(
+                "host_resource_request_invalid",
+                "class",
+                "class must be control, normal, or heavy",
+            ));
+        }
+        if request.class == "control"
+            && request.cpu_cores == 0.0
+            && request.memory_bytes == 0
+            && request.disk_bytes == 0
+            && request.tasks == 0
+        {
+            return Ok(Reservation {
+                id: "control".into(),
+                request,
+            });
+        }
+        let _lock = self.lock(true)?;
+        let mut records = self.read_records()?;
+        let changed = remove_expired(&mut records);
+        let pressure = self.pressure();
+        let refuse = |records: &Records, code: &str, reason: &str| {
+            if changed {
+                let _ = self.write_records(records);
+            }
+            Err(AdmitError::Admission {
+                code: code.into(),
+                class: request.class.clone(),
+                pressure: pressure.pressure.into(),
+                reason: reason.into(),
+                retry_after_ms: 1000,
+            })
+        };
+        if let Some((code, reason)) = pre_capacity_refusal(
+            &request.class,
+            pressure.pressure,
+            pressure.reason,
+            &pressure.enforcement,
+            self.fail_closed,
+        ) {
+            return refuse(&records, code, reason);
+        }
+        if !self.fits(&request, &records, &pressure) {
+            return refuse(
+                &records,
+                "host_capacity_saturated",
+                "declared resource cost exceeds effective host capacity",
+            );
+        }
         let now = std::time::SystemTime::now();
+        let nanos = now
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let sequence = RESERVATION_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+        let id = format!("host-reservation-{nanos}-{sequence}");
+        records.insert(
+            id.clone(),
+            json!({
+                "id": id,
+                "request": request.to_json(),
+                "createdAt": crate::hostobs::rfc3339_nano(now),
+                "expiresAt": crate::hostobs::rfc3339_nano(now + RESERVATION_TTL),
+            }),
+        );
+        self.write_records(&records)?;
+        Ok(Reservation { id, request })
+    }
+
+    /// `Coordinator.Release`: drop the record if this owner still holds it.
+    pub fn release(&self, reservation: &Reservation) -> Result<(), AdmitError> {
+        if reservation.id.is_empty() || reservation.id == "control" {
+            return Ok(());
+        }
+        let _lock = self.lock(true)?;
+        let mut records = self.read_records()?;
+        let Some(record) = records.get(&reservation.id) else {
+            return Ok(());
+        };
+        let held = AdmissionRequest::from_json(record.get("request").unwrap_or(&J::Null));
+        if !same_owner(&held, &reservation.request) {
+            return Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "reservation ownership does not match the releasing operation",
+            ));
+        }
+        records.remove(&reservation.id);
+        self.write_records(&records)
+    }
+
+    /// `reservationTotals` over the live records, read under the shared
+    /// lock with expired leases pruned, as `capacitySnapshot` does.
+    fn reservation_totals(&self) -> J {
+        let records = match self.lock(false) {
+            Ok(_lock) => {
+                let mut records = self.read_records().unwrap_or_default();
+                if remove_expired(&mut records) {
+                    let _ = self.write_records(&records);
+                }
+                records
+            }
+            Err(_) => Records::new(),
+        };
         let (mut count, mut cpu, mut memory, mut disk, mut tasks) = (0i64, 0f64, 0i64, 0i64, 0i64);
         for record in records.values() {
-            let expired = record
-                .get("expiresAt")
-                .and_then(J::as_str)
-                .and_then(crate::hostobs::parse_rfc3339)
-                .is_some_and(|t| t <= now);
-            if expired {
-                continue;
-            }
             let request = record.get("request").cloned().unwrap_or(J::Null);
             count += 1;
             cpu += request.get("cpuCores").and_then(J::as_f64).unwrap_or(0.0);
@@ -278,8 +913,9 @@ impl Coordinator {
 
     /// `Coordinator.Snapshot`: `CapacitySnapshot` with the embedded
     /// `PressureSnapshot` flattened (its `enforcement` is shadowed by the
-    /// outer field, as Go's encoder does). This build holds no reservations,
-    /// so the in-flight and queue counters are zero.
+    /// outer field, as Go's encoder does). The in-flight and queue counters
+    /// belong to Go's `Acquire` path, which the server never takes, so they
+    /// are zero; held reservations show in `reservations`.
     pub fn snapshot(&self) -> J {
         let pressure = self.pressure();
         let reservations = self.reservation_totals();
@@ -306,28 +942,7 @@ impl Coordinator {
             stats.disk_total_bytes,
             stats.tasks_limit,
         );
-        let mut cpu = stats.cpu_quota_cores;
-        if cpu <= 0.0 {
-            cpu = stats.cpu_count as f64;
-        }
-        let mut memory = stats.memory_limit_bytes;
-        if memory <= 0 {
-            memory = stats.memory_total_bytes;
-        }
-        let mut disk = stats.disk_total_bytes;
-        let mut tasks = stats.tasks_limit;
-        if self.cpu_capacity_cores > 0.0 && (cpu <= 0.0 || self.cpu_capacity_cores < cpu) {
-            cpu = self.cpu_capacity_cores;
-        }
-        if self.memory_capacity_bytes > 0 && (memory <= 0 || self.memory_capacity_bytes < memory) {
-            memory = self.memory_capacity_bytes;
-        }
-        if self.disk_capacity_bytes > 0 && (disk <= 0 || self.disk_capacity_bytes < disk) {
-            disk = self.disk_capacity_bytes;
-        }
-        if self.task_capacity > 0 && (tasks <= 0 || self.task_capacity < tasks) {
-            tasks = self.task_capacity;
-        }
+        let (cpu, memory, disk, tasks) = self.effective_limits(&stats);
         let used = if stats.memory_used_bytes > stats.memory_usage_bytes {
             stats.memory_used_bytes
         } else {
@@ -442,6 +1057,168 @@ impl Coordinator {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn held(classes: &[&str]) -> Vec<AdmissionRequest> {
+        classes
+            .iter()
+            .map(|c| AdmissionRequest {
+                class: c.to_string(),
+                ..Default::default()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn class_slots_match_go_fits() {
+        // Normal work shares up to max_normal slots, never beside heavy work.
+        assert!(class_slot_free("normal", &held(&["normal"]), 2, 1));
+        assert!(!class_slot_free(
+            "normal",
+            &held(&["normal", "normal"]),
+            2,
+            1
+        ));
+        assert!(!class_slot_free("normal", &held(&["heavy"]), 2, 1));
+        // Heavy work runs alone.
+        assert!(class_slot_free("heavy", &held(&[]), 2, 1));
+        assert!(!class_slot_free("heavy", &held(&["normal"]), 2, 1));
+        assert!(!class_slot_free("heavy", &held(&["heavy"]), 2, 1));
+        assert!(class_slot_free("heavy", &held(&["heavy"]), 2, 2));
+        // A zero limit refuses the class outright; control is never slotted.
+        assert!(!class_slot_free("normal", &held(&[]), 0, 1));
+        assert!(class_slot_free(
+            "control",
+            &held(&["heavy", "normal"]),
+            0,
+            0
+        ));
+    }
+
+    #[test]
+    fn unverified_enforcement_fails_closed() {
+        let reason = "available memory is below the host admission threshold";
+        for enforcement in ["unknown", "unsupported", ""] {
+            for class in ["normal", "heavy"] {
+                assert_eq!(
+                    pre_capacity_refusal(class, "normal", "", enforcement, true),
+                    Some((
+                        "host_resource_enforcement_unknown",
+                        "workload cgroup enforcement is not verified"
+                    )),
+                    "{class} with enforcement {enforcement:?}"
+                );
+            }
+            // Control work and advisory mode are not gated on enforcement.
+            assert_eq!(
+                pre_capacity_refusal("control", "normal", "", enforcement, true),
+                None
+            );
+            assert_eq!(
+                pre_capacity_refusal("normal", "normal", "", enforcement, false),
+                None
+            );
+        }
+        assert_eq!(
+            pre_capacity_refusal("normal", "normal", "", "enforced", true),
+            None
+        );
+        // Critical pressure refuses heavy work first, even when enforced;
+        // normal work under pressure falls through to the capacity check.
+        assert_eq!(
+            pre_capacity_refusal("heavy", "critical", reason, "unknown", true),
+            Some(("host_resource_pressure", reason))
+        );
+        assert_eq!(
+            pre_capacity_refusal("normal", "critical", reason, "enforced", true),
+            None
+        );
+    }
+
+    fn coordinator(dir: &std::path::Path) -> Coordinator {
+        Coordinator {
+            lock_dir: dir.to_path_buf(),
+            disk_paths: vec![],
+            policy_revision: String::new(),
+            min_available_memory_bytes: 0,
+            min_available_disk_bytes: 0,
+            cpu_capacity_cores: 0.0,
+            memory_capacity_bytes: 0,
+            disk_capacity_bytes: 0,
+            task_capacity: 0,
+            enforcement_env: crate::config::Env::from_pairs([("PATH", "/nonexistent")]),
+            max_normal: 2,
+            max_heavy: 1,
+            fail_closed: false,
+        }
+    }
+
+    fn lease(id: &str, task: &str, expires: &str) -> (String, J) {
+        let request = AdmissionRequest {
+            class: "normal".into(),
+            operation: "probe_incus_gpu".into(),
+            agent_id: "agent".into(),
+            task_id: task.into(),
+            ..Default::default()
+        };
+        (
+            id.into(),
+            json!({"id": id, "request": request.to_json(),
+                   "createdAt": "2026-10-02T00:00:00Z", "expiresAt": expires}),
+        )
+    }
+
+    #[test]
+    fn release_checks_owner_and_expired_leases_are_pruned() {
+        let dir = std::env::temp_dir().join(format!(
+            "opute-coordinator-test-{}-{}",
+            std::process::id(),
+            RESERVATION_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let c = coordinator(&dir);
+        let records: Records = [
+            lease("live", "task-a", "2999-01-01T00:00:00Z"),
+            lease("stale", "task-b", "2000-01-01T00:00:00Z"),
+        ]
+        .into_iter()
+        .collect();
+        c.write_records(&records).unwrap();
+        // The snapshot's ledger prunes the crashed holder's expired lease.
+        assert_eq!(c.reservation_totals()["count"], json!(1));
+        assert!(!c.read_records().unwrap().contains_key("stale"));
+
+        let (_, live) = lease("live", "task-a", "");
+        let mut request = AdmissionRequest::from_json(&live["request"]);
+        request.task_id = "task-other".into();
+        let foreign = Reservation {
+            id: "live".into(),
+            request: request.clone(),
+        };
+        assert_eq!(
+            c.release(&foreign),
+            Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "reservation ownership does not match the releasing operation"
+            ))
+        );
+        request.task_id = "task-a".into();
+        let owner = Reservation {
+            id: "live".into(),
+            request,
+        };
+        c.release(&owner).unwrap();
+        // Releasing twice, or the control lease, is a no-op; the empty
+        // ledger removes its file.
+        c.release(&owner).unwrap();
+        c.release(&Reservation {
+            id: "control".into(),
+            request: AdmissionRequest::default(),
+        })
+        .unwrap();
+        assert!(!dir.join("reservations.json").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn uris_follow_resourceid() {

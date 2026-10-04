@@ -474,6 +474,52 @@ cancellation.
 
 **Exit gate:** admission matrix fully green; zero orphans; X2 green.
 
+**Status:** implemented; the `m4` gate passes, with two canaries
+(C12-enforcement-fail-open, C14-late-result-overwrites-cancel) waived rather
+than caught — pending owner review. See
+[evidence/m4/README.md](../../../evidence/m4/README.md) for the waiver
+rationale. Scope changes, each recorded there:
+
+- **Admission matrix rows.** Gate closed and stale revision run over all 87
+  non-read tools; missing, malformed, foreign-tenant and wrong-kind URIs over
+  the 24 tools with a `uri` binding; unknown and mistyped Incus targets over the
+  9 Incus-bound ones. Three rows move out of M4. *Approval missing* is
+  Platform-owned: the agent has no approval gate of its own, and the Platform
+  owns authorization. *Quota unenforceable* (ADR 0010) is checked inside
+  `CreateVM`, not in admission, so it arrives with M6 provisioning. Cluster
+  and host-service adoption needs the M6 domains and must never reach a real
+  cluster. Where a tool binds several resource types, Go reports the error of
+  the last type tried; Rust matches.
+- **D12.** A task-aware call refused at binding or admission still gets a
+  task, as in Go, but Rust writes no `operations` row. The scenarios exempt
+  only the Go side (`x2GoGaps`), and the
+  `refuse-before-operation-record` contract suite plus canaries prove the
+  Rust behaviour.
+- **Coordinator queueing.** Go's queued class (`AcquireClass`, `MaxQueued`)
+  is not reachable from tool admission. Normal and heavy calls are admitted or
+  refused with `host_capacity_saturated`, and the snapshot reports held
+  slots under `reservations`. The N+k scenario holds two normal slots on a
+  FIFO, refuses the third call twice, admits a control call, and admits again
+  after release. `OPUTE_HOST_MAX_NORMAL_OPERATIONS=0` means "use the default"
+  on both sides.
+- **Cancellation is cooperative** in Go and in Rust. Cancelling before start,
+  during a blocked shim, or after completion never signals the child. The
+  work runs to completion, its late result is discarded, and the task stays
+  `cancelled` (or `completed` when it had already finished). The shims record
+  any SIGTERM, SIGINT or SIGHUP, plus pid files left by SIGKILL; both lists are
+  empty, and zero orphans remain.
+- **Timeouts.** `test/standalone/timeouts_test.go` asserts only harness
+  deadlines: ready within 90 s and the process bounded at 3 min. Every parity
+  scenario is stricter: ready within 30 s, and an unforced stop.
+- **Normal-class reads.** `inspect_host_file` and `probe_http_endpoint` are
+  implemented and pass admission like any other normal call. Domain reads
+  (LLM, Kubernetes/Helm, PostgreSQL, OCI, recipes, plans, operations),
+  `diagnose_bridge`, `discover_service_ingress` and
+  `inspect_host_service(_supervisor)` stay `not_implemented` until their
+  domain milestones.
+- **T2 is not covered.** All evidence comes from T1 shim fixtures in WSL2;
+  there was no real cgroup enforcement or real Incus.
+
 ---
 
 ### M5: Durable state and schema-derived redaction
@@ -798,6 +844,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D9 | go-sdk `MCPGODEBUG` compatibility flags (finding F-7) | **Do not reproduce; ask the owner** | The Go agent inherits SDK switches (`disablelocalhostprotection`, `allowsessionsinstateless`, `disablecontenttypecheck`, ...) from any process environment. They are undocumented, not part of the Host Agent contract, and one of them disables the DNS-rebinding guard. Rust implements the default behaviour, which is identical to Go with the variable unset. |
 | D10 | Standalone mutation gate | **Decided (owner, 2026-10-02): Rust diverges.** With standalone mutations disabled, Rust runs only tools whose catalog effect is `read` ([`standalone-read-only-gate`](../standalone-read-only-gate/specs/standalone-read-only-gate/spec.md)); Go is not changed. The catalog stays under Go parity, and a Rust contract suite with canaries verifies the gate | The gate derives from the same effect classification clients see, and fails closed when an effect is not known to be `read`. |
 | D11 | Audit writes for rejected calls | **Decided (owner, 2026-10-02): Rust diverges.** The enumerated invalid MCP requests and closed standalone gate leave no audit writes ([`reject-without-audit-writes`](../reject-without-audit-writes/specs/reject-without-audit-writes/spec.md)); Go is not changed. The invocation count is the only declared state difference, and the Rust contract fingerprints every database row before and after rejection and restart | Rejected work must produce neither execution effects nor durable audit writes. Startup provisioning, accepted calls and D8 OAuth auditing keep their existing contracts. |
+| D12 | Operation record for task-aware calls refused at binding or admission | **Decided (owner, 2026-10-02): Rust diverges.** Go's `createAsyncTask` persists an `operations` row before resolving the binding and admitting the call (`server.go:1642-1652`); Rust refuses first and records nothing durable ([`refuse-before-operation-record`](../refuse-before-operation-record/specs/refuse-before-operation-record/spec.md)). The task wire (`working`, then `completed` with the same typed error) is unchanged. The `operations` row count is the only declared difference, and a Rust contract suite with canaries verifies it | A refused call must not leave a durable operation that never ran; this extends X2 to the task path. |
 
 ## 7. Risks this plan specifically mitigates
 

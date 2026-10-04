@@ -21,6 +21,7 @@
    "owner": "transport",
    "route": "/.well-known/oauth-protected-resource",
    "scenarios": [
+    "admission.normal-reads.host",
     "mcp.auth",
     "wire.auth.platform",
     "wire.auth.standalone",
@@ -49,6 +50,7 @@
    "owner": "transport",
    "route": "/health",
    "scenarios": [
+    "admission.normal-reads.host",
     "config.validation-matrix",
     "mcp.auth",
     "serve.health",
@@ -64,6 +66,7 @@
    "owner": "transport",
    "route": "/mcp",
    "scenarios": [
+    "admission.normal-reads.host",
     "admission.standalone-mutation-denied",
     "authz.store-cross-read",
     "cli.dispatch",
@@ -78,6 +81,7 @@
     "serve.health",
     "startup.fail-closed",
     "state.schema-after-start",
+    "tasks.input-required.round-trip",
     "wire.auth.platform",
     "wire.auth.standalone",
     "wire.envelope",

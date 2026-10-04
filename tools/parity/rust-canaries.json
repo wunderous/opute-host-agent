@@ -273,5 +273,31 @@
    "old": "        let message = format!(\"invalid capability arguments: {e}\");",
    "new": "        let conn = rusqlite::Connection::open(std::path::Path::new(&server.host.env.get(\"OPUTE_STANDALONE_STATE_DIR\")).join(\"state.db\")).unwrap();\n        conn.execute(\"INSERT INTO capability_invocations(invocation_id,operation_id,capability_version,catalog_revision,authorization,arguments_json,result_json,observation_json,terminal_status,created_at) VALUES ('rejected-audit','',1,'','','{}','{}','{}','failed','2026-10-02T00:00:00Z')\", []).unwrap();\n        let message = format!(\"invalid capability arguments: {e}\");"
   }
+ },
+ {
+  "id": "K22-binding-refusal-operation-row",
+  "summary": "a task-aware call refused at binding leaves an operation row (Go's createAsyncTask order)",
+  "contract": "refuse-before-operation-record",
+  "scenario": "refuse.binding-standalone",
+  "mayAlsoFail": [
+   "refuse.binding-platform"
+  ],
+  "patch": {
+   "file": "crates/host-agent/src/tools.rs",
+   "old": "    let binding = match admission::resolve_binding(server, name, args) {\n        Ok(b) => b,\n        Err(refusal) => return refusal.render(),\n    };",
+   "new": "    let binding = match admission::resolve_binding(server, name, args) {\n        Ok(b) => b,\n        Err(refusal) => {\n            if let Some((_, task_id)) = identity {\n                let conn = rusqlite::Connection::open(std::path::Path::new(&server.host.env.get(\"OPUTE_STANDALONE_STATE_DIR\")).join(\"state.db\")).unwrap();\n                conn.execute(\"INSERT INTO operations(operation_id,tool_name,status,created_at,updated_at) VALUES (?1,?2,'completed','2026-10-02T00:00:00Z','2026-10-02T00:00:00Z')\", rusqlite::params![task_id, name]).unwrap();\n            }\n            return refusal.render();\n        }\n    };"
+  }
+ },
+ {
+  "id": "K23-coordinator-refusal-operation-row",
+  "summary": "a task-aware call refused by the resource coordinator leaves an operation row",
+  "contract": "refuse-before-operation-record",
+  "scenario": "refuse.coordinator",
+  "mayAlsoFail": [],
+  "patch": {
+   "file": "crates/host-agent/src/tools.rs",
+   "old": "    let reservation = match admission::admit(server, name, args, &binding, identity) {\n        Ok(r) => r,\n        Err(refusal) => return refusal.render(),\n    };",
+   "new": "    let reservation = match admission::admit(server, name, args, &binding, identity) {\n        Ok(r) => r,\n        Err(refusal) => {\n            if let Some((_, task_id)) = identity {\n                let conn = rusqlite::Connection::open(std::path::Path::new(&server.host.env.get(\"OPUTE_STANDALONE_STATE_DIR\")).join(\"state.db\")).unwrap();\n                conn.execute(\"INSERT INTO operations(operation_id,tool_name,status,created_at,updated_at) VALUES (?1,?2,'completed','2026-10-02T00:00:00Z','2026-10-02T00:00:00Z')\", rusqlite::params![task_id, name]).unwrap();\n            }\n            return refusal.render();\n        }\n    };"
+  }
  }
 ]

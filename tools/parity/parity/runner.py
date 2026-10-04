@@ -13,6 +13,7 @@ import concurrent.futures
 import gzip
 import hashlib
 import json
+import os
 import signal
 import socket
 import threading
@@ -20,7 +21,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import agent, canon
+from . import agent, canon, shims
 
 TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
@@ -116,6 +117,47 @@ def _env(step: dict) -> dict:
     return env
 
 
+def _lookup(doc: Any, path: list) -> Any:
+    for key in path:
+        if isinstance(doc, dict):
+            doc = doc.get(key)
+        elif isinstance(doc, list) and isinstance(key, int) and -len(doc) <= key < len(doc):
+            doc = doc[key]
+        else:
+            return None
+    return doc
+
+
+def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
+    """One MCP request, optionally polled until a response field settles.
+
+    "expand": run variables (for example ${TOOL_PREFIX} or a captured
+    ${TASK_ID}) in the tool name and params are replaced by this side's values.
+    "until": {"path": [...], "in": [...]} repeats the request until the value
+    at path is one of the listed values (or the timeout passes); only the
+    final response is observed, so poll counts never reach the comparison.
+    "capture": {"NAME": [...]} stores the value at a path as a run variable.
+    """
+    expand = (lambda v: _expand_all(sandbox, v)) if spec.get("expand") else (lambda v: v)
+    until = spec.get("until")
+    deadline = time.monotonic() + spec.get("timeout", 30)
+    while True:
+        result = agent.mcp_call(
+            sandbox, spec["method"], expand(spec.get("params")),
+            token=spec.get("token", "${TOKEN}"), name=expand(spec.get("name")),
+            modern=spec.get("modern", True), headers=spec.get("headers"),
+            omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1),
+            meta=expand(spec.get("meta")))
+        if not until or _lookup(result, until["path"]) in until["in"] or time.monotonic() > deadline:
+            break
+        time.sleep(0.05)
+    for name, path in spec.get("capture", {}).items():
+        value = _lookup(result, path)
+        if isinstance(value, str) and value:
+            sandbox.captured[name] = value
+    return result
+
+
 def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
             other: agent.Impl | None = None) -> tuple[dict, dict]:
     """Run one scenario on one side. Returns (observation, variables)."""
@@ -125,6 +167,8 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
     steps: dict[str, Any] = {}
     server: agent.Server | None = None
     held: list[socket.socket] = []
+    background: dict[str, concurrent.futures.Future] = {}
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
     try:
         for index, step in enumerate(scenario["steps"]):
             label = step.get("as", f"step{index}")
@@ -159,14 +203,30 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), spec["path"], headers, raw)
             elif "mcp" in step:
                 spec = step["mcp"]
-                # "expand": run variables (for example ${TOOL_PREFIX}) in the
-                # tool name and params are replaced by this side's values.
-                expand = (lambda v: _expand_all(sandbox, v)) if spec.get("expand") else (lambda v: v)
-                steps[label] = agent.mcp_call(
-                    sandbox, spec["method"], expand(spec.get("params")),
-                    token=spec.get("token", "${TOKEN}"), name=expand(spec.get("name")),
-                    modern=spec.get("modern", True), headers=spec.get("headers"),
-                    omit_headers=spec.get("omitHeaders"), request_id=spec.get("id", 1))
+                if "background" in spec:
+                    # Runs concurrently with the following steps; a "join"
+                    # step records its response.
+                    background[spec["background"]] = pool.submit(_mcp_step, sandbox, spec)
+                    steps[label] = {"background": spec["background"]}
+                else:
+                    steps[label] = _mcp_step(sandbox, spec)
+            elif "join" in step:
+                steps[label] = background.pop(step["join"]).result(timeout=320)
+            elif "drain" in step:
+                # Wait until every shim process has exited.
+                deadline = time.monotonic() + step["drain"].get("timeout", 10)
+                while shims.live_shims(sandbox.root) and time.monotonic() < deadline:
+                    time.sleep(0.02)
+                steps[label] = {"drained": not shims.live_shims(sandbox.root)}
+            elif "gate" in step:
+                spec = step["gate"]
+                # "count": how many shims must be blocked on the gate first.
+                count = spec.get("count", 1)
+                if "release" in spec:
+                    steps[label] = shims.release_gate(sandbox.root, spec["release"], spec.get("timeout", 10), count)
+                else:
+                    steps[label] = {"gate": spec["await"], "reached": shims.await_gate(
+                        sandbox.root, spec["await"], spec.get("timeout", 10), count)}
             elif "raw" in step:
                 spec = step["raw"]
                 data = sandbox.expand(spec["data"]).encode("latin-1")
@@ -208,8 +268,33 @@ def execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
             steps["_implicitStop"] = server.stop()
         for holder in held:
             holder.close()
+        for name, future in background.items():
+            # A background call nobody joined is a scenario bug; record it.
+            steps[f"_unjoined.{name}"] = future.result(timeout=320)
+        pool.shutdown(wait=True)
     observation: dict[str, Any] = {"steps": steps}
     collect = scenario.get("collect", [])
+    if "orphans" in collect:
+        # A shim still running after its agent stopped is an orphan. Allow a
+        # short grace for a released shim to finish exiting.
+        deadline = time.monotonic() + 3
+        while shims.live_shims(sandbox.root) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        observation["orphans"] = shims.live_shims(sandbox.root)
+        for orphan in observation["orphans"]:
+            try:
+                os.kill(orphan["pid"], signal.SIGKILL)
+            except OSError:
+                pass
+    if "shimExits" in collect:
+        # How cancelled children died: a catchable signal is recorded by the
+        # shim in the trace; SIGKILL leaves only a stale pid file behind.
+        observation["shimExits"] = {
+            "signalled": sorted(
+                f"{e['cmd']} {' '.join(e['argv'])} {e['signal']}"
+                for e in shims.read_trace(sandbox.trace_path) if "signal" in e),
+            "killed": sorted(e["cmd"] for e in shims.unclean_shims(sandbox.root)),
+        }
     if "trace" in collect:
         observation["trace"] = sandbox.trace()
     if "files" in collect:
@@ -228,7 +313,7 @@ _EXCLUSIVE = threading.Lock()
 X2_TABLES = ("operations", "plan_runs", "capability_invocations")
 
 
-def invariant_violations(scenario: dict, observation: dict) -> list[dict]:
+def invariant_violations(scenario: dict, observation: dict, label: str = "") -> list[dict]:
     """Cross-cutting invariants a scenario declares (milestones.md 2.6).
 
     They hold on each side on its own; equality with the other side is not
@@ -236,16 +321,55 @@ def invariant_violations(scenario: dict, observation: dict) -> list[dict]:
     the state store records no operations, plan runs or invocations.
     """
     violations = []
+    if "NO_ORPHANS" in scenario.get("invariants", []):
+        if "orphans" not in observation:
+            violations.append({"invariant": "NO_ORPHANS", "reason": "scenario does not collect orphans"})
+        elif observation["orphans"]:
+            violations.append({"invariant": "NO_ORPHANS", "reason": "shims outlived the agent",
+                               "value": observation["orphans"]})
     if "X2" in scenario.get("invariants", []):
-        if observation.get("trace"):
+        # "x2Reads": argv prefixes a refusal may still run (resolving an
+        # unknown target lists inventory). Anything else is an effect.
+        # "argPrefix" further requires the next argument to start with it
+        # (["query"] + "/1.0/" admits a GET query but not `query -X PUT`).
+        def is_read(entry: dict) -> bool:
+            argv = entry.get("argv", [])
+            for read in scenario.get("x2Reads", []):
+                prefix, arg = read["argvPrefix"], read.get("argPrefix")
+                if entry.get("cmd") != read["cmd"] or argv[:len(prefix)] != prefix:
+                    continue
+                if arg is None or (len(argv) > len(prefix) and argv[len(prefix)].startswith(arg)):
+                    return True
+            return False
+
+        effects = [e for e in observation.get("trace") or [] if not is_read(e)]
+        if effects:
             violations.append({"invariant": "X2", "reason": "shim trace is not empty",
-                               "value": observation["trace"][:5]})
+                               "value": effects[:5]})
+        # "x2GoGaps": {table: decision} names a table the pinned Go reference
+        # writes on a rejected call, recorded as a Go gap by an approved
+        # decision. It exempts only the Go side; Rust is always held to X2.
+        gaps = scenario.get("x2GoGaps", {}) if label.startswith("go") else {}
         for db, schema in (observation.get("sqlite") or {}).items():
             for table in X2_TABLES:
                 count = (schema.get("rowCounts") or {}).get(table)
-                if count:
+                if count and table not in gaps:
                     violations.append({"invariant": "X2", "reason": f"{db} {table} has {count} rows"})
     return violations
+
+
+def _execute_safe(impl: agent.Impl, scenario: dict, side: str, run_id: str,
+                  other: agent.Impl | None = None) -> tuple[dict, dict]:
+    """Like execute(), but a crash on one side (a real bug, or a mutation
+    this scenario was never designed to survive, e.g. a wrongly-admitted
+    extra concurrent call jamming a gate built for an exact count) becomes a
+    recorded difference instead of an unhandled exception that kills the
+    whole suite. The other side's normal observation then makes canon.diff
+    flag it, which is exactly the signal a comparison run must produce."""
+    try:
+        return execute(impl, scenario, side, run_id, other)
+    except Exception as exc:
+        return {"steps": {}, "_executionError": f"{type(exc).__name__}: {exc}"}, {}
 
 
 def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: str) -> dict:
@@ -254,18 +378,18 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
         # Scenarios that use fixed default ports run one side at a time and
         # never overlap another exclusive scenario.
         with _EXCLUSIVE:
-            obs_l, vars_l = execute(left, scenario, "a", run_id, right)
-            obs_r, vars_r = execute(right, scenario, "b", run_id, left)
+            obs_l, vars_l = _execute_safe(left, scenario, "a", run_id, right)
+            obs_r, vars_r = _execute_safe(right, scenario, "b", run_id, left)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            fut_l = pool.submit(execute, left, scenario, "a", run_id, right)
-            fut_r = pool.submit(execute, right, scenario, "b", run_id, left)
+            fut_l = pool.submit(_execute_safe, left, scenario, "a", run_id, right)
+            fut_r = pool.submit(_execute_safe, right, scenario, "b", run_id, left)
             obs_l, vars_l = fut_l.result()
             obs_r, vars_r = fut_r.result()
     norm_l, viol_l = canon.normalize(obs_l, spec, vars_l)
     norm_r, viol_r = canon.normalize(obs_r, spec, vars_r)
-    viol_l += invariant_violations(scenario, obs_l)
-    viol_r += invariant_violations(scenario, obs_r)
+    viol_l += invariant_violations(scenario, obs_l, left.label)
+    viol_r += invariant_violations(scenario, obs_r, right.label)
     divergences: list[dict] = []
     if cross_implementation(left, right):
         norm_l, norm_r, divergences = canon.apply_divergences(

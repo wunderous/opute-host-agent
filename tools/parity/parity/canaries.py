@@ -51,16 +51,52 @@ def run(go_binary: Path, src: Path, out_path: Path, workers: int = 6) -> dict:
     lock = json.loads((runner.REPO_ROOT / "baseline" / "source-lock.json").read_text())
     version = lock["publishedPackage"].rsplit("@", 1)[-1]
     canaries = json.loads(CANARY_FILE.read_text())
-    scenarios = runner.load_scenarios()
     left = agent.Impl(label="go", binary=go_binary)
-    results = []
+    identity = {
+        "sourceCommit": lock["sourceCommit"],
+        "goBinarySha256": left.sha256(),
+        "harnessSha256": runner.harness_sha256(),
+        "canaryFileSha256": runner.sha256_file(CANARY_FILE),
+    }
+
+    # Resume support: a crash (host/VM instability, not a harness bug) must not
+    # discard already-completed canaries, since each one is a full Go build
+    # plus a full scenario-suite run. Reuse prior results only when they were
+    # produced against the exact same source/binary/harness/canary-file
+    # identity recorded above; anything else is stale and is recomputed.
+    results: list[dict] = []
+    done_ids: set[str] = set()
+    if out_path.exists():
+        try:
+            prior = json.loads(out_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            prior = None
+        if prior and all(prior.get(k) == v for k, v in identity.items()):
+            results = prior.get("results", [])
+            done_ids = {r["id"] for r in results}
+
+    def checkpoint() -> dict:
+        doc = {"schemaVersion": 1, **identity, "results": results}
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(canon.canonical_json(doc) + "\n")
+        return doc
+
     for canary in canaries:
+        if canary["id"] in done_ids:
+            print(f"{canary['id']}: skipped (already in {out_path})")
+            continue
         work = Path(tempfile.mkdtemp(prefix=f"canary-{canary['id']}-"))
         try:
             binary, status = build_canary(src, canary, work, version)
             entry = {"id": canary["id"], "patchApplied": binary is not None, "buildStatus": status}
             if binary is not None:
                 right = agent.Impl(label="canary", binary=binary)
+                # Only the canary's own scenario and its declared mayAlsoFail
+                # set can tell us anything: the other ~80 scenarios exercise
+                # unrelated code paths and would just re-pay the full suite's
+                # build+run cost 14 times over for no additional signal.
+                scenario_ids = [canary["scenario"], *canary.get("mayAlsoFail", [])]
+                scenarios = runner.load_scenarios(ids=scenario_ids)
                 summary = runner.run_suite(left, right, f"canary-{canary['id']}", work / "evidence",
                                            scenarios, repeat=1, workers=workers, source_lock=lock)
                 entry["failedScenarios"] = sorted(k for k, v in summary["items"].items() if v["status"] != "pass")
@@ -71,14 +107,5 @@ def run(go_binary: Path, src: Path, out_path: Path, workers: int = 6) -> dict:
                   f"failed={entry.get('failedScenarios')} ({status})")
         finally:
             shutil.rmtree(work, ignore_errors=True)
-    doc = {
-        "schemaVersion": 1,
-        "sourceCommit": lock["sourceCommit"],
-        "goBinarySha256": left.sha256(),
-        "harnessSha256": runner.harness_sha256(),
-        "canaryFileSha256": runner.sha256_file(CANARY_FILE),
-        "results": results,
-    }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(canon.canonical_json(doc) + "\n")
-    return doc
+        checkpoint()
+    return checkpoint()

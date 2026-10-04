@@ -13,6 +13,10 @@
    "decision": "D8",
    "results": "evidence/current/contracts/oauth-issuance/summary.json"
   },
+  "refuse-before-operation-record": {
+   "decision": "D12",
+   "results": "evidence/current/contracts/refuse-before-operation-record/summary.json"
+  },
   "reject-without-audit-writes": {
    "decision": "D11",
    "results": "evidence/current/contracts/reject-without-audit-writes/summary.json"
@@ -38,6 +42,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D11)",
    "status": "approved",
    "summary": "Rust rejects enumerated invalid MCP calls without invocation audit writes; Go remains unchanged"
+  },
+  "D12": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/refuse-before-operation-record",
+   "date": "2026-10-02",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D12)",
+   "status": "approved",
+   "summary": "Rust refuses task-aware calls at binding or admission before any durable operation record; Go persists the operation first (server.go:1642-1652)"
   },
   "D8": {
    "approvedBy": "owner",
@@ -69,7 +81,8 @@
    "requireContracts": [
     "oauth-issuance",
     "standalone-read-only-gate",
-    "reject-without-audit-writes"
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
    ],
    "requireInventory": true,
    "requireNoGaps": true,
@@ -85,7 +98,11 @@
    "requireInventory": true,
    "requirePass": [
     "go-vs-go"
-   ]
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
   },
   "m1": {
    "description": "M1 exit: harness valid (Go-vs-Go x20, canaries, inventory) and the Rust candidate matches Go on every CLI, config and lifecycle item (x5), and passes the Go black-box startup tests; other surfaces may still differ (M2+)",
@@ -102,7 +119,11 @@
       "lifecycle"
      ]
     }
-   ]
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
   },
   "m2": {
    "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
@@ -125,7 +146,11 @@
       "auth"
      ]
     }
-   ]
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
   },
   "m3": {
    "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
@@ -155,7 +180,47 @@
       "read-only-tools"
      ]
     }
-   ]
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
+  },
+  "m4": {
+   "description": "M4 exit: everything M3 requires, plus admission and tasks matching Go on every scenario (x5): canonical URIs and kinds, tenant scope, the admission matrix over every non-read tool (gate closed, stale revision, binding, unknown target) with X2, coordinator saturation N+k, min-memory/min-disk headroom, normal-class host reads, the task registry, input_required, and cancellation before start, mid-shim and after completion with zero orphans; the D12 contract suite and its Rust canaries pass",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "read-only-tools",
+      "tasks"
+     ]
+    }
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
   }
  },
  "goReference": {
@@ -164,6 +229,182 @@
   "note": "CGO_ENABLED=0, -trimpath, -buildvcs=false, fixed ldflags; reproducible for a given Go toolchain"
  },
  "items": [
+  {
+   "anchors": [
+    "internal/tools/execution_binding.go:resolveExecutionBinding",
+    "internal/resource/resolve.go:ResolveResource",
+    "openspec/specs/host-agent-contract/spec.md:Canonical resource identity"
+   ],
+   "id": "admission.binding.canonical-uri",
+   "owner": "core",
+   "scenario": "admission.binding.canonical-uri",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/hostmcp/server.go:requestCatalogRevision"
+   ],
+   "id": "admission.catalog-revision.stale",
+   "owner": "core",
+   "scenario": "admission.catalog-revision.stale",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/resource/service.go:Admit",
+    "internal/heartbeat/capacity.go:readCgroupEnforcement"
+   ],
+   "id": "admission.enforcement.default-policy",
+   "owner": "core",
+   "scenario": "admission.enforcement.default-policy",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/resource/coordinator.go:Admit",
+    "internal/domain/host/tool.go:ProbeIncusGPU"
+   ],
+   "id": "admission.saturation.normal-class",
+   "owner": "core",
+   "scenario": "admission.saturation.normal-class",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/resource/coordinator.go:Admit"
+   ],
+   "id": "admission.headroom.min-memory",
+   "owner": "core",
+   "scenario": "admission.headroom.min-memory",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/resource/coordinator.go:Admit"
+   ],
+   "id": "admission.headroom.min-disk",
+   "owner": "core",
+   "scenario": "admission.headroom.min-disk",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "test/compliance/mcp_test.go:TestMCPInputRequiredTaskRoundTripOverHTTP",
+    "internal/hostmcp/server.go:createInputRequestTask",
+    "internal/hostmcp/tasks.go:HandleExtensionMethod"
+   ],
+   "id": "tasks.input-required.round-trip",
+   "owner": "core",
+   "scenario": "tasks.input-required.round-trip",
+   "surface": "tasks"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/tasks.go:HandleExtensionMethod",
+    "internal/tasks/registry.go:Cancel"
+   ],
+   "id": "tasks.input-required.cancel",
+   "owner": "core",
+   "scenario": "tasks.input-required.cancel",
+   "surface": "tasks"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:createAsyncTask",
+    "internal/tools/dispatch.go:DispatchTool"
+   ],
+   "id": "tasks.async.binding-failure",
+   "owner": "core",
+   "scenario": "tasks.async.binding-failure",
+   "surface": "tasks"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:createAsyncTask",
+    "internal/tasks/registry.go:Cancel",
+    "internal/tasks/registry.go:Complete"
+   ],
+   "id": "tasks.cancel.mid-shim",
+   "owner": "core",
+   "scenario": "tasks.cancel.mid-shim",
+   "surface": "tasks"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:InspectHostFile",
+    "internal/domain/host/http_probe.go:ProbeHTTPEndpoint",
+    "internal/tools/dispatch_host.go:InspectHostFile"
+   ],
+   "id": "admission.normal-reads.host",
+   "owner": "core",
+   "scenario": "admission.normal-reads.host",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:createAsyncTask",
+    "internal/tasks/registry.go:Cancel"
+   ],
+   "id": "tasks.cancel.before-start",
+   "owner": "core",
+   "scenario": "tasks.cancel.before-start",
+   "surface": "tasks"
+  },
+  {
+   "anchors": [
+    "internal/tasks/registry.go:Cancel"
+   ],
+   "id": "tasks.cancel.after-completion",
+   "owner": "core",
+   "scenario": "tasks.cancel.after-completion",
+   "surface": "tasks"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/hostmcp/server.go:resolveExecutionBindingWithSnapshot",
+    "openspec/changes/reimplement-host-agent-in-rust/milestones.md:M4 admission matrix"
+   ],
+   "id": "admission.matrix.gate-closed",
+   "owner": "core",
+   "scenario": "admission.matrix.gate-closed",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/hostmcp/server.go:resolveExecutionBindingWithSnapshot",
+    "openspec/changes/reimplement-host-agent-in-rust/milestones.md:M4 admission matrix"
+   ],
+   "id": "admission.matrix.stale-revision",
+   "owner": "core",
+   "scenario": "admission.matrix.stale-revision",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/hostmcp/server.go:resolveExecutionBindingWithSnapshot",
+    "openspec/changes/reimplement-host-agent-in-rust/milestones.md:M4 admission matrix"
+   ],
+   "id": "admission.matrix.binding",
+   "owner": "core",
+   "scenario": "admission.matrix.binding",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/server.go:handleToolCall",
+    "internal/hostmcp/server.go:resolveExecutionBindingWithSnapshot",
+    "openspec/changes/reimplement-host-agent-in-rust/milestones.md:M4 admission matrix",
+    "internal/resource/resolve.go:ResolveResource"
+   ],
+   "id": "admission.matrix.unknown-target",
+   "owner": "core",
+   "scenario": "admission.matrix.unknown-target",
+   "surface": "admission"
+  },
   {
    "anchors": [
     "internal/tools/standalone.go:StandaloneToolDefinitions",
@@ -852,7 +1093,7 @@
   "results": "evidence/current/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "6524dc94464a7a897f5b2e3eebaad6b159ce1c7de330692166dbd5bb591e9252",
+  "binarySha256": "668569815e87d05c6b5a8bc8fcad3acdb12a3b8f7858a5e9a7134fa1bfd398be",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

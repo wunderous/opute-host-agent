@@ -8,6 +8,7 @@
 //! closed with a typed `not_implemented` capability error; the catalog still
 //! publishes them, so `tools/list` stays identical to Go.
 
+use crate::admission::{self, Binding};
 use crate::catalog;
 use crate::gojson::{Node, Value};
 use crate::mcpsdk::ToolCallOutcome;
@@ -97,7 +98,7 @@ fn requested_revision(params: Option<&Node>) -> String {
         .unwrap_or_default()
 }
 
-pub fn call(server: &Server, wire: &str, params: Option<&Node>) -> ToolCallOutcome {
+pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCallOutcome {
     let Some(name) = registered(server, wire) else {
         return ToolCallOutcome::Unknown;
     };
@@ -127,18 +128,173 @@ pub fn call(server: &Server, wire: &str, params: Option<&Node>) -> ToolCallOutco
             "standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
         ));
     }
-    // Lifecycle tools are routed before the task boundary.
-    if name == "get_capability_catalog" {
-        return ToolCallOutcome::Result(structured_result(snapshot_json(server.catalog), None));
+    // Lifecycle tools are routed before the task boundary. They carry no
+    // resource binding but cross the same host admission boundary.
+    if LIFECYCLE.contains(&name.as_str()) {
+        let binding = Binding::default();
+        let reservation = match admission::admit(server, &name, &args, &binding, None) {
+            Ok(r) => r,
+            Err(refusal) => return ToolCallOutcome::Result(refusal.render()),
+        };
+        let result = if name == "get_capability_catalog" {
+            structured_result(snapshot_json(server.catalog), None)
+        } else {
+            not_implemented(&name)
+        };
+        admission::release(server, &reservation);
+        return ToolCallOutcome::Result(result);
     }
-    if catalog::is_task_aware(&name) && !LIFECYCLE.contains(&name.as_str()) {
+    if name == "request_task_input" {
         if !task_extension_declared(params) {
             return missing_tasks_capability();
         }
-        // The MCP Tasks lifecycle arrives with M4.
-        return ToolCallOutcome::Result(not_implemented(&name));
+        return ToolCallOutcome::Result(create_input_task(server, &args));
     }
-    ToolCallOutcome::Result(dispatch(server, &name, &args))
+    if catalog::is_task_aware(&name) {
+        if !task_extension_declared(params) {
+            return missing_tasks_capability();
+        }
+        return ToolCallOutcome::Result(create_async_task(server, &name, args));
+    }
+    ToolCallOutcome::Result(dispatch(server, &name, &args, None))
+}
+
+/// `createInputRequestTask`: a task that completes with the operator's
+/// response once `tasks/update` supplies it.
+fn create_input_task(server: &Arc<Server>, args: &Map<String, J>) -> J {
+    let prompt = args.get("prompt").and_then(J::as_str).unwrap_or("");
+    if prompt.trim().is_empty() {
+        return error_result("request_task_input requires prompt");
+    }
+    let response_type = match args.get("responseType").and_then(J::as_str) {
+        Some(requested) if !requested.is_empty() => requested,
+        _ => "string",
+    };
+    if !matches!(response_type, "string" | "boolean") {
+        return error_result("request_task_input responseType must be string or boolean");
+    }
+    let mut inputs = Map::new();
+    inputs.insert(
+        "response".into(),
+        json!({"type": response_type, "prompt": prompt}),
+    );
+    let desc = "Waiting for operator input...";
+    // The continuation lives inside the registry the server owns; a weak
+    // reference keeps it from holding the server alive.
+    let owner = Arc::downgrade(server);
+    let rec = server
+        .tasks
+        .create_with_input(inputs, move |task_id, responses| {
+            if let Some(server) = owner.upgrade() {
+                let response = responses.get("response").cloned().unwrap_or(J::Null);
+                server.tasks.complete(
+                    task_id,
+                    crate::tasks::ToolResult {
+                        structured_content: Some(json!({"response": response})),
+                        ..Default::default()
+                    },
+                );
+            }
+        });
+    json!({
+        "content": [{"type": "text", "text": desc}],
+        "structuredContent": rec.create_result(),
+    })
+}
+
+/// `createAsyncTask`: the call returns a task handle at once and the
+/// capability runs on its own thread under the task's operation identity.
+/// A tool-level error completes the task with `isError`; `failed` is
+/// reserved for execution errors.
+fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> J {
+    let desc = match args.get("vmName").and_then(J::as_str) {
+        Some(vm) if !vm.is_empty() => format!("Running {name} on '{vm}'..."),
+        _ => format!("Executing {name}..."),
+    };
+    // Cancellation is cooperative, as in Go: the work runs to completion
+    // even when the task is cancelled first, and the registry discards the
+    // late result (a cancelled task stays cancelled).
+    let (rec, _cancelled) = server.tasks.create();
+    let worker = Arc::clone(server);
+    let (task_id, name) = (rec.task_id.clone(), name.to_string());
+    std::thread::spawn(move || {
+        let result = dispatch(&worker, &name, &args, Some((&name, &task_id)));
+        let content: Vec<J> = result
+            .get("content")
+            .and_then(J::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|c| c.get("type").and_then(J::as_str) == Some("text"))
+            .map(|c| json!({"type": "text", "text": c.get("text").cloned().unwrap_or(J::Null)}))
+            .collect();
+        let structured = redact_task_result(&worker, &name, result.get("structuredContent"));
+        worker.tasks.complete(
+            &task_id,
+            crate::tasks::ToolResult {
+                content: (!content.is_empty()).then_some(content),
+                structured_content: structured,
+                is_error: result.get("isError") == Some(&J::Bool(true)),
+            },
+        );
+    });
+    json!({
+        "content": [{"type": "text", "text": desc}],
+        "structuredContent": rec.create_result(),
+    })
+}
+
+/// `redactTaskResult`: the stored result is projected through the
+/// capability's output schema so `writeOnly` values never reach task state.
+fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<J> {
+    let descriptor = server
+        .catalog
+        .tools
+        .iter()
+        .chain(catalog::internal().tools.iter())
+        .find(|d| d.name == name);
+    let Some(descriptor) = descriptor else {
+        return Some(json!({"redacted": true}));
+    };
+    let schema = descriptor.output_schema.as_ref().and_then(J::as_object);
+    value.map(|v| redact_by_schema(v, schema))
+}
+
+/// `redactEvidenceBySchema`.
+fn redact_by_schema(value: &J, schema: Option<&Map<String, J>>) -> J {
+    if schema.and_then(|s| s.get("writeOnly")) == Some(&J::Bool(true)) {
+        return J::from("[redacted]");
+    }
+    match value {
+        J::Object(object) => {
+            let properties = schema
+                .and_then(|s| s.get("properties"))
+                .and_then(J::as_object);
+            let additional = schema
+                .and_then(|s| s.get("additionalProperties"))
+                .and_then(J::as_object);
+            let out = object
+                .iter()
+                .map(|(key, child)| {
+                    let child_schema = properties
+                        .and_then(|p| p.get(key))
+                        .and_then(J::as_object)
+                        .or(additional);
+                    (key.clone(), redact_by_schema(child, child_schema))
+                })
+                .collect();
+            J::Object(out)
+        }
+        J::Array(items) => {
+            let item_schema = schema.and_then(|s| s.get("items")).and_then(J::as_object);
+            J::Array(
+                items
+                    .iter()
+                    .map(|i| redact_by_schema(i, item_schema))
+                    .collect(),
+            )
+        }
+        other => other.clone(),
+    }
 }
 
 /// `isLifecycleTool`: transport-owned operations routed before tasks.
@@ -173,18 +329,55 @@ fn not_implemented(name: &str) -> J {
     )
 }
 
-fn dispatch(server: &Server, name: &str, args: &Map<String, J>) -> J {
+/// `DispatchTool`: the single execution boundary for direct calls and task
+/// workers. Binding, then admission, then the capability; the reservation is
+/// released when the capability returns. `identity` is the async task's
+/// operation identity.
+fn dispatch(
+    server: &Server,
+    name: &str,
+    args: &Map<String, J>,
+    identity: Option<(&str, &str)>,
+) -> J {
+    let binding = match admission::resolve_binding(server, name, args) {
+        Ok(b) => b,
+        Err(refusal) => return refusal.render(),
+    };
+    let reservation = match admission::admit(server, name, args, &binding, identity) {
+        Ok(r) => r,
+        Err(refusal) => return refusal.render(),
+    };
+    let result = invoke(server, name, args, &binding);
+    admission::release(server, &reservation);
+    result
+}
+
+type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
+
+fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding) -> J {
     let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
         return not_implemented(name);
     };
-    // Capabilities that take a canonical resource argument are admitted by
-    // resource binding, which arrives with M4; until then they fail closed.
-    if !descriptor.requires.is_empty() {
-        return not_implemented(name);
-    }
-    let handler: fn(&Host, &Map<String, J>) -> Result<J, String> = match name {
-        "get_host_info" => |host, _| Ok(structured_with_text(&describe_host(host), &HOST_INFO)),
-        "list_vms" => |host, args| {
+    let handler: Handler = match name {
+        "get_host_info" => |host, _, _| Ok(structured_with_text(&describe_host(host), &HOST_INFO)),
+        "get_vm_info" => |host, args, binding| {
+            // The provider-native name comes from the canonical binding,
+            // never from a raw argument.
+            let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
+            let register = |uri: &str, coordinates: Map<String, J>| {
+                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
+            };
+            host.incus
+                .get_vm_info(&binding.provider_instance_name(), fast, &register)
+                .map(|v| structured_with_text(&v, &VM_INFO))
+        },
+        "probe_incus_gpu" => |host, args, _| {
+            Ok(structured_result(
+                probe_incus_gpu(host, args),
+                Some("Incus GPU capability report generated"),
+            ))
+        },
+        "list_vms" => |host, args, _| {
             let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
             let register = |uri: &str, coordinates: Map<String, J>| {
                 let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
@@ -193,7 +386,7 @@ fn dispatch(server: &Server, name: &str, args: &Map<String, J>) -> J {
                 .list_vms(fast, &register)
                 .map(|v| structured_with_text(&v, &VM_LIST))
         },
-        "detect_host_platform" => |host, _| {
+        "detect_host_platform" => |host, _, _| {
             let platform = crate::hostobs::detect_platform(&host.env);
             let text = format!(
                 "Host platform detected: {} on {}.",
@@ -202,11 +395,39 @@ fn dispatch(server: &Server, name: &str, args: &Map<String, J>) -> J {
             );
             Ok(json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}))
         },
-        "get_host_capacity" => |host, _| {
+        "get_host_capacity" => |host, _, _| {
             Ok(json!({
                 "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
                 "structuredContent": host.coordinator.snapshot(),
             }))
+        },
+        "inspect_host_file" => |_, args, _| {
+            // expectedContent is read raw: ensure_host_file writes it raw.
+            let field = |k: &str| args.get(k).and_then(J::as_str).map(str::trim).unwrap_or("");
+            let raw = args
+                .get("expectedContent")
+                .and_then(J::as_str)
+                .unwrap_or("");
+            crate::hostread::inspect_host_file(
+                field("path"),
+                field("scope"),
+                field("expectedSha256"),
+                raw,
+            )
+            .map(|v| structured_result(v, Some("Managed host file inspected.")))
+        },
+        "probe_http_endpoint" => |_, args, _| {
+            let endpoint = args
+                .get("endpoint")
+                .and_then(J::as_str)
+                .map(str::trim)
+                .unwrap_or("");
+            let accept = args
+                .get("acceptAuthenticationChallenge")
+                .and_then(J::as_bool)
+                .unwrap_or(false);
+            crate::hostread::probe_http_endpoint(endpoint, accept)
+                .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
         },
         _ => return not_implemented(name),
     };
@@ -222,7 +443,7 @@ fn dispatch(server: &Server, name: &str, args: &Map<String, J>) -> J {
         let message = format!("invalid capability arguments: {e}");
         return capability_error("capability", "invalid_arguments", &message);
     }
-    let result = match handler(&server.host, args) {
+    let result = match handler(&server.host, args, binding) {
         Ok(result) => result,
         Err(e) => return error_result(&e),
     };
@@ -246,6 +467,14 @@ fn dispatch(server: &Server, name: &str, args: &Map<String, J>) -> J {
 }
 
 use crate::gojson::Shape;
+
+/// `host.HTTPObservation`.
+const HTTP_OBSERVATION: Shape = Shape::Struct(&[
+    ("endpoint", Shape::Any),
+    ("statusCode", Shape::Any),
+    ("ready", Shape::Any),
+    ("error", Shape::Any),
+]);
 
 const VM_INFO: Shape = Shape::Struct(&[
     ("uri", Shape::Any),
@@ -426,6 +655,93 @@ fn describe_host(host: &Host) -> J {
     J::Object(result)
 }
 
+/// `host.Service.ProbeIncusGPU`: virtualization versions (each recorded
+/// only when its command succeeds), WSL GPU device and library presence, and
+/// the version gate. Go iterates its command table in map order, so the
+/// three commands run in no fixed order there; here they run in key order.
+fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
+    // exec.Command(...).CombinedOutput(): no deadline.
+    const NO_DEADLINE: std::time::Duration = std::time::Duration::from_secs(365 * 24 * 3600);
+    let mut out = Map::new();
+    for (key, argv) in [
+        ("incus", &["incus", "version"][..]),
+        ("qemu", &["qemu-system-x86_64", "--version"][..]),
+        (
+            "virglrenderer",
+            &["dpkg-query", "-W", "-f=${Version}", "virglrenderer2"][..],
+        ),
+    ] {
+        let argv: Vec<String> = argv.iter().map(|s| s.to_string()).collect();
+        let res = crate::hostobs::run_command(&host.env, &argv, NO_DEADLINE);
+        if res.exit_code == 0 {
+            let combined = format!("{}{}", res.stdout, res.stderr);
+            out.insert(key.into(), J::from(combined.trim()));
+        }
+    }
+    let exists = |p: &str| std::path::Path::new(p).exists();
+    let dxg = exists("/dev/dxg");
+    let libraries =
+        exists("/usr/lib/wsl/lib/libcuda.so") || exists("/usr/lib/wsl/lib/libcuda.so.1");
+    let nvidia_smi = crate::hostobs::look_path(&host.env, "nvidia-smi").is_some()
+        || exists("/usr/lib/wsl/lib/nvidia-smi");
+    out.insert("dxg".into(), J::Bool(dxg));
+    out.insert("wslGpuLibraries".into(), J::Bool(libraries));
+    out.insert("nvidiaSmi".into(), J::Bool(nvidia_smi));
+    out.insert(
+        "incusGpuDevice".into(),
+        J::Bool(crate::hostobs::look_path(&host.env, "incus").is_some()),
+    );
+    let incus_ok = version_at_least(out.get("incus"), 7, 2);
+    let qemu_required = args
+        .get("qemuRequired")
+        .and_then(J::as_bool)
+        .unwrap_or(false);
+    let qemu_version_ok = version_at_least(out.get("qemu"), 11, 0);
+    out.insert(
+        "versionGate".into(),
+        json!({"incusAtLeast7_2": incus_ok, "qemuRequired": qemu_required, "qemuAtLeast11": qemu_version_ok}),
+    );
+    let status = if !incus_ok || (qemu_required && !qemu_version_ok) {
+        "blocked_version_gate"
+    } else if dxg && libraries && nvidia_smi {
+        "ready_for_host_probe"
+    } else {
+        "blocked"
+    };
+    out.insert("status".into(), J::from(status));
+    J::Object(out)
+}
+
+/// `versionAtLeast(fmt.Sprint(value), major, minor)`: the first
+/// `([0-9]+)\.([0-9]+)` match. A missing value prints as `<nil>`.
+fn version_at_least(value: Option<&J>, want_major: i64, want_minor: i64) -> bool {
+    let text = value.and_then(J::as_str).unwrap_or("<nil>").as_bytes();
+    let digits_end = |from: usize| {
+        (from..text.len())
+            .find(|&k| !text[k].is_ascii_digit())
+            .unwrap_or(text.len())
+    };
+    let mut i = 0;
+    while i < text.len() {
+        if !text[i].is_ascii_digit() {
+            i += 1;
+            continue;
+        }
+        let j = digits_end(i);
+        if j + 1 < text.len() && text[j] == b'.' && text[j + 1].is_ascii_digit() {
+            let k = digits_end(j + 1);
+            let number = |a: usize, b: usize| {
+                crate::goerr::atoi(std::str::from_utf8(&text[a..b]).unwrap_or("")).0
+            };
+            let (major, minor) = (number(i, j), number(j + 1, k));
+            return major > want_major || (major == want_major && minor >= want_minor);
+        }
+        // Every start inside this digit run ends at the same place.
+        i = j;
+    }
+    false
+}
+
 /// `taskExtensionDeclared`.
 fn task_extension_declared(params: Option<&Node>) -> bool {
     let Some(meta) = params.and_then(|p| p.field("_meta")) else {
@@ -460,4 +776,45 @@ fn snapshot_json(snapshot: &catalog::Snapshot) -> J {
     let mut s = String::new();
     snapshot.encode(&mut s);
     serde_json::from_str(&s).expect("snapshot encodes as JSON")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_gate_reads_the_first_dotted_pair() {
+        let v = |s: &str| J::from(s);
+        assert!(version_at_least(
+            Some(&v("Client version: 7.2\nServer version: 7.2")),
+            7,
+            2
+        ));
+        assert!(version_at_least(Some(&v("6.21")), 6, 3));
+        assert!(!version_at_least(Some(&v("7.1")), 7, 2));
+        assert!(version_at_least(
+            Some(&v("QEMU emulator version 11.0.1")),
+            11,
+            0
+        ));
+        assert!(!version_at_least(Some(&v("1:9.2.1+ds-1")), 11, 0));
+        // A run of digits not followed by .<digit> is skipped as a whole.
+        assert!(version_at_least(Some(&v("v12x 8.3")), 8, 0));
+        assert!(!version_at_least(Some(&v("12.")), 1, 0));
+        assert!(!version_at_least(None, 0, 0));
+    }
+
+    #[test]
+    fn redaction_masks_write_only_fields() {
+        let schema: Map<String, J> = serde_json::from_value(json!({
+            "properties": {"token": {"writeOnly": true}, "items": {"items": {"properties": {"secret": {"writeOnly": true}}}}},
+            "additionalProperties": {"writeOnly": false},
+        }))
+        .unwrap();
+        let value = json!({"token": "t", "items": [{"secret": "s", "keep": 1}], "other": 2});
+        assert_eq!(
+            redact_by_schema(&value, Some(&schema)),
+            json!({"token": "[redacted]", "items": [{"secret": "[redacted]", "keep": 1}], "other": 2})
+        );
+    }
 }

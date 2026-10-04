@@ -318,6 +318,17 @@ fn http_server(
                 disk_capacity_bytes: cfg.host_resource_disk_capacity,
                 task_capacity: cfg.host_resource_task_capacity,
                 enforcement_env: cfg.env.clone(),
+                max_normal: if cfg.host_resource_max_normal > 0 {
+                    cfg.host_resource_max_normal
+                } else {
+                    2
+                },
+                max_heavy: if cfg.host_resource_max_heavy > 0 {
+                    cfg.host_resource_max_heavy
+                } else {
+                    1
+                },
+                fail_closed: cfg.host_resource_fail_closed,
             },
             state,
             tenant_id: cfg.tenant_id.clone(),
@@ -326,6 +337,7 @@ fn http_server(
             instance_root: cfg.instance_root.to_string_lossy().into_owned(),
             mcp_port: cfg.host_mcp_port,
         },
+        tasks: crate::tasks::Registry::default(),
         health_observer: Box::new(crate::hostobs::health_observer(
             cfg.env.clone(),
             cfg.instance_id.clone(),

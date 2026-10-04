@@ -58,6 +58,8 @@ pub struct Server {
     pub standalone: bool,
     pub allow_mutations: bool,
     pub host: crate::tools::Host,
+    /// The MCP Tasks registry.
+    pub tasks: crate::tasks::Registry,
 }
 
 const ROUTES: [&str; 9] = [
@@ -1154,27 +1156,43 @@ fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
             "capabilities": {"tools": {}, "extensions": {TASKS_EXTENSION: {}}},
             "_meta": {META_SERVER_INFO: {"name": server.implementation_name, "version": server.version}},
         })),
-        "tasks/get" => Err(ExtError::Plain(format!("task not found: {}", task_id()))),
-        "tasks/cancel" => Err(ExtError::Plain(format!(
-            "cannot cancel task: {}",
-            task_id()
-        ))),
+        "tasks/get" => {
+            let id = task_id();
+            match server.tasks.get(&id) {
+                Some(rec) => Ok(rec.get_result()),
+                None => Err(ExtError::Plain(format!("task not found: {id}"))),
+            }
+        }
+        "tasks/cancel" => {
+            let id = task_id();
+            match server.tasks.cancel(&id) {
+                Some(_) => Ok(json!({"resultType": "complete"})),
+                None => Err(ExtError::Plain(format!("cannot cancel task: {id}"))),
+            }
+        }
         "tasks/update" => {
             let parsed = gojson::parse(raw).ok();
             let id = task_id();
             if id.trim().is_empty() {
                 return Err(ExtError::Plain("tasks/update requires taskId".into()));
             }
-            let has_inputs = parsed
+            let responses = match parsed
                 .as_ref()
                 .and_then(|n| n.field("inputResponses"))
-                .is_some_and(|v| v.as_object().is_some());
-            if !has_inputs {
-                return Err(ExtError::Plain(
-                    "tasks/update requires inputResponses".into(),
-                ));
+                .map(go_any)
+            {
+                Some(J::Object(responses)) => responses,
+                _ => {
+                    return Err(ExtError::Plain(
+                        "tasks/update requires inputResponses".into(),
+                    ))
+                }
+            };
+            match server.tasks.update(&id, &responses) {
+                None => Err(ExtError::Plain(format!("task not found: {id}"))),
+                Some((_, false)) => Err(ExtError::Plain(format!("task cannot accept input: {id}"))),
+                Some((_, true)) => Ok(json!({"resultType": "complete"})),
             }
-            Err(ExtError::Plain(format!("task not found: {id}")))
         }
         "resources/list" | "resources/read" | "tasks/list" => {
             Err(ExtError::Rpc(-32601, format!("Method not found: {method}")))
@@ -1258,7 +1276,7 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         };
     }
     let protected = !server.disable_localhost_protection && is_local_host_address(req.host.trim());
-    let serve = move |server: &Server, req: &Request, raw: &[u8]| {
+    let serve = move |server: &Arc<Server>, req: &Request, raw: &[u8]| {
         let call = |name: &str, params: Option<&Node>| crate::tools::call(server, name, params);
         let sdk = crate::mcpsdk::Sdk {
             implementation_name: &server.implementation_name,

@@ -1,14 +1,16 @@
 {
  "baselineFailures": {
   "oauth-issuance": [],
+  "refuse-before-operation-record": [],
   "reject-without-audit-writes": [],
   "standalone-read-only-gate": []
  },
- "canaryFileSha256": "f710e9db7e7901a21d9958a228780759393eaab5f47514166c1246edd69b4c15",
+ "canaryFileSha256": "dbd772107d71fb9990173f056d2691adbdadd6a08e7c4937abf1766b67d895f8",
  "contractSha256": {
-  "oauth-issuance": "ca3ced96795f82144258cabed190cd215c8739730fefcd5724915d4ed08373e7",
-  "reject-without-audit-writes": "b71a7a58b15034bd45be5bf9074596ff3ca6202344178805fc56ad95d2c5dc46",
-  "standalone-read-only-gate": "9071c6893be1ef3d1067d64bbb280ed690ca42753f2d4bdadef388ceeb60204a"
+  "oauth-issuance": "9d42b624b214d4d90dbb6959f7edf9071cab15f3abe3e78bd361ad91db13a8cd",
+  "refuse-before-operation-record": "a8b2cf56218e4cd98bdc2b13aaaafcb64a943a303e957bac6033b4f68d188e5a",
+  "reject-without-audit-writes": "42335fe84a65d23373a1b875f9e038bb7b7d0a4227a7dcaf73898f4e207c6b5f",
+  "standalone-read-only-gate": "6307bb9b3fbc881e260caf729fc2190e54fd9057cf5474fb85d2e6283a6a85d0"
  },
  "results": [
   {
@@ -237,8 +239,29 @@
    ],
    "id": "K21-rejected-call-audit-write",
    "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "refuse-before-operation-record",
+   "failedScenarios": [
+    "refuse.binding-platform",
+    "refuse.binding-standalone"
+   ],
+   "id": "K22-binding-refusal-operation-row",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "refuse-before-operation-record",
+   "failedScenarios": [
+    "refuse.coordinator"
+   ],
+   "id": "K23-coordinator-refusal-operation-row",
+   "patchApplied": true
   }
  ],
- "rustBinarySha256": "6524dc94464a7a897f5b2e3eebaad6b159ce1c7de330692166dbd5bb591e9252",
+ "rustBinarySha256": "668569815e87d05c6b5a8bc8fcad3acdb12a3b8f7858a5e9a7134fa1bfd398be",
  "schemaVersion": 1
 }

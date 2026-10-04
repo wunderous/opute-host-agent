@@ -45,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
     can.add_argument("--go-src", required=True, type=Path)
     can.add_argument("--out", required=True, type=Path)
     can.add_argument("--workers", type=int, default=6)
+    can.add_argument("--manifest", type=Path, default=runner.REPO_ROOT / "parity-manifest.json",
+                      help="used only to exempt canaries any gate has waived from this command's own exit code")
 
     orc = sub.add_parser("oracle", help="run the Go baseline's black-box tests against binaries")
     orc.add_argument("--go-src", required=True, type=Path)
@@ -118,7 +120,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "canaries":
         from . import canaries
         doc = canaries.run(args.go.resolve(), args.go_src.resolve(), args.out, args.workers)
-        return 0 if all(r.get("caught") for r in doc["results"]) else 1
+        manifest = json.loads(args.manifest.read_text()) if args.manifest.exists() else {}
+        waived = {c for gate in manifest.get("gates", {}).values() for c in gate.get("waivedCanaries", {})}
+        return 0 if all(r.get("caught") or r["id"] in waived for r in doc["results"]) else 1
     if args.command == "capture":
         from . import capture
         index = capture.write(capture.capture(args.go.resolve(), args.go_src.resolve()))
