@@ -289,7 +289,7 @@ pub fn probe_http_endpoint(endpoint: &str, accept_challenge: bool) -> Result<J, 
     };
     let attempt = |ipv4: bool| match agent(ipv4).get(endpoint).call() {
         Ok(response) | Err(ureq::Error::Status(_, response)) => Ok(response),
-        Err(ureq::Error::Transport(t)) => Err(t),
+        Err(ureq::Error::Transport(t)) => Err(Box::new(t)),
     };
     let response = match attempt(false).or_else(|_| attempt(true)) {
         Ok(response) => response,
