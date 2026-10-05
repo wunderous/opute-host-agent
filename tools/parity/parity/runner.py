@@ -191,6 +191,7 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
     steps: dict[str, Any] = {}
     server: agent.Server | None = None
     held: list[socket.socket] = []
+    stubs: dict[str, agent.HttpStub] = {}
     background: dict[str, concurrent.futures.Future] = {}
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
     try:
@@ -285,6 +286,15 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 sig = getattr(signal, step["stop"].get("signal", "SIGINT"))
                 steps[label] = server.stop(sig) if server else {"exit": None}
                 server = None
+            elif "httpStub" in step:
+                spec = step["httpStub"]
+                stub = agent.HttpStub(spec.get("responses", []), spec.get("default", {"status": 200}))
+                stubs[label] = stub
+                sandbox.captured[spec.get("portVar", "STUB_PORT")] = str(stub.port)
+                steps[label] = {"port": stub.port}
+            elif "sleep" in step:
+                time.sleep(step["sleep"].get("seconds", 0))
+                steps[label] = {"slept": step["sleep"].get("seconds", 0)}
             else:
                 raise ValueError(f"{scenario['id']}: unknown step {step}")
     finally:
@@ -292,6 +302,8 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
             steps["_implicitStop"] = server.stop()
         for holder in held:
             holder.close()
+        for stub in stubs.values():
+            stub.close()
         for name, future in background.items():
             # A background call nobody joined is a scenario bug; record it.
             steps[f"_unjoined.{name}"] = future.result(timeout=320)
@@ -407,6 +419,73 @@ def _execute_safe(impl: agent.Impl, scenario: dict, side: str, run_id: str,
         return {"steps": {}, "_executionError": f"{type(exc).__name__}: {exc}"}, {}
 
 
+_MISSING = object()
+
+
+def _get_at(doc: Any, path: list) -> Any:
+    """Read-only lookup mirroring canon._apply_at's own traversal rules."""
+    cur = doc
+    for seg in path:
+        if isinstance(cur, dict) and seg in cur:
+            cur = cur[seg]
+        elif isinstance(cur, list) and isinstance(seg, int) and -len(cur) <= seg < len(cur):
+            cur = cur[seg]
+        else:
+            return _MISSING
+    return cur
+
+
+def _without_at(doc: Any, path: list) -> Any:
+    """Copy-on-write delete of `path`, leaving everything outside the path
+    untouched (and unshared), matching canon._apply_at's own safety: `doc`
+    may still be the caller's raw observation in branches a mask never
+    visited, so a plain in-place `del` would corrupt that evidence."""
+    if not path:
+        return doc
+    head, rest = path[0], path[1:]
+    if isinstance(doc, dict) and head in doc:
+        doc = dict(doc)
+        if rest:
+            doc[head] = _without_at(doc[head], rest)
+        else:
+            del doc[head]
+        return doc
+    if isinstance(doc, list) and isinstance(head, int) and -len(doc) <= head < len(doc):
+        doc = list(doc)
+        if rest:
+            doc[head] = _without_at(doc[head], rest)
+        else:
+            del doc[head]
+        return doc
+    return doc
+
+
+def _reconcile_optional_masks(norm_l: Any, norm_r: Any, masks: list[dict]) -> tuple[Any, Any]:
+    """An `optional` mask means a field may legitimately be absent on
+    either side (e.g. a plan admission-rejected on one side never reaches
+    its node fields at all). `canon.apply_masks` already suppresses the
+    "mask path not found" violation for that case, but it masks each side
+    independently and can't see the other -- so a field present-and-masked
+    on one side and genuinely absent on the other still reads as a diff.
+    Reconcile that one specific shape (present vs. absent) by dropping the
+    masked value from whichever side has it, for every mask that declared
+    itself optional; an outright type mismatch still surfaces as a mask
+    violation regardless, since that list is built before this runs."""
+    for mask in masks:
+        if not mask.get("optional"):
+            continue
+        path = list(mask["path"])
+        if "*" in path or "@json" in path:
+            continue
+        l_present = _get_at(norm_l, path) is not _MISSING
+        r_present = _get_at(norm_r, path) is not _MISSING
+        if l_present and not r_present:
+            norm_l = _without_at(norm_l, path)
+        elif r_present and not l_present:
+            norm_r = _without_at(norm_r, path)
+    return norm_l, norm_r
+
+
 def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: str) -> dict:
     spec = scenario.get("compare", {})
     if scenario.get("exclusive"):
@@ -428,6 +507,7 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
     if cross_implementation(left, right):
         norm_l, norm_r, divergences = canon.apply_divergences(
             norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE))
+    norm_l, norm_r = _reconcile_optional_masks(norm_l, norm_r, spec.get("masks", []))
     differences = canon.diff(norm_l, norm_r)
     return {
         "raw": {"a": {"observation": obs_l, "variables": vars_l},

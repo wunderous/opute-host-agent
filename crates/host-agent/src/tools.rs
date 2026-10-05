@@ -137,10 +137,20 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
             Ok(r) => r,
             Err(refusal) => return ToolCallOutcome::Result(refusal.render()),
         };
-        let result = if name == "get_capability_catalog" {
-            structured_result(snapshot_json(server.catalog), None)
-        } else {
-            not_implemented(&name)
+        let result = match name.as_str() {
+            "get_capability_catalog" => structured_result(snapshot_json(server.catalog), None),
+            "validate_host_plan" => {
+                crate::plan_mcp::handle_validate_host_plan(&args, server.catalog)
+            }
+            "run_host_plan" => crate::plan_mcp::handle_run_host_plan(server, &args),
+            "get_host_plan_run" => crate::plan_mcp::handle_get_host_plan_run(server, &args),
+            "validate_host_local_recipe" => {
+                crate::host_recipe_mcp::handle_validate_host_local_recipe(server, &args)
+            }
+            "run_host_local_recipe" => {
+                crate::host_recipe_mcp::handle_run_host_local_recipe(server, &args)
+            }
+            _ => not_implemented(&name),
         };
         admission::release(server, &reservation);
         return ToolCallOutcome::Result(result);
@@ -157,7 +167,7 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         }
         return ToolCallOutcome::Result(create_async_task(server, &name, args));
     }
-    ToolCallOutcome::Result(dispatch(server, &name, &args, None))
+    ToolCallOutcome::Result(dispatch(server, &name, &args, None, None))
 }
 
 /// `createInputRequestTask`: a task that completes with the operator's
@@ -285,7 +295,7 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
     let worker = Arc::clone(server);
     let (task_id, name) = (rec.task_id.clone(), name.to_string());
     let handle = std::thread::spawn(move || {
-        let result = dispatch(&worker, &name, &args, Some((&name, &task_id)));
+        let result = dispatch(&worker, &name, &args, Some((&name, &task_id)), None);
         let content: Vec<J> = result
             .get("content")
             .and_then(J::as_array)
@@ -393,12 +403,19 @@ fn not_implemented(name: &str) -> J {
 /// `DispatchTool`: the single execution boundary for direct calls and task
 /// workers. Binding, then admission, then the capability; the reservation is
 /// released when the capability returns. `identity` is the async task's
-/// operation identity.
-fn dispatch(
+/// operation identity. `cancel_ctx`, when given, is the plan executor's
+/// `RunCtx` for this node: a watcher releases the reservation as soon as
+/// that context is cancelled, instead of holding it until `invoke` itself
+/// returns -- the executor already gives up waiting on the call in that
+/// case (see `Runner::dispatch`), and the call runs to completion on its
+/// own thread regardless, so the reservation must free up independently of
+/// it, not stay held for a call nothing is still waiting on.
+pub(crate) fn dispatch(
     server: &Server,
     name: &str,
     args: &Map<String, J>,
     identity: Option<(&str, &str)>,
+    cancel_ctx: Option<&crate::plan::runner::RunCtx>,
 ) -> J {
     let binding = match admission::resolve_binding(server, name, args) {
         Ok(b) => b,
@@ -418,7 +435,27 @@ fn dispatch(
             persist_task(server, &snapshot);
         }
     }
-    let result = invoke(server, name, args, &binding);
+    let result = match cancel_ctx {
+        Some(ctx) => {
+            let finished = std::sync::atomic::AtomicBool::new(false);
+            std::thread::scope(|scope| {
+                scope.spawn(|| {
+                    while !finished.load(std::sync::atomic::Ordering::SeqCst) {
+                        if ctx.err().is_some() {
+                            admission::release(server, &reservation);
+                            finished.store(true, std::sync::atomic::Ordering::SeqCst);
+                            return;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(20));
+                    }
+                });
+                let r = invoke(server, name, args, &binding);
+                finished.store(true, std::sync::atomic::Ordering::SeqCst);
+                r
+            })
+        }
+        None => invoke(server, name, args, &binding),
+    };
     // Schema-invalid arguments are an owner-approved reject-without-audit
     // divergence (D11). Admission refusals returned above never get here.
     let code = result
@@ -427,6 +464,8 @@ fn dispatch(
     if code != Some("invalid_arguments") {
         record_invocation(server, name, args, &binding, &reservation, &result);
     }
+    // Idempotent: a no-op if the watcher above already released this on
+    // abandonment.
     admission::release(server, &reservation);
     result
 }

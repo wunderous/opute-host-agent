@@ -1,7 +1,7 @@
-.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
-.PHONY: parity-verify-m5
+.PHONY: parity-verify-m5 parity-verify-m6
 # Keep reference builds, patched canaries and client oracles on the same
 # selected Go standard-library contract, even on hosts with a newer Go.
 export GOTOOLCHAIN := $(shell python3 -c 'import json; print(json.load(open("baseline/source-lock.json"))["goToolchain"])')
@@ -88,6 +88,9 @@ parity-verify-m4:
 parity-verify-m5:
 	$(PARITY) verify --gate m5 --report $(CURDIR)/evidence/current/verify-m5.json
 
+parity-verify-m6:
+	$(PARITY) verify --gate m6 --report $(CURDIR)/evidence/current/verify-m6.json
+
 parity-verify-cutover:
 	$(PARITY) verify --gate cutover
 
@@ -109,6 +112,8 @@ parity-m2: parity-m1 parity-contracts parity-rust-canaries parity-verify-m2
 parity-m3: parity-m2 parity-verify-m3
 
 parity-m4: parity-m3 parity-verify-m4
+
+parity-m6: rust-check rust-build parity-m4 parity-go-vs-rust parity-verify-m6
 
 # CI: verify the committed evidence, then re-prove parity on every surface
 # with a freshly built Rust binary (fails on any diff).

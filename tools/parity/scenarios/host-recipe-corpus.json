@@ -1,0 +1,215 @@
+[
+  {
+    "id": "host-recipe-corpus.tailscale-public-ingress",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+      "internal/plan/schema.go:DocumentHash"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_local_recipe",
+          "params": {
+            "name": "validate_host_local_recipe",
+            "arguments": {
+              "source": "${REPO_ROOT}/.parity/go-src/plugins/tunneling/tailscale/recipes/public-ingress.yaml",
+              "inputs": {
+                "targetUri": "https://example.invalid/target",
+                "name": "demo",
+                "localTarget": "https://example.invalid/local"
+              }
+            }
+          },
+          "expand": true
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-recipe-corpus.tailscale-install",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+      "internal/plan/schema.go:DocumentHash"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_local_recipe",
+          "params": {
+            "name": "validate_host_local_recipe",
+            "arguments": {
+              "source": "${REPO_ROOT}/.parity/go-src/plugins/tunneling/tailscale/recipes/install.yaml",
+              "inputs": {
+                "artifactUri": "https://example.invalid/artifact",
+                "artifactSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "activationRecipeSource": "https://example.invalid/activation.yaml",
+                "activationRecipeSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "activationRecipeRevision": "0000000000000000000000000000000000000000"
+              }
+            }
+          },
+          "expand": true
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-recipe-corpus.tailscale-overlay-mesh",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+      "internal/plan/schema.go:DocumentHash"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_local_recipe",
+          "params": {
+            "name": "validate_host_local_recipe",
+            "arguments": {
+              "source": "${REPO_ROOT}/.parity/go-src/plugins/tunneling/tailscale/recipes/overlay-mesh.yaml",
+              "inputs": {
+                "targetUri": "https://example.invalid/target",
+                "peerTargetUri": "https://example.invalid/peer",
+                "peerMeshIp": "10.0.0.2",
+                "name": "demo"
+              }
+            }
+          },
+          "expand": true
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-recipe-corpus.tailscale-ha-network-bundle",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+      "internal/plan/schema.go:DocumentHash"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_local_recipe",
+          "params": {
+            "name": "validate_host_local_recipe",
+            "arguments": {
+              "source": "${REPO_ROOT}/.parity/go-src/plugins/tunneling/tailscale/recipes/ha-network-bundle.yaml",
+              "inputs": {
+                "targetUri": "https://example.invalid/target",
+                "peerTargetUri": "https://example.invalid/peer",
+                "peerMeshIp": "10.0.0.2",
+                "name": "demo",
+                "localTarget": "https://example.invalid/local"
+              }
+            }
+          },
+          "expand": true
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-recipe-corpus.k3s-storage-reclaim",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+      "internal/plan/schema.go:DocumentHash"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_local_recipe",
+          "params": {
+            "name": "validate_host_local_recipe",
+            "arguments": {
+              "source": "${REPO_ROOT}/.parity/go-src/plugins/kubernetes/k3s/recipes/storage-reclaim.yaml",
+              "inputs": {"clusterUri": "https://example.invalid/cluster"}
+            }
+          },
+          "expand": true
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-recipe-corpus.k3s-install",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+      "internal/plan/schema.go:DocumentHash"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_local_recipe",
+          "params": {
+            "name": "validate_host_local_recipe",
+            "arguments": {
+              "source": "${REPO_ROOT}/.parity/go-src/plugins/kubernetes/k3s/recipes/install.yaml",
+              "inputs": {
+                "artifactUri": "https://example.invalid/artifact",
+                "artifactSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "activationRecipeSource": "https://example.invalid/activation.yaml",
+                "activationRecipeSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "activationRecipeRevision": "0000000000000000000000000000000000000000"
+              }
+            }
+          },
+          "expand": true
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  }
+]

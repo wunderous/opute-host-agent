@@ -170,6 +170,32 @@ impl Registry {
         (snapshot, cancelled)
     }
 
+    /// `CreateWithID`: restores a durable operation identity after a
+    /// process restart (or dedups a concurrent request against the same
+    /// idempotency key). A working in-memory record for `task_id` is
+    /// reused as-is; otherwise a fresh working record is created under
+    /// that exact id rather than a generated one, so a later `get(task_id)`
+    /// -- using the plan run's own `run_id` as the task id -- finds it.
+    pub fn create_with_id(
+        &self,
+        task_id: &str,
+        tool_name: &str,
+        description: &str,
+        tool_args: J,
+    ) -> (Snapshot, Arc<AtomicBool>) {
+        let mut guard = self.lock();
+        if let Some(existing) = guard.get(task_id) {
+            if existing.status == "working" {
+                return (existing.snapshot(), Arc::clone(&existing.cancelled));
+            }
+        }
+        let mut rec = Self::new_record(tool_name, description, tool_args);
+        rec.task_id = task_id.to_string();
+        let (snapshot, cancelled) = (rec.snapshot(), Arc::clone(&rec.cancelled));
+        guard.insert(task_id.to_string(), rec);
+        (snapshot, cancelled)
+    }
+
     /// `CreateWithInput`: a task parked until `update` supplies every
     /// requested response. `resume` receives the task id and the accepted
     /// responses.
@@ -445,6 +471,26 @@ mod tests {
         assert_eq!(&id[14..15], "4");
         assert!(matches!(&id[19..20], "8" | "9" | "a" | "b"));
         assert_ne!(id, new_task_id());
+    }
+
+    #[test]
+    fn create_with_id_reuses_a_working_record_and_replaces_a_terminal_one() {
+        let registry = Registry::default();
+        let (first, _) =
+            registry.create_with_id("run-1", "run_host_plan", "Executing...", json!({}));
+        let (again, _) =
+            registry.create_with_id("run-1", "run_host_plan", "Executing...", json!({}));
+        assert_eq!(first.task_id, again.task_id);
+        assert_eq!(
+            first.created_at, again.created_at,
+            "a working record is reused, not recreated"
+        );
+
+        registry.complete(&first.task_id, ToolResult::default());
+        let (fresh, _) =
+            registry.create_with_id("run-1", "run_host_plan", "Resuming...", json!({}));
+        assert_eq!(fresh.task_id, "run-1");
+        assert_eq!(registry.get("run-1").unwrap().status, "working");
     }
 
     #[test]

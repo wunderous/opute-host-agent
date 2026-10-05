@@ -12,7 +12,9 @@ path = "src/main.rs"
 
 [dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
 sha1 = "0.10"
 sha2 = "0.10"
 socket2 = "0.6"
@@ -22,6 +24,7 @@ hex = "0.4"
 nix = { version = "0.29", features = ["net", "signal", "process", "sched", "fs", "user", "hostname"] }
 regex = "1"
 ureq = { version = "2", default-features = false, features = ["tls"] }
+url = "2"
 tokio = { version = "1", features = ["rt", "net", "signal", "macros", "io-util", "time"] }
 
 [dev-dependencies]

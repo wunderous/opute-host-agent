@@ -580,6 +580,23 @@ Projections the schema does not mark must fail closed.
 
 ### M6: Recipes and the single plan executor
 
+**Status:** in progress, not done. The plan executor (`internal/plan`
+ported in full: schema, graph, assert, interpolate, runner), the
+`host-recipe.v1` envelope (source loading, input resolution, host-local
+restrictions, `ValidateHostAgentVersion`), plan/recipe evidence redaction,
+and the full MCP surface (`validate_host_plan`, `run_host_plan`,
+`get_host_plan_run`, `validate_host_local_recipe`, `run_host_local_recipe`)
+are implemented and proven at the Rust unit-test level (171 tests, real
+end-to-end runs against a durable store, `cargo fmt`/`clippy` clean), all
+routed through the one `Runner` -- proven not by inspection but by a static
+structural test mirroring Go's own architecture test. None of the four
+T1 E2E validations below (recipe corpus, invalid corpus, execution traces,
+restart mid-plan) have been run against the Go reference yet, no
+`parity-verify-m6` gate exists, and the resource-reservation lease around a
+launched run is not ported. See
+[evidence/m6/README.md](../../../evidence/m6/README.md) for the full
+breakdown of what is and is not done.
+
 **Closes:** 4.2. **Depends on:** M5. **Can run in parallel with M7.**
 
 **Scope:** recipe schema validation, interpolation, canonical hashing, plan

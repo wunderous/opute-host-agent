@@ -2,15 +2,15 @@
   "failed": 0,
   "failedCases": [],
   "files": {
-    "outcomes.json.gz": "581ad1eaa30b57c3b403acecdfb38806bf9493b99a1cf84f783bb899749238f7"
+    "outcomes.json.gz": "55756a5d4bba0d8eee004a21b8b59fafe92ef9631c67893516902a5a0eebc900"
   },
-  "passed": 420,
+  "passed": 495,
   "provenance": {
     "changedDuringRun": false,
-    "driverSha256": "1bc4e585323f7afaaf4e10264df192392b4bf2a3cb07adc98e88a7c8ee2db456",
+    "driverSha256": "91b7aa8f6313895f4fa2cf6f6be2255d58a8397b58e7f21e00540dec01df0cd5",
     "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
-    "harnessSha256": "5c72a2df72c3731cd4c2dd5f52d9133541f71b9a0453a6c7e8477b9ae9cad539",
-    "rustBinarySha256": "6190965ceb251bf4da854df84a1359898daca7696229f865326d3b31121363fa",
+    "harnessSha256": "75bfa094a267dd8b8d65a22c03368673484dd22ffd54ff796d701a909a21e3be",
+    "rustBinarySha256": "c30fda4f47367061f5cf3e2aa31756bf6b5ffbd2d119d0d369a7fdadfb1ef79b",
     "scenarioHashes": {
       "admission.binding.canonical-uri": "ee64b889304d8468167ad06fe123629d426555b0b38da50e2ef3182a1290826e",
       "admission.catalog-revision.stale": "0edacd04f0957821eb84d459a180aece94e861de195df661f4d451314b0b3064",
@@ -41,6 +41,15 @@
       "defaults.port-platform": "defd73809afae8959229959975a7eab53bb8b4655498939af7cc5703788fc9b1",
       "defaults.port-standalone": "403c8c9255dd3cbf6c2b3f9173544ef007bffc161b5e73a4daf85609e7614820",
       "defaults.state-location": "488beb127c52b52bce8be43c0486dd893c5dfa3803d7fc56559a968262a54594",
+      "host-plan-fault-scripts.cancel-mid-node": "36202c0889c25e97f2a5429d5ce5e417c7fffab48ec85de11ec78c7cfa7dc38b",
+      "host-plan-fault-scripts.retry-then-success": "afe1e57ded5cdb5c662039fa06bef46924e401cbcd709b9ba455cd7686a9f582",
+      "host-plan-invalid-corpus.bad-binding-undeclared-producer": "d551753d8c7ff25bc1624c6e18675c473904b586f57a025d8804397f5fada316",
+      "host-plan-invalid-corpus.cycle": "cecb98b5dd61573f45b3973f49fdc7c8681750ed5a54cb09d8b201dc296e1f67",
+      "host-plan-invalid-corpus.duplicate-node-ids": "5222806fee60c2af34454c3020073d0252c0001f1f382bfc3f81addf1687d846",
+      "host-plan-invalid-corpus.interpolation-type-error": "fd61798e2340770b731bc702fc2e9c8ded1ae71c9788b9160b993e9579696fba",
+      "host-plan-invalid-corpus.stale-catalog-revision": "6117b9974aeb71bb40901253878c8e83a4105982bc2315e61408b7dc0bf5c94c",
+      "host-plan-invalid-corpus.unknown-node-dependency": "0d81f24e68514bb1e4f5728b814d81860ac2c6acc4f8a8f7cb9a07e328d37c49",
+      "host-plan-invalid-corpus.wrong-schema-version": "bd8c6154b6c8f440b560099a3141ad8034bac55d95d44978fce7353a44e483ee",
       "host-read.call-envelope": "f13d5101b398d41600862f72f183f7d003e7b61c13d1b3a2ca83e350534c0ef2",
       "host-read.capability-catalog.platform": "dedfd0522f8b6d7a09ddd14a595ad5510ba8656a700a0b9d058a124243f9998f",
       "host-read.capability-catalog.standalone": "5d5a06266e6fc21e11c203458f4514717ac2b376fcfeec2ca3c23dc021bee1d1",
@@ -63,6 +72,12 @@
       "host-read.standalone-mutation-set-denied": "2d42cf5fcffe2a4a69bff4f38210b9ca164cd91d78a8df610e4c20a37aea82bb",
       "host-read.standalone-mutation-set-denied.prefixed": "9634b5b2254c7c1ef814f4f5b856b100782447ec394060e3f7cca3e97198721a",
       "host-read.task-boundary.platform": "2a6f8450c16a4ba1f3312a3be5512150b9bcc62e97c88d68d23f0da82c01436a",
+      "host-recipe-corpus.k3s-install": "0a72510322bcfc30fc8c7565813e23dc5ad38e354176f3a8aef55a5438680d2c",
+      "host-recipe-corpus.k3s-storage-reclaim": "52b79a8c779e21a3b26ed4c6494cd286352f1c8d83445f0a7fc00351b531ab38",
+      "host-recipe-corpus.tailscale-ha-network-bundle": "9a210f90bb21d0196e1c0396053847c79ab76e7897ec22d3aafdc2eca0589568",
+      "host-recipe-corpus.tailscale-install": "c8b1a6281eb940eb2d6861175e16817091a5719615db9c41c54f14e64f62c606",
+      "host-recipe-corpus.tailscale-overlay-mesh": "055ceb8f2db4604434b223c0d05665d91df2f80104e8a753ec679a4fc7f9623c",
+      "host-recipe-corpus.tailscale-public-ingress": "321e110a62e8d129877c9d7d3aafa0224892382e7e9d559fdc90dadeb2c2adea",
       "lifecycle.fault-injection": "fb76d26dd72b42511c9a84d6cb78dfb81df8b2742548c17343418a68b45d09ef",
       "lifecycle.restart-reopens-state": "0674e551dfaf2edfcdea0b44af56a18bcbf3d110c3640ce5f4d8d706771d141f",
       "lifecycle.serve-platform-sigterm": "536db2286e93f179b2b170c7f43aede1f802df6d65eceaf35003926029083405",
@@ -113,5 +128,5 @@
     }
   },
   "repeats": 5,
-  "total": 420
+  "total": 495
 }

@@ -355,6 +355,26 @@ pub fn encode_string(s: &str, out: &mut String) {
     out.push('"');
 }
 
+/// Post-processes already-serialized JSON bytes (from `serde_json`, which
+/// does not HTML-escape) to match `json.Marshal`'s default HTML-escaping:
+/// `<`, `>` and `&` become `<`, `>`, `&`, and U+2028/U+2029
+/// are escaped. Safe as a blind text substitution because these five
+/// characters can only occur inside an already-quoted JSON string in valid
+/// output -- never as a structural character -- so there is no quoting
+/// context to track. Any canonical hash or byte-for-byte comparison against
+/// a Go `json.Marshal` output that goes through `serde_json` instead of
+/// `gojson::encode_string` needs this, or a string field containing one of
+/// these characters silently changes the hash.
+pub fn html_escape_json_bytes(bytes: Vec<u8>) -> Vec<u8> {
+    let text = String::from_utf8(bytes).expect("serde_json output is valid UTF-8");
+    text.replace('<', "\\u003c")
+        .replace('>', "\\u003e")
+        .replace('&', "\\u0026")
+        .replace('\u{2028}', "\\u2028")
+        .replace('\u{2029}', "\\u2029")
+        .into_bytes()
+}
+
 /// `encoding/json`'s float64 formatting: shortest round-trip digits, plain
 /// notation for 1e-6 <= |f| < 1e21, otherwise exponent form with `e-7`
 /// (not `e-07`) and `e+21`.
