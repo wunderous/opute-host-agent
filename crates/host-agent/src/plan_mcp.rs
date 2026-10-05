@@ -9,10 +9,13 @@
 //! (`host_recipe_mcp.rs` is the recipe-shaped caller of
 //! `handle_run_host_plan_with_metadata`). The recipe-metadata-driven
 //! provider-activation branches (M7: `activation`, `providerTeardownInputs`,
-//! `activateCompletedProviderCandidate`) and the resource-reservation lease
-//! binding around a launched run are not yet ported; a plan run here is
-//! admitted and audited like any other capability call, but does not yet
-//! inherit or hold a reservation of its own.
+//! `activateCompletedProviderCandidate`) are not yet ported. A launched
+//! run's reservation lease (`resource.WithReservation` /
+//! `hostmcp.reservationLease`) is: the reservation `tools::dispatch`'s
+//! LIFECYCLE branch admitted is handed to `spawn_plan_execution` once the
+//! thread is actually spawned (`claimed` flips true), and every node the
+//! run dispatches inherits it through `RunCtx::with_reservation` instead of
+//! admitting independently.
 
 use crate::catalog::Snapshot;
 use crate::plan::graph::topological_levels;
@@ -262,14 +265,24 @@ fn plan_run_result(record: &PlanRecord) -> J {
 }
 
 /// `handleRunHostPlan`: the bare path, with no recipe metadata to redact
-/// against or persist.
-pub fn handle_run_host_plan(server: &Arc<Server>, args: &Map<String, J>) -> J {
+/// against or persist. `reservation` is the launcher's own admission
+/// reservation; `claimed` is set once this call actually spawns the plan's
+/// execution thread, so `tools::dispatch`'s LIFECYCLE branch knows not to
+/// release it itself.
+pub fn handle_run_host_plan(
+    server: &Arc<Server>,
+    args: &Map<String, J>,
+    reservation: crate::resource::Reservation,
+    claimed: Arc<std::sync::atomic::AtomicBool>,
+) -> J {
     handle_run_host_plan_with_metadata(
         server,
         args,
         None,
         "run_host_plan",
         "Executing host plan...",
+        reservation,
+        claimed,
     )
 }
 
@@ -287,6 +300,8 @@ pub fn handle_run_host_plan_with_metadata(
     recipe_metadata: Option<&Map<String, J>>,
     task_name: &str,
     task_description: &str,
+    reservation: crate::resource::Reservation,
+    claimed: Arc<std::sync::atomic::AtomicBool>,
 ) -> J {
     let doc = match decode_plan_argument(args) {
         Ok(doc) => doc,
@@ -364,6 +379,11 @@ pub fn handle_run_host_plan_with_metadata(
         server
             .tasks
             .create_with_id(&record.run_id, task_name, task_description, task_args);
+    // Claim the lease now, synchronously, before anything can return: once
+    // claimed, only the spawned thread's own completion releases the
+    // reservation, mirroring Go's claimReservationLease running inside the
+    // same handler that starts the run.
+    claimed.store(true, std::sync::atomic::Ordering::SeqCst);
     spawn_plan_execution(
         Arc::clone(server),
         record.run_id.clone(),
@@ -371,6 +391,7 @@ pub fn handle_run_host_plan_with_metadata(
         state_value,
         snapshot.revision.clone(),
         cancelled,
+        reservation,
     );
     plan_run_result(&record)
 }
@@ -516,6 +537,7 @@ fn spawn_plan_execution(
     state_value: RunState,
     catalog_revision: String,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
+    reservation: crate::resource::Reservation,
 ) {
     let capabilities = capabilities_from_snapshot(server.catalog);
     let sink_capabilities = capabilities.clone();
@@ -555,7 +577,7 @@ fn spawn_plan_execution(
                 Ok(())
             })),
         };
-        let ctx = RunCtx::from_flag(cancelled);
+        let ctx = RunCtx::from_flag(cancelled).with_reservation(reservation);
         let (final_state, run_err) = runner.run(&ctx, &doc, state_value);
         let status = if final_state.status.is_empty() {
             "failed".to_string()
@@ -583,6 +605,12 @@ fn spawn_plan_execution(
                 );
             }
         }
+        // This thread claimed the launcher's reservation; its own
+        // completion -- success, failure, or (via `ctx.err()` inside the
+        // runner) cancellation -- is what finally releases it, mirroring
+        // Go's `reservationLease.finish`.
+        let held = ctx.reservation().expect("claimed reservation");
+        crate::admission::release(&server, &held);
     });
     if let Ok(mut workers) = workers_server.task_workers.lock() {
         workers.retain(|worker| !worker.is_finished());
@@ -721,12 +749,39 @@ mod tests {
         map(&[("plan", serde_json::to_value(doc).unwrap())])
     }
 
+    /// A zero-cost "control" lease, same as `Coordinator::admit` returns for
+    /// a typeless request: it never touches the reservation file, so tests
+    /// that launch a plan can hand it over without any admission
+    /// side-effects while still exercising the real claim/inherit wiring.
+    /// Its `agentId` must match the server's own, the same way the real
+    /// `tools::dispatch` LIFECYCLE branch admits it, or every node the plan
+    /// dispatches fails `reservation_owner_can_inherit`.
+    fn test_reservation(server: &Server) -> crate::resource::Reservation {
+        crate::resource::Reservation {
+            id: "control".to_string(),
+            request: crate::resource::AdmissionRequest {
+                agent_id: server.agent_id.clone(),
+                ..Default::default()
+            },
+            inherited: false,
+        }
+    }
+
+    fn unclaimed() -> Arc<std::sync::atomic::AtomicBool> {
+        Arc::new(std::sync::atomic::AtomicBool::new(false))
+    }
+
     #[test]
     fn run_host_plan_executes_a_single_node_plan_to_completion() {
         let dir = tempfile::tempdir().unwrap();
         let server = test_server(dir.path());
         let doc = sample_plan();
-        let run_result = handle_run_host_plan(&server, &plan_args(&doc));
+        let run_result = handle_run_host_plan(
+            &server,
+            &plan_args(&doc),
+            test_reservation(&server),
+            unclaimed(),
+        );
         let run_id = run_result["structuredContent"]["runId"]
             .as_str()
             .unwrap()
@@ -749,13 +804,23 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let server = test_server(dir.path());
         let doc = sample_plan();
-        let first = handle_run_host_plan(&server, &plan_args(&doc));
+        let first = handle_run_host_plan(
+            &server,
+            &plan_args(&doc),
+            test_reservation(&server),
+            unclaimed(),
+        );
         let first_run_id = first["structuredContent"]["runId"]
             .as_str()
             .unwrap()
             .to_string();
 
-        let second = handle_run_host_plan(&server, &plan_args(&doc));
+        let second = handle_run_host_plan(
+            &server,
+            &plan_args(&doc),
+            test_reservation(&server),
+            unclaimed(),
+        );
         let second_run_id = second["structuredContent"]["runId"]
             .as_str()
             .unwrap()
@@ -782,6 +847,8 @@ mod tests {
             Some(&metadata),
             "run_host_local_recipe",
             "Executing host-local recipe...",
+            test_reservation(&server),
+            unclaimed(),
         );
         let run_id = run_result["structuredContent"]["runId"]
             .as_str()
