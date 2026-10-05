@@ -267,6 +267,44 @@
     "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
     "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
    }
+  },
+  "m6": {
+   "description": "M6 exit: M1-M5 regression gates plus the single plan executor -- recipe/plan validation (valid and invalid corpora), execution-trace fault scripts (retry-then-success, permanent-failure-with-compensation, readiness-never-true-timeout, cancel-mid-node) and restart-mid-plan reconcile -- all matching Go byte-for-byte except the declared, scoped-out probe_http_endpoint cancellation-framing note in evidence/m6/README.md (not a Rust/Go behavioral divergence requiring a decision: both sides now interrupt a cancelled in-flight dispatch promptly, masked only on the exact terminal literal).",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "waivedCanaries": {
+    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
+    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
+   }
   }
  },
  "goReference": {
@@ -585,6 +623,116 @@
   },
   {
    "anchors": [
+    "internal/plan/runner.go:runNode"
+   ],
+   "id": "host-plan-fault-scripts.retry-then-success",
+   "owner": "plan",
+   "scenario": "host-plan-fault-scripts.retry-then-success",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/runner.go:runNode",
+    "internal/plan/runner.go:compensateApplied"
+   ],
+   "id": "host-plan-fault-scripts.permanent-failure-with-compensation",
+   "owner": "plan",
+   "scenario": "host-plan-fault-scripts.permanent-failure-with-compensation",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/runner.go:validateNodeReady"
+   ],
+   "id": "host-plan-fault-scripts.readiness-never-true-timeout",
+   "owner": "plan",
+   "scenario": "host-plan-fault-scripts.readiness-never-true-timeout",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/plan_run.go:handleRunHostPlan",
+    "internal/hostmcp/tasks.go"
+   ],
+   "id": "host-plan-fault-scripts.cancel-mid-node",
+   "owner": "plan",
+   "scenario": "host-plan-fault-scripts.cancel-mid-node",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/plan_reconcile_test.go:TestFailedHostPlanIsReconciledNotReplayed"
+   ],
+   "id": "host-plan-fault-scripts.restart-mid-plan-reconcile",
+   "owner": "plan",
+   "scenario": "host-plan-fault-scripts.restart-mid-plan-reconcile",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/schema.go:Validate"
+   ],
+   "id": "host-plan-invalid-corpus.wrong-schema-version",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.wrong-schema-version",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/graph.go:ValidateGraph"
+   ],
+   "id": "host-plan-invalid-corpus.duplicate-node-ids",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.duplicate-node-ids",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/graph.go:ValidateGraph"
+   ],
+   "id": "host-plan-invalid-corpus.unknown-node-dependency",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.unknown-node-dependency",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/graph.go:ValidateGraph"
+   ],
+   "id": "host-plan-invalid-corpus.cycle",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.cycle",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/schema.go:Validate"
+   ],
+   "id": "host-plan-invalid-corpus.stale-catalog-revision",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.stale-catalog-revision",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/schema.go:validateInterpolations"
+   ],
+   "id": "host-plan-invalid-corpus.bad-binding-undeclared-producer",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.bad-binding-undeclared-producer",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/plan/schema.go:walkReferenceTypes"
+   ],
+   "id": "host-plan-invalid-corpus.interpolation-type-error",
+   "owner": "plan",
+   "scenario": "host-plan-invalid-corpus.interpolation-type-error",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
     "internal/domain/incus/incus_inventory.go:ListVMs",
     "internal/tools/dispatch_incus.go"
    ],
@@ -800,6 +948,66 @@
    "owner": "authz",
    "scenario": "host-read.standalone-mutation-set-denied.prefixed",
    "surface": "auth"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.tailscale-public-ingress",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.tailscale-public-ingress",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.tailscale-install",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.tailscale-install",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.tailscale-overlay-mesh",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.tailscale-overlay-mesh",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.tailscale-ha-network-bundle",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.tailscale-ha-network-bundle",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.k3s-storage-reclaim",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.k3s-storage-reclaim",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.k3s-install",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.k3s-install",
+   "surface": "recipe-corpus"
   },
   {
    "anchors": [
@@ -1159,7 +1367,7 @@
   "results": "evidence/current/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "6190965ceb251bf4da854df84a1359898daca7696229f865326d3b31121363fa",
+  "binarySha256": "c30fda4f47367061f5cf3e2aa31756bf6b5ffbd2d119d0d369a7fdadfb1ef79b",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

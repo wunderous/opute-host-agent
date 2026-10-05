@@ -13,6 +13,7 @@ mod ddl;
 mod evidence;
 mod goflag;
 mod gojson;
+mod host_recipe_mcp;
 mod hostobs;
 mod hostread;
 mod http1;
@@ -20,11 +21,17 @@ mod identity;
 mod incus;
 mod mcpsdk;
 mod oauth;
+mod plan;
+mod plan_evidence;
+mod plan_mcp;
+mod recipe;
 mod resource;
 mod schema;
 #[cfg(test)]
 mod state_fixture;
 mod store;
+#[cfg(test)]
+mod structural_test;
 mod tasks;
 mod tools;
 mod transport;

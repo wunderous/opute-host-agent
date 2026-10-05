@@ -163,6 +163,7 @@ class Sandbox:
             "TOKEN": self.token,
             "PORT": str(self.port),
             "TOOL_PREFIX": tool_name_prefix(self.agent_id),
+            "REPO_ROOT": str(Path(__file__).resolve().parent.parent.parent.parent),
         }
         if host_ip():
             variables["HOST_IP"] = host_ip()
@@ -410,6 +411,57 @@ class Server:
                 return {"exit": self.proc.returncode, "killed": True}
         self._log.close()
         return {"exit": self.proc.returncode, "killed": False}
+
+
+class HttpStub:
+    """A scripted HTTP endpoint for fault-injection scenarios.
+
+    Each hit consumes the next entry in `responses` (status/body/delayMs);
+    once exhausted, `default` answers every further hit. Both sides script
+    identically, so a retry-then-succeed or an always-failing readiness
+    target behaves the same on Go and Rust -- only the host agent under
+    test differs.
+    """
+
+    def __init__(self, responses: list[dict], default: dict):
+        import http.server as _http_server
+
+        self.hits = 0
+        self._lock = threading.Lock()
+        responses_ref = responses
+        default_ref = default
+
+        class Handler(_http_server.BaseHTTPRequestHandler):
+            def _respond(self) -> None:
+                with stub._lock:
+                    index = stub.hits
+                    stub.hits += 1
+                spec = responses_ref[index] if index < len(responses_ref) else default_ref
+                delay_ms = spec.get("delayMs", 0)
+                if delay_ms:
+                    time.sleep(delay_ms / 1000.0)
+                body = spec.get("body", "").encode()
+                self.send_response(spec.get("status", 200))
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self) -> None:  # noqa: N802 (stdlib handler name)
+                self._respond()
+
+            def log_message(self, *_args: Any) -> None:
+                pass
+
+        stub = self
+        self.port = free_port()
+        self._server = _http_server.HTTPServer(("127.0.0.1", self.port), Handler)
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._thread.start()
+
+    def close(self) -> None:
+        self._server.shutdown()
+        self._server.server_close()
+        self._thread.join(timeout=5)
 
 
 def _proc_listen_inodes() -> dict[str, str]:

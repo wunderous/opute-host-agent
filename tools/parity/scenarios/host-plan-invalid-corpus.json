@@ -1,0 +1,255 @@
+[
+  {
+    "id": "host-plan-invalid-corpus.wrong-schema-version",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/schema.go:Validate"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v0",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "nodes": [{"id": "n1", "action": {"tool": "get_host_info", "args": {}}}]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-plan-invalid-corpus.duplicate-node-ids",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/graph.go:ValidateGraph"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "nodes": [
+                  {"id": "n1", "action": {"tool": "get_host_info", "args": {}}},
+                  {"id": "n1", "action": {"tool": "list_vms", "args": {}}}
+                ]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-plan-invalid-corpus.unknown-node-dependency",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/graph.go:ValidateGraph"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "nodes": [
+                  {"id": "n1", "dependsOn": ["ghost"], "action": {"tool": "get_host_info", "args": {}}}
+                ]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-plan-invalid-corpus.cycle",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/graph.go:ValidateGraph"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "nodes": [
+                  {"id": "n1", "dependsOn": ["n2"], "action": {"tool": "get_host_info", "args": {}}},
+                  {"id": "n2", "dependsOn": ["n1"], "action": {"tool": "list_vms", "args": {}}}
+                ]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-plan-invalid-corpus.stale-catalog-revision",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/schema.go:Validate"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "catalogRevision": "sha256:stale-revision-0000000000000000000000000000000000000000000000000000000000",
+                "nodes": [{"id": "n1", "action": {"tool": "get_host_info", "args": {}}}]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-plan-invalid-corpus.bad-binding-undeclared-producer",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/schema.go:validateInterpolations"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "dependsOn": ["ghost"],
+                    "action": {"tool": "inspect_host_file", "args": {"path": "${nodes.ghost.output.path}"}}
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  },
+  {
+    "id": "host-plan-invalid-corpus.interpolation-type-error",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": ["internal/plan/schema.go:walkReferenceTypes"],
+    "fixture": null,
+    "collect": ["trace"],
+    "invariants": ["X2"],
+    "steps": [
+      {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
+      {
+        "as": "validate",
+        "mcp": {
+          "method": "tools/call",
+          "name": "validate_host_plan",
+          "params": {
+            "name": "validate_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "k1",
+                "nodes": [
+                  {"id": "n1", "action": {"tool": "get_host_info", "args": {}}},
+                  {
+                    "id": "n2",
+                    "dependsOn": ["n1"],
+                    "action": {"tool": "inspect_host_file", "args": {"path": "${nodes.n1.output.capacity}"}}
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {"as": "stop", "stop": {}}
+    ],
+    "compare": {}
+  }
+]

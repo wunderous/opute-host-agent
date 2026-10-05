@@ -1,0 +1,1722 @@
+[
+  {
+    "id": "host-plan-fault-scripts.retry-then-success",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/plan/runner.go:runNode"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "stub",
+        "httpStub": {
+          "responses": [
+            {
+              "status": 503
+            },
+            {
+              "status": 503
+            }
+          ],
+          "default": {
+            "status": 200
+          }
+        }
+      },
+      {
+        "as": "run",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "retry-then-success",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "retry": {
+                      "maxAttempts": 3,
+                      "backoffMs": 1,
+                      "backoffFactor": 1
+                    },
+                    "action": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      }
+                    },
+                    "validate": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      },
+                      "assert": [
+                        {
+                          "path": "/ready",
+                          "op": "eq",
+                          "value": true
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true,
+          "capture": {
+            "RUN_ID": [
+              "body",
+              "result",
+              "structuredContent",
+              "runId"
+            ]
+          }
+        }
+      },
+      {
+        "as": "final",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_plan_run",
+          "params": {
+            "name": "get_host_plan_run",
+            "arguments": {
+              "runId": "${RUN_ID}"
+            }
+          },
+          "expand": true,
+          "until": {
+            "path": [
+              "body",
+              "result",
+              "structuredContent",
+              "status"
+            ],
+            "in": [
+              "completed",
+              "failed",
+              "unknown"
+            ]
+          },
+          "timeout": 15
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "stub",
+            "port"
+          ],
+          "type": "non-negative-int",
+          "reason": "stub listens on a freshly allocated ephemeral port per side"
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-plan-fault-scripts.permanent-failure-with-compensation",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/plan/runner.go:runNode",
+      "internal/plan/runner.go:compensateApplied"
+    ],
+    "shapeExempt": "capability_invocations row count/order is wall-clock-dependent for retrying nodes, not comparable byte-for-byte",
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "stub",
+        "httpStub": {
+          "responses": [],
+          "default": {
+            "status": 503
+          }
+        }
+      },
+      {
+        "as": "run",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "permanent-failure-with-compensation",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "action": {
+                      "tool": "get_host_info",
+                      "args": {}
+                    },
+                    "compensate": {
+                      "tool": "list_vms",
+                      "args": {}
+                    }
+                  },
+                  {
+                    "id": "n2",
+                    "dependsOn": [
+                      "n1"
+                    ],
+                    "retry": {
+                      "maxAttempts": 3,
+                      "backoffMs": 1,
+                      "backoffFactor": 1
+                    },
+                    "action": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      }
+                    },
+                    "validate": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      },
+                      "assert": [
+                        {
+                          "path": "/ready",
+                          "op": "eq",
+                          "value": true
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true,
+          "capture": {
+            "RUN_ID": [
+              "body",
+              "result",
+              "structuredContent",
+              "runId"
+            ]
+          }
+        }
+      },
+      {
+        "as": "final",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_plan_run",
+          "params": {
+            "name": "get_host_plan_run",
+            "arguments": {
+              "runId": "${RUN_ID}"
+            }
+          },
+          "expand": true,
+          "until": {
+            "path": [
+              "body",
+              "result",
+              "structuredContent",
+              "nodes",
+              "n1",
+              "status"
+            ],
+            "in": [
+              "compensated",
+              "compensationFailed"
+            ]
+          },
+          "timeout": 15
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "stub",
+            "port"
+          ],
+          "type": "non-negative-int",
+          "reason": "stub listens on a freshly allocated ephemeral port per side"
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n2",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "outputs",
+            "n1"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-plan-fault-scripts.readiness-never-true-timeout",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/plan/runner.go:validateNodeReady"
+    ],
+    "shapeExempt": "capability_invocations row count is wall-clock-dependent for a poll loop, not comparable byte-for-byte (see the scenario below's own comment on the readiness-deadline race)",
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "stub",
+        "httpStub": {
+          "responses": [],
+          "default": {
+            "status": 503
+          }
+        }
+      },
+      {
+        "as": "run",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "readiness-never-true-timeout",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "validate": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      },
+                      "assert": [
+                        {
+                          "path": "/ready",
+                          "op": "eq",
+                          "value": true
+                        }
+                      ],
+                      "timeoutMs": 300,
+                      "pollIntervalMs": 50
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true,
+          "capture": {
+            "RUN_ID": [
+              "body",
+              "result",
+              "structuredContent",
+              "runId"
+            ]
+          }
+        }
+      },
+      {
+        "as": "final",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_plan_run",
+          "params": {
+            "name": "get_host_plan_run",
+            "arguments": {
+              "runId": "${RUN_ID}"
+            }
+          },
+          "expand": true,
+          "until": {
+            "path": [
+              "body",
+              "result",
+              "structuredContent",
+              "status"
+            ],
+            "in": [
+              "completed",
+              "failed",
+              "unknown"
+            ]
+          },
+          "timeout": 15
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "stub",
+            "port"
+          ],
+          "type": "non-negative-int",
+          "reason": "stub listens on a freshly allocated ephemeral port per side"
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "error"
+          ],
+          "type": "nonempty-string",
+          "reason": "readiness-deadline race (dispatch-in-flight vs clean poll boundary) or a real admission refusal under host memory pressure -- see comment above",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "error"
+          ],
+          "type": "nonempty-string",
+          "reason": "readiness-deadline race (dispatch-in-flight vs clean poll boundary) or a real admission refusal under host memory pressure -- see comment above",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "error"
+          ],
+          "type": "nonempty-string",
+          "reason": "readiness-deadline race (dispatch-in-flight vs clean poll boundary) or a real admission refusal under host memory pressure -- see comment above",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "error"
+          ],
+          "type": "nonempty-string",
+          "reason": "readiness-deadline race (dispatch-in-flight vs clean poll boundary) or a real admission refusal under host memory pressure -- see comment above",
+          "optional": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-plan-fault-scripts.cancel-mid-node",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/plan_run.go:handleRunHostPlan",
+      "internal/hostmcp/tasks.go"
+    ],
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "stub",
+        "httpStub": {
+          "responses": [],
+          "default": {
+            "status": 200,
+            "delayMs": 4000
+          }
+        }
+      },
+      {
+        "as": "run",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "cancel-mid-node",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "action": {
+                      "tool": "get_host_info",
+                      "args": {}
+                    }
+                  },
+                  {
+                    "id": "n2",
+                    "dependsOn": [
+                      "n1"
+                    ],
+                    "action": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true,
+          "capture": {
+            "RUN_ID": [
+              "body",
+              "result",
+              "structuredContent",
+              "runId"
+            ]
+          }
+        }
+      },
+      {
+        "as": "settle",
+        "sleep": {
+          "seconds": 0.3
+        }
+      },
+      {
+        "as": "cancel",
+        "mcp": {
+          "method": "tasks/cancel",
+          "name": "${RUN_ID}",
+          "params": {
+            "taskId": "${RUN_ID}"
+          },
+          "expand": true
+        }
+      },
+      {
+        "as": "final",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_plan_run",
+          "params": {
+            "name": "get_host_plan_run",
+            "arguments": {
+              "runId": "${RUN_ID}"
+            }
+          },
+          "expand": true,
+          "until": {
+            "path": [
+              "body",
+              "result",
+              "structuredContent",
+              "status"
+            ],
+            "in": [
+              "completed",
+              "failed",
+              "unknown",
+              "cancelled"
+            ]
+          },
+          "timeout": 15
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "stub",
+            "port"
+          ],
+          "type": "non-negative-int",
+          "reason": "stub listens on a freshly allocated ephemeral port per side"
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body"
+          ],
+          "type": "object",
+          "reason": "terminal shape differs only in how probe_http_endpoint frames a cancelled call (M4/M8 domain nuance, see evidence/m6/README.md); the executor's own prompt-cancellation behavior is proven by this scenario's wall-clock timing instead",
+          "optional": true
+        },
+        {
+          "path": [
+            "sqlite",
+            "state/state.db",
+            "rowCounts",
+            "capability_invocations"
+          ],
+          "type": "non-negative-int",
+          "reason": "row count differs by exactly the abandoned-call audit row (see comment above)",
+          "optional": true
+        },
+        {
+          "path": [
+            "sqliteRows",
+            "state/state.db",
+            "tables",
+            "capability_invocations"
+          ],
+          "type": "array",
+          "reason": "row content differs by exactly the abandoned-call audit row (see comment above)",
+          "optional": true
+        },
+        {
+          "path": [
+            "sqliteRows",
+            "state/state.db",
+            "tables",
+            "plan_runs",
+            "${RUN_ID}",
+            "state_json"
+          ],
+          "type": "object",
+          "reason": "terminal plan state carries the same cancellation-framing nuance as steps.final.body",
+          "optional": true
+        },
+        {
+          "path": [
+            "sqliteRows",
+            "state/state.db",
+            "tables",
+            "plan_runs",
+            "${RUN_ID}",
+            "error_message"
+          ],
+          "type": "string",
+          "reason": "plan_runs' own error column carries the same cancellation-framing nuance",
+          "optional": true
+        },
+        {
+          "path": [
+            "sqliteRows",
+            "state/state.db",
+            "tables",
+            "plan_runs",
+            "${RUN_ID}",
+            "status"
+          ],
+          "type": "string",
+          "reason": "plan_runs' own status column carries the same cancellation-framing nuance",
+          "optional": true
+        },
+        {
+          "path": [
+            "sqliteRows",
+            "state/state.db",
+            "tables",
+            "operations",
+            "${RUN_ID}"
+          ],
+          "type": "object",
+          "reason": "the task record behind a cancelled run may already be reaped on one side",
+          "optional": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "host-plan-fault-scripts.restart-mid-plan-reconcile",
+    "surface": "recipe-corpus",
+    "owner": "plan",
+    "anchors": [
+      "internal/hostmcp/plan_reconcile_test.go:TestFailedHostPlanIsReconciledNotReplayed"
+    ],
+    "shapeExempt": "a mid-node restart and reconcile makes the exact capability_invocations row count/order wall-clock-dependent, not comparable byte-for-byte",
+    "fixture": null,
+    "collect": [],
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "stub",
+        "httpStub": {
+          "responses": [],
+          "default": {
+            "status": 200,
+            "delayMs": 4000
+          }
+        }
+      },
+      {
+        "as": "run",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "restart-mid-plan",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "action": {
+                      "tool": "get_host_info",
+                      "args": {}
+                    }
+                  },
+                  {
+                    "id": "n2",
+                    "dependsOn": [
+                      "n1"
+                    ],
+                    "action": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true,
+          "capture": {
+            "RUN_ID": [
+              "body",
+              "result",
+              "structuredContent",
+              "runId"
+            ]
+          }
+        }
+      },
+      {
+        "as": "settle",
+        "sleep": {
+          "seconds": 0.3
+        }
+      },
+      {
+        "as": "kill",
+        "stop": {
+          "signal": "SIGKILL"
+        }
+      },
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "resubmit",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "restart-mid-plan",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "action": {
+                      "tool": "get_host_info",
+                      "args": {}
+                    }
+                  },
+                  {
+                    "id": "n2",
+                    "dependsOn": [
+                      "n1"
+                    ],
+                    "action": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true
+        }
+      },
+      {
+        "as": "final",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_plan_run",
+          "params": {
+            "name": "get_host_plan_run",
+            "arguments": {
+              "runId": "${RUN_ID}"
+            }
+          },
+          "expand": true,
+          "until": {
+            "path": [
+              "body",
+              "result",
+              "structuredContent",
+              "status"
+            ],
+            "in": [
+              "completed",
+              "failed",
+              "unknown",
+              "cancelled",
+              "running",
+              "pending"
+            ]
+          },
+          "timeout": 15
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "stub",
+            "port"
+          ],
+          "type": "non-negative-int",
+          "reason": "stub listens on a freshly allocated ephemeral port per side"
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "string",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "string",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "outputs",
+            "n1"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        }
+      ]
+    }
+  }
+]
