@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/current/canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-05/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
@@ -11,19 +11,19 @@
  "contracts": {
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/current/contracts/oauth-issuance/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-05/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/current/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-05/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/current/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-05/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/current/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-05/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -73,13 +73,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/current/go-vs-go/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/go-vs-go-final/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/current/go-vs-rust/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/go-vs-rust-final/summary.json"
   }
  },
  "gates": {
@@ -107,11 +107,7 @@
    "requireInventory": true,
    "requirePass": [
     "go-vs-go"
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m1": {
    "description": "M1 exit: harness valid (Go-vs-Go x20, canaries, inventory) and the Rust candidate matches Go on every CLI, config and lifecycle item (x5), and passes the Go black-box startup tests; other surfaces may still differ (M2+)",
@@ -128,11 +124,7 @@
       "lifecycle"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m2": {
    "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
@@ -155,11 +147,7 @@
       "auth"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m3": {
    "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
@@ -189,11 +177,7 @@
       "read-only-tools"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m4": {
    "description": "M4 exit: everything M3 requires, plus admission and tasks matching Go on every scenario (x5): canonical URIs and kinds, tenant scope, the admission matrix over every non-read tool (gate closed, stale revision, binding, unknown target) with X2, coordinator saturation N+k, min-memory/min-disk headroom, normal-class host reads, the task registry, input_required, and cancellation before start, mid-shim and after completion with zero orphans; the D12 contract suite and its Rust canaries pass",
@@ -225,11 +209,7 @@
       "tasks"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m5": {
    "description": "M5 exit: M1-M4 regression gates plus all six provenance-bound durable-state and redaction validations; missing evidence fails closed.",
@@ -262,11 +242,7 @@
       "tasks"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m6": {
    "description": "M6 exit: M1-M5 regression gates plus the single plan executor -- recipe/plan validation (valid and invalid corpora), execution-trace fault scripts (retry-then-success, permanent-failure-with-compensation, readiness-never-true-timeout, cancel-mid-node) and restart-mid-plan reconcile -- all matching Go byte-for-byte except the declared, scoped-out probe_http_endpoint cancellation-framing note in evidence/m6/README.md (not a Rust/Go behavioral divergence requiring a decision: both sides now interrupt a cancelled in-flight dispatch promptly, masked only on the exact terminal literal).",
@@ -300,11 +276,7 @@
       "tasks"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   }
  },
  "goReference": {
@@ -1340,34 +1312,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m5/crash/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m5/cross-read/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m5/migration/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m5/secrets/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m5/shape/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/m5/shape-final/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m5/unknown-projection/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-05/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/current/go-oracles.json",
+  "results": "evidence/local-e2e/native-2026-10-05/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/current/rust-canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-05/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "c30fda4f47367061f5cf3e2aa31756bf6b5ffbd2d119d0d369a7fdadfb1ef79b",
+  "binarySha256": "78a5fe8ab57e3b37704db2d8289e186f206c7b8bf848b1d97f7139afe6c72223",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

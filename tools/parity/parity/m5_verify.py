@@ -119,6 +119,9 @@ def shape_failures(summary: dict, outcomes: dict) -> list[str]:
     hashes = {s["id"]: s["_sha256"] for s in scenarios}
     if summary.get("provenance", {}).get("scenarioHashes") != hashes:
         return ["database shape scenario matrix changed or incomplete"]
+    # Exemptions belong to the versioned scenario, not to the submitted
+    # evidence. Their hashes above still bind the full corpus.
+    scenarios = [s for s in scenarios if not s.get("shapeExempt")]
     expected = {f"{s['id']}.{i}" for s in scenarios for i in range(repeats)}
     failures = []
     if set(outcomes) != expected:

@@ -1,0 +1,50 @@
+{
+  "impl": "goref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tasks/get",
+    "params": {
+      "taskId": "2b01cb0e-10ee-4b44-b2ce-a5857ae092da",
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "createdAt": "2026-10-05T09:32:09Z",
+      "lastUpdatedAt": "2026-10-05T09:32:09Z",
+      "pollIntervalMs": 3000,
+      "result": {
+        "content": [
+          {
+            "text": "Error: root disk quota \"2GiB\" cannot be enforced: storage pool \"default\" uses the dir driver on ext4 mounted at \"/\" without project quotas (prjquota), so Incus accepts a root disk size but does not enforce it; provision on a pool with a quota-capable driver (btrfs, zfs, lvm, ceph) or enable project quotas on the dir pool's filesystem",
+            "type": "text"
+          }
+        ],
+        "isError": true,
+        "structuredContent": null
+      },
+      "resultType": "complete",
+      "status": "completed",
+      "statusMessage": "The operation completed successfully.",
+      "taskId": "2b01cb0e-10ee-4b44-b2ce-a5857ae092da",
+      "ttlMs": 3600000
+    }
+  },
+  "elapsedSeconds": 0.001596212387084961,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

@@ -1,0 +1,214 @@
+{
+  "go": {
+    "steps": {
+      "start": {
+        "ready": true
+      },
+      "capacity": {
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache, no-transform",
+          "content-type": "application/json"
+        },
+        "body": {
+          "jsonrpc": "2.0",
+          "id": 1,
+          "result": {
+            "_meta": {
+              "io.modelcontextprotocol/serverInfo": {
+                "name": "host-agent",
+                "version": "0.2.3"
+              }
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Host capacity and enforcement state observed."
+              }
+            ],
+            "structuredContent": {
+              "cgroupControllers": [
+                "memory",
+                "pids"
+              ],
+              "checkedAt": "2026-10-05T08:22:26Z",
+              "currentUsage": {
+                "diskAvailableBytes": 455315075072,
+                "diskBytes": 84662169600,
+                "memoryAvailableBytes": 20688044032,
+                "memoryBytes": 11783032832,
+                "tasks": 608
+              },
+              "diskAvailableBytes": 455315075072,
+              "diskPressure": "normal",
+              "effectiveLimits": {
+                "cpuCores": 6,
+                "diskBytes": 539977244672,
+                "memoryBytes": 25769803776,
+                "tasks": 4096
+              },
+              "enforcement": "unknown",
+              "heavyInFlight": 0,
+              "memoryAvailableBytes": 20692144128,
+              "memoryEvents": {
+                "high": 0,
+                "low": 0,
+                "max": 0,
+                "oom": 0,
+                "oom_group_kill": 0,
+                "oom_kill": 0,
+                "sock_throttled": 0
+              },
+              "normalInFlight": 0,
+              "observedLimits": {
+                "diskBytes": 539977244672,
+                "tasks": 32684
+              },
+              "policyRevision": "opute-host-resource-policy.v2",
+              "pressure": "normal",
+              "psi": {
+                "cpu": {
+                  "someAvg10": 27.57,
+                  "someAvg300": 35.76,
+                  "someAvg60": 30.16,
+                  "someTotalUsec": 782867097
+                },
+                "io": {
+                  "fullTotalUsec": 14092410,
+                  "someTotalUsec": 15170807
+                },
+                "memory": {
+                  "fullTotalUsec": 15676,
+                  "someTotalUsec": 15865
+                }
+              },
+              "queue": {
+                "heavyActive": 0,
+                "heavyQueued": 0,
+                "normalActive": 0,
+                "queued": 0
+              },
+              "queued": 0,
+              "reservations": {
+                "count": 0
+              },
+              "tasksCurrent": 607,
+              "tasksLimit": 32684
+            },
+            "resultType": "complete"
+          }
+        }
+      },
+      "stop": {
+        "exit": 0,
+        "killed": false
+      }
+    }
+  },
+  "rust": {
+    "steps": {
+      "start": {
+        "ready": true
+      },
+      "capacity": {
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache, no-transform",
+          "content-type": "application/json"
+        },
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "result": {
+            "_meta": {
+              "io.modelcontextprotocol/serverInfo": {
+                "name": "host-agent",
+                "version": "0.2.3"
+              }
+            },
+            "content": [
+              {
+                "text": "Host capacity and enforcement state observed.",
+                "type": "text"
+              }
+            ],
+            "resultType": "complete",
+            "structuredContent": {
+              "cgroupControllers": [
+                "memory",
+                "pids"
+              ],
+              "checkedAt": "2026-10-05T08:22:26Z",
+              "currentUsage": {
+                "diskAvailableBytes": 455315075072,
+                "diskBytes": 84662169600,
+                "memoryAvailableBytes": 20696715264,
+                "memoryBytes": 11774361600,
+                "tasks": 605
+              },
+              "diskAvailableBytes": 455315075072,
+              "diskPressure": "normal",
+              "effectiveLimits": {
+                "cpuCores": 6,
+                "diskBytes": 539977244672,
+                "memoryBytes": 25769803776,
+                "tasks": 4096
+              },
+              "enforcement": "unknown",
+              "heavyInFlight": 0,
+              "memoryAvailableBytes": 20697030656,
+              "memoryEvents": {
+                "high": 0,
+                "low": 0,
+                "max": 0,
+                "oom": 0,
+                "oom_group_kill": 0,
+                "oom_kill": 0,
+                "sock_throttled": 0
+              },
+              "normalInFlight": 0,
+              "observedLimits": {
+                "diskBytes": 539977244672,
+                "tasks": 32684
+              },
+              "policyRevision": "opute-host-resource-policy.v2",
+              "pressure": "normal",
+              "psi": {
+                "cpu": {
+                  "someAvg10": 27.57,
+                  "someAvg300": 35.76,
+                  "someAvg60": 30.16,
+                  "someTotalUsec": 782921243
+                },
+                "io": {
+                  "fullTotalUsec": 14092410,
+                  "someTotalUsec": 15170807
+                },
+                "memory": {
+                  "fullTotalUsec": 15676,
+                  "someTotalUsec": 15865
+                }
+              },
+              "queue": {
+                "heavyActive": 0,
+                "heavyQueued": 0,
+                "normalActive": 0,
+                "queued": 0
+              },
+              "queued": 0,
+              "reservations": {
+                "count": 0
+              },
+              "tasksCurrent": 606,
+              "tasksLimit": 32684
+            }
+          }
+        }
+      },
+      "stop": {
+        "exit": 0,
+        "killed": false
+      }
+    }
+  }
+}

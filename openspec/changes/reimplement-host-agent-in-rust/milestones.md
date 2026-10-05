@@ -474,11 +474,13 @@ cancellation.
 
 **Exit gate:** admission matrix fully green; zero orphans; X2 green.
 
-**Status:** implemented; the `m4` gate passes, with two canaries
-(C12-enforcement-fail-open, C14-late-result-overwrites-cancel) waived rather
-than caught — pending owner review. See
-[evidence/m4/README.md](../../../evidence/m4/README.md) for the waiver
-rationale. Scope changes, each recorded there:
+**Status:** implemented; the fresh native `m4` gate passes. All 14 Go
+canaries are caught with no waivers, including C12 and C14. The earlier WSL
+waivers are historical; the corrected fixtures prove saturation, release and
+durable cancellation independently. See
+[evidence/m4/README.md](../../../evidence/m4/README.md) and the
+[native validation report](../../../evidence/local-e2e/native-2026-10-05/README.md).
+Scope notes:
 
 - **Admission matrix rows.** Gate closed and stale revision run over all 87
   non-read tools; missing, malformed, foreign-tenant and wrong-kind URIs over
@@ -487,7 +489,7 @@ rationale. Scope changes, each recorded there:
   Platform-owned: the agent has no approval gate of its own, and the Platform
   owns authorization. *Quota unenforceable* (ADR 0010) is checked inside
   `CreateVM`, not in admission, so it arrives with M6 provisioning. Cluster
-  and host-service adoption needs the M6 domains and must never reach a real
+  and host-service adoption needs the M8 domains and must never reach a real
   cluster. Where a tool binds several resource types, Go reports the error of
   the last type tried; Rust matches.
 - **D12.** A task-aware call refused at binding or admission still gets a
@@ -517,85 +519,40 @@ rationale. Scope changes, each recorded there:
   `diagnose_bridge`, `discover_service_ingress` and
   `inspect_host_service(_supervisor)` stay `not_implemented` until their
   domain milestones.
-- **T2 is not covered.** All evidence comes from T1 shim fixtures in WSL2;
-  there was no real cgroup enforcement or real Incus.
+- **Native T2 supplement completed (2026-10-05).** Independent disposable
+  QEMU clones with real Incus and systemd enforcement pass 104 assertions
+  before/after restart and 28 exact structured comparisons. Existing domain
+  mutation/adoption gaps remain owned by M8. Historical WSL evidence used
+  shims and did not establish real enforcement.
 
 ---
 
 ### M5: Durable state and schema-derived redaction
 
-**Status:** in progress, not done. Operations/plan storage, provider-generation
-and invocation storage methods, task persistence, restart restoration and shared
-schema redaction are implemented. The pinned Go legacy status projection is
-preserved, accepted workers drain before stores close, and D12 refusals create
-no operation row. The admitted-task cross-read matrix passes all 18 checks;
-refused-task full-row comparisons pass with the approved D12 difference and
-an independent Rust no-write invariant. `make parity-verify-m5` now fails closed
-on every missing named validation and on stale regression evidence. Accepted
-built-in calls now persist invocation audit envelopes and schema-projected
-observations. The full database-shape corpus passes 420/420 checks, cross-read
-passes 18/18, and older-release migration passes 6/6 against the current
-candidate; all three are independently accepted by the M5 verifier.
-Varied crash recovery, full secret sink sweeps, unknown projection, final state
-shape evidence and fresh regression gates remain open. See
-[evidence/m5/README.md](../../../evidence/m5/README.md) and its implementation
-refresh for the verified scope.
-
-**Closes:** 4.3. **Depends on:** M4.
-
-**Recommendation:** keep the Rust SQLite schema, file layout, and file modes
-**bit-compatible** with Go at the pinned revision, and treat any
-reorganization as a later, separate change. The converter for task 4.4 then
-becomes a *verified identity plus version check*. That is far easier to
-prove, and it makes rollback symmetric. This needs an owner decision
-(see §6).
-
-**Scope:** stores listed in `state.json`, WAL and busy-timeout settings,
-additive column migrations, operation, task, plan, generation, and observation
-records, and redaction derived from the write-only schema markings.
-Projections the schema does not mark must fail closed.
-
-**E2E validations**
-
-1. **Shape parity (T1):** after each scenario from M1–M4, dump both
-   databases (`sqlite3 .schema` plus canonical row JSON with typed masks) and
-   diff them. Row counts, statuses, and redacted fields must match.
-2. **Cross-read (T1):** Go writes state, then Rust starts on a *copy* and
-   answers status and list queries identically over MCP. Repeat in the other
-   direction. The two never write concurrently.
-3. **Crash injection (T1):** send `kill -9` at randomized points (about 200
-   seeds) while operations, tasks, and plans are writing. Restart and compare
-   the recovered state and the MCP-visible status with Go under the same seed
-   and injection point, using a deterministic shim-driven crash point. There
-   must be no torn records and no invented success.
-4. **Secret canary X3** across every write-only field in every descriptor.
-5. **Unknown projection:** an unmarked field in a result must be rejected or
-   redacted exactly as Go does. It must never be persisted verbatim.
-6. **Older-state migration:** a DB fixture from the previous released Go
-   version (pre-column additions) is upgraded by Rust and by Go identically.
-
-**Exit gate:** state diffs empty; crash corpus green; X3 green.
+**Status:** complete; the fresh native `m5` verifier passes all categories:
+495/495 shape rows, 18/18 cross-reads, 200/200 crash seeds, secret and unknown
+projection sweeps with zero failures, 6/6 migrations, and D13 4/4. Accepted
+workers drain before stores close; D12 refusals leave no operation row, and
+D13 separates delivery from fail-closed durable storage redaction. The full
+corpus, including declared timing exemptions, is fingerprinted and raw
+observations are independently verified. See
+[evidence/m5/README.md](../../../evidence/m5/README.md) and the
+[native validation report](../../../evidence/local-e2e/native-2026-10-05/README.md).
 
 ---
 
 ### M6: Recipes and the single plan executor
 
-**Status:** in progress, not done. The plan executor (`internal/plan`
-ported in full: schema, graph, assert, interpolate, runner), the
-`host-recipe.v1` envelope (source loading, input resolution, host-local
-restrictions, `ValidateHostAgentVersion`), plan/recipe evidence redaction,
-and the full MCP surface (`validate_host_plan`, `run_host_plan`,
-`get_host_plan_run`, `validate_host_local_recipe`, `run_host_local_recipe`)
-are implemented and proven at the Rust unit-test level (171 tests, real
-end-to-end runs against a durable store, `cargo fmt`/`clippy` clean), all
-routed through the one `Runner` -- proven not by inspection but by a static
-structural test mirroring Go's own architecture test. None of the four
-T1 E2E validations below (recipe corpus, invalid corpus, execution traces,
-restart mid-plan) have been run against the Go reference yet, no
-`parity-verify-m6` gate exists, and the resource-reservation lease around a
-launched run is not ported. See
-[evidence/m6/README.md](../../../evidence/m6/README.md) for the full
-breakdown of what is and is not done.
+**Status:** accepted as passed by explicit owner instruction for the native
+validation goal. The fresh provenance-bound `m6` gate also passes: 102/102
+Go/Go cases at 20 repetitions, 102/102 Go/Rust cases at five repetitions,
+all canaries/contracts/oracles, and M5 evidence. The recipe corpus includes
+validation, retry, readiness, compensation, cancellation and restart/reconcile.
+The single executor and parent reservation inheritance are implemented;
+there is no second workflow runner. Native fixture corrections changed no
+M6 runtime implementation. This acceptance does not authorize cutover or
+claim subsequent provider/domain mutations. See
+[evidence/m6/README.md](../../../evidence/m6/README.md).
 
 **Closes:** 4.2. **Depends on:** M5. **Can run in parallel with M7.**
 

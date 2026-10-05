@@ -9,6 +9,7 @@ between sides.
 from __future__ import annotations
 
 import http.client
+import fcntl
 import json
 import os
 import random
@@ -92,25 +93,43 @@ _PORT_RANGE = range(20000, 30000)
 _PORT_LOCK = threading.Lock()
 _PORTS_HANDED_OUT: set[int] = set()
 _PORT_CURSOR = [random.randrange(len(_PORT_RANGE))]
+_PORT_LEASES: dict[int, Any] = {}
+
+
+def release_port(port: int) -> None:
+    with _PORT_LOCK:
+        lease = _PORT_LEASES.pop(port, None)
+        if lease is not None:
+            lease.close()
 
 
 def free_port() -> int:
     with _PORT_LOCK:
-        for _ in range(len(_PORT_RANGE)):
-            _PORT_CURSOR[0] = (_PORT_CURSOR[0] + 1) % len(_PORT_RANGE)
-            port = _PORT_RANGE[_PORT_CURSOR[0]]
-            if port in _PORTS_HANDED_OUT:
-                continue
-            with socket.socket() as probe:
-                try:
-                    probe.bind(("0.0.0.0", port))
-                except OSError:
+        for attempt in range(2):
+            for _ in range(len(_PORT_RANGE)):
+                _PORT_CURSOR[0] = (_PORT_CURSOR[0] + 1) % len(_PORT_RANGE)
+                port = _PORT_RANGE[_PORT_CURSOR[0]]
+                if port in _PORTS_HANDED_OUT:
                     continue
-            _PORTS_HANDED_OUT.add(port)
-            return port
-        _PORTS_HANDED_OUT.clear()
-    return free_port()
-
+                leases = Path.home() / ".cache/opute-parity/ports"
+                leases.mkdir(parents=True, exist_ok=True)
+                lease = (leases / f"{port}.lock").open("a+b")
+                try:
+                    fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    lease.close()
+                    continue
+                with socket.socket() as probe:
+                    try:
+                        probe.bind(("0.0.0.0", port))
+                    except OSError:
+                        lease.close()
+                        continue
+                _PORT_LEASES[port] = lease
+                _PORTS_HANDED_OUT.add(port)
+                return port
+            _PORTS_HANDED_OUT.clear()
+    raise RuntimeError("no free leased parity ports")
 
 def port_open(port: int) -> bool:
     with socket.socket() as s:
@@ -140,6 +159,10 @@ class Sandbox:
     agent_id: str = field(init=False)
     token: str = field(init=False)
     port: int = field(init=False)
+
+    def __del__(self) -> None:
+        if hasattr(self, "port"):
+            release_port(self.port)
 
     def __post_init__(self) -> None:
         self.root = Path(tempfile.mkdtemp(prefix=f"parity-{self.side}-"))
@@ -462,6 +485,7 @@ class HttpStub:
         self._server.shutdown()
         self._server.server_close()
         self._thread.join(timeout=5)
+        release_port(self.port)
 
 
 def _proc_listen_inodes() -> dict[str, str]:

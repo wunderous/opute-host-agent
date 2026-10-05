@@ -1,0 +1,187 @@
+{
+  "status": "pass",
+  "scope": "M1-M6 native validation supplement; M6 accepted per owner instruction; future M8 mutation parity is not claimed",
+  "nativeAssertionsPassed": 104,
+  "structuredComparisonsPassed": 28,
+  "comparisons": [
+    {
+      "phase": "before",
+      "label": "inventory-0",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "inventory-1",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "inventory-2",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "inventory-3",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "inventory-4",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "bound-read-0",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "bound-read-1",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "bound-read-2",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "bound-read-3",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "bound-read-4",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "wrong-kind",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "foreign-tenant",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "missing-target",
+      "pass": true
+    },
+    {
+      "phase": "before",
+      "label": "saturation",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "inventory-0",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "inventory-1",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "inventory-2",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "inventory-3",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "inventory-4",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "bound-read-0",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "bound-read-1",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "bound-read-2",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "bound-read-3",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "bound-read-4",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "wrong-kind",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "foreign-tenant",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "missing-target",
+      "pass": true
+    },
+    {
+      "phase": "after",
+      "label": "saturation",
+      "pass": true
+    }
+  ],
+  "normalization": "Exact configured opaque agent IDs only for Incus structured responses; retained raw observations otherwise unchanged",
+  "cleanup": [
+    {
+      "runtime": "runtime",
+      "qemuPid": 677741,
+      "exitCode": 0,
+      "noProcess": true,
+      "leaseReleased": true
+    },
+    {
+      "runtime": "go-runtime",
+      "qemuPid": 684120,
+      "exitCode": 0,
+      "noProcess": true,
+      "leaseReleased": true
+    },
+    {
+      "runtime": "rust-runtime",
+      "qemuPid": 684118,
+      "exitCode": 0,
+      "noProcess": true,
+      "leaseReleased": true
+    },
+    {
+      "disk": ".parity/local-native/t2/go.qcow2",
+      "finalDiskSha256": "3d287a3fa71bb25eda437d9fdf9f0dd6e06ef647713125f07201daf5cbc5d4a9",
+      "disposableOverlayRemoved": true
+    },
+    {
+      "disk": ".parity/local-native/t2/rust.qcow2",
+      "finalDiskSha256": "862dd72c7c71b41c8d1bb55b807c8a87104f039a63e0870daa1bddeefa71e19f",
+      "disposableOverlayRemoved": true
+    }
+  ],
+  "bootstrap": "Pinned Go typed installer and resource-policy recovery, successful Incus container provisioning; no shared host Incus or deployment changes",
+  "remainingMilestoneGaps": [
+    "Rust install_incus_stack dispatch and host-service adoption/reconciliation remain declared M8 domain gaps"
+  ],
+  "fixtureReadme": "Incus capability path in ../incus-capability-path.md"
+}

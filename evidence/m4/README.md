@@ -8,7 +8,23 @@ the admission part of tasks 2.3 and 3.2. The evidence is in
 WSL2). Every run used isolated sandboxes and Incus shims only; no real Incus,
 Kubernetes, tunnel or shared state was touched.
 
-## Gate results
+## Native validation refresh, 2026-10-05
+
+The [native report](../local-e2e/native-2026-10-05/README.md) tracks the
+current run. A diagnostic native rerun caught all 14 Go canaries; the C12
+and C14 waivers have been removed from the manifest. The saturation case
+now supplies explicit fixture capacity, proves two held leases, uses a
+bounded independent contender, and requires successful admission after
+release. Cancellation checks the stored task snapshot after graceful
+worker drain, preserving D12's absence of refused Rust operation records.
+The former C14 result was a synchronization gap: its live poll ran before
+the cancelled worker's late completion. It was not proof that the guard
+could never be reached. Fresh provenance-bound evidence is being collected.
+
+The results and waiver discussion below are historical WSL evidence;
+they do not describe the current manifest or native refresh.
+
+## Historical WSL gate results
 
 | Check | Result |
 | --- | --- |

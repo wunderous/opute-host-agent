@@ -136,5 +136,16 @@
    "tables"
   ],
   "dropValueDeep": "[redacted]"
+ },
+ {
+  "id": "D12.refused-task-snapshot-status",
+  "decision": "D12",
+  "reason": "After workers drain, the single refused Go task has a cancelled operation snapshot. D12 requires Rust to omit that refused operation and its snapshot. Independent expectations require precisely cancelled on Go and no snapshot on Rust; late completed/failed snapshots fail before this projection is removed.",
+  "path": [
+   "cancellationEvidence"
+  ],
+  "dropKeys": [
+   "taskSnapshotStatuses"
+  ]
  }
 ]

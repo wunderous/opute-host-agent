@@ -1,5 +1,7 @@
 # M5: durable state and schema-derived redaction
 
+The final native refresh on 2026-10-05 passes the provenance-bound M5 gate: shape 495/495, cross-read 18/18, crash recovery 200/200, secret sweep and unknown projection with zero failures, migration 6/6, and D13 4/4. See [native evidence](../local-e2e/native-2026-10-05/README.md). The earlier 420-row results below describe the previous corpus and remain historical evidence.
+
 **Complete. `make parity-verify-m5` reports `gate m5: PASS`.** D13 is decided
 and implemented (owner, 2026-10-04): the unmarked-field projection is split
 into two named policies instead of one function with a mode flag --

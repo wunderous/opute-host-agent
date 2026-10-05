@@ -130,7 +130,7 @@ def _lookup(doc: Any, path: list) -> Any:
     return doc
 
 
-def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
+def _mcp_step(sandbox: agent.Sandbox, spec: dict, optional_captures: set[str] | None = None) -> dict:
     """One MCP request, optionally polled until a response field settles.
 
     "expand": run variables (for example ${TOOL_PREFIX} or a captured
@@ -153,10 +153,14 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
         if not until or _lookup(result, until["path"]) in until["in"] or time.monotonic() > deadline:
             break
         time.sleep(0.05)
+    if until and _lookup(result, until["path"]) not in until["in"]:
+        raise RuntimeError(f"MCP polling timed out before {until['path']} reached {until['in']}")
     for name, path in spec.get("capture", {}).items():
         value = _lookup(result, path)
         if isinstance(value, str) and value:
             sandbox.captured[name] = value
+        elif name not in (optional_captures or set()):
+            raise RuntimeError(f"MCP response did not provide required capture {name}")
     return result
 
 
@@ -194,6 +198,9 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
     stubs: dict[str, agent.HttpStub] = {}
     background: dict[str, concurrent.futures.Future] = {}
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+    # A follow-up guarded by requires explicitly permits synchronous refusal
+    # without a task handle. Unguarded captures remain mandatory.
+    optional_captures = {name for step in scenario["steps"] for name in step.get("requires", [])}
     try:
         for index, step in enumerate(scenario["steps"]):
             label = step.get("as", f"step{index}")
@@ -214,6 +221,8 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 chosen = other if spec.get("impl") == "other" and other is not None else impl
                 server = agent.Server(chosen, sandbox, spec.get("argv", ["serve"]), _env(spec))
                 steps[label] = server.wait_ready(spec.get("timeout", 30), spec.get("readyPort"))
+                if not steps[label].get("ready"):
+                    raise RuntimeError(f"agent did not become ready: {steps[label]}")
             elif "http" in step:
                 spec = step["http"]
                 body = spec.get("body")
@@ -231,10 +240,10 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 if "background" in spec:
                     # Runs concurrently with the following steps; a "join"
                     # step records its response.
-                    background[spec["background"]] = pool.submit(_mcp_step, sandbox, spec)
+                    background[spec["background"]] = pool.submit(_mcp_step, sandbox, spec, optional_captures)
                     steps[label] = {"background": spec["background"]}
                 else:
-                    steps[label] = _mcp_step(sandbox, spec)
+                    steps[label] = _mcp_step(sandbox, spec, optional_captures)
             elif "join" in step:
                 steps[label] = background.pop(step["join"]).result(timeout=320)
             elif "drain" in step:
@@ -339,6 +348,12 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
         observation["sqlite"] = sandbox.sqlite_schemas()
     if "sqliteRows" in collect:
         observation["sqliteRows"] = sandbox.sqlite_rows()
+    if "taskSnapshotStatuses" in collect:
+        rows = sandbox.sqlite_rows().get("state/state.db", {}).get("tables", {}).get("operations", {})
+        statuses = sorted(
+            json.loads(row["task_snapshot_json"])["status"]
+            for row in rows.values() if row.get("task_snapshot_json"))
+        observation["cancellationEvidence"] = {"taskSnapshotStatuses": statuses}
     if "serverLog" in collect:
         log = sandbox.root / "server.log"
         observation["serverLog"] = agent._strip_log_prefix(log.read_text(errors="replace")) if log.exists() else None
@@ -359,6 +374,19 @@ def invariant_violations(scenario: dict, observation: dict, label: str = "") -> 
     the state store records no operations, plan runs or invocations.
     """
     violations = []
+    implementation = "rust" if label.startswith("rust") else "go"
+    for expectation in scenario.get("expectations", []):
+        if implementation not in expectation.get("implementations", ["go", "rust"]):
+            continue
+        path = expectation.get("path")
+        if not isinstance(path, list) or not path or "equals" not in expectation:
+            violations.append({"invariant": "EXPECTATION", "reason": "invalid scenario expectation"})
+            continue
+        value = _get_at(observation, path)
+        if value is _MISSING or canon.canonical_json(value) != canon.canonical_json(expectation["equals"]):
+            violations.append({"invariant": "EXPECTATION", "path": path,
+                               "expected": expectation["equals"],
+                               "value": "$absent" if value is _MISSING else value})
     # Equal harness failures are not parity. Disk exhaustion or a driver
     # exception on both sides must fail even when no scenario mask happens
     # to require a missing field.

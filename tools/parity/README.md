@@ -61,6 +61,20 @@ cd tools/parity && python3 -m parity run \
 
 ## Comparison rules
 
+- **Required outcomes.** Scenario `expectations` assert exact JSON values
+  before comparison and divergence projection. They can be restricted to
+  `implementations: ["go"]` or `["rust"]` where an approved contract differs.
+  Missing fields and wrong JSON types fail, even when both agents return
+  the same response. A failed startup or an unmet polling deadline also
+  fails. Captured task handles are mandatory unless a follow-up explicitly
+  guards them with `requires`; that guard permits synchronous refusal.
+- **Port ownership.** Dynamically allocated ports retain an OS file lease
+  in `~/.cache/opute-parity/ports` until their sandbox or HTTP stub closes.
+  The lease covers allocation before bind across independent harness
+  processes; fixed-port scenarios retain their existing exclusive lease.
+- **Reference failures.** Inventory capture records execution errors in
+  `baseline/inventory/runtime-gaps.json`, with an owner and the exact error.
+  They remain inventory gaps, and the corresponding parity scenario fails.
 - **Run variables.** Each side's agent ID, port, token, sandbox path, and the
   ADR 0012 tool-name prefix derived from its ID are replaced by `${NAME}` by
   exact literal substitution. The harness derives the prefix itself, so a

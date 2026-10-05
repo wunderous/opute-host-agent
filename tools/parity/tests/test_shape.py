@@ -1,10 +1,28 @@
 import copy
 import unittest
+from unittest.mock import patch
 
 from parity import canon, m5_verify, runner, shape
 
 
 class FullDatabaseShape(unittest.TestCase):
+    def test_exemptions_keep_hash_coverage_without_requiring_uncomparable_rows(self):
+        scenarios = [{"id": "bounded", "_sha256": "a", "steps": [{"as": "ran"}]},
+                     {"id": "timed", "_sha256": "b", "steps": [],
+                      "shapeExempt": "retry count depends on elapsed time"}]
+        summary = {"repeats": 5, "provenance": {"scenarioHashes": {"bounded": "a", "timed": "b"}}}
+        result = {"raw": {side: {"observation": {"steps": {"ran": {}}, "sqlite": {}, "sqliteRows": {}},
+                                  "variables": {}} for side in ["a", "b"]},
+                  "diff": [], "maskViolations": {}}
+        outcomes = {f"bounded.{i}": copy.deepcopy(result) for i in range(5)}
+        with patch.object(runner, "load_scenarios", return_value=scenarios):
+            self.assertEqual(m5_verify.shape_failures(summary, outcomes), [])
+            incomplete = copy.deepcopy(summary)
+            del incomplete["provenance"]["scenarioHashes"]["timed"]
+            self.assertTrue(m5_verify.shape_failures(incomplete, outcomes))
+            del outcomes["bounded.0"]
+            self.assertTrue(m5_verify.shape_failures(summary, outcomes))
+
     def raw(self):
         row = {"operation_id": "task-a", "status": "working", "created_at": "2026-10-04T00:00:00Z",
                "updated_at": "2026-10-04T00:00:00Z", "result_json": '{"answer":1}',

@@ -239,11 +239,12 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path, repeats: int = 5,
     # comparison (not this driver) is that scenario's correctness proof.
     # Exempting is never silent: `scenarioHashes` below still fingerprints
     # these scenarios, so a future edit to drop the exemption is visible.
-    scenarios = [s for s in runner.load_scenarios(ids) if not s.get("shapeExempt")]
+    all_scenarios = runner.load_scenarios(ids)
+    scenarios = [s for s in all_scenarios if not s.get("shapeExempt")]
     provenance = {"sourceLock": json.loads((runner.REPO_ROOT / "baseline/source-lock.json").read_text()),
                   "goBinarySha256": go.sha256(), "rustBinarySha256": rust.sha256(),
                   "harnessSha256": runner.harness_sha256(), "driverSha256": runner.sha256_file(Path(__file__)),
-                  "scenarioHashes": {s["id"]: s["_sha256"] for s in scenarios}}
+                  "scenarioHashes": {s["id"]: s["_sha256"] for s in all_scenarios}}
 
     def job(item: tuple[dict, int]) -> tuple[str, dict]:
         original, iteration = item
@@ -270,8 +271,7 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path, repeats: int = 5,
         provenance["goBinarySha256"] != go.sha256(), provenance["rustBinarySha256"] != rust.sha256(),
         provenance["harnessSha256"] != runner.harness_sha256(),
         provenance["driverSha256"] != runner.sha256_file(Path(__file__)),
-        provenance["scenarioHashes"] != {s["id"]: s["_sha256"] for s in runner.load_scenarios(ids)
-                                          if not s.get("shapeExempt")},
+        provenance["scenarioHashes"] != {s["id"]: s["_sha256"] for s in runner.load_scenarios(ids)},
     ])
     summary = {"repeats": repeats, "total": len(outcomes), "passed": len(outcomes) - len(failed),
                "failed": len(failed), "failedCases": failed, "provenance": provenance,

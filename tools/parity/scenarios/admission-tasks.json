@@ -449,6 +449,13 @@
     ],
     "steps": [
       {
+        "as": "fixture",
+        "write": {
+          "path": "${SANDBOX}/home/saturation-control.txt",
+          "content": "capacity control\n"
+        }
+      },
+      {
         "as": "start",
         "serve": {
           "argv": [
@@ -458,7 +465,9 @@
           "profile": "standalone",
           "env": {
             "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
-            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "2"
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "2",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64"
           }
         }
       },
@@ -511,10 +520,12 @@
         "as": "saturated",
         "mcp": {
           "method": "tools/call",
-          "name": "probe_incus_gpu",
+          "name": "inspect_host_file",
           "params": {
-            "name": "probe_incus_gpu",
-            "arguments": {}
+            "name": "inspect_host_file",
+            "arguments": {
+              "path": "${SANDBOX}/home/saturation-control.txt"
+            }
           },
           "expand": true
         }
@@ -523,11 +534,11 @@
         "as": "saturatedAgain",
         "mcp": {
           "method": "tools/call",
-          "name": "probe_incus_gpu",
+          "name": "inspect_host_file",
           "params": {
-            "name": "probe_incus_gpu",
+            "name": "inspect_host_file",
             "arguments": {
-              "qemuRequired": true
+              "path": "${SANDBOX}/home/saturation-control.txt"
             }
           },
           "expand": true
@@ -564,11 +575,11 @@
         "as": "afterRelease",
         "mcp": {
           "method": "tools/call",
-          "name": "probe_incus_gpu",
+          "name": "inspect_host_file",
           "params": {
-            "name": "probe_incus_gpu",
+            "name": "inspect_host_file",
             "arguments": {
-              "qemuRequired": true
+              "path": "${SANDBOX}/home/saturation-control.txt"
             }
           },
           "expand": true
@@ -687,7 +698,70 @@
           "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
         }
       ]
-    }
+    },
+    "expectations": [
+      {
+        "path": [
+          "steps",
+          "held",
+          "reached"
+        ],
+        "equals": true
+      },
+      {
+        "path": [
+          "steps",
+          "release",
+          "released"
+        ],
+        "equals": true
+      },
+      {
+        "path": [
+          "steps",
+          "capacityWhileHeld",
+          "body",
+          "result",
+          "structuredContent",
+          "reservations",
+          "count"
+        ],
+        "equals": 2
+      },
+      {
+        "path": [
+          "steps",
+          "saturated",
+          "body",
+          "result",
+          "structuredContent",
+          "code"
+        ],
+        "equals": "host_capacity_saturated"
+      },
+      {
+        "path": [
+          "steps",
+          "saturatedAgain",
+          "body",
+          "result",
+          "structuredContent",
+          "code"
+        ],
+        "equals": "host_capacity_saturated"
+      },
+      {
+        "path": [
+          "steps",
+          "afterRelease",
+          "body",
+          "result",
+          "structuredContent",
+          "exists"
+        ],
+        "equals": true
+      }
+    ]
   },
   {
     "id": "admission.headroom.min-memory",
@@ -1332,7 +1406,8 @@
     "collect": [
       "trace",
       "orphans",
-      "shimExits"
+      "shimExits",
+      "taskSnapshotStatuses"
     ],
     "invariants": [
       "NO_ORPHANS"
@@ -1477,8 +1552,71 @@
           "type": "rfc3339",
           "reason": "task creation and update wall-clock time (second resolution); format is contract, value is not"
         }
+      ],
+      "divergences": [
+        "D12.refused-task-snapshot-status"
       ]
-    }
+    },
+    "expectations": [
+      {
+        "path": [
+          "steps",
+          "blocked",
+          "reached"
+        ],
+        "equals": true
+      },
+      {
+        "path": [
+          "steps",
+          "drain",
+          "drained"
+        ],
+        "equals": true
+      },
+      {
+        "path": [
+          "steps",
+          "cancelled",
+          "body",
+          "result",
+          "status"
+        ],
+        "equals": "cancelled"
+      },
+      {
+        "path": [
+          "steps",
+          "stillCancelled",
+          "body",
+          "result",
+          "status"
+        ],
+        "equals": "cancelled"
+      },
+      {
+        "path": [
+          "cancellationEvidence",
+          "taskSnapshotStatuses"
+        ],
+        "equals": [
+          "cancelled"
+        ],
+        "implementations": [
+          "go"
+        ]
+      },
+      {
+        "path": [
+          "cancellationEvidence",
+          "taskSnapshotStatuses"
+        ],
+        "equals": [],
+        "implementations": [
+          "rust"
+        ]
+      }
+    ]
   },
   {
     "id": "admission.normal-reads.host",

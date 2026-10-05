@@ -6,10 +6,13 @@ import subprocess
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 from pathlib import Path
 
 from parity import shims
 from parity.runner import invariant_violations
+from parity import runner
 
 
 class ShimSandbox:
@@ -124,6 +127,50 @@ class X2InvariantTest(unittest.TestCase):
         self.assertEqual([v["reason"] for v in self.violations(rows=rows, label="rust")],
                          ["state.db operations has 1 rows"])
         self.assertEqual(len(self.violations(rows={"plan_runs": 2}, label="go-left")), 1)
+
+
+class BoundaryExpectationTest(unittest.TestCase):
+    def test_guarded_followup_permits_synchronous_refusal_without_task_handle(self):
+        response = {"body": {"error": {"code": -32603}}}
+        sandbox = SimpleNamespace(captured={})
+        with patch.object(runner.agent, "mcp_call", return_value=response):
+            self.assertEqual(runner._mcp_step(sandbox, {
+                "method": "tools/call", "capture": {"TASK_ID": ["body", "result", "taskId"]}},
+                {"TASK_ID"}), response)
+        self.assertEqual(sandbox.captured, {})
+
+    def test_equal_nonterminal_responses_cannot_pass_a_terminal_poll(self):
+        response = {"body": {"result": {"status": "working"}}}
+        spec = {"method": "tasks/get", "timeout": 0,
+                "until": {"path": ["body", "result", "status"], "in": ["completed"]}}
+        with patch.object(runner.agent, "mcp_call", return_value=response):
+            with self.assertRaisesRegex(RuntimeError, "polling timed out"):
+                runner._mcp_step(SimpleNamespace(captured={}), spec)
+
+    def test_missing_task_handle_cannot_turn_followup_calls_into_equal_errors(self):
+        with patch.object(runner.agent, "mcp_call", return_value={"body": {"error": {"code": -32603}}}):
+            with self.assertRaisesRegex(RuntimeError, "required capture TASK_ID"):
+                runner._mcp_step(SimpleNamespace(captured={}), {
+                    "method": "tools/call", "capture": {"TASK_ID": ["body", "result", "taskId"]}})
+
+    def test_equal_early_refusals_do_not_prove_saturation(self):
+        scenario = {"expectations": [{"path": ["steps", "held", "reached"], "equals": True}]}
+        self.assertTrue(invariant_violations(scenario, {"steps": {"held": {"reached": False}}}))
+        self.assertTrue(invariant_violations(scenario, {}))
+        self.assertTrue(invariant_violations(scenario, {"steps": {"held": {"reached": 1}}}))
+        self.assertEqual(invariant_violations(scenario, {"steps": {"held": {"reached": True}}}), [])
+
+    def test_late_snapshot_overwrite_fails_even_when_live_poll_was_cancelled(self):
+        scenario = {"expectations": [
+            {"path": ["taskSnapshotStatuses"], "equals": ["cancelled"], "implementations": ["go"]},
+            {"path": ["taskSnapshotStatuses"], "equals": [], "implementations": ["rust"]},
+        ]}
+        self.assertTrue(invariant_violations(scenario, {"taskSnapshotStatuses": ["completed"]}, "canary"))
+        self.assertTrue(invariant_violations(scenario, {"taskSnapshotStatuses": ["failed"]}, "go"))
+        self.assertEqual(invariant_violations(scenario, {"taskSnapshotStatuses": ["cancelled"]}, "go"), [])
+        self.assertEqual(invariant_violations(scenario, {"taskSnapshotStatuses": []}, "rust"), [])
+        self.assertTrue(invariant_violations(scenario, {"taskSnapshotStatuses": []}, "go"))
+        self.assertTrue(invariant_violations(scenario, {"taskSnapshotStatuses": ["cancelled"]}, "rust"))
 
 
 if __name__ == "__main__":

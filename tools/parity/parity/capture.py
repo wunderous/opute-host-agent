@@ -41,6 +41,9 @@ SURFACE_OWNERS = {
     "durable-state": "state",
     "effects": "host",
     "plans": "core",
+    "tasks": "core",
+    "recipe-corpus": "core",
+    "host-read": "host",
     "providers": "core",
     "distribution": "release",
 }
@@ -298,7 +301,10 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
 
     observed: dict[str, tuple[dict, dict]] = {}
     for s in scenarios:
-        observed[s["id"]] = runner.execute(impl, s, "a", "capture")
+        # Inventory must preserve a failing reference boundary as an owned
+        # gap, rather than discard all other observations. Milestone runs
+        # still fail on the same execution error; capture never blesses it.
+        observed[s["id"]] = runner._execute_safe(impl, s, "a", "capture")
 
     trace: list[dict] = []
     for obs, _ in observed.values():
@@ -342,6 +348,14 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
 
     state_obs = canon.substitute(*observed["state.schema-after-start"])
     inventory: dict[str, Any] = {
+        "runtime-gaps.json": {
+            "surface": "runtime-observations",
+            "items": [
+                {"name": sid, "owner": SURFACE_OWNERS[by_id[sid]["surface"]],
+                 "status": "gap", "gapReason": obs["_executionError"]}
+                for sid, (obs, _) in sorted(observed.items()) if "_executionError" in obs
+            ],
+        },
         "cli.json": {
             "surface": "cli", "owner": "cli",
             "items": [

@@ -104,12 +104,12 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   typed seams; maintain `vm:` versus `container:` target separation. Gate:
   focused contract tests and isolated external-effect comparisons cover
   success, failure, cleanup, and absence of unauthorized side effects.
-- [ ] 4.2 Implement recipe validation, canonical hashing, typed plan
+- [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,
   errors, cancellation, and externally observed outcome; no provider adds a
   second workflow runner.
-- [ ] 4.3 Reproduce durable operation, task, plan, generation, and observation
+- [x] 4.3 Reproduce durable operation, task, plan, generation, and observation
   semantics with schema-derived redaction. Gate: restart and secret-bearing
   fixtures preserve truthful state and leave no credentials in records, logs,
   or client-visible evidence; unknown projection fails closed.
@@ -118,6 +118,8 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   and in-flight state, revisions, permissions, and redaction reconcile; an
   ambiguous record blocks conversion. Never allow two writers on one state
   directory or discard Rust-era accepted work on rollback.
+
+Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native-2026-10-05/README.md), with provenance-bound M5/M6 gates and explicit owner acceptance of M6. Subsequent domain operations remain open under 4.1.
 
 ## 5. Prove the distributed operator surface
 
