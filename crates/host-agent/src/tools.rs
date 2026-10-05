@@ -137,6 +137,20 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
             Ok(r) => r,
             Err(refusal) => return ToolCallOutcome::Result(refusal.render()),
         };
+        // run_host_plan and run_host_local_recipe spawn their execution on
+        // a detached thread before returning; releasing only after the
+        // handler returns leaves a window where that thread's own first
+        // node dispatch can race this release and see the reservation
+        // still held, since "normal"-class admission structurally
+        // requires zero held "heavy" reservations (resource.rs's
+        // class_slot_free). Nothing is still protected by holding it
+        // through the synchronous validation these two handlers do before
+        // spawning, so release it immediately once admitted instead of
+        // racing the thread it is about to create.
+        let spawns_thread = matches!(name.as_str(), "run_host_plan" | "run_host_local_recipe");
+        if spawns_thread {
+            admission::release(server, &reservation);
+        }
         let result = match name.as_str() {
             "get_capability_catalog" => structured_result(snapshot_json(server.catalog), None),
             "validate_host_plan" => {
@@ -152,7 +166,9 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
             }
             _ => not_implemented(&name),
         };
-        admission::release(server, &reservation);
+        if !spawns_thread {
+            admission::release(server, &reservation);
+        }
         return ToolCallOutcome::Result(result);
     }
     if name == "request_task_input" {
