@@ -44,6 +44,7 @@ fn durable_projection() {
         let reservation = crate::resource::Reservation {
             id: "control".into(),
             request: Default::default(),
+            inherited: false,
         };
         record_invocation(
             &server,

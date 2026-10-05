@@ -196,7 +196,12 @@ pub fn handle_validate_host_local_recipe(server: &Server, args: &Map<String, J>)
 }
 
 /// `handleRunHostLocalRecipe`.
-pub fn handle_run_host_local_recipe(server: &Arc<Server>, args: &Map<String, J>) -> J {
+pub fn handle_run_host_local_recipe(
+    server: &Arc<Server>,
+    args: &Map<String, J>,
+    reservation: crate::resource::Reservation,
+    claimed: Arc<std::sync::atomic::AtomicBool>,
+) -> J {
     let loaded = match load_host_local_recipe(server, args, true) {
         Ok(l) => l,
         Err(e) => return crate::tools::error_result(&e),
@@ -217,6 +222,8 @@ pub fn handle_run_host_local_recipe(server: &Arc<Server>, args: &Map<String, J>)
         Some(&metadata),
         "run_host_local_recipe",
         "Executing host-local recipe...",
+        reservation,
+        claimed,
     )
 }
 
@@ -352,7 +359,19 @@ mod tests {
         ]
         .into_iter()
         .collect();
-        let run_result = handle_run_host_local_recipe(&server, &args);
+        let run_result = handle_run_host_local_recipe(
+            &server,
+            &args,
+            crate::resource::Reservation {
+                id: "control".to_string(),
+                request: crate::resource::AdmissionRequest {
+                    agent_id: server.agent_id.clone(),
+                    ..Default::default()
+                },
+                inherited: false,
+            },
+            Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        );
         let run_id = run_result["structuredContent"]["runId"]
             .as_str()
             .unwrap()

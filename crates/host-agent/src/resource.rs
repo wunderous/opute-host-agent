@@ -181,6 +181,11 @@ pub struct AdmissionRequest {
     pub operation_id: String,
     pub task_id: String,
     pub resource_uri: String,
+    /// `ParentReservationID`: set when this request was admitted alongside
+    /// a reservation already held in the current call chain (a plan node
+    /// dispatched under its launcher's reservation). Empty for a top-level
+    /// request.
+    pub parent_reservation_id: String,
 }
 
 impl AdmissionRequest {
@@ -209,6 +214,7 @@ impl AdmissionRequest {
             ("operationId", &self.operation_id),
             ("taskId", &self.task_id),
             ("resourceUri", &self.resource_uri),
+            ("parentReservationId", &self.parent_reservation_id),
         ] {
             if !v.is_empty() {
                 m.insert(k.into(), J::from(v.clone()));
@@ -231,6 +237,7 @@ impl AdmissionRequest {
             operation_id: s("operationId"),
             task_id: s("taskId"),
             resource_uri: s("resourceUri"),
+            parent_reservation_id: s("parentReservationId"),
         }
     }
 }
@@ -472,11 +479,15 @@ impl std::fmt::Display for AdmitError {
 }
 
 /// A durable ownership handle. `control` is the zero-cost lease that never
-/// touches the reservation file.
-#[derive(Clone, Debug)]
+/// touches the reservation file. `inherited` marks a view onto a reservation
+/// held elsewhere in the current call chain (a plan node sharing its
+/// launcher's reservation): releasing it is a no-op, since only the real
+/// owner's release frees the underlying record.
+#[derive(Clone, Debug, PartialEq)]
 pub struct Reservation {
     pub id: String,
     pub request: AdmissionRequest,
+    pub inherited: bool,
 }
 
 static RESERVATION_SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -486,6 +497,19 @@ fn same_owner(left: &AdmissionRequest, right: &AdmissionRequest) -> bool {
     left.agent_id == right.agent_id
         && left.task_id == right.task_id
         && left.operation_id == right.operation_id
+}
+
+/// `reservationOwnerCanInherit`: a nested request may share its parent's
+/// reservation only within the same agent, and -- once the parent is bound
+/// to a task -- the same task.
+fn reservation_owner_can_inherit(parent: &AdmissionRequest, nested: &AdmissionRequest) -> bool {
+    if parent.agent_id != nested.agent_id {
+        return false;
+    }
+    if !parent.task_id.is_empty() && parent.task_id != nested.task_id {
+        return false;
+    }
+    true
 }
 
 type Records = Map<String, J>;
@@ -759,10 +783,58 @@ impl Coordinator {
         true
     }
 
+    /// `validateParentReservation`: rechecks the durable owner record before
+    /// a nested dispatch borrows its capacity. The in-memory reservation
+    /// handle is not enough on its own once the owning lease may have been
+    /// released or expired out from under it.
+    fn validate_parent_reservation(&self, parent: &Reservation) -> Result<(), AdmitError> {
+        if parent.id.is_empty() || parent.id == "control" {
+            return Ok(());
+        }
+        let _lock = self.lock(false)?;
+        let records = self.read_records()?;
+        let Some(record) = records.get(&parent.id) else {
+            return Err(AdmitError::request(
+                "host_reservation_expired",
+                "",
+                "the parent reservation is no longer held",
+            ));
+        };
+        let held = AdmissionRequest::from_json(record.get("request").unwrap_or(&J::Null));
+        if !same_owner(&held, &parent.request) {
+            return Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "parent reservation owner does not match its durable record",
+            ));
+        }
+        let live = record
+            .get("expiresAt")
+            .and_then(J::as_str)
+            .and_then(crate::hostobs::parse_rfc3339)
+            .is_some_and(|t| t > std::time::SystemTime::now());
+        if !live {
+            return Err(AdmitError::request(
+                "host_reservation_expired",
+                "",
+                "the parent reservation has expired",
+            ));
+        }
+        Ok(())
+    }
+
     /// `Coordinator.Admit`: validate, then under the host lock drop expired
     /// leases, refuse on pressure, unverified enforcement or capacity, and
-    /// persist the new reservation.
-    pub fn admit(&self, mut request: AdmissionRequest) -> Result<Reservation, AdmitError> {
+    /// persist the new reservation. `parent`, when given, is the reservation
+    /// already held in the current call chain (`resource.WithReservation`):
+    /// a matching nested request inherits it instead of competing with it
+    /// for capacity, the way a plan's own nodes share their launcher's
+    /// `heavy` reservation in Go rather than each admitting independently.
+    pub fn admit(
+        &self,
+        mut request: AdmissionRequest,
+        parent: Option<&Reservation>,
+    ) -> Result<Reservation, AdmitError> {
         if request.class.is_empty() {
             request.class = "normal".into();
         }
@@ -787,6 +859,30 @@ impl Coordinator {
                 "class must be control, normal, or heavy",
             ));
         }
+        if let Some(parent) = parent {
+            if !request.parent_reservation_id.is_empty()
+                && request.parent_reservation_id != parent.id
+            {
+                return Err(AdmitError::request(
+                    "host_reservation_parent_mismatch",
+                    "",
+                    "request parent reservation does not match the reservation in context",
+                ));
+            }
+            if !reservation_owner_can_inherit(&parent.request, &request) {
+                return Err(AdmitError::request(
+                    "host_reservation_owner_mismatch",
+                    "",
+                    "nested reservation owner does not match the reservation in context",
+                ));
+            }
+            self.validate_parent_reservation(parent)?;
+            return Ok(Reservation {
+                id: parent.id.clone(),
+                request,
+                inherited: true,
+            });
+        }
         if request.class == "control"
             && request.cpu_cores == 0.0
             && request.memory_bytes == 0
@@ -796,6 +892,7 @@ impl Coordinator {
             return Ok(Reservation {
                 id: "control".into(),
                 request,
+                inherited: false,
             });
         }
         let _lock = self.lock(true)?;
@@ -847,12 +944,19 @@ impl Coordinator {
             }),
         );
         self.write_records(&records)?;
-        Ok(Reservation { id, request })
+        Ok(Reservation {
+            id,
+            request,
+            inherited: false,
+        })
     }
 
     /// `Coordinator.Release`: drop the record if this owner still holds it.
+    /// `inherited` is a view onto a reservation some other owner in the call
+    /// chain is responsible for; releasing it here would free capacity that
+    /// owner still needs.
     pub fn release(&self, reservation: &Reservation) -> Result<(), AdmitError> {
-        if reservation.id.is_empty() || reservation.id == "control" {
+        if reservation.id.is_empty() || reservation.id == "control" || reservation.inherited {
             return Ok(());
         }
         let _lock = self.lock(true)?;
@@ -1193,6 +1297,7 @@ mod tests {
         let foreign = Reservation {
             id: "live".into(),
             request: request.clone(),
+            inherited: false,
         };
         assert_eq!(
             c.release(&foreign),
@@ -1206,6 +1311,7 @@ mod tests {
         let owner = Reservation {
             id: "live".into(),
             request,
+            inherited: false,
         };
         c.release(&owner).unwrap();
         // Releasing twice, or the control lease, is a no-op; the empty
@@ -1214,9 +1320,119 @@ mod tests {
         c.release(&Reservation {
             id: "control".into(),
             request: AdmissionRequest::default(),
+            inherited: false,
         })
         .unwrap();
         assert!(!dir.join("reservations.json").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn nested_admission_inherits_a_live_parent_instead_of_competing_for_capacity() {
+        let dir = std::env::temp_dir().join(format!(
+            "opute-coordinator-inherit-test-{}-{}",
+            std::process::id(),
+            RESERVATION_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let c = coordinator(&dir);
+        let launcher = c
+            .admit(
+                AdmissionRequest {
+                    class: "heavy".into(),
+                    agent_id: "agent".into(),
+                    task_id: "plan-1".into(),
+                    operation: "run_host_plan".into(),
+                    ..Default::default()
+                },
+                None,
+            )
+            .unwrap();
+        assert!(!launcher.inherited);
+
+        // A node dispatched independently (no parent) is refused: a held
+        // `heavy` reservation blocks `normal` admission outright.
+        let independent = c.admit(
+            AdmissionRequest {
+                class: "normal".into(),
+                agent_id: "agent".into(),
+                task_id: "plan-1".into(),
+                operation: "probe_http_endpoint".into(),
+                ..Default::default()
+            },
+            None,
+        );
+        assert!(matches!(independent, Err(AdmitError::Admission { .. })));
+
+        // The same node dispatched under the plan's own reservation
+        // inherits it instead of contending with it.
+        let mut nested_request = AdmissionRequest {
+            class: "normal".into(),
+            agent_id: "agent".into(),
+            task_id: "plan-1".into(),
+            operation: "probe_http_endpoint".into(),
+            parent_reservation_id: launcher.id.clone(),
+            ..Default::default()
+        };
+        let nested = c.admit(nested_request.clone(), Some(&launcher)).unwrap();
+        assert!(nested.inherited);
+        assert_eq!(nested.id, launcher.id);
+        // Releasing the inherited view leaves the launcher's own record
+        // untouched -- only the real owner's release frees it.
+        c.release(&nested).unwrap();
+        assert_eq!(c.reservation_totals()["count"], json!(1));
+
+        // A mismatched agent cannot inherit, parent-id set or not.
+        nested_request.agent_id = "someone-else".into();
+        assert_eq!(
+            c.admit(nested_request, Some(&launcher)),
+            Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "nested reservation owner does not match the reservation in context"
+            ))
+        );
+
+        c.release(&launcher).unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn inheriting_a_released_parent_is_refused() {
+        let dir = std::env::temp_dir().join(format!(
+            "opute-coordinator-inherit-expired-test-{}-{}",
+            std::process::id(),
+            RESERVATION_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let c = coordinator(&dir);
+        let launcher = c
+            .admit(
+                AdmissionRequest {
+                    class: "heavy".into(),
+                    agent_id: "agent".into(),
+                    operation: "run_host_plan".into(),
+                    ..Default::default()
+                },
+                None,
+            )
+            .unwrap();
+        c.release(&launcher).unwrap();
+        let nested_request = AdmissionRequest {
+            class: "normal".into(),
+            agent_id: "agent".into(),
+            operation: "probe_http_endpoint".into(),
+            parent_reservation_id: launcher.id.clone(),
+            ..Default::default()
+        };
+        assert_eq!(
+            c.admit(nested_request, Some(&launcher)),
+            Err(AdmitError::request(
+                "host_reservation_expired",
+                "",
+                "the parent reservation is no longer held"
+            ))
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

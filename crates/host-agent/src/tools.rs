@@ -133,40 +133,45 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
     // resource binding but cross the same host admission boundary.
     if LIFECYCLE.contains(&name.as_str()) {
         let binding = Binding::default();
-        let reservation = match admission::admit(server, &name, &args, &binding, None) {
+        let reservation = match admission::admit(server, &name, &args, &binding, None, None) {
             Ok(r) => r,
             Err(refusal) => return ToolCallOutcome::Result(refusal.render()),
         };
-        // run_host_plan and run_host_local_recipe spawn their execution on
-        // a detached thread before returning; releasing only after the
-        // handler returns leaves a window where that thread's own first
-        // node dispatch can race this release and see the reservation
-        // still held, since "normal"-class admission structurally
-        // requires zero held "heavy" reservations (resource.rs's
-        // class_slot_free). Nothing is still protected by holding it
-        // through the synchronous validation these two handlers do before
-        // spawning, so release it immediately once admitted instead of
-        // racing the thread it is about to create.
-        let spawns_thread = matches!(name.as_str(), "run_host_plan" | "run_host_local_recipe");
-        if spawns_thread {
-            admission::release(server, &reservation);
-        }
+        // run_host_plan and run_host_local_recipe spawn their plan on a
+        // detached thread that outlives this call; the reservation belongs
+        // to that run, not to the synchronous request that launched it, so
+        // whichever of the two finishes touching it last is the one that
+        // must release it -- mirrors Go's reservationLease
+        // claim/releaseIfUnclaimed. The handler claims the lease (setting
+        // `claimed`) only once it actually spawns the thread; every other
+        // outcome -- a validation error, an idempotent short-circuit to an
+        // already-terminal run -- leaves it unclaimed for the plain release
+        // below, same as every other lifecycle tool.
+        let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let result = match name.as_str() {
             "get_capability_catalog" => structured_result(snapshot_json(server.catalog), None),
             "validate_host_plan" => {
                 crate::plan_mcp::handle_validate_host_plan(&args, server.catalog)
             }
-            "run_host_plan" => crate::plan_mcp::handle_run_host_plan(server, &args),
+            "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
+                server,
+                &args,
+                reservation.clone(),
+                Arc::clone(&claimed),
+            ),
             "get_host_plan_run" => crate::plan_mcp::handle_get_host_plan_run(server, &args),
             "validate_host_local_recipe" => {
                 crate::host_recipe_mcp::handle_validate_host_local_recipe(server, &args)
             }
-            "run_host_local_recipe" => {
-                crate::host_recipe_mcp::handle_run_host_local_recipe(server, &args)
-            }
+            "run_host_local_recipe" => crate::host_recipe_mcp::handle_run_host_local_recipe(
+                server,
+                &args,
+                reservation.clone(),
+                Arc::clone(&claimed),
+            ),
             _ => not_implemented(&name),
         };
-        if !spawns_thread {
+        if !claimed.load(std::sync::atomic::Ordering::SeqCst) {
             admission::release(server, &reservation);
         }
         return ToolCallOutcome::Result(result);
@@ -437,10 +442,12 @@ pub(crate) fn dispatch(
         Ok(b) => b,
         Err(refusal) => return refusal.render(),
     };
-    let reservation = match admission::admit(server, name, args, &binding, identity) {
-        Ok(r) => r,
-        Err(refusal) => return refusal.render(),
-    };
+    let parent = cancel_ctx.and_then(|ctx| ctx.reservation());
+    let reservation =
+        match admission::admit(server, name, args, &binding, identity, parent.as_deref()) {
+            Ok(r) => r,
+            Err(refusal) => return refusal.render(),
+        };
     if let Some((_, task_id)) = identity {
         if let Some(snapshot) = server.tasks.get(task_id) {
             let _ = server

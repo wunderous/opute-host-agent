@@ -326,13 +326,17 @@ fn string_argument(args: &Map<String, J>, key: &str) -> String {
 
 /// `admitInvocationWithDescriptor`. `identity` is the operation identity the
 /// invocation context carries (`WithOperationIdentity`); an async task runs
-/// with (tool name, task id).
+/// with (tool name, task id). `parent`, when given, is the reservation
+/// already held in the current call chain (`resource.ReservationFromContext`)
+/// -- a plan node dispatched under its launcher's reservation inherits it
+/// instead of admitting independently.
 pub fn admit(
     server: &Server,
     name: &str,
     args: &Map<String, J>,
     binding: &Binding,
     identity: Option<(&str, &str)>,
+    parent: Option<&Reservation>,
 ) -> Result<Reservation, Refusal> {
     let registered = catalog::admission_class(name);
     let declared = registered.is_some();
@@ -396,7 +400,14 @@ pub fn admit(
         }
     }
     cost.resource_uri = binding.first_uri();
-    server.host.coordinator.admit(cost).map_err(Refusal::Admit)
+    if let Some(parent) = parent {
+        cost.parent_reservation_id = parent.id.clone();
+    }
+    server
+        .host
+        .coordinator
+        .admit(cost, parent)
+        .map_err(Refusal::Admit)
 }
 
 /// The deferred `admission.Release`; Go ignores its error.

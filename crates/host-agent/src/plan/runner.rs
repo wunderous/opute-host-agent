@@ -29,6 +29,11 @@ pub struct RunCtx {
     own_cancelled: Arc<AtomicBool>,
     parent: Option<Arc<RunCtx>>,
     deadline: Option<Instant>,
+    /// `resource.WithReservation`: the launcher's reservation a node
+    /// dispatched under this context should inherit instead of admitting
+    /// independently. Carried like cancellation -- set once near the root,
+    /// read by walking up through `with_cancel`/`with_timeout` children.
+    reservation: Option<Arc<crate::resource::Reservation>>,
 }
 
 #[derive(Clone)]
@@ -50,6 +55,7 @@ impl RunCtx {
             own_cancelled: flag,
             parent: None,
             deadline: None,
+            reservation: None,
         }
     }
 
@@ -58,7 +64,24 @@ impl RunCtx {
             own_cancelled: Arc::new(AtomicBool::new(false)),
             parent: None,
             deadline: None,
+            reservation: None,
         }
+    }
+
+    /// `resource.WithReservation`: a copy of this context that carries
+    /// `reservation` for every node dispatched under it (and under any
+    /// `with_cancel`/`with_timeout` child), in place of the one it had.
+    pub fn with_reservation(&self, reservation: crate::resource::Reservation) -> Self {
+        let mut ctx = self.clone();
+        ctx.reservation = Some(Arc::new(reservation));
+        ctx
+    }
+
+    /// `resource.ReservationFromContext`.
+    pub fn reservation(&self) -> Option<Arc<crate::resource::Reservation>> {
+        self.reservation
+            .clone()
+            .or_else(|| self.parent.as_ref().and_then(|p| p.reservation()))
     }
 
     pub fn err(&self) -> Option<String> {
@@ -79,6 +102,7 @@ impl RunCtx {
             own_cancelled: flag.clone(),
             parent: Some(Arc::new(self.clone())),
             deadline: None,
+            reservation: None,
         };
         (child, CancelHandle(flag))
     }
@@ -89,6 +113,7 @@ impl RunCtx {
             own_cancelled: flag.clone(),
             parent: Some(Arc::new(self.clone())),
             deadline: Some(Instant::now() + duration),
+            reservation: None,
         };
         (child, CancelHandle(flag))
     }
