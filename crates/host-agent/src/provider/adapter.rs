@@ -22,6 +22,8 @@ pub struct Client {
     token: String,
     name: String,
     version: String,
+    #[cfg(test)]
+    progress: Option<(String, String)>,
 }
 impl Client {
     pub fn new(
@@ -44,6 +46,8 @@ impl Client {
             token,
             name,
             version,
+            #[cfg(test)]
+            progress: None,
         })
     }
     pub async fn call(
@@ -82,11 +86,8 @@ impl Client {
         if !self.token.trim().is_empty() {
             request = request.header("Authorization", format!("Bearer {}", self.token));
         }
-        let response = under_context(ctx, async {
-            let response = request.send().await.map_err(|e| e.to_string())?;
-            let status = response.status().as_u16();
-            let bytes = response.bytes().await.map_err(|e| e.to_string())?;
-            Ok((status, bytes))
+        let mut response = under_context(ctx, async {
+            request.send().await.map_err(|e| e.to_string())
         })
         .await
         .map_err(|e| {
@@ -96,7 +97,21 @@ impl Client {
                 e
             }
         })?;
-        let (status, bytes) = response;
+        let status = response.status().as_u16();
+        // Go http.Client.Do has returned at this boundary. ReadAll errors are
+        // returned directly, rather than being wrapped in a Post url.Error.
+        let bytes = under_context(ctx, async {
+            let mut bytes = Vec::new();
+            while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
+                bytes.extend_from_slice(&chunk);
+                #[cfg(test)]
+                self.record_progress("body");
+            }
+            #[cfg(test)]
+            self.record_progress("body-end");
+            Ok(bytes)
+        })
+        .await?;
         if status >= 400 {
             return Err(format!(
                 "MCP HTTP {status}: {}",
@@ -105,6 +120,15 @@ impl Client {
         }
         envelope::decode(&bytes)
     }
+    #[cfg(test)]
+    fn record_progress(&self, stage: &str) {
+        if let Some((wanted, path)) = &self.progress {
+            if wanted == stage {
+                std::fs::write(path, stage).expect("fixture progress marker");
+            }
+        }
+    }
+
     // The accepted result crosses the same generic-map and SDK typed boundary
     // as the pinned Go client, after child-task polling.
     pub async fn call_tool(
@@ -533,6 +557,71 @@ mod tests {
             "provider adapter is closed"
         );
         provider.join().unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires the pinned client cancellation differential driver"]
+    fn cancellation_fixture() {
+        let input: Value = serde_json::from_slice(
+            &std::fs::read(std::env::var("PARITY_PROVIDER_CANCEL_INPUT").unwrap()).unwrap(),
+        )
+        .unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let result = runtime.block_on(async {
+            let base = RunCtx::background();
+            let (ctx, cancel) = if let Some(ms) = input["timeoutMs"].as_u64() {
+                base.with_timeout(Duration::from_millis(ms))
+            } else {
+                base.with_cancel()
+            };
+            if input["before"] == true {
+                cancel.cancel();
+            }
+            let trigger = input["trigger"].as_str().unwrap().to_string();
+            let watcher = std::thread::spawn({
+                let ctx = ctx.clone();
+                let cancel = cancel.clone();
+                move || {
+                    while ctx.err().is_none() {
+                        if std::path::Path::new(&trigger).exists() {
+                            cancel.cancel();
+                            break;
+                        }
+                        std::thread::sleep(Duration::from_millis(1));
+                    }
+                }
+            });
+            let mut client = Client::new(
+                input["endpoint"].as_str().unwrap().into(),
+                String::new(),
+                "opute-host-agent".into(),
+                "dev".into(),
+            )
+            .unwrap();
+            client.progress = Some((
+                input["progressStage"].as_str().unwrap().into(),
+                input["marker"].as_str().unwrap().into(),
+            ));
+            let result = client
+                .call(&ctx, "server/discover", "", Map::new(), " signed-fixture ")
+                .await;
+            cancel.cancel();
+            watcher.join().unwrap();
+            // Let the connection driver observe the dropped body/request future.
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            match result {
+                Ok(result) => json!({"result":result}),
+                Err(error) => json!({"error":error}),
+            }
+        });
+        std::fs::write(
+            std::env::var("PARITY_PROVIDER_CANCEL_OUTPUT").unwrap(),
+            serde_json::to_vec_pretty(&result).unwrap(),
+        )
+        .unwrap();
     }
 
     #[test]

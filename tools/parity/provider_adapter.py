@@ -113,7 +113,7 @@ def freeze_binary(binary,kind):
 def run(go,rust,out):
     out.mkdir(parents=True,exist_ok=True);rows=[]
     go=freeze_binary(go,"go");rust=freeze_binary(rust,"rust")
-    provenance_paths=[Path(__file__),ROOT/"crates/host-agent/src/provider/adapter.rs",ROOT/"Cargo.lock",ROOT/"tools/parity/provider-core-oracle/main.go",ROOT/"tools/parity/provider-core-oracle/go.mod",ROOT/"tools/parity/provider-core-oracle/go.sum",ROOT/"crates/host-agent/src/provider/result.rs",ROOT/"crates/host-agent/src/provider/result/requests.rs",ROOT/"crates/host-agent/src/mcpsdk.rs",ROOT/"crates/host-agent/src/gojson.rs",ROOT/"crates/host-agent/src/gojson/validate.rs",ROOT/"crates/host-agent/src/provider/adapter/envelope.rs",ROOT/"crates/host-agent/src/goerr.rs",ROOT/"crates/host-agent/src/goerr/printable.rs"]
+    provenance_paths=[Path(__file__),ROOT/"crates/host-agent/src/plan/runner.rs",ROOT/"crates/host-agent/src/provider/adapter.rs",ROOT/"Cargo.lock",ROOT/"tools/parity/provider-core-oracle/main.go",ROOT/"tools/parity/provider-core-oracle/go.mod",ROOT/"tools/parity/provider-core-oracle/go.sum",ROOT/"crates/host-agent/src/provider/result.rs",ROOT/"crates/host-agent/src/provider/result/requests.rs",ROOT/"crates/host-agent/src/mcpsdk.rs",ROOT/"crates/host-agent/src/gojson.rs",ROOT/"crates/host-agent/src/gojson/validate.rs",ROOT/"crates/host-agent/src/provider/adapter/envelope.rs",ROOT/"crates/host-agent/src/goerr.rs",ROOT/"crates/host-agent/src/goerr/printable.rs"]
     provenance_before={str(p.relative_to(ROOT)):sha(p) for p in provenance_paths}
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()

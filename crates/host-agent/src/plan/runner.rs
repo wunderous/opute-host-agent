@@ -37,11 +37,15 @@ pub struct RunCtx {
 }
 
 #[derive(Clone)]
-pub struct CancelHandle(Arc<AtomicBool>);
+pub struct CancelHandle(Arc<AtomicBool>, RunCtx);
 
 impl CancelHandle {
     pub fn cancel(&self) {
-        self.0.store(true, Ordering::SeqCst);
+        // Go cancelCtx keeps an existing deadline or inherited refusal cause.
+        // Calling a cleanup cancel after expiry must not change ctx.Err().
+        if self.1.err().is_none() {
+            self.0.store(true, Ordering::SeqCst);
+        }
     }
 }
 
@@ -104,7 +108,7 @@ impl RunCtx {
             deadline: None,
             reservation: None,
         };
-        (child, CancelHandle(flag))
+        (child.clone(), CancelHandle(flag, child))
     }
 
     pub fn with_timeout(&self, duration: Duration) -> (Self, CancelHandle) {
@@ -115,7 +119,7 @@ impl RunCtx {
             deadline: Some(Instant::now() + duration),
             reservation: None,
         };
-        (child, CancelHandle(flag))
+        (child.clone(), CancelHandle(flag, child))
     }
 
     /// Sleeps `duration` in short slices, checking cancellation between each

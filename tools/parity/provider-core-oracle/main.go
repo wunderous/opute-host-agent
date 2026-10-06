@@ -24,6 +24,32 @@ func (t envelopeTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(t.payload))}, nil
 }
 
+// Instrument actual native body reads without modifying the pinned client.
+type progressTransport struct{ marker, stage string }
+
+func (t progressTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	response, err := http.DefaultTransport.RoundTrip(req)
+	if err == nil {
+		response.Body = &progressBody{ReadCloser: response.Body, marker: t.marker, stage: t.stage}
+	}
+	return response, err
+}
+
+type progressBody struct {
+	io.ReadCloser
+	marker, stage string
+}
+
+func (r *progressBody) Read(p []byte) (int, error) {
+	n, err := r.ReadCloser.Read(p)
+	if (n > 0 && r.stage == "body") || (err == io.EOF && r.stage == "body-end") {
+		if e := os.WriteFile(r.marker, []byte(r.stage), 0600); e != nil {
+			panic(e)
+		}
+	}
+	return n, err
+}
+
 type Step struct {
 	Action     string                    `json:"action"`
 	Provider   provider.ProviderRef      `json:"provider"`
@@ -54,6 +80,56 @@ func main() {
 		}
 		results := make([]map[string]any, 0, len(rows))
 		for _, row := range rows {
+			if row.Kind == "client-cancel" {
+				var input struct {
+					Endpoint  string `json:"endpoint"`
+					Trigger   string `json:"trigger"`
+					Marker    string `json:"marker"`
+					Stage     string `json:"progressStage"`
+					Before    bool   `json:"before"`
+					TimeoutMs *int64 `json:"timeoutMs"`
+				}
+				if err := json.Unmarshal(row.Value, &input); err != nil {
+					panic(err)
+				}
+				base := mcphttp.WithResourceDelegation(context.Background(), " signed-fixture ")
+				var ctx context.Context
+				var cancel context.CancelFunc
+				if input.TimeoutMs != nil {
+					ctx, cancel = context.WithTimeout(base, time.Duration(*input.TimeoutMs)*time.Millisecond)
+				} else {
+					ctx, cancel = context.WithCancel(base)
+				}
+				if input.Before {
+					cancel()
+				}
+				done := make(chan struct{})
+				go func() {
+					defer close(done)
+					for {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+						}
+						if _, err := os.Stat(input.Trigger); err == nil {
+							cancel()
+							return
+						}
+						time.Sleep(time.Millisecond)
+					}
+				}()
+				client := mcphttp.Client{Endpoint: input.Endpoint, Name: "opute-host-agent", Version: "dev", HTTPClient: &http.Client{Transport: progressTransport{marker: input.Marker, stage: input.Stage}}}
+				result, err := client.Call(ctx, "server/discover", "", nil)
+				cancel()
+				<-done
+				output := map[string]any{"result": result}
+				if err != nil {
+					output = map[string]any{"error": err.Error()}
+				}
+				results = append(results, output)
+				continue
+			}
 			if row.Kind == "envelope" {
 				var payload []byte
 				if err := json.Unmarshal(row.Value, &payload); err != nil {
