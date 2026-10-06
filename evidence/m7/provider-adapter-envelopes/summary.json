@@ -1,0 +1,3825 @@
+{
+  "scope": "T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; null input-request refusal (proposed divergence), TLS, proxy, connection failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open",
+  "provenance": {
+    "tools/parity/provider_adapter.py": "1987389eb66930da7e95d195f3f0ed7f00786ffeb77f444595e59c35994df734",
+    "crates/host-agent/src/provider/adapter.rs": "0ef072a6f3dce134f350cf4d49e221b96545551897b619e64643cacc86fc8670",
+    "Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "tools/parity/provider-core-oracle/main.go": "e17e21383ba56a19b1af32b607051b451b4cea800ad95e44399673e820772963",
+    "tools/parity/provider-core-oracle/go.mod": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+    "tools/parity/provider-core-oracle/go.sum": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+    "crates/host-agent/src/provider/result.rs": "c2b21635e6de4322fcba317cb524b36f30d089ac891a8cfc88067fd72046e10e",
+    "crates/host-agent/src/provider/result/requests.rs": "c456e984e253f9bfaad627cb20c52123b26459ca31743f55568ff4d6ea3b3156",
+    "crates/host-agent/src/mcpsdk.rs": "4061af6704363107dc9ec0f22ae362673c6fc716a06c192c01b9ca3d2746d98b",
+    "crates/host-agent/src/gojson.rs": "194b799ebcf38edc6b6a550bff2937db85391d4ecca35ecf212796ac687df021",
+    "crates/host-agent/src/gojson/validate.rs": "7bdfa4e7330011f6fd35ad994b2c82c8fc67a7c41ff28fd5a74c2989e1a4fcb1",
+    "crates/host-agent/src/provider/adapter/envelope.rs": "f05a71d853231f57f8b463c5bf9a7bbfe3521318e2ffa768692b553580e8183c",
+    "crates/host-agent/src/goerr.rs": "de1eedb230fb53352a58147cdece20949b808cd6617985b3d4b5616404d94458",
+    "crates/host-agent/src/goerr/printable.rs": "ec6a7b8d06450d6ab7ba11897324c2d53c3146ba0d7bd8153c71873dc191773e"
+  },
+  "binarySnapshots": {
+    "go": ".parity/bin/provider-adapter-go-e32198ccf8a37517cc143224b9eab74d2735c655c7795a3bf61b26e3c6d8732c",
+    "rust": ".parity/bin/provider-adapter-rust-4a0bf50133c53b61476075e3f5f67962bd128667c0aa30c57fcae757b38c5772"
+  },
+  "rows": [
+    {
+      "case": "valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-26",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-26",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-26",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-26",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-26",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-27",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-27",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-27",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-27",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-27",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-28",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-28",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-28",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-28",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-28",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-29",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-29",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-29",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-29",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-29",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-30",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-30",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-30",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-30",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-30",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-31",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-31",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-31",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-31",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-31",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-32",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-32",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-32",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-32",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-32",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-33",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-33",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-33",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-33",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-33",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-34",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-34",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-34",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-34",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-34",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-35",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-35",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-35",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-35",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-35",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-36",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-36",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-36",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-36",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-36",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-37",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-37",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-37",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-37",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-37",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-38",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-38",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-38",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-38",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-38",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-39",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-39",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-39",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-39",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-39",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-40",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-40",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-40",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-40",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-40",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-41",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-41",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-41",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-41",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-41",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-42",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-42",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-42",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-42",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-42",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-43",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-43",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-43",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-43",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-43",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-44",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-44",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-44",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-44",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-44",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-45",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-45",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-45",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-45",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-45",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-46",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-46",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-46",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-46",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-46",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-47",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-47",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-47",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-47",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-47",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-48",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-48",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-48",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-48",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-48",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-49",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-49",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-49",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-49",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-49",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-50",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-50",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-50",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-50",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-50",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-51",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-51",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-51",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-51",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-51",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-52",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-52",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-52",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-52",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-52",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-53",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-53",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-53",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-53",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-53",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-54",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-54",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-54",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-54",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-54",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-55",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-55",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-55",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-55",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-55",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-56",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-56",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-56",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-56",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-56",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-57",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-57",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-57",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-57",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-57",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-58",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-58",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-58",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-58",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-58",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-59",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-59",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-59",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-59",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-59",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "envelope-bytes-2",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "total": 755,
+  "passed": 755,
+  "normalization": "HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "goBinarySha256": "e32198ccf8a37517cc143224b9eab74d2735c655c7795a3bf61b26e3c6d8732c",
+  "rustTestBinarySha256": "4a0bf50133c53b61476075e3f5f67962bd128667c0aa30c57fcae757b38c5772",
+  "driverSha256": "1987389eb66930da7e95d195f3f0ed7f00786ffeb77f444595e59c35994df734",
+  "rustSourceSha256": "0ef072a6f3dce134f350cf4d49e221b96545551897b619e64643cacc86fc8670",
+  "cargoLockSha256": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+  "goOracleSourceSha256": "e17e21383ba56a19b1af32b607051b451b4cea800ad95e44399673e820772963",
+  "goOracleModSha256": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+  "goOracleSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc"
+}

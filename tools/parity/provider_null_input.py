@@ -11,7 +11,7 @@ from provider_adapter import ROOT,Fixture,cases,freeze_binary,sha
 
 def run(go,rust,out):
     go=freeze_binary(go,'go');rust=freeze_binary(rust,'rust');out.mkdir(parents=True,exist_ok=True)
-    paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/provider-core-oracle/main.go',ROOT/'tools/parity/provider-core-oracle/go.mod',ROOT/'tools/parity/provider-core-oracle/go.sum',ROOT/'crates/host-agent/src/provider/adapter.rs',ROOT/'crates/host-agent/src/provider/result.rs',ROOT/'crates/host-agent/src/provider/result/requests.rs',ROOT/'crates/host-agent/src/mcpsdk.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'Cargo.lock']
+    paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/provider-core-oracle/main.go',ROOT/'tools/parity/provider-core-oracle/go.mod',ROOT/'tools/parity/provider-core-oracle/go.sum',ROOT/'crates/host-agent/src/provider/adapter.rs',ROOT/'crates/host-agent/src/provider/result.rs',ROOT/'crates/host-agent/src/provider/result/requests.rs',ROOT/'crates/host-agent/src/mcpsdk.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'Cargo.lock',ROOT/'crates/host-agent/src/provider/adapter/envelope.rs',ROOT/'crates/host-agent/src/gojson/validate.rs',ROOT/'crates/host-agent/src/goerr.rs',ROOT/'crates/host-agent/src/goerr/printable.rs']
     before={str(p.relative_to(ROOT)):sha(p) for p in paths};lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
     assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree'] and not git('status','--porcelain')

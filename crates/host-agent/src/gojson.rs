@@ -15,6 +15,9 @@
 //! The parser keeps object members in document order (duplicates included)
 //! and the raw bytes of every value, which is what `json.RawMessage` holds.
 
+mod validate;
+pub(crate) use validate::syntax as validate_syntax;
+
 const MAX_DEPTH: usize = 10_000;
 
 #[derive(Clone, Debug, PartialEq)]

@@ -11,10 +11,18 @@ import (
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
 	"github.com/wunderous/host-agents/internal/mcphttp"
 	"io"
+	"net/http"
 	"os"
 	"sort"
 	"time"
 )
+
+// T0 response fixture uses the actual typed client without a network listener.
+type envelopeTransport struct{ payload []byte }
+
+func (t envelopeTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(t.payload))}, nil
+}
 
 type Step struct {
 	Action     string                    `json:"action"`
@@ -46,6 +54,20 @@ func main() {
 		}
 		results := make([]map[string]any, 0, len(rows))
 		for _, row := range rows {
+			if row.Kind == "envelope" {
+				var payload []byte
+				if err := json.Unmarshal(row.Value, &payload); err != nil {
+					panic(err)
+				}
+				client := mcphttp.Client{Endpoint: "http://fixture.invalid/mcp", HTTPClient: &http.Client{Transport: envelopeTransport{payload}}}
+				result, err := client.Call(context.Background(), "server/discover", "", nil)
+				output := map[string]any{"result": result}
+				if err != nil {
+					output = map[string]any{"error": err.Error()}
+				}
+				results = append(results, output)
+				continue
+			}
 			if row.Kind == "result" || row.Kind == "result-value-canary" {
 				var result sdkmcp.CallToolResult
 				var dynamic any

@@ -11,6 +11,8 @@ use std::future::Future;
 use std::time::Duration;
 use tokio::sync::RwLock;
 
+mod envelope;
+
 const PROTOCOL: &str = "2026-07-28";
 
 #[derive(Clone)]
@@ -101,24 +103,7 @@ impl Client {
                 String::from_utf8_lossy(&bytes).trim()
             ));
         }
-        let envelope: Value =
-            serde_json::from_slice(&bytes).map_err(|e| format!("decode MCP response: {e}"))?;
-        if let Some(error) = envelope.get("error").filter(|e| !e.is_null()) {
-            let code = error
-                .get("code")
-                .and_then(Value::as_i64)
-                .unwrap_or_default();
-            let message = error
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            return Err(format!("MCP error {code}: {message}"));
-        }
-        Ok(envelope
-            .get("result")
-            .and_then(Value::as_object)
-            .cloned()
-            .unwrap_or_default())
+        envelope::decode(&bytes)
     }
     // The accepted result crosses the same generic-map and SDK typed boundary
     // as the pinned Go client, after child-task polling.

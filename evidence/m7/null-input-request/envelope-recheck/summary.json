@@ -1,0 +1,81 @@
+{
+  "scope": "T1 proposed null input-request refusal through owning provider adapter; exact twin request traces and subsequent valid decoder regression",
+  "ownerDecision": "pending",
+  "status": "proposed-divergence-unverified",
+  "rows": [
+    {
+      "iteration": 0,
+      "goExitStatus": 2,
+      "rust": {
+        "error": "nil InputRequest entry"
+      },
+      "requestTraceEqual": true
+    },
+    {
+      "iteration": 1,
+      "goExitStatus": 2,
+      "rust": {
+        "error": "nil InputRequest entry"
+      },
+      "requestTraceEqual": true
+    },
+    {
+      "iteration": 2,
+      "goExitStatus": 2,
+      "rust": {
+        "error": "nil InputRequest entry"
+      },
+      "requestTraceEqual": true
+    },
+    {
+      "iteration": 3,
+      "goExitStatus": 2,
+      "rust": {
+        "error": "nil InputRequest entry"
+      },
+      "requestTraceEqual": true
+    },
+    {
+      "iteration": 4,
+      "goExitStatus": 2,
+      "rust": {
+        "error": "nil InputRequest entry"
+      },
+      "requestTraceEqual": true
+    }
+  ],
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "provenance": {
+    "tools/parity/provider_null_input.py": "576abb43442ad89287772446ad44f5c367e7462be65c6962c8acc5b0f8ef7d02",
+    "tools/parity/provider_adapter.py": "1987389eb66930da7e95d195f3f0ed7f00786ffeb77f444595e59c35994df734",
+    "tools/parity/provider-core-oracle/main.go": "e17e21383ba56a19b1af32b607051b451b4cea800ad95e44399673e820772963",
+    "tools/parity/provider-core-oracle/go.mod": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+    "tools/parity/provider-core-oracle/go.sum": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+    "crates/host-agent/src/provider/adapter.rs": "0ef072a6f3dce134f350cf4d49e221b96545551897b619e64643cacc86fc8670",
+    "crates/host-agent/src/provider/result.rs": "c2b21635e6de4322fcba317cb524b36f30d089ac891a8cfc88067fd72046e10e",
+    "crates/host-agent/src/provider/result/requests.rs": "c456e984e253f9bfaad627cb20c52123b26459ca31743f55568ff4d6ea3b3156",
+    "crates/host-agent/src/mcpsdk.rs": "4061af6704363107dc9ec0f22ae362673c6fc716a06c192c01b9ca3d2746d98b",
+    "crates/host-agent/src/gojson.rs": "194b799ebcf38edc6b6a550bff2937db85391d4ecca35ecf212796ac687df021",
+    "Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "crates/host-agent/src/provider/adapter/envelope.rs": "f05a71d853231f57f8b463c5bf9a7bbfe3521318e2ffa768692b553580e8183c",
+    "crates/host-agent/src/gojson/validate.rs": "7bdfa4e7330011f6fd35ad994b2c82c8fc67a7c41ff28fd5a74c2989e1a4fcb1",
+    "crates/host-agent/src/goerr.rs": "de1eedb230fb53352a58147cdece20949b808cd6617985b3d4b5616404d94458",
+    "crates/host-agent/src/goerr/printable.rs": "ec6a7b8d06450d6ab7ba11897324c2d53c3146ba0d7bd8153c71873dc191773e"
+  },
+  "goBinarySha256": "e32198ccf8a37517cc143224b9eab74d2735c655c7795a3bf61b26e3c6d8732c",
+  "rustTestBinarySha256": "4a0bf50133c53b61476075e3f5f67962bd128667c0aa30c57fcae757b38c5772",
+  "contract": "openspec/changes/reject-null-provider-input-requests/specs/provider-input-refusal/spec.md"
+}

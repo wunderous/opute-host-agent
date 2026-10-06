@@ -4,6 +4,7 @@ import argparse
 import copy
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 from provider_adapter import ROOT,sha,freeze_binary
@@ -87,6 +88,19 @@ def cases():
         {'TOOLS':[{'name':'first'},{'name':'second'}],'Tools':[{'name':'changed'}],'tools':[{'name':None},{'name':None}]},
         {'TOOLS':[{'name':'first','icons':[{'src':'icon'}]}],'Tools':[None],'tools':[{'name':None,'icons':[None]}]},
     ]:rows.append(request('sampling/createMessage',params))
+    # Test the shared formatter through actual SDK refusal errors, at every
+    # pinned Go printable range/exception boundary rather than mirroring Rust.
+    go_table=ROOT/'.parity/setup/go/src/strconv/isprint.go'
+    assert (ROOT/'.parity/setup/go/VERSION').read_text().splitlines()[0]=='go1.25.4'
+    table=go_table.read_text();points={0,31,32,127,128,160,173,0x200b,0xe000,0xfffe,0x10ffff}
+    for name in ['isPrint16','isNotPrint16','isPrint32','isNotPrint32']:
+        body=re.search(r'var '+name+r' = \[\]uint\d+\{(.*?)\n\}',table,re.S).group(1)
+        body=re.sub(r'//[^\n]*','',body)
+        for number in re.findall(r'0x[0-9a-fA-F]+',body):
+            code=int(number,16)+(0x10000 if name=='isNotPrint32' else 0)
+            points.update([code-1,code,code+1])
+    for point in sorted(points):
+        if 0<=point<=0x10ffff and not 0xd800<=point<=0xdfff:rows.append({'content':[{'type':'unknown-'+chr(point)}]})
     return rows
 
 def run(go,rust,out):
@@ -94,7 +108,7 @@ def run(go,rust,out):
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
     assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree'] and not git('status','--porcelain')
-    sources=[Path(__file__),ROOT/'crates/host-agent/src/provider/result.rs',ROOT/'tools/parity/provider-core-oracle/main.go',ROOT/'tools/parity/provider-core-oracle/go.mod',ROOT/'tools/parity/provider-core-oracle/go.sum',ROOT/'tools/parity/provider_adapter.py',ROOT/'Cargo.lock',ROOT/'crates/host-agent/src/mcpsdk.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/provider/result/requests.rs']
+    sources=[Path(__file__),ROOT/'crates/host-agent/src/provider/result.rs',ROOT/'tools/parity/provider-core-oracle/main.go',ROOT/'tools/parity/provider-core-oracle/go.mod',ROOT/'tools/parity/provider-core-oracle/go.sum',ROOT/'tools/parity/provider_adapter.py',ROOT/'Cargo.lock',ROOT/'crates/host-agent/src/mcpsdk.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/provider/result/requests.rs',ROOT/'crates/host-agent/src/goerr.rs',ROOT/'crates/host-agent/src/goerr/printable.rs',ROOT/'.parity/setup/go/src/strconv/isprint.go',ROOT/'tools/parity/generate_go_isprint.py']
     before={str(p.relative_to(ROOT)):sha(p) for p in sources};rows=[];payload=cases()
     canary_input={'content':[],'inputRequests':{},'resultType':'complete'}
     canary=json.loads(subprocess.check_output([str(go)],input=json.dumps([{'kind':'result','value':canary_input},{'kind':'result-value-canary','value':canary_input}]),text=True))

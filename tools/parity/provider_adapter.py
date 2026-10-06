@@ -48,6 +48,28 @@ def cases():
     for i,value in enumerate(sdk):
         rows[f'sdk-call-{i}']={**valid,'action':'call','callResult':value,'delegation':' signed-fixture '}
         if i in [0,1,2,19,20,21,22,27,28]:rows[f'sdk-task-{i}']={**valid,'action':'call','callResult':task,'taskStatuses':[{'status':'completed','result':value}],'delegation':' signed-fixture '}
+    raw=['',' ','{','[]','true','42','"scalar"','null','{}','{"result":null}',
+        '{"result":[]}','{"result":false}','{"result":42}','{"result":"scalar"}',
+        '{"error":false}','{"error":42}','{"error":[]}','{"error":"scalar"}',
+        '{"error":{}}','{"error":{"code":"bad"}}','{"error":{"code":1.5}}',
+        '{"error":{"code":9223372036854775808}}','{"error":{"message":false}}',
+        '{"error":{"CODE":-32000,"MESSAGE":"refusal"}}','{"ERROR":{"code":1},"error":null}',
+        '{"error":{"code":1},"ERROR":{"message":"merged"}}','{"error":{"code":1},"ERROR":{"code":null}}',
+        '{"RESULT":{"structuredContent":{"a":1}},"result":{"structuredContent":{"b":2}}}',
+        '{"result":{"content":[{"type":"text","text":"keep"}]},"RESULT":null}',
+        '{"result":{"structuredContent":{"dup":1,"dup":2}}}',
+        '{"error":{"code":1.5,"message":false},"result":[]}',
+        '{"result":[],"error":{"code":1.5}}',
+        '{"result":{"structuredContent":1e400}}','{"result":{"nested":[1e400]}}',
+        '{"result":{"structuredContent":9007199254740993}}',
+        '{"result":{"content":[{"type":"text","text":"\\ud800"}]}}',
+        '{"error":{"message":"\\ud800"}}',
+        '{"result":{}} trailing','{"result":{}}{}','{"result":{},}', '{result:{}}',
+        '{"result" {}}','[1,]','[1 2]','{"a":1 "b":2}',
+        'tru','trX','falsX','nulX','01','-','1.','1e','1e+','1eX','"\\q"','"\\uXX00"','"unclosed',
+        '"control\ncharacter"', '\ufeff{}']
+    for i,body in enumerate(raw):rows[f'envelope-{i}']={**valid,'action':'call','callBody':body}
+    for i,payload in enumerate([b'{"result":{"content":[{"type":"text","text":"\xff"}]}}',b'{"error":{"message":"\xff"}}',b'\xff']):rows[f'envelope-bytes-{i}']={**valid,'action':'call','callBytes':list(payload)}
     return rows
 
 class Fixture(http.server.ThreadingHTTPServer):
@@ -66,7 +88,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         key={'server/discover':'discover','tools/list':'list','tools/call':'call','tasks/get':'taskGet','tasks/cancel':'cancel'}[payload['method']]
         case=self.server.case
         status=case.get(key+'Status',200)
-        if status>=400:response=case[key+'Body'].encode()
+        if key+'Bytes' in case:response=bytes(case[key+'Bytes'])
+        elif key+'Body' in case:response=case[key+'Body'].encode()
+        elif status>=400:response=case[key+'Body'].encode()
         else:
             envelope={'jsonrpc':'2.0','id':1}
             if key+'Error' in case:envelope['error']=case[key+'Error']
@@ -89,7 +113,7 @@ def freeze_binary(binary,kind):
 def run(go,rust,out):
     out.mkdir(parents=True,exist_ok=True);rows=[]
     go=freeze_binary(go,"go");rust=freeze_binary(rust,"rust")
-    provenance_paths=[Path(__file__),ROOT/"crates/host-agent/src/provider/adapter.rs",ROOT/"Cargo.lock",ROOT/"tools/parity/provider-core-oracle/main.go",ROOT/"tools/parity/provider-core-oracle/go.mod",ROOT/"tools/parity/provider-core-oracle/go.sum",ROOT/"crates/host-agent/src/provider/result.rs",ROOT/"crates/host-agent/src/provider/result/requests.rs",ROOT/"crates/host-agent/src/mcpsdk.rs",ROOT/"crates/host-agent/src/gojson.rs"]
+    provenance_paths=[Path(__file__),ROOT/"crates/host-agent/src/provider/adapter.rs",ROOT/"Cargo.lock",ROOT/"tools/parity/provider-core-oracle/main.go",ROOT/"tools/parity/provider-core-oracle/go.mod",ROOT/"tools/parity/provider-core-oracle/go.sum",ROOT/"crates/host-agent/src/provider/result.rs",ROOT/"crates/host-agent/src/provider/result/requests.rs",ROOT/"crates/host-agent/src/mcpsdk.rs",ROOT/"crates/host-agent/src/gojson.rs",ROOT/"crates/host-agent/src/gojson/validate.rs",ROOT/"crates/host-agent/src/provider/adapter/envelope.rs",ROOT/"crates/host-agent/src/goerr.rs",ROOT/"crates/host-agent/src/goerr/printable.rs"]
     provenance_before={str(p.relative_to(ROOT)):sha(p) for p in provenance_paths}
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
@@ -115,7 +139,7 @@ def run(go,rust,out):
             finally:server.shutdown();server.server_close();thread.join()
     assert provenance_before=={str(p.relative_to(ROOT)):sha(p) for p in provenance_paths}, 'source changed during oracle run'
     assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree'] and not git('status','--porcelain')
-    report={'scope':'T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; null input-request refusal (proposed divergence), TLS, proxy, malformed envelopes, transport failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open','provenance':provenance_before,'binarySnapshots':{'go':str(go.relative_to(ROOT)),'rust':str(rust.relative_to(ROOT))},'rows':rows,'total':len(rows),'passed':sum(r['pass'] for r in rows),'normalization':'HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.','sourceLock':lock,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'driverSha256':sha(Path(__file__)),'rustSourceSha256':sha(ROOT/'crates/host-agent/src/provider/adapter.rs'),'cargoLockSha256':sha(ROOT/'Cargo.lock'),'goOracleSourceSha256':sha(ROOT/'tools/parity/provider-core-oracle/main.go'),'goOracleModSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.mod'),'goOracleSumSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.sum')}
+    report={'scope':'T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; null input-request refusal (proposed divergence), TLS, proxy, connection failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open','provenance':provenance_before,'binarySnapshots':{'go':str(go.relative_to(ROOT)),'rust':str(rust.relative_to(ROOT))},'rows':rows,'total':len(rows),'passed':sum(r['pass'] for r in rows),'normalization':'HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.','sourceLock':lock,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'driverSha256':sha(Path(__file__)),'rustSourceSha256':sha(ROOT/'crates/host-agent/src/provider/adapter.rs'),'cargoLockSha256':sha(ROOT/'Cargo.lock'),'goOracleSourceSha256':sha(ROOT/'tools/parity/provider-core-oracle/main.go'),'goOracleModSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.mod'),'goOracleSumSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.sum')}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
     index={str(p.relative_to(out)):sha(p) for p in out.rglob('*.json') if p.name!='index.json'};(out/'index.json').write_text(json.dumps(index,indent=2)+'\n')
     print('Provider adapter core flows:',report['passed'],'/',report['total']);return all(r['pass'] for r in rows)
