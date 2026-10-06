@@ -46,6 +46,14 @@ The adapter holds its read guard for accepted work; closing waits for calls rath
 
 The workspace suite passed 178 tests with five dedicated fixtures ignored; the adapter fixture was invoked by the differential driver. A second real-connection test proves close waits for an accepted call, then refuses new work. Clippy with warnings denied and formatting checks passed. The driver uses immutable binary snapshots and refuses evidence if source provenance changes during a run. M7 remains open.
 
+## SDK content projection — T0 subset
+
+`provider-sdk-content/summary.json` records **400/400 comparisons** (80 cases, five iterations) against actual pinned Go SDK `CallToolResult` decoding and re-serialization. The new projection covers all seven content variants, required/default fields, omitted empty metadata, annotations and icons, nested tool-result restrictions, resource blob nil/empty behavior, base64 decoding and exact corruption offsets, and generic-map float64 precision including values above 2^53. The fixture emits numbers with the existing Go JSON encoder so large floating-point values retain the same delivered decimal representation. Structured projections are compared with no normalization.
+
+A direct SDK oracle confirms that incoming `resultType` is dropped in the re-serialized result; the Rust projection preserves this observed pinned behavior. The projection is deliberately unwired: typed malformed-field validation, case-sensitive SDK field decoding, input-request variants, and adapter integration remain required. These cases do not establish full SDK decoding or the M7 gate.
+
+The driver uses immutable binary snapshots, checks the pinned Go checkout, and rejects changing source provenance. `go mod verify` reported all modules verified. The workspace suite passed 178 tests with six dedicated fixtures ignored; the SDK fixture was explicitly invoked. Clippy with warnings denied and formatting checks passed.
+
 ## Remaining M7 work
 
 Descriptor source/YAML loading and transport JSON error handling, outbound provider MCP adapters, candidate validation and atomic catalog promotion, typed callback/task bridging, durable restoration and reverse dependency cleanup, and all five real Go providers' installation/activation/call/teardown checks remain required. Live checks must use owning typed capabilities and independently leased disposable runtimes. No milestone completion or runtime seam promotion is claimed by this core evidence.

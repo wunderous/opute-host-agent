@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	provider "github.com/wunderous/host-agents/contracts/provider"
 	"github.com/wunderous/host-agents/internal/cordis"
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
@@ -45,6 +46,16 @@ func main() {
 		}
 		results := make([]map[string]any, 0, len(rows))
 		for _, row := range rows {
+			if row.Kind == "result" {
+				var result sdkmcp.CallToolResult
+				err := json.Unmarshal(row.Value, &result)
+				value := map[string]any{"result": result}
+				if err != nil {
+					value = map[string]any{"error": err.Error()}
+				}
+				results = append(results, value)
+				continue
+			}
 			if row.Kind == "adapter" {
 				var input struct {
 					Descriptor provider.PluginDescriptor `json:"descriptor"`

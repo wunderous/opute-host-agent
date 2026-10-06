@@ -4,6 +4,7 @@
 
 pub mod adapter;
 pub mod definition;
+pub mod result;
 
 use crate::{goerr::quote, hostobs::rfc3339_nano_now, plan::runner::RunCtx};
 use serde::{Deserialize, Serialize};
