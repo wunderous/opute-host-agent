@@ -1,0 +1,20 @@
+// Parity-only overlay bridge. The pinned checkout remains unchanged.
+package hostmcp
+
+import (
+	providercontract "github.com/wunderous/host-agents/contracts/provider"
+	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
+	"github.com/wunderous/host-agents/internal/tools"
+)
+
+// Invoke owning projection functions without copying their implementation.
+func ParityProviderCatalog(active tools.CapabilityCatalogSnapshot, manifest providercontract.InstallManifest, generation string) ([]tools.CapabilityDescriptor, tools.CapabilityCatalogSnapshot, bool) {
+	server := &Server{
+		catalog:                    active,
+		providerCandidates:         map[string]*provideradapter.Adapter{generation: {}},
+		providerCandidateManifests: map[string]providercontract.InstallManifest{generation: manifest},
+	}
+	_, descriptors := server.providerCapabilitiesForGeneration(manifest, generation, true)
+	private, ok := server.providerCandidateSnapshot(generation)
+	return descriptors, private, ok
+}
