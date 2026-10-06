@@ -526,6 +526,56 @@ pub fn encode(v: &serde_json::Value, out: &mut String) {
     }
 }
 
+/// Validate Go standard base64, retaining corruption offsets and CR/LF rules.
+pub(crate) fn validate_base64(bytes: &[u8]) -> Result<(), String> {
+    let error = |i| format!("illegal base64 data at input byte {i}");
+    let mut index = 0;
+    loop {
+        let mut digit = 0;
+        while digit < 4 {
+            if index == bytes.len() {
+                return if digit == 0 {
+                    Ok(())
+                } else {
+                    Err(error(index - digit))
+                };
+            }
+            let value = bytes[index];
+            index += 1;
+            if value.is_ascii_alphanumeric() || matches!(value, b'+' | b'/') {
+                digit += 1;
+                continue;
+            }
+            if matches!(value, b'\r' | b'\n') {
+                continue;
+            }
+            if value != b'=' || digit < 2 {
+                return Err(error(index - 1));
+            }
+            if digit == 2 {
+                while index < bytes.len() && matches!(bytes[index], b'\r' | b'\n') {
+                    index += 1;
+                }
+                if index == bytes.len() {
+                    return Err(error(bytes.len()));
+                }
+                if bytes[index] != b'=' {
+                    return Err(error(index - 1));
+                }
+                index += 1;
+            }
+            while index < bytes.len() && matches!(bytes[index], b'\r' | b'\n') {
+                index += 1;
+            }
+            return if index == bytes.len() {
+                Ok(())
+            } else {
+                Err(error(index))
+            };
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

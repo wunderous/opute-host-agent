@@ -65,6 +65,11 @@ pub enum ToolCallOutcome {
 // --- segmentio typed decoding ------------------------------------------------
 
 pub enum Ty {
+    Float,
+    Int64,
+    Bytes,
+    SliceNamedStr(&'static str),
+    PointerSlice(&'static StructDef),
     /// A string-kinded type, by its Go name ("string", "mcp.LoggingLevel").
     Str(&'static str),
     Bool,
@@ -87,6 +92,7 @@ pub struct StructDef {
 }
 
 struct TypeError {
+    raw: Option<String>,
     value: String,
     ty: String,
     strukt: String,
@@ -95,6 +101,9 @@ struct TypeError {
 
 impl TypeError {
     fn message(&self) -> String {
+        if let Some(raw) = &self.raw {
+            return raw.clone();
+        }
         if !self.strukt.is_empty() || !self.field.is_empty() {
             format!(
                 "json: cannot unmarshal {} into Go struct field {}.{} of type {}",
@@ -120,11 +129,34 @@ fn prefix(rest: &[u8]) -> String {
 
 fn leaf(node: &Node, doc: &[u8], ty: &str) -> TypeError {
     TypeError {
+        raw: None,
         value: quote(&prefix(&doc[node.offset..])),
         ty: ty.to_string(),
         strukt: String::new(),
         field: String::new(),
     }
+}
+
+fn integer_error(node: &Node, doc: &[u8], ty: &str, unsigned: bool) -> TypeError {
+    let mut e = leaf(node, doc, ty);
+    if let Value::Number(n) = &node.value {
+        if unsigned && n.starts_with('-') {
+            return e;
+        }
+        if n.contains(['.', 'e', 'E']) {
+            e.value = quote(n);
+        } else {
+            // Narrow integer overflow consumes the number before reporting it;
+            // the int64 parser itself reports the remaining input prefix.
+            let value = if unsigned && n.parse::<u64>().is_ok() {
+                n.clone()
+            } else {
+                prefix(&doc[node.offset..])
+            };
+            e.value = format!("number {value} overflows");
+        }
+    }
+    e
 }
 
 fn prepend_field(key: &str, field: &str) -> String {
@@ -136,10 +168,80 @@ fn prepend_field(key: &str, field: &str) -> String {
 }
 
 fn decode(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), TypeError> {
+    decode_mode(node, ty, doc, false)
+}
+
+pub(crate) fn validate_exact(
+    node: &Node,
+    definition: &'static StructDef,
+    doc: &[u8],
+) -> Result<(), String> {
+    decode_mode(node, &Ty::Struct(definition), doc, true).map_err(|e| e.message())
+}
+
+fn decode_mode(node: &Node, ty: &Ty, doc: &[u8], exact: bool) -> Result<(), TypeError> {
     if node.is_null() {
         return Ok(());
     }
     match ty {
+        Ty::Float => match &node.value {
+            Value::Number(n) if n.parse::<f64>().is_ok_and(|f| f.is_finite()) => Ok(()),
+            _ => Err(leaf(node, doc, "float64")),
+        },
+        Ty::Int64 => match &node.value {
+            Value::Number(n) if n.parse::<i64>().is_ok() => Ok(()),
+            _ => Err(integer_error(node, doc, "int64", false)),
+        },
+        Ty::Bytes => match &node.value {
+            Value::String(value) => {
+                crate::gojson::validate_base64(value.as_bytes()).map_err(|raw| {
+                    let mut e = leaf(node, doc, "[]uint8");
+                    e.raw = Some(raw);
+                    e
+                })
+            }
+            Value::Array(items) => {
+                for (i, item) in items.iter().enumerate() {
+                    if !item.is_null()
+                        && !matches!(&item.value,Value::Number(n) if n.parse::<u8>().is_ok())
+                    {
+                        let mut e = integer_error(item, doc, "uint8", true);
+                        e.strukt = "[]uint8".into();
+                        e.field = i.to_string();
+                        return Err(e);
+                    }
+                }
+                Ok(())
+            }
+            _ => Err(leaf(node, doc, "[]uint8")),
+        },
+        Ty::SliceNamedStr(name) => {
+            let Value::Array(items) = &node.value else {
+                return Err(leaf(node, doc, &format!("[]{name}")));
+            };
+            for (i, item) in items.iter().enumerate() {
+                if !item.is_null() && !matches!(item.value, Value::String(_)) {
+                    let mut e = leaf(item, doc, "string");
+                    e.strukt = format!("[]{name}");
+                    e.field = i.to_string();
+                    return Err(e);
+                }
+            }
+            Ok(())
+        }
+        Ty::PointerSlice(def) => {
+            let Value::Array(items) = &node.value else {
+                return Err(leaf(node, doc, &format!("[]*{}", def.name)));
+            };
+            for (i, item) in items.iter().enumerate() {
+                if let Err(mut e) = decode_mode(item, &Ty::Struct(def), doc, exact) {
+                    e.strukt = format!("[]*{}{}", def.name, e.strukt);
+                    e.field = prepend_field(&i.to_string(), &e.field);
+                    return Err(e);
+                }
+            }
+            Ok(())
+        }
         Ty::Raw => Ok(()),
         Ty::Str(name) => match node.value {
             Value::String(_) => Ok(()),
@@ -174,6 +276,9 @@ fn decode(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), TypeError> {
             for (i, item) in items.iter().enumerate() {
                 if !item.is_null() && !matches!(item.value, Value::String(_)) {
                     let mut e = leaf(item, doc, "string");
+                    if exact {
+                        e.strukt = "[]string".into();
+                    }
                     e.field = prepend_field(&i.to_string(), &e.field);
                     return Err(e);
                 }
@@ -185,7 +290,10 @@ fn decode(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), TypeError> {
                 return Err(leaf(node, doc, &format!("[]{}", def.name)));
             };
             for (i, item) in items.iter().enumerate() {
-                if let Err(mut e) = decode(item, &Ty::Struct(def), doc) {
+                if let Err(mut e) = decode_mode(item, &Ty::Struct(def), doc, exact) {
+                    if exact {
+                        e.strukt = format!("[]{}{}", def.name, e.strukt);
+                    }
                     e.field = prepend_field(&i.to_string(), &e.field);
                     return Err(e);
                 }
@@ -199,6 +307,9 @@ fn decode(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), TypeError> {
             for (k, v) in members {
                 let lower = k.to_lowercase();
                 let field = def.fields.iter().find(|(name, _)| *name == k).or_else(|| {
+                    if exact {
+                        return None;
+                    }
                     def.fields
                         .iter()
                         .find(|(name, _)| name.to_lowercase() == lower)
@@ -206,7 +317,7 @@ fn decode(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), TypeError> {
                 let Some((_, fty)) = field else {
                     continue;
                 };
-                if let Err(mut e) = decode(v, fty, doc) {
+                if let Err(mut e) = decode_mode(v, fty, doc, exact) {
                     e.strukt = format!("{}{}", def.name, e.strukt);
                     e.field = prepend_field(k, &e.field);
                     return Err(e);

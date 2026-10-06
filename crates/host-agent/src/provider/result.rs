@@ -5,6 +5,71 @@ use crate::goerr::quote;
 use base64::Engine;
 use serde_json::{Map, Value};
 
+use crate::mcpsdk::{StructDef, Ty};
+static ANNOTATIONS: StructDef = StructDef {
+    name: "mcp.Annotations",
+    fields: &[
+        ("audience", Ty::SliceNamedStr("mcp.Role")),
+        ("lastModified", Ty::Str("string")),
+        ("priority", Ty::Float),
+    ],
+};
+static ICON: StructDef = StructDef {
+    name: "mcp.Icon",
+    fields: &[
+        ("src", Ty::Str("string")),
+        ("mimeType", Ty::Str("string")),
+        ("sizes", Ty::SliceStr),
+        ("theme", Ty::Str("string")),
+    ],
+};
+static RESOURCE: StructDef = StructDef {
+    name: "mcp.ResourceContents",
+    fields: &[
+        ("uri", Ty::Str("string")),
+        ("mimeType", Ty::Str("string")),
+        ("text", Ty::Str("string")),
+        ("blob", Ty::Bytes),
+        ("_meta", Ty::MapAny("map[string]interface {}")),
+    ],
+};
+static CONTENT: StructDef = StructDef {
+    name: "mcp.wireContent",
+    fields: &[
+        ("type", Ty::Str("string")),
+        ("text", Ty::Str("string")),
+        ("mimeType", Ty::Str("string")),
+        ("data", Ty::Bytes),
+        ("resource", Ty::Struct(&RESOURCE)),
+        ("uri", Ty::Str("string")),
+        ("name", Ty::Str("string")),
+        ("title", Ty::Str("string")),
+        ("description", Ty::Str("string")),
+        ("size", Ty::Int64),
+        ("_meta", Ty::MapAny("map[string]interface {}")),
+        ("annotations", Ty::Struct(&ANNOTATIONS)),
+        ("icons", Ty::SliceOf(&ICON)),
+        ("id", Ty::Str("string")),
+        ("input", Ty::MapAny("map[string]interface {}")),
+        ("toolUseId", Ty::Str("string")),
+        ("content", Ty::PointerSlice(&CONTENT)),
+        ("structuredContent", Ty::Raw),
+        ("isError", Ty::Bool),
+    ],
+};
+static RESULT: StructDef = StructDef {
+    name: r#"struct { mcp.res; Content []*mcp.wireContent "json:\"content\""; ResultType mcp.resultType "json:\"resultType\"" }"#,
+    fields: &[
+        ("_meta", Ty::MapAny("map[string]interface {}")),
+        ("content", Ty::PointerSlice(&CONTENT)),
+        ("structuredContent", Ty::Raw),
+        ("isError", Ty::Bool),
+        ("requestState", Ty::Str("string")),
+        ("resultType", Ty::Str("string")),
+        ("inputRequests", Ty::Raw),
+    ],
+};
+
 fn generic(value: &Value) -> Value {
     match value {
         Value::Number(number) => {
@@ -67,6 +132,13 @@ fn binary(value: Option<&Value>) -> Result<String, String> {
     let Some(value) = value.filter(|v| !v.is_null()) else {
         return Ok(String::new());
     };
+    if let Some(items) = value.as_array() {
+        let bytes: Vec<u8> = items
+            .iter()
+            .map(|v| v.as_u64().unwrap_or_default() as u8)
+            .collect();
+        return Ok(base64::engine::general_purpose::STANDARD.encode(bytes));
+    }
     let raw = value.as_str().unwrap_or_default();
     let cleaned: Vec<u8> = raw
         .bytes()
@@ -77,57 +149,9 @@ fn binary(value: Option<&Value>) -> Result<String, String> {
         base64::engine::general_purpose::GeneralPurposeConfig::new()
             .with_decode_allow_trailing_bits(true),
     );
-    validate_base64(raw.as_bytes())?;
+    crate::gojson::validate_base64(raw.as_bytes())?;
     let bytes = engine.decode(&cleaned).expect("Go-validated base64");
     Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
-}
-fn validate_base64(bytes: &[u8]) -> Result<(), String> {
-    let error = |i| format!("illegal base64 data at input byte {i}");
-    let mut index = 0;
-    loop {
-        let mut digit = 0;
-        while digit < 4 {
-            if index == bytes.len() {
-                return if digit == 0 {
-                    Ok(())
-                } else {
-                    Err(error(index - digit))
-                };
-            }
-            let value = bytes[index];
-            index += 1;
-            if value.is_ascii_alphanumeric() || matches!(value, b'+' | b'/') {
-                digit += 1;
-                continue;
-            }
-            if matches!(value, b'\r' | b'\n') {
-                continue;
-            }
-            if value != b'=' || digit < 2 {
-                return Err(error(index - 1));
-            }
-            if digit == 2 {
-                while index < bytes.len() && matches!(bytes[index], b'\r' | b'\n') {
-                    index += 1;
-                }
-                if index == bytes.len() {
-                    return Err(error(bytes.len()));
-                }
-                if bytes[index] != b'=' {
-                    return Err(error(index - 1));
-                }
-                index += 1;
-            }
-            while index < bytes.len() && matches!(bytes[index], b'\r' | b'\n') {
-                index += 1;
-            }
-            return if index == bytes.len() {
-                Ok(())
-            } else {
-                Err(error(index))
-            };
-        }
-    }
 }
 
 fn annotations(value: &Value) -> Value {
@@ -136,8 +160,18 @@ fn annotations(value: &Value) -> Value {
         for key in ["audience", "lastModified", "priority"] {
             put_nonempty(&mut out, source, key);
         }
+        normalize_strings(&mut out, "audience");
     }
     Value::Object(out)
+}
+fn normalize_strings(out: &mut Map<String, Value>, key: &str) {
+    if let Some(Value::Array(items)) = out.get_mut(key) {
+        for item in items {
+            if item.is_null() {
+                *item = Value::String(String::new());
+            }
+        }
+    }
 }
 fn content(value: &Value, nested: bool) -> Result<Value, String> {
     if value.is_null() {
@@ -186,6 +220,7 @@ fn content(value: &Value, nested: bool) -> Result<Value, String> {
                                 for key in ["mimeType", "sizes", "theme"] {
                                     put_nonempty(&mut icon, &source, key);
                                 }
+                                normalize_strings(&mut icon, "sizes");
                                 Value::Object(icon)
                             })
                             .collect(),
@@ -261,6 +296,16 @@ fn content(value: &Value, nested: bool) -> Result<Value, String> {
 }
 
 pub fn project(source: &Map<String, Value>) -> Result<Map<String, Value>, String> {
+    // The pinned client first decodes the RPC result into map[string]any,
+    // then marshals that map for the typed SDK decoder. All numbers therefore
+    // cross the float64 boundary before content fields receive their types.
+    let generic_source = generic(&Value::Object(source.clone()));
+    let source = generic_source.as_object().expect("object projection");
+    let mut encoded = String::new();
+    crate::gojson::encode(&Value::Object(source.clone()), &mut encoded);
+    let node = crate::gojson::parse(encoded.as_bytes()).expect("encoded provider result");
+    crate::mcpsdk::validate_exact(&node, &RESULT, encoded.as_bytes())?;
+
     let mut out = Map::new();
     put_nonempty(&mut out, source, "_meta");
     let items = source

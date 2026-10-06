@@ -48,7 +48,15 @@ func main() {
 		for _, row := range rows {
 			if row.Kind == "result" {
 				var result sdkmcp.CallToolResult
-				err := json.Unmarshal(row.Value, &result)
+				var dynamic any
+				err := json.Unmarshal(row.Value, &dynamic)
+				canonical, marshalErr := json.Marshal(dynamic)
+				if err == nil {
+					err = marshalErr
+				}
+				if err == nil {
+					err = json.Unmarshal(canonical, &result)
+				}
 				value := map[string]any{"result": result}
 				if err != nil {
 					value = map[string]any{"error": err.Error()}
