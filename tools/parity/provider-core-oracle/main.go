@@ -25,11 +25,11 @@ func (t envelopeTransport) RoundTrip(*http.Request) (*http.Response, error) {
 }
 
 // Instrument actual native body reads without modifying the pinned client.
-type progressTransport struct{ marker, stage string }
+type progressTransport struct{ marker, stage, method string }
 
 func (t progressTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	response, err := http.DefaultTransport.RoundTrip(req)
-	if err == nil {
+	if err == nil && (t.method == "" || req.Header.Get("Mcp-Method") == t.method) {
 		response.Body = &progressBody{ReadCloser: response.Body, marker: t.marker, stage: t.stage}
 	}
 	return response, err
@@ -86,6 +86,8 @@ func main() {
 					Trigger   string `json:"trigger"`
 					Marker    string `json:"marker"`
 					Stage     string `json:"progressStage"`
+					Method    string `json:"progressMethod"`
+					Task      bool   `json:"task"`
 					Before    bool   `json:"before"`
 					TimeoutMs *int64 `json:"timeoutMs"`
 				}
@@ -119,8 +121,14 @@ func main() {
 						time.Sleep(time.Millisecond)
 					}
 				}()
-				client := mcphttp.Client{Endpoint: input.Endpoint, Name: "opute-host-agent", Version: "dev", HTTPClient: &http.Client{Transport: progressTransport{marker: input.Marker, stage: input.Stage}}}
-				result, err := client.Call(ctx, "server/discover", "", nil)
+				client := mcphttp.Client{Endpoint: input.Endpoint, Name: "opute-host-agent", Version: "dev", HTTPClient: &http.Client{Transport: progressTransport{marker: input.Marker, stage: input.Stage, method: input.Method}}}
+				var result any
+				var err error
+				if input.Task {
+					result, err = client.CallTool(ctx, "test.operation", nil)
+				} else {
+					result, err = client.Call(ctx, "server/discover", "", nil)
+				}
 				cancel()
 				<-done
 				output := map[string]any{"result": result}

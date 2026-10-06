@@ -23,7 +23,7 @@ pub struct Client {
     name: String,
     version: String,
     #[cfg(test)]
-    progress: Option<(String, String)>,
+    progress: Option<(String, String, String)>,
 }
 impl Client {
     pub fn new(
@@ -105,10 +105,10 @@ impl Client {
             while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
                 bytes.extend_from_slice(&chunk);
                 #[cfg(test)]
-                self.record_progress("body");
+                self.record_progress("body", method);
             }
             #[cfg(test)]
-            self.record_progress("body-end");
+            self.record_progress("body-end", method);
             Ok(bytes)
         })
         .await?;
@@ -121,9 +121,9 @@ impl Client {
         envelope::decode(&bytes)
     }
     #[cfg(test)]
-    fn record_progress(&self, stage: &str) {
-        if let Some((wanted, path)) = &self.progress {
-            if wanted == stage {
+    fn record_progress(&self, stage: &str, method: &str) {
+        if let Some((wanted, path, filter)) = &self.progress {
+            if wanted == stage && (filter.is_empty() || filter == method) {
                 std::fs::write(path, stage).expect("fixture progress marker");
             }
         }
@@ -604,10 +604,17 @@ mod tests {
             client.progress = Some((
                 input["progressStage"].as_str().unwrap().into(),
                 input["marker"].as_str().unwrap().into(),
+                input["progressMethod"].as_str().unwrap_or_default().into(),
             ));
-            let result = client
-                .call(&ctx, "server/discover", "", Map::new(), " signed-fixture ")
-                .await;
+            let result = if input["task"] == true {
+                client
+                    .call_tool(&ctx, "test.operation", None, " signed-fixture ")
+                    .await
+            } else {
+                client
+                    .call(&ctx, "server/discover", "", Map::new(), " signed-fixture ")
+                    .await
+            };
             cancel.cancel();
             watcher.join().unwrap();
             // Let the connection driver observe the dropped body/request future.
