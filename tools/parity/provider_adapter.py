@@ -41,6 +41,13 @@ def cases():
     rows['task-no-result']={**valid,'action':'call','callResult':task,'taskStatuses':[{'status':'completed'}]}
     rows['task-poll-error']={**valid,'action':'call','callResult':task,'taskGetError':{'code':-32000,'message':'poll refusal'},'delegation':' signed-fixture '}
     rows['task-cancel-error']={**valid,'action':'call','callResult':task,'taskGetError':{'code':-32000,'message':'poll refusal'},'cancelError':{'code':-32001,'message':'cancel refusal'}}
+    sdk=[{}, {'resultType':'complete','inputRequests':{}}, {'resultType':'input_required','inputRequests':{'request-id':{'method':'elicitation/create','params':{'message':'confirm'}}}}, {'inputRequests':{'request-id':{'method':'roots/list','params':{}}}}, {'inputRequests':{'request-id':{'method':'sampling/createMessage','params':{'messages':[{'role':'user','content':[{'type':'text','text':'hello'}]}]}}}}]
+    for kind in ['text','image','audio','resource','resource_link','tool_use','tool_result']:
+        sdk.extend([{'content':[{'type':kind}]},{'content':[{'type':kind,'unknown':'ignored','annotations':{'audience':[None],'priority':.5}}]}])
+    sdk.extend([{'content':[None]},{'content':[{'type':'unknown'}]},{'content':[{'type':'text','data':'%%%'}]},{'content':[{'type':'text','text':42}]},{'content':[{'type':'resource_link','size':9223372036854775807}]},{'content':[{'type':'image','data':[0,255]}]},{'content':[{'type':'tool_result','content':[{'type':'tool_use'}]}]},{'inputRequests':False},{'inputRequests':{'request-id':{'method':'unsupported','params':{}}}},{'inputRequests':{'request-id':{'method':'sampling/createMessage','params':{'messages':[{'role':False,'content':{'type':'text'}}]}}}}])
+    for i,value in enumerate(sdk):
+        rows[f'sdk-call-{i}']={**valid,'action':'call','callResult':value,'delegation':' signed-fixture '}
+        if i in [0,1,2,19,20,21,22,27,28]:rows[f'sdk-task-{i}']={**valid,'action':'call','callResult':task,'taskStatuses':[{'status':'completed','result':value}],'delegation':' signed-fixture '}
     return rows
 
 class Fixture(http.server.ThreadingHTTPServer):
@@ -50,6 +57,7 @@ class Fixture(http.server.ThreadingHTTPServer):
         super().__init__(('127.0.0.1',0),Handler)
 class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
+    disable_nagle_algorithm=True  # Match Go net/http provider servers; no latency normalization.
     def log_message(self,*args):pass
     def do_POST(self):
         body=self.rfile.read(int(self.headers['Content-Length']))
@@ -81,7 +89,7 @@ def freeze_binary(binary,kind):
 def run(go,rust,out):
     out.mkdir(parents=True,exist_ok=True);rows=[]
     go=freeze_binary(go,"go");rust=freeze_binary(rust,"rust")
-    provenance_paths=[Path(__file__),ROOT/"crates/host-agent/src/provider/adapter.rs",ROOT/"Cargo.lock",ROOT/"tools/parity/provider-core-oracle/main.go",ROOT/"tools/parity/provider-core-oracle/go.mod",ROOT/"tools/parity/provider-core-oracle/go.sum"]
+    provenance_paths=[Path(__file__),ROOT/"crates/host-agent/src/provider/adapter.rs",ROOT/"Cargo.lock",ROOT/"tools/parity/provider-core-oracle/main.go",ROOT/"tools/parity/provider-core-oracle/go.mod",ROOT/"tools/parity/provider-core-oracle/go.sum",ROOT/"crates/host-agent/src/provider/result.rs",ROOT/"crates/host-agent/src/provider/result/requests.rs",ROOT/"crates/host-agent/src/mcpsdk.rs",ROOT/"crates/host-agent/src/gojson.rs"]
     provenance_before={str(p.relative_to(ROOT)):sha(p) for p in provenance_paths}
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
@@ -107,7 +115,7 @@ def run(go,rust,out):
             finally:server.shutdown();server.server_close();thread.join()
     assert provenance_before=={str(p.relative_to(ROOT)):sha(p) for p in provenance_paths}, 'source changed during oracle run'
     assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree'] and not git('status','--porcelain')
-    report={'scope':'T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; SDK content union/input-request projection, TLS, proxy, malformed envelopes, transport failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open','provenance':provenance_before,'binarySnapshots':{'go':str(go.relative_to(ROOT)),'rust':str(rust.relative_to(ROOT))},'rows':rows,'total':len(rows),'passed':sum(r['pass'] for r in rows),'normalization':'HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.','sourceLock':lock,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'driverSha256':sha(Path(__file__)),'rustSourceSha256':sha(ROOT/'crates/host-agent/src/provider/adapter.rs'),'cargoLockSha256':sha(ROOT/'Cargo.lock'),'goOracleSourceSha256':sha(ROOT/'tools/parity/provider-core-oracle/main.go'),'goOracleModSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.mod'),'goOracleSumSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.sum')}
+    report={'scope':'T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; null input-request refusal (proposed divergence), TLS, proxy, malformed envelopes, transport failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open','provenance':provenance_before,'binarySnapshots':{'go':str(go.relative_to(ROOT)),'rust':str(rust.relative_to(ROOT))},'rows':rows,'total':len(rows),'passed':sum(r['pass'] for r in rows),'normalization':'HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.','sourceLock':lock,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'driverSha256':sha(Path(__file__)),'rustSourceSha256':sha(ROOT/'crates/host-agent/src/provider/adapter.rs'),'cargoLockSha256':sha(ROOT/'Cargo.lock'),'goOracleSourceSha256':sha(ROOT/'tools/parity/provider-core-oracle/main.go'),'goOracleModSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.mod'),'goOracleSumSha256':sha(ROOT/'tools/parity/provider-core-oracle/go.sum')}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
     index={str(p.relative_to(out)):sha(p) for p in out.rglob('*.json') if p.name!='index.json'};(out/'index.json').write_text(json.dumps(index,indent=2)+'\n')
     print('Provider adapter core flows:',report['passed'],'/',report['total']);return all(r['pass'] for r in rows)

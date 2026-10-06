@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pinned Go SDK content projection comparison; typed malformed fields and canonical client-map decoding; input-request variants remain open."""
+"""Pinned Go SDK content projection comparison; typed malformed fields and canonical client-map decoding; input requests and pointer-marshaler canary."""
 import argparse
 import copy
 import json
@@ -42,6 +42,51 @@ def cases():
     for data in ['AA\r\n==!','AA==','AA=\nA','%%%']:
         rows.append({'content':[{'type':'text','data':data,'text':False}]})
         rows.append({'content':[{'type':'resource','resource':{'blob':data,'uri':False}}]})
+    def request(method,params):return {'inputRequests':{'request-id':{'method':method,'params':params}}}
+    for value in [None,{},False,42,'bad',[],[{}]]:rows.append({'inputRequests':value})
+    for entry in [{},False,42,'bad',[],{'method':False,'params':{}},{'method':'unsupported','params':{}},{'method':'roots/list'},{'method':'ROOTS/LIST','params':{}}]:rows.append({'inputRequests':{'request-id':entry}})
+    for method in ['elicitation/create','roots/list','sampling/createMessage']:
+        for params in [None,{},False,42,'bad',[],{'unknown':'ignored'},{'_meta':{}},{'_meta':{'opaque':9007199254740993}}]:rows.append(request(method,params))
+    for params in [{'message':'confirm'},{'mode':'custom','message':'confirm'},{'url':'https://fixture.invalid'},{'elicitationId':'opaque-id'},{'requestedSchema':{'type':'object'}},{'MODE':'url','MESSAGE':'confirm','URL':'opaque'},{'message':None},{'requestedSchema':False}]:rows.append(request('elicitation/create',params))
+    for field in ['_meta','mode','message','requestedSchema','url','elicitationId']:
+        for value in bad_values:rows.append(request('elicitation/create',{field:value}))
+    for field in ['_meta','includeContext','maxTokens','messages','metadata','modelPreferences','stopSequences','systemPrompt','temperature','tools','toolChoice']:
+        for value in bad_values:rows.append(request('sampling/createMessage',{field:value}))
+    for msg in [{},None,False,42,[],{'role':'user','content':None},{'role':'user','content':[]},{'ROLE':'user','content':{'type':'text'}},{'role':False,'content':{'type':'text'}},{'role':'user','CONTENT':{'type':'text'}}]:rows.append(request('sampling/createMessage',{'messages':[msg]}))
+    for kind in ['text','image','audio','tool_use','tool_result','resource','resource_link','unknown']:
+        for content in [{'type':kind},[{'type':kind}],[{'type':kind},{'type':'text'}]]:rows.append(request('sampling/createMessage',{'messages':[{'role':'user','content':content}]}))
+    for content in [False,42,'bad',{},[None],[{'type':'text','text':42}],[{'type':'image','data':'%%%'}],[{'type':'text','TEXT':'ignored'}]]:rows.append(request('sampling/createMessage',{'messages':[{'role':'user','content':content}]}))
+    for prefs in [{},{'hints':[None,{}]},{'hints':[{'NAME':'opaque','unknown':True}]},{'costPriority':.5,'intelligencePriority':.3,'speedPriority':.2}]:rows.append(request('sampling/createMessage',{'modelPreferences':prefs}))
+    for field in ['costPriority','intelligencePriority','speedPriority','hints']:
+        for value in bad_values:rows.append(request('sampling/createMessage',{'modelPreferences':{field:value}}))
+    for hint in [False,42,[],{'name':False},{'name':None}]:rows.append(request('sampling/createMessage',{'modelPreferences':{'hints':[hint]}}))
+    for tools in [[],[None],[{}],[{'name':'fixture','inputSchema':{'type':'object'},'annotations':{},'icons':[None,{'src':'icon','sizes':[None]}]}],[{'annotations':{'destructiveHint':False,'openWorldHint':False}}]]:rows.append(request('sampling/createMessage',{'tools':tools}))
+    for field in ['name','description','title','inputSchema','outputSchema','annotations','icons','_meta']:
+        for value in bad_values:rows.append(request('sampling/createMessage',{'tools':[{field:value}]}))
+    for field in ['destructiveHint','openWorldHint','idempotentHint','readOnlyHint','title']:
+        for value in bad_values:rows.append(request('sampling/createMessage',{'tools':[{'annotations':{field:value}}]}))
+    for value in bad_values:rows.append(request('sampling/createMessage',{'toolChoice':{'mode':value}}))
+    rows.append({'inputRequests':{'a':{'method':'roots/list','params':{}},'b':{'method':'elicitation/create','params':{'message':'confirm'}}}})
+    for params in [
+        {'MESSAGE':'keep','message':None}, {'MODE':'url','mode':None},
+        {'MODELPreferences':{'costPriority':.5},'modelPreferences':{'speedPriority':.2}},
+        {'modelPreferences':{'HINTS':[{'name':'keep'}],'hints':[{'name':None}]}},
+        {'STOPSequences':['keep'],'stopSequences':[None]},
+        {'TOOLS':[{'name':'keep','annotations':{'title':'keep'}}],'tools':[{'name':None,'annotations':{}}]},
+        {'METADATA':{'keep':True},'metadata':None},
+        {'_META':{'keep':True},'_meta':{'other':False}},
+    ]:
+        method='elicitation/create' if 'message' in params or 'mode' in params else 'sampling/createMessage'
+        rows.append(request(method,params))
+    for params in [{'maxTokens':False,'messages':[{'content':None}]},{'maxTokens':False,'messages':[{'role':False,'content':{'type':'text'}}]},{'messages':[{'content':{'type':'image','data':'%%%'}}],'systemPrompt':False}]:rows.append(request('sampling/createMessage',params))
+    for params in [
+        {'STOPSEQUENCES':['first','second'],'StopSequences':['changed'],'stopSequences':[None,None]},
+        {'STOPSEQUENCES':['first','second'],'StopSequences':None,'stopSequences':[None]},
+        {'MODELPreferences':{'hints':[{'name':'old'}]},'ModelPreferences':None,'modelPreferences':{'hints':[{'name':None}]}},
+        {'modelPreferences':{'HINTS':[{'name':'first'},{'name':'second'}],'Hints':[{'name':'changed'}],'hints':[{'name':None},{'name':None}]}},
+        {'TOOLS':[{'name':'first'},{'name':'second'}],'Tools':[{'name':'changed'}],'tools':[{'name':None},{'name':None}]},
+        {'TOOLS':[{'name':'first','icons':[{'src':'icon'}]}],'Tools':[None],'tools':[{'name':None,'icons':[None]}]},
+    ]:rows.append(request('sampling/createMessage',params))
     return rows
 
 def run(go,rust,out):
@@ -49,8 +94,12 @@ def run(go,rust,out):
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
     assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree'] and not git('status','--porcelain')
-    sources=[Path(__file__),ROOT/'crates/host-agent/src/provider/result.rs',ROOT/'tools/parity/provider-core-oracle/main.go',ROOT/'tools/parity/provider-core-oracle/go.mod',ROOT/'tools/parity/provider-core-oracle/go.sum',ROOT/'tools/parity/provider_adapter.py',ROOT/'Cargo.lock',ROOT/'crates/host-agent/src/mcpsdk.rs',ROOT/'crates/host-agent/src/gojson.rs']
+    sources=[Path(__file__),ROOT/'crates/host-agent/src/provider/result.rs',ROOT/'tools/parity/provider-core-oracle/main.go',ROOT/'tools/parity/provider-core-oracle/go.mod',ROOT/'tools/parity/provider-core-oracle/go.sum',ROOT/'tools/parity/provider_adapter.py',ROOT/'Cargo.lock',ROOT/'crates/host-agent/src/mcpsdk.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/provider/result/requests.rs']
     before={str(p.relative_to(ROOT)):sha(p) for p in sources};rows=[];payload=cases()
+    canary_input={'content':[],'inputRequests':{},'resultType':'complete'}
+    canary=json.loads(subprocess.check_output([str(go)],input=json.dumps([{'kind':'result','value':canary_input},{'kind':'result-value-canary','value':canary_input}]),text=True))
+    assert canary[0]=={'result':canary_input} and canary[1]!=canary[0], 'oracle does not exercise SDK pointer JSON marshaler'
+    (out/'serializer-canary.json').write_text(json.dumps({'input':canary_input,'pointer':canary[0],'byValue':canary[1],'brokenByValueDetected':True},indent=2)+'\n')
     for iteration in range(5):
         folder=out/str(iteration);folder.mkdir(parents=True,exist_ok=True)
         input_path=folder/'input.json';input_path.write_text(json.dumps(payload,indent=2)+'\n')
@@ -63,7 +112,7 @@ def run(go,rust,out):
             passed=a==b;rows.append({'case':i,'iteration':iteration,'pass':passed})
             if not passed:print('FAIL',i,a,b)
     assert before=={str(p.relative_to(ROOT)):sha(p) for p in sources}
-    report={'scope':'T0 SDK content/default/omission projection, typed malformed fields, exact case-sensitive decoding, integer/base64 errors and client-map float64 conversion; input requests and adapter promotion remain open','sourceLock':lock,'provenance':before,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'rows':rows,'total':len(rows),'passed':sum(r['pass'] for r in rows),'normalization':'none; structured projections compared exactly'}
+    report={'scope':'T0 SDK content/default/omission projection, typed malformed fields, exact case-sensitive decoding, integer/base64 errors and client-map float64 conversion; elicitation/roots/sampling input requests; null-entry Go panic is excluded pending a separately reviewed refusal contract; public activation, broader HTTP failures and complete M7 E2E remain open','sourceLock':lock,'provenance':before,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'rows':rows,'total':len(rows),'passed':sum(r['pass'] for r in rows),'normalization':'none; structured projections compared exactly'}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n');(out/'index.json').write_text(json.dumps({str(p.relative_to(out)):sha(p) for p in out.rglob('*.json') if p.name!='index.json'},indent=2)+'\n')
     print('Provider SDK projection:',report['passed'],'/',report['total']);return all(r['pass'] for r in rows)
 if __name__=='__main__':

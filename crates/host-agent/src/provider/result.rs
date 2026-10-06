@@ -1,11 +1,12 @@
 //! Go SDK CallToolResult projection. Unknown wire fields are not promoted into
-//! observations. Typed malformed-field errors and input-request variants remain
-//! separate parity cases before public adapter dispatch can be promoted.
+//! observations. Content and SEP-2322 input requests retain their distinct Go
+//! codecs. Public activation and complete transport parity remain separate gates.
 use crate::goerr::quote;
 use base64::Engine;
 use serde_json::{Map, Value};
 
 use crate::mcpsdk::{StructDef, Ty};
+mod requests;
 static ANNOTATIONS: StructDef = StructDef {
     name: "mcp.Annotations",
     fields: &[
@@ -66,7 +67,7 @@ static RESULT: StructDef = StructDef {
         ("isError", Ty::Bool),
         ("requestState", Ty::Str("string")),
         ("resultType", Ty::Str("string")),
-        ("inputRequests", Ty::Raw),
+        ("inputRequests", Ty::Custom(requests::validate)),
     ],
 };
 
@@ -322,18 +323,31 @@ pub fn project(source: &Map<String, Value>) -> Result<Map<String, Value>, String
         ),
     );
     put(&mut out, source, "structuredContent");
-    for key in ["isError", "requestState"] {
+    for key in ["isError", "requestState", "resultType"] {
         put_nonempty(&mut out, source, key);
     }
-    // Typed elicitation/sampling requests are handled in a following boundary
-    // slice; retain the field until their full decoder is differential-tested.
-    put_nonempty(&mut out, source, "inputRequests");
+    if let Some(input) = node.key("inputRequests").filter(|n| !n.is_null()) {
+        out.insert("inputRequests".into(), requests::project(input)?);
+    }
     Ok(out)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn proposed_null_input_request_refusal_preserves_decoder() {
+        let input = serde_json::json!({"inputRequests":{"fixture":null}});
+        assert_eq!(
+            project(input.as_object().unwrap()).unwrap_err(),
+            "nil InputRequest entry"
+        );
+        let valid =
+            serde_json::json!({"inputRequests":{"fixture":{"method":"roots/list","params":{}}}});
+        let result = project(valid.as_object().unwrap()).unwrap();
+        assert_eq!(result.get("inputRequests"), valid.get("inputRequests"));
+    }
+
     #[test]
     #[ignore = "requires the pinned Go SDK result differential driver"]
     fn result_fixture() {

@@ -1,0 +1,2246 @@
+{
+  "scope": "T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; null input-request refusal (proposed divergence), TLS, proxy, malformed envelopes, transport failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open",
+  "provenance": {
+    "tools/parity/provider_adapter.py": "76e126f5b2df884ac83737500b5dc30e97e7d60669aea2d5b9eb268acc1d78f6",
+    "crates/host-agent/src/provider/adapter.rs": "0aadbbfa954bdbb942e7ca6fdcc202081e9aca18d3de18cf8cddafe678bf835a",
+    "Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "tools/parity/provider-core-oracle/main.go": "8940758beb2b878948ce9c4e2e6ee65f752207eb3101af15e1f24658d5d066fd",
+    "tools/parity/provider-core-oracle/go.mod": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+    "tools/parity/provider-core-oracle/go.sum": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+    "crates/host-agent/src/provider/result.rs": "c2b21635e6de4322fcba317cb524b36f30d089ac891a8cfc88067fd72046e10e",
+    "crates/host-agent/src/provider/result/requests.rs": "c456e984e253f9bfaad627cb20c52123b26459ca31743f55568ff4d6ea3b3156",
+    "crates/host-agent/src/mcpsdk.rs": "4061af6704363107dc9ec0f22ae362673c6fc716a06c192c01b9ca3d2746d98b",
+    "crates/host-agent/src/gojson.rs": "14cbe141b45650bfc3c975a4296b59c3be03b448b27597275226f0bcd96447ba"
+  },
+  "binarySnapshots": {
+    "go": ".parity/bin/provider-adapter-go-dfc61f219df9f61dfe02f2f05491590747b24135059fd5a4982efc1ea5556549",
+    "rust": ".parity/bin/provider-adapter-rust-68e7a077d956824442605c0031c939178e9ab5db737c4476a8bc049c37bd5b57"
+  },
+  "rows": [
+    {
+      "case": "valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-26",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-27",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-27",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-call-28",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sdk-task-28",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "total": 440,
+  "passed": 440,
+  "normalization": "HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "goBinarySha256": "dfc61f219df9f61dfe02f2f05491590747b24135059fd5a4982efc1ea5556549",
+  "rustTestBinarySha256": "68e7a077d956824442605c0031c939178e9ab5db737c4476a8bc049c37bd5b57",
+  "driverSha256": "76e126f5b2df884ac83737500b5dc30e97e7d60669aea2d5b9eb268acc1d78f6",
+  "rustSourceSha256": "0aadbbfa954bdbb942e7ca6fdcc202081e9aca18d3de18cf8cddafe678bf835a",
+  "cargoLockSha256": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+  "goOracleSourceSha256": "8940758beb2b878948ce9c4e2e6ee65f752207eb3101af15e1f24658d5d066fd",
+  "goOracleModSha256": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+  "goOracleSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc"
+}

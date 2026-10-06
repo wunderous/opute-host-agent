@@ -46,7 +46,7 @@ func main() {
 		}
 		results := make([]map[string]any, 0, len(rows))
 		for _, row := range rows {
-			if row.Kind == "result" {
+			if row.Kind == "result" || row.Kind == "result-value-canary" {
 				var result sdkmcp.CallToolResult
 				var dynamic any
 				err := json.Unmarshal(row.Value, &dynamic)
@@ -57,7 +57,10 @@ func main() {
 				if err == nil {
 					err = json.Unmarshal(canonical, &result)
 				}
-				value := map[string]any{"result": result}
+				value := map[string]any{"result": &result}
+				if row.Kind == "result-value-canary" {
+					value["result"] = result
+				}
 				if err != nil {
 					value = map[string]any{"error": err.Error()}
 				}

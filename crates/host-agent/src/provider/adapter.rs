@@ -120,8 +120,8 @@ impl Client {
             .cloned()
             .unwrap_or_default())
     }
-    // Raw MCP tool-result projection. The SDK content union decoder remains a
-    // required adapter gate before public provider dispatch is promoted.
+    // The accepted result crosses the same generic-map and SDK typed boundary
+    // as the pinned Go client, after child-task polling.
     pub async fn call_tool(
         &self,
         ctx: &RunCtx,
@@ -141,16 +141,20 @@ impl Client {
             .and_then(Value::as_str)
             .unwrap_or_default()
             .trim();
-        if result.get("resultType") == Some(&Value::String("task".into())) && !task.is_empty() {
+        let result = if result.get("resultType") == Some(&Value::String("task".into()))
+            && !task.is_empty()
+        {
             let interval = result
                 .get("pollIntervalMs")
                 .and_then(Value::as_f64)
                 .filter(|v| *v >= 1.0 && *v <= 60_000.0)
                 .map(|v| Duration::from_millis(v as u64))
                 .unwrap_or(Duration::from_millis(500));
-            return self.wait_task(ctx, task, interval, delegation).await;
-        }
-        Ok(result)
+            self.wait_task(ctx, task, interval, delegation).await?
+        } else {
+            result
+        };
+        super::result::project(&result)
     }
     async fn wait_task(
         &self,

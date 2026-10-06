@@ -65,6 +65,7 @@ pub enum ToolCallOutcome {
 // --- segmentio typed decoding ------------------------------------------------
 
 pub enum Ty {
+    Custom(fn(&Node, &[u8]) -> Result<(), TypeError>),
     Float,
     Int64,
     Bytes,
@@ -73,6 +74,7 @@ pub enum Ty {
     /// A string-kinded type, by its Go name ("string", "mcp.LoggingLevel").
     Str(&'static str),
     Bool,
+    PointerBool,
     Raw,
     /// A map[string]any-kinded type ("mcp.Meta", "map[string]interface {}").
     MapAny(&'static str),
@@ -91,16 +93,16 @@ pub struct StructDef {
     pub fields: &'static [(&'static str, Ty)],
 }
 
-struct TypeError {
-    raw: Option<String>,
-    value: String,
-    ty: String,
-    strukt: String,
-    field: String,
+pub(crate) struct TypeError {
+    pub(crate) raw: Option<String>,
+    pub(crate) value: String,
+    pub(crate) ty: String,
+    pub(crate) strukt: String,
+    pub(crate) field: String,
 }
 
 impl TypeError {
-    fn message(&self) -> String {
+    pub(crate) fn message(&self) -> String {
         if let Some(raw) = &self.raw {
             return raw.clone();
         }
@@ -115,6 +117,23 @@ impl TypeError {
                 self.value, self.ty
             )
         }
+    }
+}
+
+impl From<String> for TypeError {
+    fn from(raw: String) -> Self {
+        Self {
+            raw: Some(raw),
+            value: String::new(),
+            ty: String::new(),
+            strukt: String::new(),
+            field: String::new(),
+        }
+    }
+}
+impl From<&str> for TypeError {
+    fn from(raw: &str) -> Self {
+        raw.to_string().into()
     }
 }
 
@@ -176,7 +195,15 @@ pub(crate) fn validate_exact(
     definition: &'static StructDef,
     doc: &[u8],
 ) -> Result<(), String> {
-    decode_mode(node, &Ty::Struct(definition), doc, true).map_err(|e| e.message())
+    validate_type_exact(node, &Ty::Struct(definition), doc)
+}
+
+pub(crate) fn validate_type_exact_error(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), TypeError> {
+    decode_mode(node, ty, doc, true)
+}
+
+pub(crate) fn validate_type_exact(node: &Node, ty: &Ty, doc: &[u8]) -> Result<(), String> {
+    decode_mode(node, ty, doc, true).map_err(|e| e.message())
 }
 
 fn decode_mode(node: &Node, ty: &Ty, doc: &[u8], exact: bool) -> Result<(), TypeError> {
@@ -184,6 +211,7 @@ fn decode_mode(node: &Node, ty: &Ty, doc: &[u8], exact: bool) -> Result<(), Type
         return Ok(());
     }
     match ty {
+        Ty::Custom(validate) => validate(node, doc),
         Ty::Float => match &node.value {
             Value::Number(n) if n.parse::<f64>().is_ok_and(|f| f.is_finite()) => Ok(()),
             _ => Err(leaf(node, doc, "float64")),
@@ -247,7 +275,7 @@ fn decode_mode(node: &Node, ty: &Ty, doc: &[u8], exact: bool) -> Result<(), Type
             Value::String(_) => Ok(()),
             _ => Err(leaf(node, doc, name)),
         },
-        Ty::Bool => match node.value {
+        Ty::Bool | Ty::PointerBool => match node.value {
             Value::Bool(_) => Ok(()),
             _ => Err(leaf(node, doc, "bool")),
         },
