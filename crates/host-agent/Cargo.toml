@@ -23,6 +23,7 @@ getrandom = "0.2"
 hex = "0.4"
 nix = { version = "0.29", features = ["net", "signal", "process", "sched", "fs", "user", "hostname"] }
 regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots", "gzip", "system-proxy", "http2"] }
 ureq = { version = "2", default-features = false, features = ["tls"] }
 url = "2"
 tokio = { version = "1", features = ["rt", "net", "signal", "macros", "io-util", "time"] }

@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	provider "github.com/wunderous/host-agents/contracts/provider"
 	"github.com/wunderous/host-agents/internal/cordis"
+	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
 	"io"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -42,6 +44,29 @@ func main() {
 		}
 		results := make([]map[string]any, 0, len(rows))
 		for _, row := range rows {
+			if row.Kind == "adapter" {
+				var input struct {
+					Descriptor provider.PluginDescriptor `json:"descriptor"`
+					Token      string                    `json:"token"`
+					Name       string                    `json:"name"`
+					Version    string                    `json:"version"`
+				}
+				if err := json.Unmarshal(row.Value, &input); err != nil {
+					panic(err)
+				}
+				adapter, err := provideradapter.Connect(context.Background(), input.Descriptor, provideradapter.Options{BearerToken: input.Token, ClientName: input.Name, ClientVersion: input.Version})
+				result := map[string]any{}
+				if err != nil {
+					result["error"] = err.Error()
+				} else {
+					names := adapter.ToolNames()
+					sort.Strings(names)
+					result["tools"] = names
+					adapter.Close()
+				}
+				results = append(results, result)
+				continue
+			}
 			if row.Kind == "wire-descriptor" || row.Kind == "wire-manifest" {
 				var raw string
 				if err := json.Unmarshal(row.Value, &raw); err != nil {

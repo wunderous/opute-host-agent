@@ -2,6 +2,7 @@
 //! Runtime connections belong to provider mounts, not these durable projections.
 //! A session owns the generation it accepted; replacement never redirects it.
 
+pub mod adapter;
 pub mod definition;
 
 use crate::{goerr::quote, hostobs::rfc3339_nano_now, plan::runner::RunCtx};
