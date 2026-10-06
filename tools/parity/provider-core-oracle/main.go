@@ -42,6 +42,33 @@ func main() {
 		}
 		results := make([]map[string]any, 0, len(rows))
 		for _, row := range rows {
+			if row.Kind == "wire-descriptor" || row.Kind == "wire-manifest" {
+				var raw string
+				if err := json.Unmarshal(row.Value, &raw); err != nil {
+					panic(err)
+				}
+				var value any
+				var err error
+				if row.Kind == "wire-descriptor" {
+					var d provider.PluginDescriptor
+					err = json.Unmarshal([]byte(raw), &d)
+					value = d
+				} else {
+					var m provider.InstallManifest
+					err = json.Unmarshal([]byte(raw), &m)
+					value = m
+				}
+				encoded, marshalErr := json.Marshal(value)
+				if marshalErr != nil && err == nil {
+					err = marshalErr
+				}
+				result := map[string]any{"decoded": value, "encoded": string(encoded)}
+				if err != nil {
+					result = map[string]any{"error": err.Error()}
+				}
+				results = append(results, result)
+				continue
+			}
 			var err error
 			if row.Kind == "descriptor" {
 				var value provider.PluginDescriptor

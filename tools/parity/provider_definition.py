@@ -77,8 +77,38 @@ def cases():
         t=copy.deepcopy(teardown);t[key]=value;mutate('teardown-'+key,['teardown'],t)
     return rows
 
+def wire_cases():
+    rows=[]
+    originals=cases()
+    for row in originals:
+        rows.append({**row,'kind':'wire-'+row['kind'],'value':json.dumps(row['value'])})
+    descriptor=originals[1]['value'];manifest=originals[0]['value']
+    def add(name,kind,value):rows.append({'name':name,'kind':'wire-'+kind,'value':value,'expected':manifest['provider']})
+    for kind,base in [('descriptor',descriptor),('manifest',manifest)]:
+        for name,value in [('null','null'),('empty','{}'),('array','[]'),('string','"text"'),('number','123'),('boolean','true')]:add(kind+'-root-'+name,kind,value)
+        def paths(value,path=()):
+            if isinstance(value,dict):
+                for key,child in value.items():
+                    yield path+(key,)
+                    if key not in ['inputSchema','outputSchema','inputs']:yield from paths(child,path+(key,))
+            elif isinstance(value,list):
+                for i,child in enumerate(value):yield from paths(child,path+(i,))
+        for path in paths(base):
+            for label,value in [('null',None),('string','text'),('bool',True),('integer',42),('float',1.5),('array',[]),('object',{})]:
+                obj=copy.deepcopy(base);node=obj
+                for key in path[:-1]:node=node[key]
+                node[path[-1]]=value;add(kind+'-'+'.'.join(map(str,path))+'-'+label,kind,json.dumps(obj))
+        def upper(value,in_map=False):
+            if isinstance(value,dict):return {(k if in_map else k.upper()):upper(v,in_map or k in ['inputSchema','outputSchema','inputs']) for k,v in value.items()}
+            if isinstance(value,list):return [upper(v,in_map) for v in value]
+            return value
+        add(kind+'-uppercase',kind,json.dumps(upper(base)))
+    for name,raw in [('scalar-null-keeps','{"schema":"first","SCHEMA":null}'),('scalar-last-wins','{"schema":"first","SCHEMA":"second"}'),('server-merge','{"server":{"endpoint":"http://first"},"SERVER":{"transport":"streamable_http"}}'),('server-null-keeps','{"server":{"endpoint":"http://first"},"server":null}'),('slice-replaced-null','{"capabilities":[{"id":"valid","version":1}],"capabilities":null}'),('slice-null-elements','{"capabilities":[null],"server":{"args":[null]}}'),('slice-slot-reuse','{"capabilities":[{"id":"retained","version":1}],"capabilities":[{"version":2}]}'),('slice-string-reuse','{"server":{"args":["retained"]},"server":{"args":[null]}}'),('slice-hidden-capacity','{"capabilities":[{"id":"first"},{"id":"second"}],"capabilities":[{"version":2}],"capabilities":[null,null]}'),('slice-empty-clears-capacity','{"capabilities":[{"id":"first"}],"capabilities":[],"capabilities":[null]}'),('unknown-ignored','{"unknown":{"schema":4}}'),('invalid-first-not-overwritten','{"schema":42,"schema":"valid"}')]:add(name,'descriptor',raw)
+    for name,raw in [('recipe-empty-inputs','{"recipes":[{"id":"setup","inputs":{}}]}'),('recipe-null-inputs','{"recipes":[{"id":"setup","inputs":null}]}'),('recipe-number-inputs','{"recipes":[{"id":"setup","inputs":{"number":9007199254740993}}]}'),('html-unicode-encoding','{"recipes":[{"id":"<&>\\u2028\\u2029","inputs":{"html":"<&>"}}]}'),('pointer-null-clears','{"teardown":{"id":"first"},"teardown":null}'),('pointer-merge','{"teardown":{"id":"first"},"teardown":{"version":2}}'),('map-merges','{"teardown":{"inputSchema":{"one":1}},"teardown":{"inputSchema":{"two":2}}}'),('map-null-clears','{"teardown":{"inputSchema":{"one":1}},"teardown":{"inputSchema":null}}'),('large-generic-number','{"teardown":{"inputSchema":{"value":9007199254740993}}}'),('version-number-exponent','{"services":[{"version":1e0}]}'),('version-overflow','{"services":[{"version":9223372036854775808}]}'),('cost-overflow','{"teardown":{"resourceCost":{"cpuCores":1e400}}}'),('generic-number-overflow','{"teardown":{"inputSchema":{"value":1e400}}}'),('int64-overflow','{"teardown":{"resourceCost":{"tasks":9223372036854775808}}}'),('negative-zero','{"teardown":{"resourceCost":{"cpuCores":-0.0}}}'),('cardinality-type','{"teardown":{"resultTypes":[{"selectors":[{"cardinality":42}]}]}}')]:add(name,'manifest',raw)
+    return rows
+
 def sha(path):return hashlib.file_digest(path.open('rb'),'sha256').hexdigest()
-def run(go,rust,out):
+def run(go,rust,out,wire=False):
     out.mkdir(parents=True,exist_ok=True)
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     checkout=ROOT/'.parity/go-src'
@@ -86,7 +116,7 @@ def run(go,rust,out):
     assert git('rev-parse','HEAD')==lock['sourceCommit']
     assert git('rev-parse','HEAD^{tree}')==lock['sourceTree']
     assert not git('status','--porcelain')
-    payload=cases(); rows=[]
+    payload=wire_cases() if wire else cases(); rows=[]
     for iteration in range(5):
         folder=out/str(iteration);folder.mkdir(parents=True,exist_ok=True)
         input_path=folder/'input.json';input_path.write_text(json.dumps(payload,indent=2)+'\n')
@@ -99,12 +129,12 @@ def run(go,rust,out):
         for case,a,b in zip(payload,reference,actual,strict=True):
             passed=a==b;rows.append({'case':case['name'],'iteration':iteration,'pass':passed})
             if not passed:print('FAIL',case['name'],a,b)
-    report={'scope':'T0 typed descriptor/manifest validation only; wire decoding and M7 E2E remain open','total':len(rows),'passed':sum(r['pass'] for r in rows),'rows':rows,'sourceLock':lock,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'driverSha256':sha(Path(__file__)),'rustSourceSha256':sha(ROOT/'crates/host-agent/src/provider/definition.rs'),'goOracleSourceSha256':sha(ROOT/'tools/parity/provider-core-oracle/main.go'),'normalization':'none'}
+    report={'scope':('T0 typed decoding/re-encoding of syntactically valid provider JSON; syntax errors and M7 E2E remain open' if wire else 'T0 typed descriptor/manifest validation only; M7 E2E remains open'),'total':len(rows),'passed':sum(r['pass'] for r in rows),'rows':rows,'sourceLock':lock,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'driverSha256':sha(Path(__file__)),'rustSourceSha256':sha(ROOT/'crates/host-agent/src/provider/definition.rs'),'goOracleSourceSha256':sha(ROOT/'tools/parity/provider-core-oracle/main.go'),'normalization':'none'}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
     index={str(p.relative_to(out)):sha(p) for p in out.rglob('*.json') if p.name!='index.json'}
     (out/'index.json').write_text(json.dumps(index,indent=2)+'\n')
     print('Provider definition oracle:',report['passed'],'/',report['total'])
     return all(r['pass'] for r in rows)
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--go',type=Path,required=True);p.add_argument('--rust-tests',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
-    args=p.parse_args();raise SystemExit(0 if run(args.go.resolve(),args.rust_tests.resolve(),args.out.resolve()) else 1)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--wire',action='store_true');p.add_argument('--go',type=Path,required=True);p.add_argument('--rust-tests',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
+    args=p.parse_args();raise SystemExit(0 if run(args.go.resolve(),args.rust_tests.resolve(),args.out.resolve(),args.wire) else 1)
