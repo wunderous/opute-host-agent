@@ -8,6 +8,7 @@ import (
 	provider "github.com/wunderous/host-agents/contracts/provider"
 	"github.com/wunderous/host-agents/internal/cordis"
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
+	"github.com/wunderous/host-agents/internal/mcphttp"
 	"io"
 	"os"
 	"sort"
@@ -50,6 +51,10 @@ func main() {
 					Token      string                    `json:"token"`
 					Name       string                    `json:"name"`
 					Version    string                    `json:"version"`
+					Action     string                    `json:"action"`
+					Operation  string                    `json:"operation"`
+					Arguments  map[string]any            `json:"arguments"`
+					Delegation string                    `json:"delegation"`
 				}
 				if err := json.Unmarshal(row.Value, &input); err != nil {
 					panic(err)
@@ -59,6 +64,34 @@ func main() {
 				if err != nil {
 					result["error"] = err.Error()
 				} else {
+					if input.Action != "" {
+						ctx := mcphttp.WithResourceDelegation(context.Background(), input.Delegation)
+						if input.Action == "closed" {
+							adapter.Close()
+							adapter.Close()
+						}
+						if input.Operation == "" {
+							input.Operation = "test.operation"
+						}
+						var value any
+						key := "result"
+						if input.Action == "manifest" {
+							key = "manifest"
+							value, err = adapter.InstallManifest(ctx)
+						} else if input.Action == "sync" {
+							value, err = adapter.CallSynchronousOnly(ctx, input.Operation, input.Arguments)
+						} else {
+							value, err = adapter.Call(ctx, input.Operation, input.Arguments)
+						}
+						if err != nil {
+							result["error"] = err.Error()
+						} else {
+							result[key] = value
+						}
+						adapter.Close()
+						results = append(results, result)
+						continue
+					}
 					names := adapter.ToolNames()
 					sort.Strings(names)
 					result["tools"] = names

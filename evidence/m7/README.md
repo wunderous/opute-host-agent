@@ -38,6 +38,14 @@ The HTTP edge uses locked reqwest 0.12.28 with native certificate roots, HTTP/2 
 
 Still required at this edge: tool-result typed projection, manifest calls, synchronous/task bridging, signed callback delegation, cancellation/deadline differential traces, malformed JSON/response type errors, DNS/connection failures, redirects, proxy environment parity, TLS verification/handshake behavior, and all platform transport defaults. Passing discovery does not prove those cases or the M7 gate.
 
+## Provider calls and task polling — T1 core flows
+
+`provider-adapter-calls/summary.json` records **250/250 comparisons** (50 cases, five iterations) against actual Go adapter methods, covering the preceding discovery cases plus registered calls, unknown-operation refusal, idempotent close/refusal, synchronous-only guards, typed install manifest retrieval, invalid manifest identity/services, completed/failed/cancelled/input-required child tasks, polling failures, and cancellation RPC failures. Captures compare result/error projections, exact request bodies and header values. Task polls and cancellation RPCs carry the actual child task identifier in `Mcp-Name` and retain opaque delegation metadata; the fixture delegation is a synthetic string, not a verified host-issued lease or admission signature.
+
+The adapter holds its read guard for accepted work; closing waits for calls rather than redirecting them. The client polls flat task handles before returning and gives cancellation RPCs an independent two-second context after interrupted waits. Manifest retrieval uses the typed decoder and trusted descriptor identity validator. The current tool-result projection is raw JSON: SDK content union decoding, input-request/result-type projection, malformed response handling, cancellation/deadline differential traces, and real signed callback admission remain explicit gaps before this edge can serve public provider work. The successful cases here use valid SDK tool-result projections and do not prove those omitted cases.
+
+The workspace suite passed 178 tests with five dedicated fixtures ignored; the adapter fixture was invoked by the differential driver. A second real-connection test proves close waits for an accepted call, then refuses new work. Clippy with warnings denied and formatting checks passed. The driver uses immutable binary snapshots and refuses evidence if source provenance changes during a run. M7 remains open.
+
 ## Remaining M7 work
 
 Descriptor source/YAML loading and transport JSON error handling, outbound provider MCP adapters, candidate validation and atomic catalog promotion, typed callback/task bridging, durable restoration and reverse dependency cleanup, and all five real Go providers' installation/activation/call/teardown checks remain required. Live checks must use owning typed capabilities and independently leased disposable runtimes. No milestone completion or runtime seam promotion is claimed by this core evidence.

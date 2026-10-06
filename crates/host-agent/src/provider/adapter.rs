@@ -1,6 +1,9 @@
 //! Modern-only outbound MCP edge. Provider generation ownership stays in the
 //! parent module; this client never negotiates legacy sessions or executes plans.
-use super::definition::{validate_descriptor, PluginDescriptor};
+use super::definition::{
+    decode_manifest, validate_descriptor, validate_install_manifest, InstallManifest,
+    PluginDescriptor,
+};
 use crate::{goerr::quote, plan::runner::RunCtx};
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
@@ -117,6 +120,138 @@ impl Client {
             .cloned()
             .unwrap_or_default())
     }
+    // Raw MCP tool-result projection. The SDK content union decoder remains a
+    // required adapter gate before public provider dispatch is promoted.
+    pub async fn call_tool(
+        &self,
+        ctx: &RunCtx,
+        name: &str,
+        arguments: Option<Map<String, Value>>,
+        delegation: &str,
+    ) -> Result<Map<String, Value>, String> {
+        let params = json!({"name":name,"arguments":arguments})
+            .as_object()
+            .unwrap()
+            .clone();
+        let result = self
+            .call(ctx, "tools/call", name, params, delegation)
+            .await?;
+        let task = result
+            .get("taskId")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim();
+        if result.get("resultType") == Some(&Value::String("task".into())) && !task.is_empty() {
+            let interval = result
+                .get("pollIntervalMs")
+                .and_then(Value::as_f64)
+                .filter(|v| *v >= 1.0 && *v <= 60_000.0)
+                .map(|v| Duration::from_millis(v as u64))
+                .unwrap_or(Duration::from_millis(500));
+            return self.wait_task(ctx, task, interval, delegation).await;
+        }
+        Ok(result)
+    }
+    async fn wait_task(
+        &self,
+        ctx: &RunCtx,
+        task: &str,
+        interval: Duration,
+        delegation: &str,
+    ) -> Result<Map<String, Value>, String> {
+        loop {
+            let params = json!({"taskId":task}).as_object().unwrap().clone();
+            let status = match self.call(ctx, "tasks/get", task, params, delegation).await {
+                Ok(status) => status,
+                Err(error) => {
+                    return Err(self
+                        .cancel_after_wait_failure(
+                            task,
+                            format!("get host task {task}: {error}"),
+                            delegation,
+                        )
+                        .await)
+                }
+            };
+            let status_name = status
+                .get("status")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            match status_name.trim().to_ascii_lowercase().as_str() {
+                "completed" => {
+                    return status
+                        .get("result")
+                        .and_then(Value::as_object)
+                        .cloned()
+                        .ok_or_else(|| format!("host task {task} completed without a tool result"))
+                }
+                "input_required" => {
+                    return Err(self
+                        .cancel_after_wait_failure(
+                            task,
+                            format!("host task {task} {status_name}: {}", task_message(&status)),
+                            delegation,
+                        )
+                        .await)
+                }
+                "failed" | "cancelled" => {
+                    return Err(format!(
+                        "host task {task} {status_name}: {}",
+                        task_message(&status)
+                    ))
+                }
+                _ => {}
+            }
+            if let Err(error) = under_context(ctx, async {
+                tokio::time::sleep(interval).await;
+                Ok(())
+            })
+            .await
+            {
+                return Err(self
+                    .cancel_after_wait_failure(task, error, delegation)
+                    .await);
+            }
+        }
+    }
+    async fn cancel_after_wait_failure(
+        &self,
+        task: &str,
+        cause: String,
+        delegation: &str,
+    ) -> String {
+        let (ctx, _) = RunCtx::background().with_timeout(Duration::from_secs(2));
+        let params = json!({"taskId":task}).as_object().unwrap().clone();
+        let error = self
+            .call(&ctx, "tasks/cancel", task, params, delegation)
+            .await
+            .err();
+        match error {
+            Some(error) => {
+                format!("wait for host task {task}: {cause}; cancellation request failed: {error}")
+            }
+            None => format!("wait for host task {task}: {cause}"),
+        }
+    }
+}
+
+fn task_message(status: &Map<String, Value>) -> String {
+    if let Some(message) = status
+        .get("statusMessage")
+        .and_then(Value::as_str)
+        .filter(|s| !s.trim().is_empty())
+    {
+        return message.trim().into();
+    }
+    if let Some(message) = status
+        .get("error")
+        .and_then(|v| v.get("message"))
+        .and_then(Value::as_str)
+        .filter(|s| !s.trim().is_empty())
+    {
+        return message.trim().into();
+    }
+    "no diagnostic".into()
 }
 
 // Dropping the selected HTTP future cancels the request, rather than leaving
@@ -216,6 +351,67 @@ impl Adapter {
     pub fn tool_names(&self) -> Vec<String> {
         self.tools.iter().cloned().collect()
     }
+    pub async fn call(
+        &self,
+        ctx: &RunCtx,
+        operation: &str,
+        arguments: Option<Map<String, Value>>,
+        delegation: &str,
+    ) -> Result<Map<String, Value>, String> {
+        let closed = self.closed.read().await;
+        if *closed {
+            return Err("provider adapter is closed".into());
+        }
+        if !self.tools.contains(operation) {
+            return Err(format!(
+                "provider operation {} is not registered",
+                quote(operation)
+            ));
+        }
+        self.client
+            .call_tool(ctx, operation, arguments, delegation)
+            .await
+    }
+    pub async fn call_synchronous_only(
+        &self,
+        ctx: &RunCtx,
+        operation: &str,
+        arguments: Option<Map<String, Value>>,
+        delegation: &str,
+    ) -> Result<Map<String, Value>, String> {
+        let result = self.call(ctx, operation, arguments, delegation).await?;
+        if let Some(content) = result.get("structuredContent").and_then(Value::as_object) {
+            if content.get("resultType") == Some(&Value::String("task".into()))
+                || content.get("taskId").is_some_and(|v| !v.is_null())
+            {
+                return Err(format!(
+                    "provider operation {} returned a task, but this adapter is synchronous-only",
+                    quote(operation)
+                ));
+            }
+        }
+        Ok(result)
+    }
+    pub async fn install_manifest(&self, ctx: &RunCtx) -> Result<InstallManifest, String> {
+        let result = self
+            .call(ctx, "opute.provider.get_install_manifest", None, "")
+            .await?;
+        let content = result.get("structuredContent");
+        if result.get("isError") == Some(&Value::Bool(true)) || content.is_none_or(Value::is_null) {
+            return Err("provider install manifest call failed".into());
+        }
+        let mut bytes = String::new();
+        crate::gojson::encode(content.unwrap(), &mut bytes);
+        let node = crate::gojson::parse(bytes.as_bytes()).expect("encoded JSON");
+        let manifest =
+            decode_manifest(&node).map_err(|e| format!("decode provider install manifest: {e}"))?;
+        let expected = super::ProviderRef {
+            id: self.descriptor.plugin_id.clone(),
+            version: self.descriptor.version.clone(),
+        };
+        validate_install_manifest(&manifest, &expected)?;
+        Ok(manifest)
+    }
     pub async fn close(&self) {
         *self.closed.write().await = true;
     }
@@ -283,6 +479,73 @@ mod tests {
         provider.join().unwrap();
     }
 
+    #[tokio::test(flavor = "current_thread")]
+    async fn close_waits_for_an_accepted_call_then_refuses_new_work() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (release_tx, release_rx) = std::sync::mpsc::channel();
+        let provider = std::thread::spawn(move || {
+            let (mut socket, _) = listener.accept().unwrap();
+            socket
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let mut buffer = [0; 4096];
+            assert!(socket.read(&mut buffer).unwrap() > 0);
+            started_tx.send(()).unwrap();
+            release_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            let body = r#"{"jsonrpc":"2.0","id":1,"result":{"content":[]}}"#;
+            write!(
+                socket,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .unwrap();
+        });
+        let adapter = std::sync::Arc::new(Adapter {
+            descriptor: PluginDescriptor::default(),
+            client: Client::new(
+                format!("http://{address}/mcp"),
+                String::new(),
+                String::new(),
+                String::new(),
+            )
+            .unwrap(),
+            tools: BTreeSet::from(["test.operation".into()]),
+            closed: RwLock::new(false),
+        });
+        let calling = adapter.clone();
+        let call = tokio::spawn(async move {
+            calling
+                .call(&RunCtx::background(), "test.operation", None, "")
+                .await
+        });
+        tokio::time::timeout(Duration::from_secs(2), started_rx)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), adapter.close())
+                .await
+                .is_err()
+        );
+        release_tx.send(()).unwrap();
+        assert_eq!(
+            call.await.unwrap().unwrap(),
+            json!({"content":[]}).as_object().unwrap().clone()
+        );
+        adapter.close().await;
+        assert_eq!(
+            adapter
+                .call(&RunCtx::background(), "test.operation", None, "")
+                .await
+                .unwrap_err(),
+            "provider adapter is closed"
+        );
+        provider.join().unwrap();
+    }
+
     #[test]
     #[ignore = "requires the isolated provider adapter differential driver"]
     fn adapter_fixture() {
@@ -306,7 +569,36 @@ mod tests {
             )
             .await
             {
-                Ok(adapter) => json!({"tools":adapter.tool_names()}),
+                Ok(adapter) => {
+                    let action = input["action"].as_str().unwrap_or_default();
+                    if action.is_empty() {
+                        return json!({"tools":adapter.tool_names()});
+                    }
+                    if action == "closed" {
+                        adapter.close().await;
+                        adapter.close().await;
+                    }
+                    let op = input["operation"].as_str().unwrap_or("test.operation");
+                    let args = input.get("arguments").and_then(Value::as_object).cloned();
+                    let delegation = input["delegation"].as_str().unwrap_or_default();
+                    if action == "manifest" {
+                        return match adapter.install_manifest(&ctx).await {
+                            Ok(m) => json!({"manifest":serde_json::to_value(m).unwrap()}),
+                            Err(e) => json!({"error":e}),
+                        };
+                    }
+                    let result = if action == "sync" {
+                        adapter
+                            .call_synchronous_only(&ctx, op, args, delegation)
+                            .await
+                    } else {
+                        adapter.call(&ctx, op, args, delegation).await
+                    };
+                    match result {
+                        Ok(result) => json!({"result":result}),
+                        Err(e) => json!({"error":e}),
+                    }
+                }
                 Err(e) => json!({"error":e}),
             }
         });
