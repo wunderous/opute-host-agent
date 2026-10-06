@@ -24,6 +24,9 @@ mod oauth;
 mod plan;
 mod plan_evidence;
 mod plan_mcp;
+// M7 core; public provider dispatch stays closed until its adapter is wired.
+#[allow(dead_code)]
+mod provider;
 mod recipe;
 mod resource;
 mod schema;

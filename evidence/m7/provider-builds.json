@@ -1,0 +1,54 @@
+{
+  "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+  "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+  "sourceCheckoutClean": true,
+  "toolchain": "go version go1.25.4 linux/amd64",
+  "providers": {
+    "hostos": {
+      "sourceModule": ".parity/go-src/plugins/platform/hostos",
+      "goModSha256": "b7b8b93fd3ece8bdda3595c5da2785ed99f5a5566df6d5fc5a5ffc84553eb58d",
+      "goSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+      "descriptorSha256": "50a2555129e193f348a59f0a57b990123072916c60e46f5455d0a8dcdad245e6",
+      "binarySha256": "ac4e5c8e652a57df87a6be1ca48096a6438c309afd683467f63840d4eace4506",
+      "command": "GOTOOLCHAIN=go1.25.4 .parity/setup/go/bin/go build -mod=readonly -o .parity/bin/opute-provider-hostos ./cmd/opute-provider-hostos",
+      "status": "compiled; not installed, activated, or called"
+    },
+    "ollama": {
+      "sourceModule": ".parity/go-src/plugins/llm/ollama",
+      "goModSha256": "031815de61d6221f58e084361921cd755466509d694a6b8dce555a2794d2a8b3",
+      "goSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+      "descriptorSha256": "2cefd6bd0552ff1bf81c1dfc6aefd91ea218b1e68b08e37421a46c5d03f17f67",
+      "binarySha256": "7c6a5783400cc8491243c07f56eea887ee50bcc6aacfe6a288156f1e0c3b6b4b",
+      "command": "GOTOOLCHAIN=go1.25.4 .parity/setup/go/bin/go build -mod=readonly -o .parity/bin/opute-provider-ollama ./cmd/opute-provider-ollama",
+      "status": "compiled; not installed, activated, or called"
+    },
+    "k3s": {
+      "sourceModule": ".parity/go-src/plugins/kubernetes/k3s",
+      "goModSha256": "eda1da9a91cda8816ffcb9f4e3e005e263ce4242dd8605af9e9504d6cd5ff575",
+      "goSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+      "descriptorSha256": "5037f436e0773a071101699372b6e07f56611434e271fa6e89908e59949a8166",
+      "binarySha256": "0f960c4f671dbdb00b5fff671bd1106667969011a9e8d2b60b449e54901fdf9a",
+      "command": "GOTOOLCHAIN=go1.25.4 .parity/setup/go/bin/go build -mod=readonly -o .parity/bin/opute-provider-k3s ./cmd/opute-provider-k3s",
+      "status": "compiled; not installed, activated, or called"
+    },
+    "cloudflare": {
+      "sourceModule": ".parity/go-src/plugins/tunneling/cloudflare",
+      "goModSha256": "35c01572ace1df6f2190d02131b90d0a659001915b4cd15ad37c677ccb11dc4c",
+      "goSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+      "descriptorSha256": "e423c287ef143edb30d1f9a19d893bb26282abe624ed3114db07fbba4d05ef8a",
+      "binarySha256": "5a67151ef4218d24a8418f86f7cef692df7cd1f720edbc479a8747ba9625bb3a",
+      "command": "GOTOOLCHAIN=go1.25.4 .parity/setup/go/bin/go build -mod=readonly -o .parity/bin/opute-provider-cloudflare ./cmd/opute-provider-cloudflare",
+      "status": "compiled; not installed, activated, or called"
+    },
+    "tailscale": {
+      "sourceModule": ".parity/go-src/plugins/tunneling/tailscale",
+      "goModSha256": "30738bd9f8ef740048976f6f63392b13befbac2b56358a5236d895bf6c579266",
+      "goSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+      "descriptorSha256": "3c397755c6aaf8678ab1922ead5f54aea29ed1e769aac755e78c297c9dfb1ab2",
+      "binarySha256": "596f912fc6eb0ce61f22ef46f79f5d44efca1a01393b9d1e40a432e37241752f",
+      "command": "GOTOOLCHAIN=go1.25.4 .parity/setup/go/bin/go build -mod=readonly -o .parity/bin/opute-provider-tailscale ./cmd/opute-provider-tailscale",
+      "status": "compiled; not installed, activated, or called"
+    }
+  },
+  "scope": "Build-only provenance for subsequent isolated provider E2E; not lifecycle evidence"
+}
