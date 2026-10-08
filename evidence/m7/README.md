@@ -184,3 +184,56 @@ were independently verified. `provider-schema-cutover.log` retains the required
 whole-agent verifier result: it fails closed on **76 inventory gaps** and the
 historical M5 projection source binding. This work does not close M7, promote
 provider activation or authorize cutover.
+
+## Native typed schema-tree decoding
+
+`provider-schema-decoder/summary.json` records **18,185/18,185 T0 comparisons**
+(3,637 cases, five iterations) with the actual pinned
+`jsonschema.Schema.UnmarshalJSON`. The oracle marshals the same generic map
+as the owning registry, decodes through the real library and mechanically
+reflects every exported field. It preserves nil versus empty collections,
+raw/const presence, exact raw default bytes and exact float64 bits. The
+comparison treats numeric JSON spellings by value while keeping Booleans
+distinct; no malformed error text is normalized. This private typed-tree
+projection does not claim product wire serialization or `Schema.Resolve`
+parity. The pinned checkout remains unchanged.
+
+The native decoder now owns typed child pointers, maps and slices, separated
+`type`, `items` and dependency unions, metadata, generic extras, raw defaults
+and nullable integer/float values. It follows Go's case-alias merging and
+slice backing reuse, including the fresh allocation for an empty array.
+Custom integer and child-schema errors stop decoding immediately; ordinary
+standard JSON type errors are remembered while decoding continues. Special
+union fields are decoded after the typed struct phase, and integer values
+are assigned after those unions, matching Go's error precedence and reuse.
+Explicit null defaults and constants remain distinguishable from absence.
+Float64 storage retains negative zero, and the raw default bytes remain
+available to the forthcoming typed JSON Pointer resolver. Compiler errors
+are owned within the catalog module; compilation has no MCP dependency.
+
+The matrix includes the preceding 1,520 compiler-capture inputs (evaluated
+here for decoding only), explicit scalar/child/map/slice aliases and backing
+reuse, nested custom-error precedence, union fields accumulated across child
+decodes, unknown extras, null/Boolean children, escaping, negative zero and
+2,048 seeded composite cases. All observed Go outcomes agree across five
+runs. Multiple malformed dependency entries with nondeterministic Go map
+first-error selection and deeper input limits still require dedicated
+evidence. The originating library's MIT notice is retained in
+`crates/host-agent/src/catalog/schema-LICENSE.txt`.
+
+Validation: **179 workspace tests passed, twelve dedicated fixtures ignored**;
+the driver explicitly invoked the new decoder fixture. Formatting, Clippy
+with warnings denied, locked release build, all nine structural OpenSpec
+checks and the owning Go catalog suite passed. Complete raw evidence indices
+and source/library/binary provenance were independently verified.
+`provider-schema-decoder-secret-reuse.json` records reuse of the preceding
+16-field, two-mode secret sweep only after verifying the new locked release
+is byte-for-byte identical, its projection runtime sources are unchanged and
+the retained outcome hashes agree. The native decoder remains unwired, so no
+public behavior changed.
+
+`provider-schema-decoder-cutover.log` records the required whole-agent gate,
+which still fails closed on **76 inventory gaps** and the historical M5
+projection source binding. Structural/local schema checks, Go regexp
+compilation, URI/anchor/reference resolution and registry wiring remain open.
+M7 is not complete and public provider activation remains closed.

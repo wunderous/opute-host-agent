@@ -19,6 +19,7 @@ func main() {
 		Registry   json.RawMessage           `json:"registry"`
 		Schema     json.RawMessage           `json:"schema"`
 		Group      string                    `json:"group"`
+		DecodeOnly bool                      `json:"decodeOnly"`
 	}
 	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
 		panic(err)
@@ -29,6 +30,10 @@ func main() {
 			var value map[string]any
 			if err := json.Unmarshal(row.Schema, &value); err != nil {
 				panic(err)
+			}
+			if row.DecodeOnly {
+				results = append(results, registry.ParityDecodeSchema(value))
+				continue
 			}
 			err := registry.ParityCheckSchema("fixture", value)
 			message := ""
