@@ -471,3 +471,69 @@ historical M5 secret projection source binding. Earlier graph and grammar
 captures keep their original source hashes; no historical capture is relabeled
 current. Regexp resource equivalence, full checker assembly and registry wiring
 remain open. Public provider activation stays closed; M7–M13 remains active.
+
+## Native regexp AST and private assembled compiler
+
+The subsequent owned arena adds literal concatenation, the pinned four
+alternation-factoring rounds, singleton/fold-pair rewrites, simple-class unions,
+empty-branch collapse, capture/repeat structure and true tree-height/program-size
+estimates. Unicode 15.0.0 class ranges, POSIX ranges and SimpleFold cycles are
+reproduced from actual Go 1.25.4; both generated names and range/fold data must
+match regeneration before the drivers run. The arena uses indices and flat
+ownership to avoid recursive Rust destruction. This is schema admission syntax
+work, not a regexp matcher or a new public capability.
+
+`provider-regexp-ast-grammar/summary.json` retains **138,920/138,920** exact
+comparisons. `provider-regexp-ast-resource-gaps/summary.json` retains
+**446/447**, explicitly **FAIL**. The first 114 rows are the original resource
+probe, now **114/114**: all sixteen original differences are fixed. The expanded
+probe covers grouped Unicode budgets, factored nesting heights, repeated
+program sizes, upstream invalid patterns and seeded near-height inputs. Its
+single remaining difference is `(?:abcd|abce|abcf){1000}` repeated 1,000 times:
+Go accepts it while the native true-size check reports “expression too large.”
+The larger debug-native probe receives a 300-second process deadline; extending
+that harness deadline neither changes parser limits nor waives an outcome.
+Historical failed captures remain intact under their original names and hashes.
+
+`provider-regexp-cache-diagnostic.json` records an independent actual Go public
+AST/compile diagnostic. Its first repeated child is `(?:abc[d-f]){1000}`, with
+an uncached estimate of 4,000 instructions; the 1,000-child concatenation has
+an uncached pessimistic estimate of **4,000,000**, above the parser limit of
+**3,355,443**, yet `regexp.Compile` succeeds. The diagnostic uses the pinned
+`parse.go` size equations without changing the owning parser, and its source,
+binary, toolchain and standard-library hashes are retained in
+`provider-regexp-cache-diagnostic-provenance.json`. Go's lazy size map and
+allocation reuse remain the next implementation boundary; this diagnostic does
+not prove that native cache/reuse equivalence has been implemented.
+
+`provider-schema-assembled/summary.json` retains **317,015/317,015** scoped
+T0 comparisons (63,403 cases, five iterations) of the private native assembled
+compiler against actual owning `validateJSONSchema`. It combines all 3,637
+decoder cases, 4,198 default-base graph cases, and 27,784 grammar inputs in each
+of `pattern` and `patternProperties`. Typed decoding, local checks, URI/anchor
+registration, lexical/dynamic references and regexp syntax now run together.
+Three flagged multi-fault map cases must match an entire actual Go outcome from
+128 retained samples. No error substring replacement, synthetic acceptance or
+resource waiver is applied. This compiler corpus excludes the large resource
+probe; its green result cannot erase the separate failed resource evidence.
+Registry construction still requires an explicit checker, and the assembled
+checker remains private and unwired.
+
+Validation: **179 workspace tests passed, sixteen dedicated fixtures ignored**;
+the differential drivers explicitly invoked their fixtures. Formatting, Clippy
+with warnings denied, locked release build, all nine OpenSpec validations and
+the pinned Go `regexp/syntax` suite passed. Sources, input/output comparisons
+and evidence indices were independently verified. The release artifact changed
+to `e2e6e5c21a758219df0e7f25536c079ac91f36d521003d0733ce5b9578579ced`;
+`provider-schema-assembled-secret-recheck/summary.json` therefore retains a
+fresh **16-field, two-mode** secret sweep with **zero failures**, bound to this
+artifact and the actual projection runtime sources. Earlier secret receipts
+were not reused for this binary.
+
+`provider-schema-assembled-validation.json` binds these results.
+`provider-schema-assembled-cutover.log` remains **FAIL** on 76 inventory gaps
+and the historical M5 secret source binding. The full manifest still selects
+an earlier M1–M6 artifact, so the new sweep cannot be spliced into it; a complete
+manifest refresh remains required before promotion. The unwaived regexp cache
+mismatch, registry wiring and the remainder of M7–M13 stay open. Public provider
+activation remains closed; no milestone exit is asserted by these T0 results.

@@ -1,0 +1,2316 @@
+{
+  "scope": "T0 unwaived compiler-resource diagnostics against actual Go regexp.Compile. Failing rows remain an explicit implementation gap; not a parity pass or waived refusal.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "provenance": {
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_schema_regexp.py": "a7625e4447c92e4187d018e4ca2afcf9b293973e8b9dd5fd0c97f730a944abb5",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_adapter.py": "72b1793b66594abc06f3ace24d1037a631221aa476fb9f4e132545d8e1d94969",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_schema_decoder.py": "83cd5023144e57682488e457ab89fc3a0a486429d667cf629baacaad37761e60",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/go-regexp-data/main.go": "9b86db301fa0bb7f3d748da347d4f5d5c2bfd37395c8a98440ff8d924215c900",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/generate_regexp_names.py": "69d0932b0db213b55f5f1a67fb539a6c176758b9be0d1e863c56f04f3cbd5da1",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/build-provider-catalog-oracle.py": "da839fa52ae9dae73252bc6592796d1e8da1a2213851d899a9115f29a45ed5a3",
+    "/home/houman/github/wunderous/opute-host-agent/Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "/home/houman/github/wunderous/opute-host-agent/licenses/Go-BSD.txt": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog/schema.rs": "d5a020299a13480bca228e9edd20c964c5d173a483cc941192331d508bd9bd8b",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog/schema/regexp.rs": "ecbc094a1ba0fe97dde38688849e46b5405c55b369e1e0c4fd9364d1500b320d",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog/schema/regexp_names.rs": "c5746d435ac7693dfc6d1ea705990d0561738f2b01063ecd3c2dd794bfaf4b59",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog/schema/regexp_tree.rs": "4939ce29c215129f483abd3494f42a5d1060652034fee55bb7a1bda0e2c6a119",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog/schema/regexp_data.json": "30d495cfd9f1aaecd41ff9c2882db93b34bdc51d310b33616c745f3551375b99",
+    "/home/houman/github/wunderous/opute-host-agent/baseline/source-lock.json": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/go.mod": "18e342d34094c69e1f20b98d55c6a0e207a71d104f64508fbec6d09b155003f6",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/go.sum": "9728025ae5889cc14a630e33a5038123060191a5f6f73af5bdbb5bb76a7ca1c4",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/schema-bridge.go.txt": "651030540a9212a699f11525077078a4e33d9ff2eb34d4266d95d367b13a4282",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/resolver-bridge.go.txt": "1ae84d0791842010cf79e5e0554ed4ed8b8290021e515992c5a9a3ab96bfc2f6",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/bridge.go.txt": "747e915d48ac67025464db7d742b0056a7f15686b1053a4cf63819046b2d2bd1",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/main.go": "3d6dd21933238bbeb4ed65f7e1e438d53cf18ef24fe6ad8b1301a909d4a0b67b",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/registry.go": "8f84a4a32f657af82381fa831e0b66ae346b64d80bd7b1c245f846fa013296c4",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/exec.go": "cc9fda63ad7056d4c4abaaa49c00470f726be35ccee53f1c3fe73259e9634dd5",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/exec_test.go": "0b10ad15dd1f878c2c1b5ef265c570c7d74421c25736a7cb880130e68e810c04",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/backtrack.go": "ac5a1e4cf49b1c7f4372c0a7c2e8d156100c17d3a114fcf9539f55d223d06092",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/all_test.go": "3448ea6eadf660d367a73fb19df6ed981ff197f3253d17264aad514a24738165",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/onepass_test.go": "d849c5acbc51979260c9802a352302fe971d163300428bfa15cb0d1f5ef491ef",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/onepass.go": "fd0e29803438c6ea3021c78227d4f69de163f693e82c155dc62d721eaacbd24b",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/exec2_test.go": "6e60356cc5532dcc1265776736916d5ee927d3601bb0958ae8d1b5b7f16cc120",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/regexp.go": "3c6b372bf6e658c167d100093f946741ddd4bfb2717d71455d2bf6a4c515b406",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/example_test.go": "e2e3dec1e5c0dde37cbefcf2e7c6171bd604bcdea3c006be235e61d1e48be048",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/find_test.go": "f4f58c3d05b047253003420894bf71a67ac9302ad81910fedcab4d86fb6f7fa8",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/op_string.go": "391e4d0f59334da7c36c0a32f0a661139f181aecb2f7c209ca63280b030dfa0a",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/simplify_test.go": "c8aba87a1d6eec462b63fea3eea13dedcfc61d7f5580842c7c10219898f37c50",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/parse_test.go": "e8c636fa6f87a8767265cd00565a53db2a990a21287c04ec78406b0e6b9f6580",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/doc.go": "d61fed6f5a70cb4a0883f2c70da086d52edc80faf79ecb33a95393f28f24711e",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/compile.go": "2e1f753be77bf1fa54aed2a7f98932394324b82c91109e19d93283f482f7ee01",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/perl_groups.go": "d060a0645b60b210eaec7c3dba6d554dc297c14fe71cdbcc9c25b4fc7562c3a4",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/prog_test.go": "1f9a15f540211053c4b5f66e07469aee37715894dff0da223334c8e3049977f8",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/simplify.go": "d22b48ecde668bc22cd8998492c752ec088da5d027d61b7f04f7a9298796eec0",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/regexp.go": "bccc8fe5bf53c9e34aee2df851c05052f9b0d447310d151501dfbca7a8ee7fcb",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/parse.go": "d0f657113901da39d6118e4172206a0358b71c96ef43051cc0a741a0a4d04820",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/regexp/syntax/prog.go": "7a24ebd22eec504ceaeffbd33641ae330d3ca666d54f6a29ce6d96fc127e6c64",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/script_test.go": "5a235784e78d2f65473fb026add2b6b8acd89081ebcffabbf01dad2639faf2b6",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/digit_test.go": "99ab5483340c24eaefd238b6d8b371d7ce960e81be635ca76e5f51c28357717d",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/tables.go": "6a88d48746c4b2c471cc04ae40559694b734770212e6f5ea5f1962adb0c0bdb1",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/letter.go": "b35a6d259313cef88d07e9e4027b8bd72c60ae140418f5be2c41a2ecea6074fe",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/graphic_test.go": "2fdcc62306ab3ab14426f557565d2812b476c433e523524e14c585e0004f1765",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/graphic.go": "46a43107a87c88cf17a05a557e00dbf6b0f4bb53ebcd7d3035e02f1e67c428be",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/letter_test.go": "bea1ce251a42d3a9e798d99f0724c203e049784872c04798830bb72419fe3a5d",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/example_test.go": "b4a8757ace262ea3a59f56b2a285436daca31f6cd9f44f3ae7b176584eabf667",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/digit.go": "dfb14dbbcb918a6c7ee9be15293327d022f9d64a4c1a90f9c8049b682e799761",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/casetables.go": "b70c5009086ffaef3d8191924481b9b2a39108afb42d9f2b979ecf670c77670c"
+  },
+  "goBinarySha256": "a77d71124ad3d873dab0891110f7c2f90e18d15f6ae5b4dc247c4a1c809aab41",
+  "rustTestBinarySha256": "304db21a47906f8808a1dac543bd1d1a4923c2b909bd151172a14e68c907ee0d",
+  "cases": 447,
+  "iterations": 1,
+  "total": 447,
+  "passed": 446,
+  "failed": 1,
+  "rows": [
+    {
+      "case": "depth-990-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-990-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-995-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-996-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-997-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-998-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-999-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1000-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1001-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-[a]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-[aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-a|b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-a|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-abc|abd",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-(a|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-[Aa]b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "depth-1100-(?i:[a])b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "runes-1000",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "runes-3000",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "runes-10000",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "runes-27000",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "runes-30000",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-3000-a{1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-3000-(?:a|a){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-3000-(?:ab|ac){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-3000-[a]{1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-3000-(?:a|ab){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-4000-a{1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-4000-(?:a|a){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-4000-(?:ab|ac){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-4000-[a]{1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "size-4000-(?:a|ab){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-5000-(?:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-5000-(\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-5000-\\pL|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-5000-(?:\\pL|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-5000-(?i:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-5000-[\\pL]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-6500-(?:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-6500-(\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-6500-\\pL|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-6500-(?:\\pL|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-6500-(?i:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-6500-[\\pL]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-7000-(?:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-7000-(\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-7000-\\pL|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-7000-(?:\\pL|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-7000-(?i:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-7000-[\\pL]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-8500-(?:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-8500-(\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-8500-\\pL|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-8500-(?:\\pL|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-8500-(?i:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-8500-[\\pL]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-9000-(?:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-9000-(\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-9000-\\pL|",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-9000-(?:\\pL|a)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-9000-(?i:\\pL)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "grouped-unicode-9000-[\\pL]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-ab|ac",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-[a]a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-ab|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-a||",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-(?:a)b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-(?i:a)|A",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-[Aa]|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-a{2}b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-.{2}b|.{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-a{2}?b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-(?:a|b)(?:c|d)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-(?i:a){2}b|A{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-(?:abc|abd)|abe",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-996-(?s:.)|.",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-ab|ac",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-[a]a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-ab|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-a||",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-(?:a)b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-(?i:a)|A",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-[Aa]|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-a{2}b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-.{2}b|.{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-a{2}?b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-(?:a|b)(?:c|d)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-(?i:a){2}b|A{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-(?:abc|abd)|abe",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-997-(?s:.)|.",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-ab|ac",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-[a]a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-ab|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-a||",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-(?:a)b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-(?i:a)|A",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-[Aa]|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-a{2}b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-.{2}b|.{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-a{2}?b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-(?:a|b)(?:c|d)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-(?i:a){2}b|A{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-(?:abc|abd)|abe",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-998-(?s:.)|.",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-ab|ac",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-[a]a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-ab|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-a||",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-(?:a)b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-(?i:a)|A",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-[Aa]|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-a{2}b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-.{2}b|.{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-a{2}?b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-(?:a|b)(?:c|d)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-(?i:a){2}b|A{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-(?:abc|abd)|abe",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-999-(?s:.)|.",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-ab|ac",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-[a]a|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-ab|ab",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-a||",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-(?:a)b",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-(?i:a)|A",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-[Aa]|a",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-a{2}b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-.{2}b|.{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-a{2}?b|a{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-(?:a|b)(?:c|d)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-(?i:a){2}b|A{2}c",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-(?:abc|abd)|abe",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-depth-1000-(?s:.)|.",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(xx?){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?:a{2}b|a{2}c){500}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?:.b|.c){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?:a|b){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?:a|b|c){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?:abcd|abce|abcf){1000}",
+      "iteration": 0,
+      "pass": false
+    },
+    {
+      "case": "factored-size-1000-(?:a|){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?i:[A-Z]){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-1000-(?:\\pL|[a-z]){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(xx?){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:a{2}b|a{2}c){500}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:.b|.c){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:a|b){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:a|b|c){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:abcd|abce|abcf){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:a|){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?i:[A-Z]){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-3000-(?:\\pL|[a-z]){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(xx?){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:a{2}b|a{2}c){500}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:.b|.c){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:a|b){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:a|b|c){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:abcd|abce|abcf){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:a|){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?i:[A-Z]){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "factored-size-4000-(?:\\pL|[a-z]){1000}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upstream-241",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upstream-242",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upstream-243",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upstream-244",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upstream-245",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upstream-246",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-247",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-248",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-249",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-250",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-251",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-252",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-253",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-254",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-255",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-256",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-257",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-258",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-259",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-260",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-261",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-262",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-263",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-264",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-265",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-266",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-267",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-268",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-269",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-270",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-271",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-272",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-273",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-274",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-275",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-276",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-277",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-278",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-279",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-280",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-281",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-282",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-283",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-284",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-285",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-286",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-287",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-288",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-289",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-290",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-291",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-292",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-293",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-294",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-295",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-296",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-297",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-298",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-299",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-300",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-301",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-302",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-303",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-304",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-305",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-306",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-307",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-308",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-309",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-310",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-311",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-312",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-313",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-314",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-315",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-316",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-317",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-318",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-319",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-320",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-321",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-322",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-323",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-324",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-325",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-326",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-327",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-328",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-329",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-330",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-331",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-332",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-333",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-334",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-335",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-336",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-337",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-338",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-339",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-340",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-341",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-342",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-343",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-344",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-345",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-346",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-347",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-348",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-349",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-350",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-351",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-352",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-353",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-354",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-355",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-356",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-357",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-358",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-359",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-360",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-361",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-362",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-363",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-364",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-365",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-366",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-367",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-368",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-369",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-370",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-371",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-372",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-373",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-374",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-375",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-376",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-377",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-378",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-379",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-380",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-381",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-382",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-383",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-384",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-385",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-386",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-387",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-388",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-389",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-390",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-391",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-392",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-393",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-394",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-395",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-396",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-397",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-398",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-399",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-400",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-401",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-402",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-403",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-404",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-405",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-406",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-407",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-408",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-409",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-410",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-411",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-412",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-413",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-414",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-415",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-416",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-417",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-418",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-419",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-420",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-421",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-422",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-423",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-424",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-425",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-426",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-427",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-428",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-429",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-430",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-431",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-432",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-433",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-434",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-435",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-436",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-437",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-438",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-439",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-440",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-441",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-442",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-443",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-444",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-445",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "seeded-depth-446",
+      "iteration": 0,
+      "pass": true
+    }
+  ],
+  "normalization": "Exact complete errors or empty success; no diagnostic replacement, scope-dependent waiver, AST normalization or forced acceptance. Unicode names generated from pinned Go tables and filtered through actual Go regexp.Compile; runtime uses static native name facts and no Go fallback."
+}

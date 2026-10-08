@@ -1,8 +1,8 @@
 //! Typed decoding for the pinned google/jsonschema-go v0.4.3 compiler.
 //!
-//! This module is not yet a complete checker and is deliberately not wired to
-//! registry admission. It retains typed children and union fields for the
-//! resolver, rather than traversing the original generic schema document.
+//! The private compiler assembly is deliberately not wired to registry
+//! admission while regexp resource accounting remains incomplete. It retains
+//! typed children and union fields rather than traversing generic JSON.
 //! Integer keywords use the owner's custom int32 decoder,
 //! rather than a meta-schema rule (negative bounds are accepted by the owner).
 use crate::gojson::{Node, Value};
@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 
 mod regexp;
 mod regexp_names;
+mod regexp_tree;
 mod resolve;
 mod uri;
 
@@ -651,6 +652,16 @@ fn decode(value: &Map<String, J>) -> Result<Schema, TypeError> {
     Ok(schema)
 }
 
+/// Assemble the owning compiler phases without enabling provider admission.
+/// `Map` holds JSON-only values; decoding preserves Go's float64 marshal step.
+fn check(label: &str, value: &Map<String, J>) -> Result<(), String> {
+    let schema = decode(value)
+        .map_err(|error| format!("{label} schema is malformed: {}", error.message()))?;
+    resolve::graph(&schema, "", true, &regexp::parse)
+        .map(|_| ())
+        .map_err(|error| format!("{label} schema is invalid: {error}"))
+}
+
 /// Decode a nullable `*jsonschema.integer` from already validated JSON. The
 /// owning boundary first marshals generic float64 map values; callers must
 /// pass those canonical bytes, not the original manifest's number spelling.
@@ -694,6 +705,19 @@ mod tests {
     use super::*;
     use crate::gojson;
     use serde_json::{json, Value as J};
+
+    #[test]
+    #[ignore = "requires actual pinned Go catalog compiler"]
+    fn compiler_fixture() {
+        let input = std::env::var("PARITY_SCHEMA_COMPILER_INPUT").unwrap();
+        let output = std::env::var("PARITY_SCHEMA_COMPILER_OUTPUT").unwrap();
+        let node = gojson::parse(&std::fs::read(input).unwrap()).unwrap();
+        let rows = any(&node);
+        let values: Vec<J> = rows.as_array().unwrap().iter().map(|row| {
+            json!({"error": check("fixture", row["schema"].as_object().unwrap()).err().unwrap_or_default()})
+        }).collect();
+        std::fs::write(output, serde_json::to_vec(&values).unwrap()).unwrap();
+    }
 
     #[test]
     #[ignore = "requires actual pinned Go regexp compiler"]

@@ -1,8 +1,8 @@
 // Copyright 2009 The Go Authors. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause; see licenses/Go-BSD.txt.
 //! Native Go 1.25 regexp syntax admission. Pattern execution is not part of
-//! catalog schema compilation. This private parser is not yet promoted: AST
-//! factoring, class expansion and compiler resource accounting remain incomplete.
+//! catalog schema compilation. This private parser is not yet promoted:
+//! allocation-cache-dependent compiler resource accounting remains incomplete.
 use super::regexp_names::NAMES;
 
 fn error(code: &str, expression: &str) -> String {
@@ -25,106 +25,95 @@ fn canonical(name: &str) -> String {
     }
     out
 }
-#[derive(Clone, Copy)]
-struct Node {
-    height: usize,
-    copies: u64,
-    size: u64,
-    literal: bool,
-    fold: bool,
-}
-impl Node {
-    fn atom() -> Self {
-        Self {
-            height: 1,
-            copies: 1,
-            size: 1,
-            literal: false,
-            fold: false,
-        }
-    }
-    fn literal(fold: bool) -> Self {
-        Self {
-            literal: true,
-            fold,
-            ..Self::atom()
-        }
-    }
-}
+use super::regexp_tree::{self as tree, Arena, Kind};
 struct Frame {
-    flags: bool,
+    flags: u8,
     capture: bool,
-    branches: Vec<Node>,
-    nodes: Vec<Node>,
+    branches: Vec<usize>,
+    nodes: Vec<usize>,
 }
 impl Frame {
-    fn new(flags: bool, capture: bool) -> Self {
+    fn new(flags: u8, capture: bool) -> Self {
         Self {
             flags,
             capture,
-            branches: Vec::new(),
-            nodes: Vec::new(),
+            branches: vec![],
+            nodes: vec![],
         }
     }
-    fn concat(&mut self) -> Node {
-        let nodes = std::mem::take(&mut self.nodes);
-        if nodes.len() == 1 {
-            return nodes[0];
-        }
-        if nodes.is_empty() {
-            return Node::atom();
-        }
-        Node {
-            height: 1 + nodes.iter().map(|n| n.height).max().unwrap(),
-            copies: nodes.iter().map(|n| n.copies).max().unwrap(),
-            size: nodes.iter().map(|n| n.size).sum(),
-            ..Node::atom()
-        }
+    fn concat(&mut self, arena: &mut Arena) -> usize {
+        arena.merge_literals(&mut self.nodes);
+        arena.collapse(Kind::Concat, std::mem::take(&mut self.nodes))
     }
-    fn finish(mut self) -> Node {
-        let last = self.concat();
-        self.branches.push(last);
-        let mut node = if self.branches.len() == 1 {
-            last
-        } else {
-            Node {
-                height: 1 + self.branches.iter().map(|n| n.height).max().unwrap(),
-                copies: self.branches.iter().map(|n| n.copies).max().unwrap(),
-                size: self.branches.iter().map(|n| n.size).sum::<u64>()
-                    + self.branches.len() as u64
-                    - 1,
-                ..Node::atom()
-            }
-        };
-        if self.capture {
-            node.height += 1;
-            node.size += 2;
-            node.literal = false;
-        }
-        node
-    }
-    // Keep the last literal separate because a subsequent repeat applies only
-    // to it; merge the preceding two before pushing the next atom, like Go.
-    fn push(&mut self, node: Node) {
-        let n = self.nodes.len();
-        if n >= 2
-            && self.nodes[n - 1].literal
-            && self.nodes[n - 2].literal
-            && self.nodes[n - 1].fold == self.nodes[n - 2].fold
-        {
-            let last = self.nodes.pop().unwrap();
-            self.nodes.last_mut().unwrap().size += last.size;
-        }
+    fn push(&mut self, node: usize, arena: &mut Arena) {
+        arena.merge_literals(&mut self.nodes);
         self.nodes.push(node);
     }
 }
 struct Parser<'a> {
     pattern: &'a str,
     pos: usize,
-    fold: bool,
+    flags: u8,
     frames: Vec<Frame>,
+    arena: Arena,
+    num_runes: usize,
 }
 impl<'a> Parser<'a> {
+    fn concat(&mut self) -> Result<usize, String> {
+        let node = self.frames.last_mut().unwrap().concat(&mut self.arena);
+        let (node, cost) = self.arena.normalize_push(node);
+        self.num_runes += cost;
+        self.check(node)?;
+        Ok(node)
+    }
+    fn finish_frame(&mut self, closing: bool) -> Result<usize, String> {
+        let last = self.concat()?;
+        let mut frame = self.frames.pop().unwrap();
+        self.arena.branch(&mut frame.branches, last);
+        let node = self.arena.collapse(Kind::Alt, frame.branches);
+        let (node, cost) = self.arena.normalize_push(node);
+        self.num_runes += cost;
+        self.check(node)?;
+        if closing {
+            self.flags = frame.flags;
+        }
+        let node = if closing && frame.capture {
+            self.arena
+                .node(Kind::Capture, vec![], vec![node], 0, 0, None)
+        } else {
+            node
+        };
+        Ok(node)
+    }
+    fn folded(&self) -> bool {
+        self.flags & 1 != 0
+    }
+    fn check(&self, node: usize) -> Result<(), String> {
+        if self.num_runes > 33554432 || self.arena.nodes[node].size > 3355443 {
+            return Err(error("expression too large", self.pattern));
+        }
+        if self.arena.nodes[node].height > 1000 {
+            return Err(error("expression nests too deeply", self.pattern));
+        }
+        Ok(())
+    }
+    fn push(&mut self, node: usize, cost: usize) -> Result<(), String> {
+        self.num_runes += cost;
+        self.frames.last_mut().unwrap().push(node, &mut self.arena);
+        self.check(node)
+    }
+    fn literal(&mut self, r: u32) -> Result<(), String> {
+        let folded = self.folded();
+        let r = if folded { tree::min_fold(r) } else { r };
+        let node = self.arena.literal(vec![r], folded);
+        self.push(node, 1)
+    }
+    fn class_node(&mut self, ranges: Vec<u32>) -> Result<(), String> {
+        let r = tree::clean(&ranges);
+        let cost = r.len();
+        let node = self.arena.class(r);
+        self.push(node, cost)
+    }
     fn remaining(&self) -> &'a str {
         &self.pattern[self.pos..]
     }
@@ -212,11 +201,12 @@ impl<'a> Parser<'a> {
             &self.pattern[start..self.pos],
         ))
     }
-    fn unicode_class(&mut self) -> Result<bool, String> {
+    fn unicode_class(&mut self) -> Result<Option<Vec<u32>>, String> {
         if !(self.remaining().starts_with("\\p") || self.remaining().starts_with("\\P")) {
-            return Ok(false);
+            return Ok(None);
         }
         let start = self.pos;
+        let mut negative = self.remaining().starts_with("\\P");
         self.pos += 2;
         let name = if self.remaining().starts_with('{') {
             let Some(end) = self.remaining().find('}') else {
@@ -233,26 +223,52 @@ impl<'a> Parser<'a> {
             self.rune();
             &self.pattern[name_start..self.pos]
         };
-        let name = canonical(name.strip_prefix('^').unwrap_or(name));
+        let name = if let Some(name) = name.strip_prefix('^') {
+            negative = !negative;
+            name
+        } else {
+            name
+        };
+        let name = canonical(name);
         if NAMES.binary_search(&name.as_str()).is_err() {
             return Err(error(
                 "invalid character class range",
                 &self.pattern[start..self.pos],
             ));
         }
-        Ok(true)
+        let ranges = tree::table(&name, self.folded(), false).unwrap();
+        Ok(Some(if negative {
+            tree::negate(&ranges)
+        } else {
+            ranges
+        }))
     }
-    fn perl_class(&mut self) -> bool {
+    fn perl_class(&mut self) -> Option<Vec<u32>> {
         if self
             .remaining()
             .as_bytes()
             .get(..2)
             .is_some_and(|s| s[0] == b'\\' && b"dDsSwW".contains(&s[1]))
         {
+            let b = self.remaining().as_bytes()[1];
             self.pos += 2;
-            true
+            let name = match b.to_ascii_lowercase() {
+                b'd' => "digit",
+                b's' => "space",
+                _ => "word",
+            };
+            let ranges = if b.eq_ignore_ascii_case(&b's') {
+                vec![9, 10, 12, 13, 32, 32]
+            } else {
+                tree::table(name, self.folded(), true).unwrap()
+            };
+            Some(if b.is_ascii_uppercase() {
+                tree::negate(&ranges)
+            } else {
+                ranges
+            })
         } else {
-            false
+            None
         }
     }
     fn class_char(&mut self, start: usize) -> Result<u32, String> {
@@ -265,12 +281,14 @@ impl<'a> Parser<'a> {
             Ok(self.rune().unwrap())
         }
     }
-    fn class(&mut self) -> Result<(), String> {
+    fn class(&mut self) -> Result<Vec<u32>, String> {
         let start = self.pos;
         self.pos += 1;
-        if self.remaining().starts_with('^') {
+        let negative = self.remaining().starts_with('^');
+        if negative {
             self.pos += 1;
         }
+        let mut ranges = Vec::new();
         let mut first = true;
         while self.remaining().is_empty() || !self.remaining().starts_with(']') || first {
             first = false;
@@ -290,20 +308,31 @@ impl<'a> Parser<'a> {
                     {
                         return Err(error("invalid character class range", seq));
                     }
+                    let mut class = tree::table(name, self.folded(), true).unwrap();
+                    if seq[2..].starts_with('^') {
+                        class = tree::negate(&class);
+                    }
+                    for p in class.chunks_exact(2) {
+                        tree::append(&mut ranges, p[0], p[1]);
+                    }
                     continue;
                 }
             }
-            if self.unicode_class()? || self.perl_class() {
+            if let Some(class) = self.unicode_class()?.or_else(|| self.perl_class()) {
+                for p in class.chunks_exact(2) {
+                    tree::append(&mut ranges, p[0], p[1]);
+                }
                 continue;
             }
             let range_start = self.pos;
             let low = self.class_char(start)?;
+            let mut high = low;
             if self.remaining().len() >= 2
                 && self.remaining().starts_with('-')
                 && !self.remaining()[1..].starts_with(']')
             {
                 self.pos += 1;
-                let high = self.class_char(start)?;
+                high = self.class_char(start)?;
                 if high < low {
                     return Err(error(
                         "invalid character class range",
@@ -311,15 +340,25 @@ impl<'a> Parser<'a> {
                     ));
                 }
             }
+            if self.folded() {
+                tree::append_folded(&mut ranges, low, high);
+            } else {
+                tree::append(&mut ranges, low, high);
+            }
         }
         self.pos += 1;
-        Ok(())
+        let ranges = tree::clean(&ranges);
+        Ok(if negative {
+            tree::negate(&ranges)
+        } else {
+            ranges
+        })
     }
     fn group(&mut self) -> Result<(), String> {
         let start = self.pos;
         if !self.remaining().starts_with("(?") {
             self.pos += 1;
-            self.frames.push(Frame::new(self.fold, true));
+            self.frames.push(Frame::new(self.flags, true));
             return Ok(());
         }
         let rest = self.remaining();
@@ -342,20 +381,36 @@ impl<'a> Parser<'a> {
                     &self.pattern[start..self.pos],
                 ));
             }
-            self.frames.push(Frame::new(self.fold, true));
+            self.frames.push(Frame::new(self.flags, true));
             return Ok(());
         }
         self.pos += 2;
-        let old = self.fold;
+        let old = self.flags;
         let mut minus = false;
         let mut saw = false;
         while let Some(c) = self.rune() {
             match c {
                 105 => {
-                    self.fold = !minus;
+                    if minus {
+                        self.flags &= !1;
+                    } else {
+                        self.flags |= 1;
+                    }
                     saw = true;
                 }
-                109 | 115 | 85 => saw = true,
+                109 | 115 | 85 => {
+                    let bit = match c {
+                        109 => 2,
+                        115 => 4,
+                        _ => 8,
+                    };
+                    if minus {
+                        self.flags &= !bit;
+                    } else {
+                        self.flags |= bit;
+                    }
+                    saw = true;
+                }
                 45 if !minus => {
                     minus = true;
                     saw = false;
@@ -424,8 +479,10 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
     let mut p = Parser {
         pattern,
         pos: 0,
-        fold: false,
-        frames: vec![Frame::new(false, false)],
+        flags: 0,
+        frames: vec![Frame::new(0, false)],
+        arena: Arena::default(),
+        num_runes: 0,
     };
     let mut last_repeat = None;
     while !p.remaining().is_empty() {
@@ -439,19 +496,15 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                 if p.frames.len() == 1 {
                     return Err(error("unexpected )", pattern));
                 }
-                let frame = p.frames.pop().unwrap();
-                p.fold = frame.flags;
-                let node = frame.finish();
-                if node.height > 1000 {
-                    return Err(error("expression nests too deeply", pattern));
-                }
-                p.frames.last_mut().unwrap().push(node);
+                let node = p.finish_frame(true)?;
+                let (node, cost) = p.arena.normalize_push(node);
+                p.push(node, cost)?;
             }
             b'|' => {
                 p.pos += 1;
-                let frame = p.frames.last_mut().unwrap();
-                let node = frame.concat();
-                frame.branches.push(node);
+                let node = p.concat()?;
+                p.arena
+                    .branch(&mut p.frames.last_mut().unwrap().branches, node);
             }
             b'*' | b'+' | b'?' | b'{' => {
                 let count = if byte == b'{' {
@@ -464,8 +517,10 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                         return Err(error("invalid repeat count", &pattern[start..end]));
                     }
                     p.pos = end;
+                    let mut nongreedy = p.flags & 8;
                     if p.remaining().starts_with('?') {
                         p.pos += 1;
+                        nongreedy ^= 8;
                     }
                     if let Some(previous) = last_repeat {
                         return Err(error(
@@ -473,70 +528,44 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                             &pattern[previous..p.pos],
                         ));
                     }
-                    let frame = p.frames.last_mut().unwrap();
-                    let Some(child) = frame.nodes.last_mut() else {
+                    let Some(child) = p.frames.last_mut().unwrap().nodes.pop() else {
                         return Err(error(
                             "missing argument to repetition operator",
                             &pattern[start..p.pos],
                         ));
                     };
-                    let n = match byte {
-                        b'*' => Node {
-                            height: child.height + 1,
-                            size: child.size + 2,
-                            ..*child
-                        },
-                        b'+' | b'?' => Node {
-                            height: child.height + 1,
-                            size: child.size + 1,
-                            ..*child
-                        },
-                        _ => {
-                            let copies = if max == Some(0) {
-                                0
-                            } else {
-                                child.copies.saturating_mul(max.unwrap_or(min))
-                            };
-                            if (min >= 2 || max.is_some_and(|m| m >= 2)) && copies > 1000 {
-                                return Err(error("invalid repeat count", &pattern[start..p.pos]));
-                            }
-                            let size = match max {
-                                Some(m) => m.saturating_mul(child.size).saturating_add(m - min),
-                                None if min == 0 => child.size + 2,
-                                None => 1 + min.saturating_mul(child.size),
-                            };
-                            Node {
-                                height: child.height + 1,
-                                copies,
-                                size: size.max(1),
-                                ..*child
-                            }
-                        }
+                    let kind = match byte {
+                        b'*' => Kind::Star,
+                        b'+' => Kind::Plus,
+                        b'?' => Kind::Quest,
+                        _ => Kind::Repeat,
                     };
-                    *child = Node {
-                        literal: false,
-                        ..n
-                    };
-                    if child.height > 1000 {
-                        return Err(error("expression nests too deeply", pattern));
+                    let node = p.arena.node(kind, vec![], vec![child], nongreedy, min, max);
+                    p.frames.last_mut().unwrap().nodes.push(node);
+                    p.check(node)?;
+                    if kind == Kind::Repeat
+                        && (min >= 2 || max.is_some_and(|m| m >= 2))
+                        && p.arena.nodes[node].copies > 1000
+                    {
+                        return Err(error("invalid repeat count", &pattern[start..p.pos]));
                     }
                     repeat = Some(start);
                 } else {
                     p.pos += 1;
-                    p.frames.last_mut().unwrap().push(Node::literal(p.fold));
+                    p.literal(b'{' as u32)?;
                 }
             }
             b'[' => {
-                p.class()?;
-                p.frames.last_mut().unwrap().push(Node::atom());
+                let ranges = p.class()?;
+                p.class_node(ranges)?;
             }
             b'\\' => {
                 if p.remaining().starts_with("\\Q") {
                     p.pos += 2;
                     let rest = p.remaining();
                     let end = rest.find("\\E").unwrap_or(rest.len());
-                    for _ in rest[..end].chars() {
-                        p.frames.last_mut().unwrap().push(Node::literal(p.fold));
+                    for c in rest[..end].chars() {
+                        p.literal(c as u32)?;
                     }
                     p.pos += end;
                     if p.remaining().starts_with("\\E") {
@@ -548,32 +577,45 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                     .get(1)
                     .is_some_and(|b| b"AbBz".contains(b))
                 {
+                    let b = p.remaining().as_bytes()[1];
                     p.pos += 2;
-                    p.frames.last_mut().unwrap().push(Node::atom());
-                } else if p.unicode_class()? || p.perl_class() {
-                    p.frames.last_mut().unwrap().push(Node::atom());
+                    let node = p.arena.node(Kind::Atom(b), vec![], vec![], 0, 0, None);
+                    p.push(node, 0)?;
+                } else if let Some(ranges) = p.unicode_class()?.or_else(|| p.perl_class()) {
+                    p.class_node(ranges)?;
                 } else {
-                    p.escape()?;
-                    p.frames.last_mut().unwrap().push(Node::literal(p.fold));
+                    let r = p.escape()?;
+                    p.literal(r)?;
                 }
             }
-            b'^' | b'$' | b'.' => {
+            b'.' => {
                 p.pos += 1;
-                p.frames.last_mut().unwrap().push(Node::atom());
+                let kind = if p.flags & 4 != 0 {
+                    Kind::Any
+                } else {
+                    Kind::AnyNotNL
+                };
+                let node = p.arena.node(kind, vec![], vec![], 0, 0, None);
+                p.push(node, 0)?;
+            }
+            b'^' | b'$' => {
+                p.pos += 1;
+                let node = p
+                    .arena
+                    .node(Kind::Atom(byte), vec![], vec![], p.flags & 2, 0, None);
+                p.push(node, 0)?;
             }
             _ => {
-                p.rune();
-                p.frames.last_mut().unwrap().push(Node::literal(p.fold));
+                let r = p.rune().unwrap();
+                p.literal(r)?;
             }
         }
         last_repeat = repeat;
     }
-    if p.frames.len() != 1 {
+    let node = p.finish_frame(false)?;
+    p.check(node)?;
+    if !p.frames.is_empty() {
         return Err(error("missing closing )", pattern));
-    }
-    let node = p.frames.pop().unwrap().finish();
-    if node.height > 1000 {
-        return Err(error("expression nests too deeply", pattern));
     }
     Ok(())
 }

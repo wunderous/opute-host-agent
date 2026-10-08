@@ -11,7 +11,7 @@ import string
 import subprocess
 from provider_adapter import ROOT,freeze_binary,sha
 from provider_schema_decoder import equal
-from generate_regexp_names import source
+from generate_regexp_names import source,data_source
 
 
 def grammar(facts):
@@ -59,6 +59,31 @@ def limits():
     for n in [3000,4000]:
         for body in ['a{1000}','(?:a|a){1000}','(?:ab|ac){1000}','[a]{1000}','(?:a|ab){1000}']:
             add('size-'+str(n)+'-'+body,body*n)
+    # Broader limits retain allocation/cache-sensitive factoring, including
+    # the actual Go acceptance that remains different in the native checker.
+    for n in [5000,6500,7000,8500,9000]:
+        for body in ['(?:\\pL)','(\\pL)','\\pL|','(?:\\pL|a)','(?i:\\pL)','[\\pL]']:
+            add('grouped-unicode-'+str(n)+'-'+body,body*n)
+    for n in [996,997,998,999,1000]:
+        for body in ['ab|ac','[a]a|ab','ab|ab','a||','(?:a)b','(?i:a)|A','[Aa]|a',
+                     'a{2}b|a{2}c','.{2}b|.{2}c','a{2}?b|a{2}c','(?:a|b)(?:c|d)',
+                     '(?i:a){2}b|A{2}c','(?:abc|abd)|abe','(?s:.)|.']:
+            add('factored-depth-'+str(n)+'-'+body,'('*n+body+')'*n)
+    for n in [1000,3000,4000]:
+        for body in ['(xx?){1000}','(?:a{2}b|a{2}c){500}','(?:.b|.c){1000}',
+                     '(?:a|b){1000}','(?:a|b|c){1000}','(?:abcd|abce|abcf){1000}',
+                     '(?:a|){1000}','(?i:[A-Z]){1000}','(?:\\pL|[a-z]){1000}']:
+            add('factored-size-'+str(n)+'-'+body,body*n)
+    for pattern in ['a{100000}','a{100000,}','('*1000+')'*1000,
+                    '(?:'*1000+')*'*1000,'('+'(xx?)'*1000+'){1000}','(xx?){1000}'*1000]:
+        add('upstream-'+str(len(rows)),pattern)
+    rng=random.Random(0xCAFE)
+    leaves=['a','[a]','[Aa]','[a-z]','ab','abc','|','a|b','ab|ac','a{2}b|a{2}c','\\pL','(?i:a)','a||','(?:ab)']
+    for _ in range(200):
+        body=rng.choice(leaves)
+        if rng.randrange(2):body='(?:'+body+')'
+        n=rng.randrange(990,1005)
+        add('seeded-depth-'+str(len(rows)),'('*n+body+')'*n)
     return rows
 
 
@@ -69,12 +94,14 @@ def run(go,rust,out,kind):
         env={**os.environ,'GOTOOLCHAIN':'go1.25.4'},text=True,timeout=60))
     assert facts['goVersion']=='go1.25.4' and facts['unicodeVersion']=='15.0.0'
     assert source(facts)==(ROOT/'crates/host-agent/src/catalog/schema/regexp_names.rs').read_text()
+    assert data_source(facts)==(ROOT/'crates/host-agent/src/catalog/schema/regexp_data.json').read_text()
     (out/'unicode-facts.json').write_text(json.dumps(facts,indent=2)+'\n')
     go=freeze_binary(go,'regexp-go');rust=freeze_binary(rust,'regexp-rust')
     paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/provider_schema_decoder.py',
         generator,ROOT/'tools/parity/generate_regexp_names.py',ROOT/'tools/parity/build-provider-catalog-oracle.py',ROOT/'Cargo.lock',ROOT/'licenses/Go-BSD.txt',
         ROOT/'crates/host-agent/src/catalog/schema.rs',ROOT/'crates/host-agent/src/catalog/schema/regexp.rs',
-        ROOT/'crates/host-agent/src/catalog/schema/regexp_names.rs',ROOT/'baseline/source-lock.json']
+        ROOT/'crates/host-agent/src/catalog/schema/regexp_names.rs',
+        ROOT/'crates/host-agent/src/catalog/schema/regexp_tree.rs',ROOT/'crates/host-agent/src/catalog/schema/regexp_data.json',ROOT/'baseline/source-lock.json']
     paths+=list((ROOT/'tools/parity/provider-catalog-oracle').iterdir())
     for package in ['regexp','regexp/syntax','unicode']:
         paths+=list((ROOT/'.parity/setup/go/src'/package).glob('*.go'))
@@ -91,7 +118,7 @@ def run(go,rust,out,kind):
         reference=json.loads(subprocess.check_output([str(go)],input=json.dumps(rows),text=True,timeout=60))
         subprocess.run([str(rust),'catalog::schema::tests::regexp_fixture','--exact','--ignored'],
             env={**os.environ,'PARITY_SCHEMA_REGEXP_INPUT':str(inp.resolve()),'PARITY_SCHEMA_REGEXP_OUTPUT':str(target.resolve())},
-            capture_output=True,check=True,timeout=60)
+            capture_output=True,check=True,timeout=300 if kind=='limits' else 60)
         actual=json.loads(target.read_text());target.unlink();assert len(rows)==len(reference)==len(actual)
         for side,data in [('go',reference),('rust',actual)]:
             (folder/(side+'.json.gz')).write_bytes(gzip.compress(json.dumps(data).encode(),mtime=0))
@@ -99,7 +126,7 @@ def run(go,rust,out,kind):
             passed=equal(left,right);comparisons.append({'case':row['case'],'iteration':iteration,'pass':passed})
             if not passed:print('FAIL',row['case'],left['error'].split(': ')[1] if left['error'] else 'accepted',right['error'].split(': ')[1] if right['error'] else 'accepted',flush=True)
     assert hashes=={str(p):sha(p) for p in paths};pinned()
-    report={'scope':('T0 actual Go regexp.Compile vs native private grammar parser; complete error/acceptance comparisons for scoped syntax corpus. AST factoring, Unicode class expansion and full resource-limit equivalence remain open; not promoted into registry compiler.' if kind=='grammar' else 'T0 unwaived compiler-resource diagnostics against actual Go regexp.Compile. Failing rows remain an explicit implementation gap; not a parity pass or waived refusal.'),
+    report={'scope':('T0 actual Go regexp.Compile vs native private grammar parser; complete error/acceptance comparisons for scoped syntax corpus. Native AST factoring and Unicode class expansion are exercised; full resource-limit equivalence remains open; not promoted into registry compiler.' if kind=='grammar' else 'T0 unwaived compiler-resource diagnostics against actual Go regexp.Compile. Failing rows remain an explicit implementation gap; not a parity pass or waived refusal.'),
         'sourceLock':lock,'provenance':hashes,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),
         'cases':len(rows),'iterations':5 if kind=='grammar' else 1,'total':len(comparisons),'passed':sum(r['pass'] for r in comparisons),
         'failed':sum(not r['pass'] for r in comparisons),'rows':comparisons,

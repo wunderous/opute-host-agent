@@ -28,8 +28,15 @@ def source(facts):
     return '\n'.join(lines+['];'])+'\n'
 
 
+def data_source(facts):
+    classes={canonical(k):v for k,v in facts['classes'].items()}
+    data={'classes':classes,'posix':facts['posix'],'folds':facts['folds']}
+    return json.dumps(data,sort_keys=True,separators=(',',':'))+'\n'
+
+
 if __name__=='__main__':
     facts=json.loads(subprocess.check_output([str(ROOT/'.parity/setup/go/bin/go'),'run',
         str(ROOT/'tools/parity/go-regexp-data/main.go')],text=True,
         env={**os.environ,'GOTOOLCHAIN':'go1.25.4'},timeout=60))
     (ROOT/'crates/host-agent/src/catalog/schema/regexp_names.rs').write_text(source(facts))
+    (ROOT/'crates/host-agent/src/catalog/schema/regexp_data.json').write_text(data_source(facts))
