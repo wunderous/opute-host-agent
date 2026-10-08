@@ -729,6 +729,11 @@ mod tests {
                 Ok(schema)=>schema,Err(e)=>return json!({"error":format!("fixture schema is malformed: {}",e.message())}),
             };
             match row["resolverAction"].as_str().unwrap() {
+                "graph"|"uris"=>{
+                    match resolve::graph(&schema,row["baseURI"].as_str().unwrap_or(""),row["resolverAction"]=="graph",&|pattern| {
+                        assert!(pattern.is_empty(),"graph fixture excludes regexp compilation");Ok(())
+                    }) { Ok(graph)=>graph.projection(),Err(error)=>json!({"error":error}) }
+                },
                 "local"=>{
                     let error=resolve::local(&schema,&|pattern| {
                         assert!(pattern.is_empty(),"local fixture excludes regexp compilation unless basic checks bypass it");

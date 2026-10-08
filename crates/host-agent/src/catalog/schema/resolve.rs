@@ -5,23 +5,27 @@ use std::collections::HashMap;
 fn escape(segment: &str) -> String {
     segment.replace('~', "~0").replace('/', "~1")
 }
-fn unescape(segment: &str) -> String {
-    let mut chars = segment.chars();
-    let mut out = String::new();
-    while let Some(ch) = chars.next() {
-        if ch == '~' {
-            match chars.next() {
-                Some('0') => out.push('~'),
-                Some('1') => out.push('/'),
-                Some(c) => {
-                    out.push('~');
-                    out.push(c);
+fn unescape(segment: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < segment.len() {
+        if segment[i] == b'~' && i + 1 < segment.len() {
+            match segment[i + 1] {
+                b'0' => {
+                    out.push(b'~');
+                    i += 2;
+                    continue;
                 }
-                None => out.push('~'),
+                b'1' => {
+                    out.push(b'/');
+                    i += 2;
+                    continue;
+                }
+                _ => (),
             }
-        } else {
-            out.push(ch);
         }
+        out.push(segment[i]);
+        i += 1;
     }
     out
 }
@@ -301,16 +305,21 @@ fn field_cursor<'a>(schema: &'a Schema, key: &str) -> Result<Cursor<'a>, String>
         _ => unreachable!("schema pointer field inventory"),
     })
 }
-fn array_index(segment: &str, len: usize) -> Result<usize, String> {
-    if segment == "-" {
+fn array_index(segment: &[u8], len: usize) -> Result<usize, String> {
+    if segment == b"-" {
         return Err("the JSON Pointer array segment '-' is not supported".into());
     }
-    if segment.len() > 1 && segment.starts_with('0') {
-        return Err(format!("segment {} has leading zeroes", quote(segment)));
+    if segment.len() > 1 && segment.starts_with(b"0") {
+        return Err(format!(
+            "segment {} has leading zeroes",
+            uri::quote_bytes(segment)
+        ));
     }
-    let n = segment
-        .parse::<i64>()
-        .map_err(|_| format!("invalid int: {}", quote(segment)))?;
+    let n = std::str::from_utf8(segment)
+        .ok()
+        .and_then(|s| s.parse::<i64>().ok())
+        .ok_or(())
+        .map_err(|_| format!("invalid int: {}", uri::quote_bytes(segment)))?;
     if n < 0 || n as u64 >= len as u64 {
         return Err(format!(
             "index {n} is out of bounds for array of length {len}"
@@ -350,19 +359,27 @@ fn fmt_s(value: &J) -> String {
     }
 }
 pub(super) fn pointer<'a>(root: &'a Schema, pointer: &str) -> Result<Option<&'a Schema>, String> {
+    pointer_bytes(root, pointer.as_bytes())
+}
+fn pointer_bytes<'a>(root: &'a Schema, pointer: &[u8]) -> Result<Option<&'a Schema>, String> {
     let traverse = || -> Result<Option<&'a Schema>, String> {
-        if !pointer.is_empty() && !pointer.starts_with('/') {
+        if !pointer.is_empty() && !pointer.starts_with(b"/") {
             return Err(format!(
                 "JSON Pointer {} does not begin with '/'",
-                quote(pointer)
+                uri::quote_bytes(pointer)
             ));
         }
         let mut cursor = Cursor::Schema(Some(root));
         if !pointer.is_empty() {
-            for raw in pointer[1..].split('/') {
+            for raw in pointer[1..].split(|&b| b == b'/') {
                 let segment = unescape(raw);
                 cursor = match cursor {
-                    Cursor::Schema(Some(s)) => field_cursor(s, &segment)?,
+                    Cursor::Schema(Some(s)) => match std::str::from_utf8(&segment) {
+                        Ok(segment) => field_cursor(s, segment)?,
+                        Err(_) => {
+                            return Err(format!("no schema field {}", uri::quote_bytes(&segment)))
+                        }
+                    },
                     Cursor::Schema(None) | Cursor::Pointer(None, _) => {
                         return Err("navigated to nil reference".into())
                     }
@@ -374,9 +391,13 @@ pub(super) fn pointer<'a>(root: &'a Schema, pointer: &str) -> Result<Option<&'a 
                         Cursor::Schema(slots[array_index(&segment, slots.len())?].as_ref())
                     }
                     Cursor::SchemaMap(map) => Cursor::Schema(
-                        map.and_then(|m| m.get(&segment))
-                            .ok_or_else(|| format!("no key {} in map", quote(&segment)))?
-                            .as_ref(),
+                        map.and_then(|m| {
+                            std::str::from_utf8(&segment)
+                                .ok()
+                                .and_then(|key| m.get(key))
+                        })
+                        .ok_or_else(|| format!("no key {} in map", uri::quote_bytes(&segment)))?
+                        .as_ref(),
                     ),
                     Cursor::Strings(list) => {
                         let slots = list.map_or(&[][..], |(slots, len)| &slots[..*len]);
@@ -391,14 +412,18 @@ pub(super) fn pointer<'a>(root: &'a Schema, pointer: &str) -> Result<Option<&'a 
                         Cursor::Generic(&a[array_index(&segment, a.len())?])
                     }
                     Cursor::StringMap(value) => Cursor::StringList(
-                        value
-                            .get(&segment)
-                            .ok_or_else(|| format!("no key {} in map", quote(&segment)))?,
+                        std::str::from_utf8(&segment)
+                            .ok()
+                            .and_then(|key| value.get(key))
+                            .ok_or_else(|| {
+                                format!("no key {} in map", uri::quote_bytes(&segment))
+                            })?,
                     ),
                     Cursor::BoolMap(value) => Cursor::Bool(
-                        value
-                            .get(&segment)
-                            .ok_or_else(|| format!("no key {} in map", quote(&segment)))?
+                        std::str::from_utf8(&segment)
+                            .ok()
+                            .and_then(|key| value.get(key))
+                            .ok_or_else(|| format!("no key {} in map", uri::quote_bytes(&segment)))?
                             .as_bool()
                             .unwrap(),
                     ),
@@ -430,5 +455,231 @@ pub(super) fn pointer<'a>(root: &'a Schema, pointer: &str) -> Result<Option<&'a 
             )),
         }
     };
-    traverse().map_err(|cause| format!("JSON Pointer {}: {cause}", quote(pointer)))
+    traverse().map_err(|cause| format!("JSON Pointer {}: {cause}", uri::quote_bytes(pointer)))
+}
+
+/// The registry compiler uses Resolve(nil): no remote schema loader or default
+/// validation. Keep lexical schema identity separate from URI identity, which
+/// may be overwritten by later IDs in the owning traversal.
+struct Info {
+    base: String,
+    uri: Option<uri::Uri>,
+    reference: Option<String>,
+    dynamic_reference: Option<String>,
+    dynamic_anchor: String,
+    anchors: Option<BTreeMap<String, (String, bool)>>,
+    required: Option<BTreeMap<String, bool>>,
+}
+impl Info {
+    fn new(schema: &Schema) -> Self {
+        let required = match &schema.fields["Required"] {
+            Slot::Strings(Some((values, len))) if *len > 0 => {
+                Some(values[..*len].iter().map(|v| (v.clone(), true)).collect())
+            }
+            _ => None,
+        };
+        Self {
+            base: String::new(),
+            uri: None,
+            reference: None,
+            dynamic_reference: None,
+            dynamic_anchor: String::new(),
+            anchors: None,
+            required,
+        }
+    }
+}
+pub(super) struct Graph<'a> {
+    index: BTreeMap<String, &'a Schema>,
+    paths: HashMap<*const Schema, String>,
+    infos: BTreeMap<String, Info>,
+    uris: BTreeMap<String, String>,
+    draft7: bool,
+}
+impl Graph<'_> {
+    fn anchor(&mut self, base: &str, node: &str, name: &str, dynamic: bool) {
+        if name.is_empty() {
+            return;
+        }
+        // resolveURIs ignores setAnchor's duplicate error. Preserve the first
+        // lexical registration rather than introducing a stricter policy.
+        self.infos
+            .get_mut(base)
+            .unwrap()
+            .anchors
+            .get_or_insert_with(BTreeMap::new)
+            .entry(name.into())
+            .or_insert_with(|| (node.into(), dynamic));
+    }
+    fn visit(&mut self, schema: &Schema, mut base: String) -> Result<(), String> {
+        let path = self.paths[&(schema as *const Schema)].clone();
+        let id = text(schema, "ID");
+        if !id.is_empty() && (!self.draft7 || text(schema, "Ref").is_empty()) {
+            let id_uri = uri::Uri::parse(id)?;
+            if !self.draft7 && !id_uri.fragment.is_empty() {
+                return Err(format!("$id {id} must not have a fragment"));
+            }
+            if self.draft7 && !id_uri.fragment.is_empty() {
+                self.anchor(&base, &path, id.strip_prefix('#').unwrap_or(id), false);
+            } else {
+                let resolved = self.infos[&base].uri.as_ref().unwrap().resolve(&id_uri);
+                let absolute = !resolved.scheme.is_empty();
+                let name = resolved.string();
+                self.infos.get_mut(&path).unwrap().uri = Some(resolved);
+                if !absolute {
+                    // Root and base can alias; the Go error observes the newly
+                    // assigned URI in that case, not its previous value.
+                    return Err(format!(
+                        "$id {id} does not resolve to an absolute URI (base is {})",
+                        quote(&self.infos[&base].uri.as_ref().unwrap().string())
+                    ));
+                }
+                self.uris.insert(name, path.clone());
+                base = path.clone();
+            }
+        }
+        self.infos.get_mut(&path).unwrap().base = base.clone();
+        if !self.draft7 {
+            self.anchor(&base, &path, text(schema, "Anchor"), false);
+            self.anchor(&base, &path, text(schema, "DynamicAnchor"), true);
+        }
+        for (_, slot) in schema_fields(schema) {
+            match slot {
+                Slot::Child(Some(child)) => self.visit(child, base.clone())?,
+                Slot::Children(Some((children, len))) => {
+                    for child in children[..*len].iter().flatten() {
+                        self.visit(child, base.clone())?;
+                    }
+                }
+                Slot::ChildMap(Some(children)) => {
+                    for child in children.values().flatten() {
+                        self.visit(child, base.clone())?;
+                    }
+                }
+                _ => (),
+            }
+        }
+        Ok(())
+    }
+    fn reference(&self, schema: &Schema, value: &str) -> Result<(Option<String>, String), String> {
+        let parsed = uri::Uri::parse(value)?;
+        let info = &self.infos[&self.paths[&(schema as *const Schema)]];
+        let resolved = self.infos[&info.base]
+            .uri
+            .as_ref()
+            .unwrap()
+            .resolve(&parsed);
+        let mut no_fragment = resolved.clone();
+        no_fragment.fragment.clear();
+        let key = no_fragment.string();
+        let target = self.uris.get(&key).ok_or_else(|| {
+            format!(
+                "loading {key}: cannot resolve remote schemas: no loader passed to Schema.Resolve"
+            )
+        })?;
+        if !resolved.fragment.is_empty() && !resolved.fragment.starts_with(b"/") {
+            let anchor = self.infos[target]
+                .anchors
+                .as_ref()
+                .and_then(|anchors| {
+                    // Anchor names are valid UTF-8 schema strings; percent-decoded
+                    // invalid bytes cannot equal any map key.
+                    std::str::from_utf8(&resolved.fragment)
+                        .ok()
+                        .and_then(|name| anchors.get(name))
+                })
+                .ok_or_else(|| {
+                    format!(
+                        "no anchor {} in {}",
+                        uri::quote_bytes(&resolved.fragment),
+                        description(schema)
+                    )
+                })?;
+            return Ok((
+                Some(anchor.0.clone()),
+                if anchor.1 {
+                    String::from_utf8(resolved.fragment).unwrap()
+                } else {
+                    String::new()
+                },
+            ));
+        }
+        let node = pointer_bytes(self.index[target], &resolved.fragment)?;
+        Ok((
+            node.map(|node| self.paths[&(node as *const Schema)].clone()),
+            String::new(),
+        ))
+    }
+    #[cfg(test)]
+    pub(super) fn projection(&self) -> J {
+        let infos:BTreeMap<_,_>=self.infos.iter().map(|(path,info)| {
+            let anchors=info.anchors.as_ref().map(|a|a.iter().map(|(key,(path,dynamic))|(key.clone(),json!({"path":path,"dynamic":dynamic}))).collect::<BTreeMap<_,_>>());
+            (path,json!({"base":info.base,"uri":info.uri.as_ref().map(uri::Uri::string),"ref":info.reference,
+                "dynamicRef":info.dynamic_reference,"dynamicAnchor":info.dynamic_anchor,"anchors":anchors,"required":info.required}))
+        }).collect();
+        json!({"error":"","draft":if self.draft7 {0}else{1},"uris":self.uris,"infos":infos})
+    }
+}
+pub(super) fn graph<'a>(
+    root: &'a Schema,
+    base: &str,
+    refs: bool,
+    compile_pattern: &dyn Fn(&str) -> Result<(), String>,
+) -> Result<Graph<'a>, String> {
+    let base_uri = if base.is_empty() {
+        uri::Uri::default()
+    } else {
+        uri::Uri::parse(base).map_err(|error| format!("parsing base URI: {error}"))?
+    };
+    if !base_uri.fragment.is_empty() {
+        return Err(format!(
+            "base URI {} must not have a fragment",
+            base_uri.string()
+        ));
+    }
+    local(root, compile_pattern)?;
+    let index = structure(root)?;
+    let paths = index
+        .iter()
+        .map(|(path, schema)| (*schema as *const Schema, path.clone()))
+        .collect();
+    let infos = index
+        .iter()
+        .map(|(path, schema)| (path.clone(), Info::new(schema)))
+        .collect();
+    let draft7 = matches!(
+        text(root, "Schema"),
+        "http://json-schema.org/draft-07/schema#" | "https://json-schema.org/draft-07/schema#"
+    );
+    let mut graph = Graph {
+        index,
+        paths,
+        infos,
+        uris: BTreeMap::new(),
+        draft7,
+    };
+    graph.uris.insert(base_uri.string(), "root".into());
+    graph.infos.get_mut("root").unwrap().uri = Some(base_uri);
+    graph.visit(root, "root".into())?;
+    if refs {
+        // The actual loaded-document cache also binds the original base and
+        // canonical root URI. Those entries are already in the local URI map.
+        for schema in preorder(root) {
+            let path = graph.paths[&(schema as *const Schema)].clone();
+            if !text(schema, "Ref").is_empty() {
+                let (target, _) = graph.reference(schema, text(schema, "Ref"))?;
+                graph.infos.get_mut(&path).unwrap().reference = target;
+            }
+            if !text(schema, "DynamicRef").is_empty() {
+                let (target, dynamic) = graph.reference(schema, text(schema, "DynamicRef"))?;
+                let info = graph.infos.get_mut(&path).unwrap();
+                if !dynamic.is_empty() {
+                    info.dynamic_anchor = dynamic;
+                } else {
+                    info.dynamic_reference = target;
+                }
+            }
+        }
+    }
+    Ok(graph)
 }

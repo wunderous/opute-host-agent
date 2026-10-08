@@ -353,3 +353,65 @@ stale source binding. A full manifest refresh remains required. Go regexp
 compilation, schema ID/anchor/reference graph resolution and registry wiring
 remain open. Public provider activation stays closed; M7 is incomplete and
 the M7–M13 goal remains active.
+
+## Native schema identity and reference graph
+
+`provider-schema-graph/summary.json` records **35,775/35,775 T0 comparisons**
+(7,155 cases, five iterations). The build-only bridge calls the actual private
+Go `resolveURIs` for URI-only cases and actual public `Schema.Resolve` for
+reference cases. It projects the resulting typed graph: draft, URI-to-schema
+registrations, every schema's base and optional URI, anchors and their dynamic
+flags, lexical and dynamic reference targets, and required-property sets.
+Targets are identified by the owning typed tree's paths, not reconstructed
+from generic JSON. Complete errors and graph projections compare unchanged.
+
+The native graph preserves root draft selection, relative ID composition,
+original-base aliases, scoped anchors, first-registration anchor collisions,
+last-registration URI collisions, draft-7 fragment IDs and `$ref` ID ignoring,
+lexical and dynamic references, nil-success pointer targets and the owning
+compiler's default remote-loader refusal. Nested schemas do not override the
+root's draft selection. Local reference cycles link identities without
+recursively expanding the schema. The registry calls `Resolve(nil)` in Go, so
+no remote loader or default-validation mode is added in Rust.
+
+Percent decoding may produce invalid UTF-8 in a reference fragment. Typed
+pointer traversal now processes segment bytes directly: invalid bytes cannot
+match a JSON schema field or map key and remain exact in the quoted refusal.
+All 256 byte values are exercised across anchor, field, array, string, map,
+raw default and scalar pointer positions. The matrix also covers URI/error
+precedence, required-set construction, scoped and duplicate anchors/IDs,
+canonical/original base lookup, missing remote documents, malformed pointers,
+1,000 seeded coherent trees, the JSON-representable upstream `TestResolveURIs`
+fixture and local reference cycles. Three multi-fault structural-map cases
+accept only a complete owning Go refusal captured in 128 independent runs;
+an invented refusal is rejected.
+
+These fixtures remain explicitly regexp-free. A nonempty regexp reaching the
+native fixture callback panics rather than returning an invented acceptance.
+The actual Go resolver runs its full local checks. Full Go-compatible regexp
+compilation and registry compiler wiring are still open, so this is not a
+complete provider admission or activation result.
+
+`provider-schema-graph-regressions/` retains **25,215/25,215** fresh pointer and
+structural comparisons and **3,985/3,985** fresh local comparisons after byte
+traversal changed. Earlier component captures remain historical: their source
+and test-oracle hashes are not relabeled as current. Inputs, full raw twin
+outcomes, source/library inventories, frozen binary hashes and evidence indices
+are retained and checked before and after capture.
+
+Validation: **179 workspace tests passed, fourteen dedicated fixtures ignored**;
+the differential drivers explicitly invoked their fixture. Formatting, Clippy
+with warnings denied, locked release build, all nine OpenSpec validations,
+pinned Go catalog tests and seven focused upstream resolver tests passed.
+Source, snapshot and raw evidence bindings were independently verified.
+`provider-schema-graph-validation.json` records the checks and retained log
+hashes. `provider-schema-graph-secret-reuse.json` verifies the unchanged release,
+projection runtime sources and preceding 16-field, two-mode secret outcomes.
+
+`provider-schema-graph-cutover.log` records **FAIL** on 76 inventory gaps and
+the historical M5 secret projection source binding. The fresh secret sweep
+binds the current M7 release; the selected whole-agent manifest still binds
+the earlier M1–M6 artifact. Splicing the new sweep into that manifest would
+fail binary provenance. A complete manifest refresh is required before seam
+promotion. Public provider activation remains closed, M7 remains incomplete
+and the M7–M13 goal remains active.

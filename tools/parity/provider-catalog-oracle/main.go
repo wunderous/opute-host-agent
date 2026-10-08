@@ -27,6 +27,7 @@ func main() {
 		Group          string                    `json:"group"`
 		DecodeOnly     bool                      `json:"decodeOnly"`
 		ResolverAction string                    `json:"resolverAction"`
+		BaseURI        string                    `json:"baseURI"`
 		Pointer        string                    `json:"pointer"`
 	}
 	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
@@ -65,7 +66,7 @@ func main() {
 				panic(err)
 			}
 			if row.ResolverAction != "" {
-				results = append(results, registry.ParitySchemaResolver(value, row.ResolverAction, row.Pointer))
+				results = append(results, registry.ParitySchemaResolver(value, row.ResolverAction, row.Pointer, row.BaseURI))
 				continue
 			}
 			if row.DecodeOnly {

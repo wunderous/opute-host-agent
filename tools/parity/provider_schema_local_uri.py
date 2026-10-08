@@ -118,7 +118,7 @@ def uri_cases():
     return rows
 
 
-def run(go,rust,out,kind):
+def run(go,rust,out,kind,scenario_factory=None,scope=None,extra_sources=(),normalization=None):
     out.mkdir(parents=True,exist_ok=True)
     go=freeze_binary(go,'schema-local-uri-go');rust=freeze_binary(rust,'schema-local-uri-rust')
     receipt_path=ROOT/'.parity/m7/schema-reference-source.json'
@@ -126,6 +126,7 @@ def run(go,rust,out,kind):
     paths=[Path(__file__),ROOT/'tools/parity/provider_schema_decoder.py',ROOT/'tools/parity/provider_adapter.py',
            ROOT/'tools/parity/build-provider-catalog-oracle.py',ROOT/'Cargo.lock',ROOT/'baseline/source-lock.json',
            ROOT/'.parity/m7/provider-catalog-oracle.mod',ROOT/'.parity/m7/provider-catalog-oracle.sum',receipt_path]
+    paths+=list(extra_sources)
     paths+=list((ROOT/'tools/parity/provider-catalog-oracle').iterdir())
     paths+=list((ROOT/'crates/host-agent/src/catalog/schema').glob('*.rs'))
     paths+=[ROOT/'crates/host-agent/src/catalog/schema.rs',ROOT/'crates/host-agent/src/catalog/schema-LICENSE.txt',
@@ -142,7 +143,7 @@ def run(go,rust,out,kind):
         def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
         assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree']
         assert not git('status','--porcelain')
-    pinned();rows=local_cases() if kind=='local' else uri_cases()
+    pinned();rows=scenario_factory() if scenario_factory else local_cases() if kind=='local' else uri_cases()
     variants=[r for r in rows if r.get('variants')];allowed={}
     if variants:
         raw=[json.loads(subprocess.check_output([str(go)],input=json.dumps(variants),text=True,timeout=60)) for _ in range(128)]
@@ -169,12 +170,12 @@ def run(go,rust,out,kind):
             comparisons.append({'case':row['case'],'iteration':iteration,'pass':passed,'goMapVariants':row.get('variants',False)})
             if not passed and iteration==0:print('FAIL',row,left,right,flush=True)
     assert hashes=={str(p):sha(p) for p in paths};pinned()
-    report={'scope':('T0 actual jsonschema.check vs native structural/basic/vocabulary checks with regexp-free fixture or regexp behind basic-check short-circuit; full regexp compilation, URI/anchor/reference graph and registry wiring remain open.' if kind=='local' else 'T0 actual Go1.25.4 net/url.Parse and ResolveReference vs private native byte-preserving URI parser/composer. Schema ID/anchor/ref graph and registry wiring remain open.'),
+    report={'scope':scope or ('T0 actual jsonschema.check vs native structural/basic/vocabulary checks with regexp-free fixture or regexp behind basic-check short-circuit; full regexp compilation, URI/anchor/reference graph and registry wiring remain open.' if kind=='local' else 'T0 actual Go1.25.4 net/url.Parse and ResolveReference vs private native byte-preserving URI parser/composer. Schema ID/anchor/ref graph and registry wiring remain open.'),
             'sourceLock':lock,'librarySource':receipt,'provenance':hashes,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),
             'cases':len(rows),'iterations':5,'passed':sum(r['pass'] for r in comparisons),'total':len(comparisons),'rows':comparisons,
             'goMapVariantReferenceRuns':128 if variants else 0,
             'allowedMapOutcomes':{k:sorted({json.dumps(v,sort_keys=True) for v in values}) for k,values in allowed.items()},
-            'normalization':'Exact whole outcome comparison, including complete errors, URI component bytes as hex, nil user/password, escaped hints and composed strings. No URL canonicalization or error rewriting. For five multi-fault unordered-map cases, native error must equal an entire observed Go outcome from 128 independent runs; invented refusal rejected.' if kind=='local' else 'Exact whole outcome comparison. Decoded component bytes encoded as hex only to retain invalid UTF-8; raw path/fragment, nil username/password presence, all flags, original query, escaped components and URL.String compared without canonicalization or error rewriting.'}
+            'normalization':normalization or ('Exact whole outcome comparison, including complete errors, URI component bytes as hex, nil user/password, escaped hints and composed strings. No URL canonicalization or error rewriting. For multi-fault unordered-map cases, native error must equal an entire observed Go outcome from 128 independent runs; invented refusal rejected.' if kind=='local' else 'Exact whole outcome comparison. Decoded component bytes encoded as hex only to retain invalid UTF-8; raw path/fragment, nil username/password presence, all flags, original query, escaped components and URL.String compared without canonicalization or error rewriting.')}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
     (out/'index.json').write_text(json.dumps({str(p.relative_to(out)):sha(p) for p in out.rglob('*') if p.is_file() and p.name!='index.json'},indent=2)+'\n')
     print(kind,report['passed'],'/',report['total']);return report['passed']==report['total']

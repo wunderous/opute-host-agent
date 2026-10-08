@@ -13,7 +13,7 @@ func ParityCheckSchema(label string, value map[string]any) error {
 	return validateJSONSchema(label, value)
 }
 
-func ParitySchemaResolver(value map[string]any, action, pointer string) map[string]any {
+func ParitySchemaResolver(value map[string]any, action, pointer, base string) map[string]any {
 	raw, err := json.Marshal(value)
 	if err != nil {
 		panic(err)
@@ -21,6 +21,9 @@ func ParitySchemaResolver(value map[string]any, action, pointer string) map[stri
 	var schema jsonschema.Schema
 	if err := json.Unmarshal(raw, &schema); err != nil {
 		return map[string]any{"error": "fixture schema is malformed: " + err.Error()}
+	}
+	if action == "graph" || action == "uris" {
+		return jsonschema.ParityGraph(&schema, base, action == "graph")
 	}
 	if action == "local" {
 		err := jsonschema.ParityLocal(&schema)

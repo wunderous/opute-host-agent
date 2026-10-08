@@ -1,0 +1,182 @@
+[
+  {
+    "case": "map-order-$defs",
+    "schema": {
+      "$defs": {
+        "a/b": null,
+        "a~b": null
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "nested-map-order-$defs",
+    "schema": {
+      "$defs": {
+        "a": {
+          "not": {
+            "properties": {
+              "x": null
+            }
+          }
+        },
+        "b": {
+          "not": {
+            "allOf": [
+              null
+            ]
+          }
+        }
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "map-order-definitions",
+    "schema": {
+      "definitions": {
+        "a/b": null,
+        "a~b": null
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "nested-map-order-definitions",
+    "schema": {
+      "definitions": {
+        "a": {
+          "not": {
+            "properties": {
+              "x": null
+            }
+          }
+        },
+        "b": {
+          "not": {
+            "allOf": [
+              null
+            ]
+          }
+        }
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "map-order-properties",
+    "schema": {
+      "properties": {
+        "a/b": null,
+        "a~b": null
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "nested-map-order-properties",
+    "schema": {
+      "properties": {
+        "a": {
+          "not": {
+            "properties": {
+              "x": null
+            }
+          }
+        },
+        "b": {
+          "not": {
+            "allOf": [
+              null
+            ]
+          }
+        }
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "map-order-patternProperties",
+    "schema": {
+      "patternProperties": {
+        "a/b": null,
+        "a~b": null
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "nested-map-order-patternProperties",
+    "schema": {
+      "patternProperties": {
+        "a": {
+          "not": {
+            "properties": {
+              "x": null
+            }
+          }
+        },
+        "b": {
+          "not": {
+            "allOf": [
+              null
+            ]
+          }
+        }
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "map-order-dependentSchemas",
+    "schema": {
+      "dependentSchemas": {
+        "a/b": null,
+        "a~b": null
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  },
+  {
+    "case": "nested-map-order-dependentSchemas",
+    "schema": {
+      "dependentSchemas": {
+        "a": {
+          "not": {
+            "properties": {
+              "x": null
+            }
+          }
+        },
+        "b": {
+          "not": {
+            "allOf": [
+              null
+            ]
+          }
+        }
+      }
+    },
+    "pointer": "",
+    "resolverAction": "structure",
+    "variants": true
+  }
+]
