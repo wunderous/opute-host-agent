@@ -16,6 +16,9 @@ use std::sync::OnceLock;
 // M7 registry remains private until native schema compilation and activation are wired.
 #[allow(dead_code)]
 pub mod registry;
+// Native compiler components; not yet a complete schema checker.
+#[allow(dead_code)]
+mod schema;
 
 const SOURCE: &str = include_str!("../catalog/source.json");
 const RESOURCE_TYPE_KEYWORD: &str = "x-opute-resource-type";

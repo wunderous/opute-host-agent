@@ -1,0 +1,47 @@
+// Parity-only bridge to the owning native schema compilation boundary.
+package catalog
+
+import (
+	"encoding/json"
+	"github.com/google/jsonschema-go/jsonschema"
+)
+
+func ParityCheckSchema(label string, value map[string]any) error {
+	return validateJSONSchema(label, value)
+}
+
+// Read the decoded integer as well as its refusal; successful cases must
+// preserve the value, not merely return no error.
+func ParitySchemaInteger(value map[string]any) *int {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	var schema jsonschema.Schema
+	if err := json.Unmarshal(raw, &schema); err != nil {
+		panic(err)
+	}
+	for key := range value {
+		switch key {
+		case "minLength":
+			return schema.MinLength
+		case "maxLength":
+			return schema.MaxLength
+		case "minItems":
+			return schema.MinItems
+		case "maxItems":
+			return schema.MaxItems
+		case "minProperties":
+			return schema.MinProperties
+		case "maxProperties":
+			return schema.MaxProperties
+		case "minContains":
+			return schema.MinContains
+		case "maxContains":
+			return schema.MaxContains
+		default:
+			panic("integer fixture contains an unknown keyword")
+		}
+	}
+	panic("integer fixture has no keyword")
+}

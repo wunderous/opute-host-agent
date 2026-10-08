@@ -14,7 +14,12 @@ assert not virtual.exists()
 bridge = ROOT/'tools/parity/provider-catalog-oracle/bridge.go.txt'
 overlay = ROOT/'.parity/m7/provider-catalog-overlay.json'
 overlay.parent.mkdir(parents=True,exist_ok=True)
-overlay.write_text(json.dumps({'Replace':{str(virtual):str(bridge)}},indent=2)+'\n')
+schema_virtual = source/'internal/catalog/parity_schema_bridge.go'
+assert not schema_virtual.exists()
+schema_bridge = ROOT/'tools/parity/provider-catalog-oracle/schema-bridge.go.txt'
+overlay.write_text(json.dumps({'Replace':{str(virtual):str(bridge),str(schema_virtual):str(schema_bridge)}},indent=2)+'\n')
 subprocess.run([str(ROOT/'.parity/setup/go/bin/go'),'build','-mod=readonly','-overlay='+str(overlay),'-o',str(ROOT/'.parity/bin/provider-catalog-oracle'),'.'],cwd=ROOT/'tools/parity/provider-catalog-oracle',env={**os.environ,'GOTOOLCHAIN':lock['goToolchain']},check=True)
 assert not virtual.exists()
 assert subprocess.check_output(['git','-C',str(source),'status','--porcelain'],text=True).strip() == ''
+
+assert not schema_virtual.exists()

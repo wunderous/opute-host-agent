@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	provider "github.com/wunderous/host-agents/contracts/provider"
+	registry "github.com/wunderous/host-agents/internal/catalog"
 	"github.com/wunderous/host-agents/internal/hostmcp"
 	"github.com/wunderous/host-agents/internal/tools"
 	"os"
@@ -16,12 +17,34 @@ func main() {
 		Generation string                    `json:"generation"`
 		Standalone bool                      `json:"standalone"`
 		Registry   json.RawMessage           `json:"registry"`
+		Schema     json.RawMessage           `json:"schema"`
+		Group      string                    `json:"group"`
 	}
 	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
 		panic(err)
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if len(row.Schema) > 0 {
+			var value map[string]any
+			if err := json.Unmarshal(row.Schema, &value); err != nil {
+				panic(err)
+			}
+			err := registry.ParityCheckSchema("fixture", value)
+			message := ""
+			if err != nil {
+				message = err.Error()
+			}
+			observation := map[string]any{"error": message}
+			if row.Group == "integer" {
+				observation["value"] = nil
+				if err == nil {
+					observation["value"] = registry.ParitySchemaInteger(value)
+				}
+			}
+			results = append(results, observation)
+			continue
+		}
 		if len(row.Registry) > 0 {
 			results = append(results, map[string]any{"observations": registryScenario(row.Registry)})
 			continue

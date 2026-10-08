@@ -137,3 +137,50 @@ Descriptor cloning now also matches Go's JSON round-trip omission of empty optio
 Validation: **179 workspace tests passed, ten dedicated fixtures ignored** (drivers invoke their fixtures explicitly); Clippy with warnings denied, formatting, locked release build, all nine structural OpenSpec validations and the owning Go `internal/catalog` suite passed. Source/binary provenance and all raw evidence indices were verified. `provider-registry-cutover.log` retains the required whole-agent check, which fails closed on **76 inventory gaps** and the historical M5 projection source binding. The new sweep supplements historical evidence; complete manifest refresh is still required before promotion.
 
 Native schema compilation, provider connection/readiness, activation publication, generation-bound admitted invocation, signed callbacks, durable recovery and real provider E2E remain open. Public provider activation remains closed, and M7–M13 remains active.
+
+## Owning schema compiler baseline and native integer decoding
+
+`provider-schema-compiler/summary.json` captures **1,520 compiler cases, five
+iterations**, by calling the actual pinned Go registry's `validateJSONSchema`
+through a build-only overlay. The pinned checkout remains unchanged. Complete
+inputs and exact Go results are retained; all observed results agreed across
+these five runs. This is a Go behavior capture, not 7,600 Rust parity passes.
+The bridge and frozen oracle binary are bound to the source lock and the
+google/jsonschema-go v0.4.3 module sources.
+
+The corpus covers every JSON-visible schema field's typed decoding; null and
+Boolean subschemas; nested error paths and escaped property keys; aliases;
+integer bounds and fractional values; malformed-error precedence; empty versus
+nil definitions and vocabulary; unknown keywords and type names; draft-07 and
+2020-12 IDs, local/remote references, anchors, dynamic references, JSON Pointers
+and recursive references; and Go regexp acceptance and error strings. This
+capture does not establish that every possible schema or first-error order is
+covered. In particular, multiple invalid entries in a Go map can still have
+nondeterministic first-error selection.
+
+The native compiler's first component preserves Go's custom nullable int32
+decoding for all eight integer keywords. **1,040/1,040 exact comparisons** verify
+decoded values, nullable pointers and malformed error strings. These cases also
+exercise the owning boundary's float64-map marshal before decoding: the
+original manifest number spelling is not the decoder's input. Negative bounds
+are accepted by Go; replacing this component with a stricter meta-schema check
+would change the migration contract. The native component is private and is
+not wired as a complete registry checker. Typed schema-tree decoding, Go regexp
+compilation, URI/reference resolution and their full differential validation
+remain required.
+
+`provider-schema-rechecks.json` binds the rebuilt registry/catalog regression
+reports to their existing complete raw evidence. The retained raw input/output
+hashes are checked against the new captures before reuse. No result is
+normalized. `provider-schema-secret-recheck/` records a fresh sweep against the
+current locked release and projection fixtures: **16 marked fields, both
+modes, zero failures**.
+
+Validation: **179 workspace tests passed, eleven dedicated fixtures ignored**;
+the driver explicitly invokes the new integer fixture. Formatting, Clippy with
+warnings denied, locked release build, all nine structural OpenSpec checks and
+the owning Go catalog tests passed. Raw evidence indices and source provenance
+were independently verified. `provider-schema-cutover.log` retains the required
+whole-agent verifier result: it fails closed on **76 inventory gaps** and the
+historical M5 projection source binding. This work does not close M7, promote
+provider activation or authorize cutover.
