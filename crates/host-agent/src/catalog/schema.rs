@@ -10,6 +10,8 @@ use crate::{goerr::quote, gojson};
 use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 
+mod regexp;
+mod regexp_names;
 mod resolve;
 mod uri;
 
@@ -692,6 +694,16 @@ mod tests {
     use super::*;
     use crate::gojson;
     use serde_json::{json, Value as J};
+
+    #[test]
+    #[ignore = "requires actual pinned Go regexp compiler"]
+    fn regexp_fixture() {
+        let input = std::env::var("PARITY_SCHEMA_REGEXP_INPUT").unwrap();
+        let output = std::env::var("PARITY_SCHEMA_REGEXP_OUTPUT").unwrap();
+        let rows: Vec<J> = serde_json::from_slice(&std::fs::read(input).unwrap()).unwrap();
+        let values:Vec<J>=rows.iter().map(|row|json!({"error":regexp::parse(row["regexp"].as_str().unwrap()).err().unwrap_or_default()})).collect();
+        std::fs::write(output, serde_json::to_vec(&values).unwrap()).unwrap();
+    }
 
     #[test]
     #[ignore = "requires pinned Go net/url oracle"]

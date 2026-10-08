@@ -10,11 +10,13 @@ import (
 	"github.com/wunderous/host-agents/internal/tools"
 	"net/url"
 	"os"
+	"regexp"
 )
 
 func main() {
 	var rows []struct {
-		URI *struct {
+		Regexp *string `json:"regexp"`
+		URI    *struct {
 			Base string  `json:"base"`
 			Ref  *string `json:"ref"`
 		} `json:"uri"`
@@ -35,6 +37,15 @@ func main() {
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if row.Regexp != nil {
+			_, err := regexp.Compile(*row.Regexp)
+			message := ""
+			if err != nil {
+				message = err.Error()
+			}
+			results = append(results, map[string]any{"error": message})
+			continue
+		}
 		if row.URI != nil {
 			u, err := url.Parse(row.URI.Base)
 			if err == nil && row.URI.Ref != nil {

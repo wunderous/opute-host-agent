@@ -415,3 +415,59 @@ the earlier M1–M6 artifact. Splicing the new sweep into that manifest would
 fail binary provenance. A complete manifest refresh is required before seam
 promotion. Public provider activation remains closed, M7 remains incomplete
 and the M7–M13 goal remains active.
+
+## Native regexp grammar; resource accounting remains incomplete
+
+`provider-regexp-grammar/summary.json` retains **138,920/138,920 T0 comparisons**
+(27,784 cases, five iterations) against actual pinned Go `regexp.Compile`.
+The private native parser preserves grammar acceptance and complete errors for
+captures, inline flag directives and their scope, empty branches, character
+classes and ranges, POSIX classes, Perl and Unicode class escapes, numeric and
+C escapes, quoted literals, repeat syntax/counts, nested repetition and capture
+nesting in this corpus. This is a scoped grammar result, not a complete native
+regexp compiler or a registry admission pass.
+
+Unicode name facts come from Go 1.25.4 / Unicode 15.0.0 categories, scripts and
+category aliases, filtered through actual Go `regexp.Compile`. The generator
+is reproducible with `python3 tools/parity/generate_regexp_names.py`; the driver
+regenerates the facts and rejects a changed native table. All raw name
+candidates and case/underscore/hyphen/space variations are exercised. The
+pinned parser's `canonicalName` does not successfully look up every raw script
+key: for example `Old_Italic` and `SignWriting` are refused. These owning
+refusals are preserved rather than inferred from another regexp library's
+Unicode property support. Runtime parsing uses static native facts, with no Go
+compiler subprocess or alternate product policy.
+
+The grammar matrix also retains all printable ASCII escape positions,
+Unicode/control characters, repeat formatting and bound errors, named capture
+errors, POSIX negation, unsupported extensions, quoted literal termination,
+20,000 seeded patterns and selected deep capture/noncapture boundaries. Full
+raw input and twin error/acceptance outcomes are retained. No diagnostic text
+is normalized or replaced.
+
+`provider-regexp-resource-gaps/summary.json` is explicitly **FAIL: 98/114**,
+with **16 unwaived differences**. Seven are incorrect nesting refusals caused
+by missing owning AST optimizations (literal/class concatenation, alternation
+factoring/class merging and empty-branch collapse). Nine are missing size
+refusals from Unicode class expansion and compiled-program size accounting.
+The retained 114-case probe checks near-1,000 nesting heights, Unicode rune
+budgets and repeated-program sizes. Inputs and complete raw Go/native outcomes
+are retained. This is actionable failed evidence, never an accepted exception
+or a milestone pass. The next implementation step is the full owned AST and
+resource accounting; the current parser remains unwired.
+
+Validation: **179 workspace tests passed, fifteen dedicated fixtures ignored**;
+the differential driver explicitly invoked its fixture. Formatting, Clippy
+with warnings denied, locked release build, all nine OpenSpec validations and
+the complete pinned Go `regexp/syntax` suite passed. Generated-name, source and
+raw evidence hashes were independently verified.
+`provider-regexp-validation.json` records both the passing grammar scope and
+the failed resource probe. `provider-regexp-secret-reuse.json` checks the exact
+unchanged release, projection runtime sources and preceding 16-field, two-mode
+secret outcomes before reuse.
+
+`provider-regexp-cutover.log` remains **FAIL** on 76 inventory gaps and the
+historical M5 secret projection source binding. Earlier graph and grammar
+captures keep their original source hashes; no historical capture is relabeled
+current. Regexp resource equivalence, full checker assembly and registry wiring
+remain open. Public provider activation stays closed; M7–M13 remains active.
