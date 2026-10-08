@@ -10,6 +10,8 @@ use crate::{goerr::quote, gojson};
 use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 
+mod resolve;
+
 // Schema.UnmarshalJSON decodes through an anonymous embedded Go struct.
 // Keep its error context here; catalog compilation does not depend on MCP.
 struct TypeError {
@@ -689,6 +691,32 @@ mod tests {
     use super::*;
     use crate::gojson;
     use serde_json::{json, Value as J};
+
+    #[test]
+    #[ignore = "requires the actual owning schema pointer/structure oracle"]
+    fn resolver_fixture() {
+        let input = std::env::var("PARITY_SCHEMA_RESOLVER_INPUT").unwrap();
+        let output = std::env::var("PARITY_SCHEMA_RESOLVER_OUTPUT").unwrap();
+        let node = gojson::parse(&std::fs::read(input).unwrap()).unwrap();
+        let rows = any(&node);
+        let results:Vec<J>=rows.as_array().unwrap().iter().map(|row| {
+            let schema=match decode(row["schema"].as_object().unwrap()) {
+                Ok(schema)=>schema,Err(e)=>return json!({"error":format!("fixture schema is malformed: {}",e.message())}),
+            };
+            match row["resolverAction"].as_str().unwrap() {
+                "structure"=>match resolve::structure(&schema) {
+                    Ok(index)=>json!({"error":"","paths":index.keys().collect::<Vec<_>>()}),
+                    Err(error)=>json!({"error":error,"paths":null}),
+                },
+                "pointer"=>match resolve::pointer(&schema,row["pointer"].as_str().unwrap()) {
+                    Ok(target)=>json!({"error":"","nil":target.is_none(),"schema":target.map(Schema::projection)}),
+                    Err(error)=>json!({"error":error,"nil":true,"schema":null}),
+                },
+                _=>panic!("unknown schema resolver action"),
+            }
+        }).collect();
+        std::fs::write(output, serde_json::to_vec(&results).unwrap()).unwrap();
+    }
 
     #[test]
     #[ignore = "requires the actual pinned typed schema decoder oracle"]

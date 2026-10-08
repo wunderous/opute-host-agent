@@ -1,0 +1,21 @@
+// Build-only bridge to actual private JSON Schema resolver functions.
+package jsonschema
+
+import "sort"
+
+func ParityDereference(s *Schema, pointer string) (*Schema, error) {
+	return dereferenceJSONPointer(s, pointer)
+}
+
+func ParityStructure(s *Schema) ([]string, error) {
+	infos := map[*Schema]*resolvedInfo{}
+	if err := s.checkStructure(infos); err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(infos))
+	for _, info := range infos {
+		paths = append(paths, info.path)
+	}
+	sort.Strings(paths)
+	return paths, nil
+}

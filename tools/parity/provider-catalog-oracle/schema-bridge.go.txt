@@ -13,6 +13,34 @@ func ParityCheckSchema(label string, value map[string]any) error {
 	return validateJSONSchema(label, value)
 }
 
+func ParitySchemaResolver(value map[string]any, action, pointer string) map[string]any {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	var schema jsonschema.Schema
+	if err := json.Unmarshal(raw, &schema); err != nil {
+		return map[string]any{"error": "fixture schema is malformed: " + err.Error()}
+	}
+	if action == "structure" {
+		paths, err := jsonschema.ParityStructure(&schema)
+		message := ""
+		if err != nil {
+			message = err.Error()
+		}
+		return map[string]any{"error": message, "paths": paths}
+	}
+	if action != "pointer" {
+		panic("unknown schema resolver fixture action")
+	}
+	target, err := jsonschema.ParityDereference(&schema, pointer)
+	message := ""
+	if err != nil {
+		message = err.Error()
+	}
+	return map[string]any{"error": message, "nil": target == nil, "schema": paritySchemaProjection(reflect.ValueOf(target))}
+}
+
 // Reflect the actual decoded typed tree, including nil vs empty collections
 // and raw/const presence. This does not call Resolve or claim compiler parity.
 func ParityDecodeSchema(value map[string]any) map[string]any {

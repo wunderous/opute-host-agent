@@ -237,3 +237,60 @@ which still fails closed on **76 inventory gaps** and the historical M5
 projection source binding. Structural/local schema checks, Go regexp
 compilation, URI/anchor/reference resolution and registry wiring remain open.
 M7 is not complete and public provider activation remains closed.
+
+## Typed JSON Pointers and structural indexing
+
+`provider-schema-pointers/summary.json` records **25,215/25,215 T0 comparisons**
+(5,043 cases, five iterations) with the actual private Go
+`dereferenceJSONPointer` and `checkStructure` functions. The native resolver
+traverses the decoded typed tree, including the `type`, `items` and dependency
+unions. It preserves case-sensitive field lookup, one-pass `~0`/`~1`
+unescaping, signed array indices, leading-zero rejection, nil schema targets,
+pointer-to-scalar diagnostics, generic interface diagnostics and raw default
+byte indexing. Pointer refusals, nil results and complete reflected target
+schemas agree; float64 bits and raw default bytes remain in the projections.
+These are resolver-component checks, not full `Schema.Resolve` or provider
+activation checks.
+
+Structural indexing follows the owner's schema-field order, visits only typed
+child schemas and reports escaped paths for nil array/map entries. Owned JSON
+decoding constructs a tree, so shared or cyclic child pointers cannot arise at
+this boundary. Go deliberately leaves map iteration order unspecified. Ten
+multi-fault cases have **two actual Go refusal outcomes each**, captured across
+128 independent owning-helper runs. Native map traversal also leaves the
+first invalid map child unspecified. Each native result must equal a complete
+observed Go outcome; no diagnostic text is rewritten. A negative canary
+rejects an invented refusal. Successful structural paths are sorted by the
+test-only Go bridge because its internal index is a map; this does not change
+product output.
+
+The matrix covers absent and populated schema fields, typed and generic
+collections, every JSON-visible keyword, nil/Boolean schemas, map-key escaping,
+malformed pointers, index overflow and signed indices, special unions,
+accumulated child unions, malformed schema precedence, raw UTF-8/escaped
+defaults and 522 finite numeric diagnostic cases including seeded float64
+bit patterns. The native fixture reads generic map numbers through the owning
+Go-compatible JSON codec rather than an unrelated fixture decoder.
+
+Go disallows overlays inside its module cache. The build therefore verifies
+module checksums, takes a byte-identical private snapshot of the pinned
+google/jsonschema-go v0.4.3 dependency and uses an alternate build-only module
+file to add a virtual bridge. Full source/snapshot file inventories, module
+locks, source lock and frozen binaries are bound to the evidence and checked
+before and after capture. Neither the module cache nor the pinned Go checkout
+is modified; the bridge calls the actual private implementation.
+
+Validation: **179 workspace tests passed, thirteen dedicated fixtures ignored**;
+the driver explicitly invoked the resolver fixture. Formatting, Clippy with
+warnings denied, locked release build, all nine OpenSpec checks, module
+checksum verification and the owning Go catalog suite passed. Source,
+snapshot and complete raw evidence indices were independently verified.
+`provider-schema-pointers-secret-reuse.json` verifies that the locked release
+and projection runtime sources are still byte-identical before reusing the
+preceding 16-field, two-mode secret sweep and its retained outcome hashes.
+
+`provider-schema-pointers-cutover.log` retains the required whole-agent gate.
+It still fails closed on **76 inventory gaps** and the historical M5 projection
+source binding. Local/basic schema checks, Go regexp compilation,
+URI/anchor/reference resolution and registry wiring remain open. Public
+provider activation remains closed and M7–M13 remains active.

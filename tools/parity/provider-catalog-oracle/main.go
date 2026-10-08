@@ -12,14 +12,16 @@ import (
 
 func main() {
 	var rows []struct {
-		Manifest   json.RawMessage           `json:"manifest"`
-		Previous   *provider.InstallManifest `json:"previous"`
-		Generation string                    `json:"generation"`
-		Standalone bool                      `json:"standalone"`
-		Registry   json.RawMessage           `json:"registry"`
-		Schema     json.RawMessage           `json:"schema"`
-		Group      string                    `json:"group"`
-		DecodeOnly bool                      `json:"decodeOnly"`
+		Manifest       json.RawMessage           `json:"manifest"`
+		Previous       *provider.InstallManifest `json:"previous"`
+		Generation     string                    `json:"generation"`
+		Standalone     bool                      `json:"standalone"`
+		Registry       json.RawMessage           `json:"registry"`
+		Schema         json.RawMessage           `json:"schema"`
+		Group          string                    `json:"group"`
+		DecodeOnly     bool                      `json:"decodeOnly"`
+		ResolverAction string                    `json:"resolverAction"`
+		Pointer        string                    `json:"pointer"`
 	}
 	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
 		panic(err)
@@ -30,6 +32,10 @@ func main() {
 			var value map[string]any
 			if err := json.Unmarshal(row.Schema, &value); err != nil {
 				panic(err)
+			}
+			if row.ResolverAction != "" {
+				results = append(results, registry.ParitySchemaResolver(value, row.ResolverAction, row.Pointer))
+				continue
 			}
 			if row.DecodeOnly {
 				results = append(results, registry.ParityDecodeSchema(value))
