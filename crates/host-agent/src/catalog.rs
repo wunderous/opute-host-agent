@@ -13,6 +13,10 @@ use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
+// M7 registry remains private until native schema compilation and activation are wired.
+#[allow(dead_code)]
+pub mod registry;
+
 const SOURCE: &str = include_str!("../catalog/source.json");
 const RESOURCE_TYPE_KEYWORD: &str = "x-opute-resource-type";
 
@@ -739,6 +743,16 @@ pub fn build_from_descriptors(_provider: &str, descriptors: &[Descriptor]) -> Sn
         .collect();
     tools.sort_by(|a, b| a.operation_id.cmp(&b.operation_id));
     for d in &mut tools {
+        // Go clones descriptors by JSON round-trip: omitempty maps become nil.
+        if d.output_schema
+            .as_ref()
+            .is_some_and(|s| s.as_object().is_some_and(Map::is_empty))
+        {
+            d.output_schema = None;
+        }
+        if d.default_labels.as_ref().is_some_and(BTreeMap::is_empty) {
+            d.default_labels = None;
+        }
         d.input_edges.clear();
         d.output_edges.clear();
         d.argument_producers.clear();

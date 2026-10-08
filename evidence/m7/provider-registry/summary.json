@@ -1,0 +1,5119 @@
+{
+  "scope": "T0 owning Go executable registry vs Rust registry: authorization/identity, metadata validation, atomic generation/provider replacement, lookup/upsert/removal and retained executable handles. Rust schema callback is fixture-only and asserts a declared reference-free well-formed schema subset. Native schema compilation, malformed schema parity, ambiguous multi-negative cost ordering, runtime lifecycle and public activation remain open.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "provenance": {
+    "tools/parity/provider_registry.py": "afbe45ae2a8cf8e2884d024c31c7e2b1b937524b473ed235e2e223abe024814b",
+    "tools/parity/provider_adapter.py": "72b1793b66594abc06f3ace24d1037a631221aa476fb9f4e132545d8e1d94969",
+    "tools/parity/build-provider-catalog-oracle.py": "e927ae2435aa5de3290b9308d0a85f8d60963ba7849da5bdef1a5880e61b05b5",
+    "crates/host-agent/src/catalog.rs": "256e9a394c201d5c532d1c877d2b56968be2622036fb2dcec1cbd7de0636f204",
+    "crates/host-agent/src/catalog/registry.rs": "9df2e8435feac1f88932f348d60e1f795c5b6cc23cbd576d0401386891443724",
+    "crates/host-agent/src/resource.rs": "86253b20e339c67428a8cf5449b82a8a668b501d8dae6450948e0d367205119b",
+    "crates/host-agent/src/provider/definition.rs": "cb76e159ac9a1ec63efba552a68e1ebfe2f02fa21ebc051244aa1bf9891ee748",
+    "crates/host-agent/src/gojson.rs": "194b799ebcf38edc6b6a550bff2937db85391d4ecca35ecf212796ac687df021",
+    "crates/host-agent/src/goerr.rs": "de1eedb230fb53352a58147cdece20949b808cd6617985b3d4b5616404d94458",
+    "crates/host-agent/src/goerr/printable.rs": "ec6a7b8d06450d6ab7ba11897324c2d53c3146ba0d7bd8153c71873dc191773e",
+    "Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "tools/parity/provider-catalog-oracle/bridge.go.txt": "747e915d48ac67025464db7d742b0056a7f15686b1053a4cf63819046b2d2bd1",
+    "tools/parity/provider-catalog-oracle/go.mod": "18e342d34094c69e1f20b98d55c6a0e207a71d104f64508fbec6d09b155003f6",
+    "tools/parity/provider-catalog-oracle/go.sum": "9728025ae5889cc14a630e33a5038123060191a5f6f73af5bdbb5bb76a7ca1c4",
+    "tools/parity/provider-catalog-oracle/main.go": "25bee2b26f5c87317c95e1de8a871d200a00d2443db4585600e75b11aaa98513",
+    "tools/parity/provider-catalog-oracle/registry.go": "8f84a4a32f657af82381fa831e0b66ae346b64d80bd7b1c245f846fa013296c4",
+    ".parity/go-src/internal/catalog/registry.go": "2a9812ab3d98db71511e53a1ccb3c79235f1a335dcf43faf154a990124f4d227",
+    ".parity/go-src/internal/hostmcp/provider_candidate.go": "d1702e34a657f3f7d1a0907301e16d30225d0308e0768ed3d42b84b2d91a9e2a"
+  },
+  "goBinarySha256": "a1da9bb9d8ca09a94e679e76411e126a7f4ef963396434abde0ca31436721623",
+  "rustTestBinarySha256": "2924c060cb88951f3b7f1401610ed6080f43549ff6394330898181ac828993ca",
+  "rows": [
+    {
+      "case": "register",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registerCapability",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "register-nil",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-nil",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-nil",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "register-version-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "register-version--1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "register-version-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version--1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version--1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-version-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-version--1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-version-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-version--1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'a'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'A'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'test operation'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'1test'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'test/operation'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'test.\u96ea'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-' test.operation '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "name-'test__-1'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-metadata-only",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-metadata-only",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-mismatch",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-operation-mismatch",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'unknown.provider'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'false.provider'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-' Test.Provider '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'OTHER.PROVIDER'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "implementation-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "implementation-' '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "implementation-'different'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "implementation-'provider:test.provider'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "allow-{}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': False}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "allow-{'other': True}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': True}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "authorize-' unknown.provider '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "authorize-' TEST.PROVIDER '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "base-conflict",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "effect-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "outputType-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires--uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires--missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires--wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires--items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires--items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-- uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires--.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm- uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm - uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind- uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces--uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces--missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces--wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces--items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces--items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-- uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces--.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm- uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm - uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-missing",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-wrong",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items[].uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind- uri ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-.uri",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'one'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'many'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' many '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'unknown'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'id': ''}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 0}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 2}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'id': ''}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'sourcePath': 'missing'}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'labelPath': 'missing'}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'uri'}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'uri', 'selectorId': 'uri'}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'missing'}",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "known-restricted",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dynamic-cost-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-old-handle",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-nil",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-duplicate",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-bad-effect",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-other-owner",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-mixed-owner",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-wrong-generation",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-empty",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-blank",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-base-conflict",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-overlay-conflict",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-old-handle",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-nil",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-duplicate",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-bad-effect",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-other-owner",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-mixed-owner",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-wrong-generation",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-empty",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-blank",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-base-conflict",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-overlay-conflict",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-test.provider",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner- Test.Provider ",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-other.provider",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-downgrade",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "upsert-changed-implementation",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "resolve-errors",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "base-not-executable",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "unregister",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.family'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [' '])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['test.family'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [' test.family '])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown.provider', ['test.family'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['absent'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "validate-base-outputSchema",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "validate-base-effect",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "validate-base-version",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "register",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registerCapability",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "register-nil",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-nil",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-nil",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "register-version-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "register-version--1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "register-version-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version--1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version--1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-version-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-version--1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-version-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-version--1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'a'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'A'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'test operation'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'1test'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'test/operation'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'test.\u96ea'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-' test.operation '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "name-'test__-1'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-metadata-only",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-metadata-only",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-mismatch",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-operation-mismatch",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'unknown.provider'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'false.provider'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-' Test.Provider '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'OTHER.PROVIDER'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "implementation-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "implementation-' '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "implementation-'different'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "implementation-'provider:test.provider'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "allow-{}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': False}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "allow-{'other': True}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': True}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "authorize-' unknown.provider '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "authorize-' TEST.PROVIDER '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "base-conflict",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "effect-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "outputType-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires--uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires--missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires--wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires--items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires--items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-- uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires--.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm- uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm - uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind- uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces--uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces--missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces--wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces--items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces--items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-- uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces--.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm- uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm - uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-missing",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-wrong",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items[].uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind- uri ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-.uri",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'one'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'many'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' many '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'unknown'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'id': ''}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 0}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 2}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'id': ''}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'sourcePath': 'missing'}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'labelPath': 'missing'}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'uri'}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'uri', 'selectorId': 'uri'}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'missing'}",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "known-restricted",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dynamic-cost-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-old-handle",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-nil",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-duplicate",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-bad-effect",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-other-owner",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-mixed-owner",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-wrong-generation",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-empty",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-blank",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-base-conflict",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-overlay-conflict",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-old-handle",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-nil",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-duplicate",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-bad-effect",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-other-owner",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-mixed-owner",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-wrong-generation",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-empty",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-blank",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-base-conflict",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-overlay-conflict",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-test.provider",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner- Test.Provider ",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-other.provider",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-downgrade",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "upsert-changed-implementation",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "resolve-errors",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "base-not-executable",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "unregister",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.family'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [' '])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['test.family'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [' test.family '])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown.provider', ['test.family'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['absent'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "validate-base-outputSchema",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "validate-base-effect",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "validate-base-version",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "register",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registerCapability",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "register-nil",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-nil",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-nil",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "register-version-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "register-version--1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "register-version-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version--1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version--1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-version-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-version--1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-version-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-version--1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'a'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'A'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'test operation'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'1test'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'test/operation'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'test.\u96ea'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-' test.operation '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "name-'test__-1'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-metadata-only",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-metadata-only",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-mismatch",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-operation-mismatch",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'unknown.provider'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'false.provider'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-' Test.Provider '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'OTHER.PROVIDER'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "implementation-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "implementation-' '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "implementation-'different'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "implementation-'provider:test.provider'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "allow-{}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': False}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "allow-{'other': True}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': True}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "authorize-' unknown.provider '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "authorize-' TEST.PROVIDER '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "base-conflict",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "effect-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "outputType-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires--uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires--missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires--wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires--items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires--items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-- uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires--.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm- uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm - uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind- uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces--uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces--missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces--wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces--items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces--items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-- uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces--.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm- uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm - uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-missing",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-wrong",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items[].uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind- uri ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-.uri",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'one'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'many'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' many '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'unknown'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'id': ''}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 0}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 2}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'id': ''}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'sourcePath': 'missing'}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'labelPath': 'missing'}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'uri'}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'uri', 'selectorId': 'uri'}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'missing'}",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "known-restricted",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dynamic-cost-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-old-handle",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-nil",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-duplicate",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-bad-effect",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-other-owner",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-mixed-owner",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-wrong-generation",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-empty",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-blank",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-base-conflict",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-overlay-conflict",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-old-handle",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-nil",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-duplicate",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-bad-effect",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-other-owner",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-mixed-owner",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-wrong-generation",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-empty",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-blank",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-base-conflict",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-overlay-conflict",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-test.provider",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner- Test.Provider ",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-other.provider",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-downgrade",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "upsert-changed-implementation",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "resolve-errors",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "base-not-executable",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "unregister",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.family'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [' '])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['test.family'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [' test.family '])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown.provider', ['test.family'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['absent'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "validate-base-outputSchema",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "validate-base-effect",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "validate-base-version",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "register",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registerCapability",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "register-nil",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-nil",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-nil",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "register-version-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "register-version--1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "register-version-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version--1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version--1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-version-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-version--1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-version-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-version--1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'a'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'A'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'test operation'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'1test'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'test/operation'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'test.\u96ea'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-' test.operation '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "name-'test__-1'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-metadata-only",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-metadata-only",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-mismatch",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-operation-mismatch",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'unknown.provider'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'false.provider'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-' Test.Provider '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'OTHER.PROVIDER'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "implementation-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "implementation-' '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "implementation-'different'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "implementation-'provider:test.provider'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "allow-{}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': False}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "allow-{'other': True}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': True}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "authorize-' unknown.provider '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "authorize-' TEST.PROVIDER '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "base-conflict",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "effect-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "outputType-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires--uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires--missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires--wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires--items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires--items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-- uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires--.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm- uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm - uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind- uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces--uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces--missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces--wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces--items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces--items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-- uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces--.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm- uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm - uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-missing",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-wrong",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items[].uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind- uri ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-.uri",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'one'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'many'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' many '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'unknown'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'id': ''}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 0}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 2}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'id': ''}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'sourcePath': 'missing'}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'labelPath': 'missing'}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'uri'}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'uri', 'selectorId': 'uri'}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'missing'}",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "known-restricted",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dynamic-cost-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-old-handle",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-nil",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-duplicate",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-bad-effect",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-other-owner",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-mixed-owner",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-wrong-generation",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-empty",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-blank",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-base-conflict",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-overlay-conflict",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-old-handle",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-nil",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-duplicate",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-bad-effect",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-other-owner",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-mixed-owner",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-wrong-generation",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-empty",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-blank",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-base-conflict",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-overlay-conflict",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-test.provider",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner- Test.Provider ",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-other.provider",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-downgrade",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "upsert-changed-implementation",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "resolve-errors",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "base-not-executable",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "unregister",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.family'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [' '])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['test.family'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [' test.family '])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown.provider', ['test.family'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['absent'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "validate-base-outputSchema",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "validate-base-effect",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "validate-base-version",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "register",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registerCapability",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "register-nil",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-nil",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-nil",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "register-version-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "register-version--1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "register-version-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version--1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registerCapability-version-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version--1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsertCapability-version-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-version-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-version--1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-version-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-version--1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-version-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'a'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'A'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'test operation'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'1test'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'test/operation'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'test.\u96ea'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-' test.operation '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "name-'test__-1'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-metadata-only",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-metadata-only",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-mismatch",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-operation-mismatch",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'unknown.provider'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'false.provider'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-' Test.Provider '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "registration-provider-'OTHER.PROVIDER'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "implementation-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "implementation-' '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "implementation-'different'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "implementation-'provider:test.provider'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "allow-{}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': False}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "allow-{'other': True}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "allow-{'provider:test.provider': True}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "authorize-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "authorize-' unknown.provider '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "authorize-' TEST.PROVIDER '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "base-conflict",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "inputSchema-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "outputSchema-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "effect-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "taskSupport-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceKinds-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "outputType-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resourceCost-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires--uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires--missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires--wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires--items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires--items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-- uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires--.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm- uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-vm-.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm - uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires- vm -.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind- uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "requires-not-kind-.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces--uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces--missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces--wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces--items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces--items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-- uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces--.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm- uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-vm-.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm - uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces- vm -.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-missing",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-wrong",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items[].uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-items.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind- uri ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "produces-not-kind-.uri",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'one'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'many'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-' many '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-cardinality-'unknown'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'id': ''}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 0}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-type-{'version': 2}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'id': ''}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'sourcePath': 'missing'}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-path-{'labelPath': 'missing'}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'uri'}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'uri', 'selectorId': 'uri'}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "selector-binding-{'sourcePath': 'items[].uri', 'selectorId': 'missing'}",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "known-restricted",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dynamic-cost-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-old-handle",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-nil",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-duplicate",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-bad-effect",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-other-owner",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-mixed-owner",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-wrong-generation",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-empty",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-blank",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-base-conflict",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceGeneration-overlay-conflict",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-old-handle",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-nil",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-duplicate",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-bad-effect",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-other-owner",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-mixed-owner",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-wrong-generation",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-empty",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-blank",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-base-conflict",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replaceProvider-overlay-conflict",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-test.provider",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner- Test.Provider ",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-owner-other.provider",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-downgrade",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "upsert-changed-implementation",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "resolve-errors",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "base-not-executable",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "unregister",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.family'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', [' '])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['test.family'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [' test.family '])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown.provider', ['test.family'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('test.provider', ['absent'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "validate-base-outputSchema",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "validate-base-inputSchema",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "validate-base-effect",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "validate-base-version",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "passed": 1015,
+  "total": 1015,
+  "normalization": "none; observations, encoded snapshots and revisions and invoked old/new executable markers are exact"
+}

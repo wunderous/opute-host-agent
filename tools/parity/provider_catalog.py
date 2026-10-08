@@ -62,7 +62,7 @@ def cases():
 
 def run(go,rust,out):
     out.mkdir(parents=True,exist_ok=True);go=freeze_binary(go,'catalog-go');rust=freeze_binary(rust,'catalog-rust')
-    paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/build-provider-catalog-oracle.py',ROOT/'crates/host-agent/src/catalog.rs',ROOT/'crates/host-agent/src/provider/definition.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/goerr.rs',ROOT/'crates/host-agent/src/goerr/printable.rs',ROOT/'crates/host-agent/catalog/source.json',ROOT/'Cargo.lock']
+    paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/build-provider-catalog-oracle.py',ROOT/'crates/host-agent/src/catalog.rs',ROOT/'crates/host-agent/src/catalog/registry.rs',ROOT/'crates/host-agent/src/resource.rs',ROOT/'crates/host-agent/src/provider/definition.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/goerr.rs',ROOT/'crates/host-agent/src/goerr/printable.rs',ROOT/'crates/host-agent/catalog/source.json',ROOT/'Cargo.lock']
     paths+=sorted((ROOT/'tools/parity/provider-catalog-oracle').iterdir())
     paths+=[ROOT/'.parity/go-src/internal/hostmcp/provider_candidate.go',ROOT/'.parity/go-src/internal/hostmcp/server.go',ROOT/'.parity/go-src/internal/tools/capability.go',ROOT/'.parity/go-src/internal/tools/catalog.go']
     provenance={str(p.relative_to(ROOT)):sha(p) for p in paths};lock=json.loads((ROOT/'baseline/source-lock.json').read_text())

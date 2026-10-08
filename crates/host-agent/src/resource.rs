@@ -15,7 +15,7 @@ use std::path::PathBuf;
 
 pub const POLICY_REVISION: &str = "opute-host-resource-policy.v2";
 
-const KNOWN_TYPES: &[&str] = &[
+pub(crate) const KNOWN_TYPES: &[&str] = &[
     "vm",
     "container",
     "pod",

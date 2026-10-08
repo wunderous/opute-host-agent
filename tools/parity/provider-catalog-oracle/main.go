@@ -15,12 +15,17 @@ func main() {
 		Previous   *provider.InstallManifest `json:"previous"`
 		Generation string                    `json:"generation"`
 		Standalone bool                      `json:"standalone"`
+		Registry   json.RawMessage           `json:"registry"`
 	}
 	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
 		panic(err)
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if len(row.Registry) > 0 {
+			results = append(results, map[string]any{"observations": registryScenario(row.Registry)})
+			continue
+		}
 		var manifest provider.InstallManifest
 		if err := json.Unmarshal(row.Manifest, &manifest); err != nil {
 			results = append(results, map[string]any{"error": err.Error()})
