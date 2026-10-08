@@ -19,3 +19,7 @@ func ParityStructure(s *Schema) ([]string, error) {
 	sort.Strings(paths)
 	return paths, nil
 }
+
+func ParityLocal(s *Schema) error {
+	return s.check(map[*Schema]*resolvedInfo{})
+}

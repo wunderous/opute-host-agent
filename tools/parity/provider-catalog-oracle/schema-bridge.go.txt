@@ -22,6 +22,14 @@ func ParitySchemaResolver(value map[string]any, action, pointer string) map[stri
 	if err := json.Unmarshal(raw, &schema); err != nil {
 		return map[string]any{"error": "fixture schema is malformed: " + err.Error()}
 	}
+	if action == "local" {
+		err := jsonschema.ParityLocal(&schema)
+		message := ""
+		if err != nil {
+			message = err.Error()
+		}
+		return map[string]any{"error": message}
+	}
 	if action == "structure" {
 		paths, err := jsonschema.ParityStructure(&schema)
 		message := ""

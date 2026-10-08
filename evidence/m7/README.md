@@ -294,3 +294,62 @@ It still fails closed on **76 inventory gaps** and the historical M5 projection
 source binding. Local/basic schema checks, Go regexp compilation,
 URI/anchor/reference resolution and registry wiring remain open. Public
 provider activation remains closed and M7–M13 remains active.
+
+## Native local checks and URI components
+
+`provider-schema-local/summary.json` records **3,985/3,985 T0 comparisons**
+(797 cases, five iterations) against the actual private Go `Schema.check`.
+The native checks preserve structural-error precedence, Type/Types,
+Defs/Definitions and Items/ItemsArray conflicts, dependency schema/string
+conflicts, vocabulary restrictions, schema description labels, sorted child
+traversal and joined local errors. Five cases with multiple faulty map entries
+accept only a complete observed Go outcome from 128 independent reference
+runs; an invented refusal is rejected. The fixture supplies an explicit
+regexp callback that accepts only an empty pattern and panics if any nonempty
+pattern reaches it. Nonempty patterns are covered only when the owning basic
+check short-circuits regexp compilation at that same node. This does not
+establish regexp parity or provide a production success callback.
+
+`provider-schema-uri/summary.json` records **106,055/106,055 T0 comparisons**
+(21,211 cases, five iterations) against actual Go 1.25.4 `net/url.Parse` and
+`URL.ResolveReference`. The private native implementation preserves schemes,
+opaque URLs, authority and user/password presence, host/path/fragment bytes,
+raw escape hints, query flags, escaped component strings and `URL.String`.
+Percent decoding can produce invalid UTF-8, so decoded bytes are projected as
+hex in both fixtures rather than replaced or canonicalized. Complete error
+strings are compared unchanged, including `netip.ParseAddr` IPv6 and embedded
+IPv4 diagnostics. The matrix includes all ASCII characters, all 256 percent
+bytes in both hex cases, malformed escapes and hosts, IPv6 zones and ports,
+RFC reference examples, Unicode, 12,000 seeded parser inputs with sampled
+reference composition, and 2,000 generated IP-literal boundaries.
+
+An initial IPv4 trailing-dot error mismatch was corrected before retained
+capture. Bracket ordering also follows Go's port-validation precedence. No
+parser refusal was waived. This URI component is not a schema ID, anchor,
+`$ref` or `$dynamicRef` graph resolver, and does not make the registry's full
+schema compiler available.
+
+`provider-schema-local/pointer-regression/summary.json` retains a new
+**25,215/25,215** owning pointer/structure run after the shared traversal
+refactor. Every matrix retains inputs, full raw Go and Rust outcomes, exact
+source and binary provenance, and checked evidence indices. The new driver
+also binds the Go URI, netip and quoting source files. Module-cache and
+private library snapshot inventories remain unchanged; no Go source checkout
+or dependency cache is modified by the build-only bridge.
+
+Validation: **179 workspace tests passed, fourteen dedicated fixtures ignored**;
+the differential drivers explicitly invoked their fixtures. Formatting,
+Clippy with warnings denied, locked release build, all nine OpenSpec checks,
+module checksum verification and the owning Go catalog suite passed.
+`provider-schema-local-uri-validation.json` records the checks and hashes.
+`provider-schema-local-uri-secret-reuse.json` verifies the exact unchanged
+release binary, projection runtime sources and retained secret outcomes before
+reusing the preceding 16-field, two-mode sweep. These private components are
+unwired and the release binary is byte-identical.
+
+`provider-schema-local-uri-cutover.log` retains the whole-agent verifier:
+**FAIL**, with 76 inventory gaps and the historical M5 secret projection's
+stale source binding. A full manifest refresh remains required. Go regexp
+compilation, schema ID/anchor/reference graph resolution and registry wiring
+remain open. Public provider activation stays closed; M7 is incomplete and
+the M7–M13 goal remains active.

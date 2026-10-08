@@ -11,6 +11,7 @@ use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 
 mod resolve;
+mod uri;
 
 // Schema.UnmarshalJSON decodes through an anonymous embedded Go struct.
 // Keep its error context here; catalog compilation does not depend on MCP.
@@ -693,6 +694,30 @@ mod tests {
     use serde_json::{json, Value as J};
 
     #[test]
+    #[ignore = "requires pinned Go net/url oracle"]
+    fn uri_fixture() {
+        let input = std::env::var("PARITY_SCHEMA_URI_INPUT").unwrap();
+        let output = std::env::var("PARITY_SCHEMA_URI_OUTPUT").unwrap();
+        let rows: Vec<J> = serde_json::from_slice(&std::fs::read(input).unwrap()).unwrap();
+        let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        let results: Vec<J> = rows.iter().map(|row| {
+            let r = &row["uri"];
+            let u = uri::Uri::parse(r["base"].as_str().unwrap()).and_then(|base| {
+                match r["ref"].as_str() { Some(reference) => uri::Uri::parse(reference).map(|r| base.resolve(&r)), None => Ok(base) }
+            });
+            match u {
+                Err(error) => json!({"error":error}),
+                Ok(u) => json!({"error":"","scheme":u.scheme,"opaque":u.opaque,
+                    "user":u.user.as_ref().map(|(n,p)|json!({"name":hex(n),"password":p.as_ref().map(|p|hex(p))})),
+                    "host":hex(&u.host),"path":hex(&u.path),"rawPath":u.raw_path,"omitHost":u.omit_host,
+                    "forceQuery":u.force_query,"query":u.query,"fragment":hex(&u.fragment),"rawFragment":u.raw_fragment,
+                    "escapedPath":u.escaped_path(),"escapedFragment":u.escaped_fragment(),"string":u.string()}),
+            }
+        }).collect();
+        std::fs::write(output, serde_json::to_vec(&results).unwrap()).unwrap();
+    }
+
+    #[test]
     #[ignore = "requires the actual owning schema pointer/structure oracle"]
     fn resolver_fixture() {
         let input = std::env::var("PARITY_SCHEMA_RESOLVER_INPUT").unwrap();
@@ -704,6 +729,12 @@ mod tests {
                 Ok(schema)=>schema,Err(e)=>return json!({"error":format!("fixture schema is malformed: {}",e.message())}),
             };
             match row["resolverAction"].as_str().unwrap() {
+                "local"=>{
+                    let error=resolve::local(&schema,&|pattern| {
+                        assert!(pattern.is_empty(),"local fixture excludes regexp compilation unless basic checks bypass it");
+                        Ok(())
+                    }).err().unwrap_or_default();json!({"error":error})
+                },
                 "structure"=>match resolve::structure(&schema) {
                     Ok(index)=>json!({"error":"","paths":index.keys().collect::<Vec<_>>()}),
                     Err(error)=>json!({"error":error,"paths":null}),

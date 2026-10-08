@@ -26,6 +26,150 @@ fn unescape(segment: &str) -> String {
     out
 }
 
+fn schema_fields(schema: &Schema) -> Vec<(&'static str, &Slot)> {
+    let mut fields: Vec<_> = FIELDS
+        .iter()
+        .map(|&(json, name, _)| (json, &schema.fields[name]))
+        .collect();
+    fields.push(("items", &schema.fields["ItemsArray"]));
+    fields.sort_by_key(|&(key, _)| key);
+    fields
+}
+
+/// Go's all()/children() traversal sorts schema fields and map keys. This is
+/// distinct from checkStructure's unspecified first-error map order.
+fn preorder(root: &Schema) -> Vec<&Schema> {
+    fn visit<'a>(schema: &'a Schema, nodes: &mut Vec<&'a Schema>) {
+        nodes.push(schema);
+        for (_, slot) in schema_fields(schema) {
+            match slot {
+                Slot::Child(Some(child)) => visit(child, nodes),
+                Slot::Children(Some((children, len))) => {
+                    for child in children[..*len].iter().flatten() {
+                        visit(child, nodes);
+                    }
+                }
+                Slot::ChildMap(Some(children)) => {
+                    for child in children.values().flatten() {
+                        visit(child, nodes);
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    let mut nodes = Vec::new();
+    visit(root, &mut nodes);
+    nodes
+}
+fn text<'a>(schema: &'a Schema, name: &str) -> &'a str {
+    let Slot::Scalar(J::String(value)) = &schema.fields[name] else {
+        unreachable!()
+    };
+    value
+}
+fn description(schema: &Schema) -> String {
+    if !text(schema, "ID").is_empty() {
+        return text(schema, "ID").into();
+    }
+    for name in ["Anchor", "DynamicAnchor"] {
+        if !text(schema, name).is_empty() {
+            return format!("anchor {}", text(schema, name));
+        }
+    }
+    "<anonymous schema>".into()
+}
+fn basic(schema: &Schema) -> Result<(), String> {
+    if !text(schema, "Type").is_empty() && matches!(schema.fields["Types"], Slot::Strings(Some(_)))
+    {
+        return Err("both Type and Types are set; at most one should be".into());
+    }
+    if matches!(schema.fields["Defs"], Slot::ChildMap(Some(_)))
+        && matches!(schema.fields["Definitions"], Slot::ChildMap(Some(_)))
+    {
+        return Err("both Defs and Definitions are set; at most one should be".into());
+    }
+    if matches!(schema.fields["Items"], Slot::Child(Some(_)))
+        && matches!(schema.fields["ItemsArray"], Slot::Children(Some(_)))
+    {
+        return Err("both Items and ItemsArray are set; at most one should be".into());
+    }
+    if let Slot::Strings(Some((order, len))) = &schema.fields["PropertyOrder"] {
+        let mut seen = std::collections::BTreeSet::new();
+        for value in &order[..*len] {
+            if !seen.insert(value) {
+                return Err(format!(
+                    "property order slice cannot contain duplicate entries, found duplicate {}",
+                    quote(value)
+                ));
+            }
+        }
+    }
+    if let (Slot::ChildMap(Some(schemas)), Slot::Scalar(J::Object(strings))) = (
+        &schema.fields["DependencySchemas"],
+        &schema.fields["DependencyStrings"],
+    ) {
+        // The owning library ranges an unordered map to choose the first key.
+        let unordered: HashMap<_, _> = schemas.iter().collect();
+        for (key, _) in unordered {
+            if strings.contains_key(key) {
+                return Err(format!(
+                    "dependency key {} cannot be defined as both a schema and a string array",
+                    quote(key)
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Native local checks require an explicit regexp compiler. There is no
+/// production success callback: the full checker stays unwired until the
+/// Go-compatible regexp boundary is implemented and validated.
+pub(super) fn local(
+    root: &Schema,
+    compile_pattern: &dyn Fn(&str) -> Result<(), String>,
+) -> Result<(), String> {
+    structure(root)?;
+    let mut errors = Vec::new();
+    for schema in preorder(root) {
+        if let Err(error) = basic(schema) {
+            errors.push(error);
+            continue;
+        }
+        let prefix = format!("jsonschema.Schema: {}: ", description(schema));
+        if let Slot::Scalar(vocabulary) = &schema.fields["Vocabulary"] {
+            if !vocabulary.is_null()
+                && text(schema, "Schema") != "https://json-schema.org/draft/2020-12/schema"
+            {
+                errors.push(format!("{prefix}cannot validate a schema with $vocabulary"));
+            }
+        }
+        let pattern = text(schema, "Pattern");
+        if !pattern.is_empty() {
+            if let Err(error) = compile_pattern(pattern) {
+                errors.push(format!("{prefix}pattern: {error}"));
+            }
+        }
+        if let Slot::ChildMap(Some(patterns)) = &schema.fields["PatternProperties"] {
+            let unordered: HashMap<_, _> = patterns.iter().collect();
+            for (pattern, _) in unordered {
+                if let Err(error) = compile_pattern(pattern) {
+                    errors.push(format!(
+                        "{prefix}patternProperties[{}]: {error}",
+                        quote(pattern)
+                    ));
+                }
+            }
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("\n"))
+    }
+}
+
 /// JSON decoding owns a tree, so shared/cyclic child pointers cannot arise.
 /// Go map traversal is unspecified. Preserve arbitrary first-error selection
 /// among map children; valid indices are sorted only for the private projection.
@@ -43,13 +187,7 @@ pub(super) fn structure(root: &Schema) -> Result<BTreeMap<String, &Schema>, Stri
             },
             s,
         );
-        let mut fields: Vec<_> = FIELDS
-            .iter()
-            .map(|&(json, name, _)| (json, &s.fields[name]))
-            .collect();
-        fields.push(("items", &s.fields["ItemsArray"]));
-        fields.sort_by_key(|&(key, _)| key);
-        for (key, slot) in fields {
+        for (key, slot) in schema_fields(s) {
             let base = format!("{path}/{key}");
             let descend = |child: Option<&'a Schema>,
                            at: String,

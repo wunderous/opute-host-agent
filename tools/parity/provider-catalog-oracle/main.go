@@ -1,17 +1,23 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	provider "github.com/wunderous/host-agents/contracts/provider"
 	registry "github.com/wunderous/host-agents/internal/catalog"
 	"github.com/wunderous/host-agents/internal/hostmcp"
 	"github.com/wunderous/host-agents/internal/tools"
+	"net/url"
 	"os"
 )
 
 func main() {
 	var rows []struct {
+		URI *struct {
+			Base string  `json:"base"`
+			Ref  *string `json:"ref"`
+		} `json:"uri"`
 		Manifest       json.RawMessage           `json:"manifest"`
 		Previous       *provider.InstallManifest `json:"previous"`
 		Generation     string                    `json:"generation"`
@@ -28,6 +34,31 @@ func main() {
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if row.URI != nil {
+			u, err := url.Parse(row.URI.Base)
+			if err == nil && row.URI.Ref != nil {
+				var ref *url.URL
+				ref, err = url.Parse(*row.URI.Ref)
+				if err == nil {
+					u = u.ResolveReference(ref)
+				}
+			}
+			if err != nil {
+				results = append(results, map[string]any{"error": err.Error()})
+				continue
+			}
+			var user any
+			if u.User != nil {
+				password, present := u.User.Password()
+				var p any
+				if present {
+					p = hex.EncodeToString([]byte(password))
+				}
+				user = map[string]any{"name": hex.EncodeToString([]byte(u.User.Username())), "password": p}
+			}
+			results = append(results, map[string]any{"error": "", "scheme": u.Scheme, "opaque": u.Opaque, "user": user, "host": hex.EncodeToString([]byte(u.Host)), "path": hex.EncodeToString([]byte(u.Path)), "rawPath": u.RawPath, "omitHost": u.OmitHost, "forceQuery": u.ForceQuery, "query": u.RawQuery, "fragment": hex.EncodeToString([]byte(u.Fragment)), "rawFragment": u.RawFragment, "escapedPath": u.EscapedPath(), "escapedFragment": u.EscapedFragment(), "string": u.String()})
+			continue
+		}
 		if len(row.Schema) > 0 {
 			var value map[string]any
 			if err := json.Unmarshal(row.Schema, &value); err != nil {
