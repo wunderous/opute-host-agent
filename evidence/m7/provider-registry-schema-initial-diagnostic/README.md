@@ -1,0 +1,1 @@
+Initial diagnostic only. The native compiler matched registration outcomes, but the legacy-adapter fixture omitted invocation-time argument validation. This run also failed its final source-provenance check because catalog comments were edited while it ran. No passing or source-bound evidence is claimed here. Complete raw observations are retained for diagnosis.

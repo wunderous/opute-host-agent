@@ -466,9 +466,15 @@ pub fn validate_json(schema: &Map<String, Value>, value: &Value) -> Result<(), S
     if is_whole_reference(value) {
         return Ok(());
     }
-    if let Some(enum_values) = schema.get("enum").and_then(Value::as_array) {
-        if !enum_values.iter().any(|c| json_equal(c, value)) {
-            return Err(format!("value {value} is not in enum"));
+    if let Some(enum_values) = string_or_any_slice(schema.get("enum")) {
+        if !enum_values
+            .iter()
+            .any(|c| json_equal(&Value::String(c.clone()), value))
+        {
+            return Err(format!(
+                "value {} is not in enum",
+                crate::schema::go_v(value)
+            ));
         }
     }
     if let Some(constant) = schema.get("const") {

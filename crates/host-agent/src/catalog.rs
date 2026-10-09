@@ -13,10 +13,10 @@ use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-// M7 registry remains private until native schema compilation and activation are wired.
+// M7 registry is not connected to public provider activation yet.
 #[allow(dead_code)]
 pub mod registry;
-// Native compiler components; not yet a complete schema checker.
+// Assembled native compiler, also exercised through the private registry fixture.
 #[allow(dead_code)]
 mod schema;
 

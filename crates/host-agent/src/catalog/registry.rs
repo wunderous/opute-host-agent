@@ -800,48 +800,18 @@ mod tests {
         let d = descriptor(v);
         let generation = d.generation_id.clone();
         let marker = v["marker"].clone();
+        let input = d.input_schema.as_object().cloned().unwrap_or_default();
         Some(Arc::new(Capability {
             descriptor: d,
-            invoke: Arc::new(move |_, _| {
+            invoke: Arc::new(move |_, args| {
+                crate::plan::schema::validate_json(&input, &Value::Object(args.clone()))
+                    .map_err(|error| format!("invalid capability arguments: {error}"))?;
                 Ok(json!({"marker":marker,"generation":generation})
                     .as_object()
                     .unwrap()
                     .clone())
             }),
         }))
-    }
-    // This fixture declares already well-formed, reference-free schemas.
-    // It cannot establish Go schema compilation parity. Unsupported syntax
-    // aborts the producer instead of silently broadening its claim.
-    fn known_schema(schema: &Value) {
-        match schema {
-            Value::Bool(_) => {}
-            Value::Object(fields) => {
-                for (key, value) in fields {
-                    match key.as_str() {
-                        "type" => assert!(
-                            value.is_string()
-                                || value
-                                    .as_array()
-                                    .is_some_and(|a| a.iter().all(Value::is_string))
-                        ),
-                        "properties" => {
-                            for child in value.as_object().unwrap().values() {
-                                known_schema(child);
-                            }
-                        }
-                        "items" => known_schema(value),
-                        "required" => assert!(value
-                            .as_array()
-                            .is_some_and(|a| a.iter().all(Value::is_string))),
-                        other => {
-                            panic!("schema compilation is unverified for fixture keyword {other}")
-                        }
-                    }
-                }
-            }
-            _ => panic!("fixture schema is not a reference-free schema"),
-        }
     }
     #[test]
     #[ignore = "requires the owning Go registry differential driver"]
@@ -879,10 +849,7 @@ mod tests {
                         known_resource_kinds: map("KnownResourceKinds"),
                         allowed_implementations: map("AllowedImplementations"),
                     },
-                    Arc::new(|_, schema| {
-                        known_schema(&Value::Object(schema.clone()));
-                        Ok(())
-                    }),
+                    Arc::new(super::super::schema::check),
                 );
                 let mut handles: BTreeMap<String, Arc<Capability>> = BTreeMap::new();
                 let mut observations = Vec::new();

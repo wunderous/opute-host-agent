@@ -476,8 +476,11 @@ class HttpStub:
                 pass
 
         stub = self
-        self.port = free_port()
-        self._server = _http_server.HTTPServer(("127.0.0.1", self.port), Handler)
+        # Unlike an external agent, the stub can keep the listener the kernel
+        # allocates. Bind atomically rather than probing and releasing a port
+        # before constructing the server under concurrent fixture load.
+        self._server = _http_server.HTTPServer(("127.0.0.1", 0), Handler)
+        self.port = self._server.server_address[1]
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
 
@@ -485,7 +488,6 @@ class HttpStub:
         self._server.shutdown()
         self._server.server_close()
         self._thread.join(timeout=5)
-        release_port(self.port)
 
 
 def _proc_listen_inodes() -> dict[str, str]:

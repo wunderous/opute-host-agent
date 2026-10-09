@@ -654,7 +654,7 @@ fn decode(value: &Map<String, J>) -> Result<Schema, TypeError> {
 
 /// Assemble the owning compiler phases without enabling provider admission.
 /// `Map` holds JSON-only values; decoding preserves Go's float64 marshal step.
-fn check(label: &str, value: &Map<String, J>) -> Result<(), String> {
+pub(super) fn check(label: &str, value: &Map<String, J>) -> Result<(), String> {
     let schema = decode(value)
         .map_err(|error| format!("{label} schema is malformed: {}", error.message()))?;
     resolve::graph(&schema, "", true, &regexp::parse)

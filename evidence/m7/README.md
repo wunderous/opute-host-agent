@@ -601,3 +601,73 @@ source binding; the manifest still requires a complete refresh before
 promotion. Registry integration, the fake/real-provider lifecycle matrix,
 restart and in-flight replacement evidence, and M8–M13 remain open. Public
 provider activation stays closed and the goal remains active.
+
+## Native schema checker integrated into registry transactions
+
+The registry differential fixture now passes the assembled native compiler
+to its explicit schema-check dependency. The former reference-free subset
+callback has been removed. Public provider activation is still closed.
+
+`provider-registry-schema-enum-fixed/summary.json` retains **5,315/5,315**
+exact comparisons (1,063 cases over five iterations). Malformed decoder
+inputs, local and URI references, anchors, JSON pointers, regexp failures and
+valid patterns exercise registration, explicit registration, upsert, generation
+replacement, provider replacement and base validation. Replacement cases put
+the candidate before and after another valid operation to check atomicity.
+In addition to whole-output comparison, **3,690** rejection checks across both
+implementations independently assert that the catalog and resolved descriptor
+remain unchanged and that both old and newly resolved handles still invoke g1.
+All prior handles are checked after accepted replacement as well. Raw inputs,
+complete Go/Rust observations, source provenance and indices are retained.
+
+The wider corpus exposed two invocation discrepancies. The registry fixture
+now applies the existing plan validator to its legacy-adapter arguments,
+matching the owning Go adapter. The native plan validator now uses Go's
+string-only enum extraction and Go value formatting for enum errors. Numeric
+and mixed-type enum arrays are ignored by the pinned legacy validator; this
+is separate from schema compilation and is preserved for migration parity.
+Empty and string enum arrays remain enforced. Regression cases cover each.
+
+The initial diagnostic is retained in
+`provider-registry-schema-initial-diagnostic/`; its final provenance assertion
+failed after a comment changed during the run, so it makes no source-bound
+pass claim. `provider-registry-schema-enum-gap/` retains the subsequent
+**4,985/5,015** failing result and its original source bindings and raw errors.
+Neither failure has been relabeled as passing evidence.
+
+This remains T0 registry/compiler integration evidence. It does not establish
+M7 provider process lifecycle or any M8 external effects. Next, connect
+generation-owned service mounts and private candidate capabilities to catalog
+publication, preserving one adapter owner, reverse disposal and the owning
+Go dependency injection scope. Then validate fake-provider failures, in-flight
+replacement, restart and all five unchanged Go providers before advancing to
+M8 domain live checks in leased disposable runtimes.
+
+The first full runtime regression retained **101/102** passing scenarios:
+iteration two of `host-plan-fault-scripts.permanent-failure-with-compensation`
+failed before Rust startup with `OSError: [Errno 98] Address already in use`.
+The fixture probed and released a port before binding its HTTP stub. Stubs
+now bind port zero and retain the kernel-allocated listener atomically;
+external-agent sandbox port leasing is unchanged. The new parallel endpoint
+test checks 32 independent scripted endpoints and released listeners. All
+**141 harness tests** passed, and the affected scenario passed **20** fresh
+Go/Rust repetitions. The failed runtime bundle remains unchanged in
+`provider-registry-schema-runtime-regression/`.
+
+The current release artifact is
+`ec63341311ec3ad41e5b30e6c5707a965bd95a7e42670f420e800ee0594323ab`.
+Fresh `provider-registry-schema-secret-fixed/` evidence covers all sixteen
+marked fields in both modes with no failures, and uses the revised harness.
+The earlier fresh secret sweep is retained as historical evidence. The global
+cutover verifier still fails on 76 inventory gaps and stale historical
+manifest provenance, including the prior harness fingerprint. This private
+registry integration does not refresh or promote the global manifest.
+
+The full rerun in `provider-registry-schema-runtime-fixed/` passes
+**102/102 scenarios over five iterations** with no producer change during
+the run. Formatting, warnings-denied Clippy, locked release build,
+**179 workspace tests** (sixteen explicitly driven fixture tests ignored by
+the ordinary suite), and all **nine** OpenSpec checks passed.
+`provider-registry-schema-validation.json` binds the current source hashes,
+release artifact, logs and independently verified registry, runtime,
+compensation and secret captures. M7 and M8 remain incomplete.
