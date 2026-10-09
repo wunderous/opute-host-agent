@@ -1,8 +1,8 @@
 // Copyright 2009 The Go Authors. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause; see licenses/Go-BSD.txt.
 //! Native Go 1.25 regexp syntax admission. Pattern execution is not part of
-//! catalog schema compilation. This private parser is not yet promoted:
-//! allocation-cache-dependent compiler resource accounting remains incomplete.
+//! catalog schema compilation. This private parser retains the owning lazy
+//! resource caches; production registry admission remains unwired.
 use super::regexp_names::NAMES;
 
 fn error(code: &str, expression: &str) -> String {
@@ -26,80 +26,101 @@ fn canonical(name: &str) -> String {
     out
 }
 use super::regexp_tree::{self as tree, Arena, Kind};
-struct Frame {
-    flags: u8,
-    capture: bool,
-    branches: Vec<usize>,
-    nodes: Vec<usize>,
-}
-impl Frame {
-    fn new(flags: u8, capture: bool) -> Self {
-        Self {
-            flags,
-            capture,
-            branches: vec![],
-            nodes: vec![],
-        }
-    }
-    fn concat(&mut self, arena: &mut Arena) -> usize {
-        arena.merge_literals(&mut self.nodes);
-        arena.collapse(Kind::Concat, std::mem::take(&mut self.nodes))
-    }
-    fn push(&mut self, node: usize, arena: &mut Arena) {
-        arena.merge_literals(&mut self.nodes);
-        self.nodes.push(node);
-    }
-}
 struct Parser<'a> {
     pattern: &'a str,
     pos: usize,
     flags: u8,
-    frames: Vec<Frame>,
+    stack: Vec<usize>,
     arena: Arena,
-    num_runes: usize,
 }
 impl<'a> Parser<'a> {
     fn concat(&mut self) -> Result<usize, String> {
-        let node = self.frames.last_mut().unwrap().concat(&mut self.arena);
-        let (node, cost) = self.arena.normalize_push(node);
-        self.num_runes += cost;
-        self.check(node)?;
+        self.arena.merge_literals(&mut self.stack);
+        let index = self
+            .stack
+            .iter()
+            .rposition(|&id| self.arena.pseudo(id))
+            .map_or(0, |i| i + 1);
+        let children = self.stack.split_off(index);
+        self.arena.context = self.stack.clone();
+        let node = self.arena.collapse(Kind::Concat, children);
+        let cost = self.arena.nodes[node].runes.len();
+        self.push(node, cost)?;
         Ok(node)
     }
-    fn finish_frame(&mut self, closing: bool) -> Result<usize, String> {
-        let last = self.concat()?;
-        let mut frame = self.frames.pop().unwrap();
-        self.arena.branch(&mut frame.branches, last);
-        let node = self.arena.collapse(Kind::Alt, frame.branches);
-        let (node, cost) = self.arena.normalize_push(node);
-        self.num_runes += cost;
-        self.check(node)?;
-        if closing {
-            self.flags = frame.flags;
-        }
-        let node = if closing && frame.capture {
-            self.arena
-                .node(Kind::Capture, vec![], vec![node], 0, 0, None)
-        } else {
-            node
-        };
+    fn alternate(&mut self) -> Result<usize, String> {
+        let index = self
+            .stack
+            .iter()
+            .rposition(|&id| self.arena.pseudo(id))
+            .map_or(0, |i| i + 1);
+        let children = self.stack.split_off(index);
+        self.arena.clean_last(&children);
+        self.arena.context = self.stack.clone();
+        let node = self.arena.collapse(Kind::Alt, children);
+        let cost = self.arena.nodes[node].runes.len();
+        self.push(node, cost)?;
         Ok(node)
+    }
+    fn left_paren(&mut self, flags: u8, capture: bool) -> Result<(), String> {
+        let node = self.arena.node(
+            Kind::LeftParen,
+            vec![],
+            vec![],
+            flags,
+            u64::from(capture),
+            None,
+        );
+        self.push(node, 0)
+    }
+    fn right_paren(&mut self) -> Result<(), String> {
+        self.concat()?;
+        if self.arena.swap_bar(&mut self.stack) {
+            self.stack.pop();
+        }
+        self.alternate()?;
+        if self.stack.len() < 2 {
+            return Err(error("unexpected )", self.pattern));
+        }
+        let body = self.stack.pop().unwrap();
+        let marker = self.stack.pop().unwrap();
+        if self.arena.nodes[marker].kind != Kind::LeftParen {
+            return Err(error("unexpected )", self.pattern));
+        }
+        self.flags = self.arena.nodes[marker].flags;
+        let node = if self.arena.nodes[marker].min == 0 {
+            body
+        } else {
+            self.arena.capture(marker, body);
+            marker
+        };
+        let cost = self.arena.nodes[node].runes.len();
+        self.push(node, cost)
     }
     fn folded(&self) -> bool {
         self.flags & 1 != 0
     }
-    fn check(&self, node: usize) -> Result<(), String> {
-        if self.num_runes > 33554432 || self.arena.nodes[node].size > 3355443 {
-            return Err(error("expression too large", self.pattern));
-        }
-        if self.arena.nodes[node].height > 1000 {
-            return Err(error("expression nests too deeply", self.pattern));
-        }
-        Ok(())
+    fn check(&mut self, node: usize) -> Result<(), String> {
+        self.arena
+            .limits(node, &self.stack)
+            .map_err(|code| error(code, self.pattern))
     }
     fn push(&mut self, node: usize, cost: usize) -> Result<(), String> {
-        self.num_runes += cost;
-        self.frames.last_mut().unwrap().push(node, &mut self.arena);
+        self.arena.num_runes += cost;
+        let class = self.arena.nodes[node].kind == Kind::Class;
+        self.arena.normalize_push(node);
+        if class && self.arena.nodes[node].kind == Kind::Literal {
+            let n = &self.arena.nodes[node];
+            if self
+                .arena
+                .maybe_concat(&mut self.stack, Some((n.runes[0], n.flags)))
+            {
+                return Ok(());
+            }
+        } else {
+            self.arena.merge_literals(&mut self.stack);
+        }
+        self.stack.push(node);
         self.check(node)
     }
     fn literal(&mut self, r: u32) -> Result<(), String> {
@@ -358,7 +379,7 @@ impl<'a> Parser<'a> {
         let start = self.pos;
         if !self.remaining().starts_with("(?") {
             self.pos += 1;
-            self.frames.push(Frame::new(self.flags, true));
+            self.left_paren(self.flags, true)?;
             return Ok(());
         }
         let rest = self.remaining();
@@ -381,7 +402,7 @@ impl<'a> Parser<'a> {
                     &self.pattern[start..self.pos],
                 ));
             }
-            self.frames.push(Frame::new(self.flags, true));
+            self.left_paren(self.flags, true)?;
             return Ok(());
         }
         self.pos += 2;
@@ -417,7 +438,7 @@ impl<'a> Parser<'a> {
                 }
                 58 | 41 if !minus || saw => {
                     if c == 58 {
-                        self.frames.push(Frame::new(old, false));
+                        self.left_paren(old, false)?;
                     }
                     return Ok(());
                 }
@@ -480,9 +501,8 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
         pattern,
         pos: 0,
         flags: 0,
-        frames: vec![Frame::new(0, false)],
+        stack: vec![],
         arena: Arena::default(),
-        num_runes: 0,
     };
     let mut last_repeat = None;
     while !p.remaining().is_empty() {
@@ -493,18 +513,17 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
             b'(' => p.group()?,
             b')' => {
                 p.pos += 1;
-                if p.frames.len() == 1 {
-                    return Err(error("unexpected )", pattern));
-                }
-                let node = p.finish_frame(true)?;
-                let (node, cost) = p.arena.normalize_push(node);
-                p.push(node, cost)?;
+                p.right_paren()?;
             }
             b'|' => {
                 p.pos += 1;
-                let node = p.concat()?;
-                p.arena
-                    .branch(&mut p.frames.last_mut().unwrap().branches, node);
+                p.concat()?;
+                if !p.arena.swap_bar(&mut p.stack) {
+                    let node = p
+                        .arena
+                        .node(Kind::VerticalBar, vec![], vec![], p.flags, 0, None);
+                    p.push(node, 0)?;
+                }
             }
             b'*' | b'+' | b'?' | b'{' => {
                 let count = if byte == b'{' {
@@ -528,7 +547,8 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                             &pattern[previous..p.pos],
                         ));
                     }
-                    let Some(child) = p.frames.last_mut().unwrap().nodes.pop() else {
+                    let Some(child) = p.stack.last().copied().filter(|&id| !p.arena.pseudo(id))
+                    else {
                         return Err(error(
                             "missing argument to repetition operator",
                             &pattern[start..p.pos],
@@ -541,7 +561,7 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                         _ => Kind::Repeat,
                     };
                     let node = p.arena.node(kind, vec![], vec![child], nongreedy, min, max);
-                    p.frames.last_mut().unwrap().nodes.push(node);
+                    *p.stack.last_mut().unwrap() = node;
                     p.check(node)?;
                     if kind == Kind::Repeat
                         && (min >= 2 || max.is_some_and(|m| m >= 2))
@@ -581,11 +601,17 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
                     p.pos += 2;
                     let node = p.arena.node(Kind::Atom(b), vec![], vec![], 0, 0, None);
                     p.push(node, 0)?;
-                } else if let Some(ranges) = p.unicode_class()?.or_else(|| p.perl_class()) {
-                    p.class_node(ranges)?;
                 } else {
-                    let r = p.escape()?;
-                    p.literal(r)?;
+                    let dummy = p.arena.node(Kind::Class, vec![], vec![], p.flags, 0, None);
+                    if let Some(ranges) = p.unicode_class()?.or_else(|| p.perl_class()) {
+                        let cost = ranges.len();
+                        p.arena.nodes[dummy].runes = ranges;
+                        p.push(dummy, cost)?;
+                    } else {
+                        p.arena.reuse(dummy);
+                        let r = p.escape()?;
+                        p.literal(r)?;
+                    }
                 }
             }
             b'.' => {
@@ -612,9 +638,12 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
         }
         last_repeat = repeat;
     }
-    let node = p.finish_frame(false)?;
-    p.check(node)?;
-    if !p.frames.is_empty() {
+    p.concat()?;
+    if p.arena.swap_bar(&mut p.stack) {
+        p.stack.pop();
+    }
+    p.alternate()?;
+    if p.stack.len() != 1 {
         return Err(error("missing closing )", pattern));
     }
     Ok(())

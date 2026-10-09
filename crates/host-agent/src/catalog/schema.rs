@@ -1,7 +1,7 @@
 //! Typed decoding for the pinned google/jsonschema-go v0.4.3 compiler.
 //!
 //! The private compiler assembly is deliberately not wired to registry
-//! admission while regexp resource accounting remains incomplete. It retains
+//! admission pending provider registry and lifecycle validation. It retains
 //! typed children and union fields rather than traversing generic JSON.
 //! Integer keywords use the owner's custom int32 decoder,
 //! rather than a meta-schema rule (negative bounds are accepted by the owner).

@@ -101,7 +101,7 @@ def run(go, rust, out):
     assert hashes == {path: sha(Path(path)) for path in hashes}
     pinned()
     report = {
-        'scope': 'T0 private assembled typed schema decoder, local checks, URI/anchor/reference graph and native regexp grammar versus actual owning catalog validateJSONSchema. Scoped assembly comparisons; regexp compiler-resource cache gap and production registry wiring remain open. No schema-instance validation or provider activation claim.',
+        'scope': 'T0 private assembled typed schema decoder, local checks, URI/anchor/reference graph and native regexp grammar versus actual owning catalog validateJSONSchema. Scoped assembly comparisons; compiler-resource cases are verified separately. Production registry wiring and runtime lifecycle remain open. No schema-instance validation or provider activation claim.',
         'sourceLock': lock, 'provenance': hashes, 'goBinarySha256': sha(go),
         'rustTestBinarySha256': sha(rust), 'cases': len(rows), 'iterations': 5,
         'passed': sum(r['pass'] for r in comparisons), 'total': len(comparisons),

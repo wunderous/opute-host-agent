@@ -537,3 +537,67 @@ an earlier M1–M6 artifact, so the new sweep cannot be spliced into it; a compl
 manifest refresh remains required before promotion. The unwaived regexp cache
 mismatch, registry wiring and the remainder of M7–M13 stay open. Public provider
 activation remains closed; no milestone exit is asserted by these T0 results.
+
+## Native allocation reuse and lazy regexp resource caches
+
+The private parser now uses one flat parse stack with explicit parenthesis and
+alternation markers, an index-based LIFO allocation pool, and the owning lazy
+size/height caches. Pool reuse deletes the height entry and retains the size
+entry, matching actual Go. Cache activation uses the number of distinct
+allocations and the global repeat product; checked roots are recalculated while
+cached descendants keep Go's values. Factoring mutates existing allocations,
+checks the owning suffix boundaries and recycles removed nodes in Go order.
+Height and size walks use an explicit work stack instead of recursive Rust
+ownership. These are compatibility mechanics, not new public parser policy.
+
+`provider-regexp-cache-resources/summary.json` retains **447/447** exact
+comparisons. It includes all 114 original resource cases and the subsequent
+333-case expansion. The last retained mismatch, the accepted
+`(?:abcd|abce|abcf){1000}` expression repeated 1,000 times, now receives Go's
+acceptance through the generic allocator/cache mechanics. There is no
+pattern-specific success branch or relaxed limit. Historical 98/114 and
+446/447 failed captures remain intact with their original source hashes.
+
+`provider-regexp-cache-controls/summary.json` retains **925/925** comparisons
+(185 cases, five iterations). It varies factored prefix lengths, branch counts,
+captures, fold flags, singleton classes, duplicate/empty branches, surrounding
+literals and near-size repetition counts. It also compares literal-only
+expressions around 3,355,443 runes: Go can leave its size cache inactive when
+the allocation count and repeat product are small. Near-1,000 nesting cases
+exercise the height cache and pool reuse. Outcomes are complete exact errors or
+empty success; no diagnostic substitution or resource waiver is used.
+
+The Unicode probe exposed repeated copying of a growing class vector in the
+native merge. Class unions now append in place like Go, and preserve the
+owning raw-range accounting before final cleanup. A superseded scratch producer
+was explicitly stopped after identifying that copy behavior; its partial
+outputs are not retained as a passing result. The final 447-case producer
+completed successfully. Dedicated large debug-fixture processes receive a
+600-second harness deadline; this does not change any product parser limit.
+
+`provider-regexp-cache-grammar/summary.json` retains **138,920/138,920** exact
+comparisons. `provider-schema-cache-assembled/summary.json` retains
+**317,015/317,015** assembled compiler comparisons (63,403 cases, five
+iterations), with the resource/caching corpora verified separately. These are
+T0 component results. The schema checker remains private; the registry fixture
+still uses its explicitly declared well-formed subset callback until the next
+integration step. No runtime registry publication or provider activation is
+claimed by these captures.
+
+Validation: **179 workspace tests passed, sixteen dedicated fixtures ignored**;
+the differential drivers explicitly invoked their fixtures. Formatting, Clippy
+with warnings denied, locked release build, the complete pinned Go
+`regexp/syntax` suite and all nine OpenSpec checks passed. Full source and raw
+input/output indices were independently verified. Logs and receipts are bound
+by `provider-regexp-cache-validation.json`.
+
+The release remains byte-identical at
+`e2e6e5c21a758219df0e7f25536c079ac91f36d521003d0733ce5b9578579ced`.
+`provider-regexp-cache-secret-reuse.json` verifies that exact artifact, the
+unchanged projection runtime sources and the complete retained raw outcomes
+before reusing the preceding 16-field, two-mode secret sweep. The whole-agent
+cutover verifier remains **FAIL** on 76 inventory gaps and the historical M5
+source binding; the manifest still requires a complete refresh before
+promotion. Registry integration, the fake/real-provider lifecycle matrix,
+restart and in-flight replacement evidence, and M8–M13 remain open. Public
+provider activation stays closed and the goal remains active.

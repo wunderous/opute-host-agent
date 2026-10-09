@@ -109,6 +109,8 @@ pub(super) fn negate(r: &[u32]) -> Vec<u32> {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(super) enum Kind {
     Empty,
+    LeftParen,
+    VerticalBar,
     Any,
     AnyNotNL,
     Literal,
@@ -130,13 +132,18 @@ pub(super) struct Node {
     pub flags: u8,
     pub min: u64,
     pub max: Option<u64>,
-    pub height: usize,
     pub copies: u64,
-    pub size: u64,
 }
 #[derive(Default)]
 pub(super) struct Arena {
     pub nodes: Vec<Node>,
+    free: Vec<usize>,
+    sizes: Option<BTreeMap<usize, u64>>,
+    heights: Option<BTreeMap<usize, u64>>,
+    repeats: u64,
+    pub num_runes: usize,
+    pub context: Vec<usize>,
+    failure: Option<&'static str>,
 }
 impl Arena {
     pub fn node(
@@ -148,51 +155,174 @@ impl Arena {
         min: u64,
         max: Option<u64>,
     ) -> usize {
-        let height = 1 + children
-            .iter()
-            .map(|&id| self.nodes[id].height)
-            .max()
-            .unwrap_or(0);
+        let node = self.build(kind, runes, children, flags, min, max);
+        let id = self.free.pop().unwrap_or(self.nodes.len());
+        if id == self.nodes.len() {
+            self.nodes.push(node);
+        } else {
+            self.nodes[id] = node;
+        }
+        id
+    }
+    fn build(
+        &self,
+        kind: Kind,
+        runes: Vec<u32>,
+        children: Vec<usize>,
+        flags: u8,
+        min: u64,
+        max: Option<u64>,
+    ) -> Node {
         let mut copies = children
             .iter()
             .map(|&id| self.nodes[id].copies)
             .max()
             .unwrap_or(1);
-        let sum = children.iter().map(|&id| self.nodes[id].size).sum::<u64>();
-        let size = match kind {
-            Kind::Literal => runes.len() as u64,
-            Kind::Capture | Kind::Star => sum.saturating_add(2),
-            Kind::Plus | Kind::Quest => sum.saturating_add(1),
-            Kind::Concat => sum,
-            Kind::Alt => sum.saturating_add(children.len().saturating_sub(1) as u64),
-            Kind::Repeat => {
-                copies = if max == Some(0) {
-                    0
-                } else {
-                    copies.saturating_mul(max.unwrap_or(min))
-                };
-                match max {
-                    Some(m) => sum.saturating_mul(m).saturating_add(m - min),
-                    None if min == 0 => sum.saturating_add(2),
-                    None => sum.saturating_mul(min).saturating_add(1),
-                }
-            }
-            _ => 1,
+        if kind == Kind::Repeat {
+            copies = if max == Some(0) {
+                0
+            } else {
+                copies.saturating_mul(max.unwrap_or(min))
+            };
         }
-        .max(1);
-        let id = self.nodes.len();
-        self.nodes.push(Node {
+        Node {
             kind,
             runes,
             children,
             flags,
             min,
             max,
-            height,
             copies,
-            size,
-        });
-        id
+        }
+    }
+    pub fn reuse(&mut self, id: usize) {
+        if let Some(heights) = &mut self.heights {
+            heights.remove(&id);
+        }
+        // Preserve Go's size entry across allocator reuse.
+        self.free.push(id);
+    }
+    fn assign(
+        &mut self,
+        id: usize,
+        kind: Kind,
+        runes: Vec<u32>,
+        children: Vec<usize>,
+        flags: u8,
+        bounds: (u64, Option<u64>),
+    ) {
+        let (min, max) = bounds;
+        self.nodes[id] = self.build(kind, runes, children, flags, min, max);
+    }
+    fn cached(&mut self, root: usize, height: bool) -> u64 {
+        let mut pending = vec![(root, true, false)];
+        while let Some((id, force, expanded)) = pending.pop() {
+            let cache = if height {
+                self.heights.as_ref().unwrap()
+            } else {
+                self.sizes.as_ref().unwrap()
+            };
+            if !force && cache.contains_key(&id) {
+                continue;
+            }
+            let n = &self.nodes[id];
+            if !expanded {
+                pending.push((id, force, true));
+                for &child in n.children.iter().rev() {
+                    pending.push((child, false, false));
+                }
+                continue;
+            }
+            let cache = if height {
+                self.heights.as_ref().unwrap()
+            } else {
+                self.sizes.as_ref().unwrap()
+            };
+            let value = if height {
+                1 + n.children.iter().map(|c| cache[c]).max().unwrap_or(0)
+            } else {
+                let sum = n.children.iter().map(|c| cache[c]).sum::<u64>();
+                match n.kind {
+                    Kind::Literal => n.runes.len() as u64,
+                    Kind::Capture | Kind::Star => sum.saturating_add(2),
+                    Kind::Plus | Kind::Quest => sum.saturating_add(1),
+                    Kind::Concat => sum,
+                    Kind::Alt => sum.saturating_add(n.children.len().saturating_sub(1) as u64),
+                    Kind::Repeat => match n.max {
+                        Some(m) => sum.saturating_mul(m).saturating_add(m - n.min),
+                        None if n.min == 0 => sum.saturating_add(2),
+                        None => sum.saturating_mul(n.min).saturating_add(1),
+                    },
+                    _ => 1,
+                }
+                .max(1)
+            };
+            if height {
+                self.heights.as_mut().unwrap().insert(id, value);
+            } else {
+                self.sizes.as_mut().unwrap().insert(id, value);
+            }
+        }
+        if height {
+            self.heights.as_ref().unwrap()[&root]
+        } else {
+            self.sizes.as_ref().unwrap()[&root]
+        }
+    }
+    pub fn limits(&mut self, id: usize, stack: &[usize]) -> Result<(), &'static str> {
+        if let Some(error) = self.failure {
+            return Err(error);
+        }
+        if self.num_runes > 33554432 {
+            self.failure = Some("expression too large");
+        }
+        if self.sizes.is_none() {
+            self.repeats = self.repeats.max(1);
+            let n = &self.nodes[id];
+            if n.kind == Kind::Repeat {
+                let count = n.max.unwrap_or(n.min).max(1);
+                self.repeats = if count > 3355443 / self.repeats {
+                    3355443
+                } else {
+                    self.repeats * count
+                };
+            }
+            if self.nodes.len() as u64 >= 3355443 / self.repeats {
+                self.sizes = Some(BTreeMap::new());
+                for &node in stack {
+                    if self.cached(node, false) > 3355443 {
+                        self.failure = Some("expression too large");
+                        break;
+                    }
+                }
+            }
+        }
+        if self.failure.is_none() && self.sizes.is_some() && self.cached(id, false) > 3355443 {
+            self.failure = Some("expression too large");
+        }
+        if self.failure.is_none() && self.nodes.len() >= 1000 {
+            if self.heights.is_none() {
+                self.heights = Some(BTreeMap::new());
+                for &node in stack {
+                    if self.cached(node, true) > 1000 {
+                        self.failure = Some("expression nests too deeply");
+                        break;
+                    }
+                }
+            }
+            if self.failure.is_none() && self.cached(id, true) > 1000 {
+                self.failure = Some("expression nests too deeply");
+            }
+        }
+        self.failure.map_or(Ok(()), Err)
+    }
+    fn check_factored(&mut self, id: usize) {
+        let context = self.context.clone();
+        let _ = self.limits(id, &context);
+    }
+    pub fn capture(&mut self, id: usize, child: usize) {
+        let flags = self.nodes[id].flags;
+        self.assign(id, Kind::Capture, vec![], vec![child], flags, (0, None));
     }
     pub fn empty(&mut self) -> usize {
         self.node(Kind::Empty, vec![], vec![], 0, 0, None)
@@ -203,87 +333,103 @@ impl Arena {
     pub fn normalize_push(&mut self, id: usize) -> (usize, usize) {
         let cost = self.nodes[id].runes.len();
         if self.nodes[id].kind == Kind::Class {
-            let ranges = self.nodes[id].runes.clone();
-            (self.class(ranges), cost)
-        } else {
-            (id, cost)
+            let r = &self.nodes[id].runes;
+            let folded = r.len() == 4
+                && r[0] == r[1]
+                && r[2] == r[3]
+                && fold(r[0]) == r[2]
+                && fold(r[2]) == r[0]
+                || r.len() == 2 && r[0] + 1 == r[1] && fold(r[0]) == r[1] && fold(r[1]) == r[0];
+            if folded || r.len() == 2 && r[0] == r[1] {
+                let rune = r[0];
+                self.assign(
+                    id,
+                    Kind::Literal,
+                    vec![rune],
+                    vec![],
+                    u8::from(folded),
+                    (0, None),
+                );
+            }
         }
+        (id, cost)
     }
     fn clean_alt(&mut self, id: usize) -> usize {
         let n = &self.nodes[id];
-        if n.kind != Kind::Class {
-            return id;
+        if n.kind == Kind::Class {
+            let r = clean(&n.runes);
+            let kind = if r == [0, 0x10ffff] {
+                Kind::Any
+            } else if r == [0, 9, 11, 0x10ffff] {
+                Kind::AnyNotNL
+            } else {
+                Kind::Class
+            };
+            self.assign(
+                id,
+                kind,
+                if kind == Kind::Class { r } else { vec![] },
+                vec![],
+                0,
+                (0, None),
+            );
         }
-        let kind = if n.runes == [0, 0x10ffff] {
-            Some(Kind::Any)
-        } else if n.runes == [0, 9, 11, 0x10ffff] {
-            Some(Kind::AnyNotNL)
-        } else {
-            None
-        };
-        if let Some(kind) = kind {
-            self.node(kind, vec![], vec![], 0, 0, None)
-        } else {
-            id
-        }
+        id
     }
     pub fn class(&mut self, runes: Vec<u32>) -> usize {
-        let r = clean(&runes);
-        if r.len() == 2 && r[0] == r[1] {
-            return self.literal(vec![r[0]], false);
-        }
-        if r.len() == 4 && r[0] == r[1] && r[2] == r[3] && fold(r[0]) == r[2] && fold(r[2]) == r[0]
-            || r.len() == 2 && r[0] + 1 == r[1] && fold(r[0]) == r[1] && fold(r[1]) == r[0]
-        {
-            return self.literal(vec![r[0]], true);
-        }
-        self.node(Kind::Class, r, vec![], 0, 0, None)
+        self.node(Kind::Class, clean(&runes), vec![], 0, 0, None)
     }
-    pub fn merge_literals(&mut self, nodes: &mut Vec<usize>) {
+    pub fn maybe_concat(&mut self, nodes: &mut Vec<usize>, incoming: Option<(u32, u8)>) -> bool {
         let n = nodes.len();
         if n < 2 {
-            return;
+            return false;
         }
-        let a = &self.nodes[nodes[n - 2]];
-        let b = &self.nodes[nodes[n - 1]];
-        if a.kind == Kind::Literal && b.kind == Kind::Literal && a.flags == b.flags {
-            let first = nodes[n - 2];
-            let second = nodes[n - 1];
+        let first = nodes[n - 2];
+        let second = nodes[n - 1];
+        if self.nodes[first].kind == Kind::Literal
+            && self.nodes[second].kind == Kind::Literal
+            && self.nodes[first].flags & 1 == self.nodes[second].flags & 1
+        {
             let runes = std::mem::take(&mut self.nodes[second].runes);
             self.nodes[first].runes.extend(runes);
-            self.nodes[first].size = self.nodes[first].runes.len() as u64;
+            if let Some((r, flags)) = incoming {
+                self.assign(second, Kind::Literal, vec![r], vec![], flags, (0, None));
+                return true;
+            }
             nodes.pop();
+            self.reuse(second);
         }
+        false
+    }
+    pub fn merge_literals(&mut self, nodes: &mut Vec<usize>) {
+        self.maybe_concat(nodes, None);
     }
     pub fn collapse(&mut self, kind: Kind, children: Vec<usize>) -> usize {
         if children.is_empty() {
             return self.empty();
         }
         if children.len() == 1 {
-            return if kind == Kind::Alt {
-                self.clean_alt(children[0])
-            } else {
-                children[0]
-            };
+            return children[0];
         }
+        let id = self.node(kind, vec![], vec![], 0, 0, None);
         let mut flat = Vec::new();
-        for id in children {
-            if self.nodes[id].kind == kind {
-                flat.extend(self.nodes[id].children.clone());
+        for child in children {
+            if self.nodes[child].kind == kind {
+                flat.extend(self.nodes[child].children.clone());
+                self.reuse(child);
             } else {
-                flat.push(id);
+                flat.push(child);
             }
         }
         if kind == Kind::Alt {
-            if let Some(last) = flat.last_mut() {
-                *last = self.clean_alt(*last);
-            }
             flat = self.factor(flat);
         }
-        if flat.len() == 1 {
+        if kind == Kind::Alt && flat.len() == 1 {
+            self.reuse(id);
             flat[0]
         } else {
-            self.node(kind, vec![], flat, 0, 0, None)
+            self.assign(id, kind, vec![], flat, 0, (0, None));
+            id
         }
     }
     fn leading(&self, id: usize) -> usize {
@@ -294,30 +440,61 @@ impl Arena {
         }
     }
     fn remove_string(&mut self, id: usize, len: usize) -> usize {
-        let n = self.nodes[id].clone();
-        if n.kind == Kind::Concat {
-            let mut children = n.children;
-            children[0] = self.remove_string(children[0], len);
-            if self.nodes[children[0]].kind == Kind::Empty {
-                children.remove(0);
-            }
-            return self.collapse(Kind::Concat, children);
-        }
-        if n.kind == Kind::Literal {
-            if len == n.runes.len() {
-                self.empty()
-            } else {
-                self.literal(n.runes[len..].to_vec(), n.flags != 0)
-            }
-        } else {
-            id
-        }
-    }
-    fn remove_node(&mut self, id: usize) -> usize {
         if self.nodes[id].kind == Kind::Concat {
+            let child = self.nodes[id].children[0];
+            let child = self.remove_string(child, len);
+            self.nodes[id].children[0] = child;
+            if self.nodes[child].kind == Kind::Empty {
+                self.reuse(child);
+                if self.nodes[id].children.len() == 2 {
+                    let next = self.nodes[id].children[1];
+                    self.reuse(id);
+                    return next;
+                }
+                self.nodes[id].children.remove(0);
+            }
+            let n = self.nodes[id].clone();
+            self.assign(id, n.kind, n.runes, n.children, n.flags, (n.min, n.max));
+        } else if self.nodes[id].kind == Kind::Literal {
+            let runes = self.nodes[id].runes[len..].to_vec();
+            let kind = if runes.is_empty() {
+                Kind::Empty
+            } else {
+                Kind::Literal
+            };
+            let flags = self.nodes[id].flags;
+            self.assign(id, kind, runes, vec![], flags, (0, None));
+        }
+        id
+    }
+    fn remove_node(&mut self, id: usize, reuse: bool) -> usize {
+        if self.nodes[id].kind == Kind::Concat {
+            if reuse {
+                self.reuse(self.nodes[id].children[0]);
+            }
             let children = self.nodes[id].children[1..].to_vec();
-            self.collapse(Kind::Concat, children)
+            if children.len() == 1 {
+                let child = children[0];
+                self.reuse(id);
+                return child;
+            }
+            self.assign(
+                id,
+                if children.is_empty() {
+                    Kind::Empty
+                } else {
+                    Kind::Concat
+                },
+                vec![],
+                children,
+                0,
+                (0, None),
+            );
+            id
         } else {
+            if reuse {
+                self.reuse(id);
+            }
             self.empty()
         }
     }
@@ -402,7 +579,11 @@ impl Arena {
                 let p = self.literal(prefix.clone(), first.flags != 0);
                 let suffixes = children[start..end]
                     .iter()
-                    .map(|&id| self.remove_string(id, prefix.len()))
+                    .map(|&id| {
+                        let id = self.remove_string(id, prefix.len());
+                        self.check_factored(id);
+                        id
+                    })
                     .collect();
                 let suffix = self.collapse(Kind::Alt, suffixes);
                 out.push(self.node(Kind::Concat, vec![], vec![p, suffix], 0, 0, None));
@@ -428,7 +609,12 @@ impl Arena {
             if end - start > 1 {
                 let suffixes = children[start..end]
                     .iter()
-                    .map(|&id| self.remove_node(id))
+                    .enumerate()
+                    .map(|(i, &id)| {
+                        let id = self.remove_node(id, i != 0);
+                        self.check_factored(id);
+                        id
+                    })
                     .collect();
                 let suffix = self.collapse(Kind::Alt, suffixes);
                 out.push(self.node(Kind::Concat, vec![], vec![first, suffix], 0, 0, None));
@@ -443,29 +629,40 @@ impl Arena {
         while i < children.len() {
             if self.is_class(children[i]) {
                 let start = i;
-                let mut ranges = Vec::new();
                 while i < children.len() && self.is_class(children[i]) {
-                    for p in self.as_ranges(children[i]).chunks_exact(2) {
-                        append(&mut ranges, p[0], p[1]);
-                    }
                     i += 1;
                 }
-                if i - start == 1 {
-                    out.push(children[start]);
-                } else {
-                    out.push(self.node(Kind::Class, clean(&ranges), vec![], 0, 0, None));
+                let mut run = children[start..i].to_vec();
+                if run.len() > 1 {
+                    let mut most = 0;
+                    for j in 1..run.len() {
+                        if self.rank(run[j]) > self.rank(run[most])
+                            || self.rank(run[j]) == self.rank(run[most])
+                                && self.nodes[run[j]].runes.len()
+                                    > self.nodes[run[most]].runes.len()
+                        {
+                            most = j;
+                        }
+                    }
+                    run.swap(0, most);
+                    for &other in &run[1..] {
+                        self.merge_class(run[0], other);
+                        self.reuse(other);
+                    }
+                    self.clean_alt(run[0]);
                 }
+                out.push(run[0]);
             } else {
                 out.push(children[i]);
                 i += 1;
             }
         }
-        let mut final_nodes: Vec<usize> = Vec::new();
-        for id in out {
+        let mut final_nodes = Vec::new();
+        for (i, &id) in out.iter().enumerate() {
             if self.nodes[id].kind == Kind::Empty
-                && final_nodes
-                    .last()
-                    .is_some_and(|&last| self.nodes[last].kind == Kind::Empty)
+                && out
+                    .get(i + 1)
+                    .is_some_and(|&next| self.nodes[next].kind == Kind::Empty)
             {
                 continue;
             }
@@ -473,20 +670,80 @@ impl Arena {
         }
         final_nodes
     }
-    // swapVerticalBar merges simple adjacent classes before factoring. Keep
-    // merged nodes as classes (do not apply push's singleton rewrite).
-    pub fn branch(&mut self, branches: &mut Vec<usize>, node: usize) {
-        if let Some(&previous) = branches.last() {
-            if self.is_class(previous) && self.is_class(node) {
-                let mut ranges = self.as_ranges(previous);
-                for p in self.as_ranges(node).chunks_exact(2) {
-                    append(&mut ranges, p[0], p[1]);
+    fn rank(&self, id: usize) -> u8 {
+        match self.nodes[id].kind {
+            Kind::Literal => 3,
+            Kind::Class => 4,
+            Kind::AnyNotNL => 5,
+            Kind::Any => 6,
+            _ => 0,
+        }
+    }
+    fn merge_class(&mut self, dst: usize, src: usize) {
+        match self.nodes[dst].kind {
+            Kind::Any => {}
+            Kind::AnyNotNL => {
+                if self
+                    .as_ranges(src)
+                    .chunks_exact(2)
+                    .any(|p| p[0] <= 10 && p[1] >= 10)
+                {
+                    self.nodes[dst].kind = Kind::Any;
                 }
-                branches.pop();
-                branches.push(self.node(Kind::Class, clean(&ranges), vec![], 0, 0, None));
-                return;
+            }
+            Kind::Literal
+                if self.nodes[src].kind == Kind::Literal
+                    && self.nodes[dst].runes == self.nodes[src].runes
+                    && self.nodes[dst].flags == self.nodes[src].flags => {}
+            Kind::Class => {
+                let source = self.as_ranges(src);
+                for p in source.chunks_exact(2) {
+                    append(&mut self.nodes[dst].runes, p[0], p[1]);
+                }
+            }
+            _ => {
+                let mut r = self.as_ranges(dst);
+                for p in self.as_ranges(src).chunks_exact(2) {
+                    append(&mut r, p[0], p[1]);
+                }
+                self.nodes[dst].kind = Kind::Class;
+                self.nodes[dst].runes = r;
             }
         }
-        branches.push(node);
+    }
+    pub fn swap_bar(&mut self, stack: &mut Vec<usize>) -> bool {
+        let n = stack.len();
+        if n >= 3
+            && self.nodes[stack[n - 2]].kind == Kind::VerticalBar
+            && self.is_class(stack[n - 1])
+            && self.is_class(stack[n - 3])
+        {
+            let mut src = stack[n - 1];
+            let mut dst = stack[n - 3];
+            if self.rank(src) > self.rank(dst) {
+                std::mem::swap(&mut src, &mut dst);
+                stack[n - 3] = dst;
+            }
+            self.merge_class(dst, src);
+            self.reuse(src);
+            stack.pop();
+            return true;
+        }
+        if n >= 2 && self.nodes[stack[n - 2]].kind == Kind::VerticalBar {
+            if n >= 3 {
+                self.clean_alt(stack[n - 3]);
+            }
+            stack.swap(n - 1, n - 2);
+            return true;
+        }
+        false
+    }
+    pub fn clean_last(&mut self, children: &[usize]) {
+        if let Some(&id) = children.last() {
+            self.clean_alt(id);
+        }
+    }
+    pub fn pseudo(&self, id: usize) -> bool {
+        matches!(self.nodes[id].kind, Kind::LeftParen | Kind::VerticalBar)
     }
 }

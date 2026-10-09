@@ -87,7 +87,7 @@ def limits():
     return rows
 
 
-def run(go,rust,out,kind):
+def run(go,rust,out,kind,scenario_factory=None,extra_sources=()):
     out.mkdir(parents=True,exist_ok=True)
     generator=ROOT/'tools/parity/go-regexp-data/main.go'
     facts=json.loads(subprocess.check_output([str(ROOT/'.parity/setup/go/bin/go'),'run',str(generator)],
@@ -105,20 +105,22 @@ def run(go,rust,out,kind):
     paths+=list((ROOT/'tools/parity/provider-catalog-oracle').iterdir())
     for package in ['regexp','regexp/syntax','unicode']:
         paths+=list((ROOT/'.parity/setup/go/src'/package).glob('*.go'))
+    paths+=list(extra_sources)
     hashes={str(p):sha(p) for p in paths}
     lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
     def pinned():
         def git(*args):return subprocess.check_output(['git','-C',str(ROOT/'.parity/go-src'),*args],text=True).strip()
         assert git('rev-parse','HEAD')==lock['sourceCommit'] and git('rev-parse','HEAD^{tree}')==lock['sourceTree']
         assert not git('status','--porcelain')
-    pinned();rows=grammar(facts) if kind=='grammar' else limits();comparisons=[]
-    for iteration in range(5 if kind=='grammar' else 1):
+    pinned();rows=scenario_factory(facts) if scenario_factory else grammar(facts) if kind=='grammar' else limits();comparisons=[]
+    iterations=5 if kind in ['grammar','cache'] else 1
+    for iteration in range(iterations):
         folder=out/str(iteration);folder.mkdir(parents=True,exist_ok=True)
         inp=folder/'input.json';target=folder/'rust.json';inp.write_text(json.dumps(rows,indent=2)+'\n')
         reference=json.loads(subprocess.check_output([str(go)],input=json.dumps(rows),text=True,timeout=60))
         subprocess.run([str(rust),'catalog::schema::tests::regexp_fixture','--exact','--ignored'],
             env={**os.environ,'PARITY_SCHEMA_REGEXP_INPUT':str(inp.resolve()),'PARITY_SCHEMA_REGEXP_OUTPUT':str(target.resolve())},
-            capture_output=True,check=True,timeout=300 if kind=='limits' else 60)
+            capture_output=True,check=True,timeout=600 if kind!='grammar' else 60)
         actual=json.loads(target.read_text());target.unlink();assert len(rows)==len(reference)==len(actual)
         for side,data in [('go',reference),('rust',actual)]:
             (folder/(side+'.json.gz')).write_bytes(gzip.compress(json.dumps(data).encode(),mtime=0))
@@ -126,9 +128,14 @@ def run(go,rust,out,kind):
             passed=equal(left,right);comparisons.append({'case':row['case'],'iteration':iteration,'pass':passed})
             if not passed:print('FAIL',row['case'],left['error'].split(': ')[1] if left['error'] else 'accepted',right['error'].split(': ')[1] if right['error'] else 'accepted',flush=True)
     assert hashes=={str(p):sha(p) for p in paths};pinned()
-    report={'scope':('T0 actual Go regexp.Compile vs native private grammar parser; complete error/acceptance comparisons for scoped syntax corpus. Native AST factoring and Unicode class expansion are exercised; full resource-limit equivalence remains open; not promoted into registry compiler.' if kind=='grammar' else 'T0 unwaived compiler-resource diagnostics against actual Go regexp.Compile. Failing rows remain an explicit implementation gap; not a parity pass or waived refusal.'),
+    scope={
+        'grammar':'T0 actual Go regexp.Compile vs native private syntax parser: complete exact outcomes for the scoped grammar corpus. Regexp execution and production provider admission are excluded.',
+        'limits':'T0 actual Go regexp.Compile vs native private parser resource boundaries. Every difference is retained unwaived; scoped parser checks do not prove registry publication or provider lifecycle.',
+        'cache':'T0 actual Go regexp.Compile vs native private lazy size/height caches and allocation reuse: factored prefixes, captures/flags, inactive-cache literals and nesting boundaries. Complete exact outcomes for scoped controls; no matcher or provider activation claim.',
+    }[kind]
+    report={'scope':scope,
         'sourceLock':lock,'provenance':hashes,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),
-        'cases':len(rows),'iterations':5 if kind=='grammar' else 1,'total':len(comparisons),'passed':sum(r['pass'] for r in comparisons),
+        'cases':len(rows),'iterations':iterations,'total':len(comparisons),'passed':sum(r['pass'] for r in comparisons),
         'failed':sum(not r['pass'] for r in comparisons),'rows':comparisons,
         'normalization':'Exact complete errors or empty success; no diagnostic replacement, scope-dependent waiver, AST normalization or forced acceptance. Unicode names generated from pinned Go tables and filtered through actual Go regexp.Compile; runtime uses static native name facts and no Go fallback.'}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
