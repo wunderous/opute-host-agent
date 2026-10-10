@@ -671,3 +671,67 @@ the ordinary suite), and all **nine** OpenSpec checks passed.
 `provider-registry-schema-validation.json` binds the current source hashes,
 release artifact, logs and independently verified registry, runtime,
 compensation and secret captures. M7 and M8 remain incomplete.
+
+## Generation-scoped service mounts and cancellation-safe ownership
+
+`provider/mounts.rs` now owns provider service values, immutable dependency
+bindings, generation-specific lookups and the shared adapter's disposal. It
+is private to the unactivated provider composition; no public provider
+installation or dispatch is enabled. Dependency families are drawn only from
+the mounting generation and the active generation of each provider, exactly
+as the pinned Go `provider_service_plugin.go` does. Ambiguous or missing
+families reject the mount. Earlier services from the failed attempt are
+unmounted in reverse order; an earlier generation remains intact. The first
+service owns closing the generation's adapter, so normal reverse teardown
+closes that adapter last. Displacement and explicit generation retirement use
+the same owned mounts; no second service map is cleared afterwards.
+
+`provider-service-mounts-bound/summary.json` retains **385/385** exact
+comparisons (77 cases, five iterations) against the actual owning Go mount,
+lookup, dependency, displacement and Cordis disposal functions. The build-only
+overlay adds an observation bridge while leaving the pinned tree unchanged.
+It exercises nil and empty generations/services/adapters, early and late
+dependency failures, duplicate mounts, ambiguity, replacement while the prior
+generation is active, exclusion of draining generations, restored generations,
+ordered partial disposal, repeated teardown, family displacement and opaque
+keys containing whitespace, Unicode, slashes and `@`. Complete observations
+compare mount order, service keys, offered identities, exact dependency keys
+and each adapter's closed-state refusal. Every case ends with empty services
+and mounts and an identical repeated-close observation. This is T0 evidence
+with unconnected adapters, not a provider process or public activation gate.
+The preceding `provider-service-mounts-initial/` capture retains the successful
+pre-cancellation-hardening component result with its own historical source
+bindings.
+
+The new blocked-call test mounts two services sharing a real adapter HTTP
+client, accepts a request on a loopback socket, cancels the teardown caller
+while that request is held by an explicit barrier, then releases it. The
+accepted request completes on its retained service/adapter; the owning cleanup
+task closes the adapter and removes every mount, and later calls on the
+retained handle fail closed. This matches Go's background disposal ownership
+while avoiding an async cancellation leaving a native mount permanently
+marked disposed. The cleanup task only owns disposal; it is not a workflow
+executor. Broader timeout, task cancellation, callback and provider process
+behavior still require the M7 composition and E2E matrix.
+
+The changed oracle producer was rebuilt, and
+`provider-service-mounts-registry-recheck/` passes **5,315/5,315** whole
+registry comparisons with current source bindings. **180 workspace tests**
+passed (seventeen dedicated driver fixtures ignored by the ordinary suite);
+formatting, warnings-denied Clippy, locked release build and all nine OpenSpec
+checks passed. Five repetitions of the owning Go mount, dependency, generation
+swap and disposal tests also passed. The release remains byte-identical at
+`ec63341311ec3ad41e5b30e6c5707a965bd95a7e42670f420e800ee0594323ab`;
+the preceding 102-scenario runtime suite and sixteen-field secret sweep can
+be reused only after checking their unchanged artifact, harness and raw
+evidence bindings. M7 and M8 remain incomplete and the global cutover gate
+still fails on inventory gaps and historical manifest provenance. Next is
+private candidate capability composition with catalog publication, then the
+fake-provider and all-five-provider process lifecycle matrix.
+
+`provider-service-mounts-validation.json` independently verifies all current
+mount/registry raw observations, source and raw-file indices, cleanup
+invariants and reuse of the byte-identical public runtime and secret sweep.
+The twelve selected owning Go tests passed all five repetitions (sixty test
+passes). No runtime lease is needed for these in-memory/loopback provider
+checks; no shared Incus, Kubernetes, tunnel or deployment state was mutated.

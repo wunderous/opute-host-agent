@@ -39,7 +39,10 @@ assert inventory(library_snapshot) == library_inventory
 resolver_virtual = library_snapshot/'jsonschema/parity_resolver_bridge.go'
 assert not resolver_virtual.exists()
 resolver_bridge = ROOT/'tools/parity/provider-catalog-oracle/resolver-bridge.go.txt'
-overlay.write_text(json.dumps({'Replace':{str(virtual):str(bridge),str(schema_virtual):str(schema_bridge),str(resolver_virtual):str(resolver_bridge)}},indent=2)+'\n')
+mounts_virtual = source/'internal/hostmcp/parity_mounts_bridge.go'
+assert not mounts_virtual.exists()
+mounts_bridge = module/'mounts-bridge.go.txt'
+overlay.write_text(json.dumps({'Replace':{str(virtual):str(bridge),str(schema_virtual):str(schema_bridge),str(resolver_virtual):str(resolver_bridge),str(mounts_virtual):str(mounts_bridge)}},indent=2)+'\n')
 alternate = ROOT/'.parity/m7/provider-catalog-oracle.mod'
 alternate.write_text((module/'go.mod').read_text().replace('../../../.parity/go-src',str(source))+
                      '\nreplace github.com/google/jsonschema-go => '+str(library_snapshot)+'\n')
@@ -49,6 +52,7 @@ assert not virtual.exists()
 assert subprocess.check_output(['git','-C',str(source),'status','--porcelain'],text=True).strip() == ''
 
 assert not schema_virtual.exists()
+assert not mounts_virtual.exists()
 assert not resolver_virtual.exists()
 assert inventory(library_snapshot) == library_inventory == inventory(library)
 (ROOT/'.parity/m7/schema-reference-source.json').write_text(json.dumps({

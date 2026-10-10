@@ -25,6 +25,7 @@ func main() {
 		Generation     string                    `json:"generation"`
 		Standalone     bool                      `json:"standalone"`
 		Registry       json.RawMessage           `json:"registry"`
+		Mounts         json.RawMessage           `json:"mounts"`
 		Schema         json.RawMessage           `json:"schema"`
 		Group          string                    `json:"group"`
 		DecodeOnly     bool                      `json:"decodeOnly"`
@@ -37,6 +38,10 @@ func main() {
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if len(row.Mounts) > 0 {
+			results = append(results, map[string]any{"observations": hostmcp.ParityProviderMounts(row.Mounts)})
+			continue
+		}
 		if row.Regexp != nil {
 			_, err := regexp.Compile(*row.Regexp)
 			message := ""

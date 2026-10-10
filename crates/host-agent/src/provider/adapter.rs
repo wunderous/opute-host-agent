@@ -292,6 +292,19 @@ pub struct Adapter {
     closed: RwLock<bool>,
 }
 impl Adapter {
+    #[cfg(test)]
+    pub(super) fn unconnected_fixture() -> Self {
+        Self::fixture_client("http://127.0.0.1:1".into(), BTreeSet::new())
+    }
+    #[cfg(test)]
+    pub(super) fn fixture_client(endpoint: String, tools: BTreeSet<String>) -> Self {
+        Self {
+            descriptor: PluginDescriptor::default(),
+            client: Client::new(endpoint, String::new(), String::new(), String::new()).unwrap(),
+            tools,
+            closed: RwLock::new(false),
+        }
+    }
     pub async fn connect(
         ctx: &RunCtx,
         descriptor: PluginDescriptor,

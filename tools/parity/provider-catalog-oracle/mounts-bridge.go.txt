@@ -1,0 +1,88 @@
+// Parity-only overlay. Calls the owning mount/disposal functions unchanged.
+package hostmcp
+
+import (
+	"context"
+	"encoding/json"
+	provider "github.com/wunderous/host-agents/contracts/provider"
+	"github.com/wunderous/host-agents/internal/cordis"
+	adapter "github.com/wunderous/host-agents/internal/cordis/mcp"
+)
+
+func ParityProviderMounts(raw json.RawMessage) []map[string]any {
+	var input struct {
+		Steps []struct {
+			Action     string                    `json:"action"`
+			Manifest   provider.InstallManifest  `json:"manifest"`
+			Generation string                    `json:"generation"`
+			Provider   string                    `json:"provider"`
+			Service    string                    `json:"service"`
+			Adapter    string                    `json:"adapter"`
+			IDs        []string                  `json:"ids"`
+			Families   []string                  `json:"families"`
+			Restore    cordis.ProviderGeneration `json:"restore"`
+		} `json:"steps"`
+	}
+	if err := json.Unmarshal(raw, &input); err != nil {
+		panic(err)
+	}
+	server := &Server{providerContext: cordis.NewContext(), providerLifecycle: cordis.NewProviderLifecycleManager(cordis.DrainPolicy{})}
+	connections := map[string]*adapter.Adapter{}
+	observations := []map[string]any{}
+	for _, step := range input.Steps {
+		var err error
+		result := map[string]any{}
+		switch step.Action {
+		case "adapter":
+			connections[step.Adapter] = &adapter.Adapter{}
+		case "restore":
+			err = server.providerLifecycle.Restore(step.Restore)
+		case "ready":
+			err = server.providerLifecycle.MarkReady(step.Generation)
+		case "activate":
+			_, _, err = server.providerLifecycle.Activate(step.Generation)
+		case "mount":
+			err = server.mountProviderGeneration(step.Manifest, step.Generation, connections[step.Adapter])
+		case "unmount":
+			err = server.unmountProviderGeneration(step.Provider, step.Generation)
+		case "ids":
+			err = server.unmountProviderPlugins(step.IDs)
+		case "displace":
+			err = server.displaceCordisCapabilityFamilies(step.Provider, step.Families)
+		case "close":
+			err = server.providerContext.Dispose(context.Background())
+		case "lookup":
+			value, found := server.providerServiceValueFor(step.Provider, step.Service, step.Generation)
+			result["found"] = found
+			if found {
+				result["service"] = map[string]any{"key": value.key, "provider": value.providerID, "generation": value.generationID, "capability": value.capabilityID, "offering": value.OfferingKey(), "inject": value.inject}
+			}
+			result["generationAdapter"] = server.providerGenerationAdapter(step.Provider, step.Generation) != nil
+		case "families":
+		default:
+			panic("unsupported mount fixture action: " + step.Action)
+		}
+		message := ""
+		if err != nil {
+			message = err.Error()
+		}
+		result["error"] = message
+		result["plugins"] = server.providerContext.PluginIDs()
+		result["services"] = server.providerContext.ServiceKeys()
+		result["families"] = server.injectableServiceFamilies(step.Generation)
+		probes := map[string]string{}
+		for id, connection := range connections {
+			_, failure := connection.Call(context.Background(), "probe", nil)
+			if failure == nil {
+				panic("unconnected adapter unexpectedly invoked")
+			}
+			probes[id] = failure.Error()
+		}
+		result["adapters"] = probes
+		observations = append(observations, result)
+	}
+	if err := server.providerContext.Dispose(context.Background()); err != nil {
+		panic(err)
+	}
+	return observations
+}
