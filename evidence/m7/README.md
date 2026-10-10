@@ -837,3 +837,71 @@ signed callback delegation and the provider capability output-schema/
 observation hook, then ordinary dispatch composition, publication/rollback,
 and the fake-provider plus five unchanged Go-provider lifecycle E2E matrix.
 No shared Incus, Kubernetes, tunnel or deployment state was mutated.
+
+## Provider output validation and shared Go regexp execution
+
+The private provider operation now exposes the owning `ValidateResult` hook.
+It refuses nil results through the outer capability guard, validates successful
+structured results against the declared output schema, and encodes the exact
+pass-through observation. Error results bypass output validation and retain
+`status=error` and `retryability=capability`. Content, resource links and
+manifest generation identity do not synthesize resources, facts, catalog
+revisions or semantic completion. The hook consumes SDK-projected JSON results;
+programmatic Go values that cannot occur on the JSON provider wire are outside
+this fixture. Public provider composition and signed delegation remain open.
+
+That hook exposed an existing mismatch between the two native value validators.
+The plan runner now delegates to the same Go-compatible validator used by the
+ordinary capability boundary. This removes divergent type/const/property/minimum
+error formatting and equality behavior. The initial owning-hook corpus found
+ninety integer refusal mismatches: Go shadows the original value with the
+`number(value)` conversion, so even a non-number reports `got float64`. The
+native validator now preserves that behavior. The full historical failure
+capture is retained in `provider-observation-integer-diagnostic/`; its original
+validator source is `provider-observation-integer-before.rs`. Historical source
+bindings must not be interpreted as current evidence. The intermediate smaller
+corpus in `provider-observation-bound/` passed 11,805 comparisons before seeded
+pattern expansion and the final layout repair; current evidence is the final
+expanded bundle.
+
+Boolean pattern execution now begins with the pinned native Go parser and
+Unicode 15 tables. Its owned AST is emitted iteratively into a normalized
+expression: literal folding and class ranges come from the pinned data, word
+boundaries use Go's ASCII definition, anchors preserve Go's line/text semantics,
+and capture names and greediness are omitted only because the caller requests a
+boolean match. Surrogate-only ranges cannot match valid input scalars. Original
+Go patterns never pass through Rust syntax or Rust Unicode class/folding rules.
+Rust's regex engine executes the normalized language with compilation size and
+nesting settings that avoid adding its default admission limits; the owning
+Go parser retains its original resource checks. Catalog compilation still uses
+syntax admission alone. This is a pattern engine boundary, not a plan executor.
+
+`provider-observation-final/` passes **67,335/67,335** exact owning Go
+`Capability.ValidateResult` comparisons over five repetitions. It covers
+primitive/union types, enum/const, required and nested properties, arrays,
+byte lengths and numeric minima, nil and error results, opaque observations,
+ASCII boundaries, quoting, named captures, Unicode categories/scripts and
+simple folding, seeded expression combinations and large/deep/repeated patterns.
+The existing syntax corpus remains green at **138,920/138,920**, and all
+**447** resource-limit cases pass. Registry **5,315/5,315**, generation binding
+and mounts **560/560**, and private candidates **2,710/2,710** pass with current
+source/binary bindings. The workspace passes **183 tests** with eighteen
+explicit differential fixtures ignored by the ordinary suite; formatting,
+warnings-denied Clippy, locked release build and all nine OpenSpec checks pass.
+
+The changed release artifact is
+`f7c537fed070c1b242506110dad90bbb82548839602e816313f73f1698d876b8`.
+Fresh public-runtime evidence passes **102/102 scenarios over five iterations**,
+and a fresh sixteen-field secret sweep across standalone/platform modes has
+**zero failures**. These establish regression coverage for the existing public
+runtime; they do not establish the still-unconnected provider lifecycle E2E.
+`provider-observation-validation.json` independently verifies every component
+raw comparison, source and binary hash, compressed-file index, runtime raw
+normalization/invariants/declared divergences, iteration records, and secret
+outcomes. Check logs and lossless archival byte hashes are retained in
+`provider-observation-checks/`. Global cutover still fails on 76 inventory gaps
+and fourteen historical provenance problems; the old global manifest was not
+spliced with fresh component evidence. The full M7–M13 goal remains open.
+Next is signed resource delegation and callback/task-owner composition, followed
+by publication/rollback and the fake-provider/five-Go-provider process matrix.
+No shared Incus, Kubernetes, tunnel or deployment state was mutated.

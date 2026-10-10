@@ -700,6 +700,10 @@ fn integer(node: &Node) -> Result<Option<i32>, &'static str> {
         .map_err(|_| "integer is out of range")
 }
 
+pub(crate) fn regexp_match(pattern: &str, text: &str) -> Result<bool, String> {
+    regexp::is_match(pattern, text)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

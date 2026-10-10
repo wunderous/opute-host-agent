@@ -45,6 +45,12 @@ pub struct Accepted {
     operation_id: String,
 }
 impl Operation {
+    pub fn validate_result(
+        &self,
+        result: Option<&Map<String, Value>>,
+    ) -> Result<super::observation::Observation, String> {
+        super::observation::validate(&self.descriptor, result)
+    }
     pub fn descriptor(&self) -> &Descriptor {
         &self.descriptor
     }

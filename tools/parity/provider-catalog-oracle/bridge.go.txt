@@ -2,6 +2,9 @@
 package hostmcp
 
 import (
+	"context"
+	"encoding/json"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	providercontract "github.com/wunderous/host-agents/contracts/provider"
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
 	"github.com/wunderous/host-agents/internal/tools"
@@ -35,4 +38,40 @@ func ParityCandidateLookup(active tools.CapabilityCatalogSnapshot, manifest prov
 	}
 	descriptor := capability.Definition()
 	return snapshot, ok, &descriptor
+}
+
+func ParityProviderObservation(raw json.RawMessage) (string, string) {
+	var input struct {
+		Manifest providercontract.InstallManifest `json:"manifest"`
+		Result   json.RawMessage                  `json:"result"`
+	}
+	if err := json.Unmarshal(raw, &input); err != nil {
+		panic(err)
+	}
+	var response *mcp.CallToolResult
+	if string(input.Result) != "null" {
+		var generic map[string]any
+		if err := json.Unmarshal(input.Result, &generic); err != nil {
+			panic(err)
+		}
+		encoded, err := json.Marshal(generic)
+		if err != nil {
+			panic(err)
+		}
+		if err := json.Unmarshal(encoded, &response); err != nil {
+			panic(err)
+		}
+	}
+	server := &Server{}
+	capabilities, _ := server.providerCapabilitiesForGeneration(input.Manifest, "g1", false)
+	observation, err := capabilities[0].ValidateResult(context.Background(), response)
+	encoded, failure := json.Marshal(observation)
+	if failure != nil {
+		panic(failure)
+	}
+	message := ""
+	if err != nil {
+		message = err.Error()
+	}
+	return string(encoded), message
 }

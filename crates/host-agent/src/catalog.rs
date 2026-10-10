@@ -18,7 +18,7 @@ use std::sync::OnceLock;
 pub mod registry;
 // Assembled native compiler, also exercised through the private registry fixture.
 #[allow(dead_code)]
-mod schema;
+pub(crate) mod schema;
 
 const SOURCE: &str = include_str!("../catalog/source.json");
 const RESOURCE_TYPE_KEYWORD: &str = "x-opute-resource-type";

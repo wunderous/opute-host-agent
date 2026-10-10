@@ -1,8 +1,8 @@
 // Copyright 2009 The Go Authors. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause; see licenses/Go-BSD.txt.
-//! Native Go 1.25 regexp syntax admission. Pattern execution is not part of
-//! catalog schema compilation. This private parser retains the owning lazy
-//! resource caches; production registry admission remains unwired.
+//! Native Go 1.25 regexp syntax admission and boolean pattern execution.
+//! Catalog compilation uses admission alone; capability/plan value validation
+//! executes a normalized owning AST with the pinned Unicode tables.
 use super::regexp_names::NAMES;
 
 fn error(code: &str, expression: &str) -> String {
@@ -496,7 +496,7 @@ fn counted(pattern: &str, pos: usize) -> Option<(u64, Option<u64>, usize)> {
         i + 1,
     ))
 }
-pub(super) fn parse(pattern: &str) -> Result<(), String> {
+fn compiled(pattern: &str) -> Result<(Arena, usize), String> {
     let mut p = Parser {
         pattern,
         pos: 0,
@@ -646,5 +646,114 @@ pub(super) fn parse(pattern: &str) -> Result<(), String> {
     if p.stack.len() != 1 {
         return Err(error("missing closing )", pattern));
     }
-    Ok(())
+    let root = p.stack[0];
+    Ok((p.arena, root))
+}
+
+pub(super) fn parse(pattern: &str) -> Result<(), String> {
+    compiled(pattern).map(|_| ())
+}
+
+// Match only the normalized owning AST. Rust syntax and Unicode tables never
+// interpret the original Go pattern; captures/greediness do not affect bool.
+pub(super) fn is_match(pattern: &str, text: &str) -> Result<bool, String> {
+    let (arena, root) = compiled(pattern)?;
+    enum Event {
+        Node(usize),
+        Text(String),
+    }
+    fn ranges(values: &[u32]) -> String {
+        let mut out = String::from("[");
+        let mut count = 0;
+        for pair in values.chunks_exact(2) {
+            for (lo, hi) in [
+                (pair[0], pair[1].min(0xd7ff)),
+                (pair[0].max(0xe000), pair[1]),
+            ] {
+                if lo <= hi {
+                    count += 1;
+                    out.push_str(&format!("\\x{{{lo:x}}}-\\x{{{hi:x}}}"));
+                }
+            }
+        }
+        if count == 0 {
+            return "[^\\x{0}-\\x{10ffff}]".into();
+        }
+        out.push(']');
+        out
+    }
+    let mut normalized = String::new();
+    let mut events = vec![Event::Node(root)];
+    while let Some(event) = events.pop() {
+        let Event::Node(id) = event else {
+            if let Event::Text(text) = event {
+                normalized.push_str(&text);
+            }
+            continue;
+        };
+        let node = &arena.nodes[id];
+        match node.kind {
+            Kind::Empty => normalized.push_str("(?:)"),
+            Kind::Any => normalized.push_str("(?s:.)"),
+            Kind::AnyNotNL => normalized.push('.'),
+            Kind::Literal => {
+                for &rune in &node.runes {
+                    let mut values = vec![rune, rune];
+                    if node.flags & 1 != 0 {
+                        let mut next = tree::fold(rune);
+                        while next != rune {
+                            values.extend([next, next]);
+                            next = tree::fold(next);
+                        }
+                    }
+                    normalized.push_str(&ranges(&tree::clean(&values)));
+                }
+            }
+            Kind::Class => normalized.push_str(&ranges(&node.runes)),
+            Kind::Atom(atom) => normalized.push_str(match atom {
+                b'A' => "\\A",
+                b'z' => "\\z",
+                b'b' => "(?-u:\\b)",
+                b'B' => "(?-u:\\B)",
+                b'^' if node.flags & 2 != 0 => "(?m:^)",
+                b'$' if node.flags & 2 != 0 => "(?m:$)",
+                b'^' => "\\A",
+                b'$' => "\\z",
+                _ => unreachable!("owning regexp assertion"),
+            }),
+            Kind::Capture
+            | Kind::Concat
+            | Kind::Alt
+            | Kind::Star
+            | Kind::Plus
+            | Kind::Quest
+            | Kind::Repeat => {
+                normalized.push_str("(?:");
+                let suffix = match node.kind {
+                    Kind::Star => ")*".into(),
+                    Kind::Plus => ")+".into(),
+                    Kind::Quest => ")?".into(),
+                    Kind::Repeat => match node.max {
+                        Some(max) => format!("){{{},{max}}}", node.min),
+                        None => format!("){{{},}}", node.min),
+                    },
+                    _ => ")".into(),
+                };
+                events.push(Event::Text(suffix));
+                for (index, &child) in node.children.iter().enumerate().rev() {
+                    events.push(Event::Node(child));
+                    if node.kind == Kind::Alt && index != 0 {
+                        events.push(Event::Text("|".into()));
+                    }
+                }
+            }
+            Kind::LeftParen | Kind::VerticalBar => unreachable!("unclosed owning regexp"),
+        }
+    }
+    regex::RegexBuilder::new(&normalized)
+        .size_limit(usize::MAX)
+        .nest_limit(u32::MAX)
+        .build()
+        .map(|re| re.is_match(text))
+        .map_err(|error| format!("native normalized regexp: {error}"))
 }
