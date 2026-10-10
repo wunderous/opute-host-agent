@@ -905,3 +905,47 @@ spliced with fresh component evidence. The full M7–M13 goal remains open.
 Next is signed resource delegation and callback/task-owner composition, followed
 by publication/rollback and the fake-provider/five-Go-provider process matrix.
 No shared Incus, Kubernetes, tunnel or deployment state was mutated.
+
+## Signed delegation verification and permit lifetime
+
+The private provider delegation owner preserves the pinned
+`hostmcp/resource_delegation.go` HMAC-SHA256 verification order, process-local
+active-token membership, claim completeness/expiry, and exact Go claim JSON
+encoding. It uses the already locked ring 0.17.14 cryptographic implementation
+for signing and constant-time MAC verification. Go raw URL base64 decoding
+permits CR/LF and noncanonical trailing bits; the native decoder preserves those
+rules while active membership still requires the exact issued token string.
+Go JSON duplicate fields, null handling, case folding, integer decoding and
+invalid UTF-8 replacement are retained through the existing native Go decoder.
+A non-cloneable permit revokes the token when its operation releases ownership,
+including when an accepted asynchronous operation is aborted.
+
+`provider-delegation-bound/` compares **811 cases over five iterations** with
+the actual pinned Go server verifier, using a build-only bridge and fixture-owned
+keys/maps. All **4,055 comparisons** pass with exact errors and encoded claim
+bytes. This covers malformed framing/signatures/payloads, incomplete and expired
+claims, inactive or replaced tokens, key changes, duplicate/case-folded/null
+fields, Unicode, raw JSON errors, signed alternate base64 representations,
+CR/LF, arbitrary key lengths and seeded claim mutations. The pinned checkout
+remains unchanged. Dedicated lifetime tests prove drop/abort revocation and
+refusal after process-key replacement; the owning Go callback/delegation tests
+also pass **25 executions**.
+
+This checkpoint implements the cryptographic owner only. It does not claim
+validated reservation/task issuance, callback tool scope, child task inheritance,
+generation-bound admission, public provider composition, or full M7–M13 E2E.
+Those remain required before promotion. No shared runtime was mutated.
+
+The workspace passes **185 tests**, with nineteen dedicated differential
+fixtures ignored by the ordinary suite; formatting, warnings-denied Clippy,
+locked release build and all nine OpenSpec checks pass. The changed public
+release is `9ef6471ac9cfe6bc923ecc0e55544481bce859f3a73180930ddb4bd1ae018098`.
+Fresh runtime regression passes **102/102 scenarios over five iterations** and
+the sixteen-field secret sweep has **zero failures** in standalone/platform
+modes. `provider-delegation-validation.json`, reproduced by
+`provider-delegation-checks/verify.py`, independently checks every component raw
+array, source/binary/file-index hash, public raw comparison and iteration record,
+and secret outcome/provenance. Global cutover still fails on 76 inventory gaps
+and fourteen historical provenance problems; its old manifest is preserved.
+Next is typed reservation/task ownership for delegation issuance and callback
+scope/child execution, followed by provider publication and process E2E.

@@ -4,6 +4,7 @@ package hostmcp
 import (
 	"context"
 	"encoding/json"
+	"encoding/hex"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	providercontract "github.com/wunderous/host-agents/contracts/provider"
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
@@ -74,4 +75,19 @@ func ParityProviderObservation(raw json.RawMessage) (string, string) {
 		message = err.Error()
 	}
 	return string(encoded), message
+}
+
+// Invoke the production verifier with fixture-owned process key and active map.
+func ParityProviderDelegation(raw json.RawMessage) (string, string) {
+    var input struct { Key string; Token string; Active map[string]string }
+    if err := json.Unmarshal(raw, &input); err != nil { panic(err) }
+    key, err := hex.DecodeString(input.Key)
+    if err != nil { panic(err) }
+    server := &Server{resourceDelegationKey: key, resourceDelegations: input.Active}
+    claims, err := server.verifyResourceDelegation(input.Token)
+    encoded, failure := json.Marshal(claims)
+    if failure != nil { panic(failure) }
+    message := ""
+    if err != nil { message = err.Error() }
+    return string(encoded), message
 }

@@ -31,6 +31,7 @@ func main() {
 		} `json:"candidateLookup"`
 		Standalone     bool            `json:"standalone"`
 		Registry       json.RawMessage `json:"registry"`
+		Delegation     json.RawMessage `json:"delegation"`
 		Observation    json.RawMessage `json:"observation"`
 		Mounts         json.RawMessage `json:"mounts"`
 		Schema         json.RawMessage `json:"schema"`
@@ -45,6 +46,11 @@ func main() {
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if len(row.Delegation) > 0 {
+			claims, message := hostmcp.ParityProviderDelegation(row.Delegation)
+			results = append(results, map[string]any{"claims": claims, "error": message})
+			continue
+		}
 		if len(row.Observation) > 0 {
 			observation, message := hostmcp.ParityProviderObservation(row.Observation)
 			results = append(results, map[string]any{"observation": observation, "error": message})

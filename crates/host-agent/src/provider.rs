@@ -6,6 +6,7 @@ pub mod adapter;
 pub mod binding;
 pub mod candidates;
 pub mod definition;
+pub mod delegation;
 pub mod mounts;
 pub mod observation;
 pub mod result;
