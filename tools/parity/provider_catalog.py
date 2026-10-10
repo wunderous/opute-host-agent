@@ -57,12 +57,19 @@ def cases():
     collide=copy.deepcopy(linked);collide['services'][0]['operations'][1]['id']='get_host_info';add('builtin-name-first-wins',collide)
     add('generation-change',linked,generation='test.provider-99')
     add('opaque-generation',linked,generation=' opaque generation ')
+    for generation in ['test.provider-2', ' opaque generation ', '', ' \t ', '雪/@g']:
+        for present in [False, True]:
+            for adapter in [False, True]:
+                for query in dict.fromkeys([generation, generation.strip(), 'missing']):
+                    for name in ['test.probe', ' test.probe ', 'missing', '']:
+                        add('lookup-'+repr((generation,present,adapter,query,name)), generation=generation,
+                            candidateLookup={'manifestPresent':present,'adapterPresent':adapter,'generation':query,'name':name})
     return rows
 
 
 def run(go,rust,out):
     out.mkdir(parents=True,exist_ok=True);go=freeze_binary(go,'catalog-go');rust=freeze_binary(rust,'catalog-rust')
-    paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/build-provider-catalog-oracle.py',ROOT/'crates/host-agent/src/catalog.rs',ROOT/'crates/host-agent/src/catalog/registry.rs',ROOT/'crates/host-agent/src/resource.rs',ROOT/'crates/host-agent/src/provider/definition.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/goerr.rs',ROOT/'crates/host-agent/src/goerr/printable.rs',ROOT/'crates/host-agent/catalog/source.json',ROOT/'Cargo.lock']
+    paths=[Path(__file__),ROOT/'tools/parity/provider_adapter.py',ROOT/'tools/parity/build-provider-catalog-oracle.py',ROOT/'crates/host-agent/src/catalog.rs',ROOT/'crates/host-agent/src/provider/candidates.rs',ROOT/'crates/host-agent/src/catalog/registry.rs',ROOT/'crates/host-agent/src/resource.rs',ROOT/'crates/host-agent/src/provider/definition.rs',ROOT/'crates/host-agent/src/gojson.rs',ROOT/'crates/host-agent/src/goerr.rs',ROOT/'crates/host-agent/src/goerr/printable.rs',ROOT/'crates/host-agent/catalog/source.json',ROOT/'Cargo.lock']
     paths+=sorted((ROOT/'tools/parity/provider-catalog-oracle').iterdir())
     paths+=[ROOT/'.parity/go-src/internal/hostmcp/provider_candidate.go',ROOT/'.parity/go-src/internal/hostmcp/server.go',ROOT/'.parity/go-src/internal/tools/capability.go',ROOT/'.parity/go-src/internal/tools/catalog.go']
     provenance={str(p.relative_to(ROOT)):sha(p) for p in paths};lock=json.loads((ROOT/'baseline/source-lock.json').read_text())
@@ -79,7 +86,7 @@ def run(go,rust,out):
         subprocess.run([str(rust),'catalog::tests::provider_catalog_fixture','--exact','--ignored'],env=env,capture_output=True,check=True,timeout=120)
         actual_raw=target.read_text();reference=json.loads(reference_raw);actual=json.loads(actual_raw)
         for side,raw in [('go',reference_raw),('rust',actual_raw)]:
-            (folder/(side+'.json.gz')).write_bytes(gzip.compress(raw.encode(),mtime=0))
+            (folder/(side+'.json.gz')).write_bytes(gzip.compress(raw.encode(),compresslevel=1,mtime=0))
         target.unlink()
         assert len(reference)==len(actual)==len(source)
         for case,left,right in zip(source,reference,actual):
@@ -87,7 +94,7 @@ def run(go,rust,out):
             if not passed:
                 print('FAIL',case['case'],iteration,[k for k in left if left[k]!=right.get(k)],flush=True)
     assert provenance=={str(p.relative_to(ROOT)):sha(p) for p in paths};pinned()
-    report={'scope':'T0 actual owning Go provider descriptor and private candidate snapshot projection via build-only overlay bridge. Candidate maps are seeded with an inert adapter presence fixture; connection/readiness/registry admission, actual activation and E2E generation affinity remain open. Raw descriptors, full active and private catalogs, generated edges and exact revision bytes compared.','sourceLock':lock,'provenance':provenance,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'rows':rows,'passed':sum(r['pass'] for r in rows),'total':len(rows),'normalization':'none; encoded JSON strings including field order and catalog revisions are exact; complete raw outputs are losslessly gzipped with deterministic mtime'}
+    report={'scope':'T0 actual owning Go provider descriptor and private candidate snapshot projection via build-only overlay bridge. Candidate maps exercise absent manifests, absent adapter keys, null adapter entries, exact opaque generation/name lookup and private snapshot isolation; descriptor lookup uses the owning candidate capability definition. Adapter entries remain inert; connection/readiness/registry admission, actual activation and E2E generation affinity remain open. Raw descriptors, full active and private catalogs, generated edges and exact revision bytes compared.','sourceLock':lock,'provenance':provenance,'goBinarySha256':sha(go),'rustTestBinarySha256':sha(rust),'rows':rows,'passed':sum(r['pass'] for r in rows),'total':len(rows),'normalization':'none; encoded JSON strings including field order and catalog revisions are exact; complete raw outputs are losslessly gzipped with deterministic mtime'}
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
     (out/'index.json').write_text(json.dumps({str(p.relative_to(out)):sha(p) for p in out.rglob('*') if p.is_file() and p.name!='index.json'},indent=2)+'\n')
     print('Provider catalogs:',report['passed'],'/',report['total']);return all(r['pass'] for r in rows)

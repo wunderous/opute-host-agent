@@ -20,18 +20,24 @@ func main() {
 			Base string  `json:"base"`
 			Ref  *string `json:"ref"`
 		} `json:"uri"`
-		Manifest       json.RawMessage           `json:"manifest"`
-		Previous       *provider.InstallManifest `json:"previous"`
-		Generation     string                    `json:"generation"`
-		Standalone     bool                      `json:"standalone"`
-		Registry       json.RawMessage           `json:"registry"`
-		Mounts         json.RawMessage           `json:"mounts"`
-		Schema         json.RawMessage           `json:"schema"`
-		Group          string                    `json:"group"`
-		DecodeOnly     bool                      `json:"decodeOnly"`
-		ResolverAction string                    `json:"resolverAction"`
-		BaseURI        string                    `json:"baseURI"`
-		Pointer        string                    `json:"pointer"`
+		Manifest        json.RawMessage           `json:"manifest"`
+		Previous        *provider.InstallManifest `json:"previous"`
+		Generation      string                    `json:"generation"`
+		CandidateLookup *struct {
+			ManifestPresent bool   `json:"manifestPresent"`
+			AdapterPresent  bool   `json:"adapterPresent"`
+			Generation      string `json:"generation"`
+			Name            string `json:"name"`
+		} `json:"candidateLookup"`
+		Standalone     bool            `json:"standalone"`
+		Registry       json.RawMessage `json:"registry"`
+		Mounts         json.RawMessage `json:"mounts"`
+		Schema         json.RawMessage `json:"schema"`
+		Group          string          `json:"group"`
+		DecodeOnly     bool            `json:"decodeOnly"`
+		ResolverAction string          `json:"resolverAction"`
+		BaseURI        string          `json:"baseURI"`
+		Pointer        string          `json:"pointer"`
 	}
 	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
 		panic(err)
@@ -134,7 +140,7 @@ func main() {
 			_, active, _ = hostmcp.ParityProviderCatalog(active, *row.Previous, "old-generation")
 		}
 		descriptors, candidate, ok := hostmcp.ParityProviderCatalog(active, manifest, row.Generation)
-		if !ok {
+		if !ok && row.CandidateLookup == nil {
 			panic("fixture generation must identify a candidate")
 		}
 		encoded := func(value any) string {
@@ -143,6 +149,20 @@ func main() {
 				panic(err)
 			}
 			return string(raw)
+		}
+		if row.CandidateLookup != nil {
+			query := row.CandidateLookup
+			snapshot, found, descriptor := hostmcp.ParityCandidateLookup(active, manifest, row.Generation, query.ManifestPresent, query.AdapterPresent, query.Generation, query.Name)
+			var private any
+			if found {
+				private = encoded(snapshot)
+			}
+			var bound any
+			if descriptor != nil {
+				bound = encoded(descriptor)
+			}
+			results = append(results, map[string]any{"active": encoded(active), "candidate": private, "descriptor": bound})
+			continue
 		}
 		results = append(results, map[string]any{"descriptors": encoded(descriptors), "active": encoded(active), "candidate": encoded(candidate)})
 	}

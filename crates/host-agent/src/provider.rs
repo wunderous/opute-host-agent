@@ -3,6 +3,7 @@
 //! A session owns the generation it accepted; replacement never redirects it.
 
 pub mod adapter;
+pub mod candidates;
 pub mod definition;
 pub mod mounts;
 pub mod result;

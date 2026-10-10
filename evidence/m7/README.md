@@ -735,3 +735,50 @@ invariants and reuse of the byte-identical public runtime and secret sweep.
 The twelve selected owning Go tests passed all five repetitions (sixty test
 passes). No runtime lease is needed for these in-memory/loopback provider
 checks; no shared Incus, Kubernetes, tunnel or deployment state was mutated.
+
+## Private candidate lookup and catalog ownership
+
+The native candidate owner now retains generation-keyed manifests and adapter
+entries separately. Snapshot lookup refuses blank generation IDs and requires
+both entries; descriptor lookup uses only the manifest and matches the tool
+name exactly. This preserves the owning Go distinction between an absent
+adapter entry and an entry containing a null adapter. A null entry can project
+a private snapshot, but supplies no executable adapter. Generation keys are
+opaque, and removal revokes new lookups while retained immutable snapshots
+remain usable. Public activation and invocation are still unconnected.
+
+`provider-candidate-lookup/` passes **2,710/2,710** exact comparisons across
+five repetitions, including platform and standalone catalogs, missing entries,
+null adapter presence, whitespace and Unicode/slash/@ generation IDs, exact
+names, duplicate operations, replacement edges, and descriptor metadata. The
+build-only bridge calls the owning Go candidate snapshot and capability lookup
+functions; the descriptor is taken from the returned capability's Definition.
+No candidate operation is executed by this differential fixture. The driver
+now removes duplicate queries and uses faster lossless raw-output compression.
+The initial corpus passed 3,190 comparisons before the final test-only Clippy
+repair and query deduplication; that diagnostic remains under `.parity/m7/`.
+
+The rebuilt oracle and native test binary also pass the complete registry
+**5,315/5,315** and service-mount **385/385** rechecks with current bindings.
+**181 workspace tests** passed, with seventeen dedicated differential fixtures
+ignored by the ordinary suite. Formatting, warnings-denied Clippy, the locked
+release build and all nine OpenSpec checks passed. The two owning Go candidate
+projection/recipe-dispatch tests passed five repetitions using local fake HTTP
+providers; those are reference-side tests, not native execution validation.
+The public release remains byte-identical at
+`ec63341311ec3ad41e5b30e6c5707a965bd95a7e42670f420e800ee0594323ab`.
+
+`provider-candidate-validation.json` independently checks every current raw
+comparison, source hash, evidence index and binary binding. Build and check
+logs are in `provider-candidate-checks/`. Raw captures were recompressed for
+repository storage with every uncompressed byte hash verified before and
+after; `provider-candidate-checks/archive.json` records those hashes. Cutover still fails on 76 inventory
+gaps and fourteen historical evidence provenance problems. M7 and M8 remain
+incomplete. The next boundary is executable candidate/active capability
+binding with generation sessions and signed resource delegation through the
+existing admission and task owners, followed by publication/rollback and the
+fake-provider and five unchanged Go-provider process lifecycle matrix. The
+owning activation function restores a prior manifest after publication failure
+and explicitly rolls back failures after lifecycle activation; registry
+replacement alone does not establish that composition behavior. No shared
+Incus, Kubernetes, tunnel or deployment state was mutated.

@@ -18,3 +18,21 @@ func ParityProviderCatalog(active tools.CapabilityCatalogSnapshot, manifest prov
 	private, ok := server.providerCandidateSnapshot(generation)
 	return descriptors, private, ok
 }
+
+// Presence is intentionally independent of pointer validity, as in the owner.
+func ParityCandidateLookup(active tools.CapabilityCatalogSnapshot, manifest providercontract.InstallManifest, generation string, manifestPresent, adapterPresent bool, queryGeneration, name string) (tools.CapabilityCatalogSnapshot, bool, *tools.CapabilityDescriptor) {
+	server := &Server{catalog: active, providerCandidates: map[string]*provideradapter.Adapter{}, providerCandidateManifests: map[string]providercontract.InstallManifest{}}
+	if manifestPresent {
+		server.providerCandidateManifests[generation] = manifest
+	}
+	if adapterPresent {
+		server.providerCandidates[generation] = nil
+	}
+	snapshot, ok := server.providerCandidateSnapshot(queryGeneration)
+	capability, found := server.providerCandidateCapability(queryGeneration, name)
+	if !found {
+		return snapshot, ok, nil
+	}
+	descriptor := capability.Definition()
+	return snapshot, ok, &descriptor
+}

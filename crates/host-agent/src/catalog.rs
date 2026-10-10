@@ -1291,6 +1291,24 @@ mod tests {
                     .unwrap();
                     active = with_provider_generation(&active, &old, "old-generation");
                 }
+                if let Some(query) = row.get("candidateLookup") {
+                    let candidates = crate::provider::candidates::Candidates::default();
+                    if query["manifestPresent"].as_bool().unwrap_or(false) {
+                        candidates.set_manifest(generation, manifest);
+                    }
+                    if query["adapterPresent"].as_bool().unwrap_or(false) {
+                        candidates.set_adapter(generation, None);
+                    }
+                    let query_generation = query["generation"].as_str().unwrap_or_default();
+                    let snapshot = candidates.snapshot(&active, query_generation).map(|snapshot| {
+                        let mut encoded = String::new(); snapshot.encode(&mut encoded); encoded
+                    });
+                    let descriptor = candidates.descriptor(query_generation, query["name"].as_str().unwrap_or_default()).map(|descriptor| {
+                        let mut encoded = String::new(); descriptor.encode(&mut encoded); encoded
+                    });
+                    let mut active_encoded = String::new(); active.encode(&mut active_encoded);
+                    return json!({"active":active_encoded,"candidate":snapshot,"descriptor":descriptor});
+                }
                 let private = with_provider_generation(&active, &manifest, generation);
                 let mut active_encoded = String::new();
                 active.encode(&mut active_encoded);
