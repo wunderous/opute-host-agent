@@ -31,6 +31,7 @@ func main() {
 		} `json:"candidateLookup"`
 		Standalone     bool            `json:"standalone"`
 		Registry       json.RawMessage `json:"registry"`
+		Publication    json.RawMessage `json:"publication"`
 		Callback       json.RawMessage `json:"callback"`
 		Issuance       json.RawMessage `json:"issuance"`
 		Delegation     json.RawMessage `json:"delegation"`
@@ -48,6 +49,10 @@ func main() {
 	}
 	results := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
+		if len(row.Publication) > 0 {
+			results = append(results, map[string]any{"observations": hostmcp.ParityProviderPublication(row.Publication)})
+			continue
+		}
 		if len(row.Callback) > 0 {
 			results = append(results, hostmcp.ParityProviderCallback(row.Callback))
 			continue

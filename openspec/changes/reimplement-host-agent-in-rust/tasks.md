@@ -83,6 +83,13 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   candidate, active, and draining generation transitions. Gate: failed
   candidate activation leaves the prior catalog and provider usable;
   generation and catalog revisions change only under the Go contract.
+  Progress: private publication, retirement, restore, executable descriptor
+  ownership, immutable retained handles, and native schema compilation are
+  implemented. The owning Go function and actual SDK tool listing expose a
+  competing-family displacement failure before schema validation; the separate
+  `atomic-provider-family-publication` proposal is pending owner review. Public
+  activation, durable rollback, unchanged provider processes and the M7 gate
+  remain open.
 - [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,

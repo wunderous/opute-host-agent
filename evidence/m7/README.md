@@ -1016,3 +1016,75 @@ matrix and later domain E2E are still required. Global cutover remains failed on
 manifest was not spliced with this component evidence. No shared Incus,
 Kubernetes, tunnel or deployment runtime was mutated. Next is the provider
 publication/rollback transaction and durable runtime wiring.
+
+## Provider publication ownership and activation reference
+
+`provider::publication::Publication` now composes native schema compilation,
+generation-bound executable descriptor construction, family displacement,
+publication, retirement, and restoration through the active generation.
+The composition owner supplies trusted executable and MCP refresh factories.
+Retained capability handles and catalog snapshots remain immutable across
+replacement and retirement. The public native provider runtime is still closed.
+
+The owning Go `registerProviderServicesForGeneration`,
+`retireProviderCapabilities`, and `restoreProviderManifest` functions are
+captured alongside registry state, published catalogs, executable descriptors,
+remembered manifests, and actual SDK `tools/list`. **242 cases over five
+iterations pass, totaling 1,210 comparisons.** The raw batches are in
+`provider-publication-parallel/`. Comparison uses parsed JSON structural equality
+without value normalization; it does not require JSON object member order or
+literal transport byte identity. Cases cover both modes, malformed schemas,
+competing families, generation/provider identity, replacement, empty services,
+restore refusal, exact retirement, retained snapshots/handles, and seeded
+multi-step sequences. Invocation is outside this metadata fixture.
+
+The first matrix found four empty-service mismatches. Go keeps the old registry
+entries on empty generation replacement and recreates their missing executable
+bindings through its legacy MCP composition hook. Native refresh now uses
+`Publication::ensure_legacy` for that same ownership boundary. The failed batch
+and causative native source remain in
+`provider-publication-diagnostic/empty-services/`; they are historical diagnostics.
+The final matrix includes all four corrected cases.
+
+The matrix also confirms a pinned Go failure: competing-family displacement
+occurs before replacement schema validation. On failure, registry state loses
+the old provider while the published catalog and MCP still retain it. A later
+successful unrelated publication removes the old tool from those projections.
+`provider-publication-diagnostic/family-displacement/` retains the raw sequence
+and an independent verifier. Rust currently preserves the pinned ordering.
+The separate `atomic-provider-family-publication` proposal is pending owner
+review; this checkpoint does not claim failure-preserving activation or waive
+the M7 exit gate.
+
+Fresh source-bound ownership regressions pass **3,570 issuance**, **4,445
+callback/task-owner**, **4,055 cryptographic verification**, and **560
+binding/mount** comparisons. Issuance retains independent UUID, real-clock TTL,
+HMAC, and actual Go cross-verification checks. The workspace passes **186 tests**
+with twenty-two dedicated differential fixtures ignored by the ordinary suite.
+Formatting, warnings-denied Clippy, locked release build, **20** owning Go test
+executions, and **10** OpenSpec checks pass. The release remains byte-identical
+to `668a2c92b28a179e6eface6b9a8874881e16189c87f3791649821de57665a2e7`.
+The previous checkpoint's **102 public scenarios over five iterations** and
+**sixteen-field secret sweep** are reused only after independent verification
+of unchanged binary/harness hashes, raw comparisons, iteration records, and
+secret outcomes. They do not validate public provider dispatch.
+
+`provider-publication-checks/verify.py` reproduces
+`provider-publication-validation.json`, checks every current raw batch and its
+source/binary/file index, rechecks the refreshed owner captures and public
+regressions, and verifies the clean pinned Go tree. Earlier component receipts
+remain evidence for their own commits; this receipt binds the current checkpoint.
+The original global manifest is preserved and cutover remains failed.
+
+A separate build-only activation oracle uses the actual pinned Go server
+constructor, independent temporary durable state, and a fiber-owned event and
+admission listener. Its **eight reference checks** cover both modes, no-op and
+already-active metadata, admission denial, and readiness persistence failure.
+`provider-activation-reference/` preserves inputs, observations, source/binary
+hashes, and the explicit scope. This is Go reference evidence, with no native
+parity, adapter execution, outer recipe cleanup, or process E2E claim.
+
+The M7–M13 goal remains active. Next is activation/rollback and durable
+composition, followed by public admission/callback routing and the unchanged
+provider process matrix. M8 domain E2E remains open. No shared Incus, Kubernetes,
+tunnel, or deployment state was mutated by this checkpoint.

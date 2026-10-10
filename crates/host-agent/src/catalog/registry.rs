@@ -76,6 +76,9 @@ fn registration(
     })
 }
 impl Registry {
+    pub fn native(base: Snapshot, options: Options) -> Self {
+        Self::new(base, options, Arc::new(super::schema::check))
+    }
     pub fn new(base: Snapshot, options: Options, check_schema: Arc<SchemaCheck>) -> Self {
         let mut authorized = BTreeSet::from(["incus".into()]);
         authorized.extend(

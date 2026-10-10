@@ -9,6 +9,7 @@ pub mod definition;
 pub mod delegation;
 pub mod mounts;
 pub mod observation;
+pub mod publication;
 pub mod result;
 
 use crate::{goerr::quote, hostobs::rfc3339_nano_now, plan::runner::RunCtx};

@@ -1,0 +1,168 @@
+// Build-only overlay. Calls the pinned activation composition without adapting it.
+package hostmcp
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"os"
+	"sort"
+
+	providercontract "github.com/wunderous/host-agents/contracts/provider"
+	"github.com/wunderous/host-agents/internal/cordis"
+	"github.com/wunderous/host-agents/internal/hostagent"
+	"github.com/wunderous/host-agents/internal/tools"
+)
+
+type parityActivationObserver struct {
+	observe func(string, any) error
+}
+
+func (parityActivationObserver) ID() string                  { return "parity.activation.observer" }
+func (parityActivationObserver) Inject() []cordis.ServiceKey { return nil }
+func (p parityActivationObserver) Apply(ctx *cordis.Context) (cordis.Effect, error) {
+	names := make([]string, 0, len(providerEventDefinitions))
+	for name := range providerEventDefinitions {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		name := name
+		if _, err := ctx.On(name, func(_ context.Context, value any, _ cordis.Next) (any, error) {
+			return value, p.observe(name, value)
+		}); err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// Metadata/durable composition only. Adapter entries are deliberately absent;
+// provider transport, mount failure and process supervision require a later
+// real loopback adapter fixture. No domain operation is invoked by this bridge.
+func ParityProviderActivation(raw json.RawMessage) map[string]any {
+	var input struct {
+		Standalone bool
+		Steps      []struct {
+			Action, ID, Provider, Denial, PreviousID, Cause string
+			Manifest                                        *providercontract.InstallManifest
+			Generation                                      cordis.ProviderGeneration
+			Metadata                                        map[string]any
+		}
+	}
+	if err := json.Unmarshal(raw, &input); err != nil {
+		panic(err)
+	}
+	dir, err := os.MkdirTemp("", "opute-activation-owner-")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(dir)
+	ops := hostagent.New(hostagent.Options{AgentID: "parity.activation.owner", ProviderID: "incus", ToolsForProvider: func(provider string) []string {
+		names, err := tools.HostToolNamesForProvider(provider)
+		if err != nil {
+			panic(err)
+		}
+		return names
+	}})
+	server, err := NewServer(Options{ProviderID: "incus", Ops: ops, Standalone: input.Standalone, AllowMutations: true, StateDir: dir})
+	if err != nil {
+		panic(err)
+	}
+	defer server.Close()
+	events := []providercontract.ProviderEvent{}
+	denial := ""
+	if _, err := server.providerContext.Plugin(parityActivationObserver{observe: func(name string, value any) error {
+		events = append(events, value.(providercontract.ProviderEvent))
+		if name == ProviderEventAdmission && denial != "" {
+			return errors.New(denial)
+		}
+		return nil
+	}}); err != nil {
+		panic(err)
+	}
+	ids := map[string]bool{}
+	providers := map[string]bool{}
+	observations := []map[string]any{}
+	for _, step := range input.Steps {
+		var failure error
+		switch step.Action {
+		case "restore":
+			ids[step.Generation.ID] = true
+			providers[step.Generation.Provider.ID] = true
+			failure = server.providerLifecycle.Restore(step.Generation)
+		case "candidate":
+			if step.Manifest == nil {
+				delete(server.providerCandidateManifests, step.ID)
+			} else {
+				server.providerCandidateManifests[step.ID] = *step.Manifest
+			}
+		case "remember":
+			if step.Manifest == nil {
+				delete(server.providerManifests, step.Provider)
+			} else {
+				server.providerManifests[step.Manifest.Provider.ID] = *step.Manifest
+			}
+		case "register":
+			failure = server.registerProviderServicesForGeneration(*step.Manifest, step.ID)
+		case "admission":
+			denial = step.Denial
+		case "activate":
+			failure = server.activateProviderGeneration(step.Metadata)
+		case "complete":
+			server.completeProviderCandidate(step.ID)
+		case "closeState":
+			failure = server.state.Close()
+		case "rollback":
+			activated, _ := server.providerLifecycle.Get(step.ID)
+			var previous *cordis.ProviderGeneration
+			if value, ok := server.providerLifecycle.Get(step.PreviousID); ok {
+				previous = &value
+			}
+			manifest := providercontract.InstallManifest{}
+			if step.Manifest != nil {
+				manifest = *step.Manifest
+			}
+			old, ok := server.providerManifests[manifest.Provider.ID]
+			failure = server.rollbackProviderActivation(manifest, step.Manifest != nil, old, ok, activated, previous, errors.New(step.Cause))
+		default:
+			panic("unknown activation fixture action")
+		}
+		message := ""
+		if failure != nil {
+			message = failure.Error()
+		}
+		generations := map[string]cordis.ProviderGeneration{}
+		for id := range ids {
+			if value, ok := server.providerLifecycle.Get(id); ok {
+				generations[id] = value
+			}
+		}
+		active := map[string]cordis.ProviderGeneration{}
+		for provider := range providers {
+			if value, ok := server.providerLifecycle.Active(provider); ok {
+				active[provider] = value
+			}
+		}
+		candidate := map[string]providercontract.InstallManifest{}
+		for id, value := range server.providerCandidateManifests {
+			candidate[id] = value
+		}
+		manifests := map[string]providercontract.InstallManifest{}
+		for id, value := range server.providerManifests {
+			manifests[id] = value
+		}
+		validation := map[string]string{}
+		for id, value := range server.providerValidation {
+			validation[id] = value
+		}
+		eventSnapshot := append([]providercontract.ProviderEvent{}, events...)
+		durable, durableError := server.state.ListProviderGenerations()
+		durableMessage := ""
+		if durableError != nil {
+			durableMessage = durableError.Error()
+		}
+		observations = append(observations, map[string]any{"error": message, "generations": generations, "active": active, "candidates": candidate, "manifests": manifests, "validation": validation, "events": eventSnapshot, "catalog": server.CatalogSnapshot(), "registry": server.registry.Snapshot(), "durable": durable, "durableError": durableMessage})
+	}
+	return map[string]any{"observations": observations}
+}

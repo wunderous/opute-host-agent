@@ -11,6 +11,9 @@ import (
 	"github.com/wunderous/host-agents/internal/resource"
 	"github.com/wunderous/host-agents/internal/mcphttp"
 	capability "github.com/wunderous/host-agents/internal/capability"
+	registry "github.com/wunderous/host-agents/internal/catalog"
+	"github.com/wunderous/host-agents/internal/cordis"
+	"strings"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	providercontract "github.com/wunderous/host-agents/contracts/provider"
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
@@ -194,4 +197,80 @@ func ParityProviderCallback(raw json.RawMessage) map[string]any {
     if input.ChildCancelled {childCancel()}
     output["child"]=parityContextObservation(asyncTaskExecutionContext(child,"child.operation","child-task",owner))
     return output
+}
+
+// Production catalog publication/restore/retirement; actual MCP refresh also
+// runs, while no capability invocation or external provider process is started.
+func ParityProviderPublication(raw json.RawMessage) []map[string]any {
+    var input struct {
+        Standalone bool
+        Steps []struct {
+            Action, Generation, Provider, ID, Handle string
+            Manifest *providercontract.InstallManifest
+            GenerationState cordis.ProviderGeneration
+        }
+    }
+    if err:=json.Unmarshal(raw,&input);err!=nil {panic(err)}
+    definitions,err:=tools.HostToolDefinitionsForProvider("incus");if err!=nil {panic(err)}
+    if input.Standalone {
+        definitions=append(definitions,tools.StandaloneToolDefinitions()...)
+        all,err:=tools.LoadAllToolDefinitions("all");if err!=nil {panic(err)}
+        for _,def:=range all {if tools.StandaloneToolNames[def.Name] {definitions=append(definitions,def)}}
+    }
+    base:=tools.BuildCapabilityCatalog("incus",tools.CanonicalizeToolDefinitions(definitions))
+    r:=registry.NewRegistry(base,registry.Options{})
+    server:=&Server{registry:r,catalog:base,providerID:"incus",capabilities:map[string]capability.Capability{},providerManifests:map[string]providercontract.InstallManifest{},providerLifecycle:cordis.NewProviderLifecycleManager(cordis.DrainPolicy{}),mcpServer:mcp.NewServer(&mcp.Implementation{Name:"publication-fixture",Version:"1"},nil),registeredToolNames:map[string]bool{},internalToolNames:map[string]bool{}}
+    server.registerTools()
+    ctx,cancel:=context.WithTimeout(context.Background(),time.Minute);defer cancel()
+    serverTransport,clientTransport:=mcp.NewInMemoryTransports()
+    session,err:=server.mcpServer.Connect(ctx,serverTransport,nil);if err!=nil {panic(err)};defer session.Close()
+    client:=mcp.NewClient(&mcp.Implementation{Name:"publication-fixture",Version:"1"},nil)
+    connected,err:=client.Connect(ctx,clientTransport,nil);if err!=nil {panic(err)};defer connected.Close()
+    handles:=map[string]capability.Capability{};snapshots:=map[string]tools.CapabilityCatalogSnapshot{}
+    observations:=[]map[string]any{};updates:=0
+    for _,step:=range input.Steps {
+        var failure error;extra:=map[string]any{}
+        switch step.Action {
+        case "register":
+            failure=server.registerProviderServicesForGeneration(*step.Manifest,step.Generation)
+            if failure==nil {updates++}
+        case "retire":
+            refreshed:=false
+            for _,d:=range server.catalog.Tools {if d.Provider==step.Provider && (step.Generation=="" || d.GenerationID==step.Generation) {if _,ok:=r.ResolveCapability(d.OperationID);ok {refreshed=true}}}
+            server.retireProviderCapabilities(step.Provider,step.Generation)
+            if refreshed {updates++}
+        case "restore":
+            if step.Manifest!=nil {
+                failure=server.restoreProviderManifest(step.Provider,*step.Manifest,true)
+                if failure==nil {updates++}
+            } else {
+                refreshed:=false
+                for _,d:=range server.catalog.Tools {if d.Provider==step.Provider {if _,ok:=r.ResolveCapability(d.OperationID);ok {refreshed=true}}}
+                failure=server.restoreProviderManifest(step.Provider,providercontract.InstallManifest{},false)
+                if refreshed {updates++}
+            }
+        case "lifecycle":failure=server.providerLifecycle.Restore(step.GenerationState)
+        case "handle":if value:=server.capabilities[step.ID];value!=nil {handles[step.Handle]=value}
+        case "snapshot":snapshots[step.Handle]=server.CatalogSnapshot()
+        case "readHandle":var value any;if v:=handles[step.Handle];v!=nil {value=v.Definition()};extra["handle"]=value
+        case "readSnapshot":var value any;if v,ok:=snapshots[step.Handle];ok {value=v};extra["snapshot"]=value
+        default:panic("unknown publication fixture action")
+        }
+        message:="";if failure!=nil {message=failure.Error()}
+        capabilities:=map[string]tools.CapabilityDescriptor{}
+        for name,value:=range server.capabilities {if value!=nil {d:=value.Definition();if strings.HasPrefix(strings.TrimSpace(d.Implementation),"provider:") {capabilities[name]=d}}}
+        manifests:=map[string]providercontract.InstallManifest{}
+        for name,manifest:=range server.providerManifests {manifests[name]=manifest}
+        listed:=[]*mcp.Tool{};cursor:=""
+        for {
+            page,failure:=connected.ListTools(ctx,&mcp.ListToolsParams{Cursor:cursor});if failure!=nil {panic(failure)}
+            filtered:=server.filterInternalToolsFromList(page).(*mcp.ListToolsResult)
+            listed=append(listed,filtered.Tools...)
+            if page.NextCursor=="" {break};cursor=page.NextCursor
+        }
+        extra["wire"]=listed
+        extra["error"]=message;extra["updates"]=updates;extra["published"]=server.CatalogSnapshot();extra["registry"]=r.Snapshot();extra["capabilities"]=capabilities;extra["manifests"]=manifests
+        observations=append(observations,extra)
+    }
+    return observations
 }
