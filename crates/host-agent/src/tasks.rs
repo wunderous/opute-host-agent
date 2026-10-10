@@ -218,6 +218,12 @@ impl Registry {
         snapshot
     }
 
+    pub fn is_working(&self, task_id: &str) -> bool {
+        self.lock()
+            .get(task_id)
+            .is_some_and(|record| record.status == "working")
+    }
+
     pub fn get(&self, task_id: &str) -> Option<Snapshot> {
         self.lock().get(task_id).map(Record::snapshot)
     }

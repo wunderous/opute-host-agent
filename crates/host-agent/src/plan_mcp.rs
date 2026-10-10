@@ -764,6 +764,8 @@ mod tests {
                 ..Default::default()
             },
             inherited: false,
+            created_at: None,
+            expires_at: None,
         }
     }
 

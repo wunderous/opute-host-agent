@@ -949,3 +949,70 @@ and secret outcome/provenance. Global cutover still fails on 76 inventory gaps
 and fourteen historical provenance problems; its old manifest is preserved.
 Next is typed reservation/task ownership for delegation issuance and callback
 scope/child execution, followed by provider publication and process E2E.
+
+## Typed delegation issuance, callback ownership and bound invocation
+
+The native delegation owner now issues a token only after the independent
+context task/operation matches the reservation, the reservation belongs to this
+agent, and the durable task registry reports active work. Empty/control/unmanaged
+reservations retain the original context without issuance. Opaque provider,
+generation and operation strings are preserved; only the pinned context helpers'
+identity and metadata trimming is applied. `RunCtx` carries these typed values
+through cancellation children, and reservation handles retain their creation and
+expiry times without changing ledger serialization or admission defaults.
+
+Callback verification checks active signed claims before tool scope, then task
+liveness. Scope uses the owning host tool definitions and capability descriptor
+implementation, preserving the Go refusal of lifecycle, provider and unknown
+callback targets. The task-owner bridge validates owner agreement and expiry;
+a durable child copies only that typed resource owner into its independent
+context. Its registry identity, cancellation and callback metadata stay its own.
+`Operation::invoke` composes issuance before generation acceptance and retains
+both the delegation permit and immutable session throughout the provider call.
+Admission/authentication remain the caller's responsibility. Refusals retain a
+separate error currency from provider transport/protocol failures, matching Go's
+error tool result versus invocation-error distinction.
+
+Current, provenance-bound T0 comparisons pass **3,570 issuance cases**,
+**4,445 callback/task-owner cases**, **4,055 verifier cases**, and **560 generation
+binding/mount cases** (all totals include five iterations). Issuance random UUIDs
+and real-clock expiry are normalized only after independent UUID-v4, one-hour
+TTL and HMAC checks; every other field/error/context outcome is exact. Native
+issued tokens also pass the actual Go verifier. Callback comparison is exact,
+including reserved metadata typing/trimming, implementation scope, task states,
+owner matching, parent/child cancellation isolation and extreme signed expiry.
+
+The first callback matrix found five repeat mismatches at `int64::MAX`: Go's
+year-1 epoch shift wraps and `Time.Before` treats the reservation as expired.
+`provider-callback-expiry-diagnostic/` and
+`provider-callback-expiry-before.rs` retain the failed raw capture and its
+causative native source. Native comparison now preserves that behavior, with
+additional cases immediately around the wrapping boundary. Those historical
+failures are diagnostic evidence, not current parity evidence.
+
+A real loopback provider test proves reserved wire metadata, unchanged arguments,
+live generation-bound claims, callback ownership, independent child task identity,
+parent-task completion refusal, and token/session release on normal completion
+and abort. Failed generation acceptance also releases the token issued before
+it. The workspace passes **186 tests** with twenty-one dedicated fixtures ignored
+by the ordinary suite; formatting, warnings-denied Clippy, locked release build,
+all nine OpenSpec checks and 25 owning Go test executions pass.
+
+The current release is
+`668a2c92b28a179e6eface6b9a8874881e16189c87f3791649821de57665a2e7`.
+Fresh existing-public-runtime regression passes **102/102 scenarios over five
+iterations**, and the sixteen-field secret sweep across standalone/platform has
+**zero failures**. `provider-owner-validation.json`, reproduced by
+`provider-owner-checks/verify.py`, independently checks all raw component arrays,
+UUID/TTL/signature invariants, cross-verification captures, source/binary/index
+hashes, public raw comparisons and iteration records, and secret outcomes.
+The final private invocation error-type refinement leaves this public release
+byte-identical; source-bound component comparisons were rerun for the final code.
+
+The full M7–M13 goal remains open. Public authenticated callback dispatch and
+admission composition, provider publication/rollback, real process/provider
+matrix and later domain E2E are still required. Global cutover remains failed on
+76 inventory gaps and fourteen historical provenance problems; the global
+manifest was not spliced with this component evidence. No shared Incus,
+Kubernetes, tunnel or deployment runtime was mutated. Next is the provider
+publication/rollback transaction and durable runtime wiring.

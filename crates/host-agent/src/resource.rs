@@ -488,6 +488,8 @@ pub struct Reservation {
     pub id: String,
     pub request: AdmissionRequest,
     pub inherited: bool,
+    pub created_at: Option<std::time::SystemTime>,
+    pub expires_at: Option<std::time::SystemTime>,
 }
 
 static RESERVATION_SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -881,6 +883,8 @@ impl Coordinator {
                 id: parent.id.clone(),
                 request,
                 inherited: true,
+                created_at: parent.created_at,
+                expires_at: parent.expires_at,
             });
         }
         if request.class == "control"
@@ -893,6 +897,8 @@ impl Coordinator {
                 id: "control".into(),
                 request,
                 inherited: false,
+                created_at: Some(std::time::SystemTime::now()),
+                expires_at: Some(std::time::SystemTime::now() + RESERVATION_TTL),
             });
         }
         let _lock = self.lock(true)?;
@@ -948,6 +954,8 @@ impl Coordinator {
             id,
             request,
             inherited: false,
+            created_at: Some(now),
+            expires_at: Some(now + RESERVATION_TTL),
         })
     }
 
@@ -1298,6 +1306,8 @@ mod tests {
             id: "live".into(),
             request: request.clone(),
             inherited: false,
+            created_at: None,
+            expires_at: None,
         };
         assert_eq!(
             c.release(&foreign),
@@ -1312,6 +1322,8 @@ mod tests {
             id: "live".into(),
             request,
             inherited: false,
+            created_at: None,
+            expires_at: None,
         };
         c.release(&owner).unwrap();
         // Releasing twice, or the control lease, is a no-op; the empty
@@ -1321,6 +1333,8 @@ mod tests {
             id: "control".into(),
             request: AdmissionRequest::default(),
             inherited: false,
+            created_at: None,
+            expires_at: None,
         })
         .unwrap();
         assert!(!dir.join("reservations.json").exists());

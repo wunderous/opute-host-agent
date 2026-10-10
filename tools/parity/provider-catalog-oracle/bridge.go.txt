@@ -5,6 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/hex"
+	"time"
+	"github.com/wunderous/host-agents/internal/hostagent"
+	"github.com/wunderous/host-agents/internal/tasks"
+	"github.com/wunderous/host-agents/internal/resource"
+	"github.com/wunderous/host-agents/internal/mcphttp"
+	capability "github.com/wunderous/host-agents/internal/capability"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	providercontract "github.com/wunderous/host-agents/contracts/provider"
 	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
@@ -90,4 +96,102 @@ func ParityProviderDelegation(raw json.RawMessage) (string, string) {
     message := ""
     if err != nil { message = err.Error() }
     return string(encoded), message
+}
+
+// Exercise the production issuer, context helpers, task liveness and release.
+func ParityProviderIssuance(raw json.RawMessage) map[string]any {
+    var input struct {
+        Key, Agent, Task, Operation, Provider, Generation, ProviderOperation, RegistryTask, Status, PriorToken string
+        Cancelled bool
+        Reservation *struct { ID, Agent, Task, Operation string }
+    }
+    if err := json.Unmarshal(raw, &input); err != nil { panic(err) }
+    key, err := hex.DecodeString(input.Key); if err != nil { panic(err) }
+    registry := tasks.NewRegistry()
+    if input.Status == "working" {
+        registry.CreateWithID(input.RegistryTask, "fixture", nil, time.Hour, "", nil, nil)
+    } else if input.Status != "missing" {
+        registry.RestoreSnapshot(map[string]any{"taskId":input.RegistryTask,"toolName":"fixture","status":input.Status})
+    }
+    server := &Server{agent:hostagent.New(hostagent.Options{AgentID:input.Agent}),tasks:registry,resourceDelegationKey:key,resourceDelegations:map[string]string{}}
+    ctx, cancel := context.WithCancel(context.Background()); defer cancel()
+    ctx = mcphttp.WithResourceDelegation(ctx, input.PriorToken)
+    if input.Reservation != nil {
+        r := input.Reservation
+        ctx = resource.WithReservation(ctx, &resource.Reservation{ID:r.ID,Request:resource.AdmissionRequest{AgentID:r.Agent,TaskID:r.Task,OperationID:r.Operation}})
+    }
+    ctx = resource.WithOperationIdentity(ctx,input.Operation,input.Task)
+    ctx, childCancel := context.WithCancel(ctx); defer childCancel()
+    if input.Cancelled { cancel() }
+    output := map[string]any{"error":"","token":"","claims":"","verificationError":"","releaseError":"","contextError":"","issued":false}
+    empty, err := json.Marshal(resourceDelegationClaims{}); if err != nil { panic(err) }; output["claims"]=string(empty)
+    delegated, release, err := server.withProviderResourceDelegation(ctx,input.Provider,input.Generation,input.ProviderOperation)
+    if err != nil { output["error"]=err.Error(); return output }
+    token := mcphttp.ResourceDelegationFromContext(delegated)
+    output["token"]=token; output["issued"]=release!=nil
+    if delegated.Err()!=nil { output["contextError"]=delegated.Err().Error() }
+    if release != nil {
+        claims, failure := server.verifyResourceDelegation(token)
+        if failure != nil { output["verificationError"]=failure.Error() }
+        encoded, failure := json.Marshal(claims); if failure != nil { panic(failure) }; output["claims"]=string(encoded)
+        release()
+        _, failure = server.verifyResourceDelegation(token)
+        if failure != nil { output["releaseError"]=failure.Error() }
+    }
+    return output
+}
+
+func parityContextObservation(ctx context.Context) map[string]any {
+    var observation any
+    if r, ok := resource.ReservationFromContext(ctx); ok {
+        var expiry any
+        if !r.ExpiresAt.IsZero() { expiry=r.ExpiresAt.Unix() }
+        observation=map[string]any{"id":r.ID,"agent":r.Request.AgentID,"task":r.Request.TaskID,"operation":r.Request.OperationID,"expiresAt":expiry,"created":!r.CreatedAt.IsZero()}
+    }
+    operation, task := resource.OperationIdentityFromContext(ctx)
+    message:="";if ctx.Err()!=nil {message=ctx.Err().Error()}
+    return map[string]any{"reservation":observation,"identity":[]string{operation,task},"error":message,"delegation":mcphttp.ResourceDelegationFromContext(ctx)}
+}
+func ParityProviderCallback(raw json.RawMessage) map[string]any {
+    var input struct {
+        Key, Agent, Task, Operation, RegistryTask, Status, Tool string
+        Active map[string]string
+        Meta map[string]any
+        HostTools []string
+        Implementations map[string]*string
+        Cancelled, ChildCancelled bool
+        Reservation *struct { ID, Agent, Task, Operation string; ExpiresAt *int64 }
+    }
+    if err:=json.Unmarshal(raw,&input);err!=nil {panic(err)}
+    key,err:=hex.DecodeString(input.Key);if err!=nil {panic(err)}
+    registry:=tasks.NewRegistry()
+    if input.Status=="working" {registry.CreateWithID(input.RegistryTask,"fixture",nil,time.Hour,"",nil,nil)} else if input.Status!="missing" {registry.RestoreSnapshot(map[string]any{"taskId":input.RegistryTask,"toolName":"fixture","status":input.Status})}
+    server:=&Server{agent:hostagent.New(hostagent.Options{AgentID:input.Agent}),tasks:registry,resourceDelegationKey:key,resourceDelegations:input.Active,capabilities:map[string]capability.Capability{}}
+    for _, name:=range input.HostTools {server.toolDefs=append(server.toolDefs,tools.ToolDefinition{Name:name})}
+    for name, implementation:=range input.Implementations {
+        if implementation==nil {server.capabilities[name]=nil;continue}
+        server.capabilities[name]=capability.NewProviderAdapter(tools.CapabilityDescriptor{Name:name,Implementation:*implementation},nil)
+    }
+    ctx,cancel:=context.WithCancel(context.Background());defer cancel()
+    ctx=resource.WithOperationIdentity(ctx,input.Operation,input.Task)
+    ctx=mcphttp.WithResourceDelegation(ctx,"parent-only-token")
+    if input.Reservation!=nil {
+        r:=input.Reservation
+        parent:=&resource.Reservation{ID:r.ID,Request:resource.AdmissionRequest{AgentID:r.Agent,TaskID:r.Task,OperationID:r.Operation}}
+        if r.ExpiresAt!=nil {parent.ExpiresAt=time.Unix(*r.ExpiresAt,0)}
+        ctx=resource.WithReservation(ctx,parent)
+    }
+    if input.Cancelled {cancel()}
+    output:=map[string]any{"error":"","ownerError":"","callback":nil,"child":nil,"owner":false}
+    callback,err:=server.contextForProviderCallback(ctx,&mcp.CallToolRequest{Params:&mcp.CallToolParamsRaw{Meta:input.Meta}},input.Tool)
+    if err!=nil {output["error"]=err.Error();return output}
+    output["callback"]=parityContextObservation(callback)
+    owner,err:=server.providerCallbackTaskOwnerFromContext(callback)
+    if err!=nil {output["ownerError"]=err.Error();return output}
+    output["owner"]=owner!=nil
+    child,childCancel:=context.WithCancel(context.Background());defer childCancel()
+    child=mcphttp.WithResourceDelegation(child,"child-only-token")
+    if input.ChildCancelled {childCancel()}
+    output["child"]=parityContextObservation(asyncTaskExecutionContext(child,"child.operation","child-task",owner))
+    return output
 }

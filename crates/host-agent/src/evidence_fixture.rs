@@ -45,6 +45,8 @@ fn durable_projection() {
             id: "control".into(),
             request: Default::default(),
             inherited: false,
+            created_at: None,
+            expires_at: None,
         };
         record_invocation(
             &server,

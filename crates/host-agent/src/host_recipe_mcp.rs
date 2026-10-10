@@ -369,6 +369,8 @@ mod tests {
                     ..Default::default()
                 },
                 inherited: false,
+                created_at: None,
+                expires_at: None,
             },
             Arc::new(std::sync::atomic::AtomicBool::new(false)),
         );

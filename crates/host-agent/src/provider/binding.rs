@@ -44,7 +44,50 @@ pub struct Accepted {
     adapter: Arc<Adapter>,
     operation_id: String,
 }
+/// The server-owned execution objects needed for one provider invocation.
+/// The caller has already authenticated, authorized and admitted the work.
+pub struct Runtime<'a> {
+    pub lifecycle: &'a Lifecycle,
+    pub candidates: &'a Candidates,
+    pub mounts: &'a Mounts,
+    pub delegations: &'a super::delegation::Delegations,
+    pub tasks: &'a crate::tasks::Registry,
+    pub agent: &'a str,
+}
+#[derive(Debug)]
+pub enum InvocationError {
+    /// Go returns these as an error tool result with no invocation error.
+    Refused(String),
+    /// Provider transport/protocol errors remain invocation errors.
+    Adapter(String),
+}
 impl Operation {
+    pub async fn invoke(
+        &self,
+        ctx: &RunCtx,
+        arguments: Option<Map<String, Value>>,
+        runtime: &Runtime<'_>,
+    ) -> Result<Map<String, Value>, InvocationError> {
+        let (ctx, _permit) = runtime
+            .delegations
+            .issue(
+                ctx,
+                runtime.tasks,
+                runtime.agent,
+                &self.descriptor.provider,
+                &self.descriptor.generation_id,
+                &self.descriptor.operation_id,
+            )
+            .map_err(|error| InvocationError::Refused(error.into()))?;
+        let accepted = self
+            .accept(runtime.lifecycle, runtime.candidates, runtime.mounts)
+            .map_err(InvocationError::Refused)?;
+        let token = ctx.resource_delegation();
+        accepted
+            .call(&ctx, arguments, &token)
+            .await
+            .map_err(InvocationError::Adapter)
+    }
     pub fn validate_result(
         &self,
         result: Option<&Map<String, Value>>,
@@ -152,7 +195,7 @@ mod tests {
         generation: &'static str,
     ) -> (
         Arc<Adapter>,
-        tokio::sync::oneshot::Receiver<()>,
+        tokio::sync::oneshot::Receiver<Value>,
         std::sync::mpsc::Sender<()>,
         std::thread::JoinHandle<()>,
     ) {
@@ -194,7 +237,7 @@ mod tests {
                 serde_json::from_slice(&bytes[header_end..header_end + length]).unwrap();
             assert_eq!(request["params"]["name"], "probe");
             assert_eq!(request["params"]["arguments"], json!({"untouched":"雪"}));
-            started_tx.send(()).unwrap();
+            started_tx.send(request.clone()).unwrap();
             release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
             let body = serde_json::to_string(&json!({"jsonrpc":"2.0","id":request["id"],"result":{"content":[],"structuredContent":{"generation":generation}}})).unwrap();
             // Cancellation can close the peer before the response is written.
@@ -216,6 +259,142 @@ mod tests {
     }
     fn args() -> Option<Map<String, Value>> {
         Some(json!({"untouched":"雪"}).as_object().unwrap().clone())
+    }
+
+    #[tokio::test]
+    async fn signed_metadata_is_live_only_for_the_bound_provider_invocation() {
+        use crate::{
+            provider::delegation::{CallbackScope, Delegations},
+            resource::{AdmissionRequest, Reservation},
+            tasks::Registry,
+        };
+        for abort in [false, true] {
+            let lifecycle = Lifecycle::new(DrainPolicy::default());
+            let candidates = Arc::new(Candidates::default());
+            let mounts = Arc::new(Mounts::new(lifecycle.clone()));
+            let delegations = Delegations::new().unwrap();
+            let tasks = Arc::new(Registry::default());
+            tasks.create_with_id("parent-task", "parent.operation", "", json!({}));
+            let ctx = RunCtx::background()
+                .with_operation_identity("parent.operation", "parent-task")
+                .with_reservation(Reservation {
+                    id: "parent-reservation".into(),
+                    request: AdmissionRequest {
+                        agent_id: "opaque agent".into(),
+                        task_id: "parent-task".into(),
+                        operation_id: "parent.operation".into(),
+                        ..Default::default()
+                    },
+                    inherited: false,
+                    created_at: None,
+                    expires_at: None,
+                });
+            let operation = operations(&manifest(), "g1", false).remove(0);
+            // A failed accept still releases the delegation it issued first.
+            let runtime = Runtime {
+                lifecycle: &lifecycle,
+                candidates: &candidates,
+                mounts: &mounts,
+                delegations: &delegations,
+                tasks: &tasks,
+                agent: "opaque agent",
+            };
+            assert!(operation.invoke(&ctx, args(), &runtime).await.is_err());
+            assert_eq!(delegations.active_count(), 0);
+            let (adapter, started, release, provider) = server("g1");
+            restore(&lifecycle, "g1", GenerationState::Active);
+            mounts
+                .mount(&manifest(), "g1", Some(adapter))
+                .await
+                .unwrap();
+            let objects = (
+                lifecycle.clone(),
+                candidates.clone(),
+                mounts.clone(),
+                delegations.clone(),
+                tasks.clone(),
+            );
+            let call = tokio::spawn(async move {
+                let runtime = Runtime {
+                    lifecycle: &objects.0,
+                    candidates: &objects.1,
+                    mounts: &objects.2,
+                    delegations: &objects.3,
+                    tasks: &objects.4,
+                    agent: "opaque agent",
+                };
+                operation.invoke(&ctx, args(), &runtime).await
+            });
+            let request = tokio::time::timeout(Duration::from_secs(5), started)
+                .await
+                .unwrap()
+                .unwrap();
+            let meta = request["params"]["_meta"].as_object().unwrap();
+            let token = meta["io.opute/host-resource-delegation"].as_str().unwrap();
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64;
+            let claims = delegations.verify(token, now).unwrap();
+            let fields: Value = serde_json::from_str(&claims.encode()).unwrap();
+            assert_eq!(fields["ProviderGeneration"], "g1");
+            assert_eq!(fields["ProviderID"], "test.provider");
+            assert_eq!(fields["ProviderOperation"], "probe");
+            assert_eq!(delegations.active_count(), 1);
+            assert_eq!(lifecycle.get("g1").unwrap().sessions, 1);
+            let tools = vec!["get_host_info".into()];
+            let scope = CallbackScope {
+                agent: "opaque agent",
+                tasks: &tasks,
+                host_tools: &tools,
+                catalog: crate::catalog::internal(),
+            };
+            let callback = delegations
+                .callback(&RunCtx::background(), Some(meta), "get_host_info", &scope)
+                .unwrap();
+            assert_eq!(
+                callback.operation_identity(),
+                ("parent.operation".into(), "parent-task".into())
+            );
+            assert_eq!(callback.reservation().unwrap().id, "parent-reservation");
+            let owner = scope.task_owner(&callback).unwrap().unwrap();
+            let child = super::super::delegation::TaskOwner::child_context(
+                &RunCtx::background(),
+                "child.operation",
+                "child-task",
+                Some(&owner),
+            );
+            assert_eq!(child.operation_identity(), callback.operation_identity());
+            tasks.create_with_id("child-task", "child.operation", "", json!({}));
+            tasks.complete("parent-task", crate::tasks::ToolResult::default());
+            assert!(tasks.is_working("child-task"));
+            assert_eq!(
+                delegations
+                    .callback(&RunCtx::background(), Some(meta), "get_host_info", &scope)
+                    .err()
+                    .unwrap(),
+                "host_resource_delegation_task_inactive: the provider callback task is not active"
+            );
+            if abort {
+                call.abort();
+                assert!(call.await.unwrap_err().is_cancelled());
+                release.send(()).unwrap();
+            } else {
+                release.send(()).unwrap();
+                assert_eq!(
+                    call.await.unwrap().unwrap()["structuredContent"]["generation"],
+                    "g1"
+                );
+            }
+            assert_eq!(delegations.active_count(), 0);
+            assert_eq!(lifecycle.get("g1").unwrap().sessions, 0);
+            assert_eq!(delegations.callback(&RunCtx::background(),Some(meta),"get_host_info",&scope).err().unwrap(),"host_resource_delegation_inactive: provider callback delegation is no longer active");
+            tokio::time::timeout(Duration::from_secs(5), mounts.close())
+                .await
+                .unwrap();
+            assert!(mounts.plugin_ids().is_empty());
+            provider.join().unwrap();
+        }
     }
 
     #[tokio::test]
