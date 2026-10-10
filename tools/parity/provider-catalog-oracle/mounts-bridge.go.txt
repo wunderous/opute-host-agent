@@ -4,14 +4,19 @@ package hostmcp
 import (
 	"context"
 	"encoding/json"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	provider "github.com/wunderous/host-agents/contracts/provider"
 	"github.com/wunderous/host-agents/internal/cordis"
 	adapter "github.com/wunderous/host-agents/internal/cordis/mcp"
+	"github.com/wunderous/host-agents/internal/tools"
+	"strings"
 )
 
 func ParityProviderMounts(raw json.RawMessage) []map[string]any {
 	var input struct {
 		Steps []struct {
+			Candidate  bool                      `json:"candidate"`
+			Operation  provider.Operation        `json:"operation"`
 			Action     string                    `json:"action"`
 			Manifest   provider.InstallManifest  `json:"manifest"`
 			Generation string                    `json:"generation"`
@@ -26,7 +31,7 @@ func ParityProviderMounts(raw json.RawMessage) []map[string]any {
 	if err := json.Unmarshal(raw, &input); err != nil {
 		panic(err)
 	}
-	server := &Server{providerContext: cordis.NewContext(), providerLifecycle: cordis.NewProviderLifecycleManager(cordis.DrainPolicy{})}
+	server := &Server{providerContext: cordis.NewContext(), providerLifecycle: cordis.NewProviderLifecycleManager(cordis.DrainPolicy{}), providerCandidates: map[string]*adapter.Adapter{}}
 	connections := map[string]*adapter.Adapter{}
 	observations := []map[string]any{}
 	for _, step := range input.Steps {
@@ -35,6 +40,33 @@ func ParityProviderMounts(raw json.RawMessage) []map[string]any {
 		switch step.Action {
 		case "adapter":
 			connections[step.Adapter] = &adapter.Adapter{}
+		case "candidateAdapter":
+			server.providerCandidates[step.Generation] = connections[step.Adapter]
+		case "invoke":
+			manifest := provider.InstallManifest{Provider: provider.ProviderRef{ID: step.Provider}}
+			value := server.newProviderOperationCapability(manifest, provider.ServiceDefinition{ID: step.Service}, step.Operation, step.Generation, step.Candidate)
+			response, failure := value.Invoke(context.Background(), nil, tools.ExecutionBinding{}, nil)
+			result["toolError"] = response != nil && response.IsError
+			if failure != nil {
+				err = failure
+			} else if response != nil && response.IsError {
+				text := response.Content[0].(*mcp.TextContent).Text
+				result["invokeError"] = strings.TrimPrefix(text, "Error: ")
+			}
+			if err != nil {
+				result["invokeError"] = err.Error()
+				err = nil
+			}
+			if _, ok := result["invokeError"]; !ok {
+				result["invokeError"] = ""
+			}
+			sessions := map[string]int{}
+			for _, id := range []string{step.Generation, "g1", "g2"} {
+				if observed, ok := server.providerLifecycle.Get(id); ok {
+					sessions[id] = observed.Sessions
+				}
+			}
+			result["sessions"] = sessions
 		case "restore":
 			err = server.providerLifecycle.Restore(step.Restore)
 		case "ready":

@@ -782,3 +782,58 @@ owning activation function restores a prior manifest after publication failure
 and explicitly rolls back failures after lifecycle activation; registry
 replacement alone does not establish that composition behavior. No shared
 Incus, Kubernetes, tunnel or deployment state was mutated.
+
+## Executable generation/session binding
+
+The private provider binding now projects immutable operation descriptors and
+retains the exact accepted lifecycle session and adapter. Candidate calls open
+a session for their explicit generation before resolving a candidate adapter.
+Active calls open the current session, refuse an immutable descriptor whose
+generation is superseded, then resolve the generation-owned service adapter.
+Every disconnected, refused, completed or cancelled path releases its session.
+The accepted HTTP call uses `CallSynchronousOnly` with unchanged arguments and
+never resolves a replacement adapter after acceptance. Resource delegation
+must be issued by the composition owner before this boundary is entered.
+This module neither authorizes nor publishes a capability.
+
+`provider-operation-binding/` passes **560/560** comparisons over five
+repetitions. It includes all prior service-mount cases plus candidate/active
+binding against each restored generation state, missing and cross-provider
+identities, absent/null adapters, closed retained candidate connections,
+superseded descriptors, and whitespace/Unicode/slash/@ generations. The
+build-only oracle invokes the actual owning Go capability and compares exact
+refusal text, tool-error versus call-error behavior, session counts and mount
+observations. These calls use an unreserved background context, where owning
+Go delegation is a no-op. Complete MCP error envelopes, signed delegation and
+admission are not established by these comparisons. The independent verifier
+checks every observed invocation leaves zero active sessions and each fixture
+finishes with no mounted services.
+
+Two native loopback HTTP tests use explicit request/release barriers. A blocked
+accepted g1 operation remains on g1 while g2 activates; a stale g1 descriptor
+refuses new work, and a fresh operation returns g2's result. Cancelling the
+teardown caller while the g1 request is accepted does not abandon its cleanup
+owner; after release, g1 completes, its session closes, and its mount disappears.
+A separate cancellation test aborts an accepted HTTP call and verifies the
+session is released, disposal completes, and retained adapter calls refuse.
+Both tests verify arguments at the fake provider and join every provider
+thread. These are private binding/adapter tests, not the full provider process
+or public Host Agent dispatch E2E matrix.
+
+The rebuilt producer also passes **5,315/5,315** registry and **2,710/2,710**
+private candidate rechecks with current binary/source bindings. The workspace
+passes **183 tests** with seventeen dedicated differential fixtures ignored;
+formatting, warnings-denied Clippy, locked release build and all nine OpenSpec
+checks pass. Eight selected owning Go retirement, catalog refresh, candidate
+dispatch and callback delegation/task-owner tests pass five repetitions
+(forty reference-side passes). The public release remains byte-identical at
+`ec63341311ec3ad41e5b30e6c5707a965bd95a7e42670f420e800ee0594323ab`.
+
+`provider-binding-validation.json` independently verifies full raw equality,
+source/binary hashes and indices; `provider-binding-checks/` retains check logs
+and lossless archival byte hashes. Cutover still fails on 76 inventory gaps
+and fourteen historical provenance problems. M7/M8 remain incomplete. Next is
+signed callback delegation and the provider capability output-schema/
+observation hook, then ordinary dispatch composition, publication/rollback,
+and the fake-provider plus five unchanged Go-provider lifecycle E2E matrix.
+No shared Incus, Kubernetes, tunnel or deployment state was mutated.

@@ -1,0 +1,2900 @@
+{
+  "scope": "T0 generation service mount ownership vs actual Go mount, dependency, lookup, displace and Cordis disposal functions, plus actual Go provider capability Invoke session/adapter refusal and tool-error-vs-call-error behavior. Invocation uses unreserved context (owning delegation is a no-op); signed delegation and full error envelopes are not validated here. Unconnected adapters probe owning closed-state admission without network effects. No provider process, public activation, callback or full M7 E2E claim.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "provenance": {
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_mounts.py": "cc0a22e0871f4d8578d5d04f3b5e560d87c40646c99a9e2938a0b10dcd8ea755",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_adapter.py": "72b1793b66594abc06f3ace24d1037a631221aa476fb9f4e132545d8e1d94969",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/build-provider-catalog-oracle.py": "82bae1f90cc3ef063c7ac2fc36eb2ed349b1bedbaf3316afd749b2f5b330c161",
+    "/home/houman/github/wunderous/opute-host-agent/baseline/source-lock.json": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6",
+    "/home/houman/github/wunderous/opute-host-agent/Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/provider.rs": "13a416fba09bc0d30c60c06f3ce93031704e04ec477d8fee7341b24d2bb04179",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/provider/mounts.rs": "dfefe391eac979265f911e1611b1fae0016682cd42ecdffc4f307cf955fff58c",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/provider/binding.rs": "7b9fb03dfdb5034b9e58720c53c6153174ddd48a246475a54567d989e8857e58",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/provider/candidates.rs": "d93e603432f7b74faffb0912e7cb61564b9324578664d7e1fa98e6ad780898dd",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog.rs": "86464bd12bdbf736696b973421c745e16aeba912703345057f431dd8bc483cc1",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/provider/adapter.rs": "edc81ae15fc88ad3424bb7f23d7064c807b7406a10893d102fa036b84ec89072",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/provider/definition.rs": "cb76e159ac9a1ec63efba552a68e1ebfe2f02fa21ebc051244aa1bf9891ee748",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/goerr.rs": "de1eedb230fb53352a58147cdece20949b808cd6617985b3d4b5616404d94458",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/goerr/printable.rs": "ec6a7b8d06450d6ab7ba11897324c2d53c3146ba0d7bd8153c71873dc191773e",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/gojson.rs": "194b799ebcf38edc6b6a550bff2937db85391d4ecca35ecf212796ac687df021",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/hostmcp/provider_service_plugin.go": "c8aa5865149a2bf10cf3b3779be080cb555b681d2643b245707cb589c2e662a7",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/hostmcp/provider_candidate.go": "d1702e34a657f3f7d1a0907301e16d30225d0308e0768ed3d42b84b2d91a9e2a",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/capability/adapters.go": "0f87d9f7a6e6561ee48c189d589b8fb9f0078366e9b8c911f9fae99590887ec6",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/tools/dispatch.go": "ae5cafd1ec0dd37c254e6ff17a9ae31050b69dad764db7b5b26001bae5482b3e",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/cordis/context.go": "8c3ca981c3f0ff7bb81531840e8bf435e4a4da3d51e8789f9271a707a1eda050",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/cordis/generation.go": "0234207f978fb13156ca13a504ba8eb7c4db59434cde9b7d799ddc71cac33be1",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/cordis/mcp/adapter.go": "df975e0508568aa402d7fe877c9dfe3d0db402a2737ae721e7cebd9b0c73c15b",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/bridge.go.txt": "f2fe3da17bd4d5f52d71a38219eaeaf36e024c3d64e4c3c5c769f573bd6c35e2",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/go.mod": "18e342d34094c69e1f20b98d55c6a0e207a71d104f64508fbec6d09b155003f6",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/go.sum": "9728025ae5889cc14a630e33a5038123060191a5f6f73af5bdbb5bb76a7ca1c4",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/main.go": "987562f91f8b0ab4ea9e52bba3ebaa876df0eab5e4faf602ae1adb02806dae29",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/mounts-bridge.go.txt": "5b8c8719ce67a5054abdf8864af377f62ceb01b674188b0470249495734d70ea",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/registry.go": "8f84a4a32f657af82381fa831e0b66ae346b64d80bd7b1c245f846fa013296c4",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/resolver-bridge.go.txt": "1ae84d0791842010cf79e5e0554ed4ed8b8290021e515992c5a9a3ab96bfc2f6",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/schema-bridge.go.txt": "651030540a9212a699f11525077078a4e33d9ff2eb34d4266d95d367b13a4282",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/contracts/provider/provider.go": "406139b75771e939c9b29734e777fe874500b49b51347e09aff5e484a1c9239b",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/contracts/provider/validate.go": "1cae29827f8bf7347374c5fd0b4219f98d1705bdf6a302db18409a6f50db770e",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/contracts/provider/validate_test.go": "53b4e6d4fac7101c31c020361a7ce7de28632c6051fbb3bfd9ba1e7c2669c479",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atob.go": "a811df1f66377d76716b133aaa0e0029f8b8432f39b9128e60aeb792c5e70fdb",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atob_test.go": "9bfce8dca9561aa00b841b868c21004b15c762b81d4a96a91a0d1bcf34c1b721",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atoc.go": "f26230e4759ab0eff2fd0cf65b827c8cad93fff8cd1bc1606539be9eaf3ac25b",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atoc_test.go": "cc2df8e61ff4c3515d343d9bd61c580a66d4bc44506a1eef5faebbd0cd9ec3e1",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atof.go": "2681a77796dd968b4294c87ccacbf537ca6938a85d208bf2f54f98b086160772",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atof_test.go": "884b66a8a5ca219f338d9105719c08c216245e7f18fe89c67a6f767ebb68d8b2",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atoi.go": "956e9c3af07ef5bb2b5ac1ae6656e255f110e29d397e6fb4b97f3cc5347b3270",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/atoi_test.go": "94c4264719bced2f59ed865af651433851d354b2b82de0e2594b3e54ec6dbf50",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/bytealg.go": "210ed5dd413d26575dabbb917c047ba52a144d133414f5e06b9595a4b30d3c60",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/bytealg_bootstrap.go": "2d0fd3eb11f2db64c3c3212de4a3d99e6a344c0a3ac5dff0c925460e758814da",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/ctoa.go": "3b3c4b7928150ed751d97f0e48908195c244d263512c06df6f97c4843749edce",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/ctoa_test.go": "9fd701409d945ba5ad33677923d9a7ce175fae92e25bf31d345174807ec3c92d",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/decimal.go": "23bd45989d0b5a7b441c45873bf43f210fdf8381132fc74424d381216ac3a8b4",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/decimal_test.go": "ef499989d9d19eb27891518a9e995ec995e2933239f89b57c7292f94471b3ed7",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/doc.go": "aea030aeaf555c48ae648dad6421aca2cb9df369265ab31bb1cdf956dac8ce97",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/eisel_lemire.go": "702cdbff7add80c64c79178226355c6c4fd228c19e31c0dac4479fe4b476e662",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/example_test.go": "fe5f44f9ef37e00f67331812c16acb194e64bc35eeee4a14b24e9058645ccac1",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/export_test.go": "969ff455084ad2d4f4bd4234ac7f49528fc35add3de3e1db43888c57dc635966",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/fp_test.go": "e1050e3883dee02ac2fed2ae52cb91fbc0a275e9dd0c1c79b5a6be8a896cf927",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/ftoa.go": "0b6347b52b3016250953f21b957535c1a43591e278deb85b3f358ba89f1a6066",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/ftoa_test.go": "9e59474334af17ce28e61287e6ad28fb343c80317659bc97ccab09354676899b",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/ftoaryu.go": "369cf8c283e9ca407d26b7faa7b2a91ee29bb75a535b7591f132dd8d1908932f",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/ftoaryu_test.go": "1df439d9f792b9e0aafbed2100dd9e8a826c94bff62db6e1d475284ffe7ca2dd",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/internal_test.go": "867f4a3279b1d7f58311bd919131a26107ee474b97280f7f07a35758c7de2194",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/isprint.go": "24114557c2b3cad7b80c8e71683831bfbe1c72eb99e8fd28a3a48eaf77705fb4",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/itoa.go": "3ab40aaee22f21db6aac5da7a2cbcf7725a487a38762e33b52cc55f445b1fe9c",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/itoa_test.go": "1b6f963274241cfb5a90145c3769e0deabad504ad50658ed4422e66dd5926747",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/makeisprint.go": "225e414c850c0aabd9cef26c098a393cc7f811a296a9379569a90d2ced4261ec",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/quote.go": "6f85a5b0e9cc573c94d58a01fe9cd4c6ea7978a9402aa9fe39beed74f8888542",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/quote_test.go": "7fc6b61c20729f12e7fd6cd7d5b2c01cf312d5b35db8d173276c2acef588d2b6",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/strconv/strconv_test.go": "a5ac37e1ec8bab938c5dafcb585204605c105555504eb06de0d13e84073712fd",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/casetables.go": "b70c5009086ffaef3d8191924481b9b2a39108afb42d9f2b979ecf670c77670c",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/digit.go": "dfb14dbbcb918a6c7ee9be15293327d022f9d64a4c1a90f9c8049b682e799761",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/digit_test.go": "99ab5483340c24eaefd238b6d8b371d7ce960e81be635ca76e5f51c28357717d",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/example_test.go": "b4a8757ace262ea3a59f56b2a285436daca31f6cd9f44f3ae7b176584eabf667",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/graphic.go": "46a43107a87c88cf17a05a557e00dbf6b0f4bb53ebcd7d3035e02f1e67c428be",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/graphic_test.go": "2fdcc62306ab3ab14426f557565d2812b476c433e523524e14c585e0004f1765",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/letter.go": "b35a6d259313cef88d07e9e4027b8bd72c60ae140418f5be2c41a2ecea6074fe",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/letter_test.go": "bea1ce251a42d3a9e798d99f0724c203e049784872c04798830bb72419fe3a5d",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/script_test.go": "5a235784e78d2f65473fb026add2b6b8acd89081ebcffabbf01dad2639faf2b6",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/src/unicode/tables.go": "6a88d48746c4b2c471cc04ae40559694b734770212e6f5ea5f1962adb0c0bdb1"
+  },
+  "goBinarySha256": "83129eccee96eb135bc20f83c3820ca7b9d0bbc54758b2ac805706ab1295581e",
+  "rustTestBinarySha256": "f7efc12d366c295a63807e472c9f28c43aa562a540cfdf248740cbbec94f3c79",
+  "normalization": "none; complete observations including immutable inject keys, mount order, service keys and adapter refusal states are exact",
+  "rows": [
+    {
+      "case": "empty",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "nil",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "one",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "stack",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "reversed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "missing-late",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "missing-first",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "duplicate-service",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "ambiguous",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-' '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-'\\t\\n'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-' g1 '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-'g1'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque@id'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque/\u96ea'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter-blank-generation",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[' test.base ']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'test.base']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'missing']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['missing', 'test.base']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['\\n']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['TEST.BASE']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/consumer@g1']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1', 'test.provider/base@g1']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-['missing']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-[]",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/base@g1']",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "failed-remount-preserves-owner",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-candidate",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-ready",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-active",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-draining",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-stopped",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-failed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-unknown",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "replacement-active-is-ambiguous",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "draining-excluded",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.base'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-(' test.provider ', [' test.base '])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['test.base'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown', ['test.consumer'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [''])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['missing'])",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', ' base ')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'slash/service')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'service@opaque')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '\u96ea')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', ' base ')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'slash/service')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'service@opaque')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '\u96ea')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', ' base ')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'slash/service')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'service@opaque')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '\u96ea')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', ' base ')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'slash/service')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'service@opaque')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '\u96ea')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', ' base ')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'slash/service')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'service@opaque')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '\u96ea')",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "opaque-key-collision",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, False)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, True)",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-''",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' g1 '",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-'\u96ea/@generation'",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-superseded",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-absent-session",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "binding-nil-adapter",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "empty",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "nil",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "one",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "stack",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "reversed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "missing-late",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "missing-first",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "duplicate-service",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "ambiguous",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-' '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-'\\t\\n'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-' g1 '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-'g1'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque@id'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque/\u96ea'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter-blank-generation",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[]",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[' test.base ']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'test.base']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'missing']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['missing', 'test.base']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['\\n']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['TEST.BASE']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/consumer@g1']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1', 'test.provider/base@g1']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-['missing']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-[]",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/base@g1']",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "failed-remount-preserves-owner",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-candidate",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-ready",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-active",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-draining",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-stopped",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-failed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-unknown",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "replacement-active-is-ambiguous",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "draining-excluded",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.base'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-(' test.provider ', [' test.base '])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['test.base'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown', ['test.consumer'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [''])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['missing'])",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', ' base ')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'slash/service')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'service@opaque')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '\u96ea')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', ' base ')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'slash/service')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'service@opaque')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '\u96ea')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', ' base ')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'slash/service')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'service@opaque')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '\u96ea')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', ' base ')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'slash/service')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'service@opaque')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '\u96ea')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', ' base ')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'slash/service')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'service@opaque')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '\u96ea')",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "opaque-key-collision",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, False)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, True)",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-''",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' g1 '",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-'\u96ea/@generation'",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-superseded",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-absent-session",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "binding-nil-adapter",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "empty",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "nil",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "one",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "stack",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "reversed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "missing-late",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "missing-first",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "duplicate-service",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "ambiguous",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-' '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-'\\t\\n'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-' g1 '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-'g1'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque@id'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque/\u96ea'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter-blank-generation",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[]",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[' test.base ']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'test.base']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'missing']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['missing', 'test.base']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['\\n']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['TEST.BASE']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/consumer@g1']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1', 'test.provider/base@g1']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-['missing']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-[]",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/base@g1']",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "failed-remount-preserves-owner",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-candidate",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-ready",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-active",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-draining",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-stopped",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-failed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-unknown",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "replacement-active-is-ambiguous",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "draining-excluded",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.base'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-(' test.provider ', [' test.base '])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['test.base'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown', ['test.consumer'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [''])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['missing'])",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', ' base ')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'slash/service')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'service@opaque')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '\u96ea')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', ' base ')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'slash/service')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'service@opaque')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '\u96ea')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', ' base ')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'slash/service')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'service@opaque')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '\u96ea')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', ' base ')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'slash/service')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'service@opaque')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '\u96ea')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', ' base ')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'slash/service')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'service@opaque')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '\u96ea')",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "opaque-key-collision",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, False)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, True)",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-''",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' g1 '",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-'\u96ea/@generation'",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-superseded",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-absent-session",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "binding-nil-adapter",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "empty",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "nil",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "one",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "stack",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "reversed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "missing-late",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "missing-first",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "duplicate-service",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "ambiguous",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-' '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-'\\t\\n'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-' g1 '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-'g1'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque@id'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque/\u96ea'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter-blank-generation",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[]",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[' test.base ']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'test.base']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'missing']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['missing', 'test.base']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['\\n']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['TEST.BASE']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/consumer@g1']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1', 'test.provider/base@g1']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-['missing']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-[]",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/base@g1']",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "failed-remount-preserves-owner",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-candidate",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-ready",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-active",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-draining",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-stopped",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-failed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-unknown",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "replacement-active-is-ambiguous",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "draining-excluded",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.base'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-(' test.provider ', [' test.base '])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['test.base'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown', ['test.consumer'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [''])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['missing'])",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', ' base ')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'slash/service')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'service@opaque')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '\u96ea')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', ' base ')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'slash/service')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'service@opaque')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '\u96ea')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', ' base ')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'slash/service')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'service@opaque')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '\u96ea')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', ' base ')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'slash/service')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'service@opaque')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '\u96ea')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', ' base ')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'slash/service')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'service@opaque')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '\u96ea')",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "opaque-key-collision",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, False)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, True)",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-''",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' g1 '",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-'\u96ea/@generation'",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-superseded",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-absent-session",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "binding-nil-adapter",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "empty",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "nil",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "one",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "stack",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "reversed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "missing-late",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "missing-first",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "duplicate-service",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "ambiguous",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-' '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-'\\t\\n'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-' g1 '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-'g1'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque@id'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "generation-'opaque/\u96ea'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "nil-adapter-blank-generation",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[]",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-[' test.base ']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'test.base']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['test.base', 'missing']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['missing', 'test.base']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['\\n']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dependencies-['TEST.BASE']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/consumer@g1']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/consumer@g1', 'test.provider/base@g1']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-['missing']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-[]",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "dispose-['test.provider/base@g1', 'test.provider/base@g1']",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "failed-remount-preserves-owner",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-candidate",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-ready",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-active",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-draining",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-stopped",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-failed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "external-dependency-unknown",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "replacement-active-is-ambiguous",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "draining-excluded",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('', ['test.base'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-(' test.provider ', [' test.base '])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['test.base'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('unknown', ['test.consumer'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', [''])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "displace-('other.provider', ['missing'])",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', ' base ')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'slash/service')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', 'service@opaque')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-(' test.provider ', '\u96ea')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', ' base ')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'slash/service')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', 'service@opaque')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('', '\u96ea')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', ' base ')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'slash/service')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', 'service@opaque')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test.provider/', '\u96ea')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', ' base ')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'slash/service')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', 'service@opaque')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('\u96ea/provider', '\u96ea')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', ' base ')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'slash/service')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', 'service@opaque')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-('test/provider@opaque', '\u96ea')",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "opaque-key-collision",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('candidate', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('ready', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('active', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('draining', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('stopped', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('failed', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', False, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, False)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-('unknown', True, True)",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-''",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-' g1 '",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-opaque-'\u96ea/@generation'",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-superseded",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-absent-session",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "binding-nil-adapter",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "passed": 560,
+  "total": 560
+}

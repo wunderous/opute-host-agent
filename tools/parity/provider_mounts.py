@@ -75,6 +75,26 @@ def cases():
                 {'action': 'unmount', 'provider': provider, 'generation': 'g1'}, lookup(name, provider)])
     add('opaque-key-collision', [connection(), mount([service('s@g')], generation='h'), connection('two'),
                                 mount([service('s')], generation='g@h', adapter='two'), lookup('s@g', generation='h')])
+    def invoke(candidate=False, provider='test.provider', generation='g1', name='probe', service_id='base'):
+        return {'action':'invoke','provider':provider,'generation':generation,'service':service_id,
+                'candidate':candidate,'operation':{'id':name,'version':1}}
+    for state in ['candidate','ready','active','draining','stopped','failed','unknown']:
+        for candidate in [False,True]:
+            for attached in [False,True]:
+                setup=[restore(state=state),connection()]
+                if attached:
+                    setup += [mount([service()]), {'action':'candidateAdapter','generation':'g1','adapter':'a'}]
+                add('binding-'+repr((state,candidate,attached)), setup+[invoke(candidate),invoke(candidate,provider='other.provider'),invoke(candidate,generation='missing')])
+    for generation in ['', ' ', ' g1 ', '雪/@generation']:
+        add('binding-opaque-'+repr(generation),[restore(generation=generation),connection(),
+            mount([service()],generation=generation),{'action':'candidateAdapter','generation':generation,'adapter':'a'},
+            invoke(True,generation=generation),invoke(False,generation=generation)])
+    add('binding-superseded',swap+[invoke(),invoke(generation='g2'),invoke(True),invoke(True,generation='g2'),
+        {'action':'candidateAdapter','generation':'g1','adapter':'a'},invoke(True),
+        {'action':'unmount','provider':'test.provider','generation':'g1'},invoke(True),invoke(generation='g2'),
+        {'action':'unmount','provider':'test.provider','generation':'g2'},invoke(generation='g2')])
+    add('binding-absent-session',[connection(),{'action':'candidateAdapter','generation':'g1','adapter':'a'},invoke(True),invoke()])
+    add('binding-nil-adapter',[restore(),{'action':'candidateAdapter','generation':'g1','adapter':'missing'},invoke(True)])
     assert len({row['case'] for row in rows}) == len(rows)
     return rows
 
@@ -84,10 +104,10 @@ def run(go, rust, out):
     go, rust = freeze_binary(go, 'mounts-go'), freeze_binary(rust, 'mounts-rust')
     paths = [Path(__file__), ROOT/'tools/parity/provider_adapter.py', ROOT/'tools/parity/build-provider-catalog-oracle.py',
              ROOT/'baseline/source-lock.json', ROOT/'Cargo.lock', ROOT/'crates/host-agent/src/provider.rs',
-             ROOT/'crates/host-agent/src/provider/mounts.rs', ROOT/'crates/host-agent/src/provider/adapter.rs',
+             ROOT/'crates/host-agent/src/provider/mounts.rs', ROOT/'crates/host-agent/src/provider/binding.rs', ROOT/'crates/host-agent/src/provider/candidates.rs', ROOT/'crates/host-agent/src/catalog.rs', ROOT/'crates/host-agent/src/provider/adapter.rs',
              ROOT/'crates/host-agent/src/provider/definition.rs', ROOT/'crates/host-agent/src/goerr.rs',
              ROOT/'crates/host-agent/src/goerr/printable.rs',
-             ROOT/'crates/host-agent/src/gojson.rs', ROOT/'.parity/go-src/internal/hostmcp/provider_service_plugin.go',
+             ROOT/'crates/host-agent/src/gojson.rs', ROOT/'.parity/go-src/internal/hostmcp/provider_service_plugin.go', ROOT/'.parity/go-src/internal/hostmcp/provider_candidate.go', ROOT/'.parity/go-src/internal/capability/adapters.go', ROOT/'.parity/go-src/internal/tools/dispatch.go',
              ROOT/'.parity/go-src/internal/cordis/context.go', ROOT/'.parity/go-src/internal/cordis/generation.go',
              ROOT/'.parity/go-src/internal/cordis/mcp/adapter.go']
     paths += sorted((ROOT/'tools/parity/provider-catalog-oracle').iterdir())
@@ -127,7 +147,7 @@ def run(go, rust, out):
             if not passed:
                 print('FAIL', case['case'], [(i, l, r) for i, (l, r) in enumerate(zip(left['observations'], right['observations'])) if l != r], flush=True)
     assert sources == {str(p): sha(p) for p in paths if p.is_file()}; pinned()
-    report = {'scope': 'T0 generation service mount ownership vs actual Go mount, dependency, lookup, displace and Cordis disposal functions. Unconnected adapters probe owning closed-state admission without network effects. No provider process, public activation, callback or full M7 E2E claim.',
+    report = {'scope': 'T0 generation service mount ownership vs actual Go mount, dependency, lookup, displace and Cordis disposal functions, plus actual Go provider capability Invoke session/adapter refusal and tool-error-vs-call-error behavior. Invocation uses unreserved context (owning delegation is a no-op); signed delegation and full error envelopes are not validated here. Unconnected adapters probe owning closed-state admission without network effects. No provider process, public activation, callback or full M7 E2E claim.',
               'sourceLock': lock, 'provenance': sources, 'goBinarySha256': sha(go), 'rustTestBinarySha256': sha(rust),
               'normalization': 'none; complete observations including immutable inject keys, mount order, service keys and adapter refusal states are exact',
               'rows': rows, 'passed': sum(row['pass'] for row in rows), 'total': len(rows)}

@@ -387,6 +387,7 @@ mod tests {
         for row in input.as_array().unwrap() {
             let lifecycle = Lifecycle::new(DrainPolicy::default());
             let mounts = Mounts::new(lifecycle.clone());
+            let candidates = super::super::candidates::Candidates::default();
             let mut adapters: BTreeMap<String, Arc<Adapter>> = BTreeMap::new();
             let mut observations = Vec::new();
             for step in row["mounts"]["steps"].as_array().unwrap() {
@@ -411,6 +412,48 @@ mod tests {
                     "restore" => lifecycle.restore(
                         serde_json::from_value::<Generation>(step["restore"].clone()).unwrap(),
                     ),
+                    "candidateAdapter" => {
+                        candidates.set_adapter(
+                            text("generation"),
+                            adapters.get(text("adapter")).cloned(),
+                        );
+                        Ok(())
+                    }
+                    "invoke" => {
+                        let raw = serde_json::to_vec(&serde_json::json!({"provider":{"id":text("provider")},"services":[{"id":text("service"),"operations":[step["operation"].clone()]}]})).unwrap();
+                        let manifest = super::super::definition::decode_manifest(
+                            &crate::gojson::parse(&raw).unwrap(),
+                        )
+                        .unwrap();
+                        let operation = super::super::binding::operations(
+                            &manifest,
+                            text("generation"),
+                            step["candidate"].as_bool().unwrap_or(false),
+                        )
+                        .remove(0);
+                        let (tool_error, error) =
+                            match operation.accept(&lifecycle, &candidates, &mounts) {
+                                Err(error) => (true, error),
+                                Ok(accepted) => (
+                                    false,
+                                    accepted
+                                        .call(&RunCtx::background(), None, "")
+                                        .await
+                                        .err()
+                                        .unwrap_or_default(),
+                                ),
+                            };
+                        result.insert("toolError".into(), json!(tool_error));
+                        result.insert("invokeError".into(), json!(error));
+                        let mut sessions = BTreeMap::new();
+                        for id in [text("generation"), "g1", "g2"] {
+                            if let Some(observed) = lifecycle.get(id) {
+                                sessions.insert(id, observed.sessions);
+                            }
+                        }
+                        result.insert("sessions".into(), json!(sessions));
+                        Ok(())
+                    }
                     "ready" => lifecycle.mark_ready(text("generation")),
                     "activate" => lifecycle.activate(text("generation")).map(|_| ()),
                     "mount" => {
