@@ -1,5 +1,7 @@
-//! Generation-scoped provider service ownership from provider_service_plugin.go.
-//! Public activation and callback admission are owned by the composition layer.
+//! The one service context (decision D14): generation-scoped service
+//! ownership from provider_service_plugin.go, for provider generations and
+//! the built-in provider alike. Public activation and callback admission are
+//! owned by the composition layer.
 use super::{
     adapter::Adapter,
     definition::{service_key, CapabilityRef, InstallManifest, ServiceDefinition},
@@ -11,6 +13,15 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+/// What implements a generation's services: a provider's MCP adapter, or
+/// the built-in provider in process. Registration, dependencies, families,
+/// resolution and disposal do not depend on which.
+#[derive(Clone)]
+pub enum Implementation {
+    Adapter(Arc<Adapter>),
+    Builtin(Arc<crate::builtin::Provider>),
+}
+
 #[derive(Clone)]
 pub struct Service {
     pub key: String,
@@ -18,13 +29,19 @@ pub struct Service {
     pub generation_id: String,
     pub capability_id: String,
     pub definition: ServiceDefinition,
-    pub adapter: Arc<Adapter>,
+    pub implementation: Implementation,
     pub inject: Vec<String>,
 }
 
 impl Service {
     pub fn offering_key(&self) -> String {
         service_key(&self.provider_id, &self.definition.id)
+    }
+    pub fn adapter(&self) -> Option<&Arc<Adapter>> {
+        match &self.implementation {
+            Implementation::Adapter(adapter) => Some(adapter),
+            Implementation::Builtin(_) => None,
+        }
     }
 }
 struct Mount {
@@ -91,7 +108,7 @@ impl Mounts {
         &self,
         manifest: &InstallManifest,
         generation: &str,
-        adapter: Arc<Adapter>,
+        implementation: Implementation,
         definition: &ServiceDefinition,
         owns_adapter: bool,
     ) -> Result<String, String> {
@@ -111,7 +128,7 @@ impl Mounts {
                 generation_id: generation.into(),
                 capability_id: definition.capability_id.trim().into(),
                 definition: definition.clone(),
-                adapter,
+                implementation,
                 inject,
             }),
             owns_adapter,
@@ -119,23 +136,31 @@ impl Mounts {
         });
         Ok(key)
     }
-    pub async fn mount(
+    /// Register every service of a generation, in manifest order. On failure
+    /// the services already registered are returned for disposal.
+    fn register(
         &self,
         manifest: &InstallManifest,
         generation: &str,
-        adapter: Option<Arc<Adapter>>,
-    ) -> Result<(), String> {
-        let adapter = adapter.ok_or_else(|| {
-            format!(
-                "provider {} generation {} has no connected adapter",
-                quote(&manifest.provider.id),
-                quote(generation)
+        implementation: Option<Implementation>,
+    ) -> Result<(), (String, Vec<String>)> {
+        let implementation = implementation.ok_or_else(|| {
+            (
+                format!(
+                    "provider {} generation {} has no connected adapter",
+                    quote(&manifest.provider.id),
+                    quote(generation)
+                ),
+                Vec::new(),
             )
         })?;
         if generation.trim().is_empty() {
-            return Err(format!(
-                "provider {} must be mounted against a generation",
-                quote(&manifest.provider.id)
+            return Err((
+                format!(
+                    "provider {} must be mounted against a generation",
+                    quote(&manifest.provider.id)
+                ),
+                Vec::new(),
             ));
         }
         let mut mounted = Vec::new();
@@ -143,21 +168,104 @@ impl Mounts {
             match self.mount_service(
                 manifest,
                 generation,
-                adapter.clone(),
+                implementation.clone(),
                 service,
                 mounted.is_empty(),
             ) {
                 Ok(key) => mounted.push(key),
                 Err(error) => {
-                    self.unmount_ids(&mounted).await;
-                    return Err(format!(
-                        "mount provider service {}: {error}",
-                        quote(&service.id)
-                    ));
+                    return Err((
+                        format!("mount provider service {}: {error}", quote(&service.id)),
+                        mounted,
+                    ))
                 }
             }
         }
         Ok(())
+    }
+    pub async fn mount(
+        &self,
+        manifest: &InstallManifest,
+        generation: &str,
+        implementation: Option<Implementation>,
+    ) -> Result<(), String> {
+        match self.register(manifest, generation, implementation) {
+            Ok(()) => Ok(()),
+            Err((error, mounted)) => {
+                self.unmount_ids(&mounted).await;
+                Err(error)
+            }
+        }
+    }
+    /// Mount a generation whose implementation owns no connection to close,
+    /// such as the built-in provider, without an async runtime.
+    pub fn mount_now(
+        &self,
+        manifest: &InstallManifest,
+        generation: &str,
+        implementation: Implementation,
+    ) -> Result<(), String> {
+        match self.register(manifest, generation, Some(implementation)) {
+            Ok(()) => Ok(()),
+            Err((error, mounted)) => {
+                self.unmount_now(&mounted);
+                Err(error)
+            }
+        }
+    }
+    /// Dispose services that own no adapter connection, in reverse order and
+    /// exactly once. A service that owns an adapter is left for
+    /// `unmount_ids`, which closes it.
+    pub fn unmount_now(&self, ids: &[String]) {
+        let mut services = self.services.lock().unwrap();
+        for id in ids.iter().rev() {
+            let Some(index) = services.iter().position(|mount| mount.service.key == *id) else {
+                continue;
+            };
+            if services[index].owns_adapter && services[index].service.adapter().is_some() {
+                continue;
+            }
+            services[index].disposed = true;
+            services.remove(index);
+        }
+    }
+    /// The service of `provider`'s `generation` that offers `operation`.
+    pub fn resolve_operation(
+        &self,
+        provider: &str,
+        generation: &str,
+        operation: &str,
+    ) -> Option<Arc<Service>> {
+        self.services
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|mount| {
+                !mount.disposed
+                    && mount.service.provider_id == provider
+                    && mount.service.generation_id == generation
+            })
+            .find(|mount| {
+                mount
+                    .service
+                    .definition
+                    .operations
+                    .iter()
+                    .any(|candidate| candidate.id == operation)
+            })
+            .map(|mount| mount.service.clone())
+    }
+    /// The services of one provider generation, in mount order.
+    pub fn generation_services(&self, provider: &str, generation: &str) -> Vec<Arc<Service>> {
+        self.services
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|mount| {
+                mount.service.provider_id == provider && mount.service.generation_id == generation
+            })
+            .map(|mount| mount.service.clone())
+            .collect()
     }
     pub fn plugin_ids(&self) -> Vec<String> {
         self.services
@@ -192,7 +300,7 @@ impl Mounts {
                 mount.service.key.starts_with(&prefix) && mount.service.key.ends_with(&suffix)
             })
             .min_by_key(|mount| &mount.service.key)
-            .map(|mount| mount.service.adapter.clone())
+            .and_then(|mount| mount.service.adapter().cloned())
     }
     pub async fn unmount_ids(&self, ids: &[String]) {
         // Go disposal uses Background and adapter Close ignores cancellation.
@@ -211,7 +319,10 @@ impl Mounts {
                         continue;
                     }
                     mount.disposed = true;
-                    mount.owns_adapter.then(|| mount.service.adapter.clone())
+                    mount
+                        .owns_adapter
+                        .then(|| mount.service.adapter().cloned())
+                        .flatten()
                 };
                 if let Some(adapter) = owner {
                     adapter.close().await;
@@ -256,8 +367,19 @@ impl Mounts {
             .collect::<Vec<_>>();
         self.unmount_ids(&ids).await;
     }
+    /// Dispose every provider generation's services. The built-in
+    /// generation belongs to the composition root, which disposes it once
+    /// accepted work has drained.
     pub async fn close(&self) {
-        self.unmount_ids(&self.plugin_ids()).await;
+        let ids = self
+            .services
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|mount| mount.service.generation_id != crate::builtin::GENERATION)
+            .map(|mount| mount.service.key.clone())
+            .collect::<Vec<_>>();
+        self.unmount_ids(&ids).await;
     }
 }
 
@@ -328,14 +450,19 @@ mod tests {
             ..InstallManifest::default()
         };
         mounts
-            .mount(&manifest, "g1", Some(adapter.clone()))
+            .mount(
+                &manifest,
+                "g1",
+                Some(Implementation::Adapter(adapter.clone())),
+            )
             .await
             .unwrap();
         let accepted = mounts.resolve("test.provider", "consumer", "g1").unwrap();
         let calling = accepted.clone();
         let call = tokio::spawn(async move {
             calling
-                .adapter
+                .adapter()
+                .unwrap()
                 .call(&RunCtx::background(), "test.operation", None, "")
                 .await
         });
@@ -366,7 +493,8 @@ mod tests {
         assert!(mounts.generation_adapter("test.provider", "g1").is_none());
         assert_eq!(
             accepted
-                .adapter
+                .adapter()
+                .unwrap()
                 .call(&RunCtx::background(), "test.operation", None, "")
                 .await
                 .unwrap_err(),
@@ -466,7 +594,10 @@ mod tests {
                             .mount(
                                 &manifest,
                                 text("generation"),
-                                adapters.get(text("adapter")).cloned(),
+                                adapters
+                                    .get(text("adapter"))
+                                    .cloned()
+                                    .map(Implementation::Adapter),
                             )
                             .await
                     }

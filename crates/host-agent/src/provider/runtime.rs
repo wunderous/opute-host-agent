@@ -967,7 +967,7 @@ mod tests {
         let config = crate::config::Config::load(&environment);
         let state = Arc::new(Mutex::new(StateStore::open(directory.path()).unwrap()));
         let auth = crate::store::AuthzStore::open(directory.path(), "fixture-secret").unwrap();
-        let server = Arc::new(crate::app::http_server(&config, auth, state).unwrap());
+        let server = crate::app::http_server(&config, auth, state).unwrap();
         server.providers.bind(&server);
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let endpoint = format!("http://{}/mcp", listener.local_addr().unwrap());
@@ -1086,7 +1086,7 @@ mod tests {
             let state = Arc::new(Mutex::new(StateStore::open(directory.path()).unwrap()));
             let auth = crate::store::AuthzStore::open(directory.path(), "provider-runtime-secret")
                 .unwrap();
-            let server = Arc::new(crate::app::http_server(&config, auth, state).unwrap());
+            let server = crate::app::http_server(&config, auth, state).unwrap();
             server.providers.bind(&server);
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
             let endpoint = format!("http://{}/mcp", listener.local_addr().unwrap());

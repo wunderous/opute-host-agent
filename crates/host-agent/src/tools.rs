@@ -175,57 +175,18 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         // already-terminal run -- leaves it unclaimed for the plain release
         // below, same as every other lifecycle tool.
         let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let lease = || crate::provider_mcp::Lease {
-            reservation: reservation.clone(),
-            claimed: Arc::clone(&claimed),
-        };
-        let result = match name.as_str() {
-            "opute.provider.status" => server.providers.status(&args),
-            "opute.provider.validate" => server
-                .providers
-                .validate(&crate::plan::runner::RunCtx::background(), &args),
-            "get_capability_catalog" => structured_result(snapshot_json(&catalog_snapshot), None),
-            "validate_host_plan" => {
-                crate::plan_mcp::handle_validate_host_plan(&args, &catalog_snapshot)
-            }
-            "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
-                server,
-                &args,
-                reservation.clone(),
-                Arc::clone(&claimed),
-            ),
-            "get_host_plan_run" => crate::plan_mcp::handle_get_host_plan_run(server, &args),
-            "validate_host_local_recipe" => {
-                crate::host_recipe_mcp::handle_validate_host_local_recipe(server, &args)
-            }
-            "run_host_local_recipe" => crate::host_recipe_mcp::handle_run_host_local_recipe(
-                server,
-                &args,
-                reservation.clone(),
-                Arc::clone(&claimed),
-            ),
-            "validate_runtime_recipe" => {
-                crate::provider_mcp::handle_validate_runtime_recipe(server, &args)
-            }
-            "run_runtime_recipe" => {
-                crate::provider_mcp::handle_run_runtime_recipe(server, &args, lease())
-            }
-            "get_runtime_recipe_run" | "get_tunnel_run" => {
-                crate::plan_mcp::handle_get_host_plan_run(server, &args)
-            }
-            "validate_tunnel_recipe" => {
-                crate::provider_mcp::handle_validate_tunnel_recipe(server, &args)
-            }
-            "run_tunnel_recipe" => {
-                crate::provider_mcp::handle_run_tunnel_recipe(server, &args, lease())
-            }
-            "opute.provider.install" => crate::provider_mcp::handle_install(server, &args, lease()),
-            "opute.provider.reload" => crate::provider_mcp::handle_reload(server, &args, lease()),
-            "opute.provider.teardown" => {
-                crate::provider_mcp::handle_teardown(server, &args, lease())
-            }
-            _ => not_implemented(&name),
-        };
+        let ctx = crate::plan::runner::RunCtx::background().with_reservation(reservation.clone());
+        let result = run_lifecycle(
+            server,
+            &name,
+            &crate::builtin::Invocation {
+                ctx: &ctx,
+                args: &args,
+                binding: &binding,
+                snapshot: &catalog_snapshot,
+                claimed: Some(&claimed),
+            },
+        );
         if !claimed.load(std::sync::atomic::Ordering::SeqCst) {
             admission::release(server, &reservation);
         }
@@ -235,7 +196,7 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         if !task_extension_declared(params) {
             return missing_tasks_capability();
         }
-        return ToolCallOutcome::Result(create_input_task(server, &args));
+        return ToolCallOutcome::Result(run_task_input(server, &name, &args));
     }
     // Provider-declared bridged work crosses the Host Agent task boundary
     // before the public request reaches the provider.
@@ -315,6 +276,25 @@ pub fn close_task_starts(server: &Server) {
             "The Host Agent shut down before the task completed.",
         );
     }
+}
+
+/// The task-input operation, resolved through the service context.
+pub(crate) fn run_task_input(server: &Arc<Server>, name: &str, args: &Map<String, J>) -> J {
+    let ctx = crate::plan::runner::RunCtx::background();
+    let invocation = crate::builtin::Invocation {
+        ctx: &ctx,
+        args,
+        binding: &Binding::default(),
+        snapshot: &server.catalog.snapshot(),
+        claimed: None,
+    };
+    if let Some(outcome) = crate::builtin::invoke(server, name, &invocation) {
+        return outcome.unwrap_or_else(|e| error_result(&e));
+    }
+    if name == "request_task_input" {
+        return create_input_task(server, args);
+    }
+    not_implemented(name)
 }
 
 /// `createInputRequestTask`: a task that completes with the operator's
@@ -610,7 +590,7 @@ fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<
 }
 
 /// `isLifecycleTool`: transport-owned operations routed before tasks.
-const LIFECYCLE: &[&str] = &[
+pub(crate) const LIFECYCLE: &[&str] = &[
     "validate_host_plan",
     "run_host_plan",
     "get_host_plan_run",
@@ -630,6 +610,70 @@ const LIFECYCLE: &[&str] = &[
     "get_capability_catalog",
     "open_assistant_session",
 ];
+
+/// A lifecycle operation, resolved through the service context. Operations
+/// not yet revised onto the seam fall back to the legacy table below, which
+/// the seam verifier reports as gaps.
+pub(crate) fn run_lifecycle(
+    server: &Arc<Server>,
+    name: &str,
+    call: &crate::builtin::Invocation,
+) -> J {
+    if let Some(outcome) = crate::builtin::invoke(server, name, call) {
+        return outcome.unwrap_or_else(|e| error_result(&e));
+    }
+    match name {
+        "opute.provider.status" => server.providers.status(call.args),
+        "opute.provider.validate" => server
+            .providers
+            .validate(&crate::plan::runner::RunCtx::background(), call.args),
+        "get_capability_catalog" => structured_result(snapshot_json(call.snapshot), None),
+        "validate_host_plan" => {
+            crate::plan_mcp::handle_validate_host_plan(call.args, call.snapshot)
+        }
+        "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
+            server,
+            call.args,
+            call.reservation(),
+            call.claimed(),
+        ),
+        "get_host_plan_run" => crate::plan_mcp::handle_get_host_plan_run(server, call.args),
+        "validate_host_local_recipe" => {
+            crate::host_recipe_mcp::handle_validate_host_local_recipe(server, call.args)
+        }
+        "run_host_local_recipe" => crate::host_recipe_mcp::handle_run_host_local_recipe(
+            server,
+            call.args,
+            call.reservation(),
+            call.claimed(),
+        ),
+        "validate_runtime_recipe" => {
+            crate::provider_mcp::handle_validate_runtime_recipe(server, call.args)
+        }
+        "run_runtime_recipe" => {
+            crate::provider_mcp::handle_run_runtime_recipe(server, call.args, call.lease())
+        }
+        "get_runtime_recipe_run" | "get_tunnel_run" => {
+            crate::plan_mcp::handle_get_host_plan_run(server, call.args)
+        }
+        "validate_tunnel_recipe" => {
+            crate::provider_mcp::handle_validate_tunnel_recipe(server, call.args)
+        }
+        "run_tunnel_recipe" => {
+            crate::provider_mcp::handle_run_tunnel_recipe(server, call.args, call.lease())
+        }
+        "opute.provider.install" => {
+            crate::provider_mcp::handle_install(server, call.args, call.lease())
+        }
+        "opute.provider.reload" => {
+            crate::provider_mcp::handle_reload(server, call.args, call.lease())
+        }
+        "opute.provider.teardown" => {
+            crate::provider_mcp::handle_teardown(server, call.args, call.lease())
+        }
+        _ => not_implemented(name),
+    }
+}
 
 /// A capability whose handler this build does not carry yet. It fails
 /// closed with a typed error rather than doing anything.
@@ -720,6 +764,15 @@ pub(crate) fn dispatch(
         admission::release(server, &reservation);
         return result;
     }
+    // The same invocation context a provider capability receives: the
+    // caller's cancellation, the admitted reservation and the task identity.
+    let mut invocation_ctx = cancel_ctx
+        .cloned()
+        .unwrap_or_else(crate::plan::runner::RunCtx::background)
+        .with_reservation(reservation.clone());
+    if let Some((operation, task)) = identity {
+        invocation_ctx = invocation_ctx.with_operation_identity(operation, task);
+    }
     let result = match cancel_ctx {
         Some(ctx) => {
             let finished = std::sync::atomic::AtomicBool::new(false);
@@ -734,12 +787,12 @@ pub(crate) fn dispatch(
                         std::thread::sleep(std::time::Duration::from_millis(20));
                     }
                 });
-                let r = invoke(server, name, args, &binding);
+                let r = invoke(server, &invocation_ctx, name, args, &binding);
                 finished.store(true, std::sync::atomic::Ordering::SeqCst);
                 r
             })
         }
-        None => invoke(server, name, args, &binding),
+        None => invoke(server, &invocation_ctx, name, args, &binding),
     };
     // Schema-invalid arguments are an owner-approved reject-without-audit
     // divergence (D11). Admission refusals returned above never get here.
@@ -1240,123 +1293,141 @@ fn record_invocation(
 
 type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
 
-fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding) -> J {
+pub(crate) fn invoke(
+    server: &Server,
+    ctx: &crate::plan::runner::RunCtx,
+    name: &str,
+    args: &Map<String, J>,
+    binding: &Binding,
+) -> J {
     let catalog_snapshot = server.catalog.snapshot();
     let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return not_implemented(name);
     };
-    let handler: Handler = match name {
-        "get_host_info" => |host, _, _| Ok(structured_with_text(&describe_host(host), &HOST_INFO)),
-        "get_vm_info" => |host, args, binding| {
-            // The provider-native name comes from the canonical binding,
-            // never from a raw argument.
-            let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
-            let register = |uri: &str, coordinates: Map<String, J>| {
-                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-            };
-            host.incus
-                .get_vm_info(&binding.provider_instance_name(), fast, &register)
-                .map(|v| structured_with_text(&v, &VM_INFO))
-        },
-        "probe_incus_gpu" => |host, args, _| {
-            Ok(structured_result(
-                probe_incus_gpu(host, args),
-                Some("Incus GPU capability report generated"),
-            ))
-        },
-        "list_vms" => |host, args, _| {
-            let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
-            let register = |uri: &str, coordinates: Map<String, J>| {
-                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-            };
-            host.incus
-                .list_vms(fast, &register)
-                .map(|v| structured_with_text(&v, &VM_LIST))
-        },
-        "detect_host_platform" => |host, _, _| {
-            let platform = crate::hostobs::detect_platform(&host.env);
-            let text = format!(
-                "Host platform detected: {} on {}.",
-                platform["kind"].as_str().unwrap_or(""),
-                platform["cpu"]["architecture"].as_str().unwrap_or("")
-            );
-            Ok(json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}))
-        },
-        "get_host_capacity" => |host, _, _| {
-            Ok(json!({
-                "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
-                "structuredContent": host.coordinator.snapshot(),
-            }))
-        },
-        "inspect_host_file" => |_, args, _| {
-            // expectedContent is read raw: ensure_host_file writes it raw.
-            let field = |k: &str| args.get(k).and_then(J::as_str).map(str::trim).unwrap_or("");
-            let raw = args
-                .get("expectedContent")
-                .and_then(J::as_str)
-                .unwrap_or("");
-            crate::hostread::inspect_host_file(
-                field("path"),
-                field("scope"),
-                field("expectedSha256"),
-                raw,
-            )
-            .map(|v| structured_result(v, Some("Managed host file inspected.")))
-        },
-        "inspect_host_service" => |host, args, binding| {
-            // `serviceNameFromBinding` / `serviceScopeFromBinding`: an explicit
-            // argument wins over the bound coordinate.
-            let field = |key: &str| {
-                let explicit = args
-                    .get(key)
+    let seam = crate::builtin::resolve(server, name).is_some();
+    let legacy: Option<Handler> = if seam {
+        None
+    } else {
+        Some(match name {
+            "get_host_info" => {
+                |host, _, _| Ok(structured_with_text(&describe_host(host), &HOST_INFO))
+            }
+            "get_vm_info" => |host, args, binding| {
+                // The provider-native name comes from the canonical binding,
+                // never from a raw argument.
+                let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
+                let register = |uri: &str, coordinates: Map<String, J>| {
+                    let _ =
+                        crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
+                };
+                host.incus
+                    .get_vm_info(&binding.provider_instance_name(), fast, &register)
+                    .map(|v| structured_with_text(&v, &VM_INFO))
+            },
+            "probe_incus_gpu" => |host, args, _| {
+                Ok(structured_result(
+                    probe_incus_gpu(host, args),
+                    Some("Incus GPU capability report generated"),
+                ))
+            },
+            "list_vms" => |host, args, _| {
+                let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
+                let register = |uri: &str, coordinates: Map<String, J>| {
+                    let _ =
+                        crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
+                };
+                host.incus
+                    .list_vms(fast, &register)
+                    .map(|v| structured_with_text(&v, &VM_LIST))
+            },
+            "detect_host_platform" => |host, _, _| {
+                let platform = crate::hostobs::detect_platform(&host.env);
+                let text = format!(
+                    "Host platform detected: {} on {}.",
+                    platform["kind"].as_str().unwrap_or(""),
+                    platform["cpu"]["architecture"].as_str().unwrap_or("")
+                );
+                Ok(
+                    json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}),
+                )
+            },
+            "get_host_capacity" => |host, _, _| {
+                Ok(json!({
+                    "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
+                    "structuredContent": host.coordinator.snapshot(),
+                }))
+            },
+            "inspect_host_file" => |_, args, _| {
+                // expectedContent is read raw: ensure_host_file writes it raw.
+                let field = |k: &str| args.get(k).and_then(J::as_str).map(str::trim).unwrap_or("");
+                let raw = args
+                    .get("expectedContent")
+                    .and_then(J::as_str)
+                    .unwrap_or("");
+                crate::hostread::inspect_host_file(
+                    field("path"),
+                    field("scope"),
+                    field("expectedSha256"),
+                    raw,
+                )
+                .map(|v| structured_result(v, Some("Managed host file inspected.")))
+            },
+            "inspect_host_service" => |host, args, binding| {
+                // `serviceNameFromBinding` / `serviceScopeFromBinding`: an explicit
+                // argument wins over the bound coordinate.
+                let field = |key: &str| {
+                    let explicit = args
+                        .get(key)
+                        .and_then(J::as_str)
+                        .map(str::trim)
+                        .unwrap_or("");
+                    if explicit.is_empty() {
+                        binding
+                            .coordinate(key)
+                            .and_then(J::as_str)
+                            .map(|v| v.trim().to_string())
+                            .unwrap_or_default()
+                    } else {
+                        explicit.to_string()
+                    }
+                };
+                let listen_port = args
+                    .get("listenPort")
+                    .and_then(J::as_f64)
+                    .map(|v| v as i64)
+                    .unwrap_or(0);
+                crate::hostread::inspect_host_service(
+                    &host.env,
+                    &field("serviceName"),
+                    &field("scope"),
+                    listen_port,
+                )
+                .map(|v| structured_result(v, Some("Host service status inspected.")))
+            },
+            "list_host_services" => |host, args, _| {
+                let scope = args.get("scope").and_then(J::as_str).unwrap_or("");
+                let register = |uri: &str, coordinates: Map<String, J>| {
+                    let _ =
+                        crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
+                };
+                crate::hostread::list_host_services(&host.env, &host.tenant_id, scope, &register)
+                    .map(|v| structured_result(v, None))
+            },
+            "probe_http_endpoint" => |_, args, _| {
+                let endpoint = args
+                    .get("endpoint")
                     .and_then(J::as_str)
                     .map(str::trim)
                     .unwrap_or("");
-                if explicit.is_empty() {
-                    binding
-                        .coordinate(key)
-                        .and_then(J::as_str)
-                        .map(|v| v.trim().to_string())
-                        .unwrap_or_default()
-                } else {
-                    explicit.to_string()
-                }
-            };
-            let listen_port = args
-                .get("listenPort")
-                .and_then(J::as_f64)
-                .map(|v| v as i64)
-                .unwrap_or(0);
-            crate::hostread::inspect_host_service(
-                &host.env,
-                &field("serviceName"),
-                &field("scope"),
-                listen_port,
-            )
-            .map(|v| structured_result(v, Some("Host service status inspected.")))
-        },
-        "list_host_services" => |host, args, _| {
-            let scope = args.get("scope").and_then(J::as_str).unwrap_or("");
-            let register = |uri: &str, coordinates: Map<String, J>| {
-                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-            };
-            crate::hostread::list_host_services(&host.env, &host.tenant_id, scope, &register)
-                .map(|v| structured_result(v, None))
-        },
-        "probe_http_endpoint" => |_, args, _| {
-            let endpoint = args
-                .get("endpoint")
-                .and_then(J::as_str)
-                .map(str::trim)
-                .unwrap_or("");
-            let accept = args
-                .get("acceptAuthenticationChallenge")
-                .and_then(J::as_bool)
-                .unwrap_or(false);
-            crate::hostread::probe_http_endpoint(endpoint, accept)
-                .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
-        },
-        _ => return not_implemented(name),
+                let accept = args
+                    .get("acceptAuthenticationChallenge")
+                    .and_then(J::as_bool)
+                    .unwrap_or(false);
+                crate::hostread::probe_http_endpoint(endpoint, accept)
+                    .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
+            },
+            _ => return not_implemented(name),
+        })
     };
     // The legacy adapter's declarative gate: arguments against the input
     // schema, then a successful structured result against the output schema.
@@ -1370,7 +1441,23 @@ fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding)
         let message = format!("invalid capability arguments: {e}");
         return capability_error("capability", "invalid_arguments", &message);
     }
-    let result = match handler(&server.host, args, binding) {
+    let outcome = match legacy {
+        Some(handler) => handler(&server.host, args, binding),
+        None => {
+            let invocation = crate::builtin::Invocation {
+                ctx,
+                args,
+                binding,
+                snapshot: &catalog_snapshot,
+                claimed: None,
+            };
+            match crate::builtin::invoke(server, name, &invocation) {
+                Some(outcome) => outcome,
+                None => return not_implemented(name),
+            }
+        }
+    };
+    let result = match outcome {
         Ok(result) => result,
         Err(e) => return error_result(&e),
     };

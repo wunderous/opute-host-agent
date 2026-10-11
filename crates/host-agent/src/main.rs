@@ -6,6 +6,7 @@
 mod goerr;
 mod admission;
 mod app;
+mod builtin;
 mod catalog;
 mod cli;
 mod config;
@@ -31,6 +32,8 @@ mod provider_mcp;
 mod recipe;
 mod resource;
 mod schema;
+#[cfg(test)]
+mod seam;
 #[cfg(test)]
 mod state_fixture;
 mod store;

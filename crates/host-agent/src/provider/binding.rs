@@ -123,7 +123,7 @@ impl Operation {
         } else {
             mounts
                 .resolve(provider, &self.service_id, session.generation_id())
-                .map(|service| service.adapter.clone())
+                .and_then(|service| service.adapter().cloned())
         }
         .ok_or_else(|| format!("provider generation {} is not connected", quote(generation)))?;
         Ok(Accepted {
@@ -304,7 +304,11 @@ mod tests {
             let (adapter, started, release, provider) = server("g1");
             restore(&lifecycle, "g1", GenerationState::Active);
             mounts
-                .mount(&manifest(), "g1", Some(adapter))
+                .mount(
+                    &manifest(),
+                    "g1",
+                    Some(crate::provider::mounts::Implementation::Adapter(adapter)),
+                )
                 .await
                 .unwrap();
             let objects = (
@@ -404,7 +408,14 @@ mod tests {
         let mounts = Mounts::new(lifecycle.clone());
         let (first, started, release, first_server) = server("g1");
         restore(&lifecycle, "g1", GenerationState::Active);
-        mounts.mount(&manifest(), "g1", Some(first)).await.unwrap();
+        mounts
+            .mount(
+                &manifest(),
+                "g1",
+                Some(crate::provider::mounts::Implementation::Adapter(first)),
+            )
+            .await
+            .unwrap();
         let old = operations(&manifest(), "g1", false).remove(0);
         let accepted = old.accept(&lifecycle, &candidates, &mounts).unwrap();
         let call =
@@ -417,7 +428,14 @@ mod tests {
         let (second, started, release_second, second_server) = server("g2");
         restore(&lifecycle, "g2", GenerationState::Candidate);
         lifecycle.mark_ready("g2").unwrap();
-        mounts.mount(&manifest(), "g2", Some(second)).await.unwrap();
+        mounts
+            .mount(
+                &manifest(),
+                "g2",
+                Some(crate::provider::mounts::Implementation::Adapter(second)),
+            )
+            .await
+            .unwrap();
         lifecycle.activate("g2").unwrap();
         assert_eq!(
             lifecycle.get("g1").unwrap().state,
@@ -477,7 +495,13 @@ mod tests {
         let (adapter, started, release, provider) = server("g1");
         restore(&lifecycle, "g1", GenerationState::Active);
         mounts
-            .mount(&manifest(), "g1", Some(adapter.clone()))
+            .mount(
+                &manifest(),
+                "g1",
+                Some(crate::provider::mounts::Implementation::Adapter(
+                    adapter.clone(),
+                )),
+            )
             .await
             .unwrap();
         let accepted = operations(&manifest(), "g1", false)

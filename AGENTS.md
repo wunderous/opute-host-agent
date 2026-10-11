@@ -37,8 +37,9 @@ It is planning-only until the OpenSpec change is reviewed. Read
    Every capability, built-in or external, has a Service Definition, a
    Service Provider registered in the one service context, and a Consumer
    (owner decision D14, `openspec/changes/three-role-capability-seam/`).
-   Built-in services stay outside provider families. M1–M7 capabilities
-   are revised onto the seam before M8 starts.
+   Built-in and external capabilities follow one architecture and differ
+   only in distribution, trust and declared Go-observable contracts. M1–M7
+   capabilities are revised onto the seam before M8 starts.
 4. Verify with schema/catalog comparison, wire tests, durable-state migration
    tests, provider and recipe tests, release packaging, and isolated E2E runs.
    HTTP 200 or a green unit suite alone is insufficient.

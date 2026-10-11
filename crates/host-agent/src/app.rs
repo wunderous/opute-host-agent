@@ -212,7 +212,7 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
             "HOST_MCP_PORT must be positive for direct HTTP mode"
         ));
     }
-    let server = std::sync::Arc::new(http_server(&cfg, authz, runtime.state.clone())?);
+    let server = http_server(&cfg, authz, runtime.state.clone())?;
     log_info(stderr, "HTTP transport listening", &[("addr", &addr)]);
     inject_fault(fault, "listener")?;
     let result = serve(&addr, server.clone());
@@ -224,6 +224,8 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
             let _ = worker.join();
         }
     }
+    // Accepted work has finished: built-in services go last of all services.
+    crate::builtin::dispose(&server.providers.activation.mounts);
     // Reverse order: transport has stopped; release authz, then state.
     if let Ok(mut authz) = server.authz.lock() {
         authz.close();
@@ -266,7 +268,19 @@ pub(crate) fn http_server(
     cfg: &Config,
     authz: AuthzStore,
     state: std::sync::Arc<std::sync::Mutex<StateStore>>,
-) -> Result<crate::transport::Server> {
+) -> Result<std::sync::Arc<crate::transport::Server>> {
+    compose(cfg, authz, state, None)
+}
+
+/// The composition root: the server's owners, the built-in provider mounted
+/// in the service context, and the server they are bound to. A fixture may
+/// supply the catalog publication the server and its providers share.
+pub(crate) fn compose(
+    cfg: &Config,
+    authz: AuthzStore,
+    state: std::sync::Arc<std::sync::Mutex<StateStore>>,
+    publication: Option<std::sync::Arc<crate::provider::publication::Publication>>,
+) -> Result<std::sync::Arc<crate::transport::Server>> {
     let prefix = if cfg.prefix_tool_names {
         tool_name_prefix(&cfg.remote_agent_id)
     } else {
@@ -280,12 +294,14 @@ pub(crate) fn http_server(
     let identity = cfg.identity.as_ref().ok();
     let standalone = cfg.agent_mode == "standalone";
     let catalog = crate::catalog::for_mode(standalone);
-    let publication = std::sync::Arc::new(crate::provider::publication::Publication::new(
-        std::sync::Arc::new(crate::catalog::registry::Registry::native(
-            catalog.clone(),
-            Default::default(),
-        )),
-    ));
+    let publication = publication.unwrap_or_else(|| {
+        std::sync::Arc::new(crate::provider::publication::Publication::new(
+            std::sync::Arc::new(crate::catalog::registry::Registry::native(
+                catalog.clone(),
+                Default::default(),
+            )),
+        ))
+    });
     let providers = crate::provider::runtime::Runtime::new(publication.clone(), state.clone())
         .map_err(|error| go_err!("initialize provider callback delegation: {error}"))?;
     // `restoreTasks`: rebuild the in-memory registry from the durable
@@ -301,10 +317,59 @@ pub(crate) fn http_server(
     for snapshot in &snapshots {
         tasks.restore_snapshot(snapshot);
     }
+    let host = crate::tools::Host {
+        env: cfg.env.clone(),
+        incus: crate::incus::Incus {
+            binary: crate::incus::provider_binary(&cfg.env),
+            env: cfg.env.clone(),
+            instance_id: cfg.instance_id.clone(),
+            ownership_mode: cfg.ownership_mode.clone(),
+            agent_id: cfg.remote_agent_id.clone(),
+            tenant_id: cfg.tenant_id.clone(),
+        },
+        coordinator: crate::resource::Coordinator {
+            lock_dir: cfg.host_resource_lock_dir.clone(),
+            disk_paths: cfg.host_resource_disk_paths.clone(),
+            policy_revision: cfg.host_resource_policy_revision.clone(),
+            min_available_memory_bytes: cfg.host_resource_min_memory_bytes,
+            min_available_disk_bytes: cfg.host_resource_min_disk_bytes,
+            cpu_capacity_cores: cfg.host_resource_cpu_capacity,
+            memory_capacity_bytes: cfg.host_resource_memory_capacity,
+            disk_capacity_bytes: cfg.host_resource_disk_capacity,
+            task_capacity: cfg.host_resource_task_capacity,
+            enforcement_env: cfg.env.clone(),
+            max_normal: if cfg.host_resource_max_normal > 0 {
+                cfg.host_resource_max_normal
+            } else {
+                2
+            },
+            max_heavy: if cfg.host_resource_max_heavy > 0 {
+                cfg.host_resource_max_heavy
+            } else {
+                1
+            },
+            fail_closed: cfg.host_resource_fail_closed,
+        },
+        state,
+        tenant_id: cfg.tenant_id.clone(),
+        agent_id: cfg.remote_agent_id.clone(),
+        instance_id: cfg.instance_id.clone(),
+        instance_root: cfg.instance_root.to_string_lossy().into_owned(),
+        mcp_port: cfg.host_mcp_port,
+    };
+    // Decision D14: the host's own capabilities are services in the same
+    // context as provider generations, mounted before any generation is
+    // restored so disposal runs in reverse.
+    let handle = crate::builtin::ServerHandle::default();
+    crate::builtin::mount(
+        &providers.activation.mounts,
+        crate::builtin::services(&host, &handle),
+    )
+    .map_err(|e| go_err!("mount built-in services: {e}"))?;
     providers
         .restore()
         .map_err(|e| go_err!("restore provider generations: {e}"))?;
-    Ok(crate::transport::Server {
+    let server = std::sync::Arc::new(crate::transport::Server {
         instance_id: cfg.instance_id.clone(),
         local_instance_id: if cfg.agent_mode == "standalone" {
             cfg.standalone_instance_id.clone()
@@ -338,46 +403,7 @@ pub(crate) fn http_server(
         providers,
         standalone,
         allow_mutations: cfg.standalone_allow_mutations,
-        host: crate::tools::Host {
-            env: cfg.env.clone(),
-            incus: crate::incus::Incus {
-                binary: crate::incus::provider_binary(&cfg.env),
-                env: cfg.env.clone(),
-                instance_id: cfg.instance_id.clone(),
-                ownership_mode: cfg.ownership_mode.clone(),
-                agent_id: cfg.remote_agent_id.clone(),
-                tenant_id: cfg.tenant_id.clone(),
-            },
-            coordinator: crate::resource::Coordinator {
-                lock_dir: cfg.host_resource_lock_dir.clone(),
-                disk_paths: cfg.host_resource_disk_paths.clone(),
-                policy_revision: cfg.host_resource_policy_revision.clone(),
-                min_available_memory_bytes: cfg.host_resource_min_memory_bytes,
-                min_available_disk_bytes: cfg.host_resource_min_disk_bytes,
-                cpu_capacity_cores: cfg.host_resource_cpu_capacity,
-                memory_capacity_bytes: cfg.host_resource_memory_capacity,
-                disk_capacity_bytes: cfg.host_resource_disk_capacity,
-                task_capacity: cfg.host_resource_task_capacity,
-                enforcement_env: cfg.env.clone(),
-                max_normal: if cfg.host_resource_max_normal > 0 {
-                    cfg.host_resource_max_normal
-                } else {
-                    2
-                },
-                max_heavy: if cfg.host_resource_max_heavy > 0 {
-                    cfg.host_resource_max_heavy
-                } else {
-                    1
-                },
-                fail_closed: cfg.host_resource_fail_closed,
-            },
-            state,
-            tenant_id: cfg.tenant_id.clone(),
-            agent_id: cfg.remote_agent_id.clone(),
-            instance_id: cfg.instance_id.clone(),
-            instance_root: cfg.instance_root.to_string_lossy().into_owned(),
-            mcp_port: cfg.host_mcp_port,
-        },
+        host,
         tasks,
         task_workers: std::sync::Mutex::new(Vec::new()),
         task_starts: Default::default(),
@@ -386,7 +412,9 @@ pub(crate) fn http_server(
             cfg.instance_id.clone(),
             cfg.ownership_mode.clone(),
         )),
-    })
+    });
+    handle.bind(&server);
+    Ok(server)
 }
 
 /// Serve until SIGINT or SIGTERM. The runtime runs on its own thread with a

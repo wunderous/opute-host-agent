@@ -255,7 +255,7 @@ mod tests {
         let authz =
             crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.opute_client_secret)
                 .unwrap();
-        Arc::new(crate::app::http_server(&cfg, authz, runtime.state.clone()).unwrap())
+        crate::app::http_server(&cfg, authz, runtime.state.clone()).unwrap()
     }
 
     fn write_recipe(dir: &std::path::Path, document: &J) -> String {

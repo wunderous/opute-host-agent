@@ -13,9 +13,10 @@
 
 ## 2. One service context
 
-- [ ] 2.1 Generalize `provider/mounts.rs` so a mounted service holds either a
-  built-in implementation or an MCP adapter, with dependency resolution and
-  family publication filtering out built-in services. Verify: focused unit
+- [ ] 2.1 Generalize `provider/mounts.rs` so a mounted service's
+  implementation is either the built-in provider or an MCP adapter, with one
+  registration, dependency, family, resolution and disposal path for both,
+  and built-in identities under the reserved `host-agent:` prefix. Verify: focused unit
   tests for both kinds, and the 157 public and 55 Go-twin M7 captures rerun
   green over five iterations.
 - [ ] 2.2 Mount built-in providers from the composition root in dependency

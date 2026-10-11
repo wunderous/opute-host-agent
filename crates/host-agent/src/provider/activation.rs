@@ -204,7 +204,11 @@ impl Activation {
                     self.remember(&existing.provider.id, &manifest);
                     if let Some(adapter) = self.candidates.adapter(id) {
                         self.mounts
-                            .mount(&publish, id, Some(adapter))
+                            .mount(
+                                &publish,
+                                id,
+                                Some(crate::provider::mounts::Implementation::Adapter(adapter)),
+                            )
                             .await
                             .map_err(|e| {
                                 format!("reaffirm provider mount for active generation: {e}")
@@ -297,7 +301,15 @@ impl Activation {
                 })
                 .collect::<Vec<_>>();
             self.mounts.displace(&manifest.provider.id, &families).await;
-            if let Err(error) = self.mounts.mount(&publish, id, Some(adapter)).await {
+            if let Err(error) = self
+                .mounts
+                .mount(
+                    &publish,
+                    id,
+                    Some(crate::provider::mounts::Implementation::Adapter(adapter)),
+                )
+                .await
+            {
                 return Err(self
                     .rollback(
                         candidate.as_ref(),
@@ -455,7 +467,13 @@ impl Activation {
         self.mounts.displace(&manifest.provider.id, &families).await;
         if let Err(e) = self
             .mounts
-            .mount(&manifest, id, Some(adapter.clone()))
+            .mount(
+                &manifest,
+                id,
+                Some(crate::provider::mounts::Implementation::Adapter(
+                    adapter.clone(),
+                )),
+            )
             .await
         {
             adapter.close().await;
@@ -835,7 +853,10 @@ mod tests {
                             .mount(
                                 manifest.as_ref().unwrap(),
                                 text("id"),
-                                adapters.get(text("id")).cloned(),
+                                adapters
+                                    .get(text("id"))
+                                    .cloned()
+                                    .map(crate::provider::mounts::Implementation::Adapter),
                             )
                             .await
                             .err()

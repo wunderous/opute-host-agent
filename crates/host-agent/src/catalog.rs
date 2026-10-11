@@ -1205,6 +1205,40 @@ pub fn internal() -> &'static Snapshot {
     INTERNAL.get_or_init(|| build(&source().provider_id, &canonicalize(&source().internal)))
 }
 
+/// The `implementation` every built-in descriptor publishes.
+pub fn builtin_implementation() -> String {
+    format!("host-agent:{}", source().provider_id)
+}
+
+/// A descriptor from the one descriptor source, in either serving mode or
+/// among the host-internal tools: a built-in Service Definition.
+pub fn source_descriptor(name: &str) -> Option<Descriptor> {
+    [for_mode(false), for_mode(true), internal()]
+        .into_iter()
+        .flat_map(|snapshot| snapshot.tools.iter())
+        .find(|descriptor| descriptor.name == name)
+        .cloned()
+}
+
+/// Every name the descriptor source defines, in source order.
+#[cfg(test)]
+pub fn source_names() -> Vec<String> {
+    let src = source();
+    let mut names: Vec<String> = Vec::new();
+    for def in src
+        .host
+        .iter()
+        .chain(&src.standalone)
+        .chain(&src.standalone_from_all)
+        .chain(&src.internal)
+    {
+        if !names.contains(&def.name) {
+            names.push(def.name.clone());
+        }
+    }
+    names
+}
+
 /// `HostToolNamesForProvider`: the host catalog's tool names.
 pub fn host_tool_names() -> Vec<String> {
     source().host.iter().map(|d| d.name.clone()).collect()

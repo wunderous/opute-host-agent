@@ -227,11 +227,8 @@ mod tests {
                 let auth =
                     crate::store::AuthzStore::open(directory.path(), "publication-fixture-secret")
                         .unwrap();
-                let mut server = crate::app::http_server(&config, auth, store.clone()).unwrap();
-                server.catalog = owner.clone();
-                server.providers =
-                    super::super::runtime::Runtime::new(owner.clone(), store).unwrap();
-                let server = Arc::new(server);
+                let server =
+                    crate::app::compose(&config, auth, store, Some(owner.clone())).unwrap();
                 let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
                 let endpoint = format!("http://{}/mcp", listener.local_addr().unwrap());
                 let (stop, stopped) = tokio::sync::oneshot::channel::<()>();

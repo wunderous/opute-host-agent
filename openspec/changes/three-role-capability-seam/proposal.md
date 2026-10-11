@@ -28,15 +28,20 @@ the Go agent is not changed.
 - Every Rust capability has a Service Definition in the one descriptor
   source, a Service Provider registered in a provider-neutral service
   context, and at least one Consumer.
-- The service context is generalized so that a provider is either an
-  in-process built-in implementation or a generation-bound MCP adapter.
-  Built-in providers are mounted by the composition root; external ones are
-  mounted by the M7 activation owner.
-- Catalog projection and dispatch resolve registered services. No capability
-  is reached by a tool-name match outside the service context.
-- Built-in services do not take part in provider dependency injection or
-  per-family publication and displacement, which keeps provider behaviour
-  identical to Go.
+- Built-in and external capabilities follow one architecture: the same
+  Service Definition model, registration, dependency and family rules,
+  resolution, invocation interface and admission pipeline. They differ only
+  in distribution (compiled in and mounted by the composition root, versus
+  installed), trust (in process, versus behind an MCP adapter) and the
+  Go-observable per-capability contracts parity keeps, each declared.
+- Dispatch resolves mounted services. No implementation is selected by a
+  tool-name match outside the service context.
+- Built-in identities use `host-agent:`, which no provider manifest can
+  express, so the shared family rules never connect a provider to a built-in
+  service and provider behaviour stays identical to Go.
+- Capabilities the descriptor source defines but no service offers stay
+  published for catalog parity, fail closed with `not_implemented`, and are
+  reported as unported (M8 work).
 - A seam verifier lists every capability's roles and fails on a missing role.
 - The rule applies to every capability implemented or changed from
   2026-10-11 (M8, M9 and later). M1–M7 capabilities are listed as named seam
@@ -57,9 +62,10 @@ the Go agent is not changed.
 
 ### New Capabilities
 
-- `capability-seam`: the roles every Rust Host Agent capability must have, the
-  shared registration path, the isolation of built-in services from provider
-  families, and how compliance is verified and phased in.
+- `capability-seam`: the roles every Rust Host Agent capability must have,
+  the one architecture built-in and external capabilities share, the
+  isolation of built-in families by identity, and how compliance is verified
+  and phased in.
 
 ### Modified Capabilities
 
