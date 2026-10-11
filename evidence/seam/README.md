@@ -118,6 +118,15 @@ The owner widened the goal to close it (2026-10-11).
   The M5 gate verifier (`m5_verify.py`) accepts that child under the same
   typed-refusal conditions. The tests in `tests/test_shape.py` show that
   each rule still exposes a real difference.
+- **Owner approval (2026-10-11).** The r3 gate first failed m5 and m6 on
+  five `callback.child-task-acknowledged` runs, which the M5 gate verifier
+  reported as "D12 hides an admitted or unidentified operation row".
+  `m5_verify.py` was aligned with the shape driver only after that failure
+  (`056361f8`). The owner was asked explicitly and approved, as the M5 shape
+  normalization, every shape-driver rule above (not only the timestamp masks
+  first approved) and that verifier alignment. The failing gate reports are
+  not kept separately: the rerun overwrote `verify-m5.json` and
+  `verify-m6.json`, and this note records the failure.
 - **A fixture fix (`5d439346`).** `callback.cancel-bridged-task-refused` now
   waits for the bridged operation's final durable status. Go's `tasks/get`
   reports completion before that row is written. This changed the harness
