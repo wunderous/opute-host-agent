@@ -95,6 +95,9 @@ def refused_row_failures(scenario: dict, raw: dict) -> list[str]:
         document, variables = shape.database_observation(raw[side])
         document = canon.substitute(document, variables)
         rows[side] = runner._lookup(document, ["sqliteRows", "state/state.db", "tables", "operations"]) or {}
+    # A refused delegated child is identified by the handle its provider
+    # callback reported (D12.refused-callback-child-operation).
+    children = shape.callback_children(raw["a"])
     failures = []
     for key, row in rows["a"].items():
         if key in rows["b"]:
@@ -102,7 +105,7 @@ def refused_row_failures(scenario: dict, raw: dict) -> list[str]:
         try:
             result = json.loads(row["result_json"])
             error = result.get("structuredContent", {})
-            if (not key.startswith("${") or row.get("operation_id") != key
+            if (not (key.startswith("${") or key in children) or row.get("operation_id") != key
                     or result.get("isError") is not True
                     or error.get("owner") != "admission" or error.get("code") != "resource_binding"):
                 raise ValueError("omitted row is not a captured, typed refusal")

@@ -187,3 +187,17 @@ class ProviderDatabaseShape(unittest.TestCase):
         self.rows(raw, "a")["operations"][child] = refused
         raw["a"]["observation"]["steps"] = {}
         self.assertTrue(shape.evaluate(scenario, raw)["diff"])
+
+    def test_gate_accepts_only_a_typed_refusal_of_a_reported_callback_child(self):
+        child = "22222222-2222-4222-8222-222222222222"
+        row = {"operation_id": child, "result_json": json.dumps({"isError": True, "structuredContent": {
+            "owner": "admission", "code": "resource_binding"}})}
+        scenario = {"compare": {"divergences": ["D12.refused-callback-child-operation"]}}
+        raw = self.raw({"operations": {child: row}}, self.callback(child))
+        self.rows(raw, "b")["operations"] = {}
+        self.assertEqual(m5_verify.refused_row_failures(scenario, raw), [])
+        raw["a"]["observation"]["steps"] = {}
+        self.assertTrue(m5_verify.refused_row_failures(scenario, raw))
+        raw = self.raw({"operations": {child: dict(row, result_json=json.dumps({"isError": False}))}}, self.callback(child))
+        self.rows(raw, "b")["operations"] = {}
+        self.assertTrue(m5_verify.refused_row_failures(scenario, raw))
