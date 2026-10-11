@@ -33,13 +33,14 @@ pub struct Host {
 
 /// Resolves a wire name to the catalog name it was registered under, if any.
 fn registered(server: &Server, wire: &str) -> Option<String> {
+    let catalog_snapshot = server.catalog.wire_snapshot();
     let name = if server.tool_prefix.trim().is_empty() {
         wire.to_string()
     } else {
         wire.strip_prefix(&format!("{}_", server.tool_prefix.trim()))?
             .to_string()
     };
-    let known = server.catalog.tools.iter().any(|d| d.name == name)
+    let known = catalog_snapshot.tools.iter().any(|d| d.name == name)
         || catalog::internal().tools.iter().any(|d| d.name == name);
     (known && catalog::wire_name(&server.tool_prefix, &name) == wire).then_some(name)
 }
@@ -100,18 +101,19 @@ fn requested_revision(params: Option<&Node>) -> String {
 }
 
 pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCallOutcome {
+    let catalog_snapshot = server.catalog.snapshot();
     let Some(name) = registered(server, wire) else {
         return ToolCallOutcome::Unknown;
     };
     let requested = requested_revision(params);
-    if !requested.is_empty() && requested != server.catalog.revision {
+    if !requested.is_empty() && requested != catalog_snapshot.revision {
         return ToolCallOutcome::Result(capability_error(
             "lifecycle",
             "catalog_revision_stale",
             &format!(
                 "catalog revision {} is stale; current revision is {}",
                 crate::goerr::quote(&requested),
-                crate::goerr::quote(&server.catalog.revision)
+                crate::goerr::quote(&catalog_snapshot.revision)
             ),
         ));
     }
@@ -123,7 +125,7 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
     // standalone runs read tools only.
     if server.standalone
         && !server.allow_mutations
-        && !catalog::standalone_read_only(server.catalog, &name)
+        && !catalog::standalone_read_only(&catalog_snapshot, &name)
     {
         return ToolCallOutcome::Result(error_result(
             "standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
@@ -149,9 +151,9 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         // below, same as every other lifecycle tool.
         let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let result = match name.as_str() {
-            "get_capability_catalog" => structured_result(snapshot_json(server.catalog), None),
+            "get_capability_catalog" => structured_result(snapshot_json(&catalog_snapshot), None),
             "validate_host_plan" => {
-                crate::plan_mcp::handle_validate_host_plan(&args, server.catalog)
+                crate::plan_mcp::handle_validate_host_plan(&args, &catalog_snapshot)
             }
             "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
                 server,
@@ -356,8 +358,8 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
 /// nothing here -- the caller already holds whatever they sent -- while
 /// still ensuring a secret argument never carries into `state.db`.
 fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
-    let descriptor = server
-        .catalog
+    let catalog_snapshot = server.catalog.snapshot();
+    let descriptor = catalog_snapshot
         .tools
         .iter()
         .chain(catalog::internal().tools.iter())
@@ -376,8 +378,8 @@ fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
 /// reaches the caller exactly as Go returns it, since the caller already
 /// owns it and this is its one delivery channel.
 fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<J> {
-    let descriptor = server
-        .catalog
+    let catalog_snapshot = server.catalog.snapshot();
+    let descriptor = catalog_snapshot
         .tools
         .iter()
         .chain(catalog::internal().tools.iter())
@@ -503,7 +505,8 @@ fn record_invocation(
     reservation: &crate::resource::Reservation,
     result: &J,
 ) {
-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
+    let catalog_snapshot = server.catalog.snapshot();
+    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return;
     };
     let invalid_result = result
@@ -526,7 +529,7 @@ fn record_invocation(
     let mut observation = json!({
         "schemaVersion": "opute-capability-observation.v1",
         "operationId": name, "capabilityVersion": 1,
-        "catalogRevision": server.catalog.revision, "status": status,
+        "catalogRevision": catalog_snapshot.revision, "status": status,
     });
     if invalid_result {
         envelope["error"] = json!({"owner": "capability", "code": "invalid_result",
@@ -545,7 +548,7 @@ fn record_invocation(
     let mut execution_binding = json!({
         "schemaVersion": "opute-capability-execution-binding.v1",
         "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
-        "authorization": "admitted", "catalogRevision": server.catalog.revision,
+        "authorization": "admitted", "catalogRevision": catalog_snapshot.revision,
         "reservationId": reservation.id,
         "resourcePolicyRevision": crate::resource::POLICY_REVISION,
     });
@@ -566,7 +569,7 @@ fn record_invocation(
         invocation_id: crate::tasks::new_task_id(),
         operation_id: name.into(),
         capability_version: 1,
-        catalog_revision: server.catalog.revision.clone(),
+        catalog_revision: catalog_snapshot.revision.clone(),
         authorization: "admitted".into(),
         arguments_json: redact_for_storage(
             &J::Object(args.clone()),
@@ -588,7 +591,8 @@ fn record_invocation(
 type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
 
 fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding) -> J {
-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
+    let catalog_snapshot = server.catalog.snapshot();
+    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return not_implemented(name);
     };
     let handler: Handler = match name {

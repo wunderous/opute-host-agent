@@ -303,11 +303,12 @@ pub fn handle_run_host_plan_with_metadata(
     reservation: crate::resource::Reservation,
     claimed: Arc<std::sync::atomic::AtomicBool>,
 ) -> J {
+    let catalog_snapshot = server.catalog.snapshot();
     let doc = match decode_plan_argument(args) {
         Ok(doc) => doc,
         Err(e) => return crate::tools::error_result(&e),
     };
-    let snapshot = server.catalog;
+    let snapshot = &catalog_snapshot;
     if let Err(e) = validate_host_plan_with_snapshot(&doc, snapshot) {
         return crate::tools::error_result(&e);
     }
@@ -416,6 +417,7 @@ fn resolve_plan_record(
     recipe_metadata: Option<&Map<String, J>>,
     capabilities: &BTreeMap<String, Capability>,
 ) -> Result<ResolvedRecord, String> {
+    let catalog_snapshot = server.catalog.snapshot();
     let state = server
         .host
         .state
@@ -436,7 +438,7 @@ fn resolve_plan_record(
             }
         }
         if let Some(result) =
-            short_circuit_if_live_or_reconcile(&state, &mut record, &server.catalog.revision)?
+            short_circuit_if_live_or_reconcile(&state, &mut record, &catalog_snapshot.revision)?
         {
             return Ok(ResolvedRecord::Terminal(result));
         }
@@ -448,7 +450,7 @@ fn resolve_plan_record(
         generation: doc.generation,
         idempotency_key: doc.idempotency_key.clone(),
         document_hash: hash.to_string(),
-        catalog_revision: server.catalog.revision.clone(),
+        catalog_revision: catalog_snapshot.revision.clone(),
         status: "working".to_string(),
         plan_json: redacted_plan.to_string(),
         recipe_json: redacted_metadata(recipe_metadata)
@@ -464,7 +466,7 @@ fn resolve_plan_record(
     ensure_plan_document_hash(&state, &mut record, hash)?;
     if !created {
         if let Some(result) =
-            short_circuit_if_live_or_reconcile(&state, &mut record, &server.catalog.revision)?
+            short_circuit_if_live_or_reconcile(&state, &mut record, &catalog_snapshot.revision)?
         {
             return Ok(ResolvedRecord::Terminal(result));
         }
@@ -539,7 +541,8 @@ fn spawn_plan_execution(
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     reservation: crate::resource::Reservation,
 ) {
-    let capabilities = capabilities_from_snapshot(server.catalog);
+    let catalog_snapshot = server.catalog.snapshot();
+    let capabilities = capabilities_from_snapshot(&catalog_snapshot);
     let sink_capabilities = capabilities.clone();
     let final_capabilities = capabilities.clone();
     let host_agent_id = server.host.agent_id.clone();

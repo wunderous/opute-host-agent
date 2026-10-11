@@ -1180,3 +1180,37 @@ enclosing recipe cleanup, process supervision, restart and all five unchanged
 provider executables still require validation. The whole-agent gate remains
 failed with 76 inventory gaps and 14 historical provenance/evidence problems;
 its original manifest is preserved. No shared runtime was mutated.
+
+## Shared public catalog publication
+
+The composed server now owns an `Arc<Publication>` instead of a static catalog
+and startup-only tool vector. Admission, binding, plan/recipe validation,
+audit/redaction and tool-name readers take immutable snapshots from that owner.
+MCP tool listing and registered-name lookup use the separate last-completed
+publication snapshot. This preserves the pinned distinction between catalog
+state and the SDK listing after failed displacement followed by no-op retirement.
+The initial wiring draft's wire-only mismatch is preserved in
+`public-catalog-diagnostic/noop-retire`, including a reconstructible source patch.
+
+`public-catalog-publication` compares **32 cases × 5 iterations = 160 passes**.
+Every native transition crosses the authenticated HTTP `tools/list` route and
+is compared against actual Go SDK listing; observations and errors remain exact
+parsed JSON. The corpus includes replacement, retained handles and snapshots,
+family displacement/schema failures, empty services, restore, retirement and
+explicit stale-list regression checks. Public provider invocation is outside
+this corpus.
+
+The changed public release (`2b110669e98d55ed53f048924ed76a670cd2809ea811bedd02f8282cdfcb43b6`)
+has fresh captures: **102/102 public scenarios over five iterations**, and
+**16 marked secret fields with zero failures**. The independent verifier in
+`public-catalog-checks/verify.py` reproduces `public-catalog-validation.json`,
+checks all current source/binary/capture hashes, recomputes the raw comparisons
+and confirms the stale-list behavior. The workspace passes **187 tests**,
+formatting, warnings-denied Clippy, locked release build, **15** focused owning
+Go test executions and **10** OpenSpec checks.
+
+Public provider lifecycle commands, activation/recipe composition, generation-
+bound provider dispatch, supervised processes, restart and full M7–M13 E2E remain
+open. No production provider seam or cutover is claimed. The whole-agent gate
+still fails with 76 inventory gaps and 14 historical provenance problems; its
+original manifest is preserved. No shared runtime was mutated.

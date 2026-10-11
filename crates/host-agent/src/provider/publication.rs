@@ -17,6 +17,7 @@ use std::{
 
 struct State {
     catalog: Snapshot,
+    wire_catalog: Snapshot,
     capabilities: BTreeMap<String, Arc<Capability>>,
     manifests: BTreeMap<String, InstallManifest>,
 }
@@ -29,6 +30,7 @@ impl Publication {
         Self {
             state: Mutex::new(State {
                 catalog: registry.snapshot(),
+                wire_catalog: registry.snapshot(),
                 capabilities: BTreeMap::new(),
                 manifests: BTreeMap::new(),
             }),
@@ -37,6 +39,11 @@ impl Publication {
     }
     pub fn snapshot(&self) -> Snapshot {
         self.state.lock().unwrap().catalog.clone()
+    }
+    /// Last completed MCP refresh, which can differ from the catalog snapshot
+    /// after Go's no-op retirement following a failed family displacement.
+    pub fn wire_snapshot(&self) -> Snapshot {
+        self.state.lock().unwrap().wire_catalog.clone()
     }
     pub fn capability(&self, id: &str) -> Option<Arc<Capability>> {
         self.state.lock().unwrap().capabilities.get(id).cloned()
@@ -130,6 +137,7 @@ impl Publication {
             }
         }
         refresh(&current);
+        self.state.lock().unwrap().wire_catalog = current;
         self.remember_manifest(manifest.clone());
         Ok(())
     }
@@ -154,6 +162,7 @@ impl Publication {
         };
         if changed {
             refresh(&snapshot);
+            self.state.lock().unwrap().wire_catalog = snapshot;
         }
         self.state.lock().unwrap().manifests.remove(provider);
     }
@@ -184,9 +193,9 @@ impl Publication {
 mod tests {
     use super::*;
     use serde_json::{json, Value};
-    #[test]
+    #[tokio::test]
     #[ignore = "requires actual owning Go publication and retirement driver"]
-    fn publication_fixture() {
+    async fn publication_fixture() {
         let rows: Value = serde_json::from_slice(
             &std::fs::read(std::env::var("PARITY_PROVIDER_PUBLICATION_INPUT").unwrap()).unwrap(),
         )
@@ -199,7 +208,61 @@ mod tests {
                 crate::catalog::for_mode(standalone).clone(),
                 Default::default(),
             ));
-            let owner = Publication::new(registry.clone());
+            let owner = Arc::new(Publication::new(registry.clone()));
+            let directory = tempfile::tempdir().unwrap();
+            let http = if std::env::var("PARITY_PROVIDER_PUBLICATION_HTTP").as_deref() == Ok("1") {
+                let environment = crate::config::Env::from_pairs([
+                    ("OPUTE_REMOTE_AGENT_ID", "publication-http-fixture"),
+                    (
+                        "OPUTE_AGENT_MODE",
+                        if standalone { "standalone" } else { "platform" },
+                    ),
+                ]);
+                let mut config = crate::config::Config::load(&environment);
+                config.prefix_tool_names = false;
+                config.mcp_auth_token = "publication-fixture-bearer".into();
+                let store = Arc::new(Mutex::new(
+                    crate::store::StateStore::open(directory.path()).unwrap(),
+                ));
+                let auth =
+                    crate::store::AuthzStore::open(directory.path(), "publication-fixture-secret")
+                        .unwrap();
+                let mut server = crate::app::http_server(&config, auth, store).unwrap();
+                server.catalog = owner.clone();
+                let server = Arc::new(server);
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+                let endpoint = format!("http://{}/mcp", listener.local_addr().unwrap());
+                let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
+                let serving = tokio::spawn(async move {
+                    let mut stopped = stopped;
+                    let mut connections = tokio::task::JoinSet::new();
+                    loop {
+                        tokio::select! {
+                            _ = &mut stopped => break,
+                            connection = listener.accept() => {
+                                let (socket, _) = connection.unwrap();
+                                let server = server.clone();
+                                connections.spawn(crate::http1::serve_conn(socket, move |request, body| crate::transport::route(server.clone(), request, body)));
+                            }
+                        }
+                    }
+                    connections.abort_all();
+                    while connections.join_next().await.is_some() {}
+                });
+                Some((
+                    super::super::adapter::Client::new(
+                        endpoint,
+                        "publication-fixture-bearer".into(),
+                        "publication-fixture".into(),
+                        "1".into(),
+                    )
+                    .unwrap(),
+                    stop,
+                    serving,
+                ))
+            } else {
+                None
+            };
             let lifecycle = Lifecycle::new(Default::default());
             let mut updates = 0;
             let mut wire = owner.snapshot();
@@ -320,10 +383,25 @@ mod tests {
                     }
                     _ => panic!("unknown publication fixture action"),
                 }
+                let wire_tools = if let Some((client, _, _)) = &http {
+                    let result = client
+                        .call(
+                            &crate::plan::runner::RunCtx::background(),
+                            "tools/list",
+                            "",
+                            serde_json::Map::new(),
+                            "",
+                        )
+                        .await
+                        .unwrap();
+                    result.get("tools").unwrap().clone()
+                } else {
+                    json!(crate::catalog::published_tools(&wire, ""))
+                };
                 let state = owner.state.lock().unwrap();
                 extra["error"] = json!(error);
                 extra["updates"] = json!(updates);
-                extra["wire"] = json!(crate::catalog::published_tools(&wire, ""));
+                extra["wire"] = wire_tools;
                 extra["published"] = snapshot_json(&state.catalog);
                 extra["registry"] = snapshot_json(&registry.snapshot());
                 extra["capabilities"] = Value::Object(
@@ -347,6 +425,10 @@ mod tests {
                         .collect(),
                 );
                 observations.push(extra);
+            }
+            if let Some((_, stop, serving)) = http {
+                stop.send(()).unwrap();
+                serving.await.unwrap();
             }
             results.push(json!({"observations":observations}));
         }

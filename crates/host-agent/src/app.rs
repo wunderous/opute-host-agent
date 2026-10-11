@@ -270,7 +270,12 @@ pub(crate) fn http_server(
     let identity = cfg.identity.as_ref().ok();
     let standalone = cfg.agent_mode == "standalone";
     let catalog = crate::catalog::for_mode(standalone);
-    let prefix_for_tools = prefix.clone();
+    let publication = std::sync::Arc::new(crate::provider::publication::Publication::new(
+        std::sync::Arc::new(crate::catalog::registry::Registry::native(
+            catalog.clone(),
+            Default::default(),
+        )),
+    ));
     // `restoreTasks`: rebuild the in-memory registry from the durable
     // snapshots before anything can observe it. Admission's reservation
     // reclaim for terminal tasks after a restart (Go's
@@ -314,8 +319,7 @@ pub(crate) fn http_server(
         bootstrap_token: cfg.mcp_auth_token.trim().to_string(),
         authz: std::sync::Mutex::new(authz),
         grant_backoff: crate::oauth::Backoff::default(),
-        catalog,
-        published_tools: crate::catalog::published_tools(catalog, &prefix_for_tools),
+        catalog: publication,
         standalone,
         allow_mutations: cfg.standalone_allow_mutations,
         host: crate::tools::Host {

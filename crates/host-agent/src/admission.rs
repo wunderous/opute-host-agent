@@ -261,8 +261,9 @@ pub fn resolve_binding(
     name: &str,
     args: &Map<String, J>,
 ) -> Result<Binding, Refusal> {
+    let catalog_snapshot = server.catalog.snapshot();
     let mut binding = Binding::default();
-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
+    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return Ok(binding);
     };
     // Declared bindings are authoritative for their argument; there is no
@@ -338,11 +339,12 @@ pub fn admit(
     identity: Option<(&str, &str)>,
     parent: Option<&Reservation>,
 ) -> Result<Reservation, Refusal> {
+    let catalog_snapshot = server.catalog.snapshot();
     let registered = catalog::admission_class(name);
     let declared = registered.is_some();
     let class = registered.unwrap_or_else(|| "control".into());
     let mut cost = resource::default_cost_for_class(&class);
-    let descriptor = server.catalog.tools.iter().find(|d| d.name == name);
+    let descriptor = catalog_snapshot.tools.iter().find(|d| d.name == name);
     let found = descriptor.is_some();
     let effect_read = descriptor.is_some_and(|d| d.effect == "read");
     let provider = descriptor.is_some_and(|d| d.implementation.trim().starts_with("provider:"));

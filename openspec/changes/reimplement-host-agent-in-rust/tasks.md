@@ -98,6 +98,10 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   pass 24 cases over five iterations, including retained-connection probes and
   actual loopback MCP request comparison. Provider process execution, public
   wiring, enclosing recipe cleanup and restart remain required.
+  Public catalog readers now share the existing publication owner, while MCP
+  listing retains its own last-completed projection, including the pinned
+  no-op retirement behavior. Public provider lifecycle command composition
+  and executable dispatch are still required.
 - [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
