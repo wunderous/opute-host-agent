@@ -41721,6 +41721,18 @@
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     },
+     "until": {
+      "query": "operations",
+      "path": [
+       0,
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
      }
     }
    },

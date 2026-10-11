@@ -363,7 +363,10 @@ cases.append(scenario("callback.cancel-bridged-task-refused",[SERVE,{"as":"provi
     {"as":"held","providerGate":{"stub":"provider","await":"held"}},
     {"as":"cancel","requires":["BRIDGE"],"mcp":{"method":"tasks/cancel","name":"${BRIDGE}","params":{"taskId":"${BRIDGE}"}}},
     stateq("stateHeld"),{"as":"release","providerGate":{"stub":"provider","release":"held"}},
-    task_done("bridged","BRIDGE"),stateq("state"),{"as":"stop","stop":{}}]))
+    # tasks/get reports completed before Go writes the operation row's final
+    # status, so the durable read waits for it (one Go/Go race in 20).
+    task_done("bridged","BRIDGE"),stateq("state",until={"query":"operations","path":[0,"status"],"in":["completed","failed","cancelled"]}),
+    {"as":"stop","stop":{}}]))
 cases.append(scenario("callback.bridged-without-task-extension",[SERVE,{"as":"provider","providerStub":{"host":HOST,"manifest":bridged_manifest(),"tools":TOOLS}},
     WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID"),IDLE,
     {"as":"bridge","mcp":{"method":"tools/call","name":BRIDGE,"modern":True,"meta":{"io.modelcontextprotocol/clientCapabilities":{}},"params":{"name":BRIDGE,"arguments":{}}}},
