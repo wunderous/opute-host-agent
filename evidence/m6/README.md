@@ -58,5 +58,5 @@ claim evidence that was not collected locally.
 The M6 capabilities now run on the built-in provider in the one service
 context. The plan fault scripts, invalid-plan and recipe corpora, and the provider-lifecycle scenarios were rerun against the pinned Go agent with no new
 normalization: [`m6-captures-validation.json`](../seam/m6-captures-validation.json) (67/67 Go/Rust, five iterations; secret sweep clean) and the verifier receipt [`m6-validation.json`](../seam/m6-validation.json). The full rerun on the committed tree is in
-[`native-2026-10-11`](../local-e2e/native-2026-10-11/), and the seam
+[`native-2026-10-11-r3`](../local-e2e/native-2026-10-11-r3/), and the seam
 evidence index is [`evidence/seam/README.md`](../seam/README.md).

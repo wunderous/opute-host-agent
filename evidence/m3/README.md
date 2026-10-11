@@ -195,5 +195,5 @@ toolchain updates cannot silently change reference HTTP behavior.
 The M3 capabilities now run on the built-in provider in the one service
 context. The M3 catalog matrix (including the revision) and the 22 read-only host scenarios were rerun against the pinned Go agent with no new
 normalization: [`m3-captures-validation.json`](../seam/m3-captures-validation.json) (26/26 Go/Rust, five iterations). Its secret sweep was discarded and covered by the M4 stage. The full rerun on the committed tree is in
-[`native-2026-10-11`](../local-e2e/native-2026-10-11/), and the seam
+[`native-2026-10-11-r3`](../local-e2e/native-2026-10-11-r3/), and the seam
 evidence index is [`evidence/seam/README.md`](../seam/README.md).

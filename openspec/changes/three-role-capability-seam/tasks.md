@@ -80,14 +80,14 @@
 
 ## 5. Integration gate
 
-- [ ] 5.1 Run the full suite: workspace tests, Clippy `-D warnings`, fmt, the
+- [x] 5.1 Run the full suite: workspace tests, Clippy `-D warnings`, fmt, the
   locked release build, every milestone's parity verify target, the seam
   verifier and `make spec-validate`. Verify: all pass and a committed seam
-  receipt reports no gap.
-  **Open (2026-10-11):** not met. Everything else passes
-  (`evidence/local-e2e/native-2026-10-11/validation.json`, gates m0–m4) and
-  the seam receipt reports no gap, but the `m5` and `m6` gates fail on the
-  M5 shape check of 40 M7 provider scenarios (200 of 785 runs). The same
-  runs fail with `598d016d`, before any D14 code, so the seam did not cause
-  them; they still block this task. `cutover` also fails, as expected. This opens the M8 entry gate. No production
+  receipt reports no gap. Evidence:
+  `evidence/local-e2e/native-2026-10-11-r3/validation.json` (gates m0–m6
+  pass; `cutover` fails only on 76 owned inventory gaps) and
+  `evidence/seam/final-validation.json`. The first cycle failed m5 and m6 on
+  the M5 shape check of the M7 provider scenarios. Closing that needed the
+  host-service resolver fix and the shape-driver changes recorded in
+  `evidence/seam/README.md`; the failing cycles are kept. This opens the M8 entry gate. No production
   instance, shared runtime or cutover step is involved.
