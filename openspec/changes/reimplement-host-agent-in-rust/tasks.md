@@ -210,9 +210,10 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
 
 ## 7. Revise delivered capabilities onto the three-role seam
 
-- [ ] 7.1 Revise every capability delivered in M1–M7 onto the three-role
+- [x] 7.1 Revise every capability delivered in M1–M7 onto the three-role
   seam (decision D14). Tasks and gates live in
   [`three-role-capability-seam`](../three-role-capability-seam/tasks.md),
   section 4. Gate: the seam verifier reports no gap and every affected
   milestone's parity captures rerun green. By owner decision D14 this gates
-  4.1: M8 does not start until it is done.
+  4.1: M8 does not start until it is done. Done 2026-10-11: the seam
+  verifier reports no gap (`evidence/seam/README.md`).

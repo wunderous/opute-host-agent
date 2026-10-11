@@ -635,7 +635,11 @@ onto the seam with those of M1–M6, before M8 starts.
 ### M8: Mutating domain operations, one domain at a time
 
 **Closes:** 4.1. **Depends on:** M4–M7 and the D14 seam revision (task 7.1),
-which must report no seam gap before M8 starts.
+which must report no seam gap before M8 starts. That seam gate opened on
+2026-10-11: the verifier reports no gap
+([`evidence/seam/README.md`](../../../evidence/seam/README.md)). M8's other
+entry conditions (the M7 exit gate and the owner decisions on `hostos` and
+`ollama`) are unchanged.
 
 Go `internal/domain` is about 18k lines across eight domains, so M8 is split
 into sub-milestones that each ship independently behind the same gates.

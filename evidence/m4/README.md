@@ -177,3 +177,11 @@ they do not describe the current manifest or native refresh.
   other canary (C1–C11, C13) and every other check in gates m0–m4 passes
   with no waiver. **This decision has not yet been reviewed by the repo
   owner** and should be before the milestone is treated as closed.
+
+## Three-role seam revision (D14), 2026-10-11
+
+The M4 capabilities now run on the built-in provider in the one service
+context. The M4 admission matrix, rejection and task scenarios, the D10–D12 contracts and the Rust canaries were rerun against the pinned Go agent with no new
+normalization: [`m4-captures-validation.json`](../seam/m4-captures-validation.json) (44/44 Go/Rust, five iterations; secret sweep 16 fields, 0 failures; D10 8/8, D11 3/3, D12 3/3; Rust canaries 24/24 after the K23 re-anchor) and the verifier receipt [`m4-validation.json`](../seam/m4-validation.json). The full rerun on the committed tree is in
+[`native-2026-10-11`](../local-e2e/native-2026-10-11/), and the seam
+evidence index is [`evidence/seam/README.md`](../seam/README.md).

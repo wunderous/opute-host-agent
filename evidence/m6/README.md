@@ -52,3 +52,11 @@ later milestones. No provider gains a second workflow executor.
 The old unit-only report predated the M6 corpus and reservation inheritance.
 It has been replaced here so it does not misstate the current source or
 claim evidence that was not collected locally.
+
+## Three-role seam revision (D14), 2026-10-11
+
+The M6 capabilities now run on the built-in provider in the one service
+context. The plan fault scripts, invalid-plan and recipe corpora, and the provider-lifecycle scenarios were rerun against the pinned Go agent with no new
+normalization: [`m6-captures-validation.json`](../seam/m6-captures-validation.json) (67/67 Go/Rust, five iterations; secret sweep clean) and the verifier receipt [`m6-validation.json`](../seam/m6-validation.json). The full rerun on the committed tree is in
+[`native-2026-10-11`](../local-e2e/native-2026-10-11/), and the seam
+evidence index is [`evidence/seam/README.md`](../seam/README.md).

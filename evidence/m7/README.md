@@ -1527,3 +1527,17 @@ Receipts, including diagnostics and invalidated captures kept as history (each s
 - [`provider-service-mounts-validation.json`](provider-service-mounts-validation.json)
 - [`public-catalog-validation.json`](public-catalog-validation.json)
 - [`unadmitted-callback-task-validation.json`](unadmitted-callback-task-validation.json)
+
+## Three-role seam revision (D14), 2026-10-11
+
+The M7 capabilities now run on the built-in provider in the one service
+context. The M7 public provider-lifecycle scenarios (including three new `builtin-family` scenarios), the Go-twin runs and the real-provider journeys were rerun against the pinned Go agent with no new
+normalization: [`m7-captures-validation.json`](../seam/m7-captures-validation.json) (58/58 Go/Rust and 58/58 Go/Go, five iterations; secret sweep clean) and the verifier receipt [`m7-validation.json`](../seam/m7-validation.json), which reports no seam gap. The full rerun on the committed tree is in
+[`native-2026-10-11`](../local-e2e/native-2026-10-11/), and the seam
+evidence index is [`evidence/seam/README.md`](../seam/README.md).
+
+That rerun also extends the M5 shape matrix to the M7 provider scenarios.
+40 of them differ from Go in durable provider rows (`resource_registry`,
+`supportedTools` order, a refused child callback's operation row, and
+unmasked provider timestamps). The same runs fail with the pre-seam build,
+so the gap predates D14. It remains open M7 work.
