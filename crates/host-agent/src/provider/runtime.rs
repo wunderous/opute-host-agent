@@ -1043,7 +1043,14 @@ mod tests {
             .unwrap();
         assert_eq!(result["structuredContent"]["ready"], true);
         server.providers.close().await;
-        assert!(owner.mounts.service_keys().is_empty());
+        // Provider generations are gone; the built-in generation belongs to
+        // the composition root, which disposes it after work drains.
+        let builtin = format!("{}/", crate::builtin::provider_id());
+        assert!(owner
+            .mounts
+            .service_keys()
+            .iter()
+            .all(|key| key.starts_with(&builtin)));
         assert_eq!(owner.lifecycle.get("g1").unwrap().sessions, 0);
         let late = tokio::task::spawn_blocking(move || {
             (handle.invoke)(&RunCtx::background(), &Map::new())

@@ -19,6 +19,7 @@ use std::sync::{Arc, Mutex};
 
 /// What host capabilities read: the agent's environment and identity, the
 /// incus provider, the resource coordinator, and the resource registry.
+#[derive(Clone)]
 pub struct Host {
     pub env: crate::config::Env,
     pub incus: crate::incus::Incus,
@@ -291,15 +292,12 @@ pub(crate) fn run_task_input(server: &Arc<Server>, name: &str, args: &Map<String
     if let Some(outcome) = crate::builtin::invoke(server, name, &invocation) {
         return outcome.unwrap_or_else(|e| error_result(&e));
     }
-    if name == "request_task_input" {
-        return create_input_task(server, args);
-    }
     not_implemented(name)
 }
 
 /// `createInputRequestTask`: a task that completes with the operator's
 /// response once `tasks/update` supplies it.
-fn create_input_task(server: &Arc<Server>, args: &Map<String, J>) -> J {
+pub(crate) fn create_input_task(server: &Arc<Server>, args: &Map<String, J>) -> J {
     let prompt = args.get("prompt").and_then(J::as_str).unwrap_or("");
     if prompt.trim().is_empty() {
         return error_result("request_task_input requires prompt");
@@ -627,7 +625,6 @@ pub(crate) fn run_lifecycle(
         "opute.provider.validate" => server
             .providers
             .validate(&crate::plan::runner::RunCtx::background(), call.args),
-        "get_capability_catalog" => structured_result(snapshot_json(call.snapshot), None),
         "validate_host_plan" => {
             crate::plan_mcp::handle_validate_host_plan(call.args, call.snapshot)
         }
@@ -1291,8 +1288,6 @@ fn record_invocation(
     }
 }
 
-type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
-
 pub(crate) fn invoke(
     server: &Server,
     ctx: &crate::plan::runner::RunCtx,
@@ -1304,131 +1299,11 @@ pub(crate) fn invoke(
     let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return not_implemented(name);
     };
-    let seam = crate::builtin::resolve(server, name).is_some();
-    let legacy: Option<Handler> = if seam {
-        None
-    } else {
-        Some(match name {
-            "get_host_info" => {
-                |host, _, _| Ok(structured_with_text(&describe_host(host), &HOST_INFO))
-            }
-            "get_vm_info" => |host, args, binding| {
-                // The provider-native name comes from the canonical binding,
-                // never from a raw argument.
-                let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
-                let register = |uri: &str, coordinates: Map<String, J>| {
-                    let _ =
-                        crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-                };
-                host.incus
-                    .get_vm_info(&binding.provider_instance_name(), fast, &register)
-                    .map(|v| structured_with_text(&v, &VM_INFO))
-            },
-            "probe_incus_gpu" => |host, args, _| {
-                Ok(structured_result(
-                    probe_incus_gpu(host, args),
-                    Some("Incus GPU capability report generated"),
-                ))
-            },
-            "list_vms" => |host, args, _| {
-                let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
-                let register = |uri: &str, coordinates: Map<String, J>| {
-                    let _ =
-                        crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-                };
-                host.incus
-                    .list_vms(fast, &register)
-                    .map(|v| structured_with_text(&v, &VM_LIST))
-            },
-            "detect_host_platform" => |host, _, _| {
-                let platform = crate::hostobs::detect_platform(&host.env);
-                let text = format!(
-                    "Host platform detected: {} on {}.",
-                    platform["kind"].as_str().unwrap_or(""),
-                    platform["cpu"]["architecture"].as_str().unwrap_or("")
-                );
-                Ok(
-                    json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}),
-                )
-            },
-            "get_host_capacity" => |host, _, _| {
-                Ok(json!({
-                    "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
-                    "structuredContent": host.coordinator.snapshot(),
-                }))
-            },
-            "inspect_host_file" => |_, args, _| {
-                // expectedContent is read raw: ensure_host_file writes it raw.
-                let field = |k: &str| args.get(k).and_then(J::as_str).map(str::trim).unwrap_or("");
-                let raw = args
-                    .get("expectedContent")
-                    .and_then(J::as_str)
-                    .unwrap_or("");
-                crate::hostread::inspect_host_file(
-                    field("path"),
-                    field("scope"),
-                    field("expectedSha256"),
-                    raw,
-                )
-                .map(|v| structured_result(v, Some("Managed host file inspected.")))
-            },
-            "inspect_host_service" => |host, args, binding| {
-                // `serviceNameFromBinding` / `serviceScopeFromBinding`: an explicit
-                // argument wins over the bound coordinate.
-                let field = |key: &str| {
-                    let explicit = args
-                        .get(key)
-                        .and_then(J::as_str)
-                        .map(str::trim)
-                        .unwrap_or("");
-                    if explicit.is_empty() {
-                        binding
-                            .coordinate(key)
-                            .and_then(J::as_str)
-                            .map(|v| v.trim().to_string())
-                            .unwrap_or_default()
-                    } else {
-                        explicit.to_string()
-                    }
-                };
-                let listen_port = args
-                    .get("listenPort")
-                    .and_then(J::as_f64)
-                    .map(|v| v as i64)
-                    .unwrap_or(0);
-                crate::hostread::inspect_host_service(
-                    &host.env,
-                    &field("serviceName"),
-                    &field("scope"),
-                    listen_port,
-                )
-                .map(|v| structured_result(v, Some("Host service status inspected.")))
-            },
-            "list_host_services" => |host, args, _| {
-                let scope = args.get("scope").and_then(J::as_str).unwrap_or("");
-                let register = |uri: &str, coordinates: Map<String, J>| {
-                    let _ =
-                        crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-                };
-                crate::hostread::list_host_services(&host.env, &host.tenant_id, scope, &register)
-                    .map(|v| structured_result(v, None))
-            },
-            "probe_http_endpoint" => |_, args, _| {
-                let endpoint = args
-                    .get("endpoint")
-                    .and_then(J::as_str)
-                    .map(str::trim)
-                    .unwrap_or("");
-                let accept = args
-                    .get("acceptAuthenticationChallenge")
-                    .and_then(J::as_bool)
-                    .unwrap_or(false);
-                crate::hostread::probe_http_endpoint(endpoint, accept)
-                    .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
-            },
-            _ => return not_implemented(name),
-        })
-    };
+    // As in Go's registry lookup, an operation no service offers fails
+    // closed before its arguments are checked.
+    if crate::builtin::resolve(server, name).is_none() {
+        return not_implemented(name);
+    }
     // The legacy adapter's declarative gate: arguments against the input
     // schema, then a successful structured result against the output schema.
     let input = descriptor
@@ -1441,21 +1316,15 @@ pub(crate) fn invoke(
         let message = format!("invalid capability arguments: {e}");
         return capability_error("capability", "invalid_arguments", &message);
     }
-    let outcome = match legacy {
-        Some(handler) => handler(&server.host, args, binding),
-        None => {
-            let invocation = crate::builtin::Invocation {
-                ctx,
-                args,
-                binding,
-                snapshot: &catalog_snapshot,
-                claimed: None,
-            };
-            match crate::builtin::invoke(server, name, &invocation) {
-                Some(outcome) => outcome,
-                None => return not_implemented(name),
-            }
-        }
+    let invocation = crate::builtin::Invocation {
+        ctx,
+        args,
+        binding,
+        snapshot: &catalog_snapshot,
+        claimed: None,
+    };
+    let Some(outcome) = crate::builtin::invoke(server, name, &invocation) else {
+        return not_implemented(name);
     };
     let result = match outcome {
         Ok(result) => result,
@@ -1487,14 +1356,14 @@ use crate::gojson::Shape;
 mod evidence_fixture;
 
 /// `host.HTTPObservation`.
-const HTTP_OBSERVATION: Shape = Shape::Struct(&[
+pub(crate) const HTTP_OBSERVATION: Shape = Shape::Struct(&[
     ("endpoint", Shape::Any),
     ("statusCode", Shape::Any),
     ("ready", Shape::Any),
     ("error", Shape::Any),
 ]);
 
-const VM_INFO: Shape = Shape::Struct(&[
+pub(crate) const VM_INFO: Shape = Shape::Struct(&[
     ("uri", Shape::Any),
     ("kind", Shape::Any),
     ("name", Shape::Any),
@@ -1510,7 +1379,7 @@ const VM_INFO: Shape = Shape::Struct(&[
     ("agentReady", Shape::Any),
     ("hostId", Shape::Any),
 ]);
-const VM_LIST: Shape = Shape::Struct(&[("vms", Shape::List(&VM_INFO))]);
+pub(crate) const VM_LIST: Shape = Shape::Struct(&[("vms", Shape::List(&VM_INFO))]);
 const STALL: Shape = Shape::Struct(&[
     ("someAvg10", Shape::Any),
     ("someAvg60", Shape::Any),
@@ -1561,7 +1430,7 @@ const ADMISSION: Shape = Shape::Keys(&[
     ),
     ("psi", Shape::Map(&STALL)),
 ]);
-const HOST_INFO: Shape = Shape::Struct(&[
+pub(crate) const HOST_INFO: Shape = Shape::Struct(&[
     ("uri", Shape::Any),
     ("hostName", Shape::Any),
     ("providerId", Shape::Any),
@@ -1620,14 +1489,14 @@ const HOST_INFO: Shape = Shape::Struct(&[
 
 /// tools' `structuredResult(value, "")`: the value, and its JSON (as the Go
 /// type `shape` marshals) as text.
-fn structured_with_text(value: &J, shape: &Shape) -> J {
+pub(crate) fn structured_with_text(value: &J, shape: &Shape) -> J {
     let mut text = String::new();
     crate::gojson::encode_shaped(value, shape, &mut text);
     json!({"content": [{"type": "text", "text": text}], "structuredContent": value})
 }
 
 /// `host.Service.DescribeHost`.
-fn describe_host(host: &Host) -> J {
+pub(crate) fn describe_host(host: &Host) -> J {
     let host_name = nix::unistd::gethostname()
         .map(|h: std::ffi::OsString| h.to_string_lossy().into_owned())
         .unwrap_or_default();
@@ -1677,7 +1546,7 @@ fn describe_host(host: &Host) -> J {
 /// only when its command succeeds), WSL GPU device and library presence, and
 /// the version gate. Go iterates its command table in map order, so the
 /// three commands run in no fixed order there; here they run in key order.
-fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
+pub(crate) fn probe_incus_gpu(env: &crate::config::Env, args: &Map<String, J>) -> J {
     // exec.Command(...).CombinedOutput(): no deadline.
     const NO_DEADLINE: std::time::Duration = std::time::Duration::from_secs(365 * 24 * 3600);
     let mut out = Map::new();
@@ -1690,7 +1559,7 @@ fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
         ),
     ] {
         let argv: Vec<String> = argv.iter().map(|s| s.to_string()).collect();
-        let res = crate::hostobs::run_command(&host.env, &argv, NO_DEADLINE);
+        let res = crate::hostobs::run_command(env, &argv, NO_DEADLINE);
         if res.exit_code == 0 {
             let combined = format!("{}{}", res.stdout, res.stderr);
             out.insert(key.into(), J::from(combined.trim()));
@@ -1700,14 +1569,14 @@ fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
     let dxg = exists("/dev/dxg");
     let libraries =
         exists("/usr/lib/wsl/lib/libcuda.so") || exists("/usr/lib/wsl/lib/libcuda.so.1");
-    let nvidia_smi = crate::hostobs::look_path(&host.env, "nvidia-smi").is_some()
+    let nvidia_smi = crate::hostobs::look_path(env, "nvidia-smi").is_some()
         || exists("/usr/lib/wsl/lib/nvidia-smi");
     out.insert("dxg".into(), J::Bool(dxg));
     out.insert("wslGpuLibraries".into(), J::Bool(libraries));
     out.insert("nvidiaSmi".into(), J::Bool(nvidia_smi));
     out.insert(
         "incusGpuDevice".into(),
-        J::Bool(crate::hostobs::look_path(&host.env, "incus").is_some()),
+        J::Bool(crate::hostobs::look_path(env, "incus").is_some()),
     );
     let incus_ok = version_at_least(out.get("incus"), 7, 2);
     let qemu_required = args
@@ -1790,7 +1659,7 @@ fn missing_tasks_capability() -> ToolCallOutcome {
 }
 
 /// `CapabilityCatalogSnapshot` as published.
-fn snapshot_json(snapshot: &catalog::Snapshot) -> J {
+pub(crate) fn snapshot_json(snapshot: &catalog::Snapshot) -> J {
     let mut s = String::new();
     snapshot.encode(&mut s);
     serde_json::from_str(&s).expect("snapshot encodes as JSON")

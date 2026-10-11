@@ -1,0 +1,27 @@
+
+running 1 test
+test seam::seam_verifier ... FAILED
+
+failures:
+
+failures:
+    seam::seam_verifier
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 223 filtered out; finished in 0.94s
+
+   Compiling opute-host-agent v0.2.3 (/tmp/tmphpkg48fq/crates/host-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.24s
+     Running unittests src/main.rs (/home/houman/github/wunderous/opute-host-agent/target/seam-canary/debug/deps/opute_host_agent-6ae87315637d33b0)
+time=2026-10-11T18:30:59.509Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-11T18:30:59.510Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-11T18:30:59.510Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-11T18:30:59.969Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-11T18:30:59.969Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-11T18:30:59.969Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+
+thread 'seam::seam_verifier' (2733315) panicked at crates/host-agent/src/seam.rs:273:5:
+assertion `left == right` failed: seam gaps differ from seam-gaps.json: a capability is reached outside the service context, or a revised one is still listed
+  left: ["get_host_plan_run", "get_runtime_recipe_run", "get_tunnel_run", "list_operations", "opute.provider.install", "opute.provider.reload", "opute.provider.status", "opute.provider.teardown", "opute.provider.validate", "run_host_local_recipe", "run_host_plan", "run_runtime_recipe", "run_tunnel_recipe", "validate_host_local_recipe", "validate_host_plan", "validate_runtime_recipe", "validate_tunnel_recipe"]
+ right: ["get_host_plan_run", "get_runtime_recipe_run", "get_tunnel_run", "opute.provider.install", "opute.provider.reload", "opute.provider.status", "opute.provider.teardown", "opute.provider.validate", "run_host_local_recipe", "run_host_plan", "run_runtime_recipe", "run_tunnel_recipe", "validate_host_local_recipe", "validate_host_plan", "validate_runtime_recipe", "validate_tunnel_recipe"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p opute-host-agent --bin opute-host-agent`

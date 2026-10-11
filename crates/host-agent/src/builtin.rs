@@ -208,10 +208,249 @@ impl ServerHandle {
     }
 }
 
+fn op(run: impl Fn(&Invocation) -> Result<J, String> + Send + Sync + 'static) -> Handler {
+    Arc::new(run)
+}
+
+fn flag(args: &Map<String, J>, key: &str) -> bool {
+    args.get(key).and_then(J::as_bool).unwrap_or(false)
+}
+
+fn text<'a>(args: &'a Map<String, J>, key: &str) -> &'a str {
+    args.get(key)
+        .and_then(J::as_str)
+        .map(str::trim)
+        .unwrap_or("")
+}
+
 /// The host's built-in services, in dependency order, each built from the
 /// seams it declares.
-pub fn services(_host: &crate::tools::Host, _server: &ServerHandle) -> Vec<Service> {
-    Vec::new()
+pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service> {
+    vec![
+        host_info(host),
+        incus_inventory(host),
+        host_observation(host),
+        catalog_service(),
+        host_resources(host),
+        tasks(server),
+    ]
+}
+
+/// A resource registration seam: tenant-scoped canonical URIs only.
+fn registrar(
+    host: &crate::tools::Host,
+) -> impl Fn(&str, Map<String, J>) + Send + Sync + Clone + 'static {
+    let (state, tenant) = (host.state.clone(), host.tenant_id.clone());
+    move |uri: &str, coordinates: Map<String, J>| {
+        let _ = crate::resource::register(&state, &tenant, uri, &coordinates);
+    }
+}
+
+/// M3: the host's own description and platform identity. Describing the
+/// host is the one operation whose seam is the whole host record.
+fn host_info(host: &crate::tools::Host) -> Service {
+    use crate::tools::{describe_host, structured_with_text, HOST_INFO};
+    let described = Arc::new(host.clone());
+    let env = host.env.clone();
+    Service {
+        id: "host-info",
+        dependencies: &[],
+        operations: vec![
+            (
+                "get_host_info",
+                op(move |_| Ok(structured_with_text(&describe_host(&described), &HOST_INFO))),
+            ),
+            (
+                "detect_host_platform",
+                op(move |_| {
+                    let platform = crate::hostobs::detect_platform(&env);
+                    let text = format!(
+                        "Host platform detected: {} on {}.",
+                        platform["kind"].as_str().unwrap_or(""),
+                        platform["cpu"]["architecture"].as_str().unwrap_or("")
+                    );
+                    Ok(
+                        serde_json::json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}),
+                    )
+                }),
+            ),
+        ],
+    }
+}
+
+/// M3: Incus inventory reads. The provider-native name comes from the
+/// canonical binding, never from a raw argument.
+fn incus_inventory(host: &crate::tools::Host) -> Service {
+    use crate::tools::{
+        probe_incus_gpu, structured_result, structured_with_text, VM_INFO, VM_LIST,
+    };
+    let (incus, register) = (host.incus.clone(), registrar(host));
+    let (listing, listed) = (host.incus.clone(), registrar(host));
+    let env = host.env.clone();
+    Service {
+        id: "incus-inventory",
+        dependencies: &[],
+        operations: vec![
+            (
+                "get_vm_info",
+                op(move |call| {
+                    incus
+                        .get_vm_info(
+                            &call.binding.provider_instance_name(),
+                            flag(call.args, "fast"),
+                            &register,
+                        )
+                        .map(|v| structured_with_text(&v, &VM_INFO))
+                }),
+            ),
+            (
+                "probe_incus_gpu",
+                op(move |call| {
+                    Ok(structured_result(
+                        probe_incus_gpu(&env, call.args),
+                        Some("Incus GPU capability report generated"),
+                    ))
+                }),
+            ),
+            (
+                "list_vms",
+                op(move |call| {
+                    listing
+                        .list_vms(flag(call.args, "fast"), &listed)
+                        .map(|v| structured_with_text(&v, &VM_LIST))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M3: read-only observation of host files, services and endpoints.
+fn host_observation(host: &crate::tools::Host) -> Service {
+    use crate::tools::{structured_result, structured_with_text, HTTP_OBSERVATION};
+    let inspect_env = host.env.clone();
+    let (list_env, tenant, register) = (host.env.clone(), host.tenant_id.clone(), registrar(host));
+    Service {
+        id: "host-observation",
+        dependencies: &[],
+        operations: vec![
+            (
+                "inspect_host_file",
+                op(|call| {
+                    // expectedContent is read raw: ensure_host_file writes it raw.
+                    let raw = call
+                        .args
+                        .get("expectedContent")
+                        .and_then(J::as_str)
+                        .unwrap_or("");
+                    crate::hostread::inspect_host_file(
+                        text(call.args, "path"),
+                        text(call.args, "scope"),
+                        text(call.args, "expectedSha256"),
+                        raw,
+                    )
+                    .map(|v| structured_result(v, Some("Managed host file inspected.")))
+                }),
+            ),
+            (
+                "inspect_host_service",
+                op(move |call| {
+                    // `serviceNameFromBinding` / `serviceScopeFromBinding`: an
+                    // explicit argument wins over the bound coordinate.
+                    let field = |key: &str| {
+                        let explicit = text(call.args, key);
+                        if explicit.is_empty() {
+                            call.binding
+                                .coordinate(key)
+                                .and_then(J::as_str)
+                                .map(|v| v.trim().to_string())
+                                .unwrap_or_default()
+                        } else {
+                            explicit.to_string()
+                        }
+                    };
+                    let listen_port = call
+                        .args
+                        .get("listenPort")
+                        .and_then(J::as_f64)
+                        .map(|v| v as i64)
+                        .unwrap_or(0);
+                    crate::hostread::inspect_host_service(
+                        &inspect_env,
+                        &field("serviceName"),
+                        &field("scope"),
+                        listen_port,
+                    )
+                    .map(|v| structured_result(v, Some("Host service status inspected.")))
+                }),
+            ),
+            (
+                "list_host_services",
+                op(move |call| {
+                    let scope = call.args.get("scope").and_then(J::as_str).unwrap_or("");
+                    crate::hostread::list_host_services(&list_env, &tenant, scope, &register)
+                        .map(|v| structured_result(v, None))
+                }),
+            ),
+            (
+                "probe_http_endpoint",
+                op(|call| {
+                    crate::hostread::probe_http_endpoint(
+                        text(call.args, "endpoint"),
+                        flag(call.args, "acceptAuthenticationChallenge"),
+                    )
+                    .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M4: host resource capacity and enforcement, from the coordinator alone.
+fn host_resources(host: &crate::tools::Host) -> Service {
+    let coordinator = host.coordinator.clone();
+    Service {
+        id: "host-resources",
+        dependencies: &[],
+        operations: vec![(
+            "get_host_capacity",
+            op(move |_| {
+                Ok(serde_json::json!({
+                    "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
+                    "structuredContent": coordinator.snapshot(),
+                }))
+            }),
+        )],
+    }
+}
+
+/// M4: operator input requests, which own a task in the server's registry.
+fn tasks(server: &ServerHandle) -> Service {
+    let server = server.clone();
+    Service {
+        id: "tasks",
+        dependencies: &[],
+        operations: vec![(
+            "request_task_input",
+            op(move |call| Ok(crate::tools::create_input_task(&server.get()?, call.args))),
+        )],
+    }
+}
+
+/// M3: the published capability catalog, as admitted for this call.
+fn catalog_service() -> Service {
+    Service {
+        id: "catalog",
+        dependencies: &[],
+        operations: vec![(
+            "get_capability_catalog",
+            op(|call| {
+                Ok(crate::tools::structured_result(
+                    crate::tools::snapshot_json(call.snapshot),
+                    None,
+                ))
+            }),
+        )],
+    }
 }
 
 /// The mounted built-in service that implements `name`, if any.
