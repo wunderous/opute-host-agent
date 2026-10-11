@@ -8,10 +8,12 @@ the one service context (`provider/mounts.rs`), and a Consumer. Built-in and
 external capabilities share one architecture. They differ only in the
 declared distribution, trust and Go-contract rows of the design.
 
-**Result: the seam verifier reports no gap and its canary turns it red.**
-28 capabilities are compliant, 0 are gaps and 122 are unported. The
-unported ones are M8 work: they are published where Go publishes them and
-fail closed with `not_implemented`. The M8 seam gate is open.
+**Result: the seam verifier reports no gap and its canary turns it red,
+but the M8 seam gate is not open.** 28 capabilities are compliant, 0 are
+gaps and 122 are unported. The unported ones are M8 work: they are
+published where Go publishes them and fail closed with `not_implemented`.
+Seam task 5.1 and migration task 7.1 stay open because the `m5` and `m6`
+gates fail (see "What fails" below).
 
 Go authority: `wunderous/host-agents` `ace7013d`, tree `ac17cfb2`, reference
 binary `71924b62…`. Every stage capture used harness `8bee7abb…` and no new
