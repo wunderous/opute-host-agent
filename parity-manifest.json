@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/local-e2e/native-2026-10-05/canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-11/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
@@ -11,19 +11,19 @@
  "contracts": {
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/local-e2e/native-2026-10-05/contracts/oauth-issuance/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-11/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/local-e2e/native-2026-10-05/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-11/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/local-e2e/native-2026-10-05/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-11/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/local-e2e/native-2026-10-05/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-11/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -81,13 +81,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/local-e2e/native-2026-10-05/go-vs-go-final/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/go-vs-go-final/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/local-e2e/native-2026-10-05/go-vs-rust-final/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/go-vs-rust-final/summary.json"
   }
  },
  "gates": {
@@ -1848,34 +1848,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/local-e2e/native-2026-10-05/m5/crash/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/local-e2e/native-2026-10-05/m5/cross-read/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/local-e2e/native-2026-10-05/m5/migration/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/local-e2e/native-2026-10-05/m5/secrets/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/local-e2e/native-2026-10-05/m5/shape-final/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/m5/shape-final/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/local-e2e/native-2026-10-05/m5/unknown-projection/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-11/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/local-e2e/native-2026-10-05/oracles.json",
+  "results": "evidence/local-e2e/native-2026-10-11/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/local-e2e/native-2026-10-05/rust-canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-11/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "78a5fe8ab57e3b37704db2d8289e186f206c7b8bf848b1d97f7139afe6c72223",
+  "binarySha256": "e20ee4f99a471d8d01bd4d9c190e534bf25cd024b749de68ad67850dc66087b6",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

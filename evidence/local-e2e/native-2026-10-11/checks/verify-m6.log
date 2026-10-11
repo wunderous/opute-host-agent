@@ -1,0 +1,35 @@
+gate m6: FAIL
+  go-vs-go     pass=160 fail=0 unverified=0
+  go-vs-rust   pass=160 fail=0 unverified=0
+  canaries     caught=14/14
+  inventory    pass
+  go oracles   pass
+  contracts    pass
+  M5 shape              fail
+  M5 cross-read         pass
+  M5 crash              pass
+  M5 secrets            pass
+  M5 unknown-projection pass
+  M5 migration          pass
+  problem: [m5:shape] provider-lifecycle.install-call-teardown.0: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.install-call-teardown.1: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.install-call-teardown.2: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.install-call-teardown.3: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.install-call-teardown.4: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.bad-manifest.validation-operation-undeclared.0: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.bad-manifest.validation-operation-undeclared.1: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.bad-manifest.validation-operation-undeclared.2: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.bad-manifest.validation-operation-undeclared.3: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.bad-manifest.validation-operation-undeclared.4: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.operation-not-listed.0: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.operation-not-listed.1: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.operation-not-listed.2: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.operation-not-listed.3: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.operation-not-listed.4: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.result-violates-output-schema.0: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.result-violates-output-schema.1: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.result-violates-output-schema.2: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.result-violates-output-schema.3: raw schemas, rows, or invariants differ
+  problem: [m5:shape] provider-lifecycle.schema-drift.result-violates-output-schema.4: raw schemas, rows, or invariants differ
+  gate failure: M5 shape: fail
+  gate failure: 200 provenance/evidence problem(s)
