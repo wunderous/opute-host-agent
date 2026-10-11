@@ -14285,7 +14285,7 @@
    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
    "plugins/tunneling/tailscale"
   ],
-  "fixture": null,
+  "fixture": "incus-two-containers",
   "collect": [
    "orphans"
   ],
@@ -14462,6 +14462,20 @@
     }
    },
    {
+    "as": "inventory",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     },
+     "expand": true
+    }
+   },
+   {
     "as": "call",
     "mcp": {
      "method": "tools/call",
@@ -14469,7 +14483,8 @@
      "params": {
       "name": "opute.capability.mesh-runtime.status",
       "arguments": {
-       "targetUri": "vm:local:fixture-vm"
+       "targetUri": "container:local:worker-01",
+       "hostAgentId": "${AGENT_ID}"
       }
      },
      "expand": true
@@ -14604,6 +14619,3641 @@
       "in": [
        142,
        155
+      ]
+     },
+     "timeout": 15
+    }
+   },
+   {
+    "as": "state",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
+      "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
+      "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
+      "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "agentProcesses",
+    "agentProcesses": {}
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "providerStopped",
+    "providerProcessStop": {
+     "process": "provider"
+    }
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "outputs",
+     "*",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "outputs",
+     "*",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "result",
+     "structuredContent",
+     "outputs",
+     "*",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "result",
+     "structuredContent",
+     "state",
+     "outputs",
+     "*",
+     "supportedTools"
+    ]
+   ],
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeRuntime",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeCapability",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "CreatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "ActiveAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeCapabilities",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeRuntimes",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "outputs",
+      "*",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "output",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "state",
+      "outputs",
+      "*",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    }
+   ],
+   "notes": "One pinned Go provider executable, unchanged, launched by the harness on loopback with recording shims and a dead egress proxy; the core never spawns providers."
+  }
+ },
+ {
+  "id": "provider-real.k3s.restart",
+  "surface": "provider-real",
+  "owner": "provider",
+  "anchors": [
+   "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+   "plugins/kubernetes/k3s"
+  ],
+  "fixture": null,
+  "collect": [
+   "orphans"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "provider",
+    "providerProcess": {
+     "binary": "opute-provider-k3s",
+     "portVar": "PROVIDER_PORT"
+    }
+   },
+   {
+    "as": "catalogBefore",
+    "mcp": {
+     "method": "tools/list",
+     "params": {}
+    }
+   },
+   {
+    "as": "recipe",
+    "write": {
+     "path": "${SANDBOX}/recipes/activate.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.k3s.managed\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-kubernetes\n  servingContract: kubernetes.v1\n  capabilities: [kubernetes]\nactivation:\n  capability: kubernetes\n  servingContract: kubernetes.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [get_host_info]\ninputs:\n  providerId:\n    default: com.opute.k3s\n    schema: {type: string, const: com.opute.k3s}\n  # Provider activation is repeatable. A caller-scoped nonce keeps a fresh\n  # activation from replaying a terminal plan that belongs to an older\n  # provider generation.\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.k3s.managed\n  generation: 1\n  idempotencyKey: com.opute.k3s-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: get_host_info\n"
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.k3s",
+        "version": "1.0.2",
+        "capabilities": [
+         {
+          "id": "opute.capability.kubernetes.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${PROVIDER_PORT}/mcp"
+        }
+       },
+       "activate": true,
+       "recipeSource": "${SANDBOX}/recipes/activate.yaml"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RUN_ID": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RUN_ID}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RUN_ID"
+    ]
+   },
+   {
+    "as": "installTask",
+    "requires": [
+     "RUN_ID"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${RUN_ID}",
+     "params": {
+      "taskId": "${RUN_ID}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "status",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.status",
+     "params": {
+      "name": "opute.provider.status",
+      "arguments": {
+       "provider": "com.opute.k3s"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "catalog",
+    "mcp": {
+     "method": "tools/list",
+     "params": {}
+    }
+   },
+   {
+    "as": "call",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.kubernetes.validate",
+     "params": {
+      "name": "opute.capability.kubernetes.validate",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop1",
+    "stop": {}
+   },
+   {
+    "as": "restart",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "statusRestored",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.status",
+     "params": {
+      "name": "opute.provider.status",
+      "arguments": {
+       "provider": "com.opute.k3s"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "catalogRestored",
+    "mcp": {
+     "method": "tools/list",
+     "params": {},
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "tools",
+       "$len"
+      ],
+      "in": [
+       170
+      ]
+     },
+     "timeout": 15
+    }
+   },
+   {
+    "as": "callRestored",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.kubernetes.validate",
+     "params": {
+      "name": "opute.capability.kubernetes.validate",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "validate",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.validate",
+     "params": {
+      "name": "opute.provider.validate",
+      "arguments": {
+       "provider": "com.opute.k3s"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "teardown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.teardown",
+     "params": {
+      "name": "opute.provider.teardown",
+      "arguments": {
+       "provider": "com.opute.k3s",
+       "confirm": true,
+       "inputs": {
+        "hostService": "none"
+       }
+      }
+     },
+     "expand": true,
+     "capture": {
+      "TEARDOWN_RUN": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "tornDown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_host_plan_run",
+     "params": {
+      "name": "get_host_plan_run",
+      "arguments": {
+       "runId": "${TEARDOWN_RUN}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "TEARDOWN_RUN"
+    ]
+   },
+   {
+    "as": "teardownTask",
+    "requires": [
+     "TEARDOWN_RUN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${TEARDOWN_RUN}",
+     "params": {
+      "taskId": "${TEARDOWN_RUN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "statusAfter",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.status",
+     "params": {
+      "name": "opute.provider.status",
+      "arguments": {
+       "provider": "com.opute.k3s"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "catalogAfter",
+    "mcp": {
+     "method": "tools/list",
+     "params": {},
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "tools",
+       "$len"
+      ],
+      "in": [
+       142,
+       170
       ]
      },
      "timeout": 15

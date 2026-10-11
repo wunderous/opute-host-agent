@@ -18,7 +18,7 @@ import json, sys
 import yaml
 from pathlib import Path
 
-from provider_lifecycle_scenarios import SERVE, MASKS, SETS, STATE, call, task_done, wait
+from provider_lifecycle_scenarios import RESTART, SERVE, MASKS, SETS, STATE, call, task_done, wait
 
 GO_SRC = Path(__file__).resolve().parents[2] / ".parity/go-src/plugins"
 HOST_TOOLS = 142
@@ -32,11 +32,10 @@ PROVIDERS = [
     ("kubernetes/k3s", "com.opute.k3s", "recipes/kubernetes.yaml", 28, "opute.capability.kubernetes.validate", {}, {}),
     ("tunneling/cloudflare", "com.opute.cloudflare", "recipes/activate-tunneling.yaml", 13,
      "opute.capability.tunneling.validate", {"bindings": [{"bindingId": "fixture", "localTarget": "http://127.0.0.1:3080"}], "placement": "host"}, {"targetUri": "vm:local:fixture-vm"}),
-    # Every published Tailscale tool binds a resource URI first, which needs
-    # an Incus inventory this tier does not have; its declared validation
-    # (opute.provider.validate below) is the call that reaches the provider.
+    # Every published Tailscale tool binds a resource URI first, so its
+    # journey runs with the recording Incus inventory and lists it (below).
     ("tunneling/tailscale", "com.opute.tailscale", "recipes/activate.yaml", 13,
-     "opute.capability.mesh-runtime.status", {"targetUri": "vm:local:fixture-vm"}, {"targetUri": "vm:local:fixture-vm"}),
+     "opute.capability.mesh-runtime.status", {"targetUri": "container:local:worker-01", "hostAgentId": "${AGENT_ID}"}, {"targetUri": "vm:local:fixture-vm"}),
 ]
 
 
@@ -87,6 +86,7 @@ def scenario(plugin, provider, recipe_uri, operations, operation, arguments, val
               wait("installed"), task_done("installTask", "RUN_ID"),
               call("status", "opute.provider.status", {"provider": provider}),
               {"as": "catalog", "mcp": {"method": "tools/list", "params": {}}},
+              *([call("inventory", "list_vms", {"fast": True})] if name == "tailscale" else []),
               call("call", operation, arguments),
               call("validate", "opute.provider.validate", {"provider": provider, **validation}),
               call("teardown", "opute.provider.teardown", {"provider": provider, "confirm": True, "inputs": {"hostService": "none"}},
@@ -106,10 +106,27 @@ def scenario(plugin, provider, recipe_uri, operations, operation, arguments, val
             step["requires"] = ["TEARDOWN_RUN"]
     return {"id": "provider-real." + name, "surface": "provider-real", "owner": "provider",
             "anchors": ["internal/hostmcp/provider_install.go:handleProviderInstallContext", "plugins/" + plugin],
-            "fixture": None, "collect": ["orphans"], "steps": steps,
+            "fixture": "incus-two-containers" if name == "tailscale" else None, "collect": ["orphans"], "steps": steps,
             "compare": {"sets": SETS + TOOL_SETS, "masks": MASKS + host_info_masks(),
                         "notes": "One pinned Go provider executable, unchanged, launched by the harness on loopback with recording shims and a dead egress proxy; the core never spawns providers."}}
 
 
+def restart_scenario():
+    """k3s across an agent restart: the provider process keeps running (the
+    core never spawns or relaunches one), the restarted agent restores the
+    generation and its catalog, reconnects, serves calls and tears down."""
+    base = scenario(*PROVIDERS[2])
+    steps = base["steps"]
+    cut = [s.get("as") for s in steps].index("validate")
+    restart = [{"as": "stop1", "stop": {}}, RESTART,
+               call("statusRestored", "opute.provider.status", {"provider": "com.opute.k3s"}),
+               {"as": "catalogRestored", "mcp": {"method": "tools/list", "params": {},
+                                                 "until": {"path": ["body", "result", "tools", "$len"], "in": [HOST_TOOLS + 28]}, "timeout": 15}},
+               call("callRestored", "opute.capability.kubernetes.validate", {})]
+    base["steps"] = steps[:cut] + restart + steps[cut:]
+    base["id"] = "provider-real.k3s.restart"
+    return base
+
+
 if __name__ == "__main__":
-    json.dump([scenario(*p) for p in PROVIDERS], open(sys.argv[1], "w"), indent=1)
+    json.dump([scenario(*p) for p in PROVIDERS] + [restart_scenario()], open(sys.argv[1], "w"), indent=1)

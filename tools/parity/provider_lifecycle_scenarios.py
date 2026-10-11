@@ -199,7 +199,11 @@ cases.append(fault("crash.after-activation",after=[{"as":"crash","providerStop":
     call("probe","opute.capability.fixture.probe",{}),call("validate","opute.provider.validate",{"provider":PID}),STATUS("statusCrashed"),
     call("teardownBlocked","opute.provider.teardown",{"provider":PID,"confirm":True,"inputs":{"hostService":"none"}}),
     teardown("teardownForced","FORCED_RUN",force=True),wait("forced","FORCED_RUN","get_host_plan_run"),
-    call("statusAfter","opute.provider.status",{"provider":PID},until={"path":["body","result","structuredContent","active"],"in":[False]},timeout=10)]))
+    call("statusAfter","opute.provider.status",{"provider":PID},until={"path":["body","result","structuredContent","active"],"in":[False]},timeout=10),
+    # Go can report the provider inactive before the forced run's completion
+    # hook removes the active capability; wait for that settled state.
+    {"as":"settled","query":{"db":"${SANDBOX}/state/state.db","sql":{"activeCapabilities":"SELECT * FROM active_capabilities"},
+        "until":{"query":"activeCapabilities","path":["$len"],"in":[0]}}}]))
 # Publish failure: operation names the host cannot publish.
 cases.append(fault("publish.conflicting-host-tool",manifest(ops=[op("get_host_info")],validation={"capability":CAP,"operation":"get_host_info"})))
 cases.append(fault("publish.invalid-operation-name",manifest(ops=[op("Bad Name")],validation={"capability":CAP,"operation":"Bad Name"})))

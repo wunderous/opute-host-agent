@@ -1,14 +1,14 @@
 {
   "scope": "Provider callbacks and bridged tasks, a flapping readiness probe, and the five pinned Go providers unchanged through the public lifecycle (install with their own activation recipes, catalog cell, a provider-reached call, validation, teardown), with no agent descendants and no orphaned shims. The 35 lifecycle scenarios are rerun.",
   "publicScenarios": {
-    "total": 156,
+    "total": 157,
     "lifecycle": 49,
-    "realProviders": 5,
+    "realProviders": 6,
     "iterations": 5,
     "rawRecomputed": true
   },
   "providerGoTwins": {
-    "scenarios": 54,
+    "scenarios": 55,
     "iterations": 5,
     "rawRecomputed": true
   },
@@ -36,12 +36,14 @@
       "ollama": "installed and called; teardown refused by plan validation (set_host_service_state requires uri); stays active",
       "k3s": "installed, called, validated, torn down",
       "cloudflare": "installed, called, torn down; validation reaches the provider and reports its error",
-      "tailscale": "installed, validation reaches the provider, torn down; every published tool binds a resource URI that needs an Incus inventory"
+      "tailscale": "installed, called against the recording Incus inventory (container:local:worker-01), torn down; validation reaches the provider and reports its error",
+      "k3s.restart": "installed and called, agent restarted with the provider still running: generation, catalog and connection restored, called again, torn down"
     }
   },
   "goTransientsSynchronized": [
     "Go releases the install run heavy reservation after its task reports completion and refuses normal-class work while it is held; bridged calls first poll get_host_capacity until no reservation is held (only the settled count is observed, and the poll audit rows are excluded)"
   ],
+  "adapterPathsHit": "none: no provider journey on either side shows a redirect, TLS, proxy or cancel-cause failure",
   "declaredDivergences": {
     "D12.refused-callback-child-operation": "the refused callback child operation row, isolated into its own query"
   },
@@ -67,12 +69,12 @@
   "goReferenceSha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
   "harnessSha256": "8bee7abbbe4d9578677f07ca76a867b6703c8d1665e6cbb3b8de5c01dd1cf454",
   "evidenceSummaries": {
-    "evidence/m7/provider-journeys-public/summary.json": "cb45b1be2553d438e2ff5acba622f86796eb8520f333ef007cb7481bd9b975f7",
-    "evidence/m7/provider-journeys-go-vs-go/summary.json": "22fc4978981a637f3bac0b76d5fd210b57e45d6e5593a35a57168d2619c21a25",
-    "evidence/m7/provider-journeys-secret/summary.json": "3bc64bc3cd67ce1a27e815e705fd8530f626a1b619a1c4a5ed7fef40dda8def0",
-    "evidence/m7/unadmitted-callback-task/capture/summary.json": "b04c306a526b87a76c7b2c9024f5fb3a788ca3da3fb7a5274f15c142f287400d",
+    "evidence/m7/provider-journeys-public/summary.json": "3f7d057cd22e9890deb0370daae07ac36be5404e885213e749621fead7625d0d",
+    "evidence/m7/provider-journeys-go-vs-go/summary.json": "50518fb2113b5c6d4a25271e8dbba5a4140c54d46f6ccf4e0cab93799f8bbe2c",
+    "evidence/m7/provider-journeys-secret/summary.json": "5780bffc0a5ffd266897e0bc948ee6b3aeaee6da4ffb13c81e9ba8f1edeb7cbb",
+    "evidence/m7/unadmitted-callback-task/capture/summary.json": "ac79e8608625bd0487ba8538364b2b05f5ee92bd37b40e830f36fa03944b1909",
     "evidence/m7/provider-journeys-checks/providers.json": "99b01b4d3931d06119b5a795872f5d79a245a14f5d463ae511386801f1af3c53"
   },
-  "verificationScriptSha256": "db913dd71fcd9b9302efd412c3383c9413f926a335f02e3f3cf221358e1a15e8",
+  "verificationScriptSha256": "9c7ba01779702d362c76d3d490466f4e1ba10b252c44ae41d3f4fe0bd6c9bf51",
   "globalCutover": "FAIL; candidate hash preserved, derived scenario items synced"
 }

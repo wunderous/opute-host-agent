@@ -19266,6 +19266,24 @@
     }
    },
    {
+    "as": "settled",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "activeCapabilities": "SELECT * FROM active_capabilities"
+     },
+     "until": {
+      "query": "activeCapabilities",
+      "path": [
+       "$len"
+      ],
+      "in": [
+       0
+      ]
+     }
+    }
+   },
+   {
     "as": "requests",
     "providerRequests": {
      "stub": "provider"

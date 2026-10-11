@@ -2,8 +2,8 @@
 
 Reproduces evidence/m7/provider-journeys-validation.json from the raw
 captures: every public scenario (including the 49 fake-provider lifecycle and
-callback scenarios and the five real Go provider journeys) over five Go/Rust
-iterations, the same 54 scenarios Go/Go over five iterations, the 16-field
+callback scenarios and the six real Go provider journeys) over five Go/Rust
+iterations, the same 55 scenarios Go/Go over five iterations, the 16-field
 secret sweep, the open unadmitted-callback-task divergence, the reproducible
 provider build, the user-bus isolation preflight, the check logs and the clean
 pinned Go tree. It also asserts what the journeys prove on the Go side, so an
@@ -30,7 +30,7 @@ scenarios = {scenario['id']: scenario for scenario in runner.load_scenarios()}
 lifecycle = [name for name in scenarios if name.startswith('provider-lifecycle.')]
 assert len(lifecycle) == 49
 real = [name for name in scenarios if name.startswith('provider-real.')]
-assert sorted(real) == ['provider-real.' + p for p in ('cloudflare', 'hostos', 'k3s', 'ollama', 'tailscale')]
+assert sorted(real) == ['provider-real.' + p for p in ('cloudflare', 'hostos', 'k3s', 'k3s.restart', 'ollama', 'tailscale')]
 generated_real = subprocess.check_output([sys.executable, str(ROOT / 'tools/parity/provider_real_scenarios.py'), '/dev/stdout'], cwd=ROOT / 'tools/parity')
 assert json.loads(generated_real) == json.loads((ROOT / 'tools/parity/scenarios/provider-real.json').read_text())
 generated = subprocess.check_output([sys.executable, str(ROOT / 'tools/parity/provider_lifecycle_scenarios.py'), '/dev/stdout', '/dev/null'], cwd=ROOT / 'tools/parity')
@@ -186,7 +186,23 @@ assert text(ollama['teardown']) == 'Error: node "stop" action set_host_service_s
 assert structured(ollama['statusAfter'])['active'] is True
 assert structured(journey('k3s')['call']) == {'contractVersion': 'opute.capability.kubernetes.v1', 'ready': True}
 assert structured(journey('cloudflare')['call'])['ready'] is True
-assert text(journey('tailscale')['validate']) == 'Error: MCP error 0: target is not enrolled in the overlay'
+tailscale = journey('tailscale')
+assert text(tailscale['validate']) == 'Error: MCP error 0: target is not enrolled in the overlay'
+assert structured(tailscale['call'])['contractVersion'] == 'opute.capability.mesh-runtime.v1'
+assert structured(tailscale['call'])['targetUri'] == 'container:local:worker-01'
+assert tailscale['call']['body']['result']['_meta']['io.modelcontextprotocol/serverInfo']['name'] == 'opute-provider-tailscale'
+restarted = journey('k3s.restart')
+assert structured(restarted['statusRestored'])['active'] is True and structured(restarted['statusRestored'])['connected'] is True
+assert len(restarted['catalogRestored']['body']['result']['tools']) == 170
+assert structured(restarted['callRestored']) == {'contractVersion': 'opute.capability.kubernetes.v1', 'ready': True}
+assert structured(restarted['tornDown'])['status'] == 'completed' and structured(restarted['statusAfter'])['active'] is False
+# Step 6: no provider journey on either side met an adapter redirect, TLS,
+# proxy or cancel-cause failure (the egress proxy is never reached).
+ADAPTER_PATHS = ('redirect', 'x509', 'tls:', 'proxyconnect', 'context canceled', 'context deadline exceeded')
+for name in lifecycle + real:
+    for side in ('a', 'b'):
+        dump = json.dumps(raw(public_dir / 'scenarios' / name / (side + '.json.gz'))['observation']).lower()
+        assert not [p for p in ADAPTER_PATHS if p in dump], (name, side, [p for p in ADAPTER_PATHS if p in dump])
 for name in ('k3s', 'cloudflare', 'tailscale'):
     steps = journey(name)
     assert structured(steps['tornDown'])['status'] == 'completed', name
@@ -252,13 +268,15 @@ receipt = {
             'ollama': 'installed and called; teardown refused by plan validation (set_host_service_state requires uri); stays active',
             'k3s': 'installed, called, validated, torn down',
             'cloudflare': 'installed, called, torn down; validation reaches the provider and reports its error',
-            'tailscale': 'installed, validation reaches the provider, torn down; every published tool binds a resource URI that needs an Incus inventory',
+            'tailscale': 'installed, called against the recording Incus inventory (container:local:worker-01), torn down; validation reaches the provider and reports its error',
+            'k3s.restart': 'installed and called, agent restarted with the provider still running: generation, catalog and connection restored, called again, torn down',
         },
     },
     'goTransientsSynchronized': [
         'Go releases the install run heavy reservation after its task reports completion and refuses normal-class work while it is held; '
         'bridged calls first poll get_host_capacity until no reservation is held (only the settled count is observed, and the poll audit rows are excluded)',
     ],
+    'adapterPathsHit': 'none: no provider journey on either side shows a redirect, TLS, proxy or cancel-cause failure',
     'declaredDivergences': {'D12.refused-callback-child-operation': 'the refused callback child operation row, isolated into its own query'},
     'openDivergences': {'unadmitted-callback-task-record': open_receipt['status'],
                         'reject-null-provider-input-requests': 'open divergence, pending owner decision; not Go parity'},

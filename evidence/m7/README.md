@@ -1389,7 +1389,8 @@ now matches:
 | ollama | Installed (3 tools), called and validated. Teardown is refused by plan validation: its `set_host_service_state` nodes lack the required `uri`. The provider stays active. |
 | k3s | Installed (28 tools), called, validated and torn down. |
 | cloudflare | Installed (13 of 23 operations published), called and torn down. Validation reaches the provider and returns its error. |
-| tailscale | Installed (13 tools) and torn down. Validation reaches the provider. Every published tool binds a resource URI first, and that needs an Incus inventory this tier lacks. |
+| tailscale | Installed (13 tools), called (`mesh-runtime.status` on `container:local:worker-01` from the recording Incus inventory) and torn down. Validation reaches the provider and returns its error. |
+| k3s across a restart | Installed and called. The agent restarts while the provider keeps running, then restores the generation, catalog and connection, is called again and tears down. |
 
 **Fixes the journeys found.** `inspect_host_service` and host-service URI
 adoption are ported from Go: the same `systemctl` probe and the same adoption
@@ -1404,16 +1405,19 @@ task reports completion, and refuses normal-class work while a heavy one is
 held. Bridged calls now first poll `get_host_capacity` until no reservation
 is held. The step records only the settled count, and the poll's own audit
 rows are excluded from the state query. This synchronizes on Go's transient;
-nothing is normalized. `readiness.flapping` adds a probe that fails once
+nothing is normalized. A later Go/Go capture failed one iteration of `crash.after-activation`: Go
+reported the provider inactive before the forced run's completion hook had
+removed its active capability. That capture was discarded too, and the case
+now waits for the settled row. `readiness.flapping` adds a probe that fails once
 (the first install fails and leaves the prior catalog) and then succeeds
 (a second install activates generation 2).
 
 No journey reached the remaining adapter paths (redirects, TLS, proxies,
 cancel causes), so none of them changed.
 
-Captures against Rust release `7aeff419bf4ceb0586b51a9221c4f3e4dfdd49241fcfd0dd66179f7993349c26`: **156/156 public scenarios
-over five Go/Rust iterations** in `provider-journeys-public/`, the **54
-provider scenarios (49 lifecycle and callback, 5 real) over five Go/Go
+Captures against Rust release `7aeff419bf4ceb0586b51a9221c4f3e4dfdd49241fcfd0dd66179f7993349c26`: **157/157 public scenarios
+over five Go/Rust iterations** in `provider-journeys-public/`, the **55
+provider scenarios (49 lifecycle and callback, 6 real) over five Go/Go
 iterations** in `provider-journeys-go-vs-go/`, and a **16-field secret
 sweep with zero failures** in `provider-journeys-secret/`. The only
 normalizations are wall-clock timestamps, host-allocated task ids, the
@@ -1434,31 +1438,46 @@ contracts), as expected; it is not an M7 criterion.
 
 ## M7 exit
 
-Tasks 3.1 and 3.2 are checked. The milestone gate holds as Go defines it: the
-lifecycle matrix is green for the fake provider (49 scenarios, including
-callbacks and a flapping probe) and for all five real providers, over five
-Go/Rust and five Go/Go iterations, with no agent descendants and no orphaned
-processes. Green means Rust matches Go, including where Go itself refuses:
-hostos has no recipe for the public install, and ollama's teardown plan fails
-the host's schema check.
+Tasks 3.1 and 3.2 are checked: their own gates hold. Failed candidate
+activation leaves the prior catalog and provider usable, and revisions change
+only as Go's do. Wire and integration fixtures cover in-flight replacement,
+timeout and stale revision (M4), cancellation, callback rejection and
+reverse-order cleanup.
 
-Coverage by exit criterion:
+**Milestone gate, item by item.** The lifecycle matrix matches Go over five
+Go/Rust and five Go/Go iterations, for the fake provider (49 scenarios) and
+for all five real providers (six journeys, one across a restart), with no agent descendants and no
+orphaned shims. On the literal journey wording ("install, activate, call,
+teardown"), the pinned Go reference itself does not complete it for two
+providers, and Rust does exactly what Go does:
 
-- **Fake-provider faults** (bad manifest, schema drift, missing dependency,
-  readiness, crash, publish failure, bad or stale callback): the lifecycle and
-  callback scenarios, with the unchanged prior catalog and revision checked in
-  state.
-- **In-flight replacement**: `replacement.in-flight`.
-- **Teardown** (normal, forced, reverse order, idempotent, no processes):
-  the teardown and crash scenarios, each real provider's teardown plan,
-  `provider-service-mounts-validation.json` (reverse disposal against Go's
-  own container functions), the agent process tree, and the orphaned-shim
-  collector.
-- **Real providers**: `provider-journeys-validation.json`.
-- **Restart**: the four restart scenarios, plus restart during a bridged task.
-- **Adapter gaps** (redirect, TLS, proxy, cancel cause): no journey reached
-  them, so they are unchanged and remain covered only by the earlier T0/T1
-  adapter evidence.
+- **hostos** declares no recipe, so Go's public install refuses it
+  (`provider manifest has no recipe for mode ""`). It is never activated,
+  called or torn down.
+- **ollama** installs, activates and answers calls. Its own teardown plan
+  fails Go's plan validation (`set_host_service_state` requires `uri`), so the
+  provider stays active.
+
+Making those two complete would mean changing a pinned provider or Go's
+contract. That needs a separate owner decision, so it is not done here. The
+other three providers complete the full journey.
+
+**Supervision, restart and adapter paths (goal steps 4 to 6), as Go defines
+them.**
+- **Supervision:** the Go core never spawns, supervises or relaunches a
+  provider process; recipes and systemd units own them. Supervision in the
+  core is readiness: probe errors, `isError`, a failing plan assert,
+  unavailable discovery, a slow probe and a flapping probe all match. Disposal
+  is the generation retirement and teardown plans: normal, forced, idempotent
+  and reverse-order. That is proven against Go's own container functions
+  (`provider-service-mounts-validation.json`) and in each provider's ordered
+  teardown plan.
+- **Restart:** "relaunch" is reconnecting to the provider endpoint. It is
+  covered for a live provider (fake and k3s), a down provider, and after
+  teardown and replacement.
+- **Adapter paths:** the receipt scans every provider journey on both sides
+  for redirect, TLS, proxy and cancel-cause failures and finds none. No gap
+  there was reached, so none was changed.
 
 Owner decisions still open, none waived:
 `atomic-provider-family-publication` (Go's ordering is kept),
