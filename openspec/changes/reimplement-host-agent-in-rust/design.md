@@ -34,7 +34,7 @@ Start with a small Rust workspace rather than one crate per Go package:
 | --- | --- | --- |
 | Versioned contracts | `crates/contracts` and language-neutral `contracts/` | Canonical capability descriptors, schemas, resource kinds, versions, and deterministic projections |
 | Provider-neutral core | `crates/core` | Catalog, typed admission, one plan runner, recipe interpretation, generation lifecycle, task and observation contracts |
-| Host execution | `crates/host` | Local host primitives behind narrow typed seams; no Platform intent or provider-name routing |
+| Host execution | `crates/host` | Local host primitives behind narrow typed seams, registered as built-in providers of three-role services (D14); no Platform intent or provider-name routing |
 | Transport and composition | `crates/server` | CLI, configuration, HTTP/MCP adapters, auth boundary, startup/shutdown wiring, binary entrypoint |
 | External providers | Separate processes only where the current provider contract requires them | Concrete K3s, Cloudflare, Tailscale, LLM, and other implementations behind neutral contracts |
 
@@ -66,6 +66,9 @@ the verified parent task reservation, generation, and cancellation contract.
    resource bindings, and provider-neutral name in one versioned descriptor.
    Generate Rust decoding, MCP publication, reference data, and parity
    comparison from it. Do not maintain a second handwritten tool table.
+   Under D14 every descriptor is a Service Definition with a registered
+   provider, built-in or external, and at least one consumer
+   ([`three-role-capability-seam`](../three-role-capability-seam/design.md)).
 2. **One execution path.** Recipe validation produces a typed plan for the
    single executor. Providers supply operations and observations, not their
    own workflow engine. Admission occurs before side effects and remains
@@ -176,6 +179,7 @@ new Rust repository.
 | --- | --- | --- |
 | Preserve | Canonical identity, typed resource/effect admission, provider-neutral catalog, generation affinity, one executor, MCP opacity, schema-redacted evidence, and Host Agent/Platform ownership remain unchanged. Owners: Host Agent contracts and Platform routing. | Pinned Go contracts/ADRs and `host-agent-contract` spec; differential contract, wire, state, and E2E evidence at each boundary. |
 | Introduce | No Rust slice may be promoted or used to retire Go without a complete, provenance-bound parity inventory and passing boundary-matched gates. Owner: this Rust repository's release process. | Proposed typed decision `.agents/decisions/rust-cutover-parity-gate.json`; task 0.5 must make its verifier active before runtime promotion. |
+| Introduce | Every capability, built-in or external, has a Service Definition, a registered Service Provider and a Consumer, and is reached only through the service context. Applies from 2026-10-11; M1–M7 capabilities are revised onto it before M8 starts. Owner: Host Agent core, decision D14. | [`three-role-capability-seam`](../three-role-capability-seam/proposal.md); its seam verifier and canary, with the affected milestones' parity captures rerun. |
 | Retire | None. | A later removal requires its own OpenSpec delta, owner decision, and migration evidence. |
 
 This new parity gate is an implementation governance invariant, not a product

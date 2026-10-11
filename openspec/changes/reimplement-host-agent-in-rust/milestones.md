@@ -42,6 +42,8 @@ Two properties shape the sequence:
   │                    │
   └────────────► M7  provider lifecycle (hosts unchanged Go providers)
                        │
+ D14 seam revision of M1–M7 capabilities (no seam gap left)
+  │
  M8  mutating domain operations (8a…8f, one domain at a time)
   │
  M9  provider executables in Rust (optional; per-provider decision)
@@ -56,7 +58,7 @@ Two properties shape the sequence:
 ```
 
 M6 and M7 can proceed in parallel once M5 has passed. M8 domains can be split
-among contributors once M4–M7 have passed.
+among contributors once M4–M7 and the D14 seam revision have passed.
 
 ## 2. The E2E harness: one design, used by every milestone
 
@@ -624,14 +626,21 @@ M7 tests only the core's side of the boundary.
 **Exit gate:** lifecycle matrix green for the fake provider and for all five
 real providers; no orphaned provider processes.
 
+D14 generalizes M7's generation-scoped service mounts into the one service
+context for built-in and external providers. M7's lifecycle tools are revised
+onto the seam with those of M1–M6, before M8 starts.
+
 ---
 
 ### M8: Mutating domain operations, one domain at a time
 
-**Closes:** 4.1. **Depends on:** M4–M7.
+**Closes:** 4.1. **Depends on:** M4–M7 and the D14 seam revision (task 7.1),
+which must report no seam gap before M8 starts.
 
 Go `internal/domain` is about 18k lines across eight domains, so M8 is split
-into sub-milestones that each ship independently behind the same gates:
+into sub-milestones that each ship independently behind the same gates.
+Under D14, each domain's operations are ported as built-in providers of
+three-role services, not as a name-switch dispatch table:
 
 | Sub | Domain | Notable surfaces | T2 sandbox needs |
 | --- | --- | --- | --- |
@@ -662,8 +671,9 @@ into sub-milestones that each ship independently behind the same gates:
    `TestLiveGetHostInfoIncus`, and `TestLiveResetIncusStackDeleteReconcileAndVerify`
    pass against Rust in the sandbox.
 
-**Exit gate per domain:** T1 and T2 parity green; the domain's catalog tools
-move from `unverified` to `pass` in the manifest.
+**Exit gate per domain:** T1 and T2 parity green; the seam verifier reports
+no gap in the domain (D14); the domain's catalog tools move from
+`unverified` to `pass` in the manifest.
 
 ---
 
@@ -676,7 +686,8 @@ Providers are separate processes behind a versioned contract, so the Go
 provider executables can keep running under a Rust core. Porting a provider
 is **not required** for the core cutover, and the decision to port one is
 made per provider (see §6). If one is ported, do it in ascending risk order:
-`hostos` → `ollama` → `cloudflare` → `tailscale` → `k3s`.
+`hostos` → `ollama` → `cloudflare` → `tailscale` → `k3s`. A ported provider
+declares its Service Definition and consumers in the descriptor source (D14).
 
 **E2E validations:** under the *same Rust core*, swap the Go provider binary
 for the Rust provider binary and compare the provider-boundary MCP traffic
@@ -837,6 +848,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D11 | Audit writes for rejected calls | **Decided (owner, 2026-10-02): Rust diverges.** The enumerated invalid MCP requests and closed standalone gate leave no audit writes ([`reject-without-audit-writes`](../reject-without-audit-writes/specs/reject-without-audit-writes/spec.md)); Go is not changed. The invocation count is the only declared state difference, and the Rust contract fingerprints every database row before and after rejection and restart | Rejected work must produce neither execution effects nor durable audit writes. Startup provisioning, accepted calls and D8 OAuth auditing keep their existing contracts. |
 | D12 | Operation record for task-aware calls refused at binding or admission | **Decided (owner, 2026-10-02): Rust diverges.** Go's `createAsyncTask` persists an `operations` row before resolving the binding and admitting the call (`server.go:1642-1652`); Rust refuses first and records nothing durable ([`refuse-before-operation-record`](../refuse-before-operation-record/specs/refuse-before-operation-record/spec.md)). The task wire (`working`, then `completed` with the same typed error) is unchanged. The `operations` row count is the only declared difference, and a Rust contract suite with canaries verifies it | A refused call must not leave a durable operation that never ran; this extends X2 to the task path. |
 | D13 | Unmarked-field projection (M5) | **Decided (owner, 2026-10-04): approve the stricter durable-projection contract, implemented as two named policies.** The owner chose the long-term-correct behavior over carrying Go's gap forward, then a second finding sharpened the implementation: Go's pinned `redactTaskResult` already runs a task-aware tool's *delivered* result through the same schema projection as its durable copy, so a single stricter function would also have hidden open-schema content from a caller's own `tasks/get` result -- a real functionality loss with no security benefit, since that caller already owns the data. `crates/host-agent/src/evidence.rs` now exposes `redact_for_delivery` (Go's original behavior, unchanged: only `writeOnly` is ever hidden from a caller) and `redact_for_storage` (D13's stricter, fail-closed default: an unmarked/open-schema value -- no `properties` entry, no typed `additionalProperties`, including a bare `additionalProperties: true` -- is redacted before it reaches a durable sink). `redact_task_result` (what `tasks/get` returns, live and after restart) uses delivery; `redact_task_args` and the `capability_invocations` audit row use storage. The Go agent is unchanged. Declared and specified in [`redact-unmarked-projections`](../redact-unmarked-projections/proposal.md) (new `evidence-redaction` capability), verified by its own contract suite with Rust canaries, same shape as D8. See [the owner decision record](../../../evidence/m5/unknown-projection/owner-decision.md) for the two options weighed. | Matching Go and Rust alone did not satisfy the current never-persist-unmarked-field text, and the owner judged Go's gap not worth preserving. A single blanket policy would have silently traded a storage-only hardening for a caller-visible regression; splitting by destination (delivered vs. durable) gets the security improvement without that cost. Changing durable retention (not what a capability accepts or returns) is exactly the kind of improvement D8 already set precedent for declaring rather than silently porting. |
+| D14 | Three-role capability seam for every capability | **Decided (owner, 2026-10-11).** Every Rust capability, built-in or external, has a Service Definition, a Service Provider registered in the service context, and a Consumer ([`three-role-capability-seam`](../three-role-capability-seam/specs/capability-seam/spec.md)). It applies to every capability implemented or changed from now on (M8, M9 and later). M1–M7 capabilities are listed as seam gaps and revised under their own parity gates; the revision must leave no gap before M8 starts. Built-in services stay outside provider dependency injection and family publication. The published catalog, revision and errors stay identical to Go; the Go agent is not changed | Go applies ADR 0002's three-role rule only to external providers, which left two paths and a duplicated host-platform capability (built-in `detect_host_platform` and the uninstallable `hostos` provider). One registration path makes every capability's contract, implementation and consumers explicit and verifiable. |
 
 ## 7. Risks this plan specifically mitigates
 

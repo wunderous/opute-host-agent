@@ -151,6 +151,9 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   typed seams; maintain `vm:` versus `container:` target separation. Gate:
   focused contract tests and isolated external-effect comparisons cover
   success, failure, cleanup, and absence of unauthorized side effects.
+  Each operation is a built-in provider of a three-role service and the
+  seam verifier passes for its domain (decision D14,
+  [`three-role-capability-seam`](../three-role-capability-seam/tasks.md)).
 - [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,
@@ -204,3 +207,12 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
 - [ ] 6.4 After the rollback window, make a separate, evidenced retirement
   decision for Go and a separate ownership decision for releases and the
   website. Gate: no Go artifact or registration is removed by this spec alone.
+
+## 7. Revise delivered capabilities onto the three-role seam
+
+- [ ] 7.1 Revise every capability delivered in M1–M7 onto the three-role
+  seam (decision D14). Tasks and gates live in
+  [`three-role-capability-seam`](../three-role-capability-seam/tasks.md),
+  section 4. Gate: the seam verifier reports no gap and every affected
+  milestone's parity captures rerun green. By owner decision D14 this gates
+  4.1: M8 does not start until it is done.
