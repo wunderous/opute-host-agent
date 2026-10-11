@@ -124,9 +124,14 @@ The owner widened the goal to close it (2026-10-11).
   `m5_verify.py` was aligned with the shape driver only after that failure
   (`056361f8`). The owner was asked explicitly and approved, as the M5 shape
   normalization, every shape-driver rule above (not only the timestamp masks
-  first approved) and that verifier alignment. The failing gate reports are
-  not kept separately: the rerun overwrote `verify-m5.json` and
-  `verify-m6.json`, and this note records the failure.
+  first approved) and that verifier alignment, as the exit path for task
+  5.1. The failing gate reports are kept: rerunning `parity verify` on the
+  same r3 evidence with the pre-alignment checker (`0a378e6a`) reproduces
+  them as
+  [`verify-m5.pre-alignment.json`](../local-e2e/native-2026-10-11-r3/verify-m5.pre-alignment.json)
+  and
+  [`verify-m6.pre-alignment.json`](../local-e2e/native-2026-10-11-r3/verify-m6.pre-alignment.json),
+  each with exactly those five problems. Their logs are in `checks/`.
 - **A fixture fix (`5d439346`).** `callback.cancel-bridged-task-refused` now
   waits for the bridged operation's final durable status. Go's `tasks/get`
   reports completion before that row is written. This changed the harness
