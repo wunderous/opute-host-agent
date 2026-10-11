@@ -17,6 +17,29 @@ pub struct Candidates {
     state: Mutex<State>,
 }
 impl Candidates {
+    pub fn manifest_entries(&self) -> BTreeMap<String, InstallManifest> {
+        self.state.lock().unwrap().manifests.clone()
+    }
+    pub fn remove_manifest(&self, generation: &str) {
+        self.state.lock().unwrap().manifests.remove(generation);
+    }
+    pub fn manifest(&self, generation: &str) -> Option<InstallManifest> {
+        self.state
+            .lock()
+            .unwrap()
+            .manifests
+            .get(generation)
+            .cloned()
+    }
+    pub fn manifests(&self) -> Vec<InstallManifest> {
+        self.state
+            .lock()
+            .unwrap()
+            .manifests
+            .values()
+            .cloned()
+            .collect()
+    }
     pub fn set_manifest(&self, generation: &str, manifest: InstallManifest) {
         self.state
             .lock()

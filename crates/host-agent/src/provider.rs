@@ -2,6 +2,7 @@
 //! Runtime connections belong to provider mounts, not these durable projections.
 //! A session owns the generation it accepted; replacement never redirects it.
 
+pub mod activation;
 pub mod adapter;
 pub mod binding;
 pub mod candidates;

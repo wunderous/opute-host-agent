@@ -1088,3 +1088,65 @@ The M7–M13 goal remains active. Next is activation/rollback and durable
 composition, followed by public admission/callback routing and the unchanged
 provider process matrix. M8 domain E2E remains open. No shared Incus, Kubernetes,
 tunnel, or deployment state was mutated by this checkpoint.
+
+## Owned activation and durable rollback composition
+
+The private `provider::activation::Activation` owner now follows Go's
+`activateProviderGeneration` ordering: readiness and its durable row precede
+admission; publication precedes lifecycle activation; draining and active rows
+precede mounting; the predecessor is disposed last. Already-active retries
+reaffirm publication and mounting without failing the live generation. The full
+declaration is remembered separately from the recipe-filtered publication.
+Rollback disposes the replacement, restores the predecessor's lifecycle and
+durable row, then restores publication, preserving Go's combined error currency.
+Candidate cleanup removes its connected ownership and persists the failed
+observation. These are explicit lifecycle transitions, using the existing plan
+runner rather than introducing another workflow executor.
+
+Activation and cleanup tasks retain their owner if an awaiting caller is dropped.
+A focused test uses the existing single-thread Tokio runtime, blocks the ready
+announcement, aborts the caller, and verifies that the owner completes admission,
+publication, durable activation and candidate removal. It establishes cancellation
+ownership for this private composition; its provider has no adapter.
+
+The source-bound owning Go/native metadata matrix passes **170 cases over five
+iterations, totaling 850 comparisons**, in standalone and platform projections.
+It covers lifecycle states, metadata typing, service filtering and precedence,
+replacement, admission denial, schema/publication failure, rollback refusal,
+live-session refusal and closed-store rollback. Both sides use independent
+temporary durable state. Only fresh event and activation times are normalized,
+after clock bounds and generation/durable consistency checks; all other parsed
+JSON values are compared directly. Raw inputs, outputs, clocks, source/binary
+hashes and file indexes are in `provider-activation/`.
+
+The closed-store reference exposed a native provider-generation persistence
+error-text gap. Its save/list methods now return Go's `sql: database is closed`.
+The initial broader verifier also assumed a zero activation time had the same
+JSON and durable representations. Go intentionally serializes zero time in a
+generation but stores an empty activation-time string. The corrected verifier
+retains that conversion and still checks nonzero time consistency. The historical
+verifier and raw observation are preserved in
+`provider-activation-diagnostic/zero-time/`; they do not establish a runtime
+mismatch. The final 850 comparisons bind the final native source and test binary.
+
+`provider-activation-checks/verify.py` reproduces
+`provider-activation-validation.json`, independently checks time normalization,
+recomputes each raw pair, and verifies source/binary/index hashes and the clean
+pinned Go tree. The workspace passes **187 tests** with twenty-three dedicated
+fixtures ignored by the ordinary suite. Formatting, warnings-denied Clippy,
+locked release build, **30** owning Go test executions and **10** OpenSpec checks
+pass. The public release remains byte-identical to
+`668a2c92b28a179e6eface6b9a8874881e16189c87f3791649821de57665a2e7`.
+The existing 102 public scenarios over five iterations and sixteen-field secret
+sweep are reused only after rechecking exact current binary/harness identity,
+raw observations, iteration records and secret outcomes. They do not establish
+public provider activation.
+
+This differential corpus contains **no adapters**. Actual adapter invocation,
+public authenticated admission/callback composition, enclosing recipe cleanup,
+process supervision, restart, all five unchanged provider processes and full
+M7–M13 E2E remain open. The competing-family atomic-publication proposal is still
+pending owner review; the pinned failure ordering remains preserved. Global
+cutover is failed and its original manifest is untouched. No shared Incus,
+Kubernetes, tunnel or deployment state was mutated. Next is actual adapter/mount
+failure and public lifecycle composition, then the process/provider matrix.

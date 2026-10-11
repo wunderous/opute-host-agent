@@ -58,12 +58,22 @@ impl Publication {
     pub fn manifest(&self, id: &str) -> Option<InstallManifest> {
         self.state.lock().unwrap().manifests.get(id).cloned()
     }
+    pub fn manifests(&self) -> BTreeMap<String, InstallManifest> {
+        self.state.lock().unwrap().manifests.clone()
+    }
+    pub fn forget_manifest(&self, id: &str) {
+        self.state.lock().unwrap().manifests.remove(id);
+    }
     pub fn remember_manifest(&self, manifest: InstallManifest) {
+        let id = manifest.provider.id.clone();
+        self.remember_manifest_for(&id, manifest);
+    }
+    pub fn remember_manifest_for(&self, id: &str, manifest: InstallManifest) {
         self.state
             .lock()
             .unwrap()
             .manifests
-            .insert(manifest.provider.id.clone(), manifest);
+            .insert(id.into(), manifest);
     }
     /// The composition factory binds an immutable operation to its executable.
     /// MCP refresh receives the entire committed projection, including edges.
