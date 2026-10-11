@@ -1438,7 +1438,9 @@ contracts), as expected; it is not an M7 criterion.
 
 ## M7 exit
 
-Tasks 3.1 and 3.2 are checked: their own gates hold. Failed candidate
+Tasks 3.1 and 3.2 stay unchecked until the owner decides how the milestone
+gate treats the two providers pinned Go refuses (below). Their own task gates
+hold. Failed candidate
 activation leaves the prior catalog and provider usable, and revisions change
 only as Go's do. Wire and integration fixtures cover in-flight replacement,
 timeout and stale revision (M4), cancellation, callback rejection and

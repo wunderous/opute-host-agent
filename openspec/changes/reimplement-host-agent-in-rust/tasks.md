@@ -79,7 +79,7 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
 
 ## 3. Prove provider and task lifecycle parity
 
-- [x] 3.1 Implement provider manifest/schema/dependency validation and
+- [ ] 3.1 Implement provider manifest/schema/dependency validation and
   candidate, active, and draining generation transitions. Gate: failed
   candidate activation leaves the prior catalog and provider usable;
   generation and catalog revisions change only under the Go contract.
@@ -122,7 +122,7 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   `reject-null-provider-input-requests` and `unadmitted-callback-task-record`
   (open divergences). Evidence: `provider-journeys-validation.json` in
   [evidence/m7/README.md](../../../evidence/m7/README.md).
-- [x] 3.2 Implement generation-bound admission, callback primitive routing,
+- [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
   cancellation, stale revision, callback rejection, and reverse-order cleanup.
