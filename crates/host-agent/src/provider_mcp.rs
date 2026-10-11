@@ -684,6 +684,94 @@ pub fn handle_reload(server: &Arc<Server>, args: &Map<String, J>, lease: Lease) 
     handle_install(server, &reload, lease)
 }
 
+/// `resolveProviderHostService`: the host service a provider generation runs
+/// as, from what the host observes. A unit whose executable or unit file sits
+/// under a path segment equal to the provider id belongs to that provider.
+/// Observation goes through the service context, as a call by the providers
+/// service on its declared `host-observation` dependency; listing registers
+/// each observed unit, as Go's `ListHostServices` does.
+fn resolve_host_service(server: &Server, provider: &str) -> Map<String, J> {
+    let snapshot = server.catalog.snapshot();
+    resolve_host_service_with(provider, |name: &str, args: J| {
+        let args = args.as_object().cloned().unwrap_or_default();
+        let call = crate::builtin::Invocation {
+            ctx: &RunCtx::background(),
+            args: &args,
+            binding: &Default::default(),
+            snapshot: &snapshot,
+            claimed: None,
+        };
+        match crate::builtin::invoke(server, name, &call) {
+            Some(Ok(result)) => result.get("structuredContent").cloned(),
+            _ => None,
+        }
+    })
+}
+
+/// The resolution rule over `observe`, which answers a host observation
+/// operation's structured result, or `None` when it fails.
+fn resolve_host_service_with(
+    provider: &str,
+    observe: impl Fn(&str, J) -> Option<J>,
+) -> Map<String, J> {
+    let provider = provider.trim();
+    if provider.is_empty() {
+        return Map::new();
+    }
+    for scope in ["user", "system"] {
+        let Some(listed) = observe("list_host_services", json!({"scope": scope})) else {
+            continue;
+        };
+        let services = listed
+            .get("services")
+            .and_then(J::as_array)
+            .cloned()
+            .unwrap_or_default();
+        for service in services {
+            let name = service.get("serviceName").and_then(J::as_str).unwrap_or("");
+            if !service_name_is_plausible(provider, name) {
+                continue;
+            }
+            let Some(observed) = observe(
+                "inspect_host_service",
+                json!({"serviceName": name, "scope": scope}),
+            ) else {
+                continue;
+            };
+            let exec_start = observed.get("execStart").and_then(J::as_str).unwrap_or("");
+            let fragment_path = observed
+                .get("fragmentPath")
+                .and_then(J::as_str)
+                .unwrap_or("");
+            if !path_has_segment(exec_start, provider) && !path_has_segment(fragment_path, provider)
+            {
+                continue;
+            }
+            let mut resolved = Map::new();
+            resolved.insert("serviceName".into(), J::from(name));
+            resolved.insert("scope".into(), J::from(scope));
+            if !fragment_path.is_empty() {
+                resolved.insert("serviceFile".into(), J::from(fragment_path));
+            }
+            return resolved;
+        }
+    }
+    Map::new()
+}
+
+/// `providerServiceNameIsPlausible`: narrows which units are worth inspecting.
+fn service_name_is_plausible(provider: &str, service: &str) -> bool {
+    !service.is_empty()
+        && provider
+            .split('.')
+            .any(|segment| segment.len() > 2 && service.contains(segment))
+}
+
+/// `pathHasSegment`: `segment` as a whole path element.
+fn path_has_segment(path: &str, segment: &str) -> bool {
+    !path.is_empty() && !segment.is_empty() && path.split('/').any(|element| element == segment)
+}
+
 /// `providerTeardownInputs`: adds the host-resolved, tenant-scoped service
 /// URI to the neutral provider callback.
 fn teardown_inputs(server: &Server, provider: &str, args: &Map<String, J>) -> Map<String, J> {
@@ -695,7 +783,7 @@ fn teardown_inputs(server: &Server, provider: &str, args: &Map<String, J>) -> Ma
     if string_field(&inputs, "serviceName").is_empty()
         && string_field(&inputs, "hostService") != "none"
     {
-        for (key, value) in server.providers.resolve_host_service(provider) {
+        for (key, value) in resolve_host_service(server, provider) {
             inputs.entry(key).or_insert(value);
         }
     }
@@ -829,4 +917,75 @@ fn forced_reclaim_plan(generation: &str, inputs: &Map<String, J>) -> J {
         "idempotencyKey": format!("com.opute.host.provider-reclaim-{generation}"),
         "nodes": [node],
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Go's `TestResolveProviderHostServiceClaimsOnlyTheUnitInstalledUnderTheProviderID`:
+    /// both units look like k3s; only one lives under the provider id.
+    #[test]
+    fn resolve_host_service_claims_only_the_unit_installed_under_the_provider_id() {
+        let exec_start = |unit: &str| {
+            match unit {
+            "opute-provider-k3s" => "/home/u/.local/share/opute/instances/host-a/opute-provider-k3s",
+            "opute-provider-k3s-p15-mtzntn1h" => {
+                "/home/u/.local/share/opute/providers/com.opute.k3s/bin/opute-provider-k3s"
+            }
+            "opute-provider-cloudflare" => {
+                "/home/u/.local/share/opute/providers/com.opute.cloudflare/bin/opute-provider-cloudflare"
+            }
+            _ => "",
+        }
+        };
+        let inspected = std::cell::RefCell::new(Vec::new());
+        let observe = |name: &str, args: J| match name {
+            "list_host_services" => Some(json!({"services": [
+                {"serviceName": "opute-provider-k3s"},
+                {"serviceName": "opute-provider-k3s-p15-mtzntn1h"},
+                {"serviceName": "opute-provider-cloudflare"},
+                {"serviceName": "cron"},
+            ]})),
+            "inspect_host_service" => {
+                let unit = args["serviceName"].as_str().unwrap().to_string();
+                inspected.borrow_mut().push(unit.clone());
+                let fragment = if unit == "opute-provider-k3s-p15-mtzntn1h" {
+                    "/home/u/.config/systemd/user/opute-provider-k3s-p15-mtzntn1h.service"
+                } else {
+                    ""
+                };
+                Some(json!({"execStart": exec_start(&unit), "fragmentPath": fragment}))
+            }
+            _ => None,
+        };
+        let resolved = resolve_host_service_with("com.opute.k3s", observe);
+        assert_eq!(resolved["serviceName"], "opute-provider-k3s-p15-mtzntn1h");
+        assert_eq!(resolved["scope"], "user");
+        assert!(resolved["serviceFile"]
+            .as_str()
+            .unwrap()
+            .ends_with("opute-provider-k3s-p15-mtzntn1h.service"));
+        assert!(!inspected.borrow().contains(&"cron".to_string()));
+        // A provider not installed here has no unit to claim.
+        assert!(resolve_host_service_with("com.opute.absent", observe).is_empty());
+        // A failed listing in every scope resolves nothing.
+        assert!(resolve_host_service_with("com.opute.k3s", |_, _| None).is_empty());
+    }
+
+    #[test]
+    fn path_segments_match_whole_elements_only() {
+        assert!(path_has_segment("/a/com.opute.k3s/bin", "com.opute.k3s"));
+        assert!(!path_has_segment(
+            "/a/com.opute.k3s-experimental/bin",
+            "com.opute.k3s"
+        ));
+        assert!(!path_has_segment("", "com.opute.k3s"));
+        assert!(service_name_is_plausible(
+            "com.opute.k3s",
+            "opute-provider-k3s"
+        ));
+        assert!(!service_name_is_plausible("com.opute.k3s", ""));
+        assert!(!service_name_is_plausible("a.b", "ab-service"));
+    }
 }

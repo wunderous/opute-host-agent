@@ -247,7 +247,12 @@ fn providers(server: &ServerHandle) -> Service {
     use crate::provider_mcp::{handle_install, handle_reload, handle_teardown};
     Service {
         id: "providers",
-        dependencies: &["plans", "runtime-recipes", "tunnel-recipes"],
+        dependencies: &[
+            "host-observation",
+            "plans",
+            "runtime-recipes",
+            "tunnel-recipes",
+        ],
         operations: vec![
             (
                 "opute.provider.install",

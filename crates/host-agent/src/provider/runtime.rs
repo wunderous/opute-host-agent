@@ -317,11 +317,6 @@ impl Runtime {
             .candidates
             .set_manifest(generation, manifest);
     }
-    /// `resolveProviderHostService` requires host service observation, which
-    /// this build does not carry; it never claims a unit it cannot observe.
-    pub fn resolve_host_service(&self, _provider: &str) -> Map<String, Value> {
-        Map::new()
-    }
     /// `prepareProviderTeardownPlan`: the provider's own prepare phase. An
     /// error is the reason the provider could not declare a plan.
     pub fn prepare_teardown(

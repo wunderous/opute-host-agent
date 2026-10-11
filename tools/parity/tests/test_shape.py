@@ -1,4 +1,5 @@
 import copy
+import json
 import unittest
 from unittest.mock import patch
 
@@ -94,3 +95,95 @@ class FullDatabaseShape(unittest.TestCase):
         row = raw["a"]["observation"]["sqliteRows"]["state/state.db"]["tables"]["operations"]["task-a"]
         row["result_json"] = '{"isError":true,"structuredContent":{"owner":"admission","code":"resource_binding"}}'
         self.assertEqual(m5_verify.refused_row_failures(scenario, raw), [])
+
+
+class ProviderDatabaseShape(unittest.TestCase):
+    """The M7 provider tables and callbacks in the shape matrix."""
+
+    TABLES = ["sqliteRows", "state/state.db", "tables"]
+
+    def raw(self, tables, steps=None):
+        observation = {"sqlite": {"state/state.db": {"rowCounts": {t: len(r) for t, r in tables.items()}}},
+                       "sqliteRows": {"state/state.db": {"tables": tables}}, "steps": steps or {}}
+        return {side: {"observation": copy.deepcopy(observation), "variables": {}} for side in ["a", "b"]}
+
+    def rows(self, raw, side):
+        return raw[side]["observation"]["sqliteRows"]["state/state.db"]["tables"]
+
+    def test_wall_clock_accepts_only_rfc3339_or_sqlite_datetime(self):
+        check = canon.MASK_TYPES["wall-clock"]
+        self.assertTrue(check("2026-10-11T19:45:10.1Z") and check("2026-10-11 19:45:10"))
+        for invalid in ["2026-10-11", "19:45:10", "garbage", None, 0]:
+            self.assertFalse(check(invalid))
+
+    def test_generation_activation_time_is_masked_only_when_set(self):
+        generation = {"generation_id": "g-1", "created_at": "2026-10-11T00:00:00Z", "active_at": None}
+        raw = self.raw({"provider_generations": {"g-1": generation}})
+        result = shape.evaluate({}, raw)
+        self.assertFalse(result["diff"] or any(result["maskViolations"].values()))
+        self.rows(raw, "a")["provider_generations"]["g-1"]["active_at"] = "2026-10-11T00:00:01Z"
+        self.rows(raw, "b")["provider_generations"]["g-1"]["active_at"] = "2026-10-11T00:00:02Z"
+        result = shape.evaluate({}, raw)
+        self.assertFalse(result["diff"] or any(result["maskViolations"].values()))
+        # A generation activated on one side only is a difference.
+        self.rows(raw, "b")["provider_generations"]["g-1"]["active_at"] = None
+        self.assertTrue(shape.evaluate({}, raw)["diff"])
+
+    def test_capability_activation_time_is_masked(self):
+        raw = self.raw({"active_capabilities": {"llm": {"capability": "llm", "activated_at": "2026-10-11T00:00:01Z"}}})
+        self.rows(raw, "b")["active_capabilities"]["llm"]["activated_at"] = "2026-10-11T00:00:09Z"
+        self.assertFalse(shape.evaluate({}, raw)["diff"])
+        self.rows(raw, "b")["active_capabilities"]["llm"]["activated_at"] = "soon"
+        self.assertTrue(shape.evaluate({}, raw)["maskViolations"]["b"])
+
+    def invocation(self, operation, structured):
+        return {"invocation_id": "00000000-0000-4000-8000-00000000000" + str(len(operation) % 10),
+                "operation_id": operation, "created_at": "2026-10-11T00:00:00Z", "binding_json": "{}",
+                "result_json": json.dumps({"structured": structured})}
+
+    def test_supported_tools_compare_as_a_set(self):
+        row = self.invocation("get_host_info", {"supportedTools": ["a", "b", "c"]})
+        raw = self.raw({"capability_invocations": {row["invocation_id"]: row}})
+        reordered = self.rows(raw, "b")["capability_invocations"][row["invocation_id"]]
+        reordered["result_json"] = json.dumps({"structured": {"supportedTools": ["c", "a", "b"]}})
+        self.assertFalse(shape.evaluate({}, raw)["diff"])
+        reordered["result_json"] = json.dumps({"structured": {"supportedTools": ["c", "a"]}})
+        self.assertTrue(shape.evaluate({}, raw)["diff"])
+
+    def test_only_tools_called_solely_by_until_polls_lose_their_audit_rows(self):
+        poll = {"mcp": {"method": "tools/call", "name": "get_host_capacity", "until": {}}}
+        call = {"mcp": {"method": "tools/call", "name": "get_host_capacity"}}
+        self.assertEqual(shape.polled_tools({"steps": [poll]}), {"get_host_capacity"})
+        self.assertEqual(shape.polled_tools({"steps": [poll, call]}), set())
+        first = self.invocation("get_host_capacity", {"reservations": {"count": 1}})
+        raw = self.raw({"capability_invocations": {first["invocation_id"]: first}})
+        self.rows(raw, "b")["capability_invocations"] = {}
+        self.assertFalse(shape.evaluate({"steps": [poll]}, raw)["diff"])
+        self.assertTrue(shape.evaluate({"steps": [call]}, raw)["diff"])
+        # Other rows of a polling scenario still compare.
+        other = self.invocation("get_host_info", {"hostname": "a"})
+        self.rows(raw, "a")["capability_invocations"][other["invocation_id"]] = other
+        self.assertTrue(shape.evaluate({"steps": [poll]}, raw)["diff"])
+
+    def callback(self, child):
+        return {"bridged": {"body": {"result": {"result": {"structuredContent": {
+            "callback": {"body": {"result": {"taskId": child}}}}}}}}}
+
+    def test_d12_drops_only_a_refused_callback_child(self):
+        child = "11111111-1111-4111-8111-111111111111"
+        refused = {"operation_id": child, "status": "working", "created_at": "2026-10-11T00:00:00Z",
+                   "updated_at": "2026-10-11T00:00:00Z",
+                   "result_json": json.dumps({"isError": True, "structuredContent": {
+                       "owner": "admission", "code": "resource_binding"}})}
+        raw = self.raw({"operations": {child: refused}}, self.callback(child))
+        self.rows(raw, "b")["operations"] = {}
+        raw["b"]["observation"]["sqlite"]["state/state.db"]["rowCounts"]["operations"] = 0
+        scenario = {"compare": {"divergences": ["D12.refused-task-operation-count"]}}
+        self.assertFalse(shape.evaluate(scenario, raw)["diff"])
+        # The same row without the typed admission refusal stays compared.
+        self.rows(raw, "a")["operations"][child]["result_json"] = json.dumps({"isError": False})
+        self.assertTrue(shape.evaluate(scenario, raw)["diff"])
+        # A refusal whose handle no callback reported stays compared.
+        self.rows(raw, "a")["operations"][child] = refused
+        raw["a"]["observation"]["steps"] = {}
+        self.assertTrue(shape.evaluate(scenario, raw)["diff"])
