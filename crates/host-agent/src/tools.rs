@@ -625,40 +625,6 @@ pub(crate) fn run_lifecycle(
         "opute.provider.validate" => server
             .providers
             .validate(&crate::plan::runner::RunCtx::background(), call.args),
-        "validate_host_plan" => {
-            crate::plan_mcp::handle_validate_host_plan(call.args, call.snapshot)
-        }
-        "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
-            server,
-            call.args,
-            call.reservation(),
-            call.claimed(),
-        ),
-        "get_host_plan_run" => crate::plan_mcp::handle_get_host_plan_run(server, call.args),
-        "validate_host_local_recipe" => {
-            crate::host_recipe_mcp::handle_validate_host_local_recipe(server, call.args)
-        }
-        "run_host_local_recipe" => crate::host_recipe_mcp::handle_run_host_local_recipe(
-            server,
-            call.args,
-            call.reservation(),
-            call.claimed(),
-        ),
-        "validate_runtime_recipe" => {
-            crate::provider_mcp::handle_validate_runtime_recipe(server, call.args)
-        }
-        "run_runtime_recipe" => {
-            crate::provider_mcp::handle_run_runtime_recipe(server, call.args, call.lease())
-        }
-        "get_runtime_recipe_run" | "get_tunnel_run" => {
-            crate::plan_mcp::handle_get_host_plan_run(server, call.args)
-        }
-        "validate_tunnel_recipe" => {
-            crate::provider_mcp::handle_validate_tunnel_recipe(server, call.args)
-        }
-        "run_tunnel_recipe" => {
-            crate::provider_mcp::handle_run_tunnel_recipe(server, call.args, call.lease())
-        }
         "opute.provider.install" => {
             crate::provider_mcp::handle_install(server, call.args, call.lease())
         }

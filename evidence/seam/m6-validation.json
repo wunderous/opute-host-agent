@@ -1,0 +1,35 @@
+{
+ "stage": "m6",
+ "reportSha256": "746f0fd41921d5086806d7a605107e951a75820a5714600fe0c070f5acbe4b28",
+ "verifierLogSha256": "e2cdacad35b6ff1ccf3657a0aa5d21399ada71eeb799bbef024241904dec0224",
+ "counts": {
+  "compliant": 23,
+  "gap": 5,
+  "unported": 122
+ },
+ "gaps": [
+  "opute.provider.install",
+  "opute.provider.reload",
+  "opute.provider.status",
+  "opute.provider.teardown",
+  "opute.provider.validate"
+ ],
+ "services": [
+  "host-agent:incus/host-info@builtin",
+  "host-agent:incus/incus-inventory@builtin",
+  "host-agent:incus/host-observation@builtin",
+  "host-agent:incus/catalog@builtin",
+  "host-agent:incus/host-resources@builtin",
+  "host-agent:incus/tasks@builtin",
+  "host-agent:incus/plans@builtin",
+  "host-agent:incus/host-recipes@builtin",
+  "host-agent:incus/runtime-recipes@builtin",
+  "host-agent:incus/tunnel-recipes@builtin"
+ ],
+ "canary": {
+  "tool": "list_operations",
+  "red": true,
+  "logSha256": "d50c93206f3940b4c870ce30480af8b94cf5db11118911906f4fcb3b07a8195e",
+  "patchSha256": "ddcafa9fad5f5060e0a1d4cce8bc0150f078ce03119d291006270f10af4f596a"
+ }
+}

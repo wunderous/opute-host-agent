@@ -233,7 +233,134 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         catalog_service(),
         host_resources(host),
         tasks(server),
+        plans(server),
+        host_recipes(server),
+        runtime_recipes(server),
+        tunnel_recipes(server),
     ]
+}
+
+/// A lifecycle operation: owned by the transport pipeline, as Go's
+/// `isLifecycleTool` tools are, it drives the server's plan, task and
+/// provider owners through the late-bound handle.
+fn lifecycle(server: &ServerHandle, run: fn(&Arc<Server>, &Invocation) -> J) -> Handler {
+    let server = server.clone();
+    op(move |call| Ok(run(&server.get()?, call)))
+}
+
+/// M6: host plans through the single plan executor.
+fn plans(server: &ServerHandle) -> Service {
+    use crate::plan_mcp::{
+        handle_get_host_plan_run, handle_run_host_plan, handle_validate_host_plan,
+    };
+    Service {
+        id: "plans",
+        dependencies: &[],
+        operations: vec![
+            (
+                "validate_host_plan",
+                op(|call| Ok(handle_validate_host_plan(call.args, call.snapshot))),
+            ),
+            (
+                "run_host_plan",
+                lifecycle(server, |server, call| {
+                    handle_run_host_plan(server, call.args, call.reservation(), call.claimed())
+                }),
+            ),
+            (
+                "get_host_plan_run",
+                lifecycle(server, |server, call| {
+                    handle_get_host_plan_run(server, call.args)
+                }),
+            ),
+        ],
+    }
+}
+
+/// M6: host-local recipes, expanded into host plans.
+fn host_recipes(server: &ServerHandle) -> Service {
+    use crate::host_recipe_mcp::{handle_run_host_local_recipe, handle_validate_host_local_recipe};
+    Service {
+        id: "host-recipes",
+        dependencies: &["plans"],
+        operations: vec![
+            (
+                "validate_host_local_recipe",
+                lifecycle(server, |server, call| {
+                    handle_validate_host_local_recipe(server, call.args)
+                }),
+            ),
+            (
+                "run_host_local_recipe",
+                lifecycle(server, |server, call| {
+                    handle_run_host_local_recipe(
+                        server,
+                        call.args,
+                        call.reservation(),
+                        call.claimed(),
+                    )
+                }),
+            ),
+        ],
+    }
+}
+
+/// M6: runtime recipes, expanded into host plans.
+fn runtime_recipes(server: &ServerHandle) -> Service {
+    use crate::provider_mcp::{handle_run_runtime_recipe, handle_validate_runtime_recipe};
+    Service {
+        id: "runtime-recipes",
+        dependencies: &["plans"],
+        operations: vec![
+            (
+                "validate_runtime_recipe",
+                lifecycle(server, |server, call| {
+                    handle_validate_runtime_recipe(server, call.args)
+                }),
+            ),
+            (
+                "run_runtime_recipe",
+                lifecycle(server, |server, call| {
+                    handle_run_runtime_recipe(server, call.args, call.lease())
+                }),
+            ),
+            (
+                "get_runtime_recipe_run",
+                lifecycle(server, |server, call| {
+                    crate::plan_mcp::handle_get_host_plan_run(server, call.args)
+                }),
+            ),
+        ],
+    }
+}
+
+/// M6: tunnel recipes, expanded into host plans.
+fn tunnel_recipes(server: &ServerHandle) -> Service {
+    use crate::provider_mcp::{handle_run_tunnel_recipe, handle_validate_tunnel_recipe};
+    Service {
+        id: "tunnel-recipes",
+        dependencies: &["plans"],
+        operations: vec![
+            (
+                "validate_tunnel_recipe",
+                lifecycle(server, |server, call| {
+                    handle_validate_tunnel_recipe(server, call.args)
+                }),
+            ),
+            (
+                "run_tunnel_recipe",
+                lifecycle(server, |server, call| {
+                    handle_run_tunnel_recipe(server, call.args, call.lease())
+                }),
+            ),
+            (
+                "get_tunnel_run",
+                lifecycle(server, |server, call| {
+                    crate::plan_mcp::handle_get_host_plan_run(server, call.args)
+                }),
+            ),
+        ],
+    }
 }
 
 /// A resource registration seam: tenant-scoped canonical URIs only.
