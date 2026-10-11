@@ -9,7 +9,7 @@ use std::path::Path;
 use std::time::Duration;
 
 /// `filepath.Clean` for a Unix path.
-fn clean(p: &str) -> String {
+pub(crate) fn clean(p: &str) -> String {
     if p.is_empty() {
         return ".".into();
     }
@@ -204,7 +204,7 @@ pub fn inspect_host_file(
 
 /// The scheme and `host[:port]` of an absolute HTTP(S) URL, as `url.Parse`
 /// accepts it for `ProbeHTTPEndpoint` (scheme case-folded, userinfo dropped).
-fn http_authority(endpoint: &str) -> Option<(String, String)> {
+pub(crate) fn http_authority(endpoint: &str) -> Option<(String, String)> {
     let (scheme, rest) = endpoint.split_once(':')?;
     let scheme = scheme.to_ascii_lowercase();
     if scheme != "http" && scheme != "https" {
@@ -221,7 +221,7 @@ fn http_authority(endpoint: &str) -> Option<(String, String)> {
 }
 
 /// The dial address Go reports: `host:port` with the scheme's default port.
-fn dial_address(scheme: &str, host: &str) -> String {
+pub(crate) fn dial_address(scheme: &str, host: &str) -> String {
     let bracketed = host.starts_with('[');
     let has_port = if bracketed {
         host.contains("]:")
@@ -309,8 +309,152 @@ pub fn probe_http_endpoint(endpoint: &str, accept_challenge: bool) -> Result<J, 
     Ok(json!({"endpoint": endpoint, "statusCode": status, "ready": ready}))
 }
 
+const SYSTEMCTL: &str = "/usr/bin/systemctl";
+
+/// `Service.ListHostServices`: systemd units of one scope with their canonical
+/// tenant-scoped URIs, each registered as it is listed. Enablement comes from
+/// `list-unit-files` and is best-effort: an unknown unit says "unknown".
+pub fn list_host_services(
+    env: &crate::config::Env,
+    tenant_id: &str,
+    scope: &str,
+    register: &dyn Fn(&str, Map<String, J>),
+) -> Result<J, String> {
+    let scope = scope.trim().to_lowercase();
+    let scope = if scope.is_empty() {
+        "user".to_string()
+    } else {
+        scope
+    };
+    if scope != "user" && scope != "system" {
+        return Err("scope must be user or system".into());
+    }
+    let mut prefix = vec![SYSTEMCTL.to_string()];
+    if scope == "user" {
+        prefix.push("--user".into());
+    }
+    let run = |args: &[&str]| {
+        let mut argv = prefix.clone();
+        argv.extend(args.iter().map(|a| a.to_string()));
+        crate::hostobs::run_command(env, &argv, Duration::from_secs(15))
+    };
+    let listed = run(&[
+        "list-units",
+        "--type=service",
+        "--all",
+        "--no-pager",
+        "--plain",
+        "--no-legend",
+    ]);
+    let files = run(&[
+        "list-unit-files",
+        "--type=service",
+        "--no-pager",
+        "--plain",
+        "--no-legend",
+    ]);
+    Ok(host_services_from(
+        &listed.stdout,
+        &files.stdout,
+        tenant_id,
+        &scope,
+        register,
+    ))
+}
+
+/// The listing half of `ListHostServices`, over `list-units` and
+/// `list-unit-files` output.
+fn host_services_from(
+    listed: &str,
+    files: &str,
+    tenant_id: &str,
+    scope: &str,
+    register: &dyn Fn(&str, Map<String, J>),
+) -> J {
+    let mut enablement = std::collections::HashMap::new();
+
+    for line in files.split('\n') {
+        let fields: Vec<&str> = line.split_whitespace().collect();
+        if fields.len() >= 2 {
+            enablement.insert(fields[0].to_string(), fields[1].to_string());
+        }
+    }
+    let mut services = Vec::new();
+    for line in listed.split('\n') {
+        let fields: Vec<&str> = line.split_whitespace().collect();
+        if fields.len() < 4 {
+            continue;
+        }
+        let unit = fields[0];
+        let Some(service_name) = unit.strip_suffix(".service") else {
+            continue;
+        };
+        let (active_state, sub_state) = (fields[2], fields[3]);
+        let status = if !sub_state.is_empty() && sub_state != active_state {
+            format!("{active_state}/{sub_state}")
+        } else {
+            active_state.to_string()
+        };
+        let Ok(uri) = crate::resource::Uri::new(
+            "host-service",
+            tenant_id,
+            &format!("{scope}/{service_name}"),
+        ) else {
+            continue;
+        };
+        let mut coordinates = Map::new();
+        coordinates.insert("serviceName".into(), J::from(service_name));
+        coordinates.insert("scope".into(), J::from(scope));
+        register(&uri.to_string(), coordinates);
+        let state = enablement
+            .get(unit)
+            .cloned()
+            .unwrap_or_else(|| "unknown".into());
+        services.push(json!({
+            "uri": uri.to_string(),
+            "serviceName": service_name,
+            "scope": scope,
+            "status": status,
+            "active": active_state == "active",
+            "enabled": state == "enabled" || state == "enabled-runtime",
+            "enablementState": state,
+        }));
+    }
+    let total = services.len();
+    json!({"services": services, "total": total})
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn host_services_follow_go_listing_rules() {
+        let listed = "ollama.service loaded active running Ollama\n\
+            dbus.socket loaded active running D-Bus\n\
+            stale.service not-found inactive dead stale.service\n\
+            short.service loaded\n";
+        let files = "ollama.service enabled enabled\nother.service static -\n";
+        let registered = std::cell::RefCell::new(Vec::new());
+        let out = host_services_from(listed, files, "local", "user", &|uri, _| {
+            registered.borrow_mut().push(uri.to_string())
+        });
+        assert_eq!(
+            out,
+            json!({"services": [
+                {"uri": "host-service:local:user/ollama", "serviceName": "ollama", "scope": "user",
+                 "status": "active/running", "active": true, "enabled": true, "enablementState": "enabled"},
+                {"uri": "host-service:local:user/stale", "serviceName": "stale", "scope": "user",
+                 "status": "inactive/dead", "active": false, "enabled": false, "enablementState": "unknown"}
+            ], "total": 2})
+        );
+        assert_eq!(
+            *registered.borrow(),
+            [
+                "host-service:local:user/ollama",
+                "host-service:local:user/stale"
+            ]
+        );
+    }
+
     use super::*;
 
     #[test]

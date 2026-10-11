@@ -150,6 +150,10 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         // already-terminal run -- leaves it unclaimed for the plain release
         // below, same as every other lifecycle tool.
         let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let lease = || crate::provider_mcp::Lease {
+            reservation: reservation.clone(),
+            claimed: Arc::clone(&claimed),
+        };
         let result = match name.as_str() {
             "opute.provider.status" => server.providers.status(&args),
             "opute.provider.validate" => server
@@ -175,6 +179,26 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
                 reservation.clone(),
                 Arc::clone(&claimed),
             ),
+            "validate_runtime_recipe" => {
+                crate::provider_mcp::handle_validate_runtime_recipe(server, &args)
+            }
+            "run_runtime_recipe" => {
+                crate::provider_mcp::handle_run_runtime_recipe(server, &args, lease())
+            }
+            "get_runtime_recipe_run" | "get_tunnel_run" => {
+                crate::plan_mcp::handle_get_host_plan_run(server, &args)
+            }
+            "validate_tunnel_recipe" => {
+                crate::provider_mcp::handle_validate_tunnel_recipe(server, &args)
+            }
+            "run_tunnel_recipe" => {
+                crate::provider_mcp::handle_run_tunnel_recipe(server, &args, lease())
+            }
+            "opute.provider.install" => crate::provider_mcp::handle_install(server, &args, lease()),
+            "opute.provider.reload" => crate::provider_mcp::handle_reload(server, &args, lease()),
+            "opute.provider.teardown" => {
+                crate::provider_mcp::handle_teardown(server, &args, lease())
+            }
             _ => not_implemented(&name),
         };
         if !claimed.load(std::sync::atomic::Ordering::SeqCst) {
@@ -464,6 +488,32 @@ pub(crate) fn dispatch(
             persist_task(server, &snapshot);
         }
     }
+    let catalog_snapshot = server.catalog.snapshot();
+    let provider = catalog_snapshot
+        .tools
+        .iter()
+        .find(|d| d.name == name && d.implementation.trim().starts_with("provider:"));
+    if let (Some(descriptor), Some(capability)) = (provider, server.catalog.capability(name)) {
+        let base = cancel_ctx
+            .cloned()
+            .unwrap_or_else(crate::plan::runner::RunCtx::background);
+        let mut ctx = base.with_reservation(reservation.clone());
+        if let Some((operation, task)) = identity {
+            ctx = ctx.with_operation_identity(operation, task);
+        }
+        let result = dispatch_provider(
+            server,
+            &catalog_snapshot,
+            descriptor,
+            &capability,
+            &ctx,
+            args,
+            &binding,
+            &reservation,
+        );
+        admission::release(server, &reservation);
+        return result;
+    }
     let result = match cancel_ctx {
         Some(ctx) => {
             let finished = std::sync::atomic::AtomicBool::new(false);
@@ -497,6 +547,396 @@ pub(crate) fn dispatch(
     // abandonment.
     admission::release(server, &reservation);
     result
+}
+
+/// `dispatchCapabilityValue` for a provider-contributed capability, shared by
+/// ordinary dispatch and a candidate's private setup recipe. The capability
+/// owns generation affinity and delegation; this owns result admission and
+/// durable invocation evidence.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn dispatch_provider(
+    server: &Server,
+    snapshot: &catalog::Snapshot,
+    descriptor: &catalog::Descriptor,
+    capability: &catalog::registry::Capability,
+    ctx: &crate::plan::runner::RunCtx,
+    args: &Map<String, J>,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+) -> J {
+    let binding = complete_produced_binding(server, descriptor, args, binding);
+    let record = |result: Option<&J>, observation: J, error: Option<(&str, &str)>| {
+        record_provider_invocation(
+            server,
+            snapshot,
+            descriptor,
+            args,
+            &binding,
+            reservation,
+            result,
+            observation,
+            error,
+        )
+    };
+    let mut result = match (capability.invoke)(ctx, args) {
+        Ok(result) => result,
+        Err(error) => {
+            let failed = error_result(&error);
+            record(
+                Some(&failed),
+                provider_observation(snapshot, descriptor, "invoke_error", None, ""),
+                Some(("", "")),
+            );
+            return failed;
+        }
+    };
+    if result.get("isError") != Some(&J::Bool(true)) {
+        let structured = result.remove("structuredContent").unwrap_or(J::Null);
+        result.insert(
+            "structuredContent".into(),
+            materialize_bound_outputs(descriptor, structured, &binding),
+        );
+    }
+    let observation = match crate::provider::observation::validate(descriptor, Some(&result)) {
+        Ok(observation) => observation,
+        Err(error) => {
+            let message = format!(
+                "capability {} returned invalid result: {error}",
+                crate::goerr::quote(name_of(descriptor))
+            );
+            let failed = capability_error("capability", "invalid_result", &message);
+            record(
+                Some(&failed),
+                provider_observation(snapshot, descriptor, "invalid_result", None, ""),
+                Some(("capability", "invalid_result")),
+            );
+            return failed;
+        }
+    };
+    if result.get("isError") != Some(&J::Bool(true)) {
+        let structured = result.get("structuredContent").cloned().unwrap_or(J::Null);
+        if let Err(error) = validate_produced(descriptor, &structured, &server.host.tenant_id) {
+            let failed = capability_error("capability", "invalid_resource_output", &error);
+            record(
+                Some(&failed),
+                provider_observation(snapshot, descriptor, "invalid_result", None, ""),
+                Some(("capability", "invalid_resource_output")),
+            );
+            return failed;
+        }
+    }
+    let result = J::Object(result);
+    record(
+        Some(&result),
+        provider_observation(
+            snapshot,
+            descriptor,
+            &observation.status,
+            observation.structured.as_ref(),
+            &observation.retryability,
+        ),
+        None,
+    );
+    result
+}
+
+fn name_of(descriptor: &catalog::Descriptor) -> &str {
+    &descriptor.name
+}
+
+/// `normalizeCapabilityObservation` over the pass-through provider observation.
+fn provider_observation(
+    snapshot: &catalog::Snapshot,
+    descriptor: &catalog::Descriptor,
+    status: &str,
+    structured: Option<&J>,
+    retryability: &str,
+) -> J {
+    let mut observation = json!({
+        "schemaVersion": "opute-capability-observation.v1",
+        "operationId": descriptor.operation_id,
+        "capabilityVersion": descriptor.version,
+        "status": if status.is_empty() { "unknown" } else { status },
+        "catalogRevision": snapshot.revision,
+    });
+    if let Some(structured) = structured {
+        observation["structured"] = redact_for_storage(
+            structured,
+            descriptor.output_schema.as_ref().and_then(J::as_object),
+        );
+    }
+    if !retryability.is_empty() {
+        observation["retryability"] = J::from(retryability);
+    }
+    if !descriptor.generation_id.is_empty() {
+        observation["generationId"] = J::from(descriptor.generation_id.clone());
+    }
+    observation
+}
+
+fn execution_binding_json(
+    server: &Server,
+    revision: &str,
+    generation: &str,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+) -> J {
+    let mut execution_binding = json!({
+        "schemaVersion": "opute-capability-execution-binding.v1",
+        "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
+        "authorization": "admitted", "catalogRevision": revision,
+        "reservationId": reservation.id,
+        "resourcePolicyRevision": crate::resource::POLICY_REVISION,
+    });
+    if !generation.is_empty() {
+        execution_binding["generationId"] = J::from(generation);
+    }
+    if !binding.resources.is_empty() {
+        let resources: Vec<J> = binding
+            .resources
+            .iter()
+            .filter_map(|bound| {
+                let uri = crate::resource::Uri::parse(&bound.uri).ok()?;
+                Some(json!({"argument": bound.argument, "uri": bound.uri,
+                        "resourceType": uri.resource_type, "tenantId": uri.tenant_id,
+                        "resourceId": uri.resource_id, "coordinates": bound.coordinates}))
+            })
+            .collect();
+        execution_binding["resources"] = J::from(resources);
+    }
+    execution_binding
+}
+
+/// `recordCapabilityInvocation` for a provider capability.
+#[allow(clippy::too_many_arguments)]
+fn record_provider_invocation(
+    server: &Server,
+    snapshot: &catalog::Snapshot,
+    descriptor: &catalog::Descriptor,
+    args: &Map<String, J>,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+    result: Option<&J>,
+    observation: J,
+    error: Option<(&str, &str)>,
+) {
+    let mut envelope = json!({"isError": false});
+    if let Some(result) = result {
+        envelope["isError"] = J::Bool(result.get("isError") == Some(&J::Bool(true)));
+        envelope["structured"] = redact_for_storage(
+            result.get("structuredContent").unwrap_or(&J::Null),
+            descriptor.output_schema.as_ref().and_then(J::as_object),
+        );
+        envelope["content"] = json!([]);
+    }
+    if let Some((owner, code)) = error {
+        envelope["error"] = if owner.is_empty() {
+            json!({"message": "capability invocation failed"})
+        } else {
+            json!({"owner": owner, "code": code, "message": "capability invocation failed"})
+        };
+    }
+    let status = observation
+        .get("status")
+        .and_then(J::as_str)
+        .unwrap_or("unknown")
+        .to_string();
+    let record = crate::store::CapabilityInvocationRecord {
+        invocation_id: crate::tasks::new_task_id(),
+        operation_id: descriptor.operation_id.clone(),
+        capability_version: descriptor.version,
+        catalog_revision: snapshot.revision.clone(),
+        generation_id: descriptor.generation_id.clone(),
+        authorization: "admitted".into(),
+        arguments_json: redact_for_storage(
+            &J::Object(args.clone()),
+            descriptor.input_schema.as_object(),
+        )
+        .to_string(),
+        binding_json: execution_binding_json(
+            server,
+            &snapshot.revision,
+            &descriptor.generation_id,
+            binding,
+            reservation,
+        )
+        .to_string(),
+        result_json: envelope.to_string(),
+        observation_json: observation.to_string(),
+        terminal_status: if error.is_some() {
+            "error".into()
+        } else {
+            status
+        },
+        ..Default::default()
+    };
+    if let Ok(state) = server.host.state.lock() {
+        let _ = state.record_capability_invocation(&record);
+    }
+}
+
+/// `completeProducedResourceBinding`.
+fn complete_produced_binding(
+    server: &Server,
+    descriptor: &catalog::Descriptor,
+    args: &Map<String, J>,
+    binding: &Binding,
+) -> Binding {
+    let mut binding = binding.clone();
+    for produced in &descriptor.produces {
+        if produced.source_path.trim() != "uri" {
+            continue;
+        }
+        let bound = binding.resources.iter().any(|resource| {
+            !resource.uri.trim().is_empty()
+                && crate::resource::Uri::parse(&resource.uri)
+                    .is_ok_and(|uri| uri.resource_type == produced.resource_type)
+        });
+        if bound {
+            return binding;
+        }
+        let Some(candidate) = args.get("uri").and_then(J::as_str) else {
+            continue;
+        };
+        if candidate.trim().is_empty() {
+            continue;
+        }
+        if let Ok((parsed, coordinates)) =
+            admission::resolve_resource(&server.host, candidate, &produced.resource_type)
+        {
+            binding.resources.push(admission::Bound {
+                argument: "uri".into(),
+                uri: parsed.to_string(),
+                coordinates,
+            });
+        }
+    }
+    binding
+}
+
+/// `materializeBoundResourceOutputs`.
+fn materialize_bound_outputs(
+    descriptor: &catalog::Descriptor,
+    structured: J,
+    binding: &Binding,
+) -> J {
+    let mut object = match structured {
+        J::Object(object) => object,
+        J::Null => Map::new(),
+        other => return other,
+    };
+    for produced in &descriptor.produces {
+        let existing = object
+            .get("uri")
+            .and_then(J::as_str)
+            .is_some_and(|uri| !uri.trim().is_empty());
+        if produced.source_path.trim() != "uri" || existing {
+            continue;
+        }
+        if let Some(resource) = binding.resources.iter().find(|resource| {
+            !resource.uri.trim().is_empty()
+                && crate::resource::Uri::parse(&resource.uri)
+                    .is_ok_and(|uri| uri.resource_type == produced.resource_type)
+        }) {
+            object.insert("uri".into(), J::from(resource.uri.clone()));
+        }
+    }
+    J::Object(object)
+}
+
+/// `validateProducedResources`. Provider selectors require the host selector
+/// registry, which no pinned provider declares; such a binding fails closed.
+fn validate_produced(
+    descriptor: &catalog::Descriptor,
+    structured: &J,
+    tenant: &str,
+) -> Result<(), String> {
+    if descriptor.produces.is_empty() {
+        return Ok(());
+    }
+    let operation = crate::goerr::quote(&descriptor.operation_id);
+    let mut allowed: std::collections::BTreeMap<String, std::collections::BTreeSet<String>> =
+        Default::default();
+    for produced in &descriptor.produces {
+        let path = produced.source_path.trim();
+        let kind = produced.resource_type.trim();
+        if path.is_empty() || kind.is_empty() {
+            return Err(format!(
+                "capability {operation} has an incomplete produced resource binding"
+            ));
+        }
+        if !produced.selector_id.is_empty() {
+            return Err(format!(
+                "capability {operation} selector {} failed: provider selectors are not supported",
+                crate::goerr::quote(&produced.selector_id)
+            ));
+        }
+        allowed.entry(path.into()).or_default().insert(kind.into());
+    }
+    for (path, kinds) in &allowed {
+        let segments: Vec<&str> = path.split('.').collect();
+        let Some(values) = values_at_path(structured, &segments) else {
+            return Err(format!(
+                "capability {operation} did not return declared resource output {}",
+                crate::goerr::quote(path)
+            ));
+        };
+        if values.is_empty() {
+            if segments.iter().any(|segment| segment.ends_with("[]")) {
+                continue;
+            }
+            return Err(format!(
+                "capability {operation} did not return declared resource output {}",
+                crate::goerr::quote(path)
+            ));
+        }
+        for value in values {
+            let J::String(uri) = value else {
+                return Err(format!(
+                    "capability {operation} produced non-string resource output {}",
+                    crate::goerr::quote(path)
+                ));
+            };
+            let parsed = crate::resource::Uri::parse(&uri).map_err(|e| {
+                format!(
+                    "capability {operation} produced invalid resource output {}: {e}",
+                    crate::goerr::quote(path)
+                )
+            })?;
+            if parsed.tenant_id != tenant {
+                return Err(format!(
+                    "capability {operation} produced foreign-tenant resource output {}",
+                    crate::goerr::quote(path)
+                ));
+            }
+            if !kinds.contains(&parsed.resource_type) {
+                let declared: Vec<&str> = kinds.iter().map(String::as_str).collect();
+                return Err(format!(
+                    "capability {operation} produced resource kind {} at {}; declared kinds are [{}]",
+                    crate::goerr::quote(&parsed.resource_type),
+                    crate::goerr::quote(path),
+                    declared.join(" ")
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn values_at_path(value: &J, segments: &[&str]) -> Option<Vec<J>> {
+    let Some((segment, rest)) = segments.split_first() else {
+        return Some(vec![value.clone()]);
+    };
+    let object = value.as_object()?;
+    if let Some(key) = segment.strip_suffix("[]") {
+        let items = object.get(key)?.as_array()?;
+        let mut values = Vec::new();
+        for item in items {
+            values.extend(values_at_path(item, rest)?);
+        }
+        return Some(values);
+    }
+    values_at_path(object.get(*segment)?, rest)
 }
 
 /// Go's recordCapabilityInvocation for the built-in compatibility adapters.
@@ -656,6 +1096,14 @@ fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding)
                 raw,
             )
             .map(|v| structured_result(v, Some("Managed host file inspected.")))
+        },
+        "list_host_services" => |host, args, _| {
+            let scope = args.get("scope").and_then(J::as_str).unwrap_or("");
+            let register = |uri: &str, coordinates: Map<String, J>| {
+                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
+            };
+            crate::hostread::list_host_services(&host.env, &host.tenant_id, scope, &register)
+                .map(|v| structured_result(v, None))
         },
         "probe_http_endpoint" => |_, args, _| {
             let endpoint = args

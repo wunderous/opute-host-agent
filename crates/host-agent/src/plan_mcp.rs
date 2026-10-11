@@ -236,6 +236,12 @@ fn ensure_plan_document_hash(
 /// execution, redacted inputs, the redacted expanded plan, ...) are still
 /// surfaced, since those are M6-scoped and already redacted at write time.
 fn plan_run_result(record: &PlanRecord) -> J {
+    plan_run_result_in(None, record)
+}
+
+/// `planRunResult`, including the active runtime/capability selection this
+/// run committed, when the durable store is available to read it.
+fn plan_run_result_in(state: Option<&crate::store::StateStore>, record: &PlanRecord) -> J {
     let mut result = json!({
         "runId": record.run_id, "planId": record.plan_id, "generation": record.generation,
         "idempotencyKey": record.idempotency_key, "documentHash": record.document_hash,
@@ -258,10 +264,98 @@ fn plan_run_result(record: &PlanRecord) -> J {
     }
     if !record.recipe_json.trim().is_empty() {
         if let Ok(recipe_value) = serde_json::from_str::<J>(&record.recipe_json) {
+            if let (Some(state), Some(metadata)) = (state, recipe_value.as_object()) {
+                if let Some(active) = active_projection(state, record, metadata) {
+                    let key = if string_field(metadata, "recipeKind") == "tunnel" {
+                        "activeCapability"
+                    } else {
+                        "activeRuntime"
+                    };
+                    result[key] = active;
+                }
+            }
             result["recipe"] = recipe_value;
         }
     }
     crate::tools::structured_result(result, None)
+}
+
+fn active_projection(
+    state: &crate::store::StateStore,
+    record: &PlanRecord,
+    metadata: &Map<String, J>,
+) -> Option<J> {
+    let capability = metadata
+        .get("activation")?
+        .as_object()?
+        .get("capability")?
+        .as_str()?;
+    if capability.trim().is_empty() {
+        return None;
+    }
+    let active = state.get_active_capability(capability).ok()??;
+    if active.run_id != record.run_id {
+        return None;
+    }
+    let mut projection = json!({
+        "capability": active.capability, "servingContract": active.serving_contract,
+        "runtime": active.provider, "recipeId": active.recipe_id,
+        "recipeVersion": active.recipe_version, "recipeHash": active.recipe_hash,
+        "runId": active.run_id, "activatedAt": active.activated_at,
+    });
+    if let Ok(bindings) = serde_json::from_str::<J>(&active.input_bindings_json) {
+        projection["inputBindings"] = bindings;
+    }
+    if let Ok(observation) = serde_json::from_str::<J>(&active.observation_json) {
+        projection["observation"] = observation;
+    }
+    Some(projection)
+}
+
+/// `Server.redactedMetadata`: recipe secrets, then the provider-declared
+/// teardown input projection. Without a teardown declaration to project
+/// through, the inputs are withheld entirely.
+fn server_redacted_metadata(
+    server: &Server,
+    metadata: Option<&Map<String, J>>,
+) -> Option<Map<String, J>> {
+    let mut redacted = redacted_metadata(metadata)?;
+    let provider = string_field(&redacted, "providerId");
+    let inputs = redacted
+        .get("providerTeardownInputs")
+        .and_then(J::as_object)
+        .cloned();
+    if let (false, Some(inputs)) = (provider.is_empty(), inputs) {
+        let manifest = server.providers.activation.publication.manifest(&provider);
+        let projected = match manifest.and_then(|manifest| manifest.teardown) {
+            Some(teardown) => {
+                let schema = teardown
+                    .input_schema
+                    .as_ref()
+                    .and_then(|schema| schema.get("properties"))
+                    .and_then(J::as_object)
+                    .and_then(|properties| properties.get("inputs"))
+                    .and_then(J::as_object)
+                    .cloned();
+                crate::plan_evidence::redact_evidence_by_schema(&J::Object(inputs), schema.as_ref())
+            }
+            None => json!({"redacted": true}),
+        };
+        redacted.insert("providerTeardownInputs".into(), projected);
+    }
+    Some(redacted)
+}
+
+pub(crate) fn string_field(args: &Map<String, J>, key: &str) -> String {
+    args.get(key)
+        .and_then(J::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
+pub(crate) fn bool_field(args: &Map<String, J>, key: &str) -> bool {
+    args.get(key).and_then(J::as_bool).unwrap_or(false)
 }
 
 /// `handleRunHostPlan`: the bare path, with no recipe metadata to redact
@@ -303,11 +397,14 @@ pub fn handle_run_host_plan_with_metadata(
     reservation: crate::resource::Reservation,
     claimed: Arc<std::sync::atomic::AtomicBool>,
 ) -> J {
-    let catalog_snapshot = server.catalog.snapshot();
     let doc = match decode_plan_argument(args) {
         Ok(doc) => doc,
         Err(e) => return crate::tools::error_result(&e),
     };
+    let generation = recipe_metadata
+        .map(|metadata| string_field(metadata, "providerGenerationId"))
+        .unwrap_or_default();
+    let catalog_snapshot = server.providers.catalog_for_recipe(&generation);
     let snapshot = &catalog_snapshot;
     if let Err(e) = validate_host_plan_with_snapshot(&doc, snapshot) {
         return crate::tools::error_result(&e);
@@ -318,22 +415,46 @@ pub fn handle_run_host_plan_with_metadata(
         Err(e) => return crate::tools::error_result(&format!("hash plan: {e}")),
     };
 
-    let record = match resolve_plan_record(
+    let mut record = match resolve_plan_record(
         server,
         &doc,
         &hash,
         &redacted_plan,
         recipe_metadata,
         &capabilities,
+        &snapshot.revision,
     ) {
         Ok(ResolvedRecord::Terminal(result)) => return result,
         Ok(ResolvedRecord::Fresh(record)) => *record,
         Err(e) => return crate::tools::error_result(&e),
     };
+    // A terminal record is history, not an observation of the world now: the
+    // run is reconciled. The provider adapter is process-local, so a
+    // reconnect rebinds it before the plan's capability nodes can dispatch.
+    // This runs without the durable store's lock, which activation takes.
+    if record.status == "completed" {
+        if let Some(metadata) = recipe_metadata.filter(|m| bool_field(m, "activate")) {
+            if let Err(e) = server.providers.activate_completed_candidate(metadata) {
+                return crate::tools::error_result(&e);
+            }
+        }
+    }
+    if !record.catalog_revision.is_empty() && record.catalog_revision != snapshot.revision {
+        let state = match server.host.state.lock() {
+            Ok(s) => s,
+            Err(_) => return crate::tools::error_result("durable plan state is unavailable"),
+        };
+        if let Err(e) = state.update_plan_catalog_revision(&record.run_id, &snapshot.revision) {
+            return crate::tools::error_result(&format!(
+                "update resumed plan catalog revision: {e}"
+            ));
+        }
+        record.catalog_revision = snapshot.revision.clone();
+    }
 
     if let Some(existing) = server.tasks.get(&record.run_id) {
         if existing.status == "working" || existing.status == "input_required" {
-            return plan_run_result(&record);
+            return locked_plan_run_result(server, &record);
         }
     }
 
@@ -373,7 +494,7 @@ pub fn handle_run_host_plan_with_metadata(
     );
     let resume = args.get("resume").and_then(J::as_bool).unwrap_or(false);
     let mut task_args = json!({"plan": redacted_task_plan, "resume": resume});
-    if let Some(metadata) = redacted_metadata(recipe_metadata) {
+    if let Some(metadata) = server_redacted_metadata(server, recipe_metadata) {
         task_args["recipe"] = J::Object(metadata);
     }
     let (_rec, cancelled) =
@@ -390,11 +511,19 @@ pub fn handle_run_host_plan_with_metadata(
         record.run_id.clone(),
         doc,
         state_value,
-        snapshot.revision.clone(),
+        snapshot.clone(),
+        recipe_metadata.cloned(),
         cancelled,
         reservation,
     );
-    plan_run_result(&record)
+    locked_plan_run_result(server, &record)
+}
+
+fn locked_plan_run_result(server: &Server, record: &PlanRecord) -> J {
+    match server.host.state.lock() {
+        Ok(state) => plan_run_result_in(Some(&state), record),
+        Err(_) => plan_run_result(record),
+    }
 }
 
 enum ResolvedRecord {
@@ -416,8 +545,8 @@ fn resolve_plan_record(
     redacted_plan: &str,
     recipe_metadata: Option<&Map<String, J>>,
     capabilities: &BTreeMap<String, Capability>,
+    revision: &str,
 ) -> Result<ResolvedRecord, String> {
-    let catalog_snapshot = server.catalog.snapshot();
     let state = server
         .host
         .state
@@ -437,9 +566,7 @@ fn resolve_plan_record(
                 ));
             }
         }
-        if let Some(result) =
-            short_circuit_if_live_or_reconcile(&state, &mut record, &catalog_snapshot.revision)?
-        {
+        if let Some(result) = short_circuit_if_live(&state, &record) {
             return Ok(ResolvedRecord::Terminal(result));
         }
         return Ok(ResolvedRecord::Fresh(Box::new(record)));
@@ -450,10 +577,10 @@ fn resolve_plan_record(
         generation: doc.generation,
         idempotency_key: doc.idempotency_key.clone(),
         document_hash: hash.to_string(),
-        catalog_revision: catalog_snapshot.revision.clone(),
+        catalog_revision: revision.to_string(),
         status: "working".to_string(),
         plan_json: redacted_plan.to_string(),
-        recipe_json: redacted_metadata(recipe_metadata)
+        recipe_json: server_redacted_metadata(server, recipe_metadata)
             .map(J::Object)
             .and_then(|v| go_json_string(&v).ok())
             .unwrap_or_default(),
@@ -465,36 +592,20 @@ fn resolve_plan_record(
         .map_err(|e| format!("persist plan run: {e}"))?;
     ensure_plan_document_hash(&state, &mut record, hash)?;
     if !created {
-        if let Some(result) =
-            short_circuit_if_live_or_reconcile(&state, &mut record, &catalog_snapshot.revision)?
-        {
+        if let Some(result) = short_circuit_if_live(&state, &record) {
             return Ok(ResolvedRecord::Terminal(result));
         }
     }
     Ok(ResolvedRecord::Fresh(Box::new(record)))
 }
 
-/// A working/running/waiting record answers at once; a terminal record's
-/// stale catalog revision is migrated forward so a later node reconcile
-/// sees the current one. Returns the short-circuit result, if any.
-fn short_circuit_if_live_or_reconcile(
-    state: &crate::store::StateStore,
-    record: &mut PlanRecord,
-    current_revision: &str,
-) -> Result<Option<J>, String> {
-    if record.status == "working"
+/// A working/running/waiting record answers at once. A terminal record is
+/// reconciled by the caller, which migrates its stale catalog revision.
+fn short_circuit_if_live(state: &crate::store::StateStore, record: &PlanRecord) -> Option<J> {
+    (record.status == "working"
         || record.status == "running"
-        || record.status == plan::RUN_STATUS_WAITING
-    {
-        return Ok(Some(plan_run_result(record)));
-    }
-    if !record.catalog_revision.is_empty() && record.catalog_revision != current_revision {
-        state
-            .update_plan_catalog_revision(&record.run_id, current_revision)
-            .map_err(|e| format!("update resumed plan catalog revision: {e}"))?;
-        record.catalog_revision = current_revision.to_string();
-    }
-    Ok(None)
+        || record.status == plan::RUN_STATUS_WAITING)
+        .then(|| plan_run_result_in(Some(state), record))
 }
 
 fn to_dispatch_result(value: J) -> DispatchResult {
@@ -525,24 +636,27 @@ fn to_dispatch_result(value: J) -> DispatchResult {
     }
 }
 
-/// `executeHostPlan` with `recipeMetadata == nil`: runs the plan to
-/// completion on its own thread, persisting every state transition via
-/// the runner's `Sink`, then completes or fails the task. Each node's
+/// `executeHostPlan`: runs the plan to completion on its own thread,
+/// persisting every state transition via the runner's `Sink`, then applies
+/// the recipe completion hooks and completes or fails the task. Each node's
 /// tool call goes through the exact same `tools::dispatch` admission and
 /// audit path a direct capability call takes, under no task identity (as
 /// Go's `DispatchTool` does for plan nodes too) -- the plan's own task
 /// identity is for `tasks/get`, not for attributing individual node calls.
+/// A candidate's setup recipe dispatches its own provider operations through
+/// the private candidate seam against the snapshot it was validated with.
+#[allow(clippy::too_many_arguments)]
 fn spawn_plan_execution(
     server: Arc<Server>,
     run_id: String,
     doc: Document,
     state_value: RunState,
-    catalog_revision: String,
+    snapshot: Snapshot,
+    metadata: Option<Map<String, J>>,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     reservation: crate::resource::Reservation,
 ) {
-    let catalog_snapshot = server.catalog.snapshot();
-    let capabilities = capabilities_from_snapshot(&catalog_snapshot);
+    let capabilities = capabilities_from_snapshot(&snapshot);
     let sink_capabilities = capabilities.clone();
     let final_capabilities = capabilities.clone();
     let host_agent_id = server.host.agent_id.clone();
@@ -552,6 +666,13 @@ fn spawn_plan_execution(
     let sink_doc = doc.clone();
     let final_doc = doc.clone();
     let workers_server = Arc::clone(&server);
+    let generation = metadata
+        .as_ref()
+        .map(|m| string_field(m, "providerGenerationId"))
+        .unwrap_or_default();
+    let activate = metadata.as_ref().is_some_and(|m| bool_field(m, "activate"));
+    let dispatch_snapshot = snapshot.clone();
+    let catalog_revision = snapshot.revision.clone();
     let handle = std::thread::spawn(move || {
         let runner = Runner {
             capabilities,
@@ -559,6 +680,18 @@ fn spawn_plan_execution(
             host_agent_id,
             dispatch: Arc::new(
                 move |ctx: &RunCtx, name: &str, call_args: &Map<String, J>| {
+                    if !generation.is_empty() {
+                        if let Some(result) = dispatch_server.providers.dispatch_candidate(
+                            &dispatch_server,
+                            ctx,
+                            name,
+                            call_args,
+                            &generation,
+                            &dispatch_snapshot,
+                        ) {
+                            return Ok(to_dispatch_result(result));
+                        }
+                    }
                     Ok(to_dispatch_result(crate::tools::dispatch(
                         &dispatch_server,
                         name,
@@ -569,10 +702,17 @@ fn spawn_plan_execution(
                 },
             ),
             sink: Some(Box::new(move |state: &RunState| {
+                // Activation commits atomically with the durable completed
+                // state below, so no intermediate completed status is published.
+                let status = if activate && state.status == "completed" {
+                    "running"
+                } else {
+                    state.status.as_str()
+                };
                 if let Ok(store) = sink_server.host.state.lock() {
                     let _ = store.update_plan(
                         &sink_run_id,
-                        &state.status,
+                        status,
                         &marshal_plan_state(state, &sink_doc, &sink_capabilities),
                         &state.error,
                     );
@@ -581,24 +721,95 @@ fn spawn_plan_execution(
             })),
         };
         let ctx = RunCtx::from_flag(cancelled).with_reservation(reservation);
-        let (final_state, run_err) = runner.run(&ctx, &doc, state_value);
-        let status = if final_state.status.is_empty() {
+        let (mut final_state, mut run_err) = runner.run(&ctx, &doc, state_value);
+        let mut status = if final_state.status.is_empty() {
             "failed".to_string()
         } else {
             final_state.status.clone()
         };
-        if let Ok(store) = server.host.state.lock() {
-            let _ = store.update_plan(
-                &run_id,
-                &status,
-                &marshal_plan_state(&final_state, &final_doc, &final_capabilities),
-                &final_state.error,
-            );
+        let mut active_runtime = None;
+        if let Some(metadata) = &metadata {
+            apply_recipe_output_mapping(&mut final_state, metadata);
+            let fail = |error: String, final_state: &mut RunState, status: &mut String| {
+                *status = "failed".into();
+                final_state.status = "failed".into();
+                final_state.error = error.clone();
+                Err(error)
+            };
+            if run_err.is_ok() && status == "completed" && bool_field(metadata, "providerTeardown")
+            {
+                if let Err(error) = server.providers.complete_teardown(&server, metadata) {
+                    run_err = fail(error, &mut final_state, &mut status);
+                }
+            }
+            if run_err.is_ok() && status == "completed" && bool_field(metadata, "activate") {
+                let (active, observation, outcome) = server
+                    .providers
+                    .validate_activation(&server, &run_id, metadata);
+                if let Some(observation) = observation {
+                    final_state.outputs.insert("activation".into(), observation);
+                }
+                match outcome {
+                    Err(error) => run_err = fail(error, &mut final_state, &mut status),
+                    Ok(()) => {
+                        active_runtime = active;
+                        if let Err(error) = server.providers.activate_generation(metadata) {
+                            run_err = fail(error, &mut final_state, &mut status);
+                        }
+                    }
+                }
+            }
+            let generation = string_field(metadata, "providerGenerationId");
+            if !generation.is_empty() && !bool_field(metadata, "providerTeardown") {
+                if run_err.is_err() || status != "completed" {
+                    server.providers.cleanup_candidate(&generation);
+                } else {
+                    server.providers.complete_candidate(&generation);
+                }
+            }
+        }
+        let state_json = marshal_plan_state(&final_state, &final_doc, &final_capabilities);
+        match active_runtime.filter(|active: &crate::store::ActiveCapabilityRecord| {
+            run_err.is_ok() && status == "completed" && !active.capability.is_empty()
+        }) {
+            Some(active) => {
+                let committed = server
+                    .host
+                    .state
+                    .lock()
+                    .map_err(|_| "durable plan state is unavailable".to_string())
+                    .and_then(|mut store| {
+                        store.complete_plan_with_active_capability(&run_id, &state_json, &active)
+                    });
+                if let Err(error) = committed {
+                    status = "failed".into();
+                    final_state.status = status.clone();
+                    final_state.error = format!("commit active runtime: {error}");
+                    if let Ok(store) = server.host.state.lock() {
+                        let _ = store.update_plan(
+                            &run_id,
+                            &status,
+                            &marshal_plan_state(&final_state, &final_doc, &final_capabilities),
+                            &final_state.error,
+                        );
+                    }
+                    run_err = Err(error);
+                }
+            }
+            None => {
+                if let Ok(store) = server.host.state.lock() {
+                    let _ = store.update_plan(&run_id, &status, &state_json, &final_state.error);
+                }
+            }
         }
         match run_err {
             Err(e) => server.tasks.fail(&run_id, &e),
             Ok(()) => {
-                let structured = serde_json::to_value(&final_state).ok();
+                // `planRunStateResult`: the same redacted projection the
+                // durable row holds, never the raw run state.
+                let schemas = node_output_schemas(&final_doc, &final_capabilities);
+                let structured =
+                    serde_json::to_value(redact_plan_run_state(&final_state, &schemas)).ok();
                 server.tasks.complete(
                     &run_id,
                     crate::tasks::ToolResult {
@@ -621,6 +832,46 @@ fn spawn_plan_execution(
     };
 }
 
+/// `applyRecipeOutputMapping`: projects declared final-state paths into
+/// `outputs.recipeObservation`.
+fn apply_recipe_output_mapping(state_value: &mut RunState, metadata: &Map<String, J>) {
+    let Some(mapping) = metadata.get("outputMapping").and_then(J::as_object) else {
+        return;
+    };
+    let mapping: BTreeMap<&String, &str> = mapping
+        .iter()
+        .filter_map(|(target, path)| Some((target, path.as_str()?)))
+        .collect();
+    if mapping.is_empty() {
+        return;
+    }
+    let Ok(document) = serde_json::to_value(&*state_value) else {
+        return;
+    };
+    let mut observation = Map::new();
+    for (target, path) in mapping {
+        let mut current = &document;
+        let mut found = true;
+        for part in path.trim_matches('.').split('.') {
+            match current.as_object().and_then(|object| object.get(part)) {
+                Some(next) => current = next,
+                None => {
+                    found = false;
+                    break;
+                }
+            }
+        }
+        if found {
+            observation.insert(target.clone(), current.clone());
+        }
+    }
+    if !observation.is_empty() {
+        state_value
+            .outputs
+            .insert("recipeObservation".into(), J::Object(observation));
+    }
+}
+
 /// `handleGetHostPlanRun`.
 pub fn handle_get_host_plan_run(server: &Server, args: &Map<String, J>) -> J {
     let run_id = args
@@ -639,7 +890,7 @@ pub fn handle_get_host_plan_run(server: &Server, args: &Map<String, J>) -> J {
     match state.get_plan(&run_id) {
         Err(e) => crate::tools::error_result(&format!("get plan run: {e}")),
         Ok(None) => crate::tools::error_result(&format!("host plan run not found: {run_id}")),
-        Ok(Some(record)) => plan_run_result(&record),
+        Ok(Some(record)) => plan_run_result_in(Some(&state), &record),
     }
 }
 

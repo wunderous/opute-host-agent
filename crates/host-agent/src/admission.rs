@@ -255,13 +255,23 @@ fn adopt(host: &Host, parsed: &Uri) -> Result<Option<Map<String, J>>, String> {
     }
 }
 
-/// `resolveExecutionBindingWithSnapshot`.
+/// `resolveExecutionBinding` against the committed public catalog.
 pub fn resolve_binding(
     server: &Server,
     name: &str,
     args: &Map<String, J>,
 ) -> Result<Binding, Refusal> {
-    let catalog_snapshot = server.catalog.snapshot();
+    resolve_binding_in(server, &server.catalog.snapshot(), name, args)
+}
+
+/// `resolveExecutionBindingWithSnapshot`: a candidate's setup recipe binds
+/// against its private snapshot, never the public catalog.
+pub fn resolve_binding_in(
+    server: &Server,
+    catalog_snapshot: &catalog::Snapshot,
+    name: &str,
+    args: &Map<String, J>,
+) -> Result<Binding, Refusal> {
     let mut binding = Binding::default();
     let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return Ok(binding);
@@ -339,7 +349,28 @@ pub fn admit(
     identity: Option<(&str, &str)>,
     parent: Option<&Reservation>,
 ) -> Result<Reservation, Refusal> {
-    let catalog_snapshot = server.catalog.snapshot();
+    admit_in(
+        server,
+        &server.catalog.snapshot(),
+        name,
+        args,
+        binding,
+        identity,
+        parent,
+    )
+}
+
+/// Admission against an explicit snapshot, as Go's candidate dispatch passes
+/// the candidate descriptor that the public catalog does not contain.
+pub fn admit_in(
+    server: &Server,
+    catalog_snapshot: &catalog::Snapshot,
+    name: &str,
+    args: &Map<String, J>,
+    binding: &Binding,
+    identity: Option<(&str, &str)>,
+    parent: Option<&Reservation>,
+) -> Result<Reservation, Refusal> {
     let registered = catalog::admission_class(name);
     let declared = registered.is_some();
     let class = registered.unwrap_or_else(|| "control".into());

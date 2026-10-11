@@ -254,7 +254,7 @@ fn reject_host_local_event_bindings(raw: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-fn reject_nested_plan_runs(doc: &PlanDocument) -> Result<(), String> {
+pub(crate) fn reject_nested_plan_runs(doc: &PlanDocument) -> Result<(), String> {
     for node in &doc.nodes {
         let mut actions = Vec::new();
         if let Some(action) = &node.action {

@@ -15,7 +15,7 @@
 //! The parser keeps object members in document order (duplicates included)
 //! and the raw bytes of every value, which is what `json.RawMessage` holds.
 
-mod validate;
+pub(crate) mod validate;
 pub(crate) use validate::syntax as validate_syntax;
 
 const MAX_DEPTH: usize = 10_000;
@@ -487,6 +487,13 @@ pub fn float_value(f: f64) -> serde_json::Value {
 
 /// `json.Marshal` of a value decoded into `any`: object keys sorted (as Go
 /// sorts map keys), numbers as float64 unless they are exact integers.
+/// `json.Marshal` of a generic value, as a string.
+pub fn encode_to_string(v: &serde_json::Value) -> String {
+    let mut out = String::new();
+    encode(v, &mut out);
+    out
+}
+
 pub fn encode(v: &serde_json::Value, out: &mut String) {
     use serde_json::Value as J;
     match v {

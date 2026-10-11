@@ -23,14 +23,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import agent, canon, shims
+from . import agent, canon, provider_stub, shims
 
 TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 SCENARIO_DIR = TOOLS_DIR / "scenarios"
 FIXTURE_DIR = TOOLS_DIR / "fixtures"
 DIVERGENCE_FILE = TOOLS_DIR / "divergences.json"
-OBSERVING_MODULES = ("agent", "canon", "runner", "shims")
+OBSERVING_MODULES = ("agent", "canon", "provider_stub", "runner", "shims")
 
 # Environment profiles. Values may use ${AGENT_ID}, ${PORT}, ${TOKEN} and
 # ${SANDBOX}; each side expands them with its own values.
@@ -121,6 +121,10 @@ def _env(step: dict) -> dict:
 
 def _lookup(doc: Any, path: list) -> Any:
     for key in path:
+        # "$len" reads the length of the list it follows (an until that
+        # waits for a catalog to be whole again, say).
+        if key == "$len":
+            return len(doc) if isinstance(doc, list) else None
         if isinstance(doc, dict):
             doc = doc.get(key)
         elif isinstance(doc, list) and isinstance(key, int) and -len(doc) <= key < len(doc):
@@ -272,6 +276,19 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 spec = step["sql"]
                 steps[label] = agent.run_sql(Path(sandbox.expand(spec["db"])),
                                              [sandbox.expand(x) for x in spec["statements"]])
+            elif "query" in step:
+                spec = step["query"]
+                # "until": {"query": name, "path": [...], "in": [...]} re-reads
+                # until a row settles (a drained generation reaching stopped).
+                until = spec.get("until")
+                deadline = time.monotonic() + spec.get("timeout", 15)
+                while True:
+                    result = agent.query_sql(Path(sandbox.expand(spec["db"])), spec["sql"])
+                    if not until or _lookup(result[until["query"]], until["path"]) in until["in"] \
+                            or time.monotonic() > deadline:
+                        break
+                    time.sleep(0.05)
+                steps[label] = result
             elif "listeners" in step:
                 steps[label] = {"listeners": agent.listeners_of(server.proc.pid)} if server else {"listeners": None}
             elif "write" in step:
@@ -301,6 +318,27 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 stubs[label] = stub
                 sandbox.captured[spec.get("portVar", "STUB_PORT")] = str(stub.port)
                 steps[label] = {"port": stub.port}
+            elif "providerStub" in step:
+                spec = step["providerStub"]
+                stub = provider_stub.ProviderStub(json.loads(sandbox.expand(json.dumps(spec))))
+                stubs[label] = stub
+                sandbox.captured[spec.get("portVar", "PROVIDER_PORT")] = str(stub.port)
+                steps[label] = {"started": True}
+            elif "providerStop" in step:
+                # A provider crash: the listener goes away mid-life.
+                stubs[step["providerStop"]["stub"]].close()
+                steps[label] = {"stopped": True}
+            elif "providerGate" in step:
+                spec = step["providerGate"]
+                stub = stubs[spec["stub"]]
+                if "release" in spec:
+                    stub.release_gate(spec["release"])
+                    steps[label] = {"released": spec["release"]}
+                else:
+                    steps[label] = {"gate": spec["await"], "reached": stub.await_gate(spec["await"], spec.get("timeout", 15))}
+            elif "providerRequests" in step:
+                spec = step["providerRequests"]
+                steps[label] = {"requests": stubs[spec["stub"]].requests(spec.get("clear", False))}
             elif "sleep" in step:
                 time.sleep(step["sleep"].get("seconds", 0))
                 steps[label] = {"slept": step["sleep"].get("seconds", 0)}

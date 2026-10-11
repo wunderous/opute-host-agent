@@ -27,6 +27,7 @@ mod plan_mcp;
 // M7 core; public provider dispatch stays closed until its adapter is wired.
 #[allow(dead_code)]
 mod provider;
+mod provider_mcp;
 mod recipe;
 mod resource;
 mod schema;

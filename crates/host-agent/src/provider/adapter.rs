@@ -87,7 +87,10 @@ impl Client {
             request = request.header("Authorization", format!("Bearer {}", self.token));
         }
         let mut response = under_context(ctx, async {
-            request.send().await.map_err(|e| e.to_string())
+            request
+                .send()
+                .await
+                .map_err(|e| send_error(self.endpoint.trim(), &e))
         })
         .await
         .map_err(|e| {
@@ -441,6 +444,51 @@ impl Adapter {
     pub async fn close(&self) {
         *self.closed.write().await = true;
     }
+}
+
+/// Go `http.Client.Do`'s `*url.Error` text for a request that never got a
+/// response: the dial failure with the address it dialed, or `EOF` when the
+/// peer closed the connection before answering.
+fn send_error(endpoint: &str, err: &reqwest::Error) -> String {
+    use std::error::Error as _;
+    let quoted = quote(endpoint);
+    let mut source = err.source();
+    while let Some(e) = source {
+        if let Some(io) = e.downcast_ref::<std::io::Error>() {
+            if err.is_connect() && io.raw_os_error().is_some() {
+                if let Some(address) = dial_target(endpoint) {
+                    return format!(
+                        "Post {quoted}: dial tcp {address}: connect: {}",
+                        crate::goerr::errno_text(io)
+                    );
+                }
+            }
+        }
+        // hyper's IncompleteMessage, without depending on hyper directly.
+        if e.to_string() == "connection closed before message completed" {
+            return format!("Post {quoted}: EOF");
+        }
+        source = e.source();
+    }
+    err.to_string()
+}
+
+/// The `ip:port` Go's dialer reports for an endpoint: the literal address, or
+/// the first address the host name resolves to.
+fn dial_target(endpoint: &str) -> Option<String> {
+    use std::net::ToSocketAddrs;
+    let (scheme, host) = crate::hostread::http_authority(endpoint)?;
+    let address = crate::hostread::dial_address(&scheme, &host);
+    let literal = address.trim_start_matches('[');
+    let (ip, _) = literal.rsplit_once(':')?;
+    if ip.trim_end_matches(']').parse::<std::net::IpAddr>().is_ok() {
+        return Some(address);
+    }
+    address
+        .to_socket_addrs()
+        .ok()?
+        .next()
+        .map(|resolved| resolved.to_string())
 }
 
 #[cfg(test)]

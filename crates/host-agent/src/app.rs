@@ -97,6 +97,16 @@ pub(crate) fn log_info(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]
     let _ = stderr.flush();
 }
 
+/// A Go `log/slog` TextHandler line at WARN level.
+pub(crate) fn log_warn(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
+    let mut line = format!("time={} level=WARN msg={}", slog_time(), slog_value(msg));
+    for (k, v) in attrs {
+        line.push_str(&format!(" {k}={}", slog_value(v)));
+    }
+    let _ = writeln!(stderr, "{line}");
+    let _ = stderr.flush();
+}
+
 fn slog_value(v: &str) -> String {
     let needs_quote = v.is_empty()
         || v.chars()
@@ -291,6 +301,9 @@ pub(crate) fn http_server(
     for snapshot in &snapshots {
         tasks.restore_snapshot(snapshot);
     }
+    providers
+        .restore()
+        .map_err(|e| go_err!("restore provider generations: {e}"))?;
     Ok(crate::transport::Server {
         instance_id: cfg.instance_id.clone(),
         local_instance_id: if cfg.agent_mode == "standalone" {
@@ -404,6 +417,7 @@ async fn accept_loop(
     server: std::sync::Arc<crate::transport::Server>,
 ) -> Result<()> {
     server.providers.bind(&server);
+    server.providers.reconnect_restored().await;
     let listener = tokio::net::TcpListener::from_std(go_listen(addrs, addr)?)
         .map_err(|e| go_err!("listen tcp {addr}: {e}"))?;
     let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())

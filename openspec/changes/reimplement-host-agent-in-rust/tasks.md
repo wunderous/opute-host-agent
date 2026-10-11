@@ -106,6 +106,11 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   through the shared owners, with 120 exact comparisons over five iterations
   ([evidence/m7/README.md](../../../evidence/m7/README.md)). Public install,
   activation and teardown commands remain required.
+  Public install, reload, teardown (normal, forced, idempotent), generation
+  routed calls, in-flight replacement and restart restore now match Go over a
+  35-scenario fake-provider matrix, five iterations each, inside 137/137
+  public scenarios. Callbacks, bridged tasks, supervision and the five real
+  providers remain required.
 - [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,

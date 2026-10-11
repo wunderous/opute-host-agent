@@ -642,6 +642,16 @@ def run_sql(path: Path, statements: list[str]) -> dict:
     return {"sql": len(statements)}
 
 
+def query_sql(path: Path, statements: dict[str, str]) -> dict:
+    """Read rows from a SQLite file the agent owns, read-only, while it runs."""
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        return {name: [dict(row) for row in conn.execute(sql)] for name, sql in statements.items()}
+    finally:
+        conn.close()
+
+
 def _decode_body(headers: dict[str, str], raw: bytes) -> Any:
     text = raw.decode(errors="replace")
     ctype = headers.get("content-type", "")

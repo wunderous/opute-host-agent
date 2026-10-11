@@ -83,7 +83,7 @@ impl Activation {
     pub fn validation(&self) -> BTreeMap<String, String> {
         self.validation.lock().unwrap().clone()
     }
-    fn event(
+    pub(crate) fn event(
         &self,
         name: &str,
         provider: &str,
@@ -337,6 +337,162 @@ impl Activation {
             "",
         );
         Ok(())
+    }
+    /// The first half of `restoreProviderGenerations`: every durable
+    /// generation re-enters the lifecycle before anything can observe it.
+    pub fn restore_durable(&self) -> Result<Vec<ProviderGenerationRecord>, String> {
+        let Some(state) = &self.state else {
+            return Ok(Vec::new());
+        };
+        let records = state.lock().unwrap().list_provider_generations()?;
+        for record in &records {
+            if crate::hostobs::parse_rfc3339(&record.created_at).is_none() {
+                return Err(format!(
+                    "parse provider generation {} creation time: parsing time {} as \"2006-01-02T15:04:05.999999999Z07:00\": cannot parse {} as \"2006\"",
+                    quote(&record.generation_id),
+                    quote(&record.created_at),
+                    quote(&record.created_at)
+                ));
+            }
+            let mut generation = Generation {
+                id: record.generation_id.clone(),
+                provider: super::ProviderRef {
+                    id: record.provider_id.clone(),
+                    version: record.provider_version.clone(),
+                },
+                manifest_hash: record.manifest_hash.clone(),
+                endpoint: record.endpoint.clone(),
+                catalog_revision: record.catalog_revision.clone(),
+                state: serde_json::from_value(Value::String(record.status.clone()))
+                    .unwrap_or_default(),
+                created_at: record.created_at.clone(),
+                ..Default::default()
+            };
+            if !record.active_at.is_empty() {
+                if crate::hostobs::parse_rfc3339(&record.active_at).is_none() {
+                    return Err(format!(
+                        "parse provider generation {} activation time: parsing time {} as \"2006-01-02T15:04:05.999999999Z07:00\": cannot parse {} as \"2006\"",
+                        quote(&record.generation_id),
+                        quote(&record.active_at),
+                        quote(&record.active_at)
+                    ));
+                }
+                generation.active_at = record.active_at.clone();
+            }
+            self.lifecycle.restore(generation)?;
+        }
+        Ok(records)
+    }
+    /// The second half of `restoreProviderGenerations` for one durable active
+    /// generation: reconnect through its trusted descriptor, re-fetch the live
+    /// manifest, mount and publish it, then refresh and persist the
+    /// generation. A failed stage leaves the generation active and retryable;
+    /// the error names the stage Go logs.
+    pub async fn reconnect(
+        &self,
+        ctx: &crate::plan::runner::RunCtx,
+        record: &ProviderGenerationRecord,
+    ) -> Result<(), (&'static str, String)> {
+        let node = crate::gojson::parse(record.descriptor_json.as_bytes())
+            .map_err(|_| ("descriptor_decode", "invalid JSON".to_string()))?;
+        let descriptor =
+            super::definition::decode_descriptor(&node).map_err(|e| ("descriptor_decode", e))?;
+        super::definition::validate_descriptor(&descriptor)
+            .map_err(|e| ("descriptor_validate", e))?;
+        if descriptor.plugin_id != record.provider_id
+            || descriptor.version != record.provider_version
+        {
+            return Err((
+                "descriptor_identity",
+                format!(
+                    "descriptor provider {}@{} does not match durable generation {}@{}",
+                    descriptor.plugin_id,
+                    descriptor.version,
+                    record.provider_id,
+                    record.provider_version
+                ),
+            ));
+        }
+        if descriptor.server.endpoint != record.endpoint {
+            return Err((
+                "descriptor_endpoint",
+                format!(
+                    "descriptor endpoint {} does not match durable endpoint {}",
+                    quote(&descriptor.server.endpoint),
+                    quote(&record.endpoint)
+                ),
+            ));
+        }
+        let adapter = Arc::new(
+            super::adapter::Adapter::connect(ctx, descriptor, String::new(), "", "")
+                .await
+                .map_err(|e| ("provider_connect", e))?,
+        );
+        let manifest = match adapter.install_manifest(ctx).await {
+            Ok(manifest) => manifest,
+            Err(e) => {
+                adapter.close().await;
+                return Err(("manifest_fetch", e));
+            }
+        };
+        let manifest_hash = match crate::provider_mcp::hash_manifest(&manifest) {
+            Ok(hash) => hash,
+            Err(e) => {
+                adapter.close().await;
+                return Err(("manifest_hash", e));
+            }
+        };
+        let mut seen = BTreeSet::new();
+        let families = manifest
+            .services
+            .iter()
+            .filter_map(|service| {
+                let family = service.capability_id.trim();
+                (!family.is_empty() && seen.insert(family.to_owned())).then(|| family.to_owned())
+            })
+            .collect::<Vec<_>>();
+        let (provider, id) = (record.provider_id.as_str(), record.generation_id.as_str());
+        self.mounts.displace(&manifest.provider.id, &families).await;
+        if let Err(e) = self
+            .mounts
+            .mount(&manifest, id, Some(adapter.clone()))
+            .await
+        {
+            adapter.close().await;
+            return Err(("provider_mount", e));
+        }
+        self.remember(provider, &manifest);
+        let forget = |this: &Self| {
+            this.forget_validation(provider);
+            this.publication.forget_manifest(provider);
+        };
+        if let Err(e) = self.register(&manifest, id) {
+            self.mounts.unmount_generation(provider, id).await;
+            adapter.close().await;
+            forget(self);
+            return Err(("service_register", e));
+        }
+        let revision = self.publication.snapshot().revision;
+        if let Err(e) = self.lifecycle.refresh(id, &manifest_hash, &revision) {
+            self.mounts.unmount_generation(provider, id).await;
+            forget(self);
+            return Err(("generation_refresh", e));
+        }
+        let Some(generation) = self.lifecycle.get(id) else {
+            return Err((
+                "generation_lookup",
+                "restored generation disappeared".into(),
+            ));
+        };
+        if let Err(e) = self.persist(&generation) {
+            self.mounts.unmount_generation(provider, id).await;
+            forget(self);
+            return Err(("generation_persist", e));
+        }
+        Ok(())
+    }
+    pub(crate) fn forget_validation(&self, provider: &str) {
+        self.validation.lock().unwrap().remove(provider);
     }
     fn remember(&self, provider: &str, manifest: &InstallManifest) {
         self.validation

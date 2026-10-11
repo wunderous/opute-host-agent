@@ -1263,3 +1263,73 @@ callback routing, process supervision, restart and the provider matrix remain
 open. The whole-agent gate still fails with 76 inventory gaps and 14 historical
 provenance problems; its original manifest is preserved. No shared runtime
 was mutated.
+
+## Public fake-provider lifecycle
+
+`opute.provider.install`, `reload` and `teardown` now run through the activation
+owner and the single plan runner. Install connects, fetches and hashes the
+manifest, reuses an identical active generation, creates a candidate, and runs
+its runtime or tunnel recipe against the candidate's private catalog. Completion
+hooks validate the activation, publish the services, apply the output mapping
+and commit the active capability, or clean the candidate up on failure. Teardown
+asks the provider to prepare a plan, runs it, finalizes, then drains, persists,
+unmounts and retires. A forced teardown of an unreachable provider runs Go's
+reclaim plan. Provider capabilities dispatch to the retained generation, with
+result validation and redacted observations. On restart, durable generations are
+restored and active ones reconnect before the listener accepts, following Go's
+`restoreProviderGenerations` stage by stage.
+
+The parity harness gained a scripted provider MCP server
+(`tools/parity/parity/provider_stub.py`): scripted results, gates that hold a
+call in flight, crash by severing live connections, and a request trace.
+`tools/parity/provider_lifecycle_scenarios.py` generates the 35 scenarios in
+`tools/parity/scenarios/provider-lifecycle.json`. They cover install, call and
+teardown; bad manifests (unpinned recipe, identity mismatch, schema, no recipe
+for mode, tool and RPC errors, undeclared validation operation, unprovided
+service capability); schema drift; missing dependencies; readiness (probe
+errors, failing plan, unavailable discovery, slow probe); call errors; crash
+after activation with normal and forced teardown; publish failures; teardown
+refusals, idempotency, prepare and finalize errors; reuse and reload;
+in-flight replacement (a held g1 call finishes on g1 while new calls reach g2
+and g1 drains); and restart with an active, a down, a torn-down and a replaced
+provider. The agent runs with its user systemd bus pointed into the sandbox, so
+`systemctl --user` cannot reach this machine's user manager on either side.
+
+Captures against Rust release
+`efbdbd8712ae99334e5eccbbf0e83f26aa224bc21da1dd5af5c9e7ced0b98961`:
+**137/137 public scenarios over five Go/Rust iterations** (the 102 earlier
+scenarios plus the 35 lifecycle ones) in `provider-lifecycle-public/`, the
+**35 lifecycle scenarios over five Go/Go iterations** in
+`provider-lifecycle-go-vs-go/`, and a **16-field secret sweep with zero
+failures** in `provider-lifecycle-secret/`. The only normalizations are
+wall-clock timestamps, the per-side ports and sandbox paths, and Go's
+nondeterministic `supportedTools` order (F-2). Three Go transients are
+synchronized on, not normalized: after a retire Go removes and re-adds every
+MCP tool, so the scenarios wait for the whole catalog; a teardown run reads
+`completed` before a failing finalize hook records `failed`; and a plan task
+completes after its run does, so journeys wait on `tasks/get`. An earlier
+capture failed one iteration of `teardown.idempotent` on that first race (in
+Go). It was discarded, not relabeled, and the scenario now waits for the
+catalog.
+
+Fixes found by the matrix: failed generations store NULL `active_at`; adapter
+connect errors use Go's `Post "…": dial tcp …: connect: …` text; plan task
+results use the redacted run-state projection with Go's `context` and `error`
+fields; and `list_host_services` is ported because the forced reclaim plan
+needs it.
+
+`provider-lifecycle-checks/verify.py` reproduces
+`provider-lifecycle-validation.json`. It regenerates the scenarios, recomputes
+every raw diff, asserts the Go-side lifecycle semantics, and checks the secret
+outcomes, the logs and the clean pinned tree. The workspace passes
+**192 tests** (24 fixtures ignored), Clippy with warnings denied, fmt, the locked
+release build, **141** harness tests, **17 owning Go tests × 5 runs**
+and **10** OpenSpec checks. The whole-agent gate still fails with 76 inventory
+gaps and 14 historical provenance problems; the candidate hash is preserved and
+only the derived scenario items were synced.
+
+Still open for M7: provider callbacks and bridged tasks (including Go's
+acknowledge-before-start for callback tasks), cancelling still-working tasks on
+shutdown, process supervision, and the five real providers in a leased
+disposable runtime. `inspect_host_service` and named host-service cleanup stay
+with M8 and fail closed. No shared runtime was mutated.
