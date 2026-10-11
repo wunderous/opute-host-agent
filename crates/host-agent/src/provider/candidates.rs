@@ -17,6 +17,14 @@ pub struct Candidates {
     state: Mutex<State>,
 }
 impl Candidates {
+    pub fn take_adapters(&self) -> Vec<Arc<Adapter>> {
+        let mut state = self.state.lock().unwrap();
+        state.manifests.clear();
+        std::mem::take(&mut state.adapters)
+            .into_values()
+            .flatten()
+            .collect()
+    }
     pub fn manifest_entries(&self) -> BTreeMap<String, InstallManifest> {
         self.state.lock().unwrap().manifests.clone()
     }

@@ -102,6 +102,10 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   listing retains its own last-completed projection, including the pinned
   no-op retirement behavior. Public provider lifecycle command composition
   and executable dispatch are still required.
+  A server-owned provider runtime now serves provider status and validation
+  through the shared owners, with 120 exact comparisons over five iterations
+  ([evidence/m7/README.md](../../../evidence/m7/README.md)). Public install,
+  activation and teardown commands remain required.
 - [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,

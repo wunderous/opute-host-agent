@@ -276,6 +276,8 @@ pub(crate) fn http_server(
             Default::default(),
         )),
     ));
+    let providers = crate::provider::runtime::Runtime::new(publication.clone(), state.clone())
+        .map_err(|error| go_err!("initialize provider callback delegation: {error}"))?;
     // `restoreTasks`: rebuild the in-memory registry from the durable
     // snapshots before anything can observe it. Admission's reservation
     // reclaim for terminal tasks after a restart (Go's
@@ -320,6 +322,7 @@ pub(crate) fn http_server(
         authz: std::sync::Mutex::new(authz),
         grant_backoff: crate::oauth::Backoff::default(),
         catalog: publication,
+        providers,
         standalone,
         allow_mutations: cfg.standalone_allow_mutations,
         host: crate::tools::Host {
@@ -400,6 +403,7 @@ async fn accept_loop(
     addr: &str,
     server: std::sync::Arc<crate::transport::Server>,
 ) -> Result<()> {
+    server.providers.bind(&server);
     let listener = tokio::net::TcpListener::from_std(go_listen(addrs, addr)?)
         .map_err(|e| go_err!("listen tcp {addr}: {e}"))?;
     let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
@@ -411,8 +415,8 @@ async fn accept_loop(
         .run_until(async move {
             loop {
                 tokio::select! {
-                    _ = sigint.recv() => return Ok(()),
-                    _ = sigterm.recv() => return Ok(()),
+                    _ = sigint.recv() => { server.providers.close().await; return Ok(()); },
+                    _ = sigterm.recv() => { server.providers.close().await; return Ok(()); },
                     accepted = listener.accept() => {
                         if let Ok((stream, _)) = accepted {
                             let server = server.clone();

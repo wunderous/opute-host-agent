@@ -12,6 +12,7 @@ pub mod mounts;
 pub mod observation;
 pub mod publication;
 pub mod result;
+pub mod runtime;
 
 use crate::{goerr::quote, hostobs::rfc3339_nano_now, plan::runner::RunCtx};
 use serde::{Deserialize, Serialize};

@@ -74,6 +74,12 @@ impl Activation {
             validation: Mutex::new(BTreeMap::new()),
         })
     }
+    pub fn clear_metadata(&self) {
+        self.validation.lock().unwrap().clear();
+        for provider in self.publication.manifests().keys() {
+            self.publication.forget_manifest(provider);
+        }
+    }
     pub fn validation(&self) -> BTreeMap<String, String> {
         self.validation.lock().unwrap().clone()
     }

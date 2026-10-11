@@ -151,6 +151,10 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         // below, same as every other lifecycle tool.
         let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let result = match name.as_str() {
+            "opute.provider.status" => server.providers.status(&args),
+            "opute.provider.validate" => server
+                .providers
+                .validate(&crate::plan::runner::RunCtx::background(), &args),
             "get_capability_catalog" => structured_result(snapshot_json(&catalog_snapshot), None),
             "validate_host_plan" => {
                 crate::plan_mcp::handle_validate_host_plan(&args, &catalog_snapshot)

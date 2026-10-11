@@ -1214,3 +1214,52 @@ bound provider dispatch, supervised processes, restart and full M7–M13 E2E rem
 open. No production provider seam or cutover is claimed. The whole-agent gate
 still fails with 76 inventory gaps and 14 historical provenance problems; its
 original manifest is preserved. No shared runtime was mutated.
+
+## Server-owned provider runtime, status and validation
+
+`provider::runtime::Runtime` is now composed into the server beside the shared
+publication owner. It owns the lifecycle, candidates, mounts, activation and
+delegation owners for one serving process, binds once to the existing serving
+Tokio runtime, and gives activated operations immutable capability factories
+that invoke through the retained generation session and adapter. Ordinary
+admission and the single plan runner keep execution ownership; no provider
+workflow executor is introduced. Shutdown disposes mounts, then candidate
+adapters, inside an owned cleanup task while the serving runtime still drives
+accepted provider I/O. A focused test holds an accepted factory call on a real
+loopback socket, shows that shutdown waits for it, and then proves later calls
+on the retained handle fail closed with zero sessions remaining.
+
+`opute.provider.status` and `opute.provider.validate` now dispatch to this
+owner. `provider-runtime/summary.json` records **120/120 exact comparisons**
+(24 cases × 5 iterations, both modes) against the actual pinned Go server
+constructor and SDK lifecycle admission, through native authenticated HTTP.
+Cases cover absent, blank, padded and case-variant provider IDs, unconnected
+and connected generations, expected-endpoint matching, remembered and explicit
+validation operations, missing validation declarations, retained handles
+across a failed predecessor and replacement, and failed mounted generations.
+Provider request payloads and protocol headers are compared exactly per batch;
+no result normalization is applied. Trusted setup restores and activates the
+generations; public installation and ordinary provider capability dispatch
+are not exercised by this corpus.
+
+`provider-runtime-diagnostic/header-name/` retains an earlier fixture error:
+its client passed a blank `tools/call` name and native correctly refused the
+header mismatch before dispatch. The fixture was corrected; production header
+validation did not change. It is neither a runtime divergence nor a pass.
+
+The changed public release (`cf583927c7fe869d961578d99b53d87c0829cd1482645a3b41b2af7dd9f656d6`)
+has fresh captures: **102/102 public scenarios over five iterations** in
+`provider-runtime-public/` and a **16-field, two-mode secret sweep with zero
+failures** in `provider-runtime-secret/`. `provider-runtime-checks/verify.py`
+reproduces `provider-runtime-validation.json`: it rechecks source and binary
+provenance, every raw batch and request trace, the public scenario diffs and
+secret outcomes, and the clean pinned Go tree. The workspace passes
+**188 tests** (24 dedicated fixtures ignored), with formatting,
+warnings-denied Clippy, locked release build, **25** owning Go test executions
+and **10** OpenSpec checks.
+
+Public provider lifecycle commands, generation-bound ordinary dispatch,
+callback routing, process supervision, restart and the provider matrix remain
+open. The whole-agent gate still fails with 76 inventory gaps and 14 historical
+provenance problems; its original manifest is preserved. No shared runtime
+was mutated.

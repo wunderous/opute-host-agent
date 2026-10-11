@@ -5,7 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	hostcapability "github.com/wunderous/host-agents/internal/capability"
+	"github.com/wunderous/host-agents/internal/resource"
 	"os"
+	"path/filepath"
 	"sort"
 
 	providercontract "github.com/wunderous/host-agents/contracts/provider"
@@ -224,6 +228,107 @@ func ParityProviderActivation(raw json.RawMessage) map[string]any {
 			}
 		}
 		observations = append(observations, observation)
+	}
+	return map[string]any{"observations": observations}
+}
+
+// Uses production lifecycle handlers through the actual SDK. Trusted fixture
+// setup and retained capability invocation are distinct from public admission.
+func ParityProviderRuntime(raw json.RawMessage) map[string]any {
+	var input struct {
+		Standalone bool
+		Steps      []struct {
+			Action, ID, Provider, Operation string
+			Generation                      cordis.ProviderGeneration
+			Manifest                        providercontract.InstallManifest
+			Descriptor                      providercontract.PluginDescriptor
+			Metadata, Arguments             map[string]any
+		}
+	}
+	if err := json.Unmarshal(raw, &input); err != nil {
+		panic(err)
+	}
+	dir, err := os.MkdirTemp("", "opute-runtime-owner-")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(dir)
+	config := resource.DefaultConfig(filepath.Join(dir, "locks"))
+	config.DiskPaths = []string{dir}
+	config.MemoryCapacityBytes = 64 * 1024 * 1024 * 1024
+	admission, err := resource.NewCoordinator(config)
+	if err != nil {
+		panic(err)
+	}
+	defer admission.Close()
+	ops := hostagent.New(hostagent.Options{AgentID: "parity.runtime.owner", ProviderID: "incus", ResourceService: admission, ToolsForProvider: func(provider string) []string {
+		names, err := tools.HostToolNamesForProvider(provider)
+		if err != nil {
+			panic(err)
+		}
+		return names
+	}})
+	server, err := NewServer(Options{ProviderID: "incus", Ops: ops, Standalone: input.Standalone, AllowMutations: true, StateDir: dir, Version: "0.2.3", Admission: admission})
+	if err != nil {
+		panic(err)
+	}
+	defer server.Close()
+	ctx := context.Background()
+	serverTransport, clientTransport := mcp.NewInMemoryTransports()
+	session, err := server.mcpServer.Connect(ctx, serverTransport, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	client := mcp.NewClient(&mcp.Implementation{Name: "runtime-fixture-client", Version: "1"}, nil)
+	connected, err := client.Connect(ctx, clientTransport, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer connected.Close()
+	adapters := map[string]*provideradapter.Adapter{}
+	defer func() {
+		for _, adapter := range adapters {
+			_ = adapter.Close()
+		}
+	}()
+	handles := map[string]hostcapability.Capability{}
+	observations := []map[string]any{}
+	for _, step := range input.Steps {
+		var failure error
+		var result *mcp.CallToolResult
+		switch step.Action {
+		case "restore":
+			failure = server.providerLifecycle.Restore(step.Generation)
+		case "candidate":
+			server.providerCandidateManifests[step.ID] = step.Manifest
+		case "connect":
+			var adapter *provideradapter.Adapter
+			adapter, failure = provideradapter.Connect(ctx, step.Descriptor, provideradapter.Options{})
+			if failure == nil {
+				adapters[step.ID] = adapter
+				server.providerCandidates[step.ID] = adapter
+			}
+		case "activate":
+			failure = server.activateProviderGeneration(step.Metadata)
+		case "fail":
+			failure = server.providerLifecycle.Fail(step.ID, "fixture failure")
+		case "unmount":
+			failure = server.unmountProviderGeneration(step.Provider, step.ID)
+		case "handle":
+			handles[step.ID] = server.capabilities[step.Operation]
+		case "invoke":
+			result, failure = handles[step.ID].Invoke(ctx, hostcapability.RawArguments(step.Arguments), tools.ExecutionBinding{}, nil)
+		case "status", "validate":
+			result, failure = connected.CallTool(ctx, &mcp.CallToolParams{Name: "opute.provider." + step.Action, Arguments: step.Arguments})
+		default:
+			panic("unknown runtime fixture action")
+		}
+		message := ""
+		if failure != nil {
+			message = failure.Error()
+		}
+		observations = append(observations, map[string]any{"error": message, "result": result})
 	}
 	return map[string]any{"observations": observations}
 }

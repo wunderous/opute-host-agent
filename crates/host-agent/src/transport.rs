@@ -54,6 +54,7 @@ pub struct Server {
     pub grant_backoff: crate::oauth::Backoff,
     /// Committed provider-neutral publication, shared by all catalog readers.
     pub catalog: Arc<crate::provider::publication::Publication>,
+    pub providers: Arc<crate::provider::runtime::Runtime>,
     pub standalone: bool,
     pub allow_mutations: bool,
     pub host: crate::tools::Host,
@@ -78,6 +79,7 @@ const ROUTES: [&str; 9] = [
 
 /// `serverHandler` + `ServeMux.ServeHTTP` + route handlers.
 pub async fn route(server: Arc<Server>, req: Request, mut body: Body) -> (Response, Body) {
+    server.providers.bind(&server);
     if req.request_uri == "*" {
         if req.method == "OPTIONS" {
             let mut r = Response::new(200);
