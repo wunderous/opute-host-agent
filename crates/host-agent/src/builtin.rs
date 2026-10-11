@@ -237,7 +237,48 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_recipes(server),
         runtime_recipes(server),
         tunnel_recipes(server),
+        providers(server),
     ]
+}
+
+/// M7: the public provider lifecycle, through the activation owner and the
+/// single plan executor.
+fn providers(server: &ServerHandle) -> Service {
+    use crate::provider_mcp::{handle_install, handle_reload, handle_teardown};
+    Service {
+        id: "providers",
+        dependencies: &["plans", "runtime-recipes", "tunnel-recipes"],
+        operations: vec![
+            (
+                "opute.provider.install",
+                lifecycle(server, |server, call| {
+                    handle_install(server, call.args, call.lease())
+                }),
+            ),
+            (
+                "opute.provider.validate",
+                lifecycle(server, |server, call| {
+                    server.providers.validate(&RunCtx::background(), call.args)
+                }),
+            ),
+            (
+                "opute.provider.status",
+                lifecycle(server, |server, call| server.providers.status(call.args)),
+            ),
+            (
+                "opute.provider.reload",
+                lifecycle(server, |server, call| {
+                    handle_reload(server, call.args, call.lease())
+                }),
+            ),
+            (
+                "opute.provider.teardown",
+                lifecycle(server, |server, call| {
+                    handle_teardown(server, call.args, call.lease())
+                }),
+            ),
+        ],
+    }
 }
 
 /// A lifecycle operation: owned by the transport pipeline, as Go's

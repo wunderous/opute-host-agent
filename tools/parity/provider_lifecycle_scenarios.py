@@ -167,6 +167,17 @@ cases.append(fault("missing-dependency.requires",manifest(requires=[{"id":"opute
 d=descriptor();d["requires"]=[{"id":"opute.capability.kubernetes.v1","version":1}]
 cases.append(fault("missing-dependency.descriptor-requires",extra={"descriptor":d},whole=143))
 cases.append(fault("missing-dependency.recipe-tool",recipe=RECIPE.replace("requiredTools: [inspect_host_file]","requiredTools: [inspect_host_file, not_a_host_tool]")))
+# Built-in families (D14): the built-in provider's identities use the
+# reserved `host-agent:` prefix. A manifest that publishes into or depends on
+# one is refused by manifest validation; one that requires it installs, as Go
+# installs any unresolved requirement, and a built-in service satisfies
+# nothing. Go, whose built-ins sit outside its service context, behaves the
+# same way.
+m=manifest();m["services"][0]["capabilityId"]="host-agent:incus.host-info"
+cases.append(fault("builtin-family.publish",m))
+m=manifest();m["services"][0]["dependencies"]=[{"id":"host-agent:incus.plans","version":1}]
+cases.append(fault("builtin-family.depend",m))
+cases.append(fault("builtin-family.require",manifest(requires=[{"id":"host-agent:incus.host-info","version":1}]),whole=143))
 # Readiness: activation probe failure, plan failure, slow provider.
 cases.append(fault("readiness.activation-probe-error",tools_=tools(**{"opute.provider.get_install_manifest":{"responses":[ok(manifest())],"default":{"error":{"code":-32000,"message":"not ready"}}}})))
 cases.append(fault("readiness.activation-probe-is-error",tools_=tools(**{"opute.provider.get_install_manifest":{"responses":[ok(manifest())],"default":{"result":{"content":[],"isError":True}}}})))

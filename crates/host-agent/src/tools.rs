@@ -609,32 +609,15 @@ pub(crate) const LIFECYCLE: &[&str] = &[
     "open_assistant_session",
 ];
 
-/// A lifecycle operation, resolved through the service context. Operations
-/// not yet revised onto the seam fall back to the legacy table below, which
-/// the seam verifier reports as gaps.
+/// A lifecycle operation, resolved through the service context.
 pub(crate) fn run_lifecycle(
     server: &Arc<Server>,
     name: &str,
     call: &crate::builtin::Invocation,
 ) -> J {
-    if let Some(outcome) = crate::builtin::invoke(server, name, call) {
-        return outcome.unwrap_or_else(|e| error_result(&e));
-    }
-    match name {
-        "opute.provider.status" => server.providers.status(call.args),
-        "opute.provider.validate" => server
-            .providers
-            .validate(&crate::plan::runner::RunCtx::background(), call.args),
-        "opute.provider.install" => {
-            crate::provider_mcp::handle_install(server, call.args, call.lease())
-        }
-        "opute.provider.reload" => {
-            crate::provider_mcp::handle_reload(server, call.args, call.lease())
-        }
-        "opute.provider.teardown" => {
-            crate::provider_mcp::handle_teardown(server, call.args, call.lease())
-        }
-        _ => not_implemented(name),
+    match crate::builtin::invoke(server, name, call) {
+        Some(outcome) => outcome.unwrap_or_else(|e| error_result(&e)),
+        None => not_implemented(name),
     }
 }
 
