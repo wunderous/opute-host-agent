@@ -121,6 +121,31 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         Ok(a) => a,
         Err(e) => return ToolCallOutcome::Result(error_result(&format!("invalid arguments: {e}"))),
     };
+    // `contextForProviderCallback`: a signed delegation re-attaches the
+    // calling provider task's reservation and identity, or refuses.
+    let meta = params
+        .and_then(|p| p.field("_meta"))
+        .map(crate::transport::go_any)
+        .and_then(|value| match value {
+            J::Object(map) => Some(map),
+            _ => None,
+        });
+    let host_tools = catalog::host_tool_names();
+    let scope = crate::provider::delegation::CallbackScope {
+        agent: &server.agent_id,
+        tasks: &server.tasks,
+        host_tools: &host_tools,
+        catalog: &catalog_snapshot,
+    };
+    let callback = match server.providers.delegations.callback(
+        &crate::plan::runner::RunCtx::background(),
+        meta.as_ref(),
+        &name,
+        &scope,
+    ) {
+        Ok(ctx) => ctx.reservation().is_some().then_some(ctx),
+        Err(e) => return ToolCallOutcome::Result(error_result(e)),
+    };
     // Decision D10 (standalone-read-only-gate): with mutations disabled,
     // standalone runs read tools only.
     if server.standalone
@@ -212,13 +237,84 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         }
         return ToolCallOutcome::Result(create_input_task(server, &args));
     }
-    if catalog::is_task_aware(&name) {
+    // Provider-declared bridged work crosses the Host Agent task boundary
+    // before the public request reaches the provider.
+    let bridged = catalog_snapshot
+        .tools
+        .iter()
+        .find(|d| d.name == name)
+        .is_some_and(|d| d.task_support == "bridged");
+    if bridged || catalog::is_task_aware(&name) {
         if !task_extension_declared(params) {
             return missing_tasks_capability();
         }
-        return ToolCallOutcome::Result(create_async_task(server, &name, args));
+        return ToolCallOutcome::Result(create_async_task(server, &name, args, callback.as_ref()));
     }
-    ToolCallOutcome::Result(dispatch(server, &name, &args, None, None))
+    ToolCallOutcome::Result(dispatch(server, &name, &args, None, callback.as_ref()))
+}
+
+/// Callback-owned async tasks whose handle has not been acknowledged yet
+/// (`pendingAsyncTaskStarts`). A delegated callback's parent reservation is
+/// bounded by the provider call, so the child does not start until the
+/// caller polls that exact task.
+#[derive(Default)]
+pub struct TaskStarts {
+    pending: std::sync::Mutex<std::collections::HashMap<String, Box<dyn FnOnce() + Send>>>,
+    closed: std::sync::atomic::AtomicBool,
+}
+
+/// `callbackTaskAcknowledgementTimeout`.
+const CALLBACK_ACKNOWLEDGEMENT: std::time::Duration = std::time::Duration::from_secs(120);
+
+fn cancel_pending_task(server: &Server, task_id: &str, message: &str) {
+    if let Some(snapshot) = server.tasks.cancel_with_message(task_id, message) {
+        persist_task(server, &snapshot);
+    }
+}
+
+/// `startPendingAsyncTask`, on `tasks/get`.
+pub fn start_pending_task(server: &Server, task_id: &str) {
+    let start = server.task_starts.pending.lock().unwrap().remove(task_id);
+    if let Some(start) = start {
+        if !server
+            .task_starts
+            .closed
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
+            start();
+        }
+    }
+}
+
+/// `closePendingAsyncTaskStarts`: shutdown cancels unacknowledged callback
+/// tasks and every task still working.
+pub fn close_task_starts(server: &Server) {
+    server
+        .task_starts
+        .closed
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    let pending: Vec<String> = server
+        .task_starts
+        .pending
+        .lock()
+        .unwrap()
+        .drain()
+        .map(|(id, _)| id)
+        .collect();
+    for id in pending {
+        cancel_pending_task(
+            server,
+            &id,
+            "The Host Agent shut down before the callback task handle was acknowledged.",
+        );
+    }
+    for id in server.tasks.working_ids() {
+        cancel_pending_task(
+            server,
+            &id,
+            "The Host Agent shut down before the task completed.",
+        );
+    }
 }
 
 /// `createInputRequestTask`: a task that completes with the operator's
@@ -333,7 +429,36 @@ pub(crate) fn persist_task(server: &Server, snapshot: &crate::tasks::Snapshot) {
 /// capability runs on its own thread under the task's operation identity.
 /// A tool-level error completes the task with `isError`; `failed` is
 /// reserved for execution errors.
-fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> J {
+fn create_async_task(
+    server: &Arc<Server>,
+    name: &str,
+    args: Map<String, J>,
+    callback: Option<&crate::plan::runner::RunCtx>,
+) -> J {
+    let owner = match callback {
+        None => None,
+        Some(ctx) => {
+            let host_tools = catalog::host_tool_names();
+            let catalog_snapshot = server.catalog.snapshot();
+            let scope = crate::provider::delegation::CallbackScope {
+                agent: &server.agent_id,
+                tasks: &server.tasks,
+                host_tools: &host_tools,
+                catalog: &catalog_snapshot,
+            };
+            match scope.task_owner(ctx) {
+                Ok(owner) => owner,
+                Err(e) => return error_result(e),
+            }
+        }
+    };
+    if server
+        .task_starts
+        .closed
+        .load(std::sync::atomic::Ordering::SeqCst)
+    {
+        return error_result("the Host Agent is shutting down and cannot start a task");
+    }
     let desc = match args.get("vmName").and_then(J::as_str) {
         Some(vm) if !vm.is_empty() => format!("Running {name} on '{vm}'..."),
         _ => format!("Executing {name}..."),
@@ -342,11 +467,43 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
     // even when the task is cancelled first, and the registry discards the
     // late result (a cancelled task stays cancelled).
     let tool_args = redact_task_args(server, name, &args);
-    let (rec, _cancelled) = server.tasks.create(name, &desc, tool_args);
+    let (rec, cancelled) = server.tasks.create(name, &desc, tool_args);
     let worker = Arc::clone(server);
     let (task_id, name) = (rec.task_id.clone(), name.to_string());
-    let handle = std::thread::spawn(move || {
-        let result = dispatch(&worker, &name, &args, Some((&name, &task_id)), None);
+    // Go runs the task under `CreateWithCancel`'s context, so tasks/cancel
+    // and shutdown abort an in-flight provider request. Host tools keep the
+    // cooperative path above.
+    let provider = server
+        .catalog
+        .snapshot()
+        .tools
+        .iter()
+        .any(|d| d.name == name && d.implementation.trim().starts_with("provider:"));
+    let base = if provider {
+        crate::plan::runner::RunCtx::from_flag(cancelled)
+    } else {
+        crate::plan::runner::RunCtx::background()
+    };
+    // A delegated child keeps its own task identity for its record while
+    // admission stays attached to the parent task's reservation.
+    let delegated = owner.is_some();
+    let child = match owner.as_ref() {
+        Some(owner) => Some(crate::provider::delegation::TaskOwner::child_context(
+            &base,
+            &name,
+            &task_id,
+            Some(owner),
+        )),
+        None => provider.then_some(base),
+    };
+    let start = move || {
+        let result = dispatch(
+            &worker,
+            &name,
+            &args,
+            Some((&name, &task_id)),
+            child.as_ref(),
+        );
         let content: Vec<J> = result
             .get("content")
             .and_then(J::as_array)
@@ -370,10 +527,43 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
         if let Some(completed) = worker.tasks.get(&task_id) {
             persist_task(&worker, &completed);
         }
-    });
-    if let Ok(mut workers) = server.task_workers.lock() {
-        workers.retain(|worker| !worker.is_finished());
-        workers.push(handle);
+    };
+    let spawner = Arc::downgrade(server);
+    let spawn = move || {
+        let Some(server) = spawner.upgrade() else {
+            return;
+        };
+        let handle = std::thread::spawn(start);
+        let workers = server.task_workers.lock();
+        if let Ok(mut workers) = workers {
+            workers.retain(|worker| !worker.is_finished());
+            workers.push(handle);
+        }
+    };
+    if delegated {
+        server
+            .task_starts
+            .pending
+            .lock()
+            .unwrap()
+            .insert(rec.task_id.clone(), Box::new(spawn));
+        let expiry = Arc::downgrade(server);
+        let task_id = rec.task_id.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(CALLBACK_ACKNOWLEDGEMENT);
+            if let Some(server) = expiry.upgrade() {
+                let expired = server.task_starts.pending.lock().unwrap().remove(&task_id);
+                if expired.is_some() {
+                    cancel_pending_task(
+                        &server,
+                        &task_id,
+                        "The callback task handle was not acknowledged before its timeout.",
+                    );
+                }
+            }
+        });
+    } else {
+        spawn();
     }
     json!({
         "content": [{"type": "text", "text": desc}],
@@ -473,11 +663,27 @@ pub(crate) fn dispatch(
         Err(refusal) => return refusal.render(),
     };
     let parent = cancel_ctx.and_then(|ctx| ctx.reservation());
-    let reservation =
-        match admission::admit(server, name, args, &binding, identity, parent.as_deref()) {
-            Ok(r) => r,
-            Err(refusal) => return refusal.render(),
-        };
+    // Go reads the admission identity from the context; a delegated
+    // callback's context carries its parent task, which the parent
+    // reservation is bound to.
+    let context_identity = cancel_ctx
+        .map(|ctx| ctx.operation_identity())
+        .filter(|(operation, task)| !operation.is_empty() || !task.is_empty());
+    let admission_identity = context_identity
+        .as_ref()
+        .map(|(operation, task)| (operation.as_str(), task.as_str()))
+        .or(identity);
+    let reservation = match admission::admit(
+        server,
+        name,
+        args,
+        &binding,
+        admission_identity,
+        parent.as_deref(),
+    ) {
+        Ok(r) => r,
+        Err(refusal) => return refusal.render(),
+    };
     if let Some((_, task_id)) = identity {
         if let Some(snapshot) = server.tasks.get(task_id) {
             let _ = server
@@ -1096,6 +1302,38 @@ fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding)
                 raw,
             )
             .map(|v| structured_result(v, Some("Managed host file inspected.")))
+        },
+        "inspect_host_service" => |host, args, binding| {
+            // `serviceNameFromBinding` / `serviceScopeFromBinding`: an explicit
+            // argument wins over the bound coordinate.
+            let field = |key: &str| {
+                let explicit = args
+                    .get(key)
+                    .and_then(J::as_str)
+                    .map(str::trim)
+                    .unwrap_or("");
+                if explicit.is_empty() {
+                    binding
+                        .coordinate(key)
+                        .and_then(J::as_str)
+                        .map(|v| v.trim().to_string())
+                        .unwrap_or_default()
+                } else {
+                    explicit.to_string()
+                }
+            };
+            let listen_port = args
+                .get("listenPort")
+                .and_then(J::as_f64)
+                .map(|v| v as i64)
+                .unwrap_or(0);
+            crate::hostread::inspect_host_service(
+                &host.env,
+                &field("serviceName"),
+                &field("scope"),
+                listen_port,
+            )
+            .map(|v| structured_result(v, Some("Host service status inspected.")))
         },
         "list_host_services" => |host, args, _| {
             let scope = args.get("scope").and_then(J::as_str).unwrap_or("");

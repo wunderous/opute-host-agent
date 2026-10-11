@@ -436,6 +436,84 @@ class Server:
         return {"exit": self.proc.returncode, "killed": False}
 
 
+PROVIDER_BIN = Path(__file__).resolve().parent.parent.parent.parent / ".parity" / "bin" / "providers"
+
+
+class ProviderProcess:
+    """One pinned Go provider executable, unchanged, on a loopback port.
+
+    It runs in the sandbox with the recording shims first on PATH, the
+    sandbox's isolated user bus, and every outbound HTTP(S) request sent to a
+    dead loopback proxy, so it can reach nothing but loopback. The core never
+    spawns a provider; the harness owns this process and always stops it.
+    """
+
+    def __init__(self, sandbox: "Sandbox", binary: str):
+        if "/" in binary or not binary.startswith("opute-provider-"):
+            raise ValueError(f"not a pinned provider executable: {binary!r}")
+        holder = socket.socket()
+        holder.bind(("127.0.0.1", 0))
+        self.port = holder.getsockname()[1]
+        holder.close()
+        env = sandbox.base_env()
+        env.update({
+            "OPUTE_PROVIDER_PORT": str(self.port),
+            "XDG_RUNTIME_DIR": str(sandbox.root / "run"),
+            "DBUS_SESSION_BUS_ADDRESS": f"unix:path={sandbox.root / 'run' / 'bus'}",
+            "HTTP_PROXY": "http://127.0.0.1:9", "HTTPS_PROXY": "http://127.0.0.1:9",
+            "http_proxy": "http://127.0.0.1:9", "https_proxy": "http://127.0.0.1:9",
+            "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost",
+        })
+        self.log = open(sandbox.root / f"{binary}.log", "wb")
+        self.proc = subprocess.Popen([str(PROVIDER_BIN / binary), "serve"], env=env, cwd=sandbox.root,
+                                     stdin=subprocess.DEVNULL, stdout=self.log, stderr=subprocess.STDOUT)
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                socket.create_connection(("127.0.0.1", self.port), 0.2).close()
+                break
+            except OSError:
+                if self.proc.poll() is not None or time.monotonic() > deadline:
+                    raise RuntimeError(f"{binary} did not listen on {self.port}")
+                time.sleep(0.05)
+        self.result: dict | None = None
+
+    def close(self) -> dict:
+        if self.result is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
+            self.log.close()
+            self.result = {"stopped": True, "signal": -self.proc.returncode if self.proc.returncode < 0 else None}
+        return self.result
+
+
+def descendants(pid: int) -> list[str]:
+    """Sorted command names of every live descendant of `pid`."""
+    children: dict[int, list[int]] = {}
+    names: dict[int, str] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat_line = (entry / "stat").read_text()
+        except OSError:
+            continue
+        name = stat_line[stat_line.index("(") + 1:stat_line.rindex(")")]
+        ppid = int(stat_line[stat_line.rindex(")") + 2:].split()[1])
+        children.setdefault(ppid, []).append(int(entry.name))
+        names[int(entry.name)] = name
+    found, todo = [], list(children.get(pid, []))
+    while todo:
+        child = todo.pop()
+        found.append(names[child])
+        todo.extend(children.get(child, []))
+    return sorted(found)
+
+
 class HttpStub:
     """A scripted HTTP endpoint for fault-injection scenarios.
 

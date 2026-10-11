@@ -1,0 +1,53 @@
+{
+  "status": "open divergence, pending owner decision; not Go parity",
+  "proposal": "openspec/changes/unadmitted-callback-task-record",
+  "scenario": "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+  "iterations": 5,
+  "differences": [
+    [
+      "steps",
+      "childRestored",
+      "body",
+      "error"
+    ],
+    [
+      "steps",
+      "childRestored",
+      "body",
+      "result"
+    ],
+    [
+      "steps",
+      "state",
+      "operations"
+    ],
+    [
+      "steps",
+      "stateRestored",
+      "operations"
+    ]
+  ],
+  "go": "persists the delegated child operation before admission (internal/hostmcp/server.go:1642-1647); after shutdown before acknowledgement, restart restores it cancelled",
+  "rust": "D12 admit-before-record: no row for the unadmitted child; after restart tasks/get reports task not found",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "rustReleaseSha256": "7aeff419bf4ceb0586b51a9221c4f3e4dfdd49241fcfd0dd66179f7993349c26",
+  "goReferenceSha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+  "harnessSha256": "8bee7abbbe4d9578677f07ca76a867b6703c8d1665e6cbb3b8de5c01dd1cf454",
+  "scenarioSha256": "61ff98758bca7a6cc8c75db9b4805ac95fda4ff4ff217dfca8b88abe61347c9a",
+  "summarySha256": "b04c306a526b87a76c7b2c9024f5fb3a788ca3da3fb7a5274f15c142f287400d",
+  "verificationScriptSha256": "fe17fb87fae440a2327a41e82fcad78ee2977ca53f0ccc6f5387a5c9f0bff069",
+  "captureScriptSha256": "cb5939215951a6544d7cc5b9a8645863c721062afe431e5f6b37df9e09cb73af"
+}

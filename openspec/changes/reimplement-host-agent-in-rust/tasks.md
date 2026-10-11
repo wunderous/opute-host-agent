@@ -79,7 +79,7 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
 
 ## 3. Prove provider and task lifecycle parity
 
-- [ ] 3.1 Implement provider manifest/schema/dependency validation and
+- [x] 3.1 Implement provider manifest/schema/dependency validation and
   candidate, active, and draining generation transitions. Gate: failed
   candidate activation leaves the prior catalog and provider usable;
   generation and catalog revisions change only under the Go contract.
@@ -111,7 +111,18 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   35-scenario fake-provider matrix, five iterations each, inside 137/137
   public scenarios. Callbacks, bridged tasks, supervision and the five real
   providers remain required.
-- [ ] 3.2 Implement generation-bound admission, callback primitive routing,
+  Done for M7: the five pinned Go providers run unchanged through the public
+  lifecycle (install with their own recipes, catalog cell, a provider-reached
+  call, validation, teardown) and match Go over five iterations, with no agent
+  descendants or orphaned shims. A flapping readiness probe leaves the prior
+  catalog and a later install activates. `inspect_host_service` and
+  host-service adoption are ported. Owner decisions still pending, with Go's
+  behaviour kept or the difference reported:
+  `atomic-provider-family-publication` (Go ordering kept),
+  `reject-null-provider-input-requests` and `unadmitted-callback-task-record`
+  (open divergences). Evidence: `provider-journeys-validation.json` in
+  [evidence/m7/README.md](../../../evidence/m7/README.md).
+- [x] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
   cancellation, stale revision, callback rejection, and reverse-order cleanup.
@@ -121,6 +132,14 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   done in M4 ([evidence/m4/README.md](../../../evidence/m4/README.md)).
   Provider generations, callback routing, readiness, replacement during
   in-flight work and bounded disposal remain open for M7.
+  Done for M7: signed callback admission with Go's refusals, delegated child
+  tasks started on acknowledgement, bridged tasks (task extension required,
+  `tasks/cancel` refused as in Go), shutdown cancelling unacknowledged and
+  working tasks and aborting in-flight provider calls, in-flight replacement,
+  readiness faults, and normal, forced and idempotent teardown. Reverse-order
+  disposal is proven against Go's own container functions (385/385, T0) and
+  in each provider's teardown plan. A shutdown before a delegated child is
+  acknowledged is the open divergence `unadmitted-callback-task-record`.
 - [ ] 3.3 Port every supported provider integration and conditional catalog
   projection behind neutral typed contracts. Gate: the equivalent configured
   Go and Rust fixture has no missing, extra, or differently shaped tool; an

@@ -1333,3 +1333,176 @@ acknowledge-before-start for callback tasks), cancelling still-working tasks on
 shutdown, process supervision, and the five real providers in a leased
 disposable runtime. `inspect_host_service` and named host-service cleanup stay
 with M8 and fail closed. No shared runtime was mutated.
+
+## Provider callbacks and the five real Go providers
+
+**Callbacks and bridged tasks.** A provider callback into the host is admitted
+by its signed delegation, exactly as Go does it. The claims must name this
+agent, the parent task must still be working, and the target must be a host
+tool outside the lifecycle and provider families. Refusals keep Go's codes
+and text: signature invalid, malformed, inactive (a stale replay), scope
+invalid (lifecycle, provider and standalone-only tools) and unknown tool. A
+bridged provider operation needs the client's task extension and runs as a
+host task. A task-aware host tool reached by a callback becomes a delegated
+child task that starts only when the provider polls `tasks/get` for it, with
+Go's two-minute acknowledgement window. Shutdown cancels unacknowledged and
+working tasks with Go's messages. A task-run provider call now observes its
+task's cancellation as Go's task context does, so shutdown aborts an
+in-flight provider request. Before this fix, Rust hung until it was killed.
+`tasks/cancel` on a bridged task is refused (`cannot cancel task`) on both
+sides. Thirteen callback scenarios cover these cases. The refused child's
+operation row is the declared D12 difference, isolated into its own query
+(`D12.refused-callback-child-operation`).
+
+One case is **not** parity. If the host shuts down before a provider
+acknowledges a delegated child, Go has already persisted that child (before
+admission) and restores it as `cancelled`; Rust, following D12's
+admit-before-record rule, keeps nothing, so `tasks/get` reports it unknown.
+Either behaviour is a policy choice, so it is filed for the owner as
+[`unadmitted-callback-task-record`](../../openspec/changes/unadmitted-callback-task-record/proposal.md).
+The case lives outside the parity suite
+(`tools/parity/open-divergences/unadmitted-callback-task.json`).
+`unadmitted-callback-task/` keeps five Go/Rust observations and a
+`verify.py` that requires exactly the four differing paths and equality
+everywhere else. Its receipt is
+`unadmitted-callback-task-validation.json`.
+
+**Real providers.** The earlier `provider-builds.json` was build-only provenance. `tools/parity/build-go-providers.sh` now builds the five
+pinned providers unchanged and reproducibly: the same flags as the reference,
+a clean pinned checkout, and identical hashes from two builds. The harness
+launches each provider on a loopback port. It runs with the sandbox `HOME`
+and recording shims, the sandbox user bus, and a dead HTTP(S) proxy, so it
+can reach nothing but loopback. `bus-isolation.log` records the preflight:
+`systemctl --user` fails closed on that bus, and this host has none of the
+units the providers name. The core never spawns providers. Each journey
+records the agent's descendant processes (none) and the orphaned-shim
+collector (none) before the harness stops the provider. The journeys
+(`tools/parity/provider_real_scenarios.py`) install each provider with its
+manifest's first recipe and read status and the published catalog (its
+catalog cell). They then make a call that reaches the provider, validate,
+tear down, and read status and the catalog again. Go's outcomes, which Rust
+now matches:
+
+| Provider | Go outcome |
+| --- | --- |
+| hostos | Public install refused: the manifest declares no recipe (`provider manifest has no recipe for mode ""`). |
+| ollama | Installed (3 tools), called and validated. Teardown is refused by plan validation: its `set_host_service_state` nodes lack the required `uri`. The provider stays active. |
+| k3s | Installed (28 tools), called, validated and torn down. |
+| cloudflare | Installed (13 of 23 operations published), called and torn down. Validation reaches the provider and returns its error. |
+| tailscale | Installed (13 tools) and torn down. Validation reaches the provider. Every published tool binds a resource URI first, and that needs an Incus inventory this tier lacks. |
+
+**Fixes the journeys found.** `inspect_host_service` and host-service URI
+adoption are ported from Go: the same `systemctl` probe and the same adoption
+rule. Before this, k3s, cloudflare and tailscale teardown failed closed in
+Rust. A result that already carries `io.modelcontextprotocol/serverInfo` (a
+provider's own) keeps it, as the SDK's `annotateServerInfo` does; Rust had
+replaced `_meta` wholesale. Two Go/Go captures failed single iterations of three callback scenarios with
+`host_capacity_saturated`. Both were discarded, not relabeled. A first guess
+(memory headroom) was wrong and was reverted. A diagnostic run caught the
+real cause: Go releases the install run's heavy reservation only after its
+task reports completion, and refuses normal-class work while a heavy one is
+held. Bridged calls now first poll `get_host_capacity` until no reservation
+is held. The step records only the settled count, and the poll's own audit
+rows are excluded from the state query. This synchronizes on Go's transient;
+nothing is normalized. `readiness.flapping` adds a probe that fails once
+(the first install fails and leaves the prior catalog) and then succeeds
+(a second install activates generation 2).
+
+No journey reached the remaining adapter paths (redirects, TLS, proxies,
+cancel causes), so none of them changed.
+
+Captures against Rust release `7aeff419bf4ceb0586b51a9221c4f3e4dfdd49241fcfd0dd66179f7993349c26`: **156/156 public scenarios
+over five Go/Rust iterations** in `provider-journeys-public/`, the **54
+provider scenarios (49 lifecycle and callback, 5 real) over five Go/Go
+iterations** in `provider-journeys-go-vs-go/`, and a **16-field secret
+sweep with zero failures** in `provider-journeys-secret/`. The only
+normalizations are wall-clock timestamps, host-allocated task ids, the
+per-side ports and sandbox paths, M3's typed `get_host_info` telemetry masks
+(re-rooted at the activation node's output), Go's `supportedTools` order
+(F-2), and the one declared D12 row above.
+
+`provider-journeys-checks/verify.py` reproduces
+`provider-journeys-validation.json`. It regenerates both scenario files,
+recomputes every raw diff, asserts the Go-side callback and journey
+semantics, checks the provider build and the bus preflight, reruns the
+open-divergence verifier, and checks the secret outcomes, the logs and the
+clean pinned tree. The workspace passes **194 tests** (24 fixtures ignored),
+Clippy with warnings denied, fmt, the locked release build, **141** harness
+tests, **27 owning Go tests × 5 runs** and 11 OpenSpec validations. The global
+cutover verifier still fails (76 inventory gaps, stale provenance, canaries,
+contracts), as expected; it is not an M7 criterion.
+
+## M7 exit
+
+Tasks 3.1 and 3.2 are checked. The milestone gate holds as Go defines it: the
+lifecycle matrix is green for the fake provider (49 scenarios, including
+callbacks and a flapping probe) and for all five real providers, over five
+Go/Rust and five Go/Go iterations, with no agent descendants and no orphaned
+processes. Green means Rust matches Go, including where Go itself refuses:
+hostos has no recipe for the public install, and ollama's teardown plan fails
+the host's schema check.
+
+Coverage by exit criterion:
+
+- **Fake-provider faults** (bad manifest, schema drift, missing dependency,
+  readiness, crash, publish failure, bad or stale callback): the lifecycle and
+  callback scenarios, with the unchanged prior catalog and revision checked in
+  state.
+- **In-flight replacement**: `replacement.in-flight`.
+- **Teardown** (normal, forced, reverse order, idempotent, no processes):
+  the teardown and crash scenarios, each real provider's teardown plan,
+  `provider-service-mounts-validation.json` (reverse disposal against Go's
+  own container functions), the agent process tree, and the orphaned-shim
+  collector.
+- **Real providers**: `provider-journeys-validation.json`.
+- **Restart**: the four restart scenarios, plus restart during a bridged task.
+- **Adapter gaps** (redirect, TLS, proxy, cancel cause): no journey reached
+  them, so they are unchanged and remain covered only by the earlier T0/T1
+  adapter evidence.
+
+Owner decisions still open, none waived:
+`atomic-provider-family-publication` (Go's ordering is kept),
+`reject-null-provider-input-requests` and `unadmitted-callback-task-record`
+(reported as divergences, not parity). Task 3.3 is in scope only for the
+catalog cells M7 touches. Each real provider's published catalog is compared
+Go/Rust in its journey. M3 recorded provider cells as an owned M7 gap, so
+there was no earlier M3 capture to compare against. The global cutover
+verifier still fails (76 inventory gaps, stale provenance, canaries and
+contracts), as expected; it is not an M7 criterion. No shared Incus,
+Kubernetes, tunnel or deployment state was touched; real providers ran at T1
+on loopback with recording shims, an isolated user bus and a dead egress
+proxy.
+
+Receipts, including diagnostics and invalidated captures kept as history (each section above says how its receipt is reproduced):
+
+- [`invalidated-sdk-captures.json`](invalidated-sdk-captures.json)
+- [`provider-activation-connected-validation.json`](provider-activation-connected-validation.json)
+- [`provider-activation-validation.json`](provider-activation-validation.json)
+- [`provider-binding-validation.json`](provider-binding-validation.json)
+- [`provider-builds.json`](provider-builds.json)
+- [`provider-candidate-validation.json`](provider-candidate-validation.json)
+- [`provider-delegation-validation.json`](provider-delegation-validation.json)
+- [`provider-journeys-validation.json`](provider-journeys-validation.json)
+- [`provider-lifecycle-validation.json`](provider-lifecycle-validation.json)
+- [`provider-observation-validation.json`](provider-observation-validation.json)
+- [`provider-owner-validation.json`](provider-owner-validation.json)
+- [`provider-publication-validation.json`](provider-publication-validation.json)
+- [`provider-regexp-cache-diagnostic-provenance.json`](provider-regexp-cache-diagnostic-provenance.json)
+- [`provider-regexp-cache-diagnostic.json`](provider-regexp-cache-diagnostic.json)
+- [`provider-regexp-cache-secret-reuse.json`](provider-regexp-cache-secret-reuse.json)
+- [`provider-regexp-cache-validation.json`](provider-regexp-cache-validation.json)
+- [`provider-regexp-secret-reuse.json`](provider-regexp-secret-reuse.json)
+- [`provider-regexp-validation.json`](provider-regexp-validation.json)
+- [`provider-registry-schema-validation.json`](provider-registry-schema-validation.json)
+- [`provider-runtime-validation.json`](provider-runtime-validation.json)
+- [`provider-schema-assembled-validation.json`](provider-schema-assembled-validation.json)
+- [`provider-schema-decoder-secret-reuse.json`](provider-schema-decoder-secret-reuse.json)
+- [`provider-schema-graph-secret-reuse.json`](provider-schema-graph-secret-reuse.json)
+- [`provider-schema-graph-validation.json`](provider-schema-graph-validation.json)
+- [`provider-schema-local-uri-secret-reuse.json`](provider-schema-local-uri-secret-reuse.json)
+- [`provider-schema-local-uri-validation.json`](provider-schema-local-uri-validation.json)
+- [`provider-schema-pointers-secret-reuse.json`](provider-schema-pointers-secret-reuse.json)
+- [`provider-schema-rechecks.json`](provider-schema-rechecks.json)
+- [`provider-service-mounts-validation.json`](provider-service-mounts-validation.json)
+- [`public-catalog-validation.json`](public-catalog-validation.json)
+- [`unadmitted-callback-task-validation.json`](unadmitted-callback-task-validation.json)

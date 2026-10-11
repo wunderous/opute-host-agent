@@ -380,6 +380,7 @@ pub(crate) fn http_server(
         },
         tasks,
         task_workers: std::sync::Mutex::new(Vec::new()),
+        task_starts: Default::default(),
         health_observer: Box::new(crate::hostobs::health_observer(
             cfg.env.clone(),
             cfg.instance_id.clone(),
@@ -429,8 +430,8 @@ async fn accept_loop(
         .run_until(async move {
             loop {
                 tokio::select! {
-                    _ = sigint.recv() => { server.providers.close().await; return Ok(()); },
-                    _ = sigterm.recv() => { server.providers.close().await; return Ok(()); },
+                    _ = sigint.recv() => { crate::tools::close_task_starts(&server); server.providers.close().await; return Ok(()); },
+                    _ = sigterm.recv() => { crate::tools::close_task_starts(&server); server.providers.close().await; return Ok(()); },
                     accepted = listener.accept() => {
                         if let Ok((stream, _)) = accepted {
                             let server = server.clone();

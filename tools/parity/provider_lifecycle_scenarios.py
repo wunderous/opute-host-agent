@@ -70,7 +70,9 @@ def install(as_,extra=None,cap="RUN_ID"):
 STATE={"as":"state","query":{"db":"${SANDBOX}/state/state.db","sql":{
   "generations":"SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
   "planRuns":"SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-  "invocations":"SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations ORDER BY created_at, operation_id",
+  # get_host_capacity rows come only from the IDLE synchronization poll, whose
+  # count depends on timing.
+  "invocations":"SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
   "activeCapabilities":"SELECT * FROM active_capabilities ORDER BY 1",
   "activeRuntimes":"SELECT * FROM active_runtimes ORDER BY 1",
   "operations":"SELECT tool_name, status, error_message FROM operations ORDER BY created_at"}}}
@@ -86,6 +88,14 @@ MASKS=[m(SC+[k],"rfc3339",TS) for k in ("createdAt","updatedAt")]+[
   m(["steps","*",t,"*","activated_at"],"rfc3339",TS) for t in ("activeCapabilities","activeRuntimes")]+[
   m(["steps","*","body","result",k],"rfc3339",TS) for k in ("createdAt","lastUpdatedAt")]+[
   m(["steps","*","body","result","result","structuredContent","nodes","*",k],"rfc3339",TS) for k in ("startedAt","completedAt")]
+# A provider callback's own task handle: its wall-clock times and the task id
+# each host allocates, both where the provider echoes it and where the stub
+# records it.
+CB=[["steps","*","body","result","result","structuredContent","callback"],["steps","*","requests","*","callback"]]
+for base in CB:
+    for sub in (["body","result"],["acknowledged","body","result"]):
+        MASKS+=[m(base+sub+[k],"rfc3339",TS) for k in ("createdAt","lastUpdatedAt")]
+        MASKS.append(m(base+sub+["taskId"],"uuid","task id the host allocates for the callback-created task"))
 def scenario(id,steps,collect=()):
     return {"id":"provider-lifecycle."+id,"surface":"provider-lifecycle","owner":"provider","anchors":["internal/hostmcp/provider_install.go:handleProviderInstallContext"],"fixture":None,"collect":list(collect),"steps":steps,"compare":{"sets":[["steps","*","body","result","structuredContent","nodes","*","output","supportedTools"],["steps","*","body","result","structuredContent",w,"nodes","*","output","services"]] if False else SETS,"notes":"Go emits supportedTools in map-iteration order (inventory finding F-2). After teardown Go removes and re-adds every MCP tool, so a call racing that refresh sees unknown tool; post-teardown reads poll until the status answers. Go also reports a provider teardown run completed while its finalize hook is still running, then records it failed when finalize fails; that case waits for the post-hook terminal state.","masks":MASKS}}
 def stub(m=None,tools=None):
@@ -172,6 +182,10 @@ cases.append(fault("readiness.plan-assert-fails",recipe=RECIPE.replace("""      
           - {path: /exists, op: eq, value: true}
 """)))
 cases.append(fault("readiness.discover-unavailable",stub_extra={"discover":None},tools_=TOOLS))
+# A flapping provider: the activation probe fails once, so the first install
+# leaves the prior (empty) catalog; a second install then activates.
+cases.append(fault("readiness.flapping",tools_=tools(**{"opute.provider.get_install_manifest":{"responses":[ok(manifest()),{"error":{"code":-32000,"message":"not ready"}}],"default":ok(manifest())}}),
+    after=[LIST_WHOLE("catalogBetween"),install("install2",cap="RUN2"),wait("installed2","RUN2"),STATUS("status2")],whole=143))
 cases.append(fault("readiness.slow-probe",tools_=tools(**{"opute.provider.get_install_manifest":{"responses":[ok(manifest()),{"hang":1,**ok(manifest())}]}}),whole=143))
 # Calls: provider errors map to the same typed results.
 cases.append(fault("call.rpc-error",tools_=tools(**{"opute.capability.fixture.probe":{"default":{"error":{"code":-32000,"message":"probe refused"}}}}),
@@ -262,4 +276,84 @@ def restart_after(id,steps,whole):
 cases.append(restart_after("restart.after-teardown",[teardown("teardown","TD1"),wait("tornDown","TD1","get_host_plan_run"),task_done("teardownTask","TD1"),
     call("statusAfter","opute.provider.status",{"provider":PID},until={"path":["body","result","structuredContent","active"],"in":[False]},timeout=10)],142))
 cases.append(restart_after("restart.after-replacement",[install("install2",{"descriptor":d2},cap="RUN2"),wait("installed2","RUN2"),STATUS("status2")],143))
-json.dump(cases,open(sys.argv[1],'w'),indent=1)
+# Callbacks: a bridged operation runs under a host task, so its provider call
+# carries a signed delegation; the provider calls back into the host with it.
+HOST={"url":"http://127.0.0.1:${PORT}/mcp","token":"${TOKEN}"}
+BRIDGE="opute.capability.fixture.bridge"
+def bridged_manifest():
+    return manifest(ops=[op("opute.capability.fixture.probe"),op(BRIDGE,taskSupport="bridged",resourceCost={"class":"normal","cpuCores":0.25,"memoryBytes":268435456,"tasks":1})])
+# Go releases the install run's heavy reservation after its task reports
+# completion, and refuses normal-class work while a heavy one is held, so a
+# bridged call first waits for the coordinator to hold no reservation.
+IDLE={"as":"idle","mcp":{"method":"tools/call","name":"get_host_capacity","params":{"name":"get_host_capacity","arguments":{}},
+    "until":{"path":["body","result","structuredContent","reservations","count"],"in":[0]},"timeout":15,
+    "observe":["body","result","structuredContent","reservations","count"]}}
+def bridge_call(as_,var):
+    return {"as":as_,"mcp":{"method":"tools/call","name":BRIDGE,"params":{"name":BRIDGE,"arguments":{}},
+        "capture":{var:["body","result","taskId"]}}}
+def callback_case(id,callbacks,extra=()):
+    replies=[{"callback":cb,"echoCallback":True} for cb in callbacks]
+    return scenario(id,[SERVE,{"as":"provider","providerStub":{"host":HOST,"manifest":bridged_manifest(),
+            "tools":tools(**{BRIDGE:{"responses":replies,"default":ok({"bridged":True})}})}},
+        WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID")]+
+        [step for i in range(len(callbacks)) for step in (dict(IDLE,**{"as":"idle%d"%i}),bridge_call("bridge%d"%i,"BRIDGE%d"%i),task_done("bridged%d"%i,"BRIDGE%d"%i))]+
+        list(extra)+[{"as":"requests","providerRequests":{"stub":"provider"}},stateq("state"),{"as":"stop","stop":{}}])
+READ={"tool":"inspect_host_file","arguments":{"path":"~/.fixture-marker"}}
+cases.append(callback_case("callback.host-tool",[READ]))
+cases.append(callback_case("callback.no-delegation",[dict(READ,token="none")]))
+cases.append(callback_case("callback.tampered",[dict(READ,token="tampered")]))
+cases.append(callback_case("callback.malformed",[dict(READ,token="malformed")]))
+cases.append(callback_case("callback.stale",[READ,dict(READ,token="previous")]))
+cases.append(callback_case("callback.lifecycle-tool",[{"tool":"opute.provider.status","arguments":{"provider":PID}}]))
+cases.append(callback_case("callback.provider-tool",[{"tool":"opute.capability.fixture.probe","arguments":{}}]))
+cases.append(callback_case("callback.standalone-tool",[{"tool":"list_operations","arguments":{}}]))
+cases.append(callback_case("callback.unknown-tool",[{"tool":"not_a_host_tool","arguments":{}}]))
+NIC={"tool":"configure_network","arguments":{"uri":"vm:local:fixture-vm"}}
+ack=callback_case("callback.child-task-acknowledged",[dict(NIC,ack=True)])
+# D12: the refused child's operation row exists only on Go; isolate it so the
+# declared divergence drops exactly that row and nothing else.
+DB="${SANDBOX}/state/state.db"
+for step in ack["steps"]:
+    if step.get("as")=="state":
+        step["query"]["sql"]=dict(step["query"]["sql"],operations="SELECT tool_name, status, error_message FROM operations WHERE tool_name <> 'configure_network' ORDER BY created_at")
+ack["steps"].insert(-1,{"as":"refusedChild","query":{"db":DB,"sql":{"operations":"SELECT tool_name, status FROM operations WHERE tool_name = 'configure_network'"}}})
+ack["compare"]=dict(ack["compare"],divergences=["D12.refused-callback-child-operation"])
+cases.append(ack)
+# A delegated child the provider never acknowledges is still pending when the
+# host shuts down; after restart a client reads what the host kept of it.
+pending=callback_case("callback.child-task-unacknowledged-at-shutdown",[NIC])
+pending["steps"][-4]["mcp"]["capture"]={"CHILD":["body","result","result","structuredContent","callback","body","result","taskId"]}
+pending["steps"]+=[RESTART,{"as":"childRestored","requires":["CHILD"],"mcp":{"method":"tasks/get","name":"${CHILD}","params":{"taskId":"${CHILD}"},"expand":True}},
+    {"as":"stateRestored","query":{"db":"${SANDBOX}/state/state.db","sql":{"operations":"SELECT tool_name, status, error_message FROM operations ORDER BY created_at"}}},{"as":"stop2","stop":{}}]
+# Open owner decision (openspec/changes/unadmitted-callback-task-record): Go
+# persists this child before admission, Rust (D12) does not. The case is
+# kept out of the parity suite and captured on its own.
+# CHILD is captured, so its task id is already a variable, not a uuid.
+pending["compare"]=dict(pending["compare"],masks=[x for x in MASKS if not (x["type"]=="uuid" and x["path"][-1]=="taskId")])
+open_cases=[pending]
+# A bridged task still running when the host shuts down is cancelled, and
+# the restarted host reports what it kept of it.
+cases.append(scenario("callback.restart-during-bridged-task",[SERVE,{"as":"provider","providerStub":{"host":HOST,"manifest":bridged_manifest(),
+        "tools":tools(**{BRIDGE:{"responses":[dict(ok({"bridged":True}),gate="held")]}})}},
+    WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID"),IDLE,bridge_call("bridge","BRIDGE"),
+    {"as":"held","providerGate":{"stub":"provider","await":"held"}},{"as":"stop1","stop":{}},
+    {"as":"release","providerGate":{"stub":"provider","release":"held"}},RESTART,
+    {"as":"restored","requires":["BRIDGE"],"mcp":{"method":"tasks/get","name":"${BRIDGE}","params":{"taskId":"${BRIDGE}"},"expand":True}},
+    stateq("state"),{"as":"stop2","stop":{}}]))
+# Go refuses tasks/cancel for a bridged task; the held call then finishes
+# normally and records its invocation.
+cases.append(scenario("callback.cancel-bridged-task-refused",[SERVE,{"as":"provider","providerStub":{"host":HOST,"manifest":bridged_manifest(),
+        "tools":tools(**{BRIDGE:{"responses":[dict(ok({"bridged":True}),gate="held")]}})}},
+    WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID"),IDLE,bridge_call("bridge","BRIDGE"),
+    {"as":"held","providerGate":{"stub":"provider","await":"held"}},
+    {"as":"cancel","requires":["BRIDGE"],"mcp":{"method":"tasks/cancel","name":"${BRIDGE}","params":{"taskId":"${BRIDGE}"}}},
+    stateq("stateHeld"),{"as":"release","providerGate":{"stub":"provider","release":"held"}},
+    task_done("bridged","BRIDGE"),stateq("state"),{"as":"stop","stop":{}}]))
+cases.append(scenario("callback.bridged-without-task-extension",[SERVE,{"as":"provider","providerStub":{"host":HOST,"manifest":bridged_manifest(),"tools":TOOLS}},
+    WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID"),IDLE,
+    {"as":"bridge","mcp":{"method":"tools/call","name":BRIDGE,"modern":True,"meta":{"io.modelcontextprotocol/clientCapabilities":{}},"params":{"name":BRIDGE,"arguments":{}}}},
+    {"as":"requests","providerRequests":{"stub":"provider"}},{"as":"stop","stop":{}}]))
+if __name__=="__main__":
+    json.dump(cases,open(sys.argv[1],'w'),indent=1)
+    if len(sys.argv)>2:
+        json.dump(open_cases,open(sys.argv[2],'w'),indent=1)

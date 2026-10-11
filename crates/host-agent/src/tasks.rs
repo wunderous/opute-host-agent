@@ -341,6 +341,32 @@ impl Registry {
         Some(rec.snapshot())
     }
 
+    /// `CancelWithMessage`: cancels a working or waiting task with the
+    /// owner's reason instead of the caller-request message.
+    pub fn cancel_with_message(&self, task_id: &str, message: &str) -> Option<Snapshot> {
+        let mut tasks = self.lock();
+        let rec = tasks.get_mut(task_id).filter(|r| r.live())?;
+        rec.cancelled.store(true, Ordering::SeqCst);
+        rec.status = "cancelled";
+        rec.status_message = match message.trim() {
+            "" => "The task was cancelled.".into(),
+            trimmed => trimmed.into(),
+        };
+        rec.touch();
+        rec.tool_result = Some(error_tool_result(&rec.status_message));
+        rec.resume = None;
+        Some(rec.snapshot())
+    }
+
+    /// Every task still `working`, for shutdown.
+    pub fn working_ids(&self) -> Vec<String> {
+        self.lock()
+            .values()
+            .filter(|r| r.status == "working")
+            .map(|r| r.task_id.clone())
+            .collect()
+    }
+
     /// `Update`: `None` for an unknown task, `Some((snapshot, false))` when
     /// the task is not waiting for input. Responses for keys that are not
     /// outstanding are ignored; once none remain the task resumes, exactly

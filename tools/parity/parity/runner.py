@@ -143,6 +143,8 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict, optional_captures: set[str] | 
     at path is one of the listed values (or the timeout passes); only the
     final response is observed, so poll counts never reach the comparison.
     "capture": {"NAME": [...]} stores the value at a path as a run variable.
+    "observe": [...] records only the value at that path, for a step that
+    synchronizes on volatile state (a host capacity snapshot, say).
     """
     expand = (lambda v: _expand_all(sandbox, v)) if spec.get("expand") else (lambda v: v)
     until = spec.get("until")
@@ -165,6 +167,8 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict, optional_captures: set[str] | 
             sandbox.captured[name] = value
         elif name not in (optional_captures or set()):
             raise RuntimeError(f"MCP response did not provide required capture {name}")
+    if "observe" in spec:
+        return {"observed": _lookup(result, spec["observe"])}
     return result
 
 
@@ -324,6 +328,16 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 stubs[label] = stub
                 sandbox.captured[spec.get("portVar", "PROVIDER_PORT")] = str(stub.port)
                 steps[label] = {"started": True}
+            elif "providerProcess" in step:
+                spec = step["providerProcess"]
+                process = agent.ProviderProcess(sandbox, spec["binary"])
+                stubs[label] = process
+                sandbox.captured[spec.get("portVar", "PROVIDER_PORT")] = str(process.port)
+                steps[label] = {"started": True}
+            elif "providerProcessStop" in step:
+                steps[label] = stubs[step["providerProcessStop"]["process"]].close()
+            elif "agentProcesses" in step:
+                steps[label] = {"descendants": agent.descendants(server.proc.pid) if server else None}
             elif "providerStop" in step:
                 # A provider crash: the listener goes away mid-life.
                 stubs[step["providerStop"]["stub"]].close()

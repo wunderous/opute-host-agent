@@ -314,6 +314,174 @@ const SYSTEMCTL: &str = "/usr/bin/systemctl";
 /// `Service.ListHostServices`: systemd units of one scope with their canonical
 /// tenant-scoped URIs, each registered as it is listed. Enablement comes from
 /// `list-unit-files` and is best-effort: an unknown unit says "unknown".
+/// `InspectHostService`: read-only systemd evidence for a caller-owned
+/// service. It never starts, stops, enables, or reloads the unit.
+pub fn inspect_host_service(
+    env: &crate::config::Env,
+    service_name: &str,
+    scope: &str,
+    listen_port: i64,
+) -> Result<J, String> {
+    let service_name = service_name.trim();
+    let safe = !service_name.is_empty()
+        && service_name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '@' | ':' | '-'));
+    if !safe {
+        return Err("serviceName is required and must be a valid systemd unit name".into());
+    }
+    let scope = scope.trim().to_lowercase();
+    let scope = if scope.is_empty() {
+        "user".to_string()
+    } else {
+        scope
+    };
+    if scope != "user" && scope != "system" {
+        return Err("scope must be user or system".into());
+    }
+    if !(0..=65535).contains(&listen_port) {
+        return Err("listenPort must be between 1 and 65535".into());
+    }
+    let mut prefix = vec![SYSTEMCTL.to_string()];
+    if scope == "user" {
+        prefix.push("--user".into());
+    }
+    let run = |args: &[&str]| {
+        let mut argv = prefix.clone();
+        argv.extend(args.iter().map(|a| a.to_string()));
+        crate::hostobs::run_command(env, &argv, Duration::from_secs(15))
+    };
+    let result = run(&["is-active", service_name]);
+    let mut status = result.stdout.trim().to_string();
+    if status.is_empty() {
+        status = result.stderr.trim().to_string();
+    }
+    let enabled = run(&["is-enabled", service_name]);
+    let mut unit_file_state = enabled.stdout.trim().to_string();
+    if unit_file_state.is_empty() {
+        unit_file_state = enabled.stderr.trim().to_string();
+    }
+    // Where the unit lives and what it launches: read-only properties that
+    // say whose a unit is.
+    let show = run(&[
+        "show",
+        service_name,
+        "-p",
+        "FragmentPath",
+        "-p",
+        "ExecStart",
+        "-p",
+        "MainPID",
+        "--no-pager",
+    ]);
+    let (fragment_path, exec_start) = if show.exit_code == 0 {
+        unit_launch_properties(&show.stdout)
+    } else {
+        (String::new(), String::new())
+    };
+    let active = result.exit_code == 0 && status == "active";
+    let mut out = json!({
+        "serviceName": service_name,
+        "scope": scope,
+        "status": status,
+        "active": active,
+        "enabled": enabled.exit_code == 0 && unit_file_state == "enabled",
+        "unitFileState": unit_file_state,
+        "exitCode": result.exit_code,
+        "fragmentPath": fragment_path,
+        "execStart": exec_start,
+    });
+    if listen_port > 0 {
+        let mut owned = false;
+        if show.exit_code == 0 && active {
+            let pid = unit_main_pid(&show.stdout);
+            if pid > 0 {
+                owned = listener_owned_by_pid(pid, listen_port).unwrap_or(false);
+            }
+        }
+        out["listenPort"] = J::from(listen_port);
+        out["listenerOwned"] = J::Bool(owned);
+    }
+    Ok(out)
+}
+
+/// `parseUnitMainPID`.
+fn unit_main_pid(output: &str) -> i64 {
+    output
+        .split('\n')
+        .filter_map(|line| line.trim().strip_prefix("MainPID="))
+        .filter_map(|value| value.parse::<i64>().ok())
+        .find(|pid| *pid > 0)
+        .unwrap_or(0)
+}
+
+/// `parseUnitLaunchProperties`: FragmentPath and the ExecStart executable.
+fn unit_launch_properties(output: &str) -> (String, String) {
+    let (mut fragment_path, mut exec_start) = (String::new(), String::new());
+    for line in output.split('\n') {
+        let line = line.trim();
+        if let Some(value) = line.strip_prefix("FragmentPath=") {
+            fragment_path = value.trim().to_string();
+        } else if line.starts_with("ExecStart=") && exec_start.is_empty() {
+            if let Some(index) = line.find("path=") {
+                let mut value = &line[index + "path=".len()..];
+                if let Some(end) = value.find(" ;") {
+                    value = &value[..end];
+                }
+                exec_start = value.trim().to_string();
+            }
+        }
+    }
+    (fragment_path, exec_start)
+}
+
+/// `listenerOwnedByPID`: whether `pid` holds a LISTEN socket on `port`.
+fn listener_owned_by_pid(pid: i64, port: i64) -> Result<bool, std::io::Error> {
+    if pid <= 0 || port <= 0 || port > 65535 {
+        return Ok(false);
+    }
+    let proc_dir = format!("/proc/{pid}");
+    let mut inodes = std::collections::HashSet::new();
+    for protocol in ["tcp", "tcp6"] {
+        let content = match std::fs::read_to_string(format!("{proc_dir}/net/{protocol}")) {
+            Ok(content) => content,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound && protocol == "tcp6" => continue,
+            Err(e) => return Err(e),
+        };
+        for line in content.split('\n') {
+            let fields: Vec<&str> = line.split_whitespace().collect();
+            if fields.len() < 10 || fields[3] != "0A" {
+                continue;
+            }
+            let Some((_, hex_port)) = fields[1].split_once(':') else {
+                continue;
+            };
+            if u16::from_str_radix(hex_port, 16).is_ok_and(|p| i64::from(p) == port) {
+                inodes.insert(fields[9].to_string());
+            }
+        }
+    }
+    if inodes.is_empty() {
+        return Ok(false);
+    }
+    for fd in std::fs::read_dir(format!("{proc_dir}/fd"))? {
+        let Ok(fd) = fd else { continue };
+        let Ok(link) = std::fs::read_link(fd.path()) else {
+            continue;
+        };
+        let link = link.to_string_lossy();
+        if let Some(inode) = link
+            .strip_prefix("socket:[")
+            .and_then(|l| l.strip_suffix(']'))
+        {
+            if inodes.contains(inode) {
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
+}
+
 pub fn list_host_services(
     env: &crate::config::Env,
     tenant_id: &str,
@@ -426,6 +594,48 @@ fn host_services_from(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn unit_properties_follow_go_parsing() {
+        let shown = "MainPID=0\nFragmentPath=/home/u/.config/systemd/user/x.service\n\
+                     ExecStart={ path=/usr/bin/x ; argv[]=/usr/bin/x serve ; ignore_errors=no }\n\
+                     ExecStart={ path=/second ; argv[]=/second }\nMainPID=42\n";
+        assert_eq!(unit_main_pid(shown), 42);
+        assert_eq!(
+            unit_launch_properties(shown),
+            (
+                "/home/u/.config/systemd/user/x.service".to_string(),
+                "/usr/bin/x".to_string()
+            )
+        );
+        assert_eq!(unit_main_pid("MainPID=nope\n"), 0);
+        assert_eq!(
+            unit_launch_properties("ExecStart=\n"),
+            (String::new(), String::new())
+        );
+        assert!(!listener_owned_by_pid(0, 80).unwrap());
+        assert!(!listener_owned_by_pid(1, 70000).unwrap());
+    }
+
+    #[test]
+    fn inspect_host_service_rejects_unsafe_input_before_running_systemctl() {
+        let env = crate::config::Env::from_pairs(std::iter::empty::<(String, String)>());
+        let unsafe_name = inspect_host_service(&env, "x; rm -rf /", "user", 0).unwrap_err();
+        assert_eq!(
+            unsafe_name,
+            "serviceName is required and must be a valid systemd unit name"
+        );
+        assert_eq!(
+            inspect_host_service(&env, "x.service", "global", 0).unwrap_err(),
+            "scope must be user or system"
+        );
+        assert_eq!(
+            inspect_host_service(&env, "x.service", "user", 70000).unwrap_err(),
+            "listenPort must be between 1 and 65535"
+        );
+    }
+
     #[test]
     fn host_services_follow_go_listing_rules() {
         let listed = "ollama.service loaded active running Ollama\n\
@@ -454,8 +664,6 @@ mod tests {
             ]
         );
     }
-
-    use super::*;
 
     #[test]
     fn filepath_clean_matches_go() {

@@ -147,5 +147,17 @@
   "dropKeys": [
    "taskSnapshotStatuses"
   ]
+ },
+ {
+  "id": "D12.refused-callback-child-operation",
+  "decision": "D12",
+  "reason": "A provider callback into configure_network creates a delegated child task whose binding is refused (no such container). Go persists that refused task's operation row before resolving the binding (internal/hostmcp/server.go:1644-1652); Rust records nothing durable for it under owner decision D12. The scenario isolates exactly that row into its own query; the M7 verifier independently requires one working Go row and no Rust row, and every other operations row is still compared.",
+  "path": [
+   "steps",
+   "refusedChild"
+  ],
+  "dropKeys": [
+   "operations"
+  ]
  }
 ]

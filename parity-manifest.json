@@ -1324,6 +1324,15 @@
    "anchors": [
     "internal/hostmcp/provider_install.go:handleProviderInstallContext"
    ],
+   "id": "provider-lifecycle.readiness.flapping",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.flapping",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
    "id": "provider-lifecycle.readiness.slow-probe",
    "owner": "provider",
    "scenario": "provider-lifecycle.readiness.slow-probe",
@@ -1463,6 +1472,173 @@
    "owner": "provider",
    "scenario": "provider-lifecycle.restart.after-replacement",
    "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.host-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.host-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.no-delegation",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.no-delegation",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.tampered",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.tampered",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.malformed",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.malformed",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.stale",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.stale",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.lifecycle-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.lifecycle-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.provider-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.provider-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.standalone-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.standalone-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.unknown-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.unknown-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.child-task-acknowledged",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.child-task-acknowledged",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.restart-during-bridged-task",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.restart-during-bridged-task",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.cancel-bridged-task-refused",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.cancel-bridged-task-refused",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.bridged-without-task-extension",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.bridged-without-task-extension",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/platform/hostos"
+   ],
+   "id": "provider-real.hostos",
+   "owner": "provider",
+   "scenario": "provider-real.hostos",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/llm/ollama"
+   ],
+   "id": "provider-real.ollama",
+   "owner": "provider",
+   "scenario": "provider-real.ollama",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "provider-real.k3s",
+   "owner": "provider",
+   "scenario": "provider-real.k3s",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/tunneling/cloudflare"
+   ],
+   "id": "provider-real.cloudflare",
+   "owner": "provider",
+   "scenario": "provider-real.cloudflare",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/tunneling/tailscale"
+   ],
+   "id": "provider-real.tailscale",
+   "owner": "provider",
+   "scenario": "provider-real.tailscale",
+   "surface": "provider-real"
   },
   {
    "anchors": [

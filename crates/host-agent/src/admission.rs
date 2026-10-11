@@ -199,9 +199,9 @@ pub fn resolve_resource(
 }
 
 /// `Service.adoptResource`: ask the owning domain whether a resource the
-/// registry has never seen really exists. Only Incus instances are adoptable
-/// in this build; cluster and host-service adoption belong to the Kubernetes
-/// and host-service domains (M6), so those URIs fail closed instead.
+/// registry has never seen really exists. Incus instances and host services
+/// are adoptable; cluster adoption belongs to the Kubernetes domain, so those
+/// URIs fail closed instead.
 fn adopt(host: &Host, parsed: &Uri) -> Result<Option<Map<String, J>>, String> {
     match parsed.resource_type.as_str() {
         "vm" | "container" => {
@@ -247,9 +247,18 @@ fn adopt(host: &Host, parsed: &Uri) -> Result<Option<Map<String, J>>, String> {
                     "host-service URI must use <scope>/<service-name>: {parsed}"
                 ));
             }
-            Err(format!(
-                "adopt host service {parsed}: host service adoption is not implemented by this Host Agent build"
-            ))
+            let (scope, service) = parsed.resource_id.split_once('/').unwrap_or_default();
+            let observed = crate::hostread::inspect_host_service(&host.env, service, scope, 0)
+                .map_err(|e| format!("adopt host service {parsed}: {e}"))?;
+            match observed.get("status").and_then(J::as_str).unwrap_or("") {
+                "not-found" | "failed" | "" => Err(format!("host service not found: {parsed}")),
+                _ => {
+                    let mut coordinates = Map::new();
+                    coordinates.insert("serviceName".into(), J::from(service));
+                    coordinates.insert("scope".into(), J::from(scope));
+                    Ok(Some(coordinates))
+                }
+            }
         }
         _ => Ok(None),
     }

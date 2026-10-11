@@ -63,6 +63,8 @@ pub struct Server {
     /// Accepted task workers must finish their durable writes before state
     /// closes, like Go's asyncTaskStartWG.
     pub task_workers: Mutex<Vec<std::thread::JoinHandle<()>>>,
+    /// Callback-owned tasks held until their handle is acknowledged.
+    pub task_starts: crate::tools::TaskStarts,
 }
 
 const ROUTES: [&str; 9] = [
@@ -1163,6 +1165,7 @@ fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
         })),
         "tasks/get" => {
             let id = task_id();
+            crate::tools::start_pending_task(server, &id);
             match server.tasks.get(&id) {
                 Some(rec) => Ok(rec.get_result()),
                 None => Err(ExtError::Plain(format!("task not found: {id}"))),

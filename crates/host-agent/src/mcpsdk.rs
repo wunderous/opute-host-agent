@@ -1191,10 +1191,17 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
     if uses_new {
         if let Some(obj) = result.as_object_mut() {
             obj.insert("resultType".into(), J::String("complete".into()));
-            obj.insert(
-                "_meta".into(),
-                json!({META_SERVER_INFO: {"name": sdk.implementation_name, "version": sdk.version}}),
-            );
+            // `annotateServerInfo`: set the server's identity unless the
+            // result's `_meta` already carries one (a provider's own, say).
+            let meta = obj.entry("_meta").or_insert_with(|| J::Object(Map::new()));
+            if !meta.is_object() {
+                *meta = J::Object(Map::new());
+            }
+            if let Some(meta) = meta.as_object_mut() {
+                meta.entry(META_SERVER_INFO).or_insert_with(
+                    || json!({"name": sdk.implementation_name, "version": sdk.version}),
+                );
+            }
         }
     }
     Ok(result)

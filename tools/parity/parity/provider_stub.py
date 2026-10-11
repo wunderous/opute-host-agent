@@ -12,10 +12,12 @@ reported.
 from __future__ import annotations
 
 import copy
+import http.client
 import http.server
 import json
 import socket
 import threading
+import time
 from typing import Any
 
 MANIFEST_TOOL = "opute.provider.get_install_manifest"
@@ -40,6 +42,14 @@ class _Server(http.server.ThreadingHTTPServer):
             self.connections.discard(request)
         super().shutdown_request(request)
 
+    def handle_error(self, request, client_address):
+        # A held reply written after the host dropped the connection (the
+        # host shut down mid-call) is expected; nothing to report.
+        import sys
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
+
     def sever(self) -> None:
         """Drop every live keep-alive connection, as a crashed process would."""
         with self.connections_lock:
@@ -62,7 +72,10 @@ class ProviderStub:
       tasks: {taskId: [tasks/get reply...]}
     A reply is {"result": value} | {"error": {...}} |
     {"status": int, "body": str} | {"hang": seconds, ...reply} |
-    {"gate": name, ...reply} (held until a providerGate step releases it).
+    {"gate": name, ...reply} (held until a providerGate step releases it) |
+    {"callback": {...}, ...reply}: before answering, call back into the host
+    with the delegation this request carried (see _callback).
+    host: {"url": ..., "token": ...} for callbacks.
     """
 
     def __init__(self, spec: dict[str, Any]):
@@ -70,6 +83,7 @@ class ProviderStub:
         self.records: list[dict[str, Any]] = []
         self._closed = False
         self._gates: dict[str, threading.Event] = {}
+        self._last_delegation = ""
         self._reached: dict[str, threading.Event] = {}
         self._counts: dict[str, int] = {}
         self._lock = threading.Lock()
@@ -190,6 +204,12 @@ class ProviderStub:
             reply = {"result": {}}
         else:
             reply = {"error": {"code": -32601, "message": f"method not found: {method}"}}
+        if "callback" in reply:
+            outcome = self._callback(reply["callback"], meta if isinstance(meta, dict) else {})
+            with self._lock:
+                self.records.append({"callback": outcome})
+            if reply.get("echoCallback"):
+                reply = {"result": {"content": [], "structuredContent": {"callback": outcome}}}
         if "gate" in reply:
             # Block this reply until the scenario releases the gate, so a
             # call can be held in flight deterministically.
@@ -205,6 +225,68 @@ class ProviderStub:
         else:
             envelope["result"] = reply.get("result")
         return 200, json.dumps(envelope).encode()
+
+    def _callback(self, spec: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
+        """One provider callback into the host's MCP endpoint.
+
+        "token": "received" (default) forwards this request's delegation,
+        "previous" replays the one an earlier call carried, "tampered" flips
+        its signature, "malformed" sends a non-token, "none" omits it.
+        """
+        received = meta.get("io.opute/host-resource-delegation", "")
+        mode = spec.get("token", "received")
+        token = {"received": received, "previous": self._last_delegation,
+                 "malformed": "not-a-delegation", "none": ""}.get(mode, received)
+        if mode == "tampered" and isinstance(received, str) and "." in received:
+            payload, signature = received.rsplit(".", 1)
+            token = payload + "." + ("A" if signature[:1] != "A" else "B") + signature[1:]
+        if isinstance(received, str) and received:
+            self._last_delegation = received
+        name = spec["tool"]
+        outcome = self._host_call("tools/call", name, {"name": name, "arguments": spec.get("arguments", {})}, token)
+        outcome["token"] = mode
+        task_id = outcome["body"].get("result", {}).get("taskId") if isinstance(outcome["body"], dict) else None
+        if spec.get("ack") and isinstance(task_id, str):
+            # Acknowledge the callback task by polling it, as Go requires
+            # before a delegated child starts; record its terminal state.
+            deadline = time.monotonic() + 15
+            while True:
+                polled = self._host_call("tasks/get", task_id, {"taskId": task_id}, "")
+                status = polled["body"].get("result", {}).get("status") if isinstance(polled["body"], dict) else None
+                if status not in ("working", None) or time.monotonic() > deadline:
+                    break
+                time.sleep(0.05)
+            outcome["acknowledged"] = polled
+        return outcome
+
+    def _host_call(self, method: str, name: str, params: dict[str, Any], token: str) -> dict[str, Any]:
+        call_meta = {
+            "io.modelcontextprotocol/protocolVersion": PROTOCOL_VERSION,
+            "io.modelcontextprotocol/clientInfo": {"name": "parity-provider", "version": "1"},
+            "io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}},
+        }
+        if token:
+            call_meta["io.opute/host-resource-delegation"] = token
+        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method,
+                           "params": {**params, "_meta": call_meta}}).encode()
+        host = self.spec["host"]
+        port = int(host["url"].split(":")[2].split("/")[0])
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=60)
+        try:
+            conn.request("POST", "/mcp", body, {
+                "Content-Type": "application/json", "Accept": "application/json, text/event-stream",
+                "MCP-Protocol-Version": PROTOCOL_VERSION, "Mcp-Method": method, "Mcp-Name": name,
+                "Authorization": "Bearer " + host["token"]})
+            response = conn.getresponse()
+            raw = response.read()
+            try:
+                decoded = json.loads(raw)
+            except ValueError:
+                decoded = raw.decode(errors="replace")
+            outcome = {"status": response.status, "body": decoded}
+        finally:
+            conn.close()
+        return outcome
 
     def _gate_event(self, name: str) -> threading.Event:
         with self._lock:
