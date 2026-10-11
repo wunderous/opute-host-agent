@@ -621,6 +621,8 @@ mod tests {
                 Some(state.clone()),
                 hooks,
             );
+            let mut adapters: BTreeMap<String, Arc<super::super::adapter::Adapter>> =
+                BTreeMap::new();
             let mut ids = BTreeSet::new();
             let mut providers = BTreeSet::new();
             let mut observations = Vec::new();
@@ -638,6 +640,7 @@ mod tests {
                     )
                 };
                 let mut error = String::new();
+                let mut probe = Value::Null;
                 match text("action") {
                     "restore" => {
                         let generation: Generation =
@@ -645,6 +648,66 @@ mod tests {
                         ids.insert(generation.id.clone());
                         providers.insert(generation.provider.id.clone());
                         error = lifecycle.restore(generation).err().unwrap_or_default();
+                    }
+                    "connect" => {
+                        match super::super::adapter::Adapter::connect(
+                            &crate::plan::runner::RunCtx::background(),
+                            serde_json::from_value(step["descriptor"].clone()).unwrap(),
+                            String::new(),
+                            "",
+                            "",
+                        )
+                        .await
+                        {
+                            Ok(adapter) => {
+                                let adapter = Arc::new(adapter);
+                                candidates.set_adapter(text("id"), Some(adapter.clone()));
+                                adapters.insert(text("id").into(), adapter);
+                            }
+                            Err(failure) => error = failure,
+                        }
+                    }
+                    "mount" => {
+                        error = owner
+                            .mounts
+                            .mount(
+                                manifest.as_ref().unwrap(),
+                                text("id"),
+                                adapters.get(text("id")).cloned(),
+                            )
+                            .await
+                            .err()
+                            .unwrap_or_default()
+                    }
+                    "unmount" => {
+                        owner
+                            .mounts
+                            .unmount_generation(text("provider"), text("id"))
+                            .await
+                    }
+                    "cleanup" => owner.cleanup(text("id")).await,
+                    "probe" => {
+                        if let Some(adapter) = adapters.get(text("id")) {
+                            match adapter
+                                .call_synchronous_only(
+                                    &crate::plan::runner::RunCtx::background(),
+                                    text("operation"),
+                                    Some(Map::new()),
+                                    "",
+                                )
+                                .await
+                            {
+                                Ok(result) => {
+                                    probe = result
+                                        .get("structuredContent")
+                                        .cloned()
+                                        .unwrap_or(Value::Null)
+                                }
+                                Err(failure) => error = failure,
+                            }
+                        } else {
+                            error = "fixture adapter is absent".into();
+                        }
                     }
                     "candidate" => {
                         if let Some(manifest) = manifest {
@@ -742,10 +805,37 @@ mod tests {
                     value.encode(&mut out);
                     serde_json::from_str::<Value>(&out).unwrap()
                 };
-                observations.push(json!({"error":error,"generations":generations,"active":active,
+                let mut observation = json!({"error":error,"generations":generations,"active":active,
                     "candidates":manifest_map(candidate_map),"manifests":manifest_map(remembered),"validation":owner.validation(),
                     "events":events.lock().unwrap().clone(),"catalog":snapshot(publication.snapshot()),"registry":snapshot(registry.snapshot()),
-                    "durable":durable,"durableError":durable_error}));
+                    "durable":durable,"durableError":durable_error});
+                if input["observeMounts"].as_bool().unwrap_or(false) {
+                    let mounted = owner.mounts.plugin_ids().into_iter().map(|id| {
+                        // The fixture knows each service's typed declaration; no key parsing.
+                        let service = ids.iter().find_map(|generation| {
+                            let provider = lifecycle.get(generation)?;
+                            let manifest = candidates.manifest(generation).or_else(|| publication.manifest(&provider.provider.id))?;
+                            manifest.services.iter().find_map(|definition| {
+                                owner.mounts.resolve(&provider.provider.id, &definition.id, generation).filter(|service| service.key == id)
+                            })
+                        }).expect("fixture mounted service declaration");
+                        json!({"key":service.key,"provider":service.provider_id,"generation":service.generation_id,"capability":service.capability_id,"inject":service.inject})
+                    }).collect::<Vec<_>>();
+                    let candidate_adapters = ids
+                        .iter()
+                        .filter(|id| candidates.adapter(id).is_some())
+                        .collect::<Vec<_>>();
+                    observation["mounts"] = json!(mounted);
+                    observation["candidateAdapters"] = json!(candidate_adapters);
+                    if text("action") == "probe" {
+                        observation["probe"] = probe;
+                    }
+                }
+                observations.push(observation);
+            }
+            owner.mounts.close().await;
+            for adapter in adapters.values() {
+                adapter.close().await;
             }
             outputs.push(json!({"observations":observations}));
         }

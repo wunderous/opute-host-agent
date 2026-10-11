@@ -1150,3 +1150,33 @@ pending owner review; the pinned failure ordering remains preserved. Global
 cutover is failed and its original manifest is untouched. No shared Incus,
 Kubernetes, tunnel or deployment state was mutated. Next is actual adapter/mount
 failure and public lifecycle composition, then the process/provider matrix.
+
+## Connected activation and mount ownership
+
+The activation differential fixture now connects actual Go and native adapters
+to exclusively owned loopback MCP endpoints. The connected corpus covers
+**24 cases × 5 iterations = 120 passing comparisons**, including dependency
+chains, failure before and after the first mount, successful and failed
+replacement, active-generation reaffirmation, admission/store/filter failures,
+completion before activation and explicit candidate cleanup. The complete
+observations include ordered service mounts, resolved dependency keys and
+candidate adapter ownership. Synchronous connection probes establish that a
+failed replacement keeps the prior adapter usable and a successful replacement
+closes the predecessor. They do not establish public admitted dispatch.
+
+The independent verifier in `provider-activation-connected-checks/verify.py`
+checks raw comparisons, actual request payloads/protocol headers, typed loopback
+endpoint substitution, fresh timestamp bounds, durable consistency and explicit
+mount/rollback outcomes. It produces `provider-activation-connected-validation.json`.
+The workspace again passes **187 tests**, warnings-denied Clippy, formatting,
+locked release build, focused pinned Go mount/swap/idempotence tests over five
+iterations and **10** OpenSpec checks. The unchanged public release bytes permit
+rechecking the prior 102 public scenarios and sixteen-field secret sweep.
+Historical private receipts remain bound to their recorded source versions.
+
+No production runtime source changed in this checkpoint: native changes are
+inside the existing ignored differential fixture. Public lifecycle composition,
+enclosing recipe cleanup, process supervision, restart and all five unchanged
+provider executables still require validation. The whole-agent gate remains
+failed with 76 inventory gaps and 14 historical provenance/evidence problems;
+its original manifest is preserved. No shared runtime was mutated.

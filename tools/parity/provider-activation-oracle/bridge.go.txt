@@ -10,6 +10,7 @@ import (
 
 	providercontract "github.com/wunderous/host-agents/contracts/provider"
 	"github.com/wunderous/host-agents/internal/cordis"
+	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
 	"github.com/wunderous/host-agents/internal/hostagent"
 	"github.com/wunderous/host-agents/internal/tools"
 )
@@ -37,14 +38,16 @@ func (p parityActivationObserver) Apply(ctx *cordis.Context) (cordis.Effect, err
 	return nil, nil
 }
 
-// Metadata/durable composition only. Adapter entries are deliberately absent;
-// provider transport, mount failure and process supervision require a later
-// real loopback adapter fixture. No domain operation is invoked by this bridge.
+// Optional connected adapters exercise real loopback transport and mount ownership.
+// All endpoints and durable state belong to the isolated differential driver.
 func ParityProviderActivation(raw json.RawMessage) map[string]any {
 	var input struct {
-		Standalone bool
-		Steps      []struct {
+		Standalone    bool
+		ObserveMounts bool
+		Steps         []struct {
 			Action, ID, Provider, Denial, PreviousID, Cause string
+			Descriptor                                      *providercontract.PluginDescriptor
+			Operation                                       string
 			Manifest                                        *providercontract.InstallManifest
 			Generation                                      cordis.ProviderGeneration
 			Metadata                                        map[string]any
@@ -84,13 +87,43 @@ func ParityProviderActivation(raw json.RawMessage) map[string]any {
 	ids := map[string]bool{}
 	providers := map[string]bool{}
 	observations := []map[string]any{}
+	adapters := map[string]*provideradapter.Adapter{}
+	defer func() {
+		for _, adapter := range adapters {
+			_ = adapter.Close()
+		}
+	}()
 	for _, step := range input.Steps {
 		var failure error
+		var probe any
 		switch step.Action {
 		case "restore":
 			ids[step.Generation.ID] = true
 			providers[step.Generation.Provider.ID] = true
 			failure = server.providerLifecycle.Restore(step.Generation)
+		case "connect":
+			var adapter *provideradapter.Adapter
+			adapter, failure = provideradapter.Connect(context.Background(), *step.Descriptor, provideradapter.Options{})
+			if failure == nil {
+				adapters[step.ID] = adapter
+				server.providerCandidates[step.ID] = adapter
+			}
+		case "mount":
+			failure = server.mountProviderGeneration(*step.Manifest, step.ID, adapters[step.ID])
+		case "unmount":
+			failure = server.unmountProviderGeneration(step.Provider, step.ID)
+		case "cleanup":
+			server.cleanupProviderCandidate(step.ID, "")
+		case "probe":
+			if adapter := adapters[step.ID]; adapter != nil {
+				result, err := adapter.CallSynchronousOnly(context.Background(), step.Operation, map[string]any{})
+				failure = err
+				if result != nil {
+					probe = result.StructuredContent
+				}
+			} else {
+				failure = errors.New("fixture adapter is absent")
+			}
 		case "candidate":
 			if step.Manifest == nil {
 				delete(server.providerCandidateManifests, step.ID)
@@ -162,7 +195,35 @@ func ParityProviderActivation(raw json.RawMessage) map[string]any {
 		if durableError != nil {
 			durableMessage = durableError.Error()
 		}
-		observations = append(observations, map[string]any{"error": message, "generations": generations, "active": active, "candidates": candidate, "manifests": manifests, "validation": validation, "events": eventSnapshot, "catalog": server.CatalogSnapshot(), "registry": server.registry.Snapshot(), "durable": durable, "durableError": durableMessage})
+		observation := map[string]any{"error": message, "generations": generations, "active": active, "candidates": candidate, "manifests": manifests, "validation": validation, "events": eventSnapshot, "catalog": server.CatalogSnapshot(), "registry": server.registry.Snapshot(), "durable": durable, "durableError": durableMessage}
+		if input.ObserveMounts {
+			mounts := []map[string]any{}
+			for _, id := range server.providerContext.PluginIDs() {
+				service, ok := server.providerContext.Resolve(cordis.ServiceKey(id))
+				if !ok {
+					continue
+				}
+				value, ok := service.(*providerServiceValue)
+				if !ok {
+					continue
+				}
+				inject := append([]cordis.ServiceKey{}, value.inject...)
+				mounts = append(mounts, map[string]any{"key": id, "provider": value.providerID, "generation": value.generationID, "capability": value.capabilityID, "inject": inject})
+			}
+			candidateAdapters := []string{}
+			for id, adapter := range server.providerCandidates {
+				if adapter != nil {
+					candidateAdapters = append(candidateAdapters, id)
+				}
+			}
+			sort.Strings(candidateAdapters)
+			observation["mounts"] = mounts
+			observation["candidateAdapters"] = candidateAdapters
+			if step.Action == "probe" {
+				observation["probe"] = probe
+			}
+		}
+		observations = append(observations, observation)
 	}
 	return map[string]any{"observations": observations}
 }

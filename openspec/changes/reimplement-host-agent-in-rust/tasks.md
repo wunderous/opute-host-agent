@@ -93,8 +93,11 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   The private activation owner now composes readiness, admission, publication,
   durable generation rows, mounting, predecessor disposal and rollback in the
   pinned order. Its metadata/durable matrix covers 170 cases over five
-  iterations; caller-abort ownership has a focused regression. Adapter/process
-  execution, public wiring, enclosing recipe cleanup and restart remain required.
+  iterations; caller-abort ownership has a focused regression. Connected adapter
+  activation, mount rollback, replacement and explicit candidate cleanup now
+  pass 24 cases over five iterations, including retained-connection probes and
+  actual loopback MCP request comparison. Provider process execution, public
+  wiring, enclosing recipe cleanup and restart remain required.
 - [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
