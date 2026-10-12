@@ -27209,6 +27209,257 @@
          }
         }
        }
+      },
+      "opute.provider.get_install_manifest": {
+       "responses": [
+        {
+         "result": {
+          "content": [],
+          "structuredContent": {
+           "schema": "opute-provider-install-manifest.v1",
+           "provider": {
+            "id": "com.opute.fixture",
+            "version": "2.0.0"
+           },
+           "provides": [
+            {
+             "id": "opute.capability.llm-serving.v1",
+             "version": 1
+            }
+           ],
+           "hostAgent": {},
+           "recipes": [
+            {
+             "id": "fixture.activate",
+             "source": {
+              "uri": "recipes/activate.yaml",
+              "revision": "working-tree",
+              "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+             },
+             "mode": "activate"
+            }
+           ],
+           "services": [
+            {
+             "id": "opute.capability.fixture",
+             "capabilityId": "opute.capability.llm-serving.v1",
+             "version": 1,
+             "operations": [
+              {
+               "id": "opute.capability.fixture.probe",
+               "version": 1,
+               "inputSchema": {
+                "type": "object"
+               },
+               "outputSchema": {
+                "type": "object"
+               },
+               "effect": "read",
+               "idempotent": true,
+               "supportsReadiness": false,
+               "taskSupport": "sync_only"
+              }
+             ]
+            }
+           ],
+           "teardown": {
+            "id": "opute.provider.teardown",
+            "version": 1,
+            "inputSchema": {
+             "type": "object",
+             "required": [
+              "inputs"
+             ],
+             "properties": {
+              "inputs": {
+               "type": "object"
+              }
+             }
+            },
+            "outputSchema": {
+             "type": "object"
+            },
+            "effect": "destructive",
+            "idempotent": true,
+            "supportsReadiness": false,
+            "taskSupport": "sync_only",
+            "resourceKinds": [
+             "service"
+            ]
+           },
+           "validation": {
+            "capability": "opute.capability.llm-serving.v1",
+            "operation": "opute.capability.fixture.probe"
+           }
+          }
+         }
+        },
+        {
+         "gate": "activate2",
+         "result": {
+          "content": [],
+          "structuredContent": {
+           "schema": "opute-provider-install-manifest.v1",
+           "provider": {
+            "id": "com.opute.fixture",
+            "version": "2.0.0"
+           },
+           "provides": [
+            {
+             "id": "opute.capability.llm-serving.v1",
+             "version": 1
+            }
+           ],
+           "hostAgent": {},
+           "recipes": [
+            {
+             "id": "fixture.activate",
+             "source": {
+              "uri": "recipes/activate.yaml",
+              "revision": "working-tree",
+              "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+             },
+             "mode": "activate"
+            }
+           ],
+           "services": [
+            {
+             "id": "opute.capability.fixture",
+             "capabilityId": "opute.capability.llm-serving.v1",
+             "version": 1,
+             "operations": [
+              {
+               "id": "opute.capability.fixture.probe",
+               "version": 1,
+               "inputSchema": {
+                "type": "object"
+               },
+               "outputSchema": {
+                "type": "object"
+               },
+               "effect": "read",
+               "idempotent": true,
+               "supportsReadiness": false,
+               "taskSupport": "sync_only"
+              }
+             ]
+            }
+           ],
+           "teardown": {
+            "id": "opute.provider.teardown",
+            "version": 1,
+            "inputSchema": {
+             "type": "object",
+             "required": [
+              "inputs"
+             ],
+             "properties": {
+              "inputs": {
+               "type": "object"
+              }
+             }
+            },
+            "outputSchema": {
+             "type": "object"
+            },
+            "effect": "destructive",
+            "idempotent": true,
+            "supportsReadiness": false,
+            "taskSupport": "sync_only",
+            "resourceKinds": [
+             "service"
+            ]
+           },
+           "validation": {
+            "capability": "opute.capability.llm-serving.v1",
+            "operation": "opute.capability.fixture.probe"
+           }
+          }
+         }
+        }
+       ],
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "schema": "opute-provider-install-manifest.v1",
+          "provider": {
+           "id": "com.opute.fixture",
+           "version": "2.0.0"
+          },
+          "provides": [
+           {
+            "id": "opute.capability.llm-serving.v1",
+            "version": 1
+           }
+          ],
+          "hostAgent": {},
+          "recipes": [
+           {
+            "id": "fixture.activate",
+            "source": {
+             "uri": "recipes/activate.yaml",
+             "revision": "working-tree",
+             "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+            },
+            "mode": "activate"
+           }
+          ],
+          "services": [
+           {
+            "id": "opute.capability.fixture",
+            "capabilityId": "opute.capability.llm-serving.v1",
+            "version": 1,
+            "operations": [
+             {
+              "id": "opute.capability.fixture.probe",
+              "version": 1,
+              "inputSchema": {
+               "type": "object"
+              },
+              "outputSchema": {
+               "type": "object"
+              },
+              "effect": "read",
+              "idempotent": true,
+              "supportsReadiness": false,
+              "taskSupport": "sync_only"
+             }
+            ]
+           }
+          ],
+          "teardown": {
+           "id": "opute.provider.teardown",
+           "version": 1,
+           "inputSchema": {
+            "type": "object",
+            "required": [
+             "inputs"
+            ],
+            "properties": {
+             "inputs": {
+              "type": "object"
+             }
+            }
+           },
+           "outputSchema": {
+            "type": "object"
+           },
+           "effect": "destructive",
+           "idempotent": true,
+           "supportsReadiness": false,
+           "taskSupport": "sync_only",
+           "resourceKinds": [
+            "service"
+           ]
+          },
+          "validation": {
+           "capability": "opute.capability.llm-serving.v1",
+           "operation": "opute.capability.fixture.probe"
+          }
+         }
+        }
+       }
       }
      }
     }
@@ -27359,6 +27610,20 @@
        "runId"
       ]
      }
+    }
+   },
+   {
+    "as": "activate2Reached",
+    "providerGate": {
+     "stub": "provider2",
+     "await": "activate2"
+    }
+   },
+   {
+    "as": "activate2Released",
+    "providerGate": {
+     "stub": "provider2",
+     "release": "activate2"
     }
    },
    {

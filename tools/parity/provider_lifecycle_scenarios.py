@@ -250,11 +250,19 @@ def stateq(as_,until=None):
     return q
 replace=scenario("replacement.in-flight",[SERVE,
     {"as":"provider","providerStub":{"manifest":manifest(),"tools":tools(**{"opute.capability.fixture.probe":{"responses":[{"gate":"held",**ok({"generation":"g1"})}],"default":ok({"generation":"g1"})}})}},
-    {"as":"provider2","providerStub":{"portVar":"PROVIDER2_PORT","manifest":manifest("2.0.0"),"tools":tools(**{"opute.capability.fixture.probe":{"default":ok({"generation":"g2"})}})}},
+    {"as":"provider2","providerStub":{"portVar":"PROVIDER2_PORT","manifest":manifest("2.0.0"),"tools":tools(**{"opute.capability.fixture.probe":{"default":ok({"generation":"g2"})},
+        "opute.provider.get_install_manifest":{"responses":[ok(manifest("2.0.0")),{"gate":"activate2",**ok(manifest("2.0.0"))}],"default":ok(manifest("2.0.0"))}})}},
     WRITE,install("install1",cap="RUN1"),wait("installed1","RUN1"),STATUS("status1"),
     {"as":"held","mcp":{"method":"tools/call","name":"opute.capability.fixture.probe","params":{"name":"opute.capability.fixture.probe","arguments":{}},"background":"g1call"}},
     {"as":"heldReached","providerGate":{"stub":"provider","await":"held"}},
-    install("install2",{"descriptor":d2},cap="RUN2"),wait("installed2","RUN2"),STATUS("status2"),
+    # install2 reuses run 1 (same idempotency key): both hosts answer with that
+    # record and re-run the plan in the background, where activation validation
+    # reads provider2's manifest a second time. Holding that read keeps the
+    # answer from racing the background rewrite of the active runtime row.
+    install("install2",{"descriptor":d2},cap="RUN2"),
+    {"as":"activate2Reached","providerGate":{"stub":"provider2","await":"activate2"}},
+    {"as":"activate2Released","providerGate":{"stub":"provider2","release":"activate2"}},
+    wait("installed2","RUN2"),STATUS("status2"),
     call("probeNew","opute.capability.fixture.probe",{}),
     stateq("stateWhileHeld"),
     {"as":"release","providerGate":{"stub":"provider","release":"held"}},
