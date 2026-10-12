@@ -172,5 +172,145 @@
    "childRowRestored",
    "childRestored"
   ]
+ },
+ {
+  "id": "D16.rejected-candidate-keeps-owner",
+  "decision": "D16",
+  "reason": "Provider Alpha owns a capability family, provider Rival's install competes for it with an input schema the registry rejects, and provider Other then publishes a different family. The pinned Go displaces Alpha's registry entry before validating Rival (internal/hostmcp/server.go registerProviderServicesForGeneration), so Alpha's still-listed tool is refused as unregistered after the rejection and Other's publication drops it from tools/list. Under owner decision D16 Rust commits family displacement only with a valid candidate, so Alpha stays registered, listed and callable. The scenario isolates exactly Alpha's call after the rejection, the listing and Alpha's call after Other's publication, and Alpha's invocation audit rows; per-side expectations pin both sides and every other step, including Rival's rejection and Other's activation, is compared.",
+  "path": [
+   "steps"
+  ],
+  "dropKeys": [
+   "probeAfterRejection",
+   "catalogAfterOther",
+   "probeAfterOther",
+   "alphaInvocations"
+  ]
+ },
+ {
+  "id": "D16.other-install-catalog-revision",
+  "decision": "D16",
+  "reason": "In the D16.rejected-candidate-keeps-owner scenario, the install response for provider Other reports the catalog revision current when Other's install began. The pinned Go registry had already lost Alpha's operation to Rival's rejected publication, so Go's revision describes a catalog without Alpha; Rust's describes one with Alpha, as the published tools/list on both sides did at that point. Only this one field of this one step is dropped; Alpha's presence is pinned per side by the scenario's expectations.",
+  "path": [
+   "steps",
+   "installOther",
+   "body",
+   "result",
+   "structuredContent"
+  ],
+  "dropKeys": [
+   "catalogRevision"
+  ]
+ },
+ {
+  "id": "D16.other-run-catalog-revision",
+  "decision": "D16",
+  "reason": "In the D16.rejected-candidate-keeps-owner scenario, the recipe run for provider Other reports the catalog revision current when Other's install began. The pinned Go registry had already lost Alpha's operation to Rival's rejected publication, so Go's revision describes a catalog without Alpha; Rust's describes one with Alpha, as the published tools/list on both sides did at that point. Only this one field of this one step is dropped; Alpha's presence is pinned per side by the scenario's expectations.",
+  "path": [
+   "steps",
+   "otherInstalled",
+   "body",
+   "result",
+   "structuredContent"
+  ],
+  "dropKeys": [
+   "catalogRevision"
+  ]
+ },
+ {
+  "id": "D16.invocation-rows",
+  "decision": "D16",
+  "path": [
+   "sqliteRows",
+   "state/state.db",
+   "tables"
+  ],
+  "dropKeys": [
+   "capability_invocations"
+  ],
+  "reason": "Database companion of D16.rejected-candidate-keeps-owner and D16.rollback-restores-owner, applied by the M5 shape check only to those scenarios. Alpha's calls after Rival's failed publication fail before any audit in Go and succeed in Rust, and in the rejected-candidate scenario the invocation Other's install plan records carries the catalog revision of a registry that has lost Alpha in Go. Invocation rows are keyed by random ids, so the table is dropped from the database comparison; each scenario's wire state step still compares every non-Alpha invocation's operation, generation, status and authorization, and alphaInvocations pins each side."
+ },
+ {
+  "id": "D16.invocation-count",
+  "decision": "D16",
+  "path": [
+   "sqlite",
+   "state/state.db",
+   "rowCounts"
+  ],
+  "dropKeys": [
+   "capability_invocations"
+  ],
+  "reason": "Database companion of D16.rejected-candidate-keeps-owner and D16.rollback-restores-owner: the invocation row count differs by Alpha's calls that Go no longer serves after Rival's failed publication and Rust serves."
+ },
+ {
+  "id": "D16.other-run-catalog-revision-row",
+  "decision": "D16",
+  "path": [
+   "sqliteRows",
+   "state/state.db",
+   "tables",
+   "plan_runs",
+   "${OTHER_RUN}"
+  ],
+  "dropKeys": [
+   "catalog_revision"
+  ],
+  "reason": "Database companion of D16.other-run-catalog-revision: the catalog revision durable on Other's install plan run, which in Go counts a registry without Alpha. Only this field of this run is dropped."
+ },
+ {
+  "id": "D16.other-generation-catalog-revision-row",
+  "decision": "D16",
+  "path": [
+   "sqliteRows",
+   "state/state.db",
+   "tables",
+   "provider_generations",
+   "com.opute.fixture.other-3"
+  ],
+  "dropKeys": [
+   "catalog_revision"
+  ],
+  "reason": "Database companion of D16.rejected-candidate-keeps-owner: Other's generation records the catalog revision after its publication, which in Go no longer includes Alpha. Only this field of this generation is dropped."
+ },
+ {
+  "id": "D18.unacknowledged-callback-child-row",
+  "decision": "D18",
+  "path": [
+   "sqliteRows",
+   "state/state.db",
+   "tables",
+   "operations"
+  ],
+  "dropKeys": [
+   "${CHILD}"
+  ],
+  "reason": "Database companion of D18.unacknowledged-callback-child, applied by the M5 shape check only to that scenario: Go persists the never-acknowledged delegated child's operation row, Rust keeps nothing durable for it. Only the row keyed by the child's captured handle is dropped; the scenario's childRow and childRowRestored expectations pin each side."
+ },
+ {
+  "id": "D18.unacknowledged-callback-child-count",
+  "decision": "D18",
+  "path": [
+   "sqlite",
+   "state/state.db",
+   "rowCounts"
+  ],
+  "dropKeys": [
+   "operations"
+  ],
+  "reason": "Database companion of D18.unacknowledged-callback-child: the operations row count differs by exactly the child row Go persists."
+ },
+ {
+  "id": "D16.rollback-restores-owner",
+  "decision": "D16",
+  "path": [
+   "steps"
+  ],
+  "dropKeys": [
+   "catalogAfterRollback",
+   "probeAfterRollback",
+   "alphaInvocations"
+  ],
+  "reason": "Provider Alpha owns a capability family and provider Rival's install publishes a valid operation in it, which displaces Alpha, but Rival's service depends on a family nothing provides, so mounting fails and activation rolls back. The pinned Go rollback restores only Rival's own predecessor, so Alpha's operation is gone from tools/list and its call is an unknown tool. Under owner decision D16 Rust's rollback restores every family owner the activation displaced, so Alpha is listed and callable. The scenario isolates exactly the listing and Alpha's call after the rollback and Alpha's invocation audit rows; per-side expectations pin both sides and every other step, including Rival's rollback error, is compared."
  }
 ]

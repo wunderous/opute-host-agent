@@ -76,6 +76,15 @@ fn dependencies(
     }
     Ok(keys)
 }
+/// A mount of another provider in one of `owner`'s capability families.
+fn displaced(mount: &Mount, owner: &str, families: &[String]) -> bool {
+    let owner = owner.trim();
+    !owner.is_empty()
+        && mount.service.provider_id.trim() != owner
+        && families.iter().any(|family| {
+            !family.trim().is_empty() && family.trim() == mount.service.capability_id.trim()
+        })
+}
 impl Mounts {
     pub fn new(lifecycle: Lifecycle) -> Self {
         Self {
@@ -84,8 +93,22 @@ impl Mounts {
         }
     }
     fn families(&self, services: &[Mount], generation: &str) -> BTreeMap<String, String> {
+        self.families_displacing(services, generation, None)
+    }
+    /// Injectable families as they will be once `displacing` (an owner and
+    /// its candidate families) has committed, so dependencies resolve
+    /// exactly as they would after the displacement.
+    fn families_displacing(
+        &self,
+        services: &[Mount],
+        generation: &str,
+        displacing: Option<(&str, &[String])>,
+    ) -> BTreeMap<String, String> {
         services
             .iter()
+            .filter(|mount| {
+                displacing.is_none_or(|(owner, families)| !displaced(mount, owner, families))
+            })
             .filter(|mount| {
                 mount.service.generation_id == generation
                     || self
@@ -111,11 +134,12 @@ impl Mounts {
         implementation: Implementation,
         definition: &ServiceDefinition,
         owns_adapter: bool,
+        displacing: Option<(&str, &[String])>,
     ) -> Result<String, String> {
         let mut services = self.services.lock().unwrap();
         let inject = dependencies(
             &definition.dependencies,
-            &self.families(&services, generation),
+            &self.families_displacing(&services, generation, displacing),
         )?;
         let key = key(&manifest.provider.id, &definition.id, generation);
         if services.iter().any(|mount| mount.service.key == key) {
@@ -143,6 +167,7 @@ impl Mounts {
         manifest: &InstallManifest,
         generation: &str,
         implementation: Option<Implementation>,
+        displacing: Option<(&str, &[String])>,
     ) -> Result<(), (String, Vec<String>)> {
         let implementation = implementation.ok_or_else(|| {
             (
@@ -171,6 +196,7 @@ impl Mounts {
                 implementation.clone(),
                 service,
                 mounted.is_empty(),
+                displacing,
             ) {
                 Ok(key) => mounted.push(key),
                 Err(error) => {
@@ -189,13 +215,34 @@ impl Mounts {
         generation: &str,
         implementation: Option<Implementation>,
     ) -> Result<(), String> {
-        match self.register(manifest, generation, implementation) {
+        match self.register(manifest, generation, implementation, None) {
             Ok(()) => Ok(()),
             Err((error, mounted)) => {
                 self.unmount_ids(&mounted).await;
                 Err(error)
             }
         }
+    }
+    /// Mount a candidate generation whose dependencies resolve as if the
+    /// other providers in its capability families were already displaced.
+    /// The caller displaces them with `displace` once the candidate has
+    /// committed (owner decision D16), so a failed candidate leaves every
+    /// other family owner mounted; the pinned Go displaces before mounting.
+    pub async fn mount_displacing(
+        &self,
+        manifest: &InstallManifest,
+        generation: &str,
+        implementation: Option<Implementation>,
+        families: &[String],
+    ) -> Result<(), String> {
+        let displacing = Some((manifest.provider.id.as_str(), families));
+        if let Err((error, mounted)) =
+            self.register(manifest, generation, implementation, displacing)
+        {
+            self.unmount_ids(&mounted).await;
+            return Err(error);
+        }
+        Ok(())
     }
     /// Mount a generation whose implementation owns no connection to close,
     /// such as the built-in provider, without an async runtime.
@@ -205,7 +252,7 @@ impl Mounts {
         generation: &str,
         implementation: Implementation,
     ) -> Result<(), String> {
-        match self.register(manifest, generation, Some(implementation)) {
+        match self.register(manifest, generation, Some(implementation), None) {
             Ok(()) => Ok(()),
             Err((error, mounted)) => {
                 self.unmount_now(&mounted);
@@ -347,22 +394,12 @@ impl Mounts {
         self.unmount_ids(&ids).await;
     }
     pub async fn displace(&self, owner: &str, families: &[String]) {
-        let owner = owner.trim();
-        if owner.is_empty() {
-            return;
-        }
         let ids = self
             .services
             .lock()
             .unwrap()
             .iter()
-            .filter(|mount| {
-                mount.service.provider_id.trim() != owner
-                    && families.iter().any(|family| {
-                        !family.trim().is_empty()
-                            && family.trim() == mount.service.capability_id.trim()
-                    })
-            })
+            .filter(|mount| displaced(mount, owner, families))
             .map(|mount| mount.service.key.clone())
             .collect::<Vec<_>>();
         self.unmount_ids(&ids).await;

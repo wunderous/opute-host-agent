@@ -391,5 +391,104 @@ cases.append(scenario("callback.bridged-without-task-extension",[SERVE,{"as":"pr
     WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID"),IDLE,
     {"as":"bridge","mcp":{"method":"tools/call","name":BRIDGE,"modern":True,"meta":{"io.modelcontextprotocol/clientCapabilities":{}},"params":{"name":BRIDGE,"arguments":{}}}},
     {"as":"requests","providerRequests":{"stub":"provider"}},{"as":"stop","stop":{}}]))
+# D16 (owner): a candidate rejected for an invalid schema in another
+# provider's capability family must leave that owner published. Go displaces
+# the owner from its registry before validating the candidate, so the next
+# unrelated publication drops the owner's tool from tools/list; Rust commits
+# the displacement only with a valid candidate. Alpha owns the llm-serving
+# family, Rival competes for it with an invalid input schema, and Other then
+# publishes a different family. The two steps after Other's publication are
+# isolated and dropped by the declared divergence, as are Alpha's call after
+# the rejection and the catalog revision Other's install and run report
+# (Go's revision no longer counts Alpha); expectations pin each side's
+# calls and tool count, and everything else is compared.
+def family_provider(pid,service_cap,op_id,provides,schema=None,port="PROVIDER_PORT",recipe="activate"):
+    text=RECIPE.replace("com.opute.fixture",pid).replace("[llm-serving]","["+", ".join(c.split(".")[2] for c in provides)+"]")
+    m=manifest(ops=[op(op_id,**({"inputSchema":schema} if schema else {}))],
+        provides=[{"id":c,"version":1} for c in provides],validation={"capability":service_cap,"operation":op_id})
+    m["provider"]["id"]=pid;m["services"][0].update(id=op_id.rsplit(".",1)[0],capabilityId=service_cap)
+    m["recipes"][0]["source"]={"uri":"recipes/%s.yaml"%recipe,"revision":"working-tree","sha256":"sha256:"+hashlib.sha256(text.encode()).hexdigest()}
+    d=descriptor();d.update(pluginId=pid,capabilities=[{"id":c,"version":1} for c in provides])
+    d["server"]=dict(d["server"],endpoint="http://127.0.0.1:${%s}/mcp"%port)
+    stub={"as":"provider-"+recipe,"providerStub":{"manifest":m,"portVar":port,"tools":{op_id:{"default":ok({"ready":True})},"opute.provider.teardown":{"default":ok(TEARDOWN_PLAN)}}}}
+    write={"as":"recipe-"+recipe,"write":{"path":"${SANDBOX}/recipes/%s.yaml"%recipe,"content":text}}
+    return stub,write,d
+OTHER="opute.capability.fixture-other.v1"
+RIVAL,OTHER_PID="com.opute.fixture.rival","com.opute.fixture.other"
+a=family_provider(PID,CAP,"opute.capability.fixture.probe",[CAP])
+b=family_provider(RIVAL,CAP,"opute.capability.rival.probe",[CAP],schema={"type":5},port="RIVAL_PORT",recipe="rival")
+c=family_provider(OTHER_PID,OTHER,"opute.capability.other.probe",[CAP,OTHER],port="OTHER_PORT",recipe="other")
+ALPHA_ROWS="SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id = 'opute.capability.fixture.probe' ORDER BY created_at"
+NOT_ALPHA="SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id"
+def family_install(as_,provider,var):
+    return call(as_,"opute.provider.install",{"descriptor":provider[2],"recipeSource":provider[1]["write"]["path"],"activate":True},
+        capture={var:["body","result","structuredContent","runId"]})
+family=scenario("family.rejected-candidate-keeps-owner",[SERVE,a[0],b[0],c[0],a[1],b[1],c[1],
+    family_install("install",a,"RUN_ID"),wait("installed"),call("probe","opute.capability.fixture.probe",{}),
+    family_install("installRival",b,"RIVAL_RUN"),wait("rivalRejected","RIVAL_RUN"),
+    LIST_WHOLE("catalogAfterRejection",143),call("probeAfterRejection","opute.capability.fixture.probe",{}),
+    family_install("installOther",c,"OTHER_RUN"),wait("otherInstalled","OTHER_RUN"),
+    {"as":"catalogAfterOther","mcp":{"method":"tools/list","params":{},"observe":["body","result","tools","$len"]}},
+    call("probeAfterOther","opute.capability.fixture.probe",{}),STATE,
+    {"as":"alphaInvocations","query":{"db":"${SANDBOX}/state/state.db","sql":{"invocations":ALPHA_ROWS}}},{"as":"stop","stop":{}}])
+for step in family["steps"]:
+    if step.get("as")=="state":
+        step["query"]["sql"]=dict(step["query"]["sql"],invocations=NOT_ALPHA)
+family["compare"]=dict(family["compare"],divergences=["D16.rejected-candidate-keeps-owner","D16.other-install-catalog-revision","D16.other-run-catalog-revision"])
+family["expectations"]=[
+    {"implementations":["go"],"path":["steps","probeAfterRejection","body","result","content",0,"text"],
+     "equals":"Error: resource_declaration_required: operation \"opute.capability.fixture.probe\" is not registered with a typed resource cost"},
+    {"implementations":["go"],"path":["steps","catalogAfterOther","observed"],"equals":143},
+    {"implementations":["go"],"path":["steps","probeAfterOther","body","error","message"],"equals":"unknown tool \"opute.capability.fixture.probe\""},
+    {"implementations":["rust"],"path":["steps","probeAfterRejection","body","result","structuredContent"],"equals":{"ready":True}},
+    {"implementations":["rust"],"path":["steps","catalogAfterOther","observed"],"equals":144},
+    {"implementations":["rust"],"path":["steps","probeAfterOther","body","result","structuredContent"],"equals":{"ready":True}}]
+cases.append(family)
+# D16 rollback: Rival's schema is valid, so its publication commits and
+# displaces Alpha, but its service depends on a family nothing provides, so
+# mounting it fails and activation rolls back. Rollback restores every
+# family owner the activation displaced, not only Rival's own predecessor.
+# Go restores only Rival's predecessor, so Alpha is gone after the rollback;
+# the listing and Alpha's call after it are isolated, the declared
+# divergence drops them, and expectations pin each side.
+rival_dep=family_provider(RIVAL,CAP,"opute.capability.rival.probe",[CAP],port="RIVAL_PORT",recipe="rival")
+rival_dep[0]["providerStub"]["manifest"]["services"][0]["dependencies"]=[{"id":"opute.capability.fixture-missing.v1","version":1}]
+rollback=scenario("family.rollback-restores-owner",[SERVE,a[0],rival_dep[0],a[1],rival_dep[1],
+    family_install("install",a,"RUN_ID"),wait("installed"),call("probe","opute.capability.fixture.probe",{}),
+    family_install("installRival",rival_dep,"RIVAL_RUN"),wait("rivalRolledBack","RIVAL_RUN"),
+    {"as":"catalogAfterRollback","mcp":{"method":"tools/list","params":{},"observe":["body","result","tools","$len"]}},
+    call("probeAfterRollback","opute.capability.fixture.probe",{}),STATE,
+    {"as":"alphaInvocations","query":{"db":"${SANDBOX}/state/state.db","sql":{"invocations":ALPHA_ROWS}}},{"as":"stop","stop":{}}])
+for step in rollback["steps"]:
+    if step.get("as")=="state":
+        step["query"]["sql"]=dict(step["query"]["sql"],invocations=NOT_ALPHA)
+rollback["compare"]=dict(rollback["compare"],divergences=["D16.rollback-restores-owner"])
+rollback["expectations"]=[
+    {"implementations":["go"],"path":["steps","catalogAfterRollback","observed"],"equals":142},
+    {"implementations":["go"],"path":["steps","probeAfterRollback","body","error","message"],"equals":"unknown tool \"opute.capability.fixture.probe\""},
+    {"implementations":["rust"],"path":["steps","catalogAfterRollback","observed"],"equals":143},
+    {"implementations":["rust"],"path":["steps","probeAfterRollback","body","result","structuredContent"],"equals":{"ready":True}}]
+cases.append(rollback)
+# Successful replacement keeps an accepted call's binding: Alpha's call is
+# in flight when Rival's install starts; it completes through Alpha, and
+# afterwards only Rival's operation is published. Both hosts drain an
+# accepted call before displacing its service and answer nothing else
+# meanwhile, so the call is released once the install has started rather
+# than after activation. Unchanged by D16 and compared exactly.
+alpha_held=family_provider(PID,CAP,"opute.capability.fixture.probe",[CAP])
+alpha_held[0]["providerStub"]["tools"]["opute.capability.fixture.probe"]={"responses":[dict(ok({"ready":True}),gate="held")],"default":ok({"ready":True})}
+rival_ok=family_provider(RIVAL,CAP,"opute.capability.rival.probe",[CAP],port="RIVAL_PORT",recipe="rival")
+held_call=call("alphaCall","opute.capability.fixture.probe",{})
+held_call["mcp"]["background"]="alphaCall"
+affinity=scenario("family.replacement-keeps-accepted-call",[SERVE,alpha_held[0],rival_ok[0],alpha_held[1],rival_ok[1],
+    family_install("install",alpha_held,"RUN_ID"),wait("installed"),task_done("installTask","RUN_ID"),
+    held_call,{"as":"held","providerGate":{"stub":"provider-activate","await":"held"}},
+    family_install("installRival",rival_ok,"RIVAL_RUN"),
+    {"as":"release","providerGate":{"stub":"provider-activate","release":"held"}},
+    wait("rivalInstalled","RIVAL_RUN"),{"as":"alphaDone","join":"alphaCall"},
+    {"as":"catalogAfterReplacement","mcp":{"method":"tools/list","params":{},"observe":["body","result","tools","$len"]}},
+    call("rivalProbe","opute.capability.rival.probe",{}),call("alphaProbe","opute.capability.fixture.probe",{}),
+    {"as":"requests","providerRequests":{"stub":"provider-activate"}},STATE,{"as":"stop","stop":{}}])
+cases.append(affinity)
 if __name__=="__main__":
     json.dump(cases,open(sys.argv[1],'w'),indent=1)

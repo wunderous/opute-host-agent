@@ -6,11 +6,17 @@ The pinned Go `registerProviderServicesForGeneration` displaces other providers'
 
 The isolated owning Go publication oracle reproduces this sequence with an invalid candidate schema and captures actual SDK `tools/list` alongside both catalog projections. Evidence is in `evidence/m7/provider-publication-diagnostic/family-displacement/`. This is a contract gap discovered during M7, not permission to change the migration baseline.
 
-This proposal is **pending owner review**. Rust currently preserves the pinned ordering. No atomic-publication change, runtime promotion, or parity waiver is authorized by this proposal.
+**Decided (owner, 2026-10-12): make it atomic in Rust, recorded as D16.** Go is not changed. The difference is declared in the public suite and waives no other parity gate.
 
 ## What Changes
 
-An approved implementation would validate the candidate and prepare family displacement before committing either change. Failure would retain the prior registry, published catalog, executable bindings, remembered manifests, and MCP projection. Successful publication would preserve the existing per-family exclusivity rule. Accepted calls would retain their generation bindings.
+Rust validates the candidate and prepares family displacement before committing either change:
+
+- The registry commits a candidate's family displacement together with its replacement, under one lock and after every validation (`Registry::replace_generation_displacing` and `replace_provider_displacing`). A rejected candidate leaves the prior registry, published catalog, executable bindings, remembered manifests and MCP projection unchanged.
+- A candidate mounts first, with dependencies resolved as they will be after the displacement, and other providers' services in its families are displaced only once it has committed (`Mounts::mount_displacing`). A failed mount leaves every other family owner mounted.
+- Activation rollback restores every family owner the activation displaced from its remembered manifest and active generation, not only the candidate's own predecessor (`Activation::restore_owners`).
+
+Successful publication keeps the existing per-family exclusivity rule. Calls accepted before a replacement keep their generation bindings and complete through the displaced provider.
 
 ## Capabilities
 
@@ -24,4 +30,4 @@ None.
 
 ## Impact
 
-The owning catalog registry and Host Agent publication composition would require a coordinated commit boundary and fault tests. Activation rollback must account for providers displaced by the failed candidate, rather than restoring only the candidate's predecessor. The owner must decide how this contract is adopted in Go and Rust and how the deliberate baseline difference is recorded. Public provider activation remains unverified.
+The owning catalog registry, mounts and activation share one commit boundary. Three public scenarios cover it: `provider-lifecycle.family.rejected-candidate-keeps-owner`, `family.rollback-restores-owner` and `family.replacement-keeps-accepted-call`. The first two diverge from Go under the declared D16 rules in `tools/parity/divergences.json`, with per-side expectations; the third is compared exactly. The M5 shape check applies D16's database companions only to the two divergent scenarios.

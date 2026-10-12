@@ -11,4 +11,4 @@ This historical capture calls the pinned Go publication owner and observes actua
 
 The error is `capability "other.probe" input schema must declare type object`. Go displaces the other family's registry owner before validating the candidate. A later successful refresh exposes that earlier displacement. The candidate's own predecessor restoration cannot restore a different provider's lost registry entries.
 
-Rust preserves this ordering during migration. `openspec/changes/atomic-provider-family-publication/` proposes a separate owner-reviewed contract change. No approval, waiver, or cutover is implied.
+When this was captured, Rust preserved this ordering. Owner decision D16 (2026-10-12) has since made publication atomic in Rust, and `openspec/changes/atomic-provider-family-publication/` records the change. The `rust.json.gz` capture here is the pre-D16 Rust and is kept as it was. Current Go/Rust evidence for the decided behaviour comes from the public `provider-lifecycle.family.*` scenarios.

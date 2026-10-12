@@ -116,6 +116,38 @@ impl Activation {
             &*self.hooks.refresh,
         )
     }
+    /// Other providers whose published operations fall in `manifest`'s
+    /// capability families, which its publication would displace.
+    fn family_owners(&self, manifest: &InstallManifest) -> Vec<String> {
+        let families = manifest
+            .services
+            .iter()
+            .map(|service| service.capability_id.trim())
+            .filter(|family| !family.is_empty())
+            .collect::<BTreeSet<_>>();
+        self.publication
+            .snapshot()
+            .tools
+            .iter()
+            .filter(|d| {
+                d.provider.trim() != manifest.provider.id.trim()
+                    && families.contains(d.capability_id.trim())
+            })
+            .map(|d| d.provider.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
+    }
+    /// Republish each displaced family owner from its remembered manifest
+    /// and active generation (owner decision D16).
+    fn restore_owners(&self, owners: &[String]) -> Result<(), String> {
+        owners
+            .iter()
+            .try_for_each(|owner| match self.publication.manifest(owner) {
+                Some(manifest) => self.restore(owner, Some(&manifest)),
+                None => Ok(()),
+            })
+    }
     pub fn persist(&self, generation: &Generation) -> Result<(), String> {
         let Some(state) = &self.state else {
             return Ok(());
@@ -245,8 +277,10 @@ impl Activation {
                 quote(id)
             ));
         }
+        let mut displaced = Vec::new();
         let publish = if candidate.is_some() {
             let publish = publish_services(&manifest, metadata)?;
+            displaced = self.family_owners(&publish);
             if let Err(error) = self.register(&publish, id) {
                 let _ = self.lifecycle.fail(id);
                 let _ = self.restore(&manifest.provider.id, previous_manifest.as_ref());
@@ -261,6 +295,7 @@ impl Activation {
             Err(error) => {
                 if candidate.is_some() {
                     let _ = self.restore(&manifest.provider.id, previous_manifest.as_ref());
+                    let _ = self.restore_owners(&displaced);
                 }
                 return Err(format!("provider generation activation: {error}"));
             }
@@ -273,6 +308,7 @@ impl Activation {
                         previous_manifest.as_ref(),
                         &activated,
                         Some(previous),
+                        &displaced,
                         format!("persist draining provider generation: {error}"),
                     )
                     .await);
@@ -285,6 +321,7 @@ impl Activation {
                     previous_manifest.as_ref(),
                     &activated,
                     previous.as_ref(),
+                    &displaced,
                     format!("persist active provider generation: {error}"),
                 )
                 .await);
@@ -300,13 +337,13 @@ impl Activation {
                         .then(|| family.to_owned())
                 })
                 .collect::<Vec<_>>();
-            self.mounts.displace(&manifest.provider.id, &families).await;
             if let Err(error) = self
                 .mounts
-                .mount(
+                .mount_displacing(
                     &publish,
                     id,
                     Some(crate::provider::mounts::Implementation::Adapter(adapter)),
+                    &families,
                 )
                 .await
             {
@@ -316,10 +353,12 @@ impl Activation {
                         previous_manifest.as_ref(),
                         &activated,
                         previous.as_ref(),
+                        &displaced,
                         format!("mount provider generation: {error}"),
                     )
                     .await);
             }
+            self.mounts.displace(&manifest.provider.id, &families).await;
         }
         if candidate.is_some() {
             self.remember(&activated.provider.id, &manifest);
@@ -464,15 +503,15 @@ impl Activation {
             })
             .collect::<Vec<_>>();
         let (provider, id) = (record.provider_id.as_str(), record.generation_id.as_str());
-        self.mounts.displace(&manifest.provider.id, &families).await;
         if let Err(e) = self
             .mounts
-            .mount(
+            .mount_displacing(
                 &manifest,
                 id,
                 Some(crate::provider::mounts::Implementation::Adapter(
                     adapter.clone(),
                 )),
+                &families,
             )
             .await
         {
@@ -490,6 +529,7 @@ impl Activation {
             forget(self);
             return Err(("service_register", e));
         }
+        self.mounts.displace(&manifest.provider.id, &families).await;
         let revision = self.publication.snapshot().revision;
         if let Err(e) = self.lifecycle.refresh(id, &manifest_hash, &revision) {
             self.mounts.unmount_generation(provider, id).await;
@@ -526,6 +566,7 @@ impl Activation {
         previous_manifest: Option<&InstallManifest>,
         activated: &Generation,
         previous: Option<&Generation>,
+        displaced: &[String],
         cause: String,
     ) -> String {
         self.mounts
@@ -548,8 +589,11 @@ impl Activation {
                 }
             }
         }
-        let catalog_error = candidate
-            .and_then(|manifest| self.restore(&manifest.provider.id, previous_manifest).err());
+        let catalog_error = candidate.and_then(|manifest| {
+            self.restore(&manifest.provider.id, previous_manifest)
+                .and_then(|()| self.restore_owners(displaced))
+                .err()
+        });
         if lifecycle_error.is_some() || catalog_error.is_some() {
             format!(
                 "{cause}; rollback failed: lifecycle={} catalog={} unmount=<nil>",
@@ -934,6 +978,7 @@ mod tests {
                                 old.as_ref(),
                                 &activated,
                                 previous.as_ref(),
+                                &[],
                                 text("cause").into(),
                             )
                             .await;

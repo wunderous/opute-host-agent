@@ -160,6 +160,16 @@ def polled_tools(scenario: dict) -> set[str]:
     return {name for name, polled in calls.items() if polled}
 
 
+DATABASE_COMPANIONS = {
+    "D16.rejected-candidate-keeps-owner": [
+        "D16.invocation-rows", "D16.invocation-count",
+        "D16.other-run-catalog-revision-row", "D16.other-generation-catalog-revision-row"],
+    "D16.rollback-restores-owner": ["D16.invocation-rows", "D16.invocation-count"],
+    "D18.unacknowledged-callback-child": [
+        "D18.unacknowledged-callback-child-row", "D18.unacknowledged-callback-child-count"],
+}
+
+
 def evaluate(scenario: dict, raw: dict) -> dict:
     normalized, violations = {}, {}
     polled = polled_tools(scenario)
@@ -211,9 +221,17 @@ def evaluate(scenario: dict, raw: dict) -> dict:
     # so declaring these there would always be stale in the regular
     # (non-shape) comparison. Detect and apply them dynamically instead,
     # from the actual normalized documents, exactly like D11 below.
+    # A declared wire divergence whose difference is also durable brings its
+    # database companions, only for that scenario (owner decisions D16, D18).
+    for wire, companions in DATABASE_COMPANIONS.items():
+        if wire in declared:
+            declared += [rule for rule in companions if rule not in declared]
     for rule in ["D8.authz-tables", "D8.authz-row-counts", "D8.authz-rows",
                  "D12.refused-task-operation-count"]:
         if rule in declared:
+            continue
+        # D18's child row is the operations count difference there.
+        if rule == "D12.refused-task-operation-count" and "D18.unacknowledged-callback-child-count" in declared:
             continue
         _, _, applied = canon.apply_divergences(normalized["a"], normalized["b"], [rule], registry)
         if applied and not applied[0]["stale"]:

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Failed provider publication preserves prior family owners
-The Host Agent SHALL validate a candidate's schemas and prepare its family displacement before committing publication changes. A failed candidate publication SHALL retain the previous registry, published catalog, executable bindings, remembered manifests, and MCP projection. This is a deliberate change from the pinned Go ordering and requires owner approval before adoption.
+The Host Agent SHALL validate a candidate's schemas and prepare its family displacement before committing publication changes. A failed candidate publication SHALL retain the previous registry, published catalog, executable bindings, remembered manifests, and MCP projection. This is a deliberate change from the pinned Go ordering, approved as owner decision D16.
 
 #### Scenario: Invalid schema competes for an existing capability family
 - **WHEN** provider Alpha owns a family and provider Beta attempts publication in that family with an invalid schema

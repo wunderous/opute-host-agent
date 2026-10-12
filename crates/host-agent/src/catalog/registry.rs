@@ -199,6 +199,20 @@ impl Registry {
         generation: &str,
         values: &[Option<Arc<Capability>>],
     ) -> Result<(), String> {
+        self.replace_generation_displacing(generation, values, "", &[])
+            .map(|_| ())
+    }
+    /// Owner decision D16: the candidate's family displacement commits with
+    /// its replacement under one registry lock, after every validation, so a
+    /// rejected candidate leaves the other family owners registered. The
+    /// pinned Go order displaces first (`displace_capability_families`).
+    pub fn replace_generation_displacing(
+        &self,
+        generation: &str,
+        values: &[Option<Arc<Capability>>],
+        owner: &str,
+        families: &[String],
+    ) -> Result<Vec<String>, String> {
         if generation.trim().is_empty() {
             return Err("generation id is required".into());
         }
@@ -247,7 +261,8 @@ impl Registry {
                 ));
             }
         }
-        let remove: BTreeSet<String> = state
+        let displaced = Self::family_owners(&state, owner, families);
+        let mut remove: BTreeSet<String> = state
             .overlays
             .iter()
             .filter(|(_, r)| {
@@ -255,6 +270,7 @@ impl Registry {
             })
             .map(|(name, _)| name.clone())
             .collect();
+        remove.extend(displaced.iter().cloned());
         for r in &registrations {
             let name = &r.descriptor.operation_id;
             if Self::base_conflict(&state, name) {
@@ -276,13 +292,24 @@ impl Registry {
         for r in registrations {
             state.overlays.insert(r.descriptor.operation_id.clone(), r);
         }
-        Ok(())
+        Ok(displaced)
     }
     pub fn replace_provider(
         &self,
         id: &str,
         values: &[Option<Arc<Capability>>],
     ) -> Result<(), String> {
+        self.replace_provider_displacing(id, values, &[])
+            .map(|_| ())
+    }
+    /// The provider-scoped form of `replace_generation_displacing` (D16).
+    pub fn replace_provider_displacing(
+        &self,
+        id: &str,
+        values: &[Option<Arc<Capability>>],
+        families: &[String],
+    ) -> Result<Vec<String>, String> {
+        let owner = id;
         let id = provider(id);
         if id.is_empty() {
             return Err("provider id is required".into());
@@ -315,12 +342,14 @@ impl Registry {
             self.validate(r)?;
         }
         let mut state = self.state.lock().unwrap();
-        let remove: BTreeSet<String> = state
+        let displaced = Self::family_owners(&state, owner, families);
+        let mut remove: BTreeSet<String> = state
             .overlays
             .iter()
             .filter(|(_, r)| provider(&r.provider_id) == id)
             .map(|(name, _)| name.clone())
             .collect();
+        remove.extend(displaced.iter().cloned());
         for r in &registrations {
             let name = &r.descriptor.operation_id;
             if Self::base_conflict(&state, name) {
@@ -342,7 +371,7 @@ impl Registry {
         for r in registrations {
             state.overlays.insert(r.descriptor.operation_id.clone(), r);
         }
-        Ok(())
+        Ok(displaced)
     }
     pub fn resolve_capability(&self, id: &str) -> Option<Arc<Capability>> {
         self.state
@@ -381,6 +410,18 @@ impl Registry {
         owner: &str,
         families: &[String],
     ) -> Option<Vec<String>> {
+        if provider(owner).is_empty() || families.iter().all(|f| f.trim().is_empty()) {
+            return None;
+        }
+        let mut state = self.state.lock().unwrap();
+        let remove = Self::family_owners(&state, owner, families);
+        for id in &remove {
+            state.overlays.remove(id);
+        }
+        Some(remove)
+    }
+    /// Overlays in `families` registered by a provider other than `owner`.
+    fn family_owners(state: &State, owner: &str, families: &[String]) -> Vec<String> {
         let owner = provider(owner);
         let families: BTreeSet<&str> = families
             .iter()
@@ -388,10 +429,9 @@ impl Registry {
             .filter(|f| !f.is_empty())
             .collect();
         if owner.is_empty() || families.is_empty() {
-            return None;
+            return Vec::new();
         }
-        let mut state = self.state.lock().unwrap();
-        let remove: Vec<String> = state
+        state
             .overlays
             .iter()
             .filter(|(_, r)| {
@@ -399,11 +439,7 @@ impl Registry {
                     && provider(&r.provider_id) != owner
             })
             .map(|(id, _)| id.clone())
-            .collect();
-        for id in &remove {
-            state.overlays.remove(id);
-        }
-        Some(remove)
+            .collect()
     }
     fn base_conflict(state: &State, id: &str) -> bool {
         state.base.tools.iter().any(|d| d.operation_id == id)

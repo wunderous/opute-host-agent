@@ -1,6 +1,8 @@
-//! Owning catalog publication from hostmcp/server.go. Registry replacement is
-//! atomic, but family displacement precedes it in the pinned contract. Keep
-//! registry and public projections distinct so failed publication is observable.
+//! Owning catalog publication from hostmcp/server.go. Family displacement
+//! commits with the registry replacement after candidate validation (owner
+//! decision D16; the pinned Go displaces first), so a rejected candidate
+//! leaves every projection as it was. Registry and public projections stay
+//! distinct so a failed MCP refresh remains observable.
 use super::{
     binding::{operations, Operation},
     definition::InstallManifest,
@@ -104,24 +106,28 @@ impl Publication {
                 (!family.is_empty() && seen.insert(family.to_owned())).then(|| family.to_owned())
             })
             .collect();
-        let displaced = self
-            .registry
-            .displace_capability_families(&manifest.provider.id, &families);
         let registrations: Vec<_> = capabilities
             .iter()
             .map(|capability| Some(capability.clone()))
             .collect();
-        if generation.is_empty() {
-            self.registry
-                .replace_provider(&manifest.provider.id, &registrations)?;
+        let displaced = if generation.is_empty() {
+            self.registry.replace_provider_displacing(
+                &manifest.provider.id,
+                &registrations,
+                &families,
+            )?
         } else {
-            self.registry
-                .replace_generation(generation, &registrations)?;
-        }
+            self.registry.replace_generation_displacing(
+                generation,
+                &registrations,
+                &manifest.provider.id,
+                &families,
+            )?
+        };
         let current = self.registry.snapshot();
         {
             let mut state = self.state.lock().unwrap();
-            for id in displaced.unwrap_or_default() {
+            for id in displaced {
                 state.capabilities.remove(&id);
             }
             for descriptor in previous.tools {
@@ -193,6 +199,76 @@ impl Publication {
 mod tests {
     use super::*;
     use serde_json::{json, Value};
+
+    fn manifest(provider: &str, family: &str, operation: &str, input: &str) -> InstallManifest {
+        let raw = json!({
+            "provider": {"id": provider, "version": "v1"},
+            "services": [{"id": "service", "capabilityId": family, "operations": [{
+                "id": operation, "version": 1, "effect": "read",
+                "inputSchema": {"type": input}, "outputSchema": {"type": "object"},
+            }]}],
+        });
+        super::super::definition::decode_manifest(
+            &crate::gojson::parse(&serde_json::to_vec(&raw).unwrap()).unwrap(),
+        )
+        .unwrap()
+    }
+
+    /// Owner decision D16: a rejected candidate displaces nothing, and a later
+    /// unrelated publication does not expose a delayed displacement. A valid
+    /// candidate still takes the family exclusively.
+    #[test]
+    fn rejected_candidate_keeps_family_owner_and_valid_one_displaces_it() {
+        for standalone in [false, true] {
+            let registry = Arc::new(Registry::native(
+                crate::catalog::for_mode(standalone).clone(),
+                Default::default(),
+            ));
+            let owner = Publication::new(registry.clone());
+            let factory = |operation: &Operation| {
+                Arc::new(Capability {
+                    descriptor: operation.descriptor().clone(),
+                    invoke: Arc::new(|_, _| Ok(Default::default())),
+                })
+            };
+            let published =
+                |snapshot: &Snapshot, id: &str| snapshot.tools.iter().any(|d| d.operation_id == id);
+            let alpha = manifest("opaque.provider", "test.family", "test.probe", "object");
+            owner.register(&alpha, "g1", factory, |_| {}).unwrap();
+            let view = |snapshot: Snapshot| {
+                let ids: Vec<_> = snapshot.tools.into_iter().map(|d| d.operation_id).collect();
+                (snapshot.revision, ids)
+            };
+            let before = (
+                view(registry.snapshot()),
+                view(owner.snapshot()),
+                view(owner.wire_snapshot()),
+            );
+            let beta = manifest("other.provider", "test.family", "other.probe", "bad-type");
+            let mut refreshed = false;
+            let error = owner
+                .register(&beta, "other-g1", factory, |_| refreshed = true)
+                .unwrap_err();
+            assert!(error.contains("other.probe"), "{error}");
+            assert!(!refreshed);
+            assert_eq!(view(registry.snapshot()), before.0);
+            assert_eq!(view(owner.snapshot()), before.1);
+            assert_eq!(view(owner.wire_snapshot()), before.2);
+            assert!(owner.capability("test.probe").is_some());
+            assert!(owner.manifest("other.provider").is_none());
+            let gamma = manifest("third.provider", "other.family", "third.probe", "object");
+            owner.register(&gamma, "third-g1", factory, |_| {}).unwrap();
+            for snapshot in [registry.snapshot(), owner.snapshot(), owner.wire_snapshot()] {
+                assert!(published(&snapshot, "test.probe") && published(&snapshot, "third.probe"));
+            }
+            let beta = manifest("other.provider", "test.family", "other.probe", "object");
+            owner.register(&beta, "other-g1", factory, |_| {}).unwrap();
+            for snapshot in [registry.snapshot(), owner.snapshot(), owner.wire_snapshot()] {
+                assert!(!published(&snapshot, "test.probe") && published(&snapshot, "other.probe"));
+            }
+            assert!(owner.capability("test.probe").is_none());
+        }
+    }
     #[tokio::test]
     #[ignore = "requires actual owning Go publication and retirement driver"]
     async fn publication_fixture() {

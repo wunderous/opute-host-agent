@@ -201,3 +201,51 @@ class ProviderDatabaseShape(unittest.TestCase):
         raw = self.raw({"operations": {child: dict(row, result_json=json.dumps({"isError": False}))}}, self.callback(child))
         self.rows(raw, "b")["operations"] = {}
         self.assertTrue(m5_verify.refused_row_failures(scenario, raw))
+
+
+class DatabaseCompanions(unittest.TestCase):
+    """A wire divergence's database companions (D16, D18) apply only where
+    the scenario declares that wire divergence, and hide nothing else."""
+
+    def raw(self, child=True):
+        go = {"operations": {"${CHILD}": {"operation_id": "${CHILD}", "status": "working"},
+                             "kept": {"operation_id": "kept", "status": "completed"}}}
+        rust = {"operations": {"kept": {"operation_id": "kept", "status": "completed"}}}
+        if not child:
+            go["operations"].pop("${CHILD}")
+        observation = lambda tables: {
+            "sqlite": {"state/state.db": {"rowCounts": {t: len(r) for t, r in tables.items()}}},
+            "sqliteRows": {"state/state.db": {"tables": tables}}, "steps": {}}
+        return {"a": {"observation": observation(go), "variables": {}},
+                "b": {"observation": observation(rust), "variables": {}}}
+
+    def test_d18_child_row_needs_the_declared_wire_divergence(self):
+        self.assertTrue(shape.evaluate({}, self.raw())["diff"])
+        declared = {"compare": {"divergences": ["D18.unacknowledged-callback-child"]}}
+        result = shape.evaluate(declared, self.raw())
+        self.assertFalse(result["diff"] or runner.stale_divergences(result))
+        changed = self.raw()
+        changed["b"]["observation"]["sqliteRows"]["state/state.db"]["tables"]["operations"]["kept"]["status"] = "failed"
+        self.assertTrue(shape.evaluate(declared, changed)["diff"])
+
+    def test_d18_companion_is_stale_without_the_child_difference(self):
+        declared = {"compare": {"divergences": ["D18.unacknowledged-callback-child"]}}
+        self.assertTrue(runner.stale_divergences(shape.evaluate(declared, self.raw(child=False))))
+
+    def test_d16_drops_only_named_revisions(self):
+        def tables(revision, other):
+            return {"plan_runs": {"${OTHER_RUN}": {"catalog_revision": revision, "status": "completed"}},
+                    "provider_generations": {"com.opute.fixture.other-3": {"catalog_revision": revision, "status": other}},
+                    "capability_invocations": {}}
+        raw = {}
+        for side, revision in [("a", "sha256:go"), ("b", "sha256:rust")]:
+            t = tables(revision, "active")
+            t["capability_invocations"] = {f"{side}-{i}": {} for i in range(1 if side == "a" else 2)}
+            raw[side] = {"observation": {"sqlite": {"state/state.db": {"rowCounts": {"capability_invocations": len(t["capability_invocations"])}}},
+                                         "sqliteRows": {"state/state.db": {"tables": t}}, "steps": {}}, "variables": {}}
+        declared = {"compare": {"divergences": ["D16.rejected-candidate-keeps-owner"]}}
+        self.assertTrue(shape.evaluate({}, copy.deepcopy(raw))["diff"])
+        result = shape.evaluate(declared, copy.deepcopy(raw))
+        self.assertFalse(result["diff"] or runner.stale_divergences(result))
+        raw["b"]["observation"]["sqliteRows"]["state/state.db"]["tables"]["provider_generations"]["com.opute.fixture.other-3"]["status"] = "failed"
+        self.assertTrue(shape.evaluate(declared, raw)["diff"])

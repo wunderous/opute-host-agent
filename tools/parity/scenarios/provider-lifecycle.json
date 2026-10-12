@@ -426,7 +426,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -1174,7 +1174,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -1924,7 +1924,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -2674,7 +2674,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -3425,7 +3425,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -4188,7 +4188,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -4946,7 +4946,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -5696,7 +5696,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -6446,7 +6446,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -7200,7 +7200,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -7950,7 +7950,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -8720,7 +8720,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -9476,7 +9476,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -10232,7 +10232,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -10982,7 +10982,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -11732,7 +11732,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -12488,7 +12488,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -13244,7 +13244,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -14086,7 +14086,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -14928,7 +14928,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -15678,7 +15678,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -16429,7 +16429,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -17456,7 +17456,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -18375,7 +18375,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -19135,7 +19135,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -19900,7 +19900,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -20660,7 +20660,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -21577,7 +21577,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -22327,7 +22327,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -23077,7 +23077,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -23987,7 +23987,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -24750,7 +24750,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -25577,7 +25577,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -26453,7 +26453,7 @@
      "sql": {
       "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
       "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
-      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
       "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
       "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
       "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
@@ -43510,6 +43510,3329 @@
     "as": "requests",
     "providerRequests": {
      "stub": "provider"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ]
+   ],
+   "notes": "Go emits supportedTools in map-iteration order (inventory finding F-2). After teardown Go removes and re-adds every MCP tool, so a call racing that refresh sees unknown tool; post-teardown reads poll until the status answers. Go also reports a provider teardown run completed while its finalize hook is still running, then records it failed when finalize fails; that case waits for the post-hook terminal state.",
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeRuntime",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeCapability",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "CreatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "ActiveAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeCapabilities",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeRuntimes",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "provider-lifecycle.family.rejected-candidate-keeps-owner",
+  "surface": "provider-lifecycle",
+  "owner": "provider",
+  "anchors": [
+   "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+  ],
+  "fixture": null,
+  "collect": [],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "provider-activate",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/activate.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.fixture",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.fixture.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.fixture.probe"
+      }
+     },
+     "portVar": "PROVIDER_PORT",
+     "tools": {
+      "opute.capability.fixture.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "provider-rival",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture.rival",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/rival.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:a1ba643cc87c2941ade82e6279aebfaaf95b77422bb8b15b638404035f8071eb"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.rival",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.rival.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": 5
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.rival.probe"
+      }
+     },
+     "portVar": "RIVAL_PORT",
+     "tools": {
+      "opute.capability.rival.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "provider-other",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture.other",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       },
+       {
+        "id": "opute.capability.fixture-other.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/other.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:1bb6d40269ed969bc095ec430ef08d584f61a4f06bccb6945d8f78aa0c5f504c"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.other",
+        "capabilityId": "opute.capability.fixture-other.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.other.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.fixture-other.v1",
+       "operation": "opute.capability.other.probe"
+      }
+     },
+     "portVar": "OTHER_PORT",
+     "tools": {
+      "opute.capability.other.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "recipe-activate",
+    "write": {
+     "path": "${SANDBOX}/recipes/activate.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture\n    schema: {type: string, const: com.opute.fixture}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "recipe-rival",
+    "write": {
+     "path": "${SANDBOX}/recipes/rival.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.rival.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture.rival\n    schema: {type: string, const: com.opute.fixture.rival}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.rival.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.rival.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "recipe-other",
+    "write": {
+     "path": "${SANDBOX}/recipes/other.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.other.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving, fixture-other]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture.other\n    schema: {type: string, const: com.opute.fixture.other}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.other.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.other.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${PROVIDER_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/activate.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RUN_ID": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RUN_ID}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RUN_ID"
+    ]
+   },
+   {
+    "as": "probe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "installRival",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture.rival",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${RIVAL_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/rival.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RIVAL_RUN": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "rivalRejected",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RIVAL_RUN}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RIVAL_RUN"
+    ]
+   },
+   {
+    "as": "catalogAfterRejection",
+    "mcp": {
+     "method": "tools/list",
+     "params": {},
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "tools",
+       "$len"
+      ],
+      "in": [
+       143
+      ]
+     },
+     "timeout": 15
+    }
+   },
+   {
+    "as": "probeAfterRejection",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "installOther",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture.other",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         },
+         {
+          "id": "opute.capability.fixture-other.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${OTHER_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/other.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "OTHER_RUN": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "otherInstalled",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${OTHER_RUN}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "OTHER_RUN"
+    ]
+   },
+   {
+    "as": "catalogAfterOther",
+    "mcp": {
+     "method": "tools/list",
+     "params": {},
+     "observe": [
+      "body",
+      "result",
+      "tools",
+      "$len"
+     ]
+    }
+   },
+   {
+    "as": "probeAfterOther",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "state",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
+      "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
+      "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
+      "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
+      "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "alphaInvocations",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id = 'opute.capability.fixture.probe' ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ]
+   ],
+   "notes": "Go emits supportedTools in map-iteration order (inventory finding F-2). After teardown Go removes and re-adds every MCP tool, so a call racing that refresh sees unknown tool; post-teardown reads poll until the status answers. Go also reports a provider teardown run completed while its finalize hook is still running, then records it failed when finalize fails; that case waits for the post-hook terminal state.",
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeRuntime",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeCapability",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "CreatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "ActiveAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeCapabilities",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeRuntimes",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D16.rejected-candidate-keeps-owner",
+    "D16.other-install-catalog-revision",
+    "D16.other-run-catalog-revision"
+   ]
+  },
+  "expectations": [
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "probeAfterRejection",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    "equals": "Error: resource_declaration_required: operation \"opute.capability.fixture.probe\" is not registered with a typed resource cost"
+   },
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "catalogAfterOther",
+     "observed"
+    ],
+    "equals": 143
+   },
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "probeAfterOther",
+     "body",
+     "error",
+     "message"
+    ],
+    "equals": "unknown tool \"opute.capability.fixture.probe\""
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "probeAfterRejection",
+     "body",
+     "result",
+     "structuredContent"
+    ],
+    "equals": {
+     "ready": true
+    }
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "catalogAfterOther",
+     "observed"
+    ],
+    "equals": 144
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "probeAfterOther",
+     "body",
+     "result",
+     "structuredContent"
+    ],
+    "equals": {
+     "ready": true
+    }
+   }
+  ]
+ },
+ {
+  "id": "provider-lifecycle.family.rollback-restores-owner",
+  "surface": "provider-lifecycle",
+  "owner": "provider",
+  "anchors": [
+   "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+  ],
+  "fixture": null,
+  "collect": [],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "provider-activate",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/activate.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.fixture",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.fixture.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.fixture.probe"
+      }
+     },
+     "portVar": "PROVIDER_PORT",
+     "tools": {
+      "opute.capability.fixture.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "provider-rival",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture.rival",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/rival.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:a1ba643cc87c2941ade82e6279aebfaaf95b77422bb8b15b638404035f8071eb"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.rival",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.rival.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ],
+        "dependencies": [
+         {
+          "id": "opute.capability.fixture-missing.v1",
+          "version": 1
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.rival.probe"
+      }
+     },
+     "portVar": "RIVAL_PORT",
+     "tools": {
+      "opute.capability.rival.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "recipe-activate",
+    "write": {
+     "path": "${SANDBOX}/recipes/activate.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture\n    schema: {type: string, const: com.opute.fixture}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "recipe-rival",
+    "write": {
+     "path": "${SANDBOX}/recipes/rival.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.rival.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture.rival\n    schema: {type: string, const: com.opute.fixture.rival}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.rival.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.rival.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${PROVIDER_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/activate.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RUN_ID": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RUN_ID}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RUN_ID"
+    ]
+   },
+   {
+    "as": "probe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "installRival",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture.rival",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${RIVAL_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/rival.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RIVAL_RUN": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "rivalRolledBack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RIVAL_RUN}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RIVAL_RUN"
+    ]
+   },
+   {
+    "as": "catalogAfterRollback",
+    "mcp": {
+     "method": "tools/list",
+     "params": {},
+     "observe": [
+      "body",
+      "result",
+      "tools",
+      "$len"
+     ]
+    }
+   },
+   {
+    "as": "probeAfterRollback",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "state",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
+      "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
+      "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
+      "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
+      "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "alphaInvocations",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id = 'opute.capability.fixture.probe' ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ]
+   ],
+   "notes": "Go emits supportedTools in map-iteration order (inventory finding F-2). After teardown Go removes and re-adds every MCP tool, so a call racing that refresh sees unknown tool; post-teardown reads poll until the status answers. Go also reports a provider teardown run completed while its finalize hook is still running, then records it failed when finalize fails; that case waits for the post-hook terminal state.",
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeRuntime",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeCapability",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "CreatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "ActiveAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeCapabilities",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeRuntimes",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "taskId"
+     ],
+     "type": "uuid",
+     "reason": "task id the host allocates for the callback-created task",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D16.rollback-restores-owner"
+   ]
+  },
+  "expectations": [
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "catalogAfterRollback",
+     "observed"
+    ],
+    "equals": 142
+   },
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "probeAfterRollback",
+     "body",
+     "error",
+     "message"
+    ],
+    "equals": "unknown tool \"opute.capability.fixture.probe\""
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "catalogAfterRollback",
+     "observed"
+    ],
+    "equals": 143
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "probeAfterRollback",
+     "body",
+     "result",
+     "structuredContent"
+    ],
+    "equals": {
+     "ready": true
+    }
+   }
+  ]
+ },
+ {
+  "id": "provider-lifecycle.family.replacement-keeps-accepted-call",
+  "surface": "provider-lifecycle",
+  "owner": "provider",
+  "anchors": [
+   "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+  ],
+  "fixture": null,
+  "collect": [],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "provider-activate",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/activate.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.fixture",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.fixture.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.fixture.probe"
+      }
+     },
+     "portVar": "PROVIDER_PORT",
+     "tools": {
+      "opute.capability.fixture.probe": {
+       "responses": [
+        {
+         "result": {
+          "content": [],
+          "structuredContent": {
+           "ready": true
+          }
+         },
+         "gate": "held"
+        }
+       ],
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "provider-rival",
+    "providerStub": {
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture.rival",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/rival.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:a1ba643cc87c2941ade82e6279aebfaaf95b77422bb8b15b638404035f8071eb"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.rival",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.rival.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.rival.probe"
+      }
+     },
+     "portVar": "RIVAL_PORT",
+     "tools": {
+      "opute.capability.rival.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "recipe-activate",
+    "write": {
+     "path": "${SANDBOX}/recipes/activate.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture\n    schema: {type: string, const: com.opute.fixture}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "recipe-rival",
+    "write": {
+     "path": "${SANDBOX}/recipes/rival.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.rival.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture.rival\n    schema: {type: string, const: com.opute.fixture.rival}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.rival.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.rival.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${PROVIDER_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/activate.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RUN_ID": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RUN_ID}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RUN_ID"
+    ]
+   },
+   {
+    "as": "installTask",
+    "requires": [
+     "RUN_ID"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${RUN_ID}",
+     "params": {
+      "taskId": "${RUN_ID}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "alphaCall",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true,
+     "background": "alphaCall"
+    }
+   },
+   {
+    "as": "held",
+    "providerGate": {
+     "stub": "provider-activate",
+     "await": "held"
+    }
+   },
+   {
+    "as": "installRival",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture.rival",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${RIVAL_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/rival.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RIVAL_RUN": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "release",
+    "providerGate": {
+     "stub": "provider-activate",
+     "release": "held"
+    }
+   },
+   {
+    "as": "rivalInstalled",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RIVAL_RUN}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RIVAL_RUN"
+    ]
+   },
+   {
+    "as": "alphaDone",
+    "join": "alphaCall"
+   },
+   {
+    "as": "catalogAfterReplacement",
+    "mcp": {
+     "method": "tools/list",
+     "params": {},
+     "observe": [
+      "body",
+      "result",
+      "tools",
+      "$len"
+     ]
+    }
+   },
+   {
+    "as": "rivalProbe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.rival.probe",
+     "params": {
+      "name": "opute.capability.rival.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "alphaProbe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.probe",
+     "params": {
+      "name": "opute.capability.fixture.probe",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "requests",
+    "providerRequests": {
+     "stub": "provider-activate"
+    }
+   },
+   {
+    "as": "state",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
+      "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id NOT IN ('get_host_capacity', 'opute.capability.fixture.probe') ORDER BY created_at, operation_id",
+      "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
+      "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
+      "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     }
     }
    },
    {
