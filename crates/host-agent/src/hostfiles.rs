@@ -74,36 +74,6 @@ fn scoped_path(scope: &str, raw: &str) -> Result<(String, String), String> {
     Ok((scope, path))
 }
 
-/// `os.CreateTemp(dir, ".opute-host-file-*")`.
-fn create_temp(dir: &str) -> Result<(std::fs::File, String), String> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let mut last = None;
-    for _ in 0..10_000 {
-        let mut seed = [0u8; 4];
-        getrandom::getrandom(&mut seed).map_err(|e| e.to_string())?;
-        let name = format!("{dir}/.opute-host-file-{}", u32::from_ne_bytes(seed));
-        match std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&name)
-        {
-            Ok(file) => return Ok((file, name)),
-            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => last = Some(e),
-            Err(e) => {
-                last = Some(e);
-                break;
-            }
-        }
-    }
-    let e = last.expect("create_temp tried at least once");
-    Err(format!(
-        "createtemp {dir}/.opute-host-file-*: {}",
-        crate::goerr::errno_text(&e)
-    ))
-}
-
 /// `Service.EnsureHostFile`: write a caller-declared managed file atomically.
 pub fn ensure_host_file(
     owner: &Owner,
@@ -144,8 +114,8 @@ pub fn ensure_host_file(
             .unwrap_or_else(|| ".".into());
         crate::goerr::mkdir_all(Path::new(&dir), 0o700)
             .map_err(|e| format!("create managed host file directory: {}", e.0))?;
-        let (mut file, temporary) =
-            create_temp(&dir).map_err(|e| format!("create managed host file temporary: {e}"))?;
+        let (mut file, temporary) = crate::goerr::create_temp(&dir, ".opute-host-file-", "")
+            .map_err(|e| format!("create managed host file temporary: {e}"))?;
         // `defer os.Remove(temporaryPath)`.
         struct Remove<'a>(&'a str);
         impl Drop for Remove<'_> {

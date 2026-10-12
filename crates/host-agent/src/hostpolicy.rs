@@ -171,35 +171,6 @@ fn preserves_stricter(name: &str, contents: &str) -> bool {
     })
 }
 
-/// `os.CreateTemp(dir, ".opute-host-resource-*.tmp")`.
-fn create_temp(dir: &str) -> io::Result<(std::fs::File, String)> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let mut last = None;
-    for _ in 0..10_000 {
-        let mut seed = [0u8; 4];
-        getrandom::getrandom(&mut seed).map_err(|e| io::Error::other(e.to_string()))?;
-        let name = format!(
-            "{dir}/.opute-host-resource-{}.tmp",
-            u32::from_ne_bytes(seed)
-        );
-        match std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&name)
-        {
-            Ok(file) => return Ok((file, name)),
-            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => last = Some(e),
-            Err(e) => {
-                last = Some(e);
-                break;
-            }
-        }
-    }
-    Err(last.expect("create_temp tried at least once"))
-}
-
 /// `writeManagedUnit`: an atomic 0600 replacement.
 fn write_unit(path: &str, contents: &str) -> Result<(), String> {
     use std::io::Write;
@@ -213,12 +184,8 @@ fn write_unit(path: &str, contents: &str) -> Result<(), String> {
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
     let base = crate::goerr::quote(&base);
-    let (mut file, temporary) = create_temp(&dir).map_err(|e| {
-        format!(
-            "create managed systemd unit {base}: createtemp {dir}/.opute-host-resource-*.tmp: {}",
-            crate::goerr::errno_text(&e)
-        )
-    })?;
+    let (mut file, temporary) = crate::goerr::create_temp(&dir, ".opute-host-resource-", ".tmp")
+        .map_err(|e| format!("create managed systemd unit {base}: {e}"))?;
     struct Remove<'a>(&'a str);
     impl Drop for Remove<'_> {
         fn drop(&mut self) {

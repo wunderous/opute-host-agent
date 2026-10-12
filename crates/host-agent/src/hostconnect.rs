@@ -13,36 +13,6 @@ use crate::config::Env;
 use crate::goerr::{errno_text, path_error};
 use crate::hostfiles::Owner;
 
-/// `os.CreateTemp(dir, ".host-agent.env.*")`.
-fn create_temp(dir: &str) -> Result<(std::fs::File, String), String> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let mut last = None;
-    for _ in 0..10_000 {
-        let mut seed = [0u8; 4];
-        getrandom::getrandom(&mut seed).map_err(|e| e.to_string())?;
-        let name = format!("{dir}/.host-agent.env.{}", u32::from_ne_bytes(seed));
-        match std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&name)
-        {
-            Ok(file) => return Ok((file, name)),
-            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => last = Some(e),
-            Err(e) => {
-                last = Some(e);
-                break;
-            }
-        }
-    }
-    let e = last.expect("create_temp tried at least once");
-    Err(format!(
-        "createtemp {dir}/.host-agent.env.*: {}",
-        errno_text(&e)
-    ))
-}
-
 /// `upsertEnvFile`: comments first, then keys in first-seen order with the
 /// last value winning; removals drop a key, `export ` prefixes are dropped,
 /// and the file is replaced atomically with mode 0600.
@@ -130,8 +100,8 @@ fn upsert_env_file(
         .unwrap_or_else(|| ".".into());
     crate::goerr::mkdir_all(Path::new(&dir), 0o700)
         .map_err(|e| format!("create env directory: {}", e.0))?;
-    let (mut file, temporary) =
-        create_temp(&dir).map_err(|e| format!("create temp env file: {e}"))?;
+    let (mut file, temporary) = crate::goerr::create_temp(&dir, ".host-agent.env.", "")
+        .map_err(|e| format!("create temp env file: {e}"))?;
     struct Remove<'a>(&'a str);
     impl Drop for Remove<'_> {
         fn drop(&mut self) {

@@ -107,38 +107,13 @@ fn current_user_name() -> String {
 
 /// `os.CreateTemp("", pattern)`: in `$TMPDIR`, else /tmp.
 fn create_temp(env: &Env, prefix: &str) -> Result<(std::fs::File, String), String> {
-    use std::os::unix::fs::OpenOptionsExt;
     let dir = env.get("TMPDIR");
     let dir = if dir.is_empty() {
         "/tmp".to_string()
     } else {
         dir
     };
-    let mut last = None;
-    for _ in 0..10_000 {
-        let mut seed = [0u8; 4];
-        getrandom::getrandom(&mut seed).map_err(|e| e.to_string())?;
-        let name = format!("{dir}/{prefix}{}", u32::from_ne_bytes(seed));
-        match std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&name)
-        {
-            Ok(file) => return Ok((file, name)),
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => last = Some(e),
-            Err(e) => {
-                last = Some(e);
-                break;
-            }
-        }
-    }
-    let e = last.expect("create_temp tried at least once");
-    Err(format!(
-        "createtemp {dir}/{prefix}*: {}",
-        crate::goerr::errno_text(&e)
-    ))
+    crate::goerr::create_temp(&dir, prefix, "")
 }
 
 struct Remove(String);

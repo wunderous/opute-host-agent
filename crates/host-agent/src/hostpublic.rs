@@ -234,36 +234,6 @@ fn read_file(path: &str) -> Result<Vec<u8>, String> {
     Ok(data)
 }
 
-/// `os.CreateTemp(dir, ".opute-public-mcp-*")`.
-fn create_temp(dir: &str) -> Result<(std::fs::File, String), String> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let mut last = None;
-    for _ in 0..10_000 {
-        let mut seed = [0u8; 4];
-        getrandom::getrandom(&mut seed).map_err(|e| e.to_string())?;
-        let name = format!("{dir}/.opute-public-mcp-{}", u32::from_ne_bytes(seed));
-        match std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&name)
-        {
-            Ok(file) => return Ok((file, name)),
-            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => last = Some(e),
-            Err(e) => {
-                last = Some(e);
-                break;
-            }
-        }
-    }
-    let e = last.expect("create_temp tried at least once");
-    Err(format!(
-        "createtemp {dir}/.opute-public-mcp-*: {}",
-        errno_text(&e)
-    ))
-}
-
 fn managed_observation(path: &str, content: &str, changed: bool) -> J {
     json!({
         "path": path,
@@ -303,7 +273,7 @@ fn ensure_private_file(path: &str, content: &str) -> Result<J, String> {
         .unwrap_or_else(|| ".".into());
     crate::goerr::mkdir_all(Path::new(&dir), 0o700)
         .map_err(|e| format!("create managed public MCP secret directory: {}", e.0))?;
-    let (mut file, temporary) = create_temp(&dir)
+    let (mut file, temporary) = crate::goerr::create_temp(&dir, ".opute-public-mcp-", "")
         .map_err(|e| format!("create managed public MCP secret temporary: {e}"))?;
     struct Remove<'a>(&'a str);
     impl Drop for Remove<'_> {
