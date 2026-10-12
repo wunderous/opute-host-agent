@@ -4,7 +4,7 @@
 
 The pinned Go SDK v1.7.0 accepts a null value while decoding its raw input-request map, then dereferences that value at `mcp/protocol.go:106`. The isolated provider-result oracle reproduces a nil-pointer panic for `{"inputRequests":{"fixture-request":null}}`; the process exits with status 2. This establishes a decoder panic, not a claim about every enclosing server's panic recovery.
 
-The migration requires a separate owner decision for a user-visible policy change. This proposal is **pending owner review**. It does not authorize runtime promotion, cutover, or a parity waiver.
+The migration requires a separate owner decision for a user-visible policy change. **Decided (owner, 2026-10-12): approved, recorded as D17.** A provider must not be able to crash the agent. The decision waives no other parity gate.
 
 ## What Changes
 
