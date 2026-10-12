@@ -38,7 +38,9 @@ class Tree:
             "sourceLockSha256": _sha(lock_bytes),
             "goReference": {"binarySha256": GO_SHA},
             "decisions": {"D8": {"status": "approved"}, "D11": {"status": "approved"},
-                          "D12": {"status": "approved"}, "D13": {"status": "approved"}},
+                          "D12": {"status": "approved"}, "D13": {"status": "approved"},
+                          "D16": {"status": "approved"}, "D17": {"status": "approved"},
+                          "D18": {"status": "approved"}},
             "rustCandidate": {"binarySha256": RUST_SHA},
             "evidence": {
                 "go-vs-go": {"summary": "evidence/gg/summary.json", "right": "go", "minRepeat": 2},
