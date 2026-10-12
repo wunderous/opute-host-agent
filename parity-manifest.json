@@ -307,7 +307,8 @@
    "requirePass": [
     "go-vs-go",
     "go-vs-rust"
-   ]
+   ],
+   "requireT2": true
   },
   "m0": {
    "description": "M0 exit: harness proven (Go-vs-Go clean x20, every canary caught), inventory captured with zero unowned gaps, every Rust item present and unverified",
@@ -485,6 +486,44 @@
      ]
     }
    ]
+  },
+  "m8a": {
+   "description": "M8a exit (host domain): M1-M7 regression gates (Go-vs-Go x20, canaries, inventory, oracles, contracts, M5) plus every host-domain item matching Go (x5) at T1 shim-trace parity, the M7 provider surfaces, and T2 twin-sandbox parity: every T2 host-domain scenario (effects, cleanup and residue, and the M4 admission-rejected calls leaving the host unchanged) passes Go-vs-Go x20 and Go-vs-Rust x5, re-derived from committed receipts. Remaining host T2 gaps (WSL2 runner, Incus instances) stay owned in baseline/inventory/t2.json.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true
   }
  },
  "goReference": {
@@ -2376,5 +2415,9 @@
  },
  "schemaVersion": 1,
  "sourceLock": "baseline/source-lock.json",
- "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6"
+ "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6",
+ "t2Evidence": {
+  "golden": {},
+  "suites": {}
+ }
 }

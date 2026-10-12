@@ -1,0 +1,4342 @@
+[
+ {
+  "id": "t2.host-domain.services.user-lifecycle",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/file.go",
+   "internal/domain/host/service_probe.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "commands": [
+   "loginctl",
+   "systemctl"
+  ],
+  "residue": "Lingering for ubuntu stays enabled (Go has no inverse of ensure_host_service_supervisor), and the user unit directory it created stays.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "supervisorAgain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "supervisorInspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service_supervisor",
+     "params": {
+      "name": "inspect_host_service_supervisor",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "unit",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/systemd/user/parity-web.service",
+       "content": "[Unit]\nDescription=Opute parity T2 web\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n"
+      }
+     }
+    }
+   },
+   {
+    "as": "enable",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "enable",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "start",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "inspectNoUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service",
+     "params": {
+      "name": "inspect_host_service",
+      "arguments": {
+       "serviceName": "parity-web.service",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service",
+     "params": {
+      "name": "inspect_host_service",
+      "arguments": {
+       "uri": "host-service:local:user/parity-web.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "running",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "restart",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "stop",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "disable",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "disable",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "remove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "~/.config/systemd/user/parity-web.service",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_REMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVE}",
+     "params": {
+      "taskId": "${T_REMOVE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "stopMissing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "stop",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "removed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "supervisor",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "match": "Error: user service supervisor bus is unavailable: Failed to connect to bus: (No such file or directory|Permission denied|Connection refused)",
+     "reason": "Go probes the user bus right after enabling lingering, racing systemd's start of user@1000; which connect error it sees is timing. The linger effect itself and the settled second call are compared exactly"
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.services.system-lifecycle",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/file.go",
+   "internal/domain/host/service_probe.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "commands": [
+   "sudo",
+   "systemctl"
+  ],
+  "residue": "None from the agent: the unit file is written and removed by the harness as root, because the agent runs unprivileged and system-scope file writes are refused.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "unitDenied",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "/etc/systemd/system/parity-sys.service",
+       "content": "[Unit]\nDescription=Opute parity T2 web\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "unitByRoot",
+    "write": {
+     "path": "/etc/systemd/system/parity-sys.service",
+     "content": "[Unit]\nDescription=Opute parity T2 web\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n"
+    }
+   },
+   {
+    "as": "enable",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service",
+       "state": "enable",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service",
+       "state": "start",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service",
+     "params": {
+      "name": "inspect_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/parity-sys.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "running",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "restartState",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service",
+       "state": "restart",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service",
+       "state": "stop",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "disable",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service",
+       "state": "disable",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "removeDenied",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "/etc/systemd/system/parity-sys.service",
+       "scope": "system",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_REMOVEDENIED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDeniedDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVEDENIED}",
+     "params": {
+      "taskId": "${T_REMOVEDENIED}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "removeByRoot",
+    "shell": {
+     "argv": [
+      "rm",
+      "-f",
+      "/etc/systemd/system/parity-sys.service"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "reloadAfter",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-sys.service",
+       "state": "stop",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "removed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "unitDenied",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "Go names its temporary file with a random suffix",
+     "match": "Error: create managed host file temporary: open /etc/systemd/system/\\.opute-host-file-[0-9]+: permission denied"
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.exec.workloads",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/hostruntime/runtime.go:RunHostWorkloadContext",
+   "internal/exec/process.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "commands": [
+   "loginctl",
+   "systemd-run"
+  ],
+  "residue": "The file the first command wrote, and lingering (enabled by the harness so the supervisor call is not a race).",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "write",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "echo hello > \"$HOME/parity-out.txt\" && echo written"
+      }
+     },
+     "capture": {
+      "T_WRITE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "writeDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRITE}",
+     "params": {
+      "taskId": "${T_WRITE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "fails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "echo err >&2; exit 3"
+      }
+     },
+     "capture": {
+      "T_FAILS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "failsDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FAILS}",
+     "params": {
+      "taskId": "${T_FAILS}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "quiet",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "true"
+      }
+     },
+     "capture": {
+      "T_QUIET": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "quietDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_QUIET}",
+     "params": {
+      "taskId": "${T_QUIET}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "timeout",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "sleep 30",
+       "timeoutMs": 1500
+      }
+     },
+     "capture": {
+      "T_TIMEOUT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "timeoutDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TIMEOUT}",
+     "params": {
+      "taskId": "${T_TIMEOUT}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "shell",
+    "mcp": {
+     "method": "tools/call",
+     "name": "agent_shell",
+     "params": {
+      "name": "agent_shell",
+      "arguments": {
+       "command": "id -un; pwd"
+      }
+     }
+    }
+   },
+   {
+    "as": "env",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "systemctl --user show -p Slice --value \"$(cat /proc/self/cgroup | sed -n 's#.*/\\([^/]*\\.service\\)$#\\1#p')\" 2>/dev/null; true"
+      }
+     },
+     "capture": {
+      "T_ENV": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "envDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ENV}",
+     "params": {
+      "taskId": "${T_ENV}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "writeDone",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: success\\nMain processes terminated with: code=exited/status=0\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "failsDone",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nerr\\\nFinished with result: exit\\-code\\nMain processes terminated with: code=exited/status=3\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "quietDone",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: success\\nMain processes terminated with: code=exited/status=0\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "timeoutDone",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: timeout\\nMain processes terminated with: code=killed/status=TERM\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "envDone",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: success\\nMain processes terminated with: code=exited/status=0\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "failsDone",
+      "body",
+      "result",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nerr\\\nFinished with result: exit\\-code\\nMain processes terminated with: code=exited/status=3\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "quietDone",
+      "body",
+      "result",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: success\\nMain processes terminated with: code=exited/status=0\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "timeoutDone",
+      "body",
+      "result",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: timeout\\nMain processes terminated with: code=killed/status=TERM\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "shell",
+      "body",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: success\\nMain processes terminated with: code=exited/status=0\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "*",
+      "/home/ubuntu/.config/opute/host-resource-coordinator/reservations.json",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "reservation ledger records per-run ids and times; its presence, mode and owner are compared"
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.policy.user-agent-unit",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/resource_policy.go",
+   "internal/resource/service.go:Reconcile",
+   "internal/hostruntime/runtime.go:RunHostWorkloadContext",
+   "internal/exec/process.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "commands": [
+   "systemctl",
+   "systemd-run"
+  ],
+  "residue": "The two managed slice units and the agent unit's persisted property drop-ins; lingering (enabled by the harness before the agent starts).",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "manager": "user",
+     "unit": "opute-host-agent.service"
+    }
+   },
+   {
+    "as": "reconcile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:user/opute-host-agent.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:user/opute-host-agent.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "staleRevision",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v1",
+       "uri": "host-service:local:user/opute-host-agent.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "workload",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "cat /proc/self/cgroup"
+      }
+     },
+     "capture": {
+      "T_WORKLOAD": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "workloadDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WORKLOAD}",
+     "params": {
+      "taskId": "${T_WORKLOAD}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongUnit",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:user/parity-web.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "workloadDone",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "stderr"
+     ],
+     "type": "string",
+     "match": "Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nFinished with result: success\\nMain processes terminated with: code=exited/status=0\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?\\n",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.policy.system-agent-unit",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/resource_policy.go",
+   "internal/resource/service.go:Reconcile"
+  ],
+  "commands": [
+   "systemctl"
+  ],
+  "residue": "The two managed system slice units and the agent unit's persisted property drop-ins.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "user": "root",
+     "unit": "opute-host-agent.service"
+    }
+   },
+   {
+    "as": "reconcile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:system/opute-host-agent.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:system/opute-host-agent.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.connection.restart-user-service",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/generic_agent_connection.go",
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/file.go",
+   "internal/domain/host/service_probe.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "commands": [
+   "loginctl",
+   "systemctl"
+  ],
+  "residue": "The connection env file, lingering (enabled by the harness), and the user unit directory.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "unit",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/systemd/user/parity-web.service",
+       "content": "[Unit]\nDescription=Opute parity T2 web\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n"
+      }
+     }
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "start",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "configure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "/home/ubuntu/.config/parity/agent.env",
+       "environment": {
+        "OPUTE_PARITY": "one"
+       },
+       "serviceName": "parity-web.service",
+       "restart": true,
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "rewrite",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "/home/ubuntu/.config/parity/agent.env",
+       "environment": {
+        "OPUTE_PARITY": "two"
+       },
+       "remove": [
+        "MISSING"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "badRestart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "/home/ubuntu/.config/parity/agent.env",
+       "environment": {
+        "OPUTE_PARITY": "three"
+       },
+       "serviceName": "parity-none.service",
+       "restart": true,
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "parity-web.service",
+       "state": "stop",
+       "scope": "user"
+      }
+     }
+    }
+   },
+   {
+    "as": "remove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "~/.config/systemd/user/parity-web.service",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_REMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVE}",
+     "params": {
+      "taskId": "${T_REMOVE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.public.tunnel-and-quick",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+   "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+   "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+   "internal/mcpprobe/probe.go"
+  ],
+  "commands": [
+   "loginctl",
+   "systemctl"
+  ],
+  "residue": "The named tunnel's artifact, token file and user unit (Go has no remove for a named tunnel), lingering, and whatever the quick removal leaves; the harness's TLS stub and hosts entry predate the baseline.",
+  "steps": [
+   {
+    "as": "tlsInit",
+    "shell": {
+     "argv": [
+      "python3",
+      "/opt/parity-t2/tlsstub.py",
+      "init",
+      "/opt/parity-t2/tls"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "connector",
+    "write": {
+     "path": "/opt/parity-t2/tls/artifact",
+     "content": "#!/bin/sh\necho 'INF |  https://parity-t2.trycloudflare.com  |' >&2\nexec sleep infinity\n"
+    }
+   },
+   {
+    "as": "tlsServe",
+    "shell": {
+     "argv": [
+      "systemd-run",
+      "--unit=parity-tls.service",
+      "--collect",
+      "python3",
+      "/opt/parity-t2/tlsstub.py",
+      "serve",
+      "/opt/parity-t2/tls",
+      "8443"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "tlsReady",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do python3 -c 'import socket; socket.create_connection((\"127.0.0.1\", 8443), 1)' 2>/dev/null && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "quickHost",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "echo '127.0.0.1 parity-t2.trycloudflare.com mcp.parity-t2.test' >> /etc/hosts"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "SSL_CERT_FILE": "/opt/parity-t2/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity-t2.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:8443/cloudflared",
+       "artifactSha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8"
+      }
+     },
+     "capture": {
+      "T_TUNNEL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "tunnelDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TUNNEL}",
+     "params": {
+      "taskId": "${T_TUNNEL}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "quick",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:8443/cloudflared",
+       "artifactSha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8"
+      }
+     },
+     "capture": {
+      "T_QUICK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "quickDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_QUICK}",
+     "params": {
+      "taskId": "${T_QUICK}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 200
+    }
+   },
+   {
+    "as": "installed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "quickRemove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_QUICKREMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "quickRemoveDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_QUICKREMOVE}",
+     "params": {
+      "taskId": "${T_QUICKREMOVE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "removed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.tools.apt-ninja",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_tool.go",
+   "internal/domain/host/incus_install.go",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/hostruntime/elevation.go"
+  ],
+  "commands": [
+   "sudo",
+   "apt-get"
+  ],
+  "residue": "The installed ninja-build package: ensure_host_tool has no inverse.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_tool",
+     "params": {
+      "name": "ensure_host_tool",
+      "arguments": {
+       "tool": "ninja"
+      }
+     },
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_tool",
+     "params": {
+      "name": "ensure_host_tool",
+      "arguments": {
+       "tool": "ninja"
+      }
+     },
+     "capture": {
+      "T_AGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "againDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_AGAIN}",
+     "params": {
+      "taskId": "${T_AGAIN}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "notOffered",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_tool",
+     "params": {
+      "name": "ensure_host_tool",
+      "arguments": {
+       "tool": "jq"
+      }
+     },
+     "capture": {
+      "T_NOTOFFERED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "notOfferedDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOTOFFERED}",
+     "params": {
+      "taskId": "${T_NOTOFFERED}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.virt.stack-install-uninstall",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_tool.go",
+   "internal/domain/host/incus_install.go",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/hostruntime/elevation.go"
+  ],
+  "commands": [
+   "sudo",
+   "apt-get",
+   "apt-cache",
+   "curl",
+   "dpkg",
+   "dpkg-query",
+   "install",
+   "usermod",
+   "systemctl",
+   "rm",
+   "incus"
+  ],
+  "residue": "Inventoried from Go's own run: what uninstall leaves of the package set, the apt source and key, and group membership.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "refused",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {}
+     },
+     "capture": {
+      "T_REFUSED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "refusedDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REFUSED}",
+     "params": {
+      "taskId": "${T_REFUSED}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 1800
+    }
+   },
+   {
+    "as": "installed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stopForGroup",
+    "stop": {}
+   },
+   {
+    "as": "serveWithGroup",
+    "serve": {}
+   },
+   {
+    "as": "installAgain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "capture": {
+      "T_INSTALLAGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installAgainDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALLAGAIN}",
+     "params": {
+      "taskId": "${T_INSTALLAGAIN}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 1800
+    }
+   },
+   {
+    "as": "initialized",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "uninstall",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_UNINSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "uninstallDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNINSTALL}",
+     "params": {
+      "taskId": "${T_UNINSTALL}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 1800
+    }
+   },
+   {
+    "as": "removed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "*",
+      "/var/lib/incus/server.crt",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "incusd generates its own server key pair on first start"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "*",
+      "/var/lib/incus/server.key",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "incusd generates its own server key pair on first start"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "*",
+      "/var/lib/incus/networks/incusbr0/dnsmasq.pid",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "the bridge's dnsmasq writes its own process id"
+    },
+    {
+     "path": [
+      "steps",
+      "installDone",
+      "body",
+      "result",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "the incus CLI's first-run hint names a randomly chosen example image",
+     "match": "Error: initialize Incus container runtime: inspect storage pools: If this is your first time running Incus on this machine, you should also run: incus admin init\\nTo start your first container, try: incus launch images:[a-z0-9./-]+\\nOr for a virtual machine: incus launch images:[a-z0-9./-]+ --vm\\n\\nError: You don't have the needed permissions to talk to the incus daemon \\(socket path: /var/lib/incus/unix\\.socket\\)"
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.archives.extract",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive"
+  ],
+  "commands": [],
+  "residue": "The extracted trees: extract_host_archive has no inverse.",
+  "steps": [
+   {
+    "as": "inDir",
+    "shell": {
+     "argv": [
+      "install",
+      "-d",
+      "-o",
+      "ubuntu",
+      "-g",
+      "ubuntu",
+      "/home/ubuntu/in"
+     ]
+    }
+   },
+   {
+    "as": "put-basic",
+    "write": {
+     "path": "/home/ubuntu/in/basic.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "put-gnu-long",
+    "write": {
+     "path": "/home/ubuntu/in/gnu-long.tar.zst",
+     "base64": "KLUv/WAAJ/UDALLEEBeAtToAQYf57/YfhmxGr2yCtFCHxcqjpIGvPukY4Xb6j5DyDMzS4DO2bbEuSmhVhJgJwEyt0Fq/zfl9xMdclGzYsiUUAJYh5+HT1nQAA2Q1AJAcJwIYdAWF84IGuwggDBApqAMqApAwgFTogOIApONW+KnNCgCAXTMBJQ==",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "put-pax-long",
+    "write": {
+     "path": "/home/ubuntu/in/pax-long.tar.zst",
+     "base64": "KLUv/WAAJ00GAGIHGBqAqTpA9JEYojHgd2CjqLKpu4mUcSGLJcKSAos2+4SepRwShOEiNVi2po7ZZA561ai5jf6fk2y458piCCFXHllIEAxgcKohOurfCeUUCz/0da+3dfd3Yh1qCZ4aBLJkCSYg8AKaUMZ2/aeH+QrAwD8FQgMpW+YBrGNBn2mkIbEUJDYImZI0GiUciqRhWFZlnz0wgClLQEXbXSkMsBX4A5QC4jLSkQAw6Ebh/Gm2WwBBXwrWqh5IGEh1npJAmr5o/QksxspU6g==",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "put-legacy-rega",
+    "write": {
+     "path": "/home/ubuntu/in/legacy-rega.tar.zst",
+     "base64": "KLUv/WAACT0DAHQDb2xkLwAwMDAwNzU1MDAwADAwNjQzNgAgAHVzdGFyADAwAG9sZC9mADY0NDAwMDMANjYwNGFiYxEAleU/EGorHWMDhKIR4gGA6QqF86XBXgFYMJU5oE4AiWDBzwewAoBj5TI8AS0=",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "put-sparse",
+    "write": {
+     "path": "/home/ubuntu/in/sparse.tar.zst",
+     "base64": "KLUv/WAADeUFAMKIHR5QhaoNKFhk8O40Ox7iDwbC7CAzQ779XjrhyCzId2TIMMwAyWsq+byBqiyi16+GGuHwOE0uyjqgPYjbLZtSQxwUxawjlhIkz9wktVTmJgVHq59j6q3HaYxd/NHx4gFgZWBg93pU9P+TZPl/dJ3gLlRsEBzrWAEYAPSBJxx7CqZgaVqoJwyoBiAzQDYwxEeAesUyQISIVwAgoIAcbFFpK16+yg7gjpxdmwPqAJCOW+GmNgCOlcuQCdQB",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "basic",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out/basic"
+      }
+     }
+    }
+   },
+   {
+    "as": "gnu-long",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/gnu-long.tar.zst",
+       "destination": "out/gnu-long"
+      }
+     }
+    }
+   },
+   {
+    "as": "pax-long",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/pax-long.tar.zst",
+       "destination": "out/pax-long"
+      }
+     }
+    }
+   },
+   {
+    "as": "legacy-rega",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/legacy-rega.tar.zst",
+       "destination": "out/legacy-rega"
+      }
+     }
+    }
+   },
+   {
+    "as": "sparse",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/sparse.tar.zst",
+       "destination": "out/sparse"
+      }
+     }
+    }
+   },
+   {
+    "as": "overExisting",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out/basic"
+      }
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.artifacts.download-and-agent-build",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifacts.go:EnsureHostArtifact",
+   "internal/domain/host/artifacts_agent.go:PrepareHostAgentArtifacts"
+  ],
+  "commands": [
+   "sudo",
+   "apt-get",
+   "bash",
+   "systemd-run"
+  ],
+  "residue": "The downloaded artifacts, and from prepare_host_agent_artifacts the Go toolchain package it installs, the output directory and the Go build cache (the build itself fails: the source directory holds no module, and nothing is fetched).",
+  "steps": [
+   {
+    "as": "tlsInit",
+    "shell": {
+     "argv": [
+      "python3",
+      "/opt/parity-t2/tlsstub.py",
+      "init",
+      "/opt/parity-t2/tls"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "connector",
+    "write": {
+     "path": "/opt/parity-t2/tls/artifact",
+     "content": "#!/bin/sh\necho 'INF |  https://parity-t2.trycloudflare.com  |' >&2\nexec sleep infinity\n"
+    }
+   },
+   {
+    "as": "tlsServe",
+    "shell": {
+     "argv": [
+      "systemd-run",
+      "--unit=parity-tls.service",
+      "--collect",
+      "python3",
+      "/opt/parity-t2/tlsstub.py",
+      "serve",
+      "/opt/parity-t2/tls",
+      "8443"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "tlsReady",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do python3 -c 'import socket; socket.create_connection((\"127.0.0.1\", 8443), 1)' 2>/dev/null && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "quickHost",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "echo '127.0.0.1 parity-t2.trycloudflare.com mcp.parity-t2.test' >> /etc/hosts"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "srcDir",
+    "shell": {
+     "argv": [
+      "install",
+      "-d",
+      "-o",
+      "ubuntu",
+      "-g",
+      "ubuntu",
+      "/home/ubuntu/src"
+     ]
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "SSL_CERT_FILE": "/opt/parity-t2/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "create",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:8443/cloudflared",
+       "destination": "bin/a.bin",
+       "sha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8",
+       "executable": true
+      }
+     },
+     "capture": {
+      "T_CREATE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "createDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREATE}",
+     "params": {
+      "taskId": "${T_CREATE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "reuse",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:8443/cloudflared",
+       "destination": "bin/a.bin",
+       "sha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8",
+       "executable": true
+      }
+     },
+     "capture": {
+      "T_REUSE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "reuseDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REUSE}",
+     "params": {
+      "taskId": "${T_REUSE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "plain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:8443/cloudflared",
+       "destination": "lib/b.bin",
+       "sha256": "sha256:C500A191A352B9EA5E1B1F5EC89F8A812CCF132DCDFBEACE60F49BFB5DFDFBB8"
+      }
+     },
+     "capture": {
+      "T_PLAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "plainDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PLAIN}",
+     "params": {
+      "taskId": "${T_PLAIN}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongSha",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:8443/cloudflared",
+       "destination": "lib/c.bin",
+       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+     },
+     "capture": {
+      "T_WRONGSHA": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongShaDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGSHA}",
+     "params": {
+      "taskId": "${T_WRONGSHA}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "prepare",
+    "mcp": {
+     "method": "tools/call",
+     "name": "prepare_host_agent_artifacts",
+     "params": {
+      "name": "prepare_host_agent_artifacts",
+      "arguments": {
+       "sourceDir": "/home/ubuntu/src",
+       "destDir": "/home/ubuntu/src/out",
+       "archs": [
+        "amd64"
+       ]
+      }
+     },
+     "capture": {
+      "T_PREPARE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "prepareDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PREPARE}",
+     "params": {
+      "taskId": "${T_PREPARE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 1200
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "prepareDone",
+      "body",
+      "result",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "match": "Error:\\ Running as unit: opute-host-workload-[0-9a-f]{24}\\.service(; invocation ID: [0-9a-f]{32})?\\nno\\ required\\ module\\ provides\\ package\\ github\\.com/wunderous/host\\-agents/cmd/opute\\-host\\-agent:\\ go\\.mod\\ file\\ not\\ found\\ in\\ current\\ directory\\ or\\ any\\ parent\\ directory;\\ see\\ 'go\\ help\\ modules'\\\nFinished with result: exit\\-code\\nMain processes terminated with: code=exited/status=1\\nService runtime: [0-9.]+m?s\\nCPU time consumed: [0-9.]+m?s\\nMemory peak: [0-9.]+[BKMG]?\\nMemory swap peak: [0-9.]+[BKMG]?",
+     "reason": "systemd-run per-run unit name, invocation id and resource accounting"
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.bridge.recover",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go:RecoverBridge"
+  ],
+  "commands": [
+   "systemctl"
+  ],
+  "residue": "None: recover_bridge only restarts the harness's stand-in opute-bridge user unit.",
+  "steps": [
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "bridgeDir",
+    "shell": {
+     "argv": [
+      "install",
+      "-d",
+      "-o",
+      "ubuntu",
+      "-g",
+      "ubuntu",
+      "/home/ubuntu/.config",
+      "/home/ubuntu/.config/systemd",
+      "/home/ubuntu/.config/systemd/user"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "bridgeUnit",
+    "write": {
+     "path": "/home/ubuntu/.config/systemd/user/opute-bridge.service",
+     "content": "[Unit]\nDescription=Opute parity T2 bridge stand-in\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "bridgeStart",
+    "shell": {
+     "argv": [
+      "env",
+      "XDG_RUNTIME_DIR=/run/user/1000",
+      "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus",
+      "sh",
+      "-c",
+      "systemctl --user daemon-reload && systemctl --user start opute-bridge.service"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "recover",
+    "mcp": {
+     "method": "tools/call",
+     "name": "recover_bridge",
+     "params": {
+      "name": "recover_bridge",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.linux.no-effect-tools",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/firewall.go",
+   "internal/domain/host/host_service.go:EnsureDocker"
+  ],
+  "commands": [],
+  "residue": "None: on a Linux Incus host ensure_docker is unsupported and no firewall rule applies; the snapshot must be empty.",
+  "steps": [
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "docker",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_docker",
+     "params": {
+      "name": "ensure_docker",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "info",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_host_info",
+     "params": {
+      "name": "get_host_info",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "rule",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_firewall_rule",
+     "params": {
+      "name": "ensure_host_firewall_rule",
+      "arguments": {
+       "uri": "host:local:parity-t2-agent",
+       "port": 8443
+      }
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": {
+      "except": [
+       "/home/ubuntu/.config/opute/host-resource-coordinator"
+      ]
+     }
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "info",
+      "body",
+      "result",
+      "structuredContent",
+      "system"
+     ],
+     "type": "object",
+     "reason": "live host load and memory figures; their shape is compared in T1"
+    },
+    {
+     "path": [
+      "steps",
+      "info",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system"
+     ],
+     "type": "object",
+     "reason": "live host load and memory figures; their shape is compared in T1"
+    }
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "info",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ]
+   ],
+   "sets": [
+    [
+     "steps",
+     "info",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text",
+     "$json",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "info",
+     "body",
+     "result",
+     "structuredContent",
+     "supportedTools"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "t2.host-domain.admission.rejected-no-effect",
+  "tier": "T2",
+  "owner": "host",
+  "anchors": [
+   "internal/admission/admission.go",
+   "internal/tools/dispatch.go",
+   "internal/runtime/standalone.go:MutationsAllowed",
+   "internal/domain/host"
+  ],
+  "commands": [],
+  "residue": "None: every call is refused before it reaches the host. The baseline is taken after the agent starts, so the agent's own startup state is not attributed to a refused call.",
+  "steps": [
+   {
+    "as": "keep",
+    "write": {
+     "path": "/home/ubuntu/parity-keep.txt",
+     "content": "kept\n",
+     "owner": "ubuntu:ubuntu"
+    }
+   },
+   {
+    "as": "serveClosed",
+    "serve": {
+     "unset": [
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS"
+     ]
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "gateClosed.configure_agent_connection",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "/home/ubuntu/.config/parity/rejected.env",
+       "environment": {
+        "OPUTE_PARITY": "x"
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.recover_bridge",
+    "mcp": {
+     "method": "tools/call",
+     "name": "recover_bridge",
+     "params": {
+      "name": "recover_bridge",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_docker",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_docker",
+     "params": {
+      "name": "ensure_docker",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.extract_host_archive",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "/home/ubuntu/none.tar.gz",
+       "destination": "~/rejected"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_host_artifact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:8443/cloudflared",
+       "sha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8",
+       "path": "~/.local/bin/rejected"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.prepare_host_agent_artifacts",
+    "mcp": {
+     "method": "tools/call",
+     "name": "prepare_host_agent_artifacts",
+     "params": {
+      "name": "prepare_host_agent_artifacts",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.run_host_command",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "touch /home/ubuntu/rejected-run"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_host_file",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/systemd/user/rejected.service",
+       "content": "[Unit]\nDescription=Opute parity T2 web\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.remove_host_file",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "/home/ubuntu/parity-keep.txt",
+       "confirm": true
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.reconcile_host_resource_policy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:system/opute-host-agent.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_host_service_supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.restart_host_service",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "cron.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.set_host_service_state",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "cron.service",
+       "state": "stop",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_host_tool",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_tool",
+     "params": {
+      "name": "ensure_host_tool",
+      "arguments": {
+       "tool": "ninja"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.compact_wsl_disk",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "confirm": true
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.shutdown_wsl",
+    "mcp": {
+     "method": "tools/call",
+     "name": "shutdown_wsl",
+     "params": {
+      "name": "shutdown_wsl",
+      "arguments": {
+       "confirm": true
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.terminate_wsl_distribution",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distribution": "Ubuntu"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.run_instance_command",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "vm:local:web1",
+       "command": "true"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_public_mcp_quick_tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "rejected",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:8443/cloudflared",
+       "artifactSha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_public_mcp_tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "rejected",
+       "endpoint": "https://mcp.parity-t2.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:8443/cloudflared",
+       "artifactSha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.remove_public_mcp_quick_tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "confirm": true
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.install_incus_stack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.uninstall_incus_stack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     }
+    }
+   },
+   {
+    "as": "afterGateClosed",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   },
+   {
+    "as": "stopClosed",
+    "stop": {}
+   },
+   {
+    "as": "serveOpen",
+    "serve": {}
+   },
+   {
+    "as": "staleRevision.configure_agent_connection",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "/home/ubuntu/.config/parity/rejected.env",
+       "environment": {
+        "OPUTE_PARITY": "x"
+       }
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.recover_bridge",
+    "mcp": {
+     "method": "tools/call",
+     "name": "recover_bridge",
+     "params": {
+      "name": "recover_bridge",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_docker",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_docker",
+     "params": {
+      "name": "ensure_docker",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.extract_host_archive",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "/home/ubuntu/none.tar.gz",
+       "destination": "~/rejected"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_host_artifact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:8443/cloudflared",
+       "sha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8",
+       "path": "~/.local/bin/rejected"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.prepare_host_agent_artifacts",
+    "mcp": {
+     "method": "tools/call",
+     "name": "prepare_host_agent_artifacts",
+     "params": {
+      "name": "prepare_host_agent_artifacts",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.run_host_command",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "touch /home/ubuntu/rejected-run"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_host_file",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/systemd/user/rejected.service",
+       "content": "[Unit]\nDescription=Opute parity T2 web\n\n[Service]\nExecStart=/bin/sleep infinity\n\n[Install]\nWantedBy=default.target\n"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.remove_host_file",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "/home/ubuntu/parity-keep.txt",
+       "confirm": true
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.reconcile_host_resource_policy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:system/opute-host-agent.service"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_host_service_supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.restart_host_service",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "cron.service"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.set_host_service_state",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "cron.service",
+       "state": "stop",
+       "scope": "system"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_host_tool",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_tool",
+     "params": {
+      "name": "ensure_host_tool",
+      "arguments": {
+       "tool": "ninja"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.compact_wsl_disk",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.shutdown_wsl",
+    "mcp": {
+     "method": "tools/call",
+     "name": "shutdown_wsl",
+     "params": {
+      "name": "shutdown_wsl",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.terminate_wsl_distribution",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distribution": "Ubuntu"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.run_instance_command",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "vm:local:web1",
+       "command": "true"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_public_mcp_quick_tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "rejected",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:8443/cloudflared",
+       "artifactSha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_public_mcp_tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "rejected",
+       "endpoint": "https://mcp.parity-t2.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:8443/cloudflared",
+       "artifactSha256": "c500a191a352b9ea5e1b1f5ec89f8a812ccf132dcdfbeace60f49bfb5dfdfbb8"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.remove_public_mcp_quick_tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "confirm": true
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.install_incus_stack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.uninstall_incus_stack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.reconcile_host_resource_policy.0",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.reconcile_host_resource_policy.1",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.reconcile_host_resource_policy.2",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:other-tenant:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.reconcile_host_resource_policy.3",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host:local:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_host_service.4",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "serviceName": "cron.service"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_host_service.5",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "serviceName": "cron.service",
+       "uri": "web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_host_service.6",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "serviceName": "cron.service",
+       "uri": "host-service:other-tenant:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_host_service.7",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "serviceName": "cron.service",
+       "uri": "host:local:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.set_host_service_state.8",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "serviceName": "cron.service",
+       "state": "stop",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.set_host_service_state.9",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "serviceName": "cron.service",
+       "state": "stop",
+       "scope": "system",
+       "uri": "web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.set_host_service_state.10",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "serviceName": "cron.service",
+       "state": "stop",
+       "scope": "system",
+       "uri": "host-service:other-tenant:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.set_host_service_state.11",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "serviceName": "cron.service",
+       "state": "stop",
+       "scope": "system",
+       "uri": "host:local:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "afterOpen",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ]
+  },
+  "rejectedOnly": true
+ }
+]

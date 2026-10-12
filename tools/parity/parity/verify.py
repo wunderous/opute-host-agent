@@ -423,6 +423,19 @@ def verify(manifest_path: Path, gate: str) -> dict:
         path = root / entry["path"] if entry.get("path") else None
         if path is None or not path.is_file() or _sha(path) != entry.get("sha256"):
             failures.append(f"cutover evidence {key}: missing or not the reviewed file")
+    t2 = None
+    if rules.get("requireT2"):
+        # M8 validations 2-4: twin-sandbox effect, cleanup and
+        # no-unauthorized-effect parity, re-derived from committed receipts.
+        from . import t2_verify
+        t2 = t2_verify.check(root, manifest, lambda text: report.problem(text, "t2"))
+        suites = set((manifest.get("t2Evidence") or {}).get("suites") or {})
+        if not t2 or not {"go-vs-go", "go-vs-rust"} <= suites:
+            failures.append("t2: no T2 evidence for both go-vs-go and go-vs-rust")
+        bad = sorted(sid for sid, row in t2.items() if any(v != PASS for v in row.values()))
+        if bad:
+            failures.append(f"t2: {len(bad)} scenario(s) not pass: {', '.join(bad[:8])}"
+                            + (" ..." if len(bad) > 8 else ""))
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
@@ -443,6 +456,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.add("inventory")
     if rules.get("requireContracts"):
         scopes.add("contracts")
+    if rules.get("requireT2"):
+        scopes.add("t2")
     gating = [text for scope, text in report.problems if scope in scopes]
     if gating:
         failures.append(f"{len(gating)} provenance/evidence problem(s)")
@@ -455,6 +470,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "oracles": oracles,
         "contracts": contracts,
         "m5": m5,
+        "t2": t2,
     }
 
 
@@ -479,6 +495,11 @@ def render(report: dict) -> str:
         lines.append(f"  contracts    {report['contracts']}")
     for requirement, status in (report.get("m5") or {}).items():
         lines.append(f"  M5 {requirement:18} {status}")
+    if report.get("t2") is not None:
+        for suite in sorted({s for row in report["t2"].values() for s in row}):
+            values = [row.get(suite) for row in report["t2"].values()]
+            lines.append(f"  T2 {suite:10} pass={values.count(PASS)} fail={values.count(FAIL)} "
+                         f"unverified={values.count(UNVERIFIED)}")
     for p in report.get("problems", [])[:20]:
         lines.append(f"  problem: {p}")
     for f in gate.get("failures", []):
