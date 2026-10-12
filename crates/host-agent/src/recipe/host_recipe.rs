@@ -20,7 +20,11 @@ pub const HOST_MODE_DISTRIBUTED: &str = "distributed";
 pub const HOST_COORDINATOR_HOST_AGENT: &str = "host-agent";
 pub const HOST_MODE_LOCAL: &str = "local";
 
+// Go's decoder leaves an absent field at its zero value, so a document of
+// another recipe family reaches the envelope check and is refused by its
+// contractVersion rather than by a missing field.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
 pub struct HostExecution {
     pub coordinator: String,
     pub mode: String,
@@ -34,17 +38,19 @@ impl HostExecution {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct HostDocument {
-    #[serde(rename = "contractVersion")]
+    #[serde(rename = "contractVersion", default)]
     pub contract_version: String,
-    #[serde(rename = "recipeId")]
+    #[serde(rename = "recipeId", default)]
     pub recipe_id: String,
-    #[serde(rename = "recipeVersion")]
+    #[serde(rename = "recipeVersion", default)]
     pub recipe_version: String,
+    #[serde(default)]
     pub execution: HostExecution,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub inputs: BTreeMap<String, InputSpec>,
     #[serde(default)]
     pub compatibility: CompatibilitySpec,
+    #[serde(default)]
     pub plan: PlanDocument,
     #[serde(
         rename = "outputMapping",
@@ -366,6 +372,16 @@ mod tests {
         let mut doc = base_document();
         doc.contract_version = "host-recipe.v2".to_string();
         assert!(validate_host_envelope(&doc).is_err());
+    }
+
+    #[test]
+    fn another_recipe_family_is_refused_by_its_contract_version() {
+        let runtime = b"contractVersion: runtime-recipe.v1\nrecipeId: r\nrecipeVersion: 1.0.0\nruntime:\n  id: x\n";
+        let doc = decode_host(runtime).unwrap();
+        assert_eq!(
+            validate_host_envelope(&doc).unwrap_err(),
+            "unsupported host recipe contractVersion \"runtime-recipe.v1\""
+        );
     }
 
     #[test]
