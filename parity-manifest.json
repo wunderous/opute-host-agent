@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/local-e2e/native-2026-10-11-r3/canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-12-r4/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
@@ -11,19 +11,19 @@
  "contracts": {
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/local-e2e/native-2026-10-11-r3/contracts/oauth-issuance/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r4/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/local-e2e/native-2026-10-11-r3/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r4/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/local-e2e/native-2026-10-11-r3/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r4/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/local-e2e/native-2026-10-11-r3/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r4/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -113,13 +113,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/go-vs-go-final/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/go-vs-go-final/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/go-vs-rust-final/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/go-vs-rust-final/summary.json"
   }
  },
  "gates": {
@@ -552,6 +552,16 @@
   },
   {
    "anchors": [
+    "internal/tools/catalog.go:CatalogExcludedToolNames",
+    "internal/hostmcp/server.go:handleToolsCall"
+   ],
+   "id": "catalog.unpublished-dispatch",
+   "owner": "contracts",
+   "scenario": "catalog.unpublished-dispatch",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
     "internal/cli/cli.go:Run --version"
    ],
    "id": "cli.version",
@@ -621,6 +631,37 @@
    "owner": "cli",
    "scenario": "cli.dispatch",
    "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load",
+    "internal/resource/service.go:capacitySnapshot",
+    "internal/resource/service.go:Admit"
+   ],
+   "id": "config.env.resource-policy",
+   "owner": "config",
+   "scenario": "config.env.resource-policy",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load",
+    "internal/app/app.go:Run",
+    "internal/transport/http.go:handleHealth"
+   ],
+   "id": "config.env.local-instance-id",
+   "owner": "config",
+   "scenario": "config.env.local-instance-id",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/hostruntime/runtime.go:ConfigFromEnv"
+   ],
+   "id": "config.env.incus-binary-path",
+   "owner": "config",
+   "scenario": "config.env.incus-binary-path",
+   "surface": "config"
   },
   {
    "anchors": [
@@ -1029,6 +1070,76 @@
    "id": "host-recipe-corpus.k3s-install",
    "owner": "plan",
    "scenario": "host-recipe-corpus.k3s-install",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-activate",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-activate",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-activate-tunneling",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-activate-tunneling",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-tunneling-managed",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-tunneling-managed",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-tunneling-public-host",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-tunneling-public-host",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-tunneling",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-tunneling",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.k3s-kubernetes",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.k3s-kubernetes",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.fixture-cloudflared",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.fixture-cloudflared",
    "surface": "recipe-corpus"
   },
   {
@@ -1678,6 +1789,33 @@
   },
   {
    "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.family.rejected-candidate-keeps-owner",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.family.rejected-candidate-keeps-owner",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.family.rollback-restores-owner",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.family.rollback-restores-owner",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.family.replacement-keeps-accepted-call",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.family.replacement-keeps-accepted-call",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
     "internal/hostmcp/provider_install.go:handleProviderInstallContext",
     "plugins/platform/hostos"
    ],
@@ -1899,34 +2037,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/m5/crash/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/m5/cross-read/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/m5/migration/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/m5/secrets/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/m5/shape-final/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/m5/shape-final/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/local-e2e/native-2026-10-11-r3/m5/unknown-projection/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r4/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/local-e2e/native-2026-10-11-r3/oracles.json",
+  "results": "evidence/local-e2e/native-2026-10-12-r4/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/local-e2e/native-2026-10-11-r3/rust-canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-12-r4/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "5d2930b13be05208145273970a043706b734a17f58c9d01f06d1ac2690aefa0d",
+  "binarySha256": "0b645a0362dd6e3ec9c42ea12b12fe4f7824f743cbd86ffd07354f40ea188b00",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

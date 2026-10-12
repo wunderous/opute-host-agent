@@ -28,6 +28,106 @@
   {
    "decision": "open: reproduce exactly in Rust, or fix in both implementations",
    "evidence": {
+    "cell": "provider-cloudflare",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/provider-cloudflare",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "provider-hostos",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/provider-hostos",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "provider-k3s",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/provider-k3s",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
+    "cell": "provider-tailscale",
+    "tools": [
+     "check_local_llm_prerequisites",
+     "configure_local_llm_model",
+     "configure_local_llm_runtime",
+     "ensure_local_llm_k3s_proxy",
+     "ensure_local_llm_relay",
+     "ensure_local_llm_server_binary",
+     "install_local_llm_model",
+     "list_local_llm_models",
+     "probe_local_llm",
+     "remove_local_llm_k3s_proxy",
+     "remove_local_llm_model",
+     "remove_local_llm_relay",
+     "start_local_llm_runtime",
+     "stop_local_llm_runtime"
+    ]
+   },
+   "id": "G-1/provider-tailscale",
+   "kind": "apparent-go-defect",
+   "summary": "local-LLM tools are published with the generic LEGACY wrapper description"
+  },
+  {
+   "decision": "open: reproduce exactly in Rust, or fix in both implementations",
+   "evidence": {
     "cell": "standalone",
     "tools": [
      "check_local_llm_prerequisites",
@@ -148,21 +248,6 @@
    "id": "F-4",
    "kind": "nondeterminism",
    "summary": "recipe validate names a different missing required input between runs (map iteration order)"
-  },
-  {
-   "decision": "open: determine whether tools/call can reach them (hidden surface) or they are provider-conditional; add a scenario before M3",
-   "evidence": {
-    "tools": [
-     "ensure_k3d",
-     "get_cluster_details",
-     "get_cluster_runtime_details",
-     "list_clusters",
-     "uninstall_helm_chart"
-    ]
-   },
-   "id": "F-5",
-   "kind": "unpublished-dispatch",
-   "summary": "dispatch-registered tool names that appear in no captured catalog and are not in CatalogExcludedToolNames"
   }
  ]
 }

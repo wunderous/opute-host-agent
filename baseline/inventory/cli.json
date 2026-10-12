@@ -500,6 +500,352 @@
   },
   {
    "observed": {
+    "incusPathWins": {
+     "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+       "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+         "name": "host-agent",
+         "version": "0.2.3"
+        }
+       },
+       "content": [
+        {
+         "text": "{\"vms\":[]}",
+         "type": "text"
+        }
+       ],
+       "resultType": "complete",
+       "structuredContent": {
+        "vms": []
+       }
+      }
+     },
+     "headers": {
+      "cache-control": "no-cache, no-transform",
+      "content-type": "application/json"
+     },
+     "status": 200
+    },
+    "start": {
+     "ready": true
+    },
+    "startPrecedence": {
+     "ready": true
+    },
+    "stop": {
+     "exit": 0,
+     "killed": false
+    },
+    "stopPrecedence": {
+     "exit": 0,
+     "killed": false
+    },
+    "vmPathMissing": {
+     "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+       "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+         "name": "host-agent",
+         "version": "0.2.3"
+        }
+       },
+       "content": [
+        {
+         "text": "Error: virtualization_stack_absent: the incus virtualization stack is not installed on this host; install it with install_incus_stack",
+         "type": "text"
+        }
+       ],
+       "isError": true,
+       "resultType": "complete"
+      }
+     },
+     "headers": {
+      "cache-control": "no-cache, no-transform",
+      "content-type": "application/json"
+     },
+     "status": 200
+    }
+   },
+   "owner": "config",
+   "scenario": "config.env.incus-binary-path"
+  },
+  {
+   "observed": {
+    "health": {
+     "body": {
+      "agentId": "${AGENT_ID}",
+      "capabilities": {
+       "host": {
+        "canInvokeWindowsInterop": false,
+        "canManageWsl": false,
+        "canShutdownWsl": false,
+        "canTerminateWslDistribution": false
+       }
+      },
+      "capacity": {
+       "runningVmCount": 0,
+       "totalVmCount": 0
+      },
+      "executionContext": {
+       "displayName": "Linux",
+       "id": "native-linux",
+       "kind": "native-linux"
+      },
+      "fingerprint": "host:v2:2451b134fcdf2846890dd7cae3cf237c82835e9a2cde4c6bb289d968e0f95df2",
+      "fingerprintSource": "linux-machine-id",
+      "fingerprintVersion": "v2",
+      "instanceId": "standalone",
+      "localInstanceId": "launcher-parity-7",
+      "ok": true
+     },
+     "headers": {
+      "content-type": "application/json"
+     },
+     "status": 200
+    },
+    "healthPlatform": {
+     "body": {
+      "agentId": "${AGENT_ID}",
+      "capabilities": {
+       "host": {
+        "canInvokeWindowsInterop": false,
+        "canManageWsl": false,
+        "canShutdownWsl": false,
+        "canTerminateWslDistribution": false
+       }
+      },
+      "capacity": {
+       "runningVmCount": 0,
+       "totalVmCount": 0
+      },
+      "executionContext": {
+       "displayName": "Linux",
+       "id": "native-linux",
+       "kind": "native-linux"
+      },
+      "fingerprint": "host:v2:2451b134fcdf2846890dd7cae3cf237c82835e9a2cde4c6bb289d968e0f95df2",
+      "fingerprintSource": "linux-machine-id",
+      "fingerprintVersion": "v2",
+      "instanceId": "platform",
+      "ok": true
+     },
+     "headers": {
+      "content-type": "application/json"
+     },
+     "status": 200
+    },
+    "start": {
+     "ready": true
+    },
+    "startPlatform": {
+     "ready": true
+    },
+    "stop": {
+     "exit": 0,
+     "killed": false
+    },
+    "stopPlatform": {
+     "exit": 0,
+     "killed": false
+    }
+   },
+   "owner": "config",
+   "scenario": "config.env.local-instance-id"
+  },
+  {
+   "observed": {
+    "advisoryChecksCapacity": {
+     "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+       "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+         "name": "host-agent",
+         "version": "0.2.3"
+        }
+       },
+       "content": [
+        {
+         "text": "Error: host_capacity_saturated: class=normal pressure=normal reason=declared resource cost exceeds effective host capacity retryAfterMs=1000",
+         "type": "text"
+        }
+       ],
+       "isError": true,
+       "resultType": "complete",
+       "structuredContent": {
+        "class": "normal",
+        "code": "host_capacity_saturated",
+        "owner": "admission",
+        "pressure": "normal",
+        "reason": "declared resource cost exceeds effective host capacity",
+        "retryAfterMs": 1000
+       }
+      }
+     },
+     "headers": {
+      "cache-control": "no-cache, no-transform",
+      "content-type": "application/json"
+     },
+     "status": 200
+    },
+    "capacity": {
+     "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+       "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+         "name": "host-agent",
+         "version": "0.2.3"
+        }
+       },
+       "content": [
+        {
+         "text": "Host capacity and enforcement state observed.",
+         "type": "text"
+        }
+       ],
+       "resultType": "complete",
+       "structuredContent": {
+        "cgroupControllers": [
+         "memory",
+         "pids"
+        ],
+        "checkedAt": "2026-10-12T01:01:00Z",
+        "currentUsage": {
+         "diskAvailableBytes": 5801435136,
+         "diskBytes": 10434105344,
+         "memoryAvailableBytes": 13881454592,
+         "memoryBytes": 18589622272,
+         "tasks": 228
+        },
+        "diskAvailableBytes": 5801435136,
+        "diskPressure": "normal",
+        "effectiveLimits": {
+         "cpuCores": 6,
+         "diskBytes": 1073741824,
+         "memoryBytes": 11811160064,
+         "tasks": 77
+        },
+        "enforcement": "unknown",
+        "heavyInFlight": 0,
+        "memoryAvailableBytes": 13881454592,
+        "memoryEvents": {
+         "high": 0,
+         "low": 0,
+         "max": 0,
+         "oom": 0,
+         "oom_group_kill": 0,
+         "oom_kill": 0,
+         "sock_throttled": 0
+        },
+        "normalInFlight": 0,
+        "observedLimits": {
+         "diskBytes": 16235540480,
+         "tasks": 32684
+        },
+        "policyRevision": "opute-host-resource-policy.parity",
+        "pressure": "normal",
+        "psi": {
+         "cpu": {
+          "someAvg300": 0.26,
+          "someAvg60": 0.06,
+          "someTotalUsec": 6085750222
+         },
+         "io": {
+          "fullTotalUsec": 170429740,
+          "someTotalUsec": 212258956
+         },
+         "memory": {
+          "fullTotalUsec": 5041731,
+          "someTotalUsec": 5132747
+         }
+        },
+        "queue": {
+         "heavyActive": 0,
+         "heavyQueued": 0,
+         "normalActive": 0,
+         "queued": 0
+        },
+        "queued": 0,
+        "reservations": {
+         "count": 0
+        },
+        "tasksCurrent": 228,
+        "tasksLimit": 32684
+       }
+      }
+     },
+     "headers": {
+      "cache-control": "no-cache, no-transform",
+      "content-type": "application/json"
+     },
+     "status": 200
+    },
+    "failClosedRefuses": {
+     "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+       "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+         "name": "host-agent",
+         "version": "0.2.3"
+        }
+       },
+       "content": [
+        {
+         "text": "Error: host_resource_enforcement_unknown: class=normal pressure=normal reason=workload cgroup enforcement is not verified retryAfterMs=1000",
+         "type": "text"
+        }
+       ],
+       "isError": true,
+       "resultType": "complete",
+       "structuredContent": {
+        "class": "normal",
+        "code": "host_resource_enforcement_unknown",
+        "owner": "admission",
+        "pressure": "normal",
+        "reason": "workload cgroup enforcement is not verified",
+        "retryAfterMs": 1000
+       }
+      }
+     },
+     "headers": {
+      "cache-control": "no-cache, no-transform",
+      "content-type": "application/json"
+     },
+     "status": 200
+    },
+    "fixture": {
+     "wrote": "${SANDBOX}/home/policy.txt"
+    },
+    "start": {
+     "ready": true
+    },
+    "startAdvisory": {
+     "ready": true
+    },
+    "stop": {
+     "exit": 0,
+     "killed": false
+    },
+    "stopAdvisory": {
+     "exit": 0,
+     "killed": false
+    }
+   },
+   "owner": "config",
+   "scenario": "config.env.resource-policy"
+  },
+  {
+   "observed": {
     "agentIdNonAscii": {
      "exit": 1,
      "stderr": "OPUTE_REMOTE_AGENT_ID \"agént\" is invalid: use printable non-whitespace characters",
