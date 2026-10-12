@@ -252,6 +252,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         agent_connection(host),
         host_firewall(),
         container_engine(),
+        virtualization_stack(host),
         instance_exec(host),
         host_artifacts(host),
         catalog_service(),
@@ -1007,6 +1008,67 @@ fn host_firewall() -> Service {
                 Ok(crate::tools::structured_result(out, Some(&text)))
             }),
         )],
+    }
+}
+
+/// M8a: the virtualization stack's install and fail-closed uninstall.
+fn virtualization_stack(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let uninstall_owner = owner.clone();
+    let (env, uninstall_env) = (host.env.clone(), host.env.clone());
+    let (incus, uninstall_incus) = (host.incus.clone(), host.incus.clone());
+    Service {
+        id: "virtualization-stack",
+        dependencies: &[],
+        operations: vec![
+            (
+                "install_incus_stack",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &owner.0,
+                        owner_instance: &owner.1,
+                    };
+                    let args = crate::hostvirt::InstallArgs {
+                        package_name: text(call.args, "incusPackage").into(),
+                        qemu_package: text(call.args, "qemuPackage").into(),
+                        gpu_packages: string_slice(call.args, "gpuPackages"),
+                        channel: text(call.args, "incusChannel").into(),
+                        version: text(call.args, "incusVersion").into(),
+                        install_qemu: flag(call.args, "installQemu"),
+                    };
+                    crate::hostvirt::install_incus_stack(&env, &owner, &incus, &args).map(|v| {
+                        structured_result(v, Some("Incus virtualization prerequisites installed"))
+                    })
+                }),
+            ),
+            (
+                "uninstall_incus_stack",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &uninstall_owner.0,
+                        owner_instance: &uninstall_owner.1,
+                    };
+                    crate::hostvirt::uninstall_incus_stack(
+                        &uninstall_env,
+                        &owner,
+                        &uninstall_incus,
+                        flag(call.args, "confirm"),
+                        flag(call.args, "removeState"),
+                        flag(call.args, "keepRepository"),
+                    )
+                    .map(|v| {
+                        structured_result(
+                            v,
+                            Some("Incus virtualization stack removed from this host"),
+                        )
+                    })
+                }),
+            ),
+        ],
     }
 }
 

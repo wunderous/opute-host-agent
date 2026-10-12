@@ -10622,5 +10622,2241 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.virt.install",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {
+       "installQemu": true,
+       "gpuPackages": [
+        "gpu-ok",
+        " ",
+        "gpu-missing"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.install-refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "channel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {
+       "incusChannel": "edge"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_CHANNEL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "channelDone",
+    "requires": [
+     "T_CHANNEL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CHANNEL}",
+     "params": {
+      "taskId": "${T_CHANNEL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "version",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {
+       "incusVersion": "8.0"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_VERSION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "versionDone",
+    "requires": [
+     "T_VERSION"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_VERSION}",
+     "params": {
+      "taskId": "${T_VERSION}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.install-curl-fails",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install-curl-fails",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.install-not-armored",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install-not-armored",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.install-runtime-fails",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install-runtime-fails",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_INCUS_NETWORK_NAME": "incusbr0"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {
+       "incusChannel": "lts-6.0",
+       "incusVersion": "7"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.install-no-apt",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-uninstall",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "unconfirmed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {}
+     },
+     "expand": true,
+     "capture": {
+      "T_UNCONFIRMED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "unconfirmedDone",
+    "requires": [
+     "T_UNCONFIRMED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNCONFIRMED}",
+     "params": {
+      "taskId": "${T_UNCONFIRMED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "declined",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": false
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DECLINED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "declinedDone",
+    "requires": [
+     "T_DECLINED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DECLINED}",
+     "params": {
+      "taskId": "${T_DECLINED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "purge",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "removeState": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_PURGE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "purgeDone",
+    "requires": [
+     "T_PURGE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PURGE}",
+     "params": {
+      "taskId": "${T_PURGE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "keep",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "keepRepository": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_KEEP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "keepDone",
+    "requires": [
+     "T_KEEP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_KEEP}",
+     "params": {
+      "taskId": "${T_KEEP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall-busy",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-uninstall-busy",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "busy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BUSY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "busyDone",
+    "requires": [
+     "T_BUSY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BUSY}",
+     "params": {
+      "taskId": "${T_BUSY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall-malformed",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-uninstall-malformed",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "malformed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_MALFORMED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "malformedDone",
+    "requires": [
+     "T_MALFORMED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MALFORMED}",
+     "params": {
+      "taskId": "${T_MALFORMED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall-object",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-uninstall-object",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "object",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_OBJECT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "objectDone",
+    "requires": [
+     "T_OBJECT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_OBJECT}",
+     "params": {
+      "taskId": "${T_OBJECT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall-list-fails",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-uninstall-list-fails",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "listFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_LISTFAILS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "listFailsDone",
+    "requires": [
+     "T_LISTFAILS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_LISTFAILS}",
+     "params": {
+      "taskId": "${T_LISTFAILS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall-no-packages",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-uninstall-no-packages",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "none",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NONE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noneDone",
+    "requires": [
+     "T_NONE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NONE}",
+     "params": {
+      "taskId": "${T_NONE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.uninstall-absent",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "absent",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ABSENT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "absentDone",
+    "requires": [
+     "T_ABSENT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ABSENT}",
+     "params": {
+      "taskId": "${T_ABSENT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.virt.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {}
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "uninstall",
+    "mcp": {
+     "method": "tools/call",
+     "name": "uninstall_incus_stack",
+     "params": {
+      "name": "uninstall_incus_stack",
+      "arguments": {
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_UNINSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "uninstallDone",
+    "requires": [
+     "T_UNINSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNINSTALL}",
+     "params": {
+      "taskId": "${T_UNINSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ]
+  }
  }
 ]

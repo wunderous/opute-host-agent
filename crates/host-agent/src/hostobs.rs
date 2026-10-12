@@ -327,6 +327,8 @@ pub fn health_observer(
         ownership_mode,
         agent_id: String::new(),
         tenant_id: String::new(),
+        network_name: String::new(),
+        network_address: String::new(),
     };
     move || {
         let capacity = incus.inventory_capacity().map(|c| {

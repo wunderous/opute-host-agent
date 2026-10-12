@@ -172,7 +172,14 @@ def apply_masks(doc: Any, masks: Iterable[dict]) -> tuple[Any, list[dict]]:
         else:
             check = MASK_TYPES[kind]
 
-        def fn(value: Any, _kind=kind, _check=check, _path=path) -> Any:
+        # "match": the mask covers only values that fully match this regex
+        # (a random temp-file name among literal argv, say); other values at
+        # the path are left to compare as they are.
+        pattern = re.compile(mask["match"]) if "match" in mask else None
+
+        def fn(value: Any, _kind=kind, _check=check, _path=path, _pattern=pattern) -> Any:
+            if _pattern is not None and not (isinstance(value, str) and _pattern.fullmatch(value)):
+                return value
             if _check(value) or value == REDACTED_MARKER:
                 return {"$masked": _kind}
             violations.append({"path": _path, "type": _kind, "value": value})

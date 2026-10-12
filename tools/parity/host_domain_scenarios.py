@@ -802,6 +802,78 @@ cases += [
         STOP], POLICY),
 ]
 
+# Virtualization stack. Every command is PATH-resolved (sudo, apt-get,
+# apt-cache, dpkg, curl, dpkg-query) or the provider binary, so with the shim
+# directory as the whole PATH the full install and uninstall argv run against
+# recorded shims. TMPDIR puts Go's temp key and source files in the sandbox;
+# their random names are masked by pattern, their bytes compared by hash.
+VIRT = ["internal/domain/host/tool.go:InstallIncusStack", "internal/domain/host/incus_uninstall.go",
+        "internal/exec/process.go:RunPrivilegedPackage", "internal/tools/dispatch_host.go"]
+TMP_MASK = [{"path": ["trace", "*", "argv", "*"], "type": "string", "optional": True,
+             "match": r"(\$\{SANDBOX\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+             "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"}]
+
+
+def virt_case(id_, steps, fixture, tmp=True):
+    pre = [{"as": "tmp", "mkdir": {"path": "${SANDBOX}/home/tmp"}}] if tmp else []
+    case = scenario(id_, pre + steps, VIRT)
+    case["compare"]["masks"] = MASKS + TMP_MASK
+    case["fixture"] = fixture
+    return case
+
+
+def virt_serve(**env):
+    return shims_only(TMPDIR="${SANDBOX}/home/tmp", **env)
+
+
+def install(as_, **args):
+    return task_call(as_, "install_incus_stack", args)
+
+
+def uninstall(as_, **args):
+    return task_call(as_, "uninstall_incus_stack", args)
+
+
+cases += [
+    virt_case("virt.install", [
+        virt_serve(),
+        install("install", installQemu=True, gpuPackages=["gpu-ok", " ", "gpu-missing"]),
+        STOP], "virt-install"),
+    virt_case("virt.install-refusals", [
+        virt_serve(),
+        install("channel", incusChannel="edge"),
+        install("version", incusVersion="8.0"),
+        STOP], "virt-install"),
+    virt_case("virt.install-curl-fails", [virt_serve(), install("install"), STOP], "virt-install-curl-fails"),
+    virt_case("virt.install-not-armored", [virt_serve(), install("install"), STOP], "virt-install-not-armored"),
+    virt_case("virt.install-runtime-fails", [
+        virt_serve(OPUTE_INCUS_NETWORK_NAME="incusbr0"), install("install", incusChannel="lts-6.0", incusVersion="7"),
+        STOP], "virt-install-runtime-fails"),
+    virt_case("virt.install-no-apt", [virt_serve(), install("install"), STOP], None),
+    virt_case("virt.uninstall", [
+        virt_serve(),
+        uninstall("unconfirmed"),
+        uninstall("declined", confirm=False),
+        uninstall("purge", confirm=True, removeState=True),
+        uninstall("keep", confirm=True, keepRepository=True),
+        STOP], "virt-uninstall", tmp=False),
+    virt_case("virt.uninstall-busy", [virt_serve(), uninstall("busy", confirm=True), STOP], "virt-uninstall-busy",
+              tmp=False),
+    virt_case("virt.uninstall-malformed", [virt_serve(), uninstall("malformed", confirm=True), STOP],
+              "virt-uninstall-malformed", tmp=False),
+    virt_case("virt.uninstall-object", [virt_serve(), uninstall("object", confirm=True), STOP],
+              "virt-uninstall-object", tmp=False),
+    virt_case("virt.uninstall-list-fails", [virt_serve(), uninstall("listFails", confirm=True), STOP],
+              "virt-uninstall-list-fails", tmp=False),
+    virt_case("virt.uninstall-no-packages", [virt_serve(), uninstall("none", confirm=True), STOP],
+              "virt-uninstall-no-packages", tmp=False),
+    virt_case("virt.uninstall-absent", [virt_serve(), uninstall("absent", confirm=True), STOP], None, tmp=False),
+    virt_case("virt.shared-owner-refused", [
+        virt_serve(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"),
+        install("install"), uninstall("uninstall", confirm=True),
+        STOP], "virt-install", tmp=False),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

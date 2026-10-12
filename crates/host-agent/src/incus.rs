@@ -24,6 +24,9 @@ pub struct Incus {
     pub ownership_mode: String,
     pub agent_id: String,
     pub tenant_id: String,
+    /// `OPUTE_INCUS_NETWORK_NAME` / `_ADDRESS`: the managed container bridge.
+    pub network_name: String,
+    pub network_address: String,
 }
 
 /// `Runtime.ProviderBinary`.

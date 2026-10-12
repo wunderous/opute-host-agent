@@ -22,7 +22,9 @@ A rule matches on exact argv, on an argv prefix, or on a substring of one
 argument ("argvContains"). The first match wins. An unmatched invocation uses
 "default", and is still recorded. A rule's "creates" lists sandbox-relative
 paths written as executables after the call is recorded, standing in for an
-installer's effect.
+installer's effect; "writes" ({"after": flag, "content": text}) writes the
+content to the argument following the flag; "hashFiles" records the
+sha256 of each sandbox file named in the argv.
 
 A rule with "gate": "<name>" blocks after it is recorded: the shim marks
 gates/<name>.waiting.<pid> and waits on the FIFO gates/<name>.fifo until the
@@ -235,11 +237,22 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
             chosen, index = rule, i
             break
     entry = {"cmd": name, "argv": argv, "rule": index}
+    if chosen.get("hashFiles"):
+        # Files passed by path (a generated temp file, say) are recorded by
+        # content, so their names may differ while their bytes are compared.
+        entry["argvFiles"] = {str(i): hashlib.sha256(Path(a).read_bytes()).hexdigest()
+                              for i, a in enumerate(argv) if a.startswith("/") and Path(a).is_file()
+                              and str(Path(a)).startswith(str(root))}
     if stdin_digest:
         entry["stdinSha256"] = stdin_digest
     _append(log_path, entry)
     if chosen.get("gate"):
         wait_gate(root, chosen["gate"])
+    writes = chosen.get("writes")
+    if writes and writes["after"] in argv[:-1]:
+        # The effect of e.g. `curl -o PATH`: content written to the argument
+        # that follows the flag.
+        Path(argv[argv.index(writes["after"]) + 1]).write_text(writes["content"])
     for relative in chosen.get("creates", []):
         # The effect an installer would have: an executable at a
         # sandbox-relative path.

@@ -33,6 +33,15 @@ class CanonTest(unittest.TestCase):
         self.assertEqual(len(violations), 1)
         self.assertIn("$maskViolation", doc["t"])
 
+    def test_match_mask_covers_only_matching_values(self):
+        spec = {"masks": [{"path": ["argv", "*"], "type": "string", "match": r".*/tmp-\d+",
+                           "reason": "random temp name"}]}
+        left, vl = canon.normalize({"argv": ["-m", "/x/tmp-1"]}, spec, {})
+        right, vr = canon.normalize({"argv": ["-m", "/x/tmp-2"]}, spec, {})
+        self.assertEqual((vl, vr, canon.diff(left, right)), ([], [], []))
+        other, _ = canon.normalize({"argv": ["-n", "/x/tmp-2"]}, spec, {})
+        self.assertNotEqual(canon.diff(left, other), [])
+
     def test_mask_on_missing_path_is_a_violation(self):
         spec = {"masks": [{"path": ["t"], "type": "rfc3339", "reason": "clock"}]}
         _, violations = canon.normalize({}, spec, {})
