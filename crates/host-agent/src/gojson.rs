@@ -620,6 +620,29 @@ fn quote_char(c: u8) -> String {
 /// `json.Valid`'s first error, as `checkValid` reports it: Go's scanner,
 /// state for state, so the message names the same byte and context.
 pub fn syntax_error(data: &[u8]) -> Option<String> {
+    scan(data, false).err()
+}
+
+/// `json.Decoder.Decode`'s framing: the end of the first JSON value, or the
+/// decoder's error (`EOF` before any value, `unexpected EOF` inside one).
+/// Bytes after the value are not read.
+pub fn first_value(data: &[u8]) -> Result<usize, String> {
+    if data
+        .iter()
+        .all(|c| matches!(c, b' ' | b'\t' | b'\r' | b'\n'))
+    {
+        return Err("EOF".into());
+    }
+    scan(data, true).map_err(|e| {
+        if e == "unexpected end of JSON input" {
+            "unexpected EOF".into()
+        } else {
+            e
+        }
+    })
+}
+
+fn scan(data: &[u8], stop_at_value: bool) -> Result<usize, String> {
     #[derive(Clone, Copy, PartialEq)]
     enum Parse {
         ObjectKey,
@@ -648,7 +671,7 @@ pub fn syntax_error(data: &[u8]) -> Option<String> {
         Lit(&'static [u8], usize, &'static str),
     }
     let invalid =
-        |c: u8, context: &str| Some(format!("invalid character {} {context}", quote_char(c)));
+        |c: u8, context: &str| Err(format!("invalid character {} {context}", quote_char(c)));
     let space = |c: u8| matches!(c, b' ' | b'\t' | b'\r' | b'\n');
     let mut stack: Vec<Parse> = Vec::new();
     let mut st = St::BeginValue;
@@ -672,14 +695,14 @@ pub fn syntax_error(data: &[u8]) -> Option<String> {
                 st = match c {
                     b'{' => {
                         if stack.len() >= 10_000 {
-                            return Some("exceeded max depth".into());
+                            return Err("exceeded max depth".into());
                         }
                         stack.push(Parse::ObjectKey);
                         St::BeginStringOrEmpty
                     }
                     b'[' => {
                         if stack.len() >= 10_000 {
-                            return Some("exceeded max depth".into());
+                            return Err("exceeded max depth".into());
                         }
                         stack.push(Parse::ArrayValue);
                         St::BeginValueOrEmpty
@@ -714,6 +737,9 @@ pub fn syntax_error(data: &[u8]) -> Option<String> {
             }
             St::EndValue => {
                 let Some(&top) = stack.last() else {
+                    if stop_at_value {
+                        return Ok(i);
+                    }
                     st = St::EndTop;
                     continue;
                 };
@@ -865,11 +891,28 @@ pub fn syntax_error(data: &[u8]) -> Option<String> {
             st,
             St::EndValue | St::EndTop | St::One | St::Zero | St::Dot0 | St::E0
         );
-    (!complete).then(|| "unexpected end of JSON input".to_string())
+    if complete {
+        Ok(data.len())
+    } else {
+        Err("unexpected end of JSON input".to_string())
+    }
 }
 
 /// `json.Unmarshal(data, &[]struct{ Name string `json:"name"` }{})`: the
 /// names, or Go's first syntax or type error.
+/// The JSON kind `UnmarshalTypeError` names (`number 1.5` for a non-integer
+/// number decoded into an int is the caller's concern).
+pub fn kind_name(v: &Value) -> &'static str {
+    match v {
+        Value::Object(_) => "object",
+        Value::Array(_) => "array",
+        Value::String(_) => "string",
+        Value::Bool(_) => "bool",
+        Value::Null => "null",
+        Value::Number(_) => "number",
+    }
+}
+
 pub fn unmarshal_names(data: &[u8]) -> Result<Vec<String>, String> {
     const ELEMENT: &str = "struct { Name string \"json:\\\"name\\\"\" }";
     if let Some(e) = syntax_error(data) {
@@ -1058,6 +1101,9 @@ mod tests {
             e("01").as_deref(),
             Some("invalid character '1' after top-level value")
         );
+        assert_eq!(first_value(b"{} junk"), Ok(2));
+        assert_eq!(first_value(b"  ").unwrap_err(), "EOF");
+        assert_eq!(first_value(b"{\"a\"").unwrap_err(), "unexpected EOF");
     }
 
     #[test]

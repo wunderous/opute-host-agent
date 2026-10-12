@@ -97,7 +97,7 @@ pub(crate) fn normalize_sha256(raw: &str) -> Result<String, String> {
     Ok(format!("sha256:{}", value.to_ascii_lowercase()))
 }
 
-fn file_sha256(path: &str) -> Result<String, String> {
+pub(crate) fn file_sha256(path: &str) -> Result<String, String> {
     let mut file = std::fs::File::open(path).map_err(|e| {
         format!(
             "open host artifact: {}",
@@ -115,7 +115,7 @@ fn file_sha256(path: &str) -> Result<String, String> {
 }
 
 /// Go's root pool: `SSL_CERT_FILE` / `SSL_CERT_DIR`, else the system store.
-fn tls_config() -> Arc<rustls::ClientConfig> {
+pub(crate) fn tls_config() -> Arc<rustls::ClientConfig> {
     let mut roots = rustls::RootCertStore::empty();
     for cert in rustls_native_certs::load_native_certs().certs {
         let _ = roots.add(cert);

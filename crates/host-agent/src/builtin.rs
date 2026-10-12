@@ -255,6 +255,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         virtualization_stack(host),
         instance_exec(host),
         host_artifacts(host),
+        public_mcp(host),
         catalog_service(),
         host_resources(host),
         tasks(server),
@@ -989,6 +990,109 @@ fn agent_connection(host: &crate::tools::Host) -> Service {
                 .map(|v| structured_result(v, Some("Agent connection configuration written.")))
             }),
         )],
+    }
+}
+
+/// M8a: public MCP exposure through a pinned connector, stable or quick.
+fn public_mcp(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let owner = Arc::new((
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    ));
+    let env = host.env.clone();
+    let (tunnel_owner, tunnel_env) = (owner.clone(), env.clone());
+    let (quick_owner, quick_env) = (owner.clone(), env.clone());
+    Service {
+        id: "public-mcp",
+        dependencies: &["host-artifacts", "host-files", "host-services"],
+        operations: vec![
+            (
+                "ensure_public_mcp_tunnel",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &tunnel_owner.0,
+                        owner_instance: &tunnel_owner.1,
+                    };
+                    let a = call.args;
+                    let args = crate::hostpublic::TunnelArgs {
+                        binding_id: text(a, "bindingId").into(),
+                        endpoint: text(a, "endpoint").into(),
+                        local_target: text(a, "localTarget").into(),
+                        origin_host_id: text(a, "originHostId").into(),
+                        tunnel_token: text(a, "tunnelToken").into(),
+                        artifact_uri: text(a, "artifactUri").into(),
+                        artifact_sha256: text(a, "artifactSha256").into(),
+                        artifact_path: text(a, "artifactPath").into(),
+                        token_file: text(a, "tokenFile").into(),
+                        service_name: text(a, "serviceName").into(),
+                        service_file: text(a, "serviceFile").into(),
+                        scope: text(a, "scope").into(),
+                    };
+                    crate::hostpublic::ensure_public_mcp_tunnel(
+                        &tunnel_env,
+                        &owner,
+                        call.ctx,
+                        &args,
+                    )
+                    .map(|v| {
+                        structured_result(v, Some("Authenticated public MCP tunnel reconciled."))
+                    })
+                }),
+            ),
+            (
+                "ensure_public_mcp_quick_tunnel",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &quick_owner.0,
+                        owner_instance: &quick_owner.1,
+                    };
+                    let a = call.args;
+                    crate::hostpublic::ensure_public_mcp_quick_tunnel(
+                        &quick_env,
+                        &owner,
+                        call.ctx,
+                        text(a, "bindingId"),
+                        text(a, "localTarget"),
+                        text(a, "artifactUri"),
+                        text(a, "artifactSha256"),
+                        text(a, "scope"),
+                    )
+                    .map(|v| {
+                        structured_result(
+                            v,
+                            Some("Authenticated public MCP quick tunnel reconciled."),
+                        )
+                    })
+                }),
+            ),
+            (
+                "remove_public_mcp_quick_tunnel",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &owner.0,
+                        owner_instance: &owner.1,
+                    };
+                    let a = call.args;
+                    crate::hostpublic::remove_public_mcp_quick_tunnel(
+                        &env,
+                        &owner,
+                        call.ctx,
+                        text(a, "bindingId"),
+                        text(a, "artifactUri"),
+                        text(a, "artifactSha256"),
+                        text(a, "scope"),
+                        flag(a, "confirm"),
+                    )
+                    .map(|v| {
+                        structured_result(
+                            v,
+                            Some("Authenticated public MCP quick tunnel cleanup reconciled."),
+                        )
+                    })
+                }),
+            ),
+        ],
     }
 }
 

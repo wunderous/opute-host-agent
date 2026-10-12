@@ -12858,5 +12858,3482 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.public.tunnel-arguments",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+   "internal/mcpprobe/probe.go:ValidateEndpoint",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "binding",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "-bad",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BINDING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "bindingDone",
+    "requires": [
+     "T_BINDING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BINDING}",
+     "params": {
+      "taskId": "${T_BINDING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "noMcp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/other",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOMCP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noMcpDone",
+    "requires": [
+     "T_NOMCP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOMCP}",
+     "params": {
+      "taskId": "${T_NOMCP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "userinfo",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://u@mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_USERINFO": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "userinfoDone",
+    "requires": [
+     "T_USERINFO"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_USERINFO}",
+     "params": {
+      "taskId": "${T_USERINFO}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "query",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp?x=1",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_QUERY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "queryDone",
+    "requires": [
+     "T_QUERY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_QUERY}",
+     "params": {
+      "taskId": "${T_QUERY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "plainHttp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "http://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_PLAINHTTP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "plainHttpDone",
+    "requires": [
+     "T_PLAINHTTP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PLAINHTTP}",
+     "params": {
+      "taskId": "${T_PLAINHTTP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "badPort",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test:x/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BADPORT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "badPortDone",
+    "requires": [
+     "T_BADPORT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BADPORT}",
+     "params": {
+      "taskId": "${T_BADPORT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "badEscape",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/%zz/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BADESCAPE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "badEscapeDone",
+    "requires": [
+     "T_BADESCAPE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BADESCAPE}",
+     "params": {
+      "taskId": "${T_BADESCAPE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "remoteOrigin",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://10.0.0.5:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REMOTEORIGIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "remoteOriginDone",
+    "requires": [
+     "T_REMOTEORIGIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOTEORIGIN}",
+     "params": {
+      "taskId": "${T_REMOTEORIGIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "originQuery",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp?x",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ORIGINQUERY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "originQueryDone",
+    "requires": [
+     "T_ORIGINQUERY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ORIGINQUERY}",
+     "params": {
+      "taskId": "${T_ORIGINQUERY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "originNoMcp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/api",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ORIGINNOMCP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "originNoMcpDone",
+    "requires": [
+     "T_ORIGINNOMCP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ORIGINNOMCP}",
+     "params": {
+      "taskId": "${T_ORIGINNOMCP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "scope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "scope": "machine"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SCOPE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "scopeDone",
+    "requires": [
+     "T_SCOPE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SCOPE}",
+     "params": {
+      "taskId": "${T_SCOPE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "system",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "scope": "system"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SYSTEM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "systemDone",
+    "requires": [
+     "T_SYSTEM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SYSTEM}",
+     "params": {
+      "taskId": "${T_SYSTEM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "serviceName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "serviceName": "other.service"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SERVICENAME": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "serviceNameDone",
+    "requires": [
+     "T_SERVICENAME"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SERVICENAME}",
+     "params": {
+      "taskId": "${T_SERVICENAME}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactHttp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "http://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTHTTP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactHttpDone",
+    "requires": [
+     "T_ARTIFACTHTTP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTHTTP}",
+     "params": {
+      "taskId": "${T_ARTIFACTHTTP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactSha",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "abc"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTSHA": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactShaDone",
+    "requires": [
+     "T_ARTIFACTSHA"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTSHA}",
+     "params": {
+      "taskId": "${T_ARTIFACTSHA}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactPath",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "artifactPath": "~/elsewhere/cloudflared"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTPATH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactPathDone",
+    "requires": [
+     "T_ARTIFACTPATH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTPATH}",
+     "params": {
+      "taskId": "${T_ARTIFACTPATH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "tokenFile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "tokenFile": "/tmp/token.env"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_TOKENFILE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "tokenFileDone",
+    "requires": [
+     "T_TOKENFILE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TOKENFILE}",
+     "params": {
+      "taskId": "${T_TOKENFILE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "serviceFile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "serviceFile": "${SANDBOX}/home/x.service"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SERVICEFILE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "serviceFileDone",
+    "requires": [
+     "T_SERVICEFILE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SERVICEFILE}",
+     "params": {
+      "taskId": "${T_SERVICEFILE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "shortToken",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "short",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SHORTTOKEN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "shortTokenDone",
+    "requires": [
+     "T_SHORTTOKEN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SHORTTOKEN}",
+     "params": {
+      "taskId": "${T_SHORTTOKEN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "spaceToken",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "token with spaces and enough characters",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SPACETOKEN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "spaceTokenDone",
+    "requires": [
+     "T_SPACETOKEN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SPACETOKEN}",
+     "params": {
+      "taskId": "${T_SPACETOKEN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.public.tunnel-install",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+   "internal/mcpprobe/probe.go:ValidateEndpoint",
+   "internal/tools/dispatch_host.go",
+   "internal/domain/host/public_mcp.go:requireOwnedManagedFile",
+   "internal/domain/host/public_mcp.go:normalizePublicMCPInstanceID"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "serviceName": "opute-cloudflared-parity-public.service",
+       "tokenFile": "${SANDBOX}/home/.config/opute/tunnels/parity-public.env",
+       "artifactPath": "${SANDBOX}/home/.local/share/opute/tunnels/parity-public/cloudflared",
+       "serviceFile": "${SANDBOX}/home/.config/systemd/user/opute-cloudflared-parity-public.service"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_AGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "againDone",
+    "requires": [
+     "T_AGAIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_AGAIN}",
+     "params": {
+      "taskId": "${T_AGAIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "normalized",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "Parity:Public",
+       "endpoint": " https://MCP.parity.test/a%2Fb/mcp//#frag ",
+       "localTarget": "http://[::1]:9/mcp",
+       "tunnelToken": "  parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx  ",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NORMALIZED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "normalizedDone",
+    "requires": [
+     "T_NORMALIZED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NORMALIZED}",
+     "params": {
+      "taskId": "${T_NORMALIZED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "remoteOrigin",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-remote",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://10.0.0.5:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "originHostId": "host-parity"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REMOTEORIGIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "remoteOriginDone",
+    "requires": [
+     "T_REMOTEORIGIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOTEORIGIN}",
+     "params": {
+      "taskId": "${T_REMOTEORIGIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "foreignToken",
+    "write": {
+     "path": "${SANDBOX}/home/.config/opute/tunnels/parity-foreign.env",
+     "content": "OTHER=1\n",
+     "mode": "0600"
+    }
+   },
+   {
+    "as": "foreignToken",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-foreign",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FOREIGNTOKEN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "foreignTokenDone",
+    "requires": [
+     "T_FOREIGNTOKEN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FOREIGNTOKEN}",
+     "params": {
+      "taskId": "${T_FOREIGNTOKEN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "foreignUnit",
+    "write": {
+     "path": "${SANDBOX}/home/.config/systemd/user/opute-cloudflared-parity-unit.service",
+     "content": "[Unit]\n"
+    }
+   },
+   {
+    "as": "foreignUnit",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-unit",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FOREIGNUNIT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "foreignUnitDone",
+    "requires": [
+     "T_FOREIGNUNIT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FOREIGNUNIT}",
+     "params": {
+      "taskId": "${T_FOREIGNUNIT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "dirToken",
+    "mkdir": {
+     "path": "${SANDBOX}/home/.config/opute/tunnels/parity-dir.env"
+    }
+   },
+   {
+    "as": "dirToken",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-dir",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DIRTOKEN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "dirTokenDone",
+    "requires": [
+     "T_DIRTOKEN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DIRTOKEN}",
+     "params": {
+      "taskId": "${T_DIRTOKEN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "mismatch",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-mismatch",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_MISMATCH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "mismatchDone",
+    "requires": [
+     "T_MISMATCH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MISMATCH}",
+     "params": {
+      "taskId": "${T_MISMATCH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.public.quick-arguments",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+   "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "binding",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "a b",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BINDING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "bindingDone",
+    "requires": [
+     "T_BINDING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BINDING}",
+     "params": {
+      "taskId": "${T_BINDING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "scope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "scope": "machine"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SCOPE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "scopeDone",
+    "requires": [
+     "T_SCOPE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SCOPE}",
+     "params": {
+      "taskId": "${T_SCOPE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "system",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "scope": "SYSTEM"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SYSTEM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "systemDone",
+    "requires": [
+     "T_SYSTEM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SYSTEM}",
+     "params": {
+      "taskId": "${T_SYSTEM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactHttp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "http://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTHTTP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactHttpDone",
+    "requires": [
+     "T_ARTIFACTHTTP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTHTTP}",
+     "params": {
+      "taskId": "${T_ARTIFACTHTTP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactSha",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "sha256:gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTSHA": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactShaDone",
+    "requires": [
+     "T_ARTIFACTSHA"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTSHA}",
+     "params": {
+      "taskId": "${T_ARTIFACTSHA}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "remoteOrigin",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://10.0.0.5:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REMOTEORIGIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "remoteOriginDone",
+    "requires": [
+     "T_REMOTEORIGIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOTEORIGIN}",
+     "params": {
+      "taskId": "${T_REMOTEORIGIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "nestedPath",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/x/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NESTEDPATH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "nestedPathDone",
+    "requires": [
+     "T_NESTEDPATH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NESTEDPATH}",
+     "params": {
+      "taskId": "${T_NESTEDPATH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "fragment",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp#x",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FRAGMENT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "fragmentDone",
+    "requires": [
+     "T_FRAGMENT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FRAGMENT}",
+     "params": {
+      "taskId": "${T_FRAGMENT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "credentials",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://u:p@127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_CREDENTIALS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "credentialsDone",
+    "requires": [
+     "T_CREDENTIALS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREDENTIALS}",
+     "params": {
+      "taskId": "${T_CREDENTIALS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "named",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://example.com:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NAMED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "namedDone",
+    "requires": [
+     "T_NAMED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NAMED}",
+     "params": {
+      "taskId": "${T_NAMED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.public.quick-install",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+   "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+   "internal/tools/dispatch_host.go",
+   "internal/domain/host/public_mcp_quick.go:ensurePublicMCPQuickArtifact"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "requires": [
+     "T_INSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://localhost:9/mcp/",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_AGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "againDone",
+    "requires": [
+     "T_AGAIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_AGAIN}",
+     "params": {
+      "taskId": "${T_AGAIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "ip6",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-ip6",
+       "localTarget": "http://[::1]:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_IP6": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "ip6Done",
+    "requires": [
+     "T_IP6"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_IP6}",
+     "params": {
+      "taskId": "${T_IP6}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "wrongBinary",
+    "write": {
+     "path": "${SANDBOX}/home/.local/share/opute/tunnels/quick/parity-wrong/cloudflared",
+     "content": "other"
+    }
+   },
+   {
+    "as": "wrongBinary",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-wrong",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_WRONGBINARY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinaryDone",
+    "requires": [
+     "T_WRONGBINARY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINARY}",
+     "params": {
+      "taskId": "${T_WRONGBINARY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "linkedBinary",
+    "symlink": {
+     "path": "${SANDBOX}/home/.local/share/opute/tunnels/quick/parity-link/cloudflared",
+     "target": "/bin/true"
+    }
+   },
+   {
+    "as": "linkedBinary",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-link",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_LINKEDBINARY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "linkedBinaryDone",
+    "requires": [
+     "T_LINKEDBINARY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_LINKEDBINARY}",
+     "params": {
+      "taskId": "${T_LINKEDBINARY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "foreignState",
+    "write": {
+     "path": "${SANDBOX}/home/.local/share/opute/tunnels/quick/parity-state/endpoint.json",
+     "content": "{}"
+    }
+   },
+   {
+    "as": "foreignState",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-state",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FOREIGNSTATE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "foreignStateDone",
+    "requires": [
+     "T_FOREIGNSTATE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FOREIGNSTATE}",
+     "params": {
+      "taskId": "${T_FOREIGNSTATE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "foreignLog",
+    "write": {
+     "path": "${SANDBOX}/home/.local/share/opute/tunnels/quick/parity-log/quick.log",
+     "content": "log\n"
+    }
+   },
+   {
+    "as": "foreignLog",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-log",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FOREIGNLOG": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "foreignLogDone",
+    "requires": [
+     "T_FOREIGNLOG"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FOREIGNLOG}",
+     "params": {
+      "taskId": "${T_FOREIGNLOG}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.public.quick-remove-refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+   "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "unconfirmed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_UNCONFIRMED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "unconfirmedDone",
+    "requires": [
+     "T_UNCONFIRMED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNCONFIRMED}",
+     "params": {
+      "taskId": "${T_UNCONFIRMED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "declined",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "confirm": false
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DECLINED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "declinedDone",
+    "requires": [
+     "T_DECLINED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DECLINED}",
+     "params": {
+      "taskId": "${T_DECLINED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "binding",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "",
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BINDING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "bindingDone",
+    "requires": [
+     "T_BINDING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BINDING}",
+     "params": {
+      "taskId": "${T_BINDING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "scope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "scope": "machine",
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SCOPE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "scopeDone",
+    "requires": [
+     "T_SCOPE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SCOPE}",
+     "params": {
+      "taskId": "${T_SCOPE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "system",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "scope": "system",
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SYSTEM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "systemDone",
+    "requires": [
+     "T_SYSTEM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SYSTEM}",
+     "params": {
+      "taskId": "${T_SYSTEM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactHttp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "artifactUri": "http://example.com/cloudflared",
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTHTTP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactHttpDone",
+    "requires": [
+     "T_ARTIFACTHTTP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTHTTP}",
+     "params": {
+      "taskId": "${T_ARTIFACTHTTP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "artifactSha",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "artifactSha256": "abc",
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ARTIFACTSHA": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "artifactShaDone",
+    "requires": [
+     "T_ARTIFACTSHA"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ARTIFACTSHA}",
+     "params": {
+      "taskId": "${T_ARTIFACTSHA}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.public.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+   "internal/mcpprobe/probe.go:ValidateEndpoint",
+   "internal/tools/dispatch_host.go",
+   "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+   "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+   "internal/tools/dispatch_host.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "tunnel",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_tunnel",
+      "arguments": {
+       "bindingId": "parity-public",
+       "endpoint": "https://mcp.parity.test/mcp",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "tunnelToken": "parity-tunnel-token-xxxxxxxxxxxxxxxxxxxxxxxx",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_TUNNEL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "tunnelDone",
+    "requires": [
+     "T_TUNNEL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TUNNEL}",
+     "params": {
+      "taskId": "${T_TUNNEL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "quick",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_public_mcp_quick_tunnel",
+     "params": {
+      "name": "ensure_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "localTarget": "http://127.0.0.1:9/mcp",
+       "artifactUri": "https://127.0.0.1:${STUB_PORT}/cloudflared",
+       "artifactSha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_QUICK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "quickDone",
+    "requires": [
+     "T_QUICK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_QUICK}",
+     "params": {
+      "taskId": "${T_QUICK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "remove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_public_mcp_quick_tunnel",
+     "params": {
+      "name": "remove_public_mcp_quick_tunnel",
+      "arguments": {
+       "bindingId": "parity-quick",
+       "confirm": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDone",
+    "requires": [
+     "T_REMOVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVE}",
+     "params": {
+      "taskId": "${T_REMOVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
  }
 ]

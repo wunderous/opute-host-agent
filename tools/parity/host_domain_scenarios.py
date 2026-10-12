@@ -874,6 +874,141 @@ cases += [
         STOP], "virt-install", tmp=False),
 ]
 
+# Public MCP exposure. The connector binary comes from the TLS stub, never
+# the pinned default (which would reach GitHub). PATH holds only shims and
+# none is recorded for loginctl or sudo, so a user-scope run stops at the
+# supervisor's linger step: the artifact, token and unit files it wrote are
+# compared, and no service manager state changes. Service start, the MCP
+# probes and quick-tunnel log handling run in T2. Removal starts with the
+# real /usr/bin/systemctl --user, so T1 covers its refusals only.
+PUBLIC = ["internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel", "internal/mcpprobe/probe.go:ValidateEndpoint",
+          "internal/tools/dispatch_host.go"]
+QUICK = ["internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+         "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel", "internal/tools/dispatch_host.go"]
+TOKEN = "parity-tunnel-token-" + "x" * 24
+
+
+def public_serve(**env):
+    return shims_only(SSL_CERT_FILE="${SANDBOX}/tls/ca.pem", **env)
+
+
+def tunnel(as_, binding="parity-public", **extra):
+    args = {"bindingId": binding, "endpoint": "https://mcp.parity.test/mcp", "localTarget": "http://127.0.0.1:9/mcp",
+            "tunnelToken": TOKEN, "artifactUri": URL + "/cloudflared", "artifactSha256": PAYLOAD_SHA}
+    args.update(extra)
+    return task_call(as_, "ensure_public_mcp_tunnel", {k: v for k, v in args.items() if v is not None})
+
+
+def quick(as_, binding="parity-quick", **extra):
+    args = {"bindingId": binding, "localTarget": "http://127.0.0.1:9/mcp",
+            "artifactUri": URL + "/cloudflared", "artifactSha256": PAYLOAD_SHA}
+    args.update(extra)
+    return task_call(as_, "ensure_public_mcp_quick_tunnel", {k: v for k, v in args.items() if v is not None})
+
+
+def remove_quick(as_, **args):
+    return task_call(as_, "remove_public_mcp_quick_tunnel", {"bindingId": "parity-quick", **args})
+
+
+HOME_ = "${SANDBOX}/home"
+cases += [
+    scenario("public.tunnel-arguments", [
+        stub([]), public_serve(),
+        tunnel("binding", binding="-bad"),
+        tunnel("noMcp", endpoint="https://mcp.parity.test/other"),
+        tunnel("userinfo", endpoint="https://u@mcp.parity.test/mcp"),
+        tunnel("query", endpoint="https://mcp.parity.test/mcp?x=1"),
+        tunnel("plainHttp", endpoint="http://mcp.parity.test/mcp"),
+        tunnel("badPort", endpoint="https://mcp.parity.test:x/mcp"),
+        tunnel("badEscape", endpoint="https://mcp.parity.test/%zz/mcp"),
+        tunnel("remoteOrigin", localTarget="http://10.0.0.5:9/mcp"),
+        tunnel("originQuery", localTarget="http://127.0.0.1:9/mcp?x"),
+        tunnel("originNoMcp", localTarget="http://127.0.0.1:9/api"),
+        tunnel("scope", scope="machine"),
+        tunnel("system", scope="system"),
+        tunnel("serviceName", serviceName="other.service"),
+        tunnel("artifactHttp", artifactUri="http://127.0.0.1:${STUB_PORT}/cloudflared"),
+        tunnel("artifactSha", artifactSha256="abc"),
+        tunnel("artifactPath", artifactPath="~/elsewhere/cloudflared"),
+        tunnel("tokenFile", tokenFile="/tmp/token.env"),
+        tunnel("serviceFile", serviceFile=HOME_ + "/x.service"),
+        tunnel("shortToken", tunnelToken="short"),
+        tunnel("spaceToken", tunnelToken="token with spaces and enough characters"),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], PUBLIC),
+    scenario("public.tunnel-install", [
+        stub([]), public_serve(),
+        tunnel("install"),
+        tunnel("again", serviceName="opute-cloudflared-parity-public.service",
+               tokenFile=HOME_ + "/.config/opute/tunnels/parity-public.env",
+               artifactPath=HOME_ + "/.local/share/opute/tunnels/parity-public/cloudflared",
+               serviceFile=HOME_ + "/.config/systemd/user/opute-cloudflared-parity-public.service"),
+        tunnel("normalized", binding="Parity:Public", endpoint=" https://MCP.parity.test/a%2Fb/mcp//#frag ",
+               localTarget="http://[::1]:9/mcp", tunnelToken="  " + TOKEN + "  "),
+        tunnel("remoteOrigin", binding="parity-remote", localTarget="http://10.0.0.5:9/mcp",
+               originHostId="host-parity"),
+        {"as": "foreignToken", "write": {"path": HOME_ + "/.config/opute/tunnels/parity-foreign.env",
+                                         "content": "OTHER=1\n", "mode": "0600"}},
+        tunnel("foreignToken", binding="parity-foreign"),
+        {"as": "foreignUnit", "write": {
+            "path": HOME_ + "/.config/systemd/user/opute-cloudflared-parity-unit.service", "content": "[Unit]\n"}},
+        tunnel("foreignUnit", binding="parity-unit"),
+        {"as": "dirToken", "mkdir": {"path": HOME_ + "/.config/opute/tunnels/parity-dir.env"}},
+        tunnel("dirToken", binding="parity-dir"),
+        tunnel("mismatch", binding="parity-mismatch", artifactSha256="0" * 64),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], PUBLIC + ["internal/domain/host/public_mcp.go:requireOwnedManagedFile",
+                         "internal/domain/host/public_mcp.go:normalizePublicMCPInstanceID"]),
+    scenario("public.quick-arguments", [
+        stub([]), public_serve(),
+        quick("binding", binding="a b"),
+        quick("scope", scope="machine"),
+        quick("system", scope="SYSTEM"),
+        quick("artifactHttp", artifactUri="http://127.0.0.1:${STUB_PORT}/cloudflared"),
+        quick("artifactSha", artifactSha256="sha256:" + "g" * 64),
+        quick("remoteOrigin", localTarget="http://10.0.0.5:9/mcp"),
+        quick("nestedPath", localTarget="http://127.0.0.1:9/x/mcp"),
+        quick("fragment", localTarget="http://127.0.0.1:9/mcp#x"),
+        quick("credentials", localTarget="http://u:p@127.0.0.1:9/mcp"),
+        quick("named", localTarget="http://example.com:9/mcp"),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], QUICK),
+    scenario("public.quick-install", [
+        stub([]), public_serve(),
+        quick("install"),
+        quick("again", localTarget="http://localhost:9/mcp/"),
+        quick("ip6", binding="parity-ip6", localTarget="http://[::1]:9/mcp"),
+        {"as": "wrongBinary", "write": {
+            "path": HOME_ + "/.local/share/opute/tunnels/quick/parity-wrong/cloudflared", "content": "other"}},
+        quick("wrongBinary", binding="parity-wrong"),
+        {"as": "linkedBinary", "symlink": {
+            "path": HOME_ + "/.local/share/opute/tunnels/quick/parity-link/cloudflared", "target": "/bin/true"}},
+        quick("linkedBinary", binding="parity-link"),
+        {"as": "foreignState", "write": {
+            "path": HOME_ + "/.local/share/opute/tunnels/quick/parity-state/endpoint.json", "content": "{}"}},
+        quick("foreignState", binding="parity-state"),
+        {"as": "foreignLog", "write": {
+            "path": HOME_ + "/.local/share/opute/tunnels/quick/parity-log/quick.log", "content": "log\n"}},
+        quick("foreignLog", binding="parity-log"),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], QUICK + ["internal/domain/host/public_mcp_quick.go:ensurePublicMCPQuickArtifact"]),
+    scenario("public.quick-remove-refusals", [
+        serve(),
+        remove_quick("unconfirmed"),
+        remove_quick("declined", confirm=False),
+        remove_quick("binding", bindingId="", confirm=True),
+        remove_quick("scope", scope="machine", confirm=True),
+        remove_quick("system", scope="system", confirm=True),
+        remove_quick("artifactHttp", artifactUri="http://example.com/cloudflared", confirm=True),
+        remove_quick("artifactSha", artifactSha256="abc", confirm=True),
+        STOP], QUICK),
+    scenario("public.shared-owner-refused", [
+        stub([]), public_serve(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"),
+        tunnel("tunnel"), quick("quick"), remove_quick("remove", confirm=True),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], PUBLIC + QUICK + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:
