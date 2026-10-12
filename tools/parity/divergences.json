@@ -159,5 +159,18 @@
   "dropKeys": [
    "operations"
   ]
+ },
+ {
+  "id": "D18.unacknowledged-callback-child",
+  "decision": "D18",
+  "reason": "A provider callback creates a delegated configure_network child that the provider never acknowledges before the host shuts down. Go persists that never-started child's operation row at creation (internal/hostmcp/server.go:1642-1647) and restores it cancelled after a restart; under owner decision D18 (extending D12) Rust keeps nothing durable for it, so its rows are absent and its handle is unknown after the restart. The scenario isolates exactly the child's rows and its restored handle; per-side expectations pin Go's working then unknown row and cancelled handle and Rust's empty rows and task-not-found error, and every other step is compared.",
+  "path": [
+   "steps"
+  ],
+  "dropKeys": [
+   "childRow",
+   "childRowRestored",
+   "childRestored"
+  ]
  }
 ]

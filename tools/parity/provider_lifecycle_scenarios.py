@@ -336,16 +336,36 @@ ack["compare"]=dict(ack["compare"],divergences=["D12.refused-callback-child-oper
 cases.append(ack)
 # A delegated child the provider never acknowledges is still pending when the
 # host shuts down; after restart a client reads what the host kept of it.
+# D18 (owner, extending D12): Go persists that never-started child, Rust keeps
+# nothing durable for it. The child's rows and its restored handle are
+# isolated into their own steps, which the declared divergence drops; each
+# side's exact values are pinned by expectations, and everything else is
+# compared.
 pending=callback_case("callback.child-task-unacknowledged-at-shutdown",[NIC])
 pending["steps"][-4]["mcp"]["capture"]={"CHILD":["body","result","result","structuredContent","callback","body","result","taskId"]}
+NOT_CHILD="SELECT tool_name, status, error_message FROM operations WHERE tool_name <> 'configure_network' ORDER BY created_at"
+CHILD_ROW={"operations":"SELECT tool_name, status, error_message FROM operations WHERE tool_name = 'configure_network'"}
+for step in pending["steps"]:
+    if step.get("as")=="state":
+        step["query"]["sql"]=dict(step["query"]["sql"],operations=NOT_CHILD)
+pending["steps"].insert(-1,{"as":"childRow","query":{"db":DB,"sql":CHILD_ROW}})
 pending["steps"]+=[RESTART,{"as":"childRestored","requires":["CHILD"],"mcp":{"method":"tasks/get","name":"${CHILD}","params":{"taskId":"${CHILD}"},"expand":True}},
-    {"as":"stateRestored","query":{"db":"${SANDBOX}/state/state.db","sql":{"operations":"SELECT tool_name, status, error_message FROM operations ORDER BY created_at"}}},{"as":"stop2","stop":{}}]
-# Open owner decision (openspec/changes/unadmitted-callback-task-record): Go
-# persists this child before admission, Rust (D12) does not. The case is
-# kept out of the parity suite and captured on its own.
+    {"as":"stateRestored","query":{"db":"${SANDBOX}/state/state.db","sql":{"operations":NOT_CHILD}}},
+    {"as":"childRowRestored","query":{"db":DB,"sql":CHILD_ROW}},{"as":"stop2","stop":{}}]
 # CHILD is captured, so its task id is already a variable, not a uuid.
-pending["compare"]=dict(pending["compare"],masks=[x for x in MASKS if not (x["type"]=="uuid" and x["path"][-1]=="taskId")])
-open_cases=[pending]
+child=lambda status:[{"error_message":None,"status":status,"tool_name":"configure_network"}]
+pending["compare"]=dict(pending["compare"],masks=[x for x in MASKS if not (x["type"]=="uuid" and x["path"][-1]=="taskId")],
+    divergences=["D18.unacknowledged-callback-child"])
+pending["expectations"]=[
+    {"implementations":["go"],"path":["steps","childRow","operations"],"equals":child("working")},
+    {"implementations":["go"],"path":["steps","childRowRestored","operations"],"equals":child("unknown")},
+    {"implementations":["go"],"path":["steps","childRestored","body","result","status"],"equals":"cancelled"},
+    {"implementations":["go"],"path":["steps","childRestored","body","result","statusMessage"],
+     "equals":"The Host Agent shut down before the callback task handle was acknowledged."},
+    {"implementations":["rust"],"path":["steps","childRow","operations"],"equals":[]},
+    {"implementations":["rust"],"path":["steps","childRowRestored","operations"],"equals":[]},
+    {"implementations":["rust"],"path":["steps","childRestored","body","error","code"],"equals":-32603}]
+cases.append(pending)
 # A bridged task still running when the host shuts down is cancelled, and
 # the restarted host reports what it kept of it.
 cases.append(scenario("callback.restart-during-bridged-task",[SERVE,{"as":"provider","providerStub":{"host":HOST,"manifest":bridged_manifest(),
@@ -373,5 +393,3 @@ cases.append(scenario("callback.bridged-without-task-extension",[SERVE,{"as":"pr
     {"as":"requests","providerRequests":{"stub":"provider"}},{"as":"stop","stop":{}}]))
 if __name__=="__main__":
     json.dump(cases,open(sys.argv[1],'w'),indent=1)
-    if len(sys.argv)>2:
-        json.dump(open_cases,open(sys.argv[2],'w'),indent=1)

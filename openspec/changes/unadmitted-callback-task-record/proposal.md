@@ -6,7 +6,7 @@ A provider callback into a task-aware host tool creates a delegated child task. 
 
 Owner decision D12 (`refuse-before-operation-record`) requires Rust to resolve the binding and admit a task-aware call before persisting any operation record. An unacknowledged child has not been admitted. Rust therefore writes nothing durable for it, and after a restart `tasks/get` for that child reports `task not found`. D12 was decided for calls refused at binding or admission, not for a call that was never admitted because it never started. Choosing either behaviour is a user-visible policy decision, so the migration does not choose one.
 
-This proposal is **pending owner review**. It does not authorize runtime promotion or cutover, and it waives no parity gate.
+**Decided (owner, 2026-10-12): option A, recorded as D18.** The owner asked for the long-term behaviour: durable operation records hold only admitted work, so a delegated child that never starts leaves nothing behind. The case is a declared divergence in the public suite; it waives no other parity gate.
 
 ## What Changes
 

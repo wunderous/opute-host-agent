@@ -67,6 +67,38 @@
    "status": "approved",
    "summary": "Every Rust capability, built-in or external, follows one architecture: a Service Definition, a Service Provider mounted in one service context, and a Consumer; they differ only in distribution, trust and declared Go-observable contracts; built-in identities are unreachable by provider families; no observable change; M1-M7 capabilities are revised onto the seam before M8 starts"
   },
+  "D15": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/reimplement-host-agent-in-rust",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D15)",
+   "status": "approved",
+   "summary": "The ollama provider is out of the Rust migration scope: excluded from the M7 exit gate and the inventory; Rust behaviour unchanged"
+  },
+  "D16": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/atomic-provider-family-publication",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D16)",
+   "status": "approved",
+   "summary": "Rust validates a provider candidate before displacing other providers' family operations; a failed candidate leaves registry, catalog, bindings and MCP tools intact"
+  },
+  "D17": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/reject-null-provider-input-requests",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D17)",
+   "status": "approved",
+   "summary": "Rust refuses a null provider input-request entry with 'nil InputRequest entry' instead of Go's SDK panic"
+  },
+  "D18": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/unadmitted-callback-task-record",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D18)",
+   "status": "approved",
+   "summary": "Extend D12: a delegated callback child that never starts leaves no durable row; after a restart its handle is unknown"
+  },
   "D8": {
    "approvedBy": "owner",
    "change": "openspec/changes/secure-oauth-issuance",
@@ -1606,6 +1638,15 @@
    "id": "provider-lifecycle.callback.child-task-acknowledged",
    "owner": "provider",
    "scenario": "provider-lifecycle.callback.child-task-acknowledged",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
    "surface": "provider-lifecycle"
   },
   {
