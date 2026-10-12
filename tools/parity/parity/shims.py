@@ -18,8 +18,11 @@ Fixture format (tools/parity/fixtures/shims/<name>.json):
       "default": {"exit": 1, "stderr": "unsupported parity shim invocation\\n"}
     }
 
-A rule matches on exact argv or on an argv prefix. The first match wins. An
-unmatched invocation uses "default", and is still recorded.
+A rule matches on exact argv, on an argv prefix, or on a substring of one
+argument ("argvContains"). The first match wins. An unmatched invocation uses
+"default", and is still recorded. A rule's "creates" lists sandbox-relative
+paths written as executables after the call is recorded, standing in for an
+installer's effect.
 
 A rule with "gate": "<name>" blocks after it is recorded: the shim marks
 gates/<name>.waiting.<pid> and waits on the FIFO gates/<name>.fifo until the
@@ -71,6 +74,9 @@ def _match(rule: dict, argv: list[str]) -> bool:
     if "argvPrefix" in rule:
         prefix = rule["argvPrefix"]
         return argv[: len(prefix)] == prefix
+    if "argvContains" in rule:
+        # A substring of one argument: for scripts that embed sandbox paths.
+        return any(rule["argvContains"] in arg for arg in argv)
     return False
 
 
@@ -234,6 +240,13 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
     _append(log_path, entry)
     if chosen.get("gate"):
         wait_gate(root, chosen["gate"])
+    for relative in chosen.get("creates", []):
+        # The effect an installer would have: an executable at a
+        # sandbox-relative path.
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("#!/bin/sh\nexit 0\n")
+        target.chmod(0o755)
     if chosen.get("stdout"):
         sys.stdout.write(chosen["stdout"])
         if not chosen["stdout"].endswith("\n"):

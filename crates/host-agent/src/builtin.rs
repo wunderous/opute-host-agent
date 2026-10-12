@@ -245,6 +245,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_observation(host),
         host_files(host),
         host_archives(host),
+        host_tools(host),
         host_artifacts(host),
         catalog_service(),
         host_resources(host),
@@ -684,27 +685,86 @@ fn host_artifacts(host: &crate::tools::Host) -> Service {
         host.instance_id.clone(),
         host.shared_host_owner_instance.clone(),
     );
+    let prepare_owner = owner.clone();
+    let env = host.env.clone();
     Service {
         id: "host-artifacts",
+        dependencies: &["host-tools"],
+        operations: vec![
+            (
+                "ensure_host_artifact",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &owner.0,
+                        owner_instance: &owner.1,
+                    };
+                    crate::hostartifact::ensure_host_artifact(
+                        &owner,
+                        text(call.args, "uri"),
+                        text(call.args, "destination"),
+                        text(call.args, "sha256"),
+                        flag(call.args, "executable"),
+                    )
+                    .map(|v| structured_result(v, Some("Verified host artifact reconciled.")))
+                }),
+            ),
+            (
+                "prepare_host_agent_artifacts",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &prepare_owner.0,
+                        owner_instance: &prepare_owner.1,
+                    };
+                    crate::hostartifact::prepare_host_agent_artifacts(
+                        &env,
+                        &owner,
+                        text(call.args, "sourceDir"),
+                        text(call.args, "destDir"),
+                        &string_slice(call.args, "archs"),
+                    )
+                    .map(|v| structured_result(v, Some("Host-agent build artifacts are ready.")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8a: allowlisted generic host tools (`internal/domain/host/tool.go`).
+fn host_tools(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let env = host.env.clone();
+    Service {
+        id: "host-tools",
         dependencies: &[],
         operations: vec![(
-            "ensure_host_artifact",
+            "ensure_host_tool",
             op(move |call| {
                 let owner = crate::hostfiles::Owner {
                     instance_id: &owner.0,
                     owner_instance: &owner.1,
                 };
-                crate::hostartifact::ensure_host_artifact(
-                    &owner,
-                    text(call.args, "uri"),
-                    text(call.args, "destination"),
-                    text(call.args, "sha256"),
-                    flag(call.args, "executable"),
-                )
-                .map(|v| structured_result(v, Some("Verified host artifact reconciled.")))
+                crate::hosttool::ensure_host_tool(&env, &owner, text(call.args, "tool"))
+                    .map(|v| structured_result(v, Some("Generic host tool is available.")))
             }),
         )],
     }
+}
+
+/// `stringSliceField`: the array's string elements, untrimmed.
+fn string_slice(args: &Map<String, J>, key: &str) -> Vec<String> {
+    args.get(key)
+        .and_then(J::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// M4: host resource capacity and enforcement, from the coordinator alone.

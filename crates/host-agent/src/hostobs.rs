@@ -75,6 +75,18 @@ fn command_environment(env: &Env, argv: &[String]) -> Env {
 /// `RunCommandContext` without streaming: start failures and timeouts are
 /// results, not errors, exactly as in Go.
 pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResult {
+    let deadline = (!timeout.is_zero()).then(|| Instant::now() + timeout);
+    run_command_until(env, argv, deadline, timeout)
+}
+
+/// `RunCommandContext` under a deadline that may come from the caller's
+/// context rather than `timeout`; an expiry reports `timeout` as Go does.
+pub fn run_command_until(
+    env: &Env,
+    argv: &[String],
+    deadline: Option<Instant>,
+    timeout: Duration,
+) -> CommandResult {
     if argv.is_empty() {
         return CommandResult {
             exit_code: 1,
@@ -132,12 +144,11 @@ pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResu
         let _ = err_pipe.read_to_end(&mut s);
         s
     });
-    let deadline = Instant::now() + timeout;
     let mut timed_out = false;
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Some(status),
-            Ok(None) if Instant::now() >= deadline => {
+            Ok(None) if deadline.is_some_and(|d| Instant::now() >= d) => {
                 timed_out = true;
                 let pgid = nix::unistd::Pid::from_raw(child.id() as i32);
                 let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
@@ -171,9 +182,13 @@ pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResu
     }
 }
 
-/// `time.Duration.String` for whole seconds and minutes.
+/// `time.Duration.String` for whole seconds.
 fn go_duration(d: Duration) -> String {
     let secs = d.as_secs();
+    if secs >= 3600 {
+        let (h, m, s) = (secs / 3600, secs % 3600 / 60, secs % 60);
+        return format!("{h}h{m}m{s}s");
+    }
     if secs >= 60 {
         let (m, s) = (secs / 60, secs % 60);
         return format!("{m}m{s}s");

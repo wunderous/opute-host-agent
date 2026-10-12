@@ -416,6 +416,105 @@ pub fn ensure_host_artifact(
     ensure_at(uri, &destination, &expected, executable)
 }
 
+/// `hostAgentArtifactDestAllowed`: beneath the source, a
+/// `.opute-host-agent-build` directory in an existing parent, or beneath
+/// `~/.opute/host-agent-build`.
+fn agent_artifact_dest_allowed(dest: &str, source: &str) -> bool {
+    use crate::hostread::clean;
+    let (dest, source) = (clean(dest), clean(source));
+    if dest == source || dest.starts_with(&format!("{source}/")) {
+        return true;
+    }
+    if dest.ends_with("/.opute-host-agent-build") {
+        let parent = Path::new(&dest).parent().map(|p| p.display().to_string());
+        if parent.is_some_and(|p| !p.is_empty() && std::fs::metadata(&p).is_ok_and(|m| m.is_dir()))
+        {
+            return true;
+        }
+    }
+    let home = home_dir().unwrap_or_default();
+    if home.is_empty() {
+        return false;
+    }
+    let root = clean(&format!("{home}/.opute/host-agent-build"));
+    dest == root || dest.starts_with(&format!("{root}/"))
+}
+
+/// `Service.PrepareHostAgentArtifacts`: Linux host-agent binaries built from
+/// a caller-selected source tree inside a bounded workload unit.
+pub fn prepare_host_agent_artifacts(
+    env: &crate::config::Env,
+    owner: &crate::hostfiles::Owner,
+    source_dir: &str,
+    dest_dir: &str,
+    archs: &[String],
+) -> Result<J, String> {
+    use crate::goerr::{quote, shell_quote};
+    let (source_dir, dest_dir) = (source_dir.trim(), dest_dir.trim());
+    if source_dir.is_empty() {
+        return Err("sourceDir is required".into());
+    }
+    if dest_dir.is_empty() {
+        return Err("destDir is required".into());
+    }
+    let source =
+        crate::hostread::absolute(source_dir).map_err(|e| format!("resolve sourceDir: {e}"))?;
+    let dest = crate::hostread::absolute(dest_dir).map_err(|e| format!("resolve destDir: {e}"))?;
+    if !std::fs::metadata(&source).is_ok_and(|m| m.is_dir()) {
+        return Err(format!("sourceDir must be an existing directory: {source}"));
+    }
+    if !agent_artifact_dest_allowed(&dest, &source) {
+        return Err("destDir must be under sourceDir or ~/.opute/host-agent-build".into());
+    }
+    let defaults = ["amd64".to_string(), "arm64".to_string()];
+    let archs = if archs.is_empty() {
+        &defaults[..]
+    } else {
+        archs
+    };
+    crate::hosttool::ensure_host_tool(env, owner, "go")?;
+    crate::goerr::mkdir_all(Path::new(&dest), 0o755)
+        .map_err(|e| format!("create destDir: {}", e.0))?;
+    let mut built = Vec::new();
+    for arch in archs {
+        let arch = arch.trim();
+        if arch != "amd64" && arch != "arm64" {
+            return Err(format!(
+                "unsupported arch {} (use amd64 or arm64)",
+                quote(arch)
+            ));
+        }
+        let output = if arch == "arm64" {
+            "host-agent-linux-arm64"
+        } else {
+            "host-agent-linux-x64"
+        };
+        let output_path = crate::hostread::clean(&format!("{dest}/{output}"));
+        let script = format!(
+            "cd {} && export GOCACHE=\"${{GOCACHE:-$HOME/.cache/go-build}}\" && mkdir -p \"$GOCACHE\" && GOOS=linux GOARCH={arch} go build -buildvcs=false -ldflags={} -o {} github.com/wunderous/host-agents/cmd/opute-host-agent",
+            shell_quote(&source),
+            shell_quote("-s -w"),
+            shell_quote(&output_path),
+        );
+        let result = crate::hostexec::run_host_workload(
+            env,
+            &format!("prepare-host-agent-artifacts-{arch}"),
+            &["bash".into(), "-lc".into(), script],
+            Duration::from_secs(15 * 60),
+        )?;
+        if result.exit_code != 0 {
+            return Err(crate::incus::first_non_empty(&[
+                &result.stderr,
+                &result.stdout,
+                &format!("go build failed for {arch}"),
+            ])
+            .to_string());
+        }
+        built.push(output);
+    }
+    Ok(json!({"sourceDir": source, "destDir": dest, "artifacts": built}))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

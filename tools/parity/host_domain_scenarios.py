@@ -436,6 +436,92 @@ cases += [
         ARTIFACT + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
 ]
 
+# Host tools. PATH is the shim directory alone, so lookups, sudo, apt-get and
+# the installer shells are the recorded shims; no real package manager runs.
+# prepare_host_agent_artifacts is exercised only up to the step before its
+# systemd workload unit (an absolute /usr/bin/systemd-run): the build itself
+# is a T2 case.
+TOOL = ["internal/domain/host/tool.go:EnsureHostTool", "internal/exec/process.go:RunPrivilegedPackage",
+        "internal/tools/dispatch_host.go"]
+PREPARE = ["internal/domain/host/artifacts_agent.go:PrepareHostAgentArtifacts",
+           "internal/tools/dispatch_host.go"]
+
+
+def shims_only(**env):
+    return serve(PATH="${SANDBOX}/shims", **env)
+
+
+def tool(as_, name):
+    return task_call(as_, "ensure_host_tool", {"tool": name})
+
+
+def with_fixture(case, fixture):
+    case["fixture"] = fixture
+    return case
+
+
+SRC = "${SANDBOX}/home/src"
+cases += [
+    with_fixture(scenario("tools.package-manager", [
+        shims_only(),
+        tool("present", "gcc"),
+        tool("installed", "cmake"),
+        tool("again", "cmake"),
+        tool("vanished", "ninja"),
+        tool("failed", "podman"),
+        tool("silent", "buildah"),
+        tool("unknown", "rustc"),
+        tool("empty", ""),
+        STOP], TOOL), "host-tools"),
+    with_fixture(scenario("tools.user-local", [
+        shims_only(),
+        tool("bun", "bun"),
+        tool("bunAgain", "bun"),
+        tool("helm", "helm"),
+        STOP], TOOL), "host-tools"),
+    with_fixture(scenario("tools.update-fails", [
+        shims_only(),
+        tool("update", "cmake"),
+        tool("bunMissing", "bun"),
+        tool("helmPath", "helm"),
+        STOP], TOOL), "host-tools-update-fails"),
+    with_fixture(scenario("tools.no-sudo", [shims_only(), tool("noSudo", "gcc"), STOP], TOOL),
+                 "host-tools-nosudo"),
+    scenario("tools.no-package-manager", [
+        shims_only(), tool("noApt", "go"), tool("noBash", "bun"), STOP], TOOL),
+    scenario("tools.shared-owner-refused", [
+        shims_only(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"), tool("refused", "gcc"), STOP],
+        TOOL + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
+    scenario("prepare.arguments", [
+        shims_only(),
+        {"as": "src", "mkdir": {"path": SRC}},
+        {"as": "file", "write": {"path": "${SANDBOX}/home/plain", "content": "x"}},
+        task_call("noSource", "prepare_host_agent_artifacts", {"sourceDir": " ", "destDir": "d"}),
+        task_call("noDest", "prepare_host_agent_artifacts", {"sourceDir": SRC, "destDir": ""}),
+        task_call("missing", "prepare_host_agent_artifacts", {"sourceDir": SRC + "/none", "destDir": SRC + "/out"}),
+        task_call("notDir", "prepare_host_agent_artifacts", {"sourceDir": "${SANDBOX}/home/plain", "destDir": SRC}),
+        task_call("outside", "prepare_host_agent_artifacts", {"sourceDir": SRC, "destDir": "${SANDBOX}/elsewhere"}),
+        task_call("noGo", "prepare_host_agent_artifacts", {"sourceDir": SRC, "destDir": SRC + "/../src/out"}),
+        task_call("buildDir", "prepare_host_agent_artifacts",
+                  {"sourceDir": SRC, "destDir": "${SANDBOX}/home/.opute-host-agent-build"}),
+        task_call("homeRoot", "prepare_host_agent_artifacts",
+                  {"sourceDir": SRC, "destDir": "${SANDBOX}/home/.opute/host-agent-build/x"}),
+        STOP], PREPARE),
+    with_fixture(scenario("prepare.unsupported-arch", [
+        shims_only(),
+        {"as": "src", "mkdir": {"path": SRC}},
+        task_call("arch", "prepare_host_agent_artifacts",
+                  {"sourceDir": SRC, "destDir": SRC + "/out", "archs": ["riscv64"]}),
+        task_call("mixedArchs", "prepare_host_agent_artifacts",
+                  {"sourceDir": SRC, "destDir": SRC + "/out2", "archs": [7, "x86"]}),
+        STOP], PREPARE), "host-tools"),
+    scenario("prepare.shared-owner-refused", [
+        shims_only(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"),
+        {"as": "src", "mkdir": {"path": SRC}},
+        task_call("refused", "prepare_host_agent_artifacts", {"sourceDir": SRC, "destDir": SRC + "/out"}),
+        STOP], PREPARE + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

@@ -1,0 +1,19 @@
+{
+  "commands": {
+    "apt-get": [],
+    "gcc": [],
+    "go": [],
+    "sudo": [
+      {"argv": ["-n", "apt-get", "update"], "stdout": "Reading package lists... Done"},
+      {"argv": ["-n", "apt-get", "install", "-y", "cmake"], "stdout": "Setting up cmake", "creates": ["shims/cmake"]},
+      {"argv": ["-n", "apt-get", "install", "-y", "ninja-build"], "stdout": "Setting up ninja-build"},
+      {"argv": ["-n", "apt-get", "install", "-y", "podman"], "exit": 100, "stdout": "Reading package lists...", "stderr": "E: Unable to locate package podman\n"},
+      {"argv": ["-n", "apt-get", "install", "-y", "buildah"], "exit": 1}
+    ],
+    "bash": [
+      {"argvContains": "https://bun.sh/install", "stdout": "bun was installed", "creates": ["home/.bun/bin/bun"]},
+      {"argvContains": "get-helm-3", "exit": 1, "stdout": "Downloading helm", "stderr": "helm: checksum verification failed\n"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

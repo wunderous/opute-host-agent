@@ -37,7 +37,7 @@ pub(crate) fn clean(p: &str) -> String {
 }
 
 /// `filepath.Abs(filepath.Clean(p))`.
-fn absolute(p: &str) -> Result<String, String> {
+pub(crate) fn absolute(p: &str) -> Result<String, String> {
     if p.starts_with('/') {
         return Ok(clean(p));
     }

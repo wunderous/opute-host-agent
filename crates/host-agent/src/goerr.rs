@@ -191,6 +191,11 @@ pub fn atoi(s: &str) -> (i64, bool) {
     }
 }
 
+/// `textutil.ShellQuote`: single-quoted, with embedded quotes escaped.
+pub fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', r"'\''"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
