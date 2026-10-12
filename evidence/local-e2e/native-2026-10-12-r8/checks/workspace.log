@@ -1,0 +1,313 @@
+   Compiling opute-host-agent v0.2.3 (/home/houman/github/wunderous/opute-host-agent/crates/host-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.02s
+     Running unittests src/main.rs (target/debug/deps/opute_host_agent-6ae87315637d33b0)
+
+running 229 tests
+test admission::tests::coordinates_skip_blank_values ... ok
+test admission::tests::argument_paths_walk_objects ... ok
+test app::tests::listen_address_errors_match_go ... ok
+test admission::tests::refusals_render_like_error_result ... ok
+test app::tests::wildcard_listen_is_dual_stack_when_ipv4_maps ... ok
+test app::tests::slog_formatting ... ok
+test catalog::registry::tests::registry_fixture ... ignored, requires the owning Go registry differential driver
+test catalog::schema::tests::compiler_fixture ... ignored, requires actual pinned Go catalog compiler
+test catalog::schema::tests::decoder_fixture ... ignored, requires the actual pinned typed schema decoder oracle
+test catalog::schema::tests::integer_fixture ... ignored
+test catalog::schema::tests::regexp_fixture ... ignored, requires actual pinned Go regexp compiler
+test catalog::schema::tests::resolver_fixture ... ignored, requires the actual owning schema pointer/structure oracle
+test catalog::schema::tests::uri_fixture ... ignored, requires pinned Go net/url oracle
+test catalog::tests::provider_catalog_fixture ... ignored, requires the pinned provider catalog differential driver
+test catalog::tests::wire_names_round_trip ... ok
+test cli::tests::help_goes_to_stdout_and_flag_help_to_stderr ... ok
+test cli::tests::oauth_flags_may_follow_positionals ... ok
+test catalog::tests::malformed_cost_is_dropped_like_go ... ok
+test cli::tests::version_only_as_sole_argument ... ok
+test cli::tests::token_file_rules ... ok
+test cli::tests::dispatch_errors_match_go ... ok
+test config::tests::env_value_strips_one_quote_pair ... ok
+test config::tests::env_file_never_overrides_non_blank_values ... ok
+test cli::tests::version_tracks_the_source_lock ... ok
+test config::tests::xdg_config_home_replaces_opute_config_dir ... ok
+test config::tests::defaults_follow_mode ... ok
+test goerr::tests::atoi_matches_go ... ok
+test goerr::tests::errno_text_is_go_style ... ok
+test goerr::tests::quote_matches_go ... ok
+test goerr::tests::mkdir_all_reports_failing_component ... ok
+test goflag::tests::bool_does_not_consume_next_arg ... ok
+test goflag::tests::defaults_are_rendered_like_go ... ok
+test goflag::tests::double_dash_terminates ... ok
+test goflag::tests::errors_print_message_then_usage ... ok
+test goflag::tests::parses_forms_and_stops_at_positional ... ok
+test goflag::tests::help_returns_err_help_after_usage ... ok
+test goflag::tests::usage_matches_go_print_defaults ... ok
+test gojson::tests::encodes_like_encoding_json ... ok
+test gojson::tests::invalid_utf8_is_replaced ... ok
+test gojson::tests::keys_fold_and_last_wins ... ok
+test gojson::tests::raw_bytes_are_preserved ... ok
+test config::tests::validation_messages_match_go ... ok
+test hostobs::tests::durations_print_like_go ... ok
+test app::tests::check_opens_state_only_in_standalone ... ok
+test hostobs::tests::user_bus_preserves_explicit_values_and_does_not_affect_other_commands ... ok
+test app::tests::each_stage_failure_stops_startup_and_releases_earlier_stages ... ok
+test hostread::tests::endpoints_must_be_absolute_http ... ok
+test hostread::tests::filepath_clean_matches_go ... ok
+test hostread::tests::host_services_follow_go_listing_rules ... ok
+test hostread::tests::inspect_host_service_rejects_unsafe_input_before_running_systemctl ... ok
+test hostread::tests::managed_paths_stay_home_or_name_a_unit ... ok
+test hostread::tests::unit_properties_follow_go_parsing ... ok
+test http1::tests::clean_path_matches_go ... ok
+test http1::tests::segment_matching_unescapes_each_segment ... ok
+test http1::tests::version_and_key_rules_match_go ... ok
+test identity::tests::fingerprint_digest_matches_go_formula ... ok
+test incus::tests::capacity_bytes_match_go ... ok
+test incus::tests::list_decoding_is_typed ... ok
+time=2026-10-12T16:10:57.485Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0test incus::tests::quota_reasons ... 
+ok
+test mcpsdk::tests::cursor_round_trips_go_encodings ... ok
+test mcpsdk::tests::segmentio_messages ... ok
+time=2026-10-12T16:10:57.485Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.486Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test hostobs::tests::platform_classification_matches_hostplatform ... ok
+time=2026-10-12T16:10:57.488Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.488Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.488Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.489Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.490Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.490Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+test oauth::tests::a_confidential_client_with_an_empty_hash_cannot_authenticate ... ok
+test oauth::tests::approval_page_has_no_control_and_escapes ... ok
+time=2026-10-12T16:10:57.490Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.491Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.491Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=TC6G-XRH4
+time=2026-10-12T16:10:57.491Z level=INFO msg=oauth event=approve client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp decided_by=cli
+time=2026-10-12T16:10:57.492Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+test oauth::tests::approval_flow_issues_one_code_bound_to_the_request ... ok
+test oauth::tests::backoff_after_repeated_failures ... ok
+time=2026-10-12T16:10:57.492Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.492Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.493Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=BJP6-4GP3
+time=2026-10-12T16:10:57.493Z level=INFO msg=oauth event=approve client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp decided_by=cli
+time=2026-10-12T16:10:57.494Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.494Z level=INFO msg=oauth event=approve client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp decided_by=consent
+time=2026-10-12T16:10:57.494Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.494Z level=INFO msg=oauth event=revoke-consent client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp revoked_tokens=1
+test hostobs::tests::user_systemd_child_restores_bus_without_changing_agent_environment ... ok
+time=2026-10-12T16:10:57.495Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.495Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=SWTV-JK7H
+test oauth::tests::approved_code_redeems_with_pkce_and_consent_skips_the_wait ... ok
+test oauth::tests::client_credentials_require_a_registered_secret ... ok
+test oauth::tests::metadata_and_ssrf_rules ... ok
+time=2026-10-12T16:10:57.496Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.497Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.497Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.497Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.497Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.497Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=1
+test oauth::tests::credential_files_are_private_and_hold_the_only_plaintext ... ok
+time=2026-10-12T16:10:57.498Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.498Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.498Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=N7CT-7D63
+time=2026-10-12T16:10:57.498Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.498Z level=INFO msg=oauth event=deny client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp decided_by=cli
+time=2026-10-12T16:10:57.499Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=92D7-8GPM
+time=2026-10-12T16:10:57.499Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=M8GF-6J89
+test oauth::tests::migration_revokes_once_and_is_idempotent ... ok
+test oauth::tests::redirect_rules ... ok
+time=2026-10-12T16:10:57.499Z level=INFO msg=oauth event=pending client_id=host-agent-bootstrap resource=http://127.0.0.1:3014/mcp user_code=S9CW-M4Z8
+time=2026-10-12T16:10:57.499Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+test plan::assert::tests::all_requires_every_element_to_match ... ok
+test oauth::tests::denial_and_limits ... ok
+test plan::assert::tests::eq_passes_when_values_match ... ok
+test plan::assert::tests::exists_fails_on_missing_pointer ... ok
+test plan::assert::tests::gt_requires_numeric_values ... ok
+test plan::assert::tests::json_pointer_escapes_tilde_and_slash ... ok
+test plan::graph::tests::detects_cycle ... ok
+test plan::graph::tests::accepts_acyclic_graph ... ok
+test plan::graph::tests::rejects_duplicate_node_ids ... ok
+test plan::graph::tests::rejects_unknown_dependency ... ok
+time=2026-10-12T16:10:57.500Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test plan::graph::tests::reverse_topological_order_is_fully_reversed ... ok
+test oauth::tests::operator_secret_wins_and_writes_no_file ... ok
+test plan::interpolate::tests::unresolved_reference_is_an_error ... ok
+test plan::interpolate::tests::node_output_reference_strips_output_prefix ... ok
+test plan::interpolate::tests::partial_match_does_string_concatenation ... ok
+test plan::interpolate::tests::whole_match_returns_raw_typed_value ... ok
+test plan::runner::tests::cycle_in_graph_is_rejected_before_any_dispatch ... ok
+test plan::runner::tests::cancel_before_dispatch_marks_node_unknown ... ok
+test plan::runner::tests::resume_rejects_a_mismatched_wait_revision ... ok
+test plan::runner::tests::permanent_failure_triggers_compensation ... ok
+test plan::runner::tests::idempotent_rerun_dispatches_nothing_when_already_satisfied ... ok
+test plan::schema::tests::canonical_json_html_escapes_like_go_json_marshal ... ok
+test plan::runner::tests::wait_then_resume_completes_the_plan ... ok
+test plan::schema::tests::decode_accepts_yaml ... ok
+test plan::schema::tests::decode_round_trips_through_canonical_json ... ok
+test plan::schema::tests::document_hash_is_deterministic_and_order_independent_for_object_keys ... ok
+test plan::schema::tests::omitempty_struct_fields_always_serialize ... ok
+test plan::schema::tests::validate_accepts_declared_action_capability ... ok
+test plan::schema::tests::validate_json_enforces_required_properties ... ok
+test plan::schema::tests::validate_rejects_empty_nodes ... ok
+test plan::schema::tests::validate_rejects_wrong_contract_version ... ok
+test plan_evidence::tests::nested_object_projects_by_properties_schema ... ok
+test plan_evidence::tests::redact_plan_evidence_masks_secret_variables_and_unknown_tool_args ... ok
+test plan_evidence::tests::redact_plan_run_state_fails_closed_on_an_output_with_no_node_schema ... ok
+test plan_evidence::tests::redact_plan_run_state_withholds_secret_context_values ... ok
+test builtin::tests::provider_manifests_cannot_name_built_in_families ... ok
+test plan_evidence::tests::write_only_schema_redacts_regardless_of_field_name ... ok
+test plan::runner::tests::retry_then_success_eventually_applies ... ok
+time=2026-10-12T16:10:57.509Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.510Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.510Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.510Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.510Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.510Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.510Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.511Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.511Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test catalog::tests::catalog_sizes_match_go ... ok
+test plan_mcp::tests::handle_validate_host_plan_requires_a_plan_argument ... ok
+test catalog::tests::revisions_match_manifest ... ok
+test builtin::tests::dependencies_resolve_in_mount_order_and_disposal_reverses_it ... ok
+test builtin::tests::a_failed_mount_disposes_what_was_mounted ... ok
+test catalog::tests::standalone_read_only_gate ... ok
+test provider::activation::tests::activation_fixture ... ignored, requires owning Go activation differential driver
+test builtin::tests::providers_cannot_reach_built_in_families_and_close_leaves_them ... ok
+test provider::adapter::envelope::tests::envelope_fixture ... ignored, requires the pinned typed response-envelope driver
+test provider::adapter::tests::adapter_fixture ... ignored, requires the isolated provider adapter differential driver
+test builtin::tests::an_operation_without_a_definition_is_refused_and_nothing_stays_mounted ... ok
+test provider::adapter::tests::cancellation_fixture ... ignored, requires the pinned client cancellation differential driver
+test plan_mcp::tests::validate_rejects_a_cycle_before_hashing ... ok
+test plan_mcp::tests::validate_reports_levels_and_hash_for_a_valid_plan ... ok
+time=2026-10-12T16:10:57.562Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.562Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.563Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.563Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.563Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.563Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test provider::binding::tests::cancelling_accepted_http_call_releases_session_and_allows_disposal ... ok
+test gojson::tests::go_rejections ... ok
+test provider::definition::tests::definition_fixture ... ignored, requires the pinned Go manifest differential driver
+test plan_mcp::tests::get_host_plan_run_reports_not_found_for_an_unknown_run_id ... ok
+test provider::delegation::tests::aborting_an_accepted_operation_revokes_its_permit ... ok
+test provider::delegation::tests::callback_scope_fixture ... ignored, requires actual owning Go callback scope and task-owner driver
+test provider::delegation::tests::delegation_fixture ... ignored, requires actual owning Go signed delegation differential driver
+test provider::delegation::tests::issuance_fixture ... ignored, requires actual owning Go typed delegation issuance driver
+test plan_mcp::tests::get_host_plan_run_requires_a_run_id ... ok
+test provider::delegation::tests::permit_release_revokes_without_changing_signed_claims ... ok
+test provider::mounts::tests::mounts_fixture ... ignored, requires the owning Go service-mount differential driver
+test provider::observation::tests::observation_fixture ... ignored, requires the owning Go provider observation differential driver
+test provider::publication::tests::publication_fixture ... ignored, requires actual owning Go publication and retirement driver
+test provider::result::tests::proposed_null_input_request_refusal_preserves_decoder ... ok
+test provider::result::tests::result_fixture ... ignored, requires the pinned Go SDK result differential driver
+test provider::runtime::tests::runtime_fixture ... ignored, requires the owning provider runtime differential driver
+test app::tests::listener_failure_happens_after_the_listening_log_like_go ... ok
+test provider::tests::drain_waits_for_the_session_owner_and_observes_its_release ... ok
+test provider::tests::lifecycle_fixture ... ignored, driven by the pinned Go/Rust provider lifecycle oracle
+test provider::tests::session_drop_does_not_release_the_replacement_generation ... ok
+test provider_mcp::tests::path_segments_match_whole_elements_only ... ok
+test provider_mcp::tests::resolve_host_service_claims_only_the_unit_installed_under_the_provider_id ... ok
+test recipe::host_recipe::tests::another_recipe_family_is_refused_by_its_contract_version ... ok
+test recipe::host_recipe::tests::distributed_action_target_is_required ... ok
+test recipe::host_recipe::tests::distributed_action_target_must_be_an_exact_inputs_reference ... ok
+test recipe::host_recipe::tests::envelope_accepts_distributed_or_host_local ... ok
+test recipe::host_recipe::tests::envelope_requires_the_host_contract_version ... ok
+test recipe::host_recipe::tests::host_local_action_target_may_be_omitted ... ok
+test recipe::host_recipe::tests::host_local_plan_rejects_a_wait_node ... ok
+test recipe::host_recipe::tests::host_local_plan_rejects_more_than_one_host ... time=2026-10-12T16:10:57.666Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+ok
+test recipe::host_recipe::tests::nested_plan_run_is_rejected ... ok
+time=2026-10-12T16:10:57.667Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test recipe::host_recipe::tests::redacted_inputs_masks_only_secret_names ... ok
+test recipe::host_recipe::tests::resolve_inputs_feeds_tenant_and_inputs_into_plan_variables ... ok
+test recipe::runtime::tests::runtime_envelope_requires_activation_contract_to_match_runtime ... ok
+test recipe::runtime::tests::runtime_inputs_resolve_plan_identity_and_redact_secrets ... ok
+test host_recipe_mcp::tests::validate_reports_the_recipe_and_its_expanded_plan ... ok
+test recipe::runtime::tests::tunnel_bindings_interpolate_and_reject_unresolved_variables ... ok
+test recipe::source::tests::expected_hash_mismatch_is_rejected ... ok
+test host_recipe_mcp::tests::validate_rejects_a_recipe_targeting_a_different_host_agent ... ok
+test recipe::source::tests::github_path_rejects_traversal ... ok
+test recipe::source::tests::github_reference_requires_a_40_char_commit ... ok
+test recipe::source::tests::host_agent_version_check_matches_go ... ok
+test recipe::source::tests::local_source_reads_and_hashes_a_real_file ... ok
+test recipe::source::tests::resolve_inputs_applies_defaults_and_enforces_required ... ok
+test recipe::source::tests::resolve_inputs_rejects_unknown_names ... ok
+test resource::tests::class_slots_match_go_fits ... ok
+test recipe::source::tests::local_source_rejects_missing_file ... ok
+test resource::tests::reclaim_drops_only_reservations_of_terminal_tasks ... ok
+test resource::tests::release_checks_owner_and_expired_leases_are_pruned ... ok
+test resource::tests::unverified_enforcement_fails_closed ... ok
+test provider::candidates::tests::removing_candidate_revokes_lookup_without_mutating_retained_snapshot ... ok
+test schema::tests::go_number_formats ... ok
+test schema::tests::go_texts ... ok
+test provider::adapter::tests::cancellation_closes_a_request_waiting_for_provider_headers ... ok
+test state_fixture::crash_writer ... ignored, requires an isolated parity driver and state directory
+test provider::adapter::tests::close_waits_for_an_accepted_call_then_refuses_new_work ... ok
+time=2026-10-12T16:10:57.680Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.680Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.681Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-12T16:10:57.682Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.683Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.683Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test resource::tests::uris_follow_resourceid ... ok
+time=2026-10-12T16:10:57.683Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:57.684Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:57.684Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test store::tests::authz_open_registers_builtin_clients_once ... ok
+test store::tests::authz_restart_keeps_provisioned_secrets ... ok
+test resource::tests::inheriting_a_released_parent_is_refused ... ok
+test store::tests::open_failure_text_matches_modernc ... ok
+test provider::binding::tests::signed_metadata_is_live_only_for_the_bound_provider_invocation ... ok
+test store::tests::complete_plan_writes_active_capability_atomically ... ok
+test store::tests::invocation_replay_preserves_original_and_go_defaults ... ok
+test store::tests::operation_lifecycle_round_trips ... ok
+test store::tests::open_migrates_legacy_active_runtime_columns ... ok
+test store::tests::registry_snapshot_preserves_go_named_status_projection ... ok
+test store::tests::state_open_reports_go_style_mkdir_error ... ok
+test resource::tests::nested_admission_inherits_a_live_parent_instead_of_competing_for_capacity ... ok
+test store::tests::plan_create_is_idempotent_on_conflict ... ok
+test tasks::tests::cancel_is_terminal_and_signals_work ... ok
+test tasks::tests::create_with_id_reuses_a_working_record_and_replaces_a_terminal_one ... ok
+test tasks::tests::failure_projects_a_jsonrpc_error ... ok
+test tasks::tests::ids_are_v4_uuids ... ok
+test tasks::tests::input_round_trip_resumes_once ... ok
+test tasks::tests::restore_completed_task_preserves_result ... ok
+test tasks::tests::restore_input_required_task_preserves_requests ... ok
+test store::tests::provider_generation_replacement_keeps_creation_and_survives_restart ... ok
+test tasks::tests::restore_rejects_a_snapshot_missing_identity ... ok
+test tools::evidence_fixture::durable_projection ... ignored, requires the isolated M5 secret-canary driver
+test tasks::tests::restore_working_task_comes_back_failed ... ok
+test tools::tests::redaction_for_delivery_passes_through_unmarked_content ... ok
+test tools::tests::redaction_for_storage_fails_closed_on_unmarked_content ... ok
+test tools::tests::every_task_aware_tools_write_only_fields_are_redacted ... ok
+test tools::tests::redaction_masks_write_only_fields ... ok
+test tools::tests::version_gate_reads_the_first_dotted_pair ... ok
+test transport::tests::go_float_formatting ... ok
+test transport::tests::local_host_rules ... ok
+test transport::tests::rfc2047_decoding_matches_go ... ok
+test transport::tests::media_type_rules_match_go ... ok
+test store::tests::state_open_creates_schema_and_is_idempotent ... ok
+test store::tests::task_snapshot_survives_store_restart ... ok
+test provider::activation::tests::caller_abort_does_not_strand_accepted_activation ... ok
+test provider::binding::tests::accepted_call_finishes_on_predecessor_while_new_calls_use_replacement ... ok
+test structural_test::tests::only_plan_runner_and_its_one_mcp_caller_construct_a_runner ... ok
+test provider::mounts::tests::cancelled_teardown_keeps_its_owner_until_accepted_work_finishes ... ok
+test plan_mcp::tests::run_host_plan_with_metadata_redacts_a_declared_secret_input_everywhere ... ok
+test plan_mcp::tests::run_host_plan_is_idempotent_on_the_same_plan_identity ... ok
+test plan_mcp::tests::run_host_plan_executes_a_single_node_plan_to_completion ... ok
+test store::tests::concurrent_writers_wait_rather_than_fail_busy ... ok
+test host_recipe_mcp::tests::run_host_local_recipe_executes_and_redacts_its_secret_input ... ok
+test provider::runtime::tests::shutdown_keeps_io_alive_until_accepted_factory_call_finishes ... ok
+test provider::publication::tests::rejected_candidate_keeps_family_owner_and_valid_one_displaces_it ... ok
+time=2026-10-12T16:10:58.282Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-12T16:10:58.282Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-12T16:10:58.282Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+test seam::seam_verifier ... ok
+
+test result: ok. 205 passed; 0 failed; 24 ignored; 0 measured; 0 filtered out; finished in 1.34s
+

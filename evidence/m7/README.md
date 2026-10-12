@@ -1438,9 +1438,11 @@ contracts), as expected; it is not an M7 criterion.
 
 ## M7 exit
 
-Tasks 3.1 and 3.2 stay unchecked until the owner decides how the milestone
-gate treats the two providers pinned Go refuses (below). Their own task gates
-hold. Failed candidate
+Tasks 3.1 and 3.2 are checked (2026-10-12). The owner settled how the
+milestone gate treats the two providers that pinned Go cannot complete (D15,
+below), and the closing cycle
+[`native-2026-10-12-r8`](../local-e2e/native-2026-10-12-r8/validation.json)
+is clean. Failed candidate
 activation leaves the prior catalog and provider usable, and revisions change
 only as Go's do. Wire and integration fixtures cover in-flight replacement,
 timeout and stale revision (M4), cancellation, callback rejection and
@@ -1460,9 +1462,10 @@ providers, and Rust does exactly what Go does:
   fails Go's plan validation (`set_host_service_state` requires `uri`), so the
   provider stays active.
 
-Making those two complete would mean changing a pinned provider or Go's
-contract. That needs a separate owner decision, so it is not done here. The
-other three providers complete the full journey.
+D15 (owner, 2026-10-12) settles both. ollama is out of scope for the Rust
+migration and leaves the gate and the inventory; Rust still matches Go on its
+journey. hostos stays in scope, and Rust's refusal, identical to Go's, is its
+parity. The other three providers complete the full journey.
 
 **Supervision, restart and adapter paths (goal steps 4 to 6), as Go defines
 them.**
@@ -1481,18 +1484,40 @@ them.**
   for redirect, TLS, proxy and cancel-cause failures and finds none. No gap
   there was reached, so none was changed.
 
-Owner decisions still open, none waived:
-`atomic-provider-family-publication` (Go's ordering is kept),
-`reject-null-provider-input-requests` and `unadmitted-callback-task-record`
-(reported as divergences, not parity). Task 3.3 is in scope only for the
-catalog cells M7 touches. Each real provider's published catalog is compared
-Go/Rust in its journey. M3 recorded provider cells as an owned M7 gap, so
-there was no earlier M3 capture to compare against. The global cutover
-verifier still fails (76 inventory gaps, stale provenance, canaries and
-contracts), as expected; it is not an M7 criterion. No shared Incus,
-Kubernetes, tunnel or deployment state was touched; real providers ran at T1
-on loopback with recording shims, an isolated user bus and a dead egress
-proxy.
+Owner decisions, all resolved on 2026-10-12:
+- **D15:** ollama is out of scope; hostos parity is the shared refusal.
+- **D16:** provider-family publication is atomic in Rust
+  (`atomic-provider-family-publication`). It is declared as a divergence with
+  database companions, and three family scenarios prove that a rejected
+  candidate keeps the owner, a rollback restores it, and an accepted call
+  survives replacement.
+- **D17:** a null input request is refused with a decode error
+  (`reject-null-provider-input-requests`).
+- **D18:** an unadmitted callback child follows D12
+  (`unadmitted-callback-task-record`). It is declared as a divergence with
+  database companions.
+
+Task 3.3 is in scope only for the catalog cells M7 touches. Each real
+provider's published catalog is compared Go/Rust in its journey. M3 recorded
+provider cells as an owned M7 gap, so there was no earlier M3 capture to
+compare against.
+
+**Closing cycle (r8).** Go/Go and Go/Rust are 177/177, M5 shape is 870/870,
+and gates m0-m6 pass on the committed tree with no change during the run.
+The inventory has no M1-M7 gap: 38 remain, 37 owned by M8 and 1 by M10. The
+receipt is reproduced by `native-2026-10-12-r8/verify.py`. Cycles r4-r7 failed
+and are kept with a NOTE.md each, none relabeled:
+- **r4:** two real parity bugs, both since fixed: host recipe defaults and
+  the policy revision binding.
+- **r5:** admission capacity under load.
+- **r6:** a callback operation row read too early.
+- **r7:** the in-flight replacement answer racing background activation.
+
+r4 also has an `-enospc` attempt, kept with its note. The cutover verifier
+still fails, as expected and not an M7 criterion. It reports the 38 gaps and
+four missing reviewed cutover evidence files. No shared Incus, Kubernetes,
+tunnel or deployment state was touched. Real providers ran at T1 on loopback
+with recording shims, an isolated user bus and a dead egress proxy.
 
 Receipts, including diagnostics and invalidated captures kept as history (each section above says how its receipt is reproduced):
 

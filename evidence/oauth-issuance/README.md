@@ -103,10 +103,17 @@ upgrade is checked by `migration.revokes-live-tokens` instead.
    expiry-window check ran after the test had aged the row. The check now
    runs on the fresh request.
 
+## Real client (5.3)
+
+The go-sdk v1.7.0 OAuth client (`tools/parity/oauth-sdk-client/`) completes
+an operator-approved authorization against the Rust binary and lists tools.
+A deny control proves the client is refused when the operator denies. The
+receipt is pinned to the binary hash:
+[`native-2026-10-12-r8/oauth-sdk-client/receipt.json`](../local-e2e/native-2026-10-12-r8/oauth-sdk-client/receipt.json),
+checked by that cycle's `verify.py`.
+
 ## Open items
 
-- **5.3:** the go-sdk real client completing an operator-approved
-  authorization against Rust.
 - **Cutover** (moved from M3 by the owner, 2026-10-12): the
   `list_oauth_authorizations` / `approve_oauth_authorization` admin tools.
 - **M9** (moved from M7 by the owner, 2026-10-12): the provider environment gains `OPUTE_HOST_AGENT_CLIENT_ID` and

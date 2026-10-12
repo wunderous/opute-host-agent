@@ -630,6 +630,12 @@ D14 generalizes M7's generation-scoped service mounts into the one service
 context for built-in and external providers. M7's lifecycle tools are revised
 onto the seam with those of M1–M6, before M8 starts.
 
+**Status (2026-10-12): passed.** D15 removes ollama from the gate; hostos
+parity is Go's own install refusal. D16-D18 are applied. The closing cycle
+[`native-2026-10-12-r8`](../../../evidence/local-e2e/native-2026-10-12-r8/validation.json)
+passes Go/Go and Go/Rust 177/177, M5 shape 870/870 and gates m0-m6. No M1-M7
+inventory gap remains ([`evidence/m7/README.md`](../../../evidence/m7/README.md)).
+
 ---
 
 ### M8: Mutating domain operations, one domain at a time
