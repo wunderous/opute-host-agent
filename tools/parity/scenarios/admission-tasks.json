@@ -1622,7 +1622,7 @@
     "id": "admission.normal-reads.host",
     "surface": "admission",
     "owner": "core",
-    "notes": "normal-class host reads arrive with M4 admission (milestones.md M3 status). Each is admitted into a normal slot, and refused when no slot exists.",
+    "notes": "normal-class host reads arrive with M4 admission (milestones.md M3 status). Each is admitted into a normal slot, and refused when no slot exists. The admitting server pins CPU and memory capacity, as the other admission scenarios do, so live host load cannot refuse a read (one Go/Go refusal in r5).",
     "anchors": [
       "internal/domain/host/file.go:InspectHostFile",
       "internal/domain/host/http_probe.go:ProbeHTTPEndpoint",
@@ -1667,7 +1667,9 @@
           ],
           "profile": "standalone",
           "env": {
-            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory"
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
           }
         }
       },
