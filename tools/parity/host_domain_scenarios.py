@@ -703,6 +703,78 @@ cases += [
         shims_only(BRIDGE_URL="ftp://127.0.0.1:1"), call("diagnose", "diagnose_bridge", {}), STOP]),
 ]
 
+# Agent connection: the env file lives wherever the caller names (Go does
+# not confine it), here beneath the sandbox. One new key per call keeps Go's
+# map-ordered append deterministic. Restarts run only with system scope,
+# through the sudo shim; user scope would reach the real user manager.
+CONNECT = ["internal/domain/host/generic_agent_connection.go", "internal/tools/dispatch_cluster.go"]
+ENVF = "${SANDBOX}/home/.config/agent/host-agent.env"
+HOST_URI = "host:local:${AGENT_ID}"
+EXISTING = "# managed by parity\nexport A=1\nB = two\nnot-an-assignment\nA=override\n  # indented comment\nC=3=3\n=empty\n"
+
+
+def connect(as_, **args):
+    return call(as_, "configure_agent_connection", args)
+
+
+# get_host_info only registers the host URI here; its live metrics are
+# compared by the host-info surface, not this one.
+INFO_MASKS = [{"path": ["steps", "info", "body", "result", "structuredContent"], "type": "object",
+               "reason": "setup step: live host metrics, compared by the host-info surface"},
+              {"path": ["steps", "info", "body", "result", "content", 0, "text"], "type": "string",
+               "reason": "setup step: live host metrics, compared by the host-info surface"}]
+
+
+def firewall_case(id_, steps, anchors):
+    case = scenario(id_, steps, anchors, collect=("trace",))
+    case["compare"]["masks"] = MASKS + INFO_MASKS
+    return case
+
+
+cases += [
+    with_fixture(scenario("connection.env-file", [
+        shims_only(),
+        {"as": "seed", "write": {"path": ENVF, "content": EXISTING}},
+        connect("merge", envFile=ENVF, environment={"B": "changed", "D": "4", "skip": 5}, remove=["C", " ", "A"]),
+        connect("again", envFile=ENVF, environment={"E": "five"}, restart=False, serviceName="web.service"),
+        connect("noService", envFile=ENVF, environment={"F": "6"}, restart=True),
+        connect("restart", envFile=ENVF, environment={"G": "7"}, restart=True, serviceName="web.service",
+                scope="system"),
+        connect("restartFails", envFile=ENVF, environment={"H": "8"}, restart=True, serviceName="bad name",
+                scope="system"),
+        connect("fresh", envFile="${SANDBOX}/home/new/dir/agent.env", environment={"X": "y"}),
+        STOP], CONNECT), "host-services"),
+    scenario("connection.refusals", [
+        shims_only(),
+        {"as": "file", "write": {"path": "${SANDBOX}/home/plain", "content": "x"}},
+        {"as": "dir", "mkdir": {"path": "${SANDBOX}/home/adir"}},
+        connect("noFile", envFile=" ", environment={"A": "1"}),
+        connect("noEnv", envFile=ENVF, environment={}),
+        connect("onlyNonStrings", envFile=ENVF, environment={"A": 1}),
+        connect("underFile", envFile="${SANDBOX}/home/plain/x.env", environment={"A": "1"}),
+        connect("isDir", envFile="${SANDBOX}/home/adir", environment={"A": "1"}),
+        STOP], CONNECT),
+    with_fixture(scenario("connection.shared-owner-refused", [
+        shims_only(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"),
+        connect("written", envFile=ENVF, environment={"A": "1"}),
+        connect("restart", envFile=ENVF, environment={"B": "2"}, restart=True, serviceName="web.service",
+                scope="system"),
+        STOP], CONNECT + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]), "host-services"),
+    firewall_case("firewall.linux", [
+        serve(),
+        call("unregistered", "ensure_host_firewall_rule", {"uri": HOST_URI, "port": 8443}),
+        call("info", "get_host_info", {}),
+        call("rule", "ensure_host_firewall_rule", {"uri": HOST_URI, "bindingId": "binding-1", "port": 8443}),
+        call("fraction", "ensure_host_firewall_rule", {"uri": HOST_URI, "bindingId": " b ", "port": 7.9}),
+        call("empty", "ensure_host_firewall_rule", {}),
+        STOP], ["internal/domain/host/firewall.go", "internal/tools/dispatch_host.go"]),
+    firewall_case("firewall.elevated-env", [
+        serve(OPUTE_HOST_AGENT_ELEVATED="1"),
+        call("info", "get_host_info", {}),
+        call("rule", "ensure_host_firewall_rule", {"uri": HOST_URI, "bindingId": "binding-1", "port": 8443}),
+        STOP], ["internal/domain/host/firewall.go:isWindowsAdmin"]),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

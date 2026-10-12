@@ -19,6 +19,7 @@ mod host_recipe_mcp;
 mod hostarchive;
 mod hostartifact;
 mod hostcommand;
+mod hostconnect;
 mod hostexec;
 mod hostfiles;
 mod hostobs;

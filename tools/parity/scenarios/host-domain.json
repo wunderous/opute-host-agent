@@ -9637,5 +9637,793 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.connection.env-file",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/generic_agent_connection.go",
+   "internal/tools/dispatch_cluster.go"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "seed",
+    "write": {
+     "path": "${SANDBOX}/home/.config/agent/host-agent.env",
+     "content": "# managed by parity\nexport A=1\nB = two\nnot-an-assignment\nA=override\n  # indented comment\nC=3=3\n=empty\n"
+    }
+   },
+   {
+    "as": "merge",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "B": "changed",
+        "D": "4",
+        "skip": 5
+       },
+       "remove": [
+        "C",
+        " ",
+        "A"
+       ]
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "E": "five"
+       },
+       "restart": false,
+       "serviceName": "web.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "noService",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "F": "6"
+       },
+       "restart": true
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "G": "7"
+       },
+       "restart": true,
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "restartFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "H": "8"
+       },
+       "restart": true,
+       "serviceName": "bad name",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "fresh",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/new/dir/agent.env",
+       "environment": {
+        "X": "y"
+       }
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.connection.refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/generic_agent_connection.go",
+   "internal/tools/dispatch_cluster.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "file",
+    "write": {
+     "path": "${SANDBOX}/home/plain",
+     "content": "x"
+    }
+   },
+   {
+    "as": "dir",
+    "mkdir": {
+     "path": "${SANDBOX}/home/adir"
+    }
+   },
+   {
+    "as": "noFile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": " ",
+       "environment": {
+        "A": "1"
+       }
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "noEnv",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {}
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "onlyNonStrings",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "A": 1
+       }
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "underFile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/plain/x.env",
+       "environment": {
+        "A": "1"
+       }
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "isDir",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/adir",
+       "environment": {
+        "A": "1"
+       }
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.connection.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/generic_agent_connection.go",
+   "internal/tools/dispatch_cluster.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "written",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "A": "1"
+       }
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_agent_connection",
+     "params": {
+      "name": "configure_agent_connection",
+      "arguments": {
+       "envFile": "${SANDBOX}/home/.config/agent/host-agent.env",
+       "environment": {
+        "B": "2"
+       },
+       "restart": true,
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.firewall.linux",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/firewall.go",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "unregistered",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_firewall_rule",
+     "params": {
+      "name": "ensure_host_firewall_rule",
+      "arguments": {
+       "uri": "host:local:${AGENT_ID}",
+       "port": 8443
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "info",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_host_info",
+     "params": {
+      "name": "get_host_info",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "rule",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_firewall_rule",
+     "params": {
+      "name": "ensure_host_firewall_rule",
+      "arguments": {
+       "uri": "host:local:${AGENT_ID}",
+       "bindingId": "binding-1",
+       "port": 8443
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "fraction",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_firewall_rule",
+     "params": {
+      "name": "ensure_host_firewall_rule",
+      "arguments": {
+       "uri": "host:local:${AGENT_ID}",
+       "bindingId": " b ",
+       "port": 7.9
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "empty",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_firewall_rule",
+     "params": {
+      "name": "ensure_host_firewall_rule",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "info",
+      "body",
+      "result",
+      "structuredContent"
+     ],
+     "type": "object",
+     "reason": "setup step: live host metrics, compared by the host-info surface"
+    },
+    {
+     "path": [
+      "steps",
+      "info",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "setup step: live host metrics, compared by the host-info surface"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.firewall.elevated-env",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/firewall.go:isWindowsAdmin"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_ELEVATED": "1"
+     }
+    }
+   },
+   {
+    "as": "info",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_host_info",
+     "params": {
+      "name": "get_host_info",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "rule",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_firewall_rule",
+     "params": {
+      "name": "ensure_host_firewall_rule",
+      "arguments": {
+       "uri": "host:local:${AGENT_ID}",
+       "bindingId": "binding-1",
+       "port": 8443
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "info",
+      "body",
+      "result",
+      "structuredContent"
+     ],
+     "type": "object",
+     "reason": "setup step: live host metrics, compared by the host-info surface"
+    },
+    {
+     "path": [
+      "steps",
+      "info",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "setup step: live host metrics, compared by the host-info surface"
+    }
+   ]
+  }
  }
 ]

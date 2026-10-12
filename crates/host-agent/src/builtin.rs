@@ -249,6 +249,8 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_exec(host),
         host_services(host),
         bridge(host),
+        agent_connection(host),
+        host_firewall(),
         container_engine(),
         instance_exec(host),
         host_artifacts(host),
@@ -941,6 +943,70 @@ fn bridge(host: &crate::tools::Host) -> Service {
                 }),
             ),
         ],
+    }
+}
+
+/// M8a: a caller-owned connection environment file, then an optional
+/// restart through the host service lifecycle.
+fn agent_connection(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let env = host.env.clone();
+    Service {
+        id: "agent-connection",
+        dependencies: &["host-services"],
+        operations: vec![(
+            "configure_agent_connection",
+            op(move |call| {
+                let owner = crate::hostfiles::Owner {
+                    instance_id: &owner.0,
+                    owner_instance: &owner.1,
+                };
+                let environment = call
+                    .args
+                    .get("environment")
+                    .and_then(J::as_object)
+                    .map(|m| {
+                        m.iter()
+                            .filter_map(|(k, v)| v.as_str().map(|v| (k.clone(), v.to_string())))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                crate::hostconnect::configure_agent_connection(
+                    &env,
+                    &owner,
+                    text(call.args, "envFile"),
+                    &environment,
+                    &string_slice(call.args, "remove"),
+                    text(call.args, "serviceName"),
+                    call.args.get("restart").and_then(J::as_bool),
+                    text(call.args, "scope"),
+                )
+                .map(|v| structured_result(v, Some("Agent connection configuration written.")))
+            }),
+        )],
+    }
+}
+
+/// M8a: the host firewall rule a tunnel provider may request.
+fn host_firewall() -> Service {
+    Service {
+        id: "host-firewall",
+        dependencies: &[],
+        operations: vec![(
+            "ensure_host_firewall_rule",
+            op(|call| {
+                let out = crate::hostconnect::ensure_host_firewall_rule(
+                    text(call.args, "bindingId"),
+                    int_field(call.args, "port"),
+                );
+                let text = format!("Firewall rule applied={}", out["applied"]);
+                Ok(crate::tools::structured_result(out, Some(&text)))
+            }),
+        )],
     }
 }
 
