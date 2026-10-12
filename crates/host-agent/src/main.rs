@@ -23,6 +23,7 @@ mod hostconnect;
 mod hostexec;
 mod hostfiles;
 mod hostobs;
+mod hostpolicy;
 mod hostread;
 mod hostservice;
 mod hosttool;

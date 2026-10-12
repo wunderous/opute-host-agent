@@ -1060,18 +1060,38 @@ fn string_slice(args: &Map<String, J>, key: &str) -> Vec<String> {
 /// M4: host resource capacity and enforcement, from the coordinator alone.
 fn host_resources(host: &crate::tools::Host) -> Service {
     let coordinator = host.coordinator.clone();
+    let policy = host.coordinator.clone();
+    let env = host.env.clone();
+    let tenant = host.tenant_id.clone();
     Service {
         id: "host-resources",
         dependencies: &[],
-        operations: vec![(
-            "get_host_capacity",
-            op(move |_| {
-                Ok(serde_json::json!({
-                    "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
-                    "structuredContent": coordinator.snapshot(),
-                }))
-            }),
-        )],
+        operations: vec![
+            (
+                "get_host_capacity",
+                op(move |_| {
+                    Ok(serde_json::json!({
+                        "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
+                        "structuredContent": coordinator.snapshot(),
+                    }))
+                }),
+            ),
+            // M8a: the policy backend repairs the systemd projection
+            // admission depends on (`resource_policy.go`).
+            (
+                "reconcile_host_resource_policy",
+                op(move |call| {
+                    crate::hostpolicy::reconcile_host_resource_policy(
+                        &env,
+                        &policy,
+                        tenant.trim(),
+                        call.ctx,
+                        text(call.args, "policyRevision"),
+                        text(call.args, "uri"),
+                    )
+                }),
+            ),
+        ],
     }
 }
 

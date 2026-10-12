@@ -10,6 +10,7 @@
   "host-firewall",
   "host-info",
   "host-observation",
+  "host-resources",
   "host-services",
   "host-tools",
   "host-vm-subsystem",
@@ -53,7 +54,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "configure_agent_connection"
   },
@@ -84,7 +85,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "diagnose_bridge"
   },
@@ -119,7 +120,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "recover_bridge"
   },
@@ -146,7 +147,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "ensure_docker"
   },
@@ -214,7 +215,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskAware",
    "tool": "ensure_host_artifact"
   },
@@ -253,7 +254,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskAware",
    "tool": "prepare_host_agent_artifacts"
   },
@@ -274,7 +275,7 @@
    "goTests": [],
    "neutralName": "agent_shell",
    "publishedIn": [],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "agent_shell"
   },
@@ -295,7 +296,7 @@
    ],
    "neutralName": "exec_command",
    "publishedIn": [],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "exec_command"
   },
@@ -426,7 +427,7 @@
    "goTests": [],
    "neutralName": "ensure_host_firewall_rule",
    "publishedIn": [],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "ensure_host_firewall_rule"
   },
@@ -633,6 +634,51 @@
   },
   {
    "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_resource.go:28",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/resource_policy.go:188:ReconcileHostResourcePolicy",
+    "internal/domain/host/resource_policy.go:452:parseSystemdProperties",
+    "internal/domain/host/resource_policy.go:511:firstHostResourceError",
+    "internal/domain/host/wsl_compact.go:158:Error",
+    "internal/domain/host/resource_policy.go:113:ensureResourceSliceUnits",
+    "internal/domain/host/resource_policy.go:160:writeManagedUnit",
+    "internal/domain/host/resource_policy.go:463:preservesStricterResourceUnit",
+    "internal/domain/host/resource_policy.go:499:parseSystemdUnitProperty",
+    "internal/domain/host/resource_policy.go:379:parseSystemdLimit",
+    "internal/domain/host/resource_policy.go:85:managedResourceUnitNeedsMigration",
+    "internal/domain/host/resource_policy.go:70:resourceUnitDescription",
+    "internal/domain/host/resource_policy.go:63:renderHostResourceSliceUnits",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/resource_policy.go:35:resourcePolicyTarget"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-resources",
+   "goTests": [
+    "internal/domain/host/resource_policy_test.go:TestReconcileHostResourcePolicyUsesExactSystemdUnit",
+    "internal/hostmcp/server_test.go:TestPolicyReconcileRemainsAdmissibleWhenWorkloadEnforcementIsUnknown"
+   ],
+   "neutralName": "reconcile_host_resource_policy",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "reconcile_host_resource_policy"
+  },
+  {
+   "admissionClass": "ClassControl",
    "anchor": "internal/tools/dispatch_unassigned.go:334",
    "catalogExclusion": null,
    "commandsStatic": [
@@ -659,7 +705,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "ensure_host_service_supervisor"
   },
@@ -693,7 +739,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "inspect_host_service_supervisor"
   },
@@ -724,7 +770,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "restart_host_service"
   },
@@ -757,7 +803,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "set_host_service_state"
   },
@@ -791,7 +837,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskAware",
    "tool": "ensure_host_tool"
   },
@@ -930,7 +976,7 @@
     "standalone",
     "standalone-mutations"
    ],
-   "rustServes": false,
+   "rustServes": true,
    "taskMode": "TaskInline",
    "tool": "run_instance_command"
   },

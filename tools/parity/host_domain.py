@@ -58,6 +58,12 @@ FAMILY = {
     "diagnose_bridge": "bridge", "recover_bridge": "bridge",
 }
 
+# Tools whose handler reaches the host domain through a seam other than
+# svc.Host(): the resource coordinator's policy backend is wired to
+# Host().ReconcileHostResourcePolicy in internal/app/runtime.go.
+ROUTED = {"reconcile_host_resource_policy": ["ReconcileHostResourcePolicy"]}
+FAMILY["reconcile_host_resource_policy"] = "host-resources"
+
 COMMANDS = {"apt-cache", "apt-get", "bash", "curl", "dpkg", "dpkg-query", "install", "kill", "rm",
             "sudo", "systemctl", "usermod", "incus", "wsl.exe", "powershell.exe", "nft", "iptables",
             "ufw", "cloudflared", "docker", "k3d", "journalctl", "loginctl", "ss", "tar", "sh",
@@ -120,6 +126,7 @@ def registrations() -> list[dict]:
                 start = text.rfind("\nfunc init()", 0, m.start())
                 body = text[start:end]
             calls = sorted(set(re.findall(r'svc\.Host\(\)\.(\w+)', body)))
+            calls = calls or ROUTED.get(names[m.group(1)], [])
             if calls:
                 rows.append({"tool": names[m.group(1)], "effect": m.group(2), "admissionClass": m.group(3),
                              "taskMode": m.group(4), "anchor": f"{path.relative_to(GO)}:{text.count(chr(10), 0, m.start()) + 1}",
@@ -158,12 +165,9 @@ def tests_for(tool: str, functions: list[str]) -> list[str]:
 
 
 def rust_serves(tool: str) -> bool:
-    for path in (ROOT / "crates/host-agent/src").rglob("*.rs"):
-        text = path.read_text()
-        if f'"{tool}"' in text or f'"{NEUTRAL.get(tool, tool)}"' in text:
-            if re.search(rf'op\(|"{tool}"\s*=>|\("{tool}",', text):
-                return True
-    return False
+    """A built-in service operation registered under the tool's name."""
+    text = (ROOT / "crates/host-agent/src/builtin.rs").read_text()
+    return any(re.search(rf'"{re.escape(name)}",\s*op\(', text) for name in (tool, NEUTRAL.get(tool, tool)))
 
 
 def main() -> None:

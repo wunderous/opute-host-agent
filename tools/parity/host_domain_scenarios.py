@@ -775,6 +775,33 @@ cases += [
         STOP], ["internal/domain/host/firewall.go:isWindowsAdmin"]),
 ]
 
+# Resource policy. A reconciliation that passes validation writes slice
+# units and drives the absolute /usr/bin/systemctl (user scope) or writes
+# /etc/systemd/system (system scope): both are T2 cases. T1 covers every
+# refusal that precedes an effect.
+POLICY = ["internal/resource/service.go:Reconcile", "internal/domain/host/resource_policy.go",
+          "internal/tools/dispatch_resource.go"]
+REV = "opute-host-resource-policy.v2"
+
+
+def reconcile(as_, uri, rev=REV):
+    return call(as_, "reconcile_host_resource_policy", {"policyRevision": rev, "uri": uri})
+
+
+cases += [
+    scenario("policy.refusals", [
+        shims_only(),
+        reconcile("oldRevision", "host-service:local:user/opute-host-agent.service", rev="opute-host-resource-policy.v1"),
+        reconcile("blankRevision", "host-service:local:user/opute-host-agent.service", rev=" "),
+        reconcile("otherUnit", "host-service:local:system/dbus.service"),
+        reconcile("badInstance", "host-service:local:system/opute-host-agent@Bad_Id.service"),
+        reconcile("otherTenant", "host-service:other:system/opute-host-agent.service"),
+        reconcile("notService", "container:local:worker-01"),
+        reconcile("badScope", "host-service:local:machine/opute-host-agent.service"),
+        call("missing", "reconcile_host_resource_policy", {"uri": "host-service:local:system/dbus.service"}),
+        STOP], POLICY),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

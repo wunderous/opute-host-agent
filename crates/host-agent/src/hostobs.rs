@@ -1049,7 +1049,7 @@ const SYSTEMCTL: &str = "/usr/bin/systemctl";
 const SYSTEMD_RUN: &str = "/usr/bin/systemd-run";
 const WORKLOAD_SLICE: &str = "opute-workload.slice";
 
-fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, String> {
+pub(crate) fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, String> {
     output
         .split('\n')
         .filter_map(|line| line.split_once('='))
@@ -1057,7 +1057,7 @@ fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, 
         .collect()
 }
 
-fn parse_systemd_limit(value: &str) -> Option<i64> {
+pub(crate) fn parse_systemd_limit(value: &str) -> Option<i64> {
     let mut value = value.trim().to_lowercase();
     if value.is_empty() || value == "max" || value == "infinity" || value == "inf" {
         return None;

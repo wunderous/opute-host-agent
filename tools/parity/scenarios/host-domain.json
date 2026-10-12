@@ -10425,5 +10425,202 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.policy.refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/resource/service.go:Reconcile",
+   "internal/domain/host/resource_policy.go",
+   "internal/tools/dispatch_resource.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "oldRevision",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v1",
+       "uri": "host-service:local:user/opute-host-agent.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "blankRevision",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": " ",
+       "uri": "host-service:local:user/opute-host-agent.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "otherUnit",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:system/dbus.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badInstance",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:system/opute-host-agent@Bad_Id.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "otherTenant",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:other:system/opute-host-agent.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "notService",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "container:local:worker-01"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badScope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "policyRevision": "opute-host-resource-policy.v2",
+       "uri": "host-service:local:machine/opute-host-agent.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "missing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_host_resource_policy",
+     "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
  }
 ]
