@@ -71,8 +71,22 @@ def _anchor(src: Path, path: Path, text: str, offset: int) -> str:
 
 
 def _scenario_refs(scenarios: list[dict]) -> dict[str, str]:
-    """Scenario id -> canonical JSON text, for coverage lookups."""
-    return {s["id"]: json.dumps(s, sort_keys=True) for s in scenarios}
+    """Scenario id -> canonical JSON text, for coverage lookups.
+
+    A step's profile environment is part of what it runs, so it is included.
+    The single-implementation contract suites are the owning evidence for
+    surfaces a decision moved off Go-vs-Rust comparison (D8's OAuth
+    issuance), so their scenarios count too, as `contract:<suite>/<id>`.
+    """
+    refs = {}
+    for s in scenarios:
+        profiles = [runner.PROFILES[step[kind].get("profile", "empty")]
+                    for step in s.get("steps", []) for kind in ("serve", "cli") if kind in step]
+        refs[s["id"]] = json.dumps([s, profiles], sort_keys=True)
+    for path in sorted((runner.TOOLS_DIR / "contracts").glob("*.json")):
+        for s in json.loads(path.read_text())["scenarios"]:
+            refs[f"contract:{path.stem}/{s['id']}"] = json.dumps(s, sort_keys=True)
+    return refs
 
 
 def _covering(needle: str, refs: dict[str, str]) -> list[str]:
@@ -91,6 +105,40 @@ def verify_source(src: Path, lock: dict) -> None:
         raise SystemExit(f"Go source at {src} has local changes; capture refuses a dirty tree")
 
 
+# Variables pinned Go reads that are not M1-M7 surfaces. Each stays in the
+# inventory with its owner; an inert one has no observable effect in Go.
+ENV_DOMAIN = {
+    "OPUTE_DOGFOOD_GATEWAY_VM": "internal/domain/cluster (cluster agent bridge relay)",
+    "OPUTE_K3S_CONTAINER": "internal/domain/cluster (cluster agent bridge relay)",
+    "OPUTE_K3S_VM": "internal/domain/cluster (cluster agent bridge relay)",
+    "OPUTE_PLATFORM_GUEST_HOST": "internal/domain/cluster (cluster agent)",
+    "OPUTE_PLATFORM_PUBLIC_URL": "internal/domain/cluster (cluster agent)",
+    "OPUTE_PLATFORM_URL": "internal/domain/cluster (cluster agent)",
+    "OPUTE_HOST_AGENT_ELEVATED": "internal/domain/host (firewall)",
+    "OPUTE_HOST_AGENT_RELAY_DIR": "internal/domain/postgres (relay configuration directory)",
+    "OPUTE_HOST_AGENT_SQLITE_ROOT": "internal/domain/postgres (local SQLite databases)",
+    "OPUTE_SHARED_HOST_OWNER_INSTANCE": "internal/domain/incus (shared incus stack ownership)",
+    "OPUTE_LLAMA_SERVER_ARTIFACT_PATH": "internal/domain/llm (llama server)",
+    "OPUTE_LLAMA_SERVER_BASE_MODEL": "internal/domain/llm (llama server)",
+    "OPUTE_LLAMA_SERVER_BINARY": "internal/domain/llm (llama server)",
+    "OPUTE_LLAMA_SERVER_BUILD": "internal/domain/llm (llama server)",
+    "OPUTE_LLAMA_SERVER_MODEL": "internal/domain/llm (llama server)",
+    "OPUTE_LLAMA_SERVER_PORT": "internal/domain/llm (llama server)",
+    "OPUTE_LLAMA_SERVER_VERSION": "internal/domain/llm (llama server)",
+    "OPUTE_OLLAMA_BINARY": "internal/domain/llm (host ollama runtime)",
+    "OPUTE_OLLAMA_CONTEXT_SIZE": "internal/domain/llm (host ollama runtime)",
+    "OPUTE_OLLAMA_MODEL": "internal/domain/llm (host ollama runtime)",
+    "OPUTE_OLLAMA_PORT": "internal/domain/llm (host ollama runtime)",
+}
+ENV_INERT = {
+    "OPUTE_TEST": "sets Config.TestMode, which nothing in pinned Go reads",
+    "OPUTE_MCP_ROUTE_HOST": "read only by mcphttp.ApplyMcpRouteHost, which nothing in pinned Go calls",
+    "OPUTE_HOST_MAX_QUEUED_OPERATIONS": "bounds Coordinator.AcquireClass's queue, which nothing in pinned Go "
+                                        "calls; a non-positive or non-numeric value falls back to 16, so "
+                                        "Config.Validate never sees a negative one",
+}
+
+
 def capture_env(src: Path, refs: dict[str, str]) -> dict:
     found: dict[str, list[str]] = {}
     for path in _go_files(src, "internal", "pkg", "cmd"):
@@ -100,13 +148,18 @@ def capture_env(src: Path, refs: dict[str, str]) -> dict:
     items = []
     for name in sorted(found):
         covered = _covering(name, refs)
-        items.append({
+        item = {
             "name": name,
             "owner": "config",
             "anchors": sorted(set(found[name])),
             "scenarios": covered,
             "status": "covered" if covered else "gap",
-        })
+        }
+        if not covered and name in ENV_INERT:
+            item.update(status="inert", inertReason=ENV_INERT[name])
+        elif not covered and name in ENV_DOMAIN:
+            item.update(milestone="M8", gapReason=f"read only by {ENV_DOMAIN[name]}; domain operations are M8")
+        items.append(item)
     return {"surface": "config", "owner": "config", "items": items}
 
 
@@ -149,6 +202,8 @@ def capture_effects(src: Path, observed: list[dict]) -> dict:
             # sandbox) is confirmed per command in M8; until then it is a gap.
             "tier": "T1-shim-observed" if name in observed_cmds else "unclassified",
             "status": "covered" if name in observed_cmds else "gap",
+            **({} if name in observed_cmds else {
+                "milestone": "M8", "gapReason": "host effect tiering of domain operations is M8"}),
         })
     return {
         "surface": "effects",
@@ -192,7 +247,7 @@ def _descriptor_row(tool: dict) -> dict:
 
 def capture_catalog_cell(observation: dict, variables: dict[str, str], cell: dict) -> dict:
     doc = canon.substitute(observation, variables)
-    result = doc["steps"]["list"]["body"]["result"]
+    result = doc["steps"][cell.get("step", "list")]["body"]["result"]
     tools = sorted(result["tools"], key=lambda t: t["name"])
     return {
         "surface": "catalog",
@@ -320,6 +375,14 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
         "platform": {"mode": "platform", "providers": [], "mutations": False, "prefixedNames": False,
                      "scenario": "catalog.platform"},
     }
+    # Provider cells: the catalog each real provider journey publishes once
+    # its install has run (hostos: Go's install refuses it, and the cell is
+    # that unchanged catalog). The ollama provider is out of the Rust
+    # migration (owner decision D15), so its cell is not inventoried.
+    for provider in ["k3s", "cloudflare", "tailscale", "hostos"]:
+        cells[f"provider-{provider}"] = {"mode": "standalone", "providers": [provider], "mutations": True,
+                                         "prefixedNames": False, "scenario": f"provider-real.{provider}",
+                                         "step": "catalog"}
     catalogs = {}
     for name, cell in cells.items():
         obs, variables = observed[cell["scenario"]]
@@ -337,13 +400,16 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
     for tool in dispatch:
         in_catalog = tool in published_plain
         excluded = f'"{tool}":' in excluded_text.split("CatalogExcludedToolNames", 1)[-1].split("}\n", 1)[0]
+        refused = _refused_as_unknown(tool, observed, by_id)
         registry.append({
             "name": tool,
             "owner": "contracts",
             "publishedIn": sorted(c for c, cat in catalogs.items()
                                   if tool in {t["name"].replace("${TOOL_PREFIX}_", "") for t in cat["descriptors"]}),
             "catalogExcluded": excluded,
-            "status": "covered" if in_catalog else ("excluded-by-design" if excluded else "gap"),
+            **({"unreachableIn": refused} if refused and not in_catalog else {}),
+            "status": "covered" if in_catalog else ("excluded-by-design" if excluded
+                                                    else "unreachable" if refused else "gap"),
         })
 
     state_obs = canon.substitute(*observed["state.schema-after-start"])
@@ -378,7 +444,7 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
     }
     for name, cat in catalogs.items():
         inventory[f"catalog/{name}.json"] = cat
-    inventory["plans.json"] = capture_plans(impl, src)
+    inventory["plans.json"] = capture_plans(impl, src, scenarios)
     inventory["findings.json"]["items"] += _plan_findings(inventory["plans.json"])
     inventory["findings.json"]["items"] += _registry_findings(registry)
     inventory["distribution.json"] = capture_distribution(src)
@@ -393,7 +459,36 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
     return inventory
 
 
-def capture_plans(impl: agent.Impl, src: Path) -> dict:
+def _refused_as_unknown(tool: str, observed: dict, by_id: dict) -> list[str]:
+    """Modes in which a direct tools/call of `tool` is refused as unknown."""
+    modes = set()
+    for sid, (obs, _) in observed.items():
+        mode = None
+        for step in by_id[sid].get("steps", []):
+            if "serve" in step:
+                mode = next((a.split("=", 1)[1] for a in step["serve"].get("argv", [])
+                             if a.startswith("--mode=")), mode)
+            call = step.get("mcp") or {}
+            if call.get("method") != "tools/call" or call.get("name") != tool:
+                continue
+            body = (obs.get("steps", {}).get(step["as"]) or {}).get("body") or {}
+            if (body.get("error") or {}).get("message") == f'unknown tool "{tool}"' and mode:
+                modes.add(mode)
+    # A dispatch name counts as unreachable only when every serving mode refuses it.
+    return sorted(modes) if modes >= {"standalone", "platform"} else []
+
+
+# Recipes of the ollama provider, which owner decision D15 takes out of the
+# Rust migration; they leave the M6 and M7 inventory.
+PLANS_OUT_OF_SCOPE = {
+    "plugins/llm/ollama/recipes/activate.yaml",
+    "plugins/llm/ollama/recipes/ollama-external.yaml",
+    "plugins/llm/ollama/recipes/ollama.yaml",
+    "test/fixtures/recipes/ollama.yaml",
+}
+
+
+def capture_plans(impl: agent.Impl, src: Path, scenarios: list[dict] | None = None) -> dict:
     items = []
     recipes = sorted(p for p in src.rglob("*.yaml")
                      if "recipes" in p.parts and "manifests" not in p.parts)
@@ -411,15 +506,30 @@ def capture_plans(impl: agent.Impl, src: Path) -> dict:
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
             variants = set(pool.map(once, range(PLAN_RUNS)))
         observed = [json.loads(v) for v in sorted(variants)]
-        items.append({
+        item = {
             "recipe": rel,
             "owner": "core",
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "cliValidate": observed[0] if len(observed) == 1 else {"nondeterministic": True,
                                                                    "variants": observed},
-            "status": "gap",
-            "gapReason": "plan execution parity (node states, retry, compensation) is M6",
-        })
+        }
+        # Covered when a scenario validates this file through the public
+        # recipe tool, or installs and runs its exact text (a real provider
+        # journey writes the provider's own recipe). Node states, retry and
+        # compensation are proven by the M6 fault scripts; the domain actions
+        # a recipe invokes are M8.
+        text = path.read_text()
+        covering = sorted(s["id"] for s in scenarios or []
+                          if rel in json.dumps(s) or any(
+                              (step.get("write") or {}).get("content") == text for step in s.get("steps", [])))
+        if rel in PLANS_OUT_OF_SCOPE:
+            item.update(status="out-of-scope", decision="D15")
+        elif covering:
+            item.update(status="covered", scenarios=covering)
+        else:
+            item.update(status="gap", milestone="M6",
+                        gapReason="no scenario validates or runs this recipe")
+        items.append(item)
     return {"surface": "plans", "owner": "core", "items": items}
 
 
@@ -437,6 +547,7 @@ def capture_distribution(src: Path) -> dict:
         "npm": {k: package.get(k) for k in ("name", "version", "bin", "files", "engines")},
         "deployFiles": deploy,
         "status": "gap",
+        "milestone": "M10",
         "gapReason": "packaging parity is M10",
     }
 
@@ -450,14 +561,16 @@ def collect_gaps(inventory: dict, catalogs: dict) -> dict:
             if item.get("status") == "gap":
                 key = item.get("name") or item.get("route") or item.get("command") or item.get("recipe")
                 gaps.append({"file": fname, "item": key, "owner": item.get("owner"),
+                             "milestone": item.get("milestone"),
                              "reason": item.get("gapReason", "no covering scenario yet")})
         if doc.get("status") == "gap":
-            gaps.append({"file": fname, "item": "*", "owner": doc.get("owner"), "reason": doc.get("gapReason")})
-    gaps.append({"file": "catalog/*", "item": "provider cells", "owner": "contracts",
-                 "reason": "catalog cells with active providers (k3s, cloudflare, tailscale, ollama, hostos) "
-                           "require provider installation fixtures; captured in M7"})
+            gaps.append({"file": fname, "item": "*", "owner": doc.get("owner"), "milestone": doc.get("milestone"),
+                         "reason": doc.get("gapReason")})
     unowned = [g for g in gaps if not g.get("owner")]
-    return {"count": len(gaps), "unownedCount": len(unowned), "items": gaps}
+    by_milestone: dict[str, int] = {}
+    for g in gaps:
+        by_milestone[g["milestone"] or "unassigned"] = by_milestone.get(g["milestone"] or "unassigned", 0) + 1
+    return {"count": len(gaps), "unownedCount": len(unowned), "byMilestone": by_milestone, "items": gaps}
 
 
 def write(inventory: dict[str, Any]) -> dict:

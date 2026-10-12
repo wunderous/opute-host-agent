@@ -46,5 +46,29 @@
       {"as": "list", "mcp": {"method": "tools/list"}},
       {"as": "stop", "stop": {}}
     ]
+  },
+  {
+    "id": "catalog.unpublished-dispatch",
+    "surface": "catalog",
+    "owner": "contracts",
+    "anchors": ["internal/tools/catalog.go:CatalogExcludedToolNames", "internal/hostmcp/server.go:handleToolsCall"],
+    "fixture": "incus-empty",
+    "collect": ["trace"],
+    "steps": [
+      {"as": "start-standalone", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"}}},
+      {"as": "standalone-ensure_k3d", "mcp": {"method": "tools/call", "name": "ensure_k3d", "params": {"name": "ensure_k3d", "arguments": {}}}},
+      {"as": "standalone-get_cluster_details", "mcp": {"method": "tools/call", "name": "get_cluster_details", "params": {"name": "get_cluster_details", "arguments": {}}}},
+      {"as": "standalone-get_cluster_runtime_details", "mcp": {"method": "tools/call", "name": "get_cluster_runtime_details", "params": {"name": "get_cluster_runtime_details", "arguments": {}}}},
+      {"as": "standalone-list_clusters", "mcp": {"method": "tools/call", "name": "list_clusters", "params": {"name": "list_clusters", "arguments": {}}}},
+      {"as": "standalone-uninstall_helm_chart", "mcp": {"method": "tools/call", "name": "uninstall_helm_chart", "params": {"name": "uninstall_helm_chart", "arguments": {}}}},
+      {"as": "stop-standalone", "stop": {}},
+      {"as": "start-platform", "serve": {"argv": ["serve", "--mode=platform"], "profile": "platform", "env": {}}},
+      {"as": "platform-ensure_k3d", "mcp": {"method": "tools/call", "name": "ensure_k3d", "params": {"name": "ensure_k3d", "arguments": {}}}},
+      {"as": "platform-get_cluster_details", "mcp": {"method": "tools/call", "name": "get_cluster_details", "params": {"name": "get_cluster_details", "arguments": {}}}},
+      {"as": "platform-get_cluster_runtime_details", "mcp": {"method": "tools/call", "name": "get_cluster_runtime_details", "params": {"name": "get_cluster_runtime_details", "arguments": {}}}},
+      {"as": "platform-list_clusters", "mcp": {"method": "tools/call", "name": "list_clusters", "params": {"name": "list_clusters", "arguments": {}}}},
+      {"as": "platform-uninstall_helm_chart", "mcp": {"method": "tools/call", "name": "uninstall_helm_chart", "params": {"name": "uninstall_helm_chart", "arguments": {}}}},
+      {"as": "stop-platform", "stop": {}}
+    ]
   }
 ]
