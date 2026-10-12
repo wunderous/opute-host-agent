@@ -245,6 +245,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_observation(host),
         host_files(host),
         host_archives(host),
+        host_artifacts(host),
         catalog_service(),
         host_resources(host),
         tasks(server),
@@ -670,6 +671,37 @@ fn host_archives(host: &crate::tools::Host) -> Service {
                     text(call.args, "format"),
                 )
                 .map(|v| structured_result(v, Some("Verified host archive extracted.")))
+            }),
+        )],
+    }
+}
+
+/// M8a: verified HTTPS artifacts installed beneath the account home
+/// (`internal/domain/host/artifact.go`).
+fn host_artifacts(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    Service {
+        id: "host-artifacts",
+        dependencies: &[],
+        operations: vec![(
+            "ensure_host_artifact",
+            op(move |call| {
+                let owner = crate::hostfiles::Owner {
+                    instance_id: &owner.0,
+                    owner_instance: &owner.1,
+                };
+                crate::hostartifact::ensure_host_artifact(
+                    &owner,
+                    text(call.args, "uri"),
+                    text(call.args, "destination"),
+                    text(call.args, "sha256"),
+                    flag(call.args, "executable"),
+                )
+                .map(|v| structured_result(v, Some("Verified host artifact reconciled.")))
             }),
         )],
     }

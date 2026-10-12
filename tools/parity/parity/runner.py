@@ -328,10 +328,13 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 server = None
             elif "httpStub" in step:
                 spec = step["httpStub"]
-                stub = agent.HttpStub(spec.get("responses", []), spec.get("default", {"status": 200}))
+                tls = agent.make_test_tls(sandbox.root / "tls") if spec.get("tls") else None
+                stub = agent.HttpStub(spec.get("responses", []), spec.get("default", {"status": 200}), tls)
                 stubs[label] = stub
                 sandbox.captured[spec.get("portVar", "STUB_PORT")] = str(stub.port)
                 steps[label] = {"port": stub.port}
+            elif "httpRequests" in step:
+                steps[label] = {"paths": list(stubs[step["httpRequests"]["stub"]].paths)}
             elif "providerStub" in step:
                 spec = step["providerStub"]
                 stub = provider_stub.ProviderStub(json.loads(sandbox.expand(json.dumps(spec))))

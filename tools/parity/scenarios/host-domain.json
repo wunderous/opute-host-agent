@@ -43,7 +43,8 @@
        "path": "~/.config/parity/app.conf",
        "content": "alpha\n"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -58,7 +59,8 @@
        "content": "alpha\n",
        "mode": 384
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -73,7 +75,8 @@
        "content": "alpha\n",
        "mode": 420
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -88,7 +91,8 @@
        "content": "beta\n",
        "mode": 420
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -103,7 +107,8 @@
        "content": "alpha\n",
        "mode": 420
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -117,7 +122,8 @@
        "path": "~/.config/parity/app.conf",
        "expectedSha256": "sha256:b6a98d9ce9a2d9149288fa3df42d377c3e42737afdcdaf714e33c0a100b51060"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -133,6 +139,7 @@
        "expectedSha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
       }
      },
+     "expand": true,
      "capture": {
       "T_WRONGHASH": [
        "body",
@@ -180,6 +187,7 @@
        "path": "~/.config/parity/app.conf"
       }
      },
+     "expand": true,
      "capture": {
       "T_UNCONFIRMED": [
        "body",
@@ -229,6 +237,7 @@
        "expectedSha256": "B6A98D9CE9A2D9149288FA3DF42D377C3E42737AFDCDAF714E33C0A100B51060"
       }
      },
+     "expand": true,
      "capture": {
       "T_REMOVE": [
        "body",
@@ -277,6 +286,7 @@
        "confirm": true
       }
      },
+     "expand": true,
      "capture": {
       "T_AGAIN": [
        "body",
@@ -343,6 +353,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -392,7 +412,8 @@
        "content": " #!/bin/sh\n",
        "mode": 493
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -407,7 +428,8 @@
        "content": "",
        "scope": " USER "
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -421,7 +443,8 @@
        "path": "${SANDBOX}/home/abs/x.txt",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -434,7 +457,8 @@
       "arguments": {
        "path": "bin/run.sh"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -449,6 +473,7 @@
        "confirm": true
       }
      },
+     "expand": true,
      "capture": {
       "T_REMOVERELATIVE": [
        "body",
@@ -515,6 +540,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -583,7 +618,8 @@
        "content": "x",
        "scope": "bogus"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -597,7 +633,8 @@
        "path": "  ",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -611,7 +648,8 @@
        "path": "../escape.txt",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -625,7 +663,8 @@
        "path": "/etc/hostname",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -639,7 +678,8 @@
        "path": "linked/x.txt",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -654,6 +694,7 @@
        "confirm": true
       }
      },
+     "expand": true,
      "capture": {
       "T_LINKITSELF": [
        "body",
@@ -702,7 +743,8 @@
        "content": "x",
        "mode": 256
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -717,7 +759,8 @@
        "content": "x",
        "mode": 511
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -732,7 +775,8 @@
        "content": "x",
        "mode": -1
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -747,7 +791,8 @@
        "content": "x",
        "mode": 420.9
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -762,7 +807,8 @@
        "content": "x",
        "mode": "644"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -777,7 +823,8 @@
        "content": "x",
        "mode": 33188
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -791,7 +838,8 @@
        "path": "adir",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -806,6 +854,7 @@
        "confirm": true
       }
      },
+     "expand": true,
      "capture": {
       "T_REMOVEDIRECTORY": [
        "body",
@@ -854,7 +903,8 @@
        "content": "x",
        "scope": "system"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -869,7 +919,8 @@
        "content": "x",
        "scope": "system"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -885,6 +936,7 @@
        "scope": "system"
       }
      },
+     "expand": true,
      "capture": {
       "T_SYSTEMBADNAME": [
        "body",
@@ -934,6 +986,7 @@
        "scope": "system"
       }
      },
+     "expand": true,
      "capture": {
       "T_SYSTEMMISSING": [
        "body",
@@ -1000,6 +1053,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -1050,7 +1113,8 @@
        "path": "x.txt",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1064,6 +1128,7 @@
        "path": "x.txt"
       }
      },
+     "expand": true,
      "capture": {
       "T_REMOVE": [
        "body",
@@ -1110,7 +1175,8 @@
       "arguments": {
        "path": "x.txt"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1143,6 +1209,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -1194,7 +1270,8 @@
        "path": "x.txt",
        "content": "x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1209,6 +1286,7 @@
        "confirm": true
       }
      },
+     "expand": true,
      "capture": {
       "T_REMOVE": [
        "body",
@@ -1275,6 +1353,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -1329,7 +1417,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "out/basic"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1350,7 +1439,8 @@
        "archivePath": "in/gnu-long.tar.zst",
        "destination": "out/gnu-long"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1371,7 +1461,8 @@
        "archivePath": "in/pax-long.tar.zst",
        "destination": "out/pax-long"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1392,7 +1483,8 @@
        "archivePath": "in/legacy-rega.tar.zst",
        "destination": "out/legacy-rega"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1413,7 +1505,8 @@
        "archivePath": "in/sparse.tar.zst",
        "destination": "out/sparse"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1446,6 +1539,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -1500,7 +1603,8 @@
        "archivePath": "in/empty-tar.tar.zst",
        "destination": "out/empty-tar"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1521,7 +1625,8 @@
        "archivePath": "in/empty-frame.tar.zst",
        "destination": "out/empty-frame"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1542,7 +1647,8 @@
        "archivePath": "in/zero-bytes.tar.zst",
        "destination": "out/zero-bytes"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1563,7 +1669,8 @@
        "archivePath": "in/not-zstd.tar.zst",
        "destination": "out/not-zstd"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1584,7 +1691,8 @@
        "archivePath": "in/zstd-garbage.tar.zst",
        "destination": "out/zstd-garbage"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1605,7 +1713,8 @@
        "archivePath": "in/truncated-zstd.tar.zst",
        "destination": "out/truncated-zstd"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1626,7 +1735,8 @@
        "archivePath": "in/truncated-tar.tar.zst",
        "destination": "out/truncated-tar"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1647,7 +1757,8 @@
        "archivePath": "in/crc-corrupt.tar.zst",
        "destination": "out/crc-corrupt"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1668,7 +1779,8 @@
        "archivePath": "in/bad-header-checksum.tar.zst",
        "destination": "out/bad-header-checksum"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1689,7 +1801,8 @@
        "archivePath": "in/zero-then-header.tar.zst",
        "destination": "out/zero-then-header"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1710,7 +1823,8 @@
        "archivePath": "in/partial-magic.tar.zst",
        "destination": "out/partial-magic"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1731,7 +1845,8 @@
        "archivePath": "in/header-only.tar.zst",
        "destination": "out/header-only"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1752,7 +1867,8 @@
        "archivePath": "in/bitflip-middle.tar.zst",
        "destination": "out/bitflip-middle"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1773,7 +1889,8 @@
        "archivePath": "in/two-frames.tar.zst",
        "destination": "out/two-frames"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1794,7 +1911,8 @@
        "archivePath": "in/skippable-first.tar.zst",
        "destination": "out/skippable-first"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1815,7 +1933,8 @@
        "archivePath": "in/skippable-truncated.tar.zst",
        "destination": "out/skippable-truncated"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1836,7 +1955,8 @@
        "archivePath": "in/trailing-garbage.tar.zst",
        "destination": "out/trailing-garbage"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1869,6 +1989,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -1923,7 +2053,8 @@
        "archivePath": "in/dotdot.tar.zst",
        "destination": "out/dotdot"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1944,7 +2075,8 @@
        "archivePath": "in/absolute.tar.zst",
        "destination": "out/absolute"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1965,7 +2097,8 @@
        "archivePath": "in/inner-dotdot.tar.zst",
        "destination": "out/inner-dotdot"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -1986,7 +2119,8 @@
        "archivePath": "in/backslash.tar.zst",
        "destination": "out/backslash"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2007,7 +2141,8 @@
        "archivePath": "in/dot.tar.zst",
        "destination": "out/dot"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2028,7 +2163,8 @@
        "archivePath": "in/link-escape.tar.zst",
        "destination": "out/link-escape"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2049,7 +2185,8 @@
        "archivePath": "in/link-absolute.tar.zst",
        "destination": "out/link-absolute"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2070,7 +2207,8 @@
        "archivePath": "in/link-dotdot-inside.tar.zst",
        "destination": "out/link-dotdot-inside"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2091,7 +2229,8 @@
        "archivePath": "in/hardlink.tar.zst",
        "destination": "out/hardlink"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2112,7 +2251,8 @@
        "archivePath": "in/fifo.tar.zst",
        "destination": "out/fifo"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2133,7 +2273,8 @@
        "archivePath": "in/chardev.tar.zst",
        "destination": "out/chardev"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2154,7 +2295,8 @@
        "archivePath": "in/global-pax.tar.zst",
        "destination": "out/global-pax"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2187,6 +2329,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -2241,7 +2393,8 @@
        "archivePath": "in/bitflip-early.tar.zst",
        "destination": "out/bitflip-early"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2262,7 +2415,8 @@
        "archivePath": "in/bitflip-late.tar.zst",
        "destination": "out/bitflip-late"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2295,6 +2449,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ],
    "divergences": [
@@ -2448,7 +2612,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2462,7 +2627,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2476,7 +2642,8 @@
        "archivePath": "in/overwrite.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2490,7 +2657,8 @@
        "archivePath": "in/symlink-over-file.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2504,7 +2672,8 @@
        "archivePath": "in/file-over-symlink.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2525,7 +2694,8 @@
        "archivePath": "in/through-symlink.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2558,6 +2728,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -2639,7 +2819,8 @@
        "destination": "out",
        "format": "zip"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2654,7 +2835,8 @@
        "destination": "fmt",
        "format": " TAR.ZST "
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2668,7 +2850,8 @@
        "archivePath": "in/none.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2682,7 +2865,8 @@
        "archivePath": "in/dir.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2696,7 +2880,8 @@
        "archivePath": "/etc/hostname",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2710,7 +2895,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "../escape"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2724,7 +2910,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "plain/sub"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2738,7 +2925,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "linkdest/x"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2751,7 +2939,8 @@
       "arguments": {
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2765,7 +2954,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": ""
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2798,6 +2988,16 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }
@@ -2854,7 +3054,8 @@
        "archivePath": "in/basic.tar.zst",
        "destination": "out"
       }
-     }
+     },
+     "expand": true
     }
    },
    {
@@ -2887,6 +3088,1705 @@
      "type": "rfc3339",
      "reason": "wall-clock timestamp of this side's run",
      "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.artifacts.download",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifact.go:EnsureHostArtifact",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "create",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "bin/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "executable": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_CREATE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "createDone",
+    "requires": [
+     "T_CREATE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREATE}",
+     "params": {
+      "taskId": "${T_CREATE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "reuse",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "bin/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "executable": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REUSE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "reuseDone",
+    "requires": [
+     "T_REUSE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REUSE}",
+     "params": {
+      "taskId": "${T_REUSE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "plain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "lib/b.bin",
+       "sha256": "sha256:464D31C69AABF74692F5C760D3CA0D385AD8D588EE1DEFE36A5396DC26A7A19B"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_PLAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "plainDone",
+    "requires": [
+     "T_PLAIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PLAIN}",
+     "params": {
+      "taskId": "${T_PLAIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "makeExecutable",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "lib/b.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b",
+       "executable": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_MAKEEXECUTABLE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "makeExecutableDone",
+    "requires": [
+     "T_MAKEEXECUTABLE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MAKEEXECUTABLE}",
+     "params": {
+      "taskId": "${T_MAKEEXECUTABLE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "keepExecutable",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "lib/b.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_KEEPEXECUTABLE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "keepExecutableDone",
+    "requires": [
+     "T_KEEPEXECUTABLE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_KEEPEXECUTABLE}",
+     "params": {
+      "taskId": "${T_KEEPEXECUTABLE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.artifacts.faults",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifact.go:EnsureHostArtifact",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [
+      {
+       "status": 200,
+       "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+      },
+      {
+       "status": 404,
+       "body": "missing"
+      },
+      {
+       "status": 302,
+       "headers": {
+        "Location": "https://127.0.0.1:${STUB_PORT}/final"
+       }
+      },
+      {
+       "status": 200,
+       "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+      },
+      {
+       "status": 302,
+       "headers": {
+        "Location": "http://127.0.0.1:${STUB_PORT}/plain"
+       }
+      },
+      {
+       "status": 200,
+       "contentLength": 5368709120,
+       "body": "x"
+      },
+      {
+       "status": 200,
+       "contentLength": 100,
+       "body": "short"
+      },
+      {
+       "status": 204
+      }
+     ],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "existing",
+    "write": {
+     "path": "${SANDBOX}/home/keep/a.bin",
+     "content": "old"
+    }
+   },
+   {
+    "as": "mismatch",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "keep/a.bin",
+       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_MISMATCH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "mismatchDone",
+    "requires": [
+     "T_MISMATCH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MISMATCH}",
+     "params": {
+      "taskId": "${T_MISMATCH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "notFound",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/missing",
+       "destination": "bin/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOTFOUND": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "notFoundDone",
+    "requires": [
+     "T_NOTFOUND"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOTFOUND}",
+     "params": {
+      "taskId": "${T_NOTFOUND}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "redirected",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/redirect",
+       "destination": "r/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REDIRECTED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "redirectedDone",
+    "requires": [
+     "T_REDIRECTED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REDIRECTED}",
+     "params": {
+      "taskId": "${T_REDIRECTED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "toPlainHttp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/downgrade",
+       "destination": "d/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_TOPLAINHTTP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "toPlainHttpDone",
+    "requires": [
+     "T_TOPLAINHTTP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TOPLAINHTTP}",
+     "params": {
+      "taskId": "${T_TOPLAINHTTP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "tooLarge",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/large",
+       "destination": "l/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_TOOLARGE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "tooLargeDone",
+    "requires": [
+     "T_TOOLARGE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TOOLARGE}",
+     "params": {
+      "taskId": "${T_TOOLARGE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "shortBody",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/short",
+       "destination": "s/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SHORTBODY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "shortBodyDone",
+    "requires": [
+     "T_SHORTBODY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SHORTBODY}",
+     "params": {
+      "taskId": "${T_SHORTBODY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "noContent",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/empty",
+       "destination": "e/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOCONTENT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noContentDone",
+    "requires": [
+     "T_NOCONTENT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOCONTENT}",
+     "params": {
+      "taskId": "${T_NOCONTENT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.artifacts.arguments",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifact.go:EnsureHostArtifact",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem"
+     }
+    }
+   },
+   {
+    "as": "plainHttp",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "http://127.0.0.1:${STUB_PORT}/a",
+       "destination": "x",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_PLAINHTTP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "plainHttpDone",
+    "requires": [
+     "T_PLAINHTTP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PLAINHTTP}",
+     "params": {
+      "taskId": "${T_PLAINHTTP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "credentials",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://u:p@127.0.0.1:${STUB_PORT}/a",
+       "destination": "x",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_CREDENTIALS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "credentialsDone",
+    "requires": [
+     "T_CREDENTIALS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREDENTIALS}",
+     "params": {
+      "taskId": "${T_CREDENTIALS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "noHost",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https:///a",
+       "destination": "x",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOHOST": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noHostDone",
+    "requires": [
+     "T_NOHOST"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOHOST}",
+     "params": {
+      "taskId": "${T_NOHOST}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "relativeUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "/a",
+       "destination": "x",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_RELATIVEURI": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "relativeUriDone",
+    "requires": [
+     "T_RELATIVEURI"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RELATIVEURI}",
+     "params": {
+      "taskId": "${T_RELATIVEURI}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "shortSha",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a",
+       "destination": "x",
+       "sha256": "abc"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SHORTSHA": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "shortShaDone",
+    "requires": [
+     "T_SHORTSHA"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SHORTSHA}",
+     "params": {
+      "taskId": "${T_SHORTSHA}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "badSha",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a",
+       "destination": "x",
+       "sha256": "sha256:gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BADSHA": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "badShaDone",
+    "requires": [
+     "T_BADSHA"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BADSHA}",
+     "params": {
+      "taskId": "${T_BADSHA}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "outside",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a",
+       "destination": "../x",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_OUTSIDE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "outsideDone",
+    "requires": [
+     "T_OUTSIDE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_OUTSIDE}",
+     "params": {
+      "taskId": "${T_OUTSIDE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.artifacts.untrusted",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifact.go:EnsureHostArtifact",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "untrusted",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "bin/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_UNTRUSTED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "untrustedDone",
+    "requires": [
+     "T_UNTRUSTED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNTRUSTED}",
+     "params": {
+      "taskId": "${T_UNTRUSTED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.artifacts.refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifact.go:EnsureHostArtifact",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "refused",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:1/a.bin",
+       "destination": "x",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REFUSED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "refusedDone",
+    "requires": [
+     "T_REFUSED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REFUSED}",
+     "params": {
+      "taskId": "${T_REFUSED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.artifacts.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/artifact.go:EnsureHostArtifact",
+   "internal/tools/dispatch_host.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "tls": true,
+     "responses": [],
+     "default": {
+      "status": 200,
+      "base64": "IyEvYmluL3NoCmVjaG8gYXJ0aWZhY3QK"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "SSL_CERT_FILE": "${SANDBOX}/tls/ca.pem",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "refused",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_artifact",
+     "params": {
+      "name": "ensure_host_artifact",
+      "arguments": {
+       "uri": "https://127.0.0.1:${STUB_PORT}/a.bin",
+       "destination": "bin/a.bin",
+       "sha256": "464d31c69aabf74692f5c760d3ca0d385ad8d588ee1defe36a5396dc26a7a19b"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REFUSED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "refusedDone",
+    "requires": [
+     "T_REFUSED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REFUSED}",
+     "params": {
+      "taskId": "${T_REFUSED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
     }
    ]
   }

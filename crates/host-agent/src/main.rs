@@ -17,6 +17,7 @@ mod gojson;
 mod gotar;
 mod host_recipe_mcp;
 mod hostarchive;
+mod hostartifact;
 mod hostfiles;
 mod hostobs;
 mod hostread;

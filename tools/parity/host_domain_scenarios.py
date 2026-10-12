@@ -29,7 +29,7 @@ def serve(**env):
 
 def call(as_, name, args):
     return {"as": as_, "mcp": {"method": "tools/call", "name": name,
-                               "params": {"name": name, "arguments": args}}}
+                               "params": {"name": name, "arguments": args}, "expand": True}}
 
 
 def task_call(as_, name, args):
@@ -55,7 +55,9 @@ TS = "wall-clock timestamp of this side's run"
 # A task handle's own timestamps, as tasks/get and the task-aware call
 # report them.
 MASKS = [{"path": ["steps", "*", "body", "result", k], "type": "rfc3339", "reason": TS, "optional": True}
-         for k in ("createdAt", "lastUpdatedAt")]
+         for k in ("createdAt", "lastUpdatedAt")] + [
+    {"path": ["steps", "stub", "port"], "type": "non-negative-int", "optional": True,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"}]
 
 
 def scenario(id_, steps, anchors, collect=("homeTree", "trace")):
@@ -356,6 +358,82 @@ cases += [
     scenario("archives.shared-owner-refused", [
         serve(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"), archive_write("basic"),
         extract("extract", "basic"), STOP], ARCHIVE + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
+]
+
+
+# ---- host artifacts -------------------------------------------------------
+import hashlib as _hashlib
+
+ARTIFACT = ["internal/domain/host/artifact.go:EnsureHostArtifact", "internal/tools/dispatch_host.go"]
+PAYLOAD = b"#!/bin/sh\necho artifact\n"
+PAYLOAD_SHA = _hashlib.sha256(PAYLOAD).hexdigest()
+OK = {"status": 200, "base64": base64.b64encode(PAYLOAD).decode()}
+URL = "https://127.0.0.1:${STUB_PORT}"
+
+
+def stub(responses, default=OK):
+    return {"as": "stub", "httpStub": {"tls": True, "responses": responses, "default": default}}
+
+
+def trusted(**env):
+    return serve(SSL_CERT_FILE="${SANDBOX}/tls/ca.pem", **env)
+
+
+def artifact(as_, path="/a.bin", dest="bin/a.bin", sha=PAYLOAD_SHA, **extra):
+    return task_call(as_, "ensure_host_artifact", {"uri": URL + path, "destination": dest, "sha256": sha, **extra})
+
+
+cases += [
+    scenario("artifacts.download", [
+        stub([]), trusted(),
+        artifact("create", executable=True),
+        artifact("reuse", executable=True),
+        artifact("plain", dest="lib/b.bin", sha="sha256:" + PAYLOAD_SHA.upper()),
+        artifact("makeExecutable", dest="lib/b.bin", executable=True),
+        artifact("keepExecutable", dest="lib/b.bin"),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], ARTIFACT),
+    scenario("artifacts.faults", [
+        stub([
+            OK,                                                     # mismatch: downloaded, then refused
+            {"status": 404, "body": "missing"},
+            {"status": 302, "headers": {"Location": URL + "/final"}}, OK,
+            {"status": 302, "headers": {"Location": "http://127.0.0.1:${STUB_PORT}/plain"}},
+            {"status": 200, "contentLength": 5 * 1024 ** 3, "body": "x"},
+            {"status": 200, "contentLength": 100, "body": "short"},
+            {"status": 204},
+        ]), trusted(),
+        {"as": "existing", "write": {"path": "${SANDBOX}/home/keep/a.bin", "content": "old"}},
+        artifact("mismatch", dest="keep/a.bin", sha="0" * 64),
+        artifact("notFound", path="/missing"),
+        artifact("redirected", path="/redirect", dest="r/a.bin"),
+        artifact("toPlainHttp", path="/downgrade", dest="d/a.bin"),
+        artifact("tooLarge", path="/large", dest="l/a.bin"),
+        artifact("shortBody", path="/short", dest="s/a.bin"),
+        artifact("noContent", path="/empty", dest="e/a.bin"),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], ARTIFACT),
+    scenario("artifacts.arguments", [
+        stub([]), trusted(),
+        task_call("plainHttp", "ensure_host_artifact", {"uri": "http://127.0.0.1:${STUB_PORT}/a", "destination": "x", "sha256": PAYLOAD_SHA}),
+        task_call("credentials", "ensure_host_artifact", {"uri": "https://u:p@127.0.0.1:${STUB_PORT}/a", "destination": "x", "sha256": PAYLOAD_SHA}),
+        task_call("noHost", "ensure_host_artifact", {"uri": "https:///a", "destination": "x", "sha256": PAYLOAD_SHA}),
+        task_call("relativeUri", "ensure_host_artifact", {"uri": "/a", "destination": "x", "sha256": PAYLOAD_SHA}),
+        task_call("shortSha", "ensure_host_artifact", {"uri": URL + "/a", "destination": "x", "sha256": "abc"}),
+        task_call("badSha", "ensure_host_artifact", {"uri": URL + "/a", "destination": "x", "sha256": "sha256:" + "g" * 64}),
+        task_call("outside", "ensure_host_artifact", {"uri": URL + "/a", "destination": "../x", "sha256": PAYLOAD_SHA}),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP], ARTIFACT),
+    # Without SSL_CERT_FILE the test CA is not trusted.
+    scenario("artifacts.untrusted", [stub([]), serve(), artifact("untrusted"), STOP], ARTIFACT),
+    scenario("artifacts.refused", [
+        serve(), task_call("refused", "ensure_host_artifact",
+                           {"uri": "https://127.0.0.1:1/a.bin", "destination": "x", "sha256": PAYLOAD_SHA}),
+        STOP], ARTIFACT),
+    scenario("artifacts.shared-owner-refused", [
+        stub([]), trusted(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"), artifact("refused"),
+        {"as": "hits", "httpRequests": {"stub": "stub"}}, STOP],
+        ARTIFACT + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
 ]
 
 if __name__ == "__main__":
