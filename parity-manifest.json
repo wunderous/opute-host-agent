@@ -471,6 +471,16 @@
   },
   {
    "anchors": [
+    "internal/hostmcp/plan_run.go:reservationLease.bindTask",
+    "internal/hostmcp/server.go:reclaimTerminalTaskReservations"
+   ],
+   "id": "admission.restart.plan-run-reservation-after-kill",
+   "owner": "core",
+   "scenario": "admission.restart.plan-run-reservation-after-kill",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
     "internal/tools/standalone.go:StandaloneToolDefinitions",
     "test/contract/standalone_catalog_test.go"
    ],
@@ -1875,7 +1885,7 @@
   "results": "evidence/local-e2e/native-2026-10-11-r3/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "2deda5e21cf9cdea9e56c6119a280a44dc40a750a547412704b56128be592232",
+  "binarySha256": "5d2930b13be05208145273970a043706b734a17f58c9d01f06d1ac2690aefa0d",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

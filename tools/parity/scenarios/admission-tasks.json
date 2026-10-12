@@ -10711,5 +10711,818 @@
         "D12.refused-task-operation-count"
       ]
     }
+  },
+  {
+    "id": "admission.restart.plan-run-reservation-after-kill",
+    "surface": "admission",
+    "owner": "core",
+    "anchors": [
+      "internal/hostmcp/plan_run.go:reservationLease.bindTask",
+      "internal/hostmcp/server.go:reclaimTerminalTaskReservations"
+    ],
+    "fixture": null,
+    "collect": [],
+    "notes": "A plan run binds its launcher's reservation to its task and holds it while a node waits on a slow endpoint. The agent is killed and restarted; the reservations and the run's task that survive the restart must be what Go keeps.",
+    "steps": [
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "stub",
+        "httpStub": {
+          "responses": [],
+          "default": {
+            "status": 200,
+            "delayMs": 4000
+          }
+        }
+      },
+      {
+        "as": "run",
+        "mcp": {
+          "method": "tools/call",
+          "name": "run_host_plan",
+          "params": {
+            "name": "run_host_plan",
+            "arguments": {
+              "plan": {
+                "contractVersion": "host-plan.v1",
+                "planId": "p1",
+                "generation": 1,
+                "idempotencyKey": "restart-mid-plan",
+                "nodes": [
+                  {
+                    "id": "n1",
+                    "action": {
+                      "tool": "get_host_info",
+                      "args": {}
+                    }
+                  },
+                  {
+                    "id": "n2",
+                    "dependsOn": [
+                      "n1"
+                    ],
+                    "action": {
+                      "tool": "probe_http_endpoint",
+                      "args": {
+                        "endpoint": "http://127.0.0.1:${STUB_PORT}/"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expand": true,
+          "capture": {
+            "RUN_ID": [
+              "body",
+              "result",
+              "structuredContent",
+              "runId"
+            ]
+          }
+        }
+      },
+      {
+        "as": "settle",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_plan_run",
+          "params": {
+            "name": "get_host_plan_run",
+            "arguments": {
+              "runId": "${RUN_ID}"
+            }
+          },
+          "expand": true,
+          "until": {
+            "path": [
+              "body",
+              "result",
+              "structuredContent",
+              "nodes",
+              "n2",
+              "attempts"
+            ],
+            "in": [
+              1
+            ]
+          },
+          "timeout": 30,
+          "observe": [
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "attempts"
+          ]
+        }
+      },
+      {
+        "as": "heldCapacity",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_capacity",
+          "params": {
+            "name": "get_host_capacity",
+            "arguments": {}
+          },
+          "observe": [
+            "body",
+            "result",
+            "structuredContent",
+            "reservations",
+            "count"
+          ]
+        }
+      },
+      {
+        "as": "kill",
+        "stop": {
+          "signal": "SIGKILL"
+        }
+      },
+      {
+        "as": "start",
+        "serve": {
+          "argv": [
+            "serve",
+            "--mode=standalone"
+          ],
+          "profile": "standalone",
+          "env": {
+            "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+            "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+            "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+            "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+            "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+            "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+          }
+        }
+      },
+      {
+        "as": "restoredTask",
+        "requires": [
+          "RUN_ID"
+        ],
+        "mcp": {
+          "method": "tasks/get",
+          "name": "${RUN_ID}",
+          "params": {
+            "taskId": "${RUN_ID}"
+          },
+          "expand": true,
+          "observe": [
+            "body",
+            "result",
+            "status"
+          ]
+        }
+      },
+      {
+        "as": "restartedCapacity",
+        "mcp": {
+          "method": "tools/call",
+          "name": "get_host_capacity",
+          "params": {
+            "name": "get_host_capacity",
+            "arguments": {}
+          },
+          "observe": [
+            "body",
+            "result",
+            "structuredContent",
+            "reservations",
+            "count"
+          ]
+        }
+      },
+      {
+        "as": "stop",
+        "stop": {}
+      }
+    ],
+    "compare": {
+      "masks": [
+        {
+          "path": [
+            "steps",
+            "stub",
+            "port"
+          ],
+          "type": "non-negative-int",
+          "reason": "stub listens on a freshly allocated ephemeral port per side"
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "run",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "final",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "outputs",
+            "n1"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "nonempty-string",
+          "reason": "restart resubmission returns the persisted updated_at value; SQLite CURRENT_TIMESTAMP and RFC3339 are both emitted by the pinned store and vary with wall-clock time",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "resubmit",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "outputs",
+            "n1"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "documentHash"
+          ],
+          "type": "string",
+          "reason": "plan embeds the per-side ephemeral stub port, so its canonical hash legitimately differs between sides",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "createdAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "updatedAt"
+          ],
+          "type": "nonempty-string",
+          "reason": "restart resubmission returns the persisted updated_at value; SQLite CURRENT_TIMESTAMP and RFC3339 are both emitted by the pinned store and vary with wall-clock time",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "completedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n2",
+            "startedAt"
+          ],
+          "type": "rfc3339",
+          "reason": "wall-clock timestamp; format is contract",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "nodes",
+            "n1",
+            "output"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        },
+        {
+          "path": [
+            "steps",
+            "settle",
+            "body",
+            "result",
+            "structuredContent",
+            "state",
+            "outputs",
+            "n1"
+          ],
+          "type": "object",
+          "reason": "get_host_info reports live host measurements that vary between any two calls",
+          "optional": true
+        }
+      ]
+    },
+    "expectations": [
+      {
+        "path": [
+          "steps",
+          "settle",
+          "observed"
+        ],
+        "equals": 1
+      },
+      {
+        "path": [
+          "steps",
+          "heldCapacity",
+          "observed"
+        ],
+        "equals": 1
+      }
+    ]
   }
 ]

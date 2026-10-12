@@ -224,6 +224,16 @@ impl Registry {
             .is_some_and(|record| record.status == "working")
     }
 
+    /// Ids of every task in a terminal status, as `reclaimTerminalTaskReservations`
+    /// collects them after restore.
+    pub fn terminal_ids(&self) -> std::collections::HashSet<String> {
+        self.lock()
+            .values()
+            .filter(|record| matches!(record.status, "completed" | "failed" | "cancelled"))
+            .map(|record| record.task_id.clone())
+            .collect()
+    }
+
     pub fn get(&self, task_id: &str) -> Option<Snapshot> {
         self.lock().get(task_id).map(Record::snapshot)
     }

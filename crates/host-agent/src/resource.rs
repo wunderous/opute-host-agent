@@ -984,6 +984,79 @@ impl Coordinator {
         self.write_records(&records)
     }
 
+    /// `BindReservationTask`: transfers a launcher's unscoped reservation to
+    /// the durable task that now owns it, before the run's first node.
+    pub fn bind_reservation_task(
+        &self,
+        reservation: &mut Reservation,
+        operation_id: &str,
+        task_id: &str,
+    ) -> Result<(), AdmitError> {
+        let _lock = self.lock(true)?;
+        let mut records = self.read_records()?;
+        let Some(record) = records.get_mut(&reservation.id) else {
+            return Err(AdmitError::request(
+                "host_reservation_expired",
+                "",
+                "the reservation being bound is no longer held",
+            ));
+        };
+        let held = AdmissionRequest::from_json(record.get("request").unwrap_or(&J::Null));
+        if held.agent_id != reservation.request.agent_id
+            || (!held.operation_id.is_empty() && held.operation_id != operation_id)
+        {
+            return Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "reservation ownership does not match the binding operation",
+            ));
+        }
+        if !held.task_id.trim().is_empty() && held.task_id != task_id {
+            return Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "reservation is already bound to another task",
+            ));
+        }
+        if let Some(request) = record.get_mut("request").and_then(J::as_object_mut) {
+            request.insert("operationId".into(), J::from(operation_id));
+            request.insert("taskId".into(), J::from(task_id));
+        }
+        self.write_records(&records)?;
+        reservation.request.operation_id = operation_id.into();
+        reservation.request.task_id = task_id.into();
+        Ok(())
+    }
+
+    /// `ReclaimTerminalTaskReservations`: after a restart, drop every
+    /// reservation owned by a task that is now terminal. Its owner died with
+    /// the previous process, so nothing else would ever release it.
+    pub fn reclaim_terminal_task_reservations(
+        &self,
+        task_ids: &std::collections::HashSet<String>,
+    ) -> Result<usize, AdmitError> {
+        if task_ids.is_empty() {
+            return Ok(0);
+        }
+        let _lock = self.lock(true)?;
+        let mut records = self.read_records()?;
+        let before = records.len();
+        records.retain(|_, record| {
+            let task_id = record
+                .pointer("/request/taskId")
+                .and_then(J::as_str)
+                .unwrap_or("")
+                .trim();
+            task_id.is_empty() || !task_ids.contains(task_id)
+        });
+        let removed = before - records.len();
+        if removed == 0 {
+            return Ok(0);
+        }
+        self.write_records(&records)?;
+        Ok(removed)
+    }
+
     /// `reservationTotals` over the live records, read under the shared
     /// lock with expired leases pruned, as `capacitySnapshot` does.
     fn reservation_totals(&self) -> J {
@@ -1277,6 +1350,37 @@ mod tests {
             json!({"id": id, "request": request.to_json(),
                    "createdAt": "2026-10-02T00:00:00Z", "expiresAt": expires}),
         )
+    }
+
+    #[test]
+    fn reclaim_drops_only_reservations_of_terminal_tasks() {
+        let dir = std::env::temp_dir().join(format!(
+            "opute-coordinator-test-{}-{}",
+            std::process::id(),
+            RESERVATION_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let c = coordinator(&dir);
+        let records: Records = [
+            lease("done", "task-done", "2999-01-01T00:00:00Z"),
+            lease("running", "task-running", "2999-01-01T00:00:00Z"),
+            lease("untasked", "", "2999-01-01T00:00:00Z"),
+        ]
+        .into_iter()
+        .collect();
+        c.write_records(&records).unwrap();
+        let terminal: std::collections::HashSet<String> =
+            ["task-done".to_string(), "".to_string()].into();
+        assert_eq!(c.reclaim_terminal_task_reservations(&terminal), Ok(1));
+        let left = c.read_records().unwrap();
+        assert!(!left.contains_key("done"));
+        assert!(left.contains_key("running") && left.contains_key("untasked"));
+        // Nothing terminal, nothing written.
+        assert_eq!(
+            c.reclaim_terminal_task_reservations(&Default::default()),
+            Ok(0)
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

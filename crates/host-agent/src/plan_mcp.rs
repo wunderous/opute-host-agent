@@ -380,14 +380,8 @@ pub fn handle_run_host_plan(
     )
 }
 
-/// `handleRunHostPlanWithMetadata`. The recipe-metadata-driven
-/// provider-activation branches (M7: `activation`, `providerTeardownInputs`,
-/// `activateCompletedProviderCandidate`) and the resource-reservation lease
-/// binding around a launched run are not yet ported (see the module-level
-/// comment); the durable wait -> `tasks/input_required` escalation is a
-/// separate, also-not-yet-wired follow-up -- a plan that reaches a durable
-/// wait still records `status: "waiting"` correctly in `get_host_plan_run`,
-/// it just does not yet surface as a live MCP task input request.
+/// `handleRunHostPlanWithMetadata`: validates, resolves the durable record,
+/// binds the launcher's reservation to the run's task and spawns the run.
 pub fn handle_run_host_plan_with_metadata(
     server: &Arc<Server>,
     args: &Map<String, J>,
@@ -501,11 +495,49 @@ pub fn handle_run_host_plan_with_metadata(
         server
             .tasks
             .create_with_id(&record.run_id, task_name, task_description, task_args);
+    // A reservation admitted for a different task -- a durable run launched
+    // from inside another one -- is not inherited by this run's nodes, which
+    // could never satisfy its ownership. An unscoped launcher reservation is
+    // the ordinary case of a call handing its capacity to the run it started.
+    let mut reservation = reservation;
+    let inherit =
+        reservation.request.task_id.is_empty() || reservation.request.task_id == record.run_id;
     // Claim the lease now, synchronously, before anything can return: once
     // claimed, only the spawned thread's own completion releases the
     // reservation, mirroring Go's claimReservationLease running inside the
     // same handler that starts the run.
     claimed.store(true, std::sync::atomic::Ordering::SeqCst);
+    // `reservationLease.bindTask`: the launcher's reservation is bound to the
+    // durable plan task before any node runs. A reservation that already
+    // names a task stays with that task.
+    let bindable = !reservation.id.is_empty()
+        && reservation.id != "control"
+        && reservation.request.task_id.is_empty();
+    if bindable {
+        if let Err(e) = server.host.coordinator.bind_reservation_task(
+            &mut reservation,
+            task_name,
+            &record.run_id,
+        ) {
+            server.tasks.fail(&record.run_id, &e.to_string());
+            if let Some(failed) = server.tasks.get(&record.run_id) {
+                crate::tools::persist_task(server, &failed);
+            }
+            let message = format!("bind plan resource reservation: {e}");
+            state_value.status = "failed".into();
+            state_value.error = message.clone();
+            if let Ok(state) = server.host.state.lock() {
+                let _ = state.update_plan(
+                    &record.run_id,
+                    "failed",
+                    &marshal_plan_state(&state_value, &doc, &capabilities),
+                    &message,
+                );
+            }
+            crate::admission::release(server, &reservation);
+            return crate::tools::error_result(&message);
+        }
+    }
     spawn_plan_execution(
         Arc::clone(server),
         record.run_id.clone(),
@@ -515,6 +547,8 @@ pub fn handle_run_host_plan_with_metadata(
         recipe_metadata.cloned(),
         cancelled,
         reservation,
+        inherit,
+        task_name,
     );
     locked_plan_run_result(server, &record)
 }
@@ -655,7 +689,10 @@ fn spawn_plan_execution(
     metadata: Option<Map<String, J>>,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     reservation: crate::resource::Reservation,
+    inherit: bool,
+    task_name: &str,
 ) {
+    let task_name = task_name.to_string();
     let capabilities = capabilities_from_snapshot(&snapshot);
     let sink_capabilities = capabilities.clone();
     let final_capabilities = capabilities.clone();
@@ -720,7 +757,14 @@ fn spawn_plan_execution(
                 Ok(())
             })),
         };
-        let ctx = RunCtx::from_flag(cancelled).with_reservation(reservation);
+        // `resource.WithOperationIdentity(taskCtx, taskName, rec.TaskID)`:
+        // nodes admit as the run's own operation and task.
+        let ctx = RunCtx::from_flag(cancelled).with_operation_identity(&task_name, &run_id);
+        let ctx = if inherit {
+            ctx.with_reservation(reservation.clone())
+        } else {
+            ctx
+        };
         let (mut final_state, mut run_err) = runner.run(&ctx, &doc, state_value);
         let mut status = if final_state.status.is_empty() {
             "failed".to_string()
@@ -823,8 +867,7 @@ fn spawn_plan_execution(
         // completion -- success, failure, or (via `ctx.err()` inside the
         // runner) cancellation -- is what finally releases it, mirroring
         // Go's `reservationLease.finish`.
-        let held = ctx.reservation().expect("claimed reservation");
-        crate::admission::release(&server, &held);
+        crate::admission::release(&server, &reservation);
     });
     if let Ok(mut workers) = workers_server.task_workers.lock() {
         workers.retain(|worker| !worker.is_finished());

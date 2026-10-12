@@ -305,9 +305,7 @@ pub(crate) fn compose(
     let providers = crate::provider::runtime::Runtime::new(publication.clone(), state.clone())
         .map_err(|error| go_err!("initialize provider callback delegation: {error}"))?;
     // `restoreTasks`: rebuild the in-memory registry from the durable
-    // snapshots before anything can observe it. Admission's reservation
-    // reclaim for terminal tasks after a restart (Go's
-    // `reclaimTerminalTaskReservations`) is a separate, not-yet-ported gap.
+    // snapshots before anything can observe it.
     let tasks = crate::tasks::Registry::default();
     let snapshots = state
         .lock()
@@ -357,6 +355,11 @@ pub(crate) fn compose(
         instance_root: cfg.instance_root.to_string_lossy().into_owned(),
         mcp_port: cfg.host_mcp_port,
     };
+    // `reclaimTerminalTaskReservations`: a reservation whose task is now
+    // terminal lost its owner with the previous process.
+    host.coordinator
+        .reclaim_terminal_task_reservations(&tasks.terminal_ids())
+        .map_err(|e| go_err!("reclaim terminal task reservations: {e}"))?;
     // Decision D14: the host's own capabilities are services in the same
     // context as provider generations, mounted before any generation is
     // restored so disposal runs in reverse.
