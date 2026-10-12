@@ -6,6 +6,7 @@
 mod goerr;
 mod admission;
 mod app;
+mod builtin;
 mod catalog;
 mod cli;
 mod config;
@@ -24,9 +25,15 @@ mod oauth;
 mod plan;
 mod plan_evidence;
 mod plan_mcp;
+// M7 core; public provider dispatch stays closed until its adapter is wired.
+#[allow(dead_code)]
+mod provider;
+mod provider_mcp;
 mod recipe;
 mod resource;
 mod schema;
+#[cfg(test)]
+mod seam;
 #[cfg(test)]
 mod state_fixture;
 mod store;

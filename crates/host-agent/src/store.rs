@@ -715,7 +715,7 @@ impl StateStore {
                 "provider generation identity, manifest hash, and endpoint are required".into(),
             );
         }
-        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let conn = self.conn.as_ref().ok_or("sql: database is closed")?;
         let now = crate::hostobs::rfc3339_nano_now();
         let created = if record.created_at.is_empty() {
             &now
@@ -724,7 +724,7 @@ impl StateStore {
         };
         conn.execute(
             "INSERT INTO provider_generations(generation_id, provider_id, provider_version, manifest_hash, endpoint, descriptor_json, manifest_json, catalog_revision, status, created_at, active_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''))
              ON CONFLICT(generation_id) DO UPDATE SET provider_id=excluded.provider_id, provider_version=excluded.provider_version,
              manifest_hash=excluded.manifest_hash, endpoint=excluded.endpoint, descriptor_json=excluded.descriptor_json,
              manifest_json=excluded.manifest_json, catalog_revision=excluded.catalog_revision, status=excluded.status, active_at=excluded.active_at",
@@ -737,7 +737,7 @@ impl StateStore {
     pub fn list_provider_generations(
         &self,
     ) -> std::result::Result<Vec<ProviderGenerationRecord>, String> {
-        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let conn = self.conn.as_ref().ok_or("sql: database is closed")?;
         let mut stmt = conn.prepare("SELECT generation_id, provider_id, provider_version, manifest_hash, endpoint,
             COALESCE(descriptor_json, ''), COALESCE(manifest_json, ''), catalog_revision, status, created_at, COALESCE(active_at, '')
             FROM provider_generations ORDER BY created_at").map_err(sqlite_err)?;

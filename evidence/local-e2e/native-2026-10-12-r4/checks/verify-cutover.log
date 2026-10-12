@@ -1,0 +1,30 @@
+gate cutover: FAIL
+  go-vs-go     pass=177 fail=0 unverified=0
+  go-vs-rust   pass=177 fail=0 unverified=0
+  canaries     caught=14/14
+  inventory    pass
+  go oracles   pass
+  contracts    pass
+  M5 shape              fail
+  M5 cross-read         pass
+  M5 crash              pass
+  M5 secrets            pass
+  M5 unknown-projection pass
+  M5 migration          pass
+  problem: [m5:shape] admission.restart.plan-run-reservation-after-kill.0: raw schemas, rows, or invariants differ
+  problem: [m5:shape] admission.restart.plan-run-reservation-after-kill.1: raw schemas, rows, or invariants differ
+  problem: [m5:shape] admission.restart.plan-run-reservation-after-kill.2: raw schemas, rows, or invariants differ
+  problem: [m5:shape] admission.restart.plan-run-reservation-after-kill.3: raw schemas, rows, or invariants differ
+  problem: [m5:shape] admission.restart.plan-run-reservation-after-kill.4: raw schemas, rows, or invariants differ
+  problem: [m5:shape] config.env.resource-policy.0: raw schemas, rows, or invariants differ
+  problem: [m5:shape] config.env.resource-policy.1: raw schemas, rows, or invariants differ
+  problem: [m5:shape] config.env.resource-policy.2: raw schemas, rows, or invariants differ
+  problem: [m5:shape] config.env.resource-policy.3: raw schemas, rows, or invariants differ
+  problem: [m5:shape] config.env.resource-policy.4: raw schemas, rows, or invariants differ
+  gate failure: M5 shape: fail
+  gate failure: inventory gaps remain: 38
+  gate failure: cutover evidence packageFirstSuccess: missing or not the reviewed file
+  gate failure: cutover evidence externalEffects: missing or not the reviewed file
+  gate failure: cutover evidence rollbackRehearsal: missing or not the reviewed file
+  gate failure: cutover evidence ownerReview: missing or not the reviewed file
+  gate failure: 10 provenance/evidence problem(s)

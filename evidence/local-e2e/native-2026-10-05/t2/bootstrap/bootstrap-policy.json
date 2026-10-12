@@ -1,0 +1,126 @@
+{
+  "impl": "goref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "reconcile_host_resource_policy",
+      "arguments": {
+        "policyRevision": "opute-host-resource-policy.v2",
+        "uri": "host-service:local:system/opute-host-agent@goref.service"
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "host-agent",
+          "version": "0.2.3"
+        }
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Host resource policy revision reconciled."
+        }
+      ],
+      "structuredContent": {
+        "capacity": {
+          "pressure": "normal",
+          "memoryAvailableBytes": 5730930688,
+          "diskAvailableBytes": 30370013184,
+          "diskPressure": "normal",
+          "normalInFlight": 0,
+          "heavyInFlight": 0,
+          "queued": 0,
+          "checkedAt": "2026-10-05T09:27:42Z",
+          "memoryEvents": {
+            "high": 0,
+            "low": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "psi": {
+            "cpu": {
+              "someAvg60": 0.2,
+              "someAvg300": 0.18,
+              "someTotalUsec": 938228
+            },
+            "io": {
+              "someAvg60": 0.22,
+              "someAvg300": 0.18,
+              "someTotalUsec": 875777,
+              "fullAvg60": 0.16,
+              "fullAvg300": 0.12,
+              "fullTotalUsec": 682585
+            },
+            "memory": {
+              "someTotalUsec": 71,
+              "fullTotalUsec": 44
+            }
+          },
+          "cgroupControllers": [
+            "cpu",
+            "memory",
+            "pids"
+          ],
+          "tasksCurrent": 9,
+          "tasksLimit": 1024,
+          "policyRevision": "opute-host-resource-policy.v2",
+          "observedLimits": {
+            "diskBytes": 32162967552,
+            "tasks": 1024
+          },
+          "effectiveLimits": {
+            "cpuCores": 4,
+            "memoryBytes": 6213009408,
+            "diskBytes": 32162967552,
+            "tasks": 1024
+          },
+          "currentUsage": {
+            "memoryBytes": 482029568,
+            "memoryAvailableBytes": 5730979840,
+            "diskBytes": 1792954368,
+            "diskAvailableBytes": 30370013184,
+            "tasks": 9
+          },
+          "reservations": {
+            "count": 0
+          },
+          "queue": {
+            "queued": 0,
+            "heavyQueued": 0,
+            "normalActive": 0,
+            "heavyActive": 0
+          },
+          "enforcement": "enforced"
+        },
+        "enforcement": "enforced",
+        "policyRevision": "opute-host-resource-policy.v2",
+        "reconciled": true
+      },
+      "resultType": "complete"
+    }
+  },
+  "elapsedSeconds": 0.37043118476867676,
+  "driverSha256": "530fd90436c9812a78c46684735b71b8f7320ba2852144ba01ed2ad363991b97"
+}

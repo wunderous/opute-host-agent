@@ -1,0 +1,420 @@
+[
+ {
+  "id": "config.env.resource-policy",
+  "surface": "config",
+  "owner": "config",
+  "anchors": [
+   "internal/config/config.go:Load",
+   "internal/resource/service.go:capacitySnapshot",
+   "internal/resource/service.go:Admit"
+  ],
+  "fixture": "incus-empty",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "fixture",
+    "write": {
+     "path": "${SANDBOX}/home/policy.txt",
+     "content": "policy\n"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_RESOURCE_FAIL_CLOSED": "true",
+      "OPUTE_HOST_RESOURCE_DISK_PATHS": "${SANDBOX}/state",
+      "OPUTE_HOST_RESOURCE_DISK_CAPACITY_BYTES": "1073741824",
+      "OPUTE_HOST_RESOURCE_POLICY_REVISION": "opute-host-resource-policy.parity",
+      "OPUTE_HOST_RESOURCE_TASK_CAPACITY": "77"
+     }
+    }
+   },
+   {
+    "as": "capacity",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_host_capacity",
+     "params": {
+      "name": "get_host_capacity",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "failClosedRefuses",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_file",
+     "params": {
+      "name": "inspect_host_file",
+      "arguments": {
+       "path": "${SANDBOX}/home/policy.txt"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "startAdvisory",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_RESOURCE_DISK_PATHS": "${SANDBOX}/state",
+      "OPUTE_HOST_RESOURCE_DISK_CAPACITY_BYTES": "1073741824",
+      "OPUTE_HOST_RESOURCE_POLICY_REVISION": "opute-host-resource-policy.parity",
+      "OPUTE_HOST_RESOURCE_TASK_CAPACITY": "77"
+     }
+    }
+   },
+   {
+    "as": "advisoryChecksCapacity",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_file",
+     "params": {
+      "name": "inspect_host_file",
+      "arguments": {
+       "path": "${SANDBOX}/home/policy.txt"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stopAdvisory",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "tasksCurrent"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "capacity",
+      "body",
+      "result",
+      "structuredContent",
+      "memoryEvents",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "config.env.local-instance-id",
+  "surface": "config",
+  "owner": "config",
+  "anchors": [
+   "internal/config/config.go:Load",
+   "internal/app/app.go:Run",
+   "internal/transport/http.go:handleHealth"
+  ],
+  "fixture": "incus-empty",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_LOCAL_HOST_AGENT_INSTANCE_ID": "launcher-parity-7"
+     }
+    }
+   },
+   {
+    "as": "health",
+    "http": {
+     "method": "GET",
+     "path": "/health"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "startPlatform",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=platform"
+     ],
+     "profile": "platform",
+     "env": {
+      "OPUTE_LOCAL_HOST_AGENT_INSTANCE_ID": "launcher-parity-7"
+     }
+    }
+   },
+   {
+    "as": "healthPlatform",
+    "http": {
+     "method": "GET",
+     "path": "/health"
+    }
+   },
+   {
+    "as": "stopPlatform",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "trace"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "config.env.incus-binary-path",
+  "surface": "config",
+  "owner": "config",
+  "anchors": [
+   "internal/hostruntime/runtime.go:ConfigFromEnv"
+  ],
+  "fixture": "incus-empty",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_INCUS_BINARY_PATH": "",
+      "OPUTE_VM_BINARY_PATH": "${SANDBOX}/missing/incus"
+     }
+    }
+   },
+   {
+    "as": "vmPathMissing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "startPrecedence",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_INCUS_BINARY_PATH": "${SANDBOX}/shims/incus",
+      "OPUTE_VM_BINARY_PATH": "${SANDBOX}/missing/incus"
+     }
+    }
+   },
+   {
+    "as": "incusPathWins",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "stopPrecedence",
+    "stop": {}
+   }
+  ]
+ },
+ {
+  "id": "config.env.tool-prefix-health",
+  "surface": "config",
+  "owner": "config",
+  "anchors": [
+   "docs/adr/0012-mcp-tool-name-prefix.md",
+   "internal/transport/http.go:handleHealth"
+  ],
+  "fixture": "incus-empty",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_MCP_PREFIX_TOOL_NAMES": "true"
+     }
+    }
+   },
+   {
+    "as": "health",
+    "http": {
+     "method": "GET",
+     "path": "/health"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "startUnprefixed",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone"
+    }
+   },
+   {
+    "as": "healthUnprefixed",
+    "http": {
+     "method": "GET",
+     "path": "/health"
+    }
+   },
+   {
+    "as": "stopUnprefixed",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "trace"
+    ]
+   ]
+  }
+ }
+]

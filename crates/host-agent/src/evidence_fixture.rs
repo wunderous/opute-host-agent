@@ -17,8 +17,9 @@ fn durable_projection() {
     let state = Arc::new(Mutex::new(StateStore::open(Path::new(&directory)).unwrap()));
     let authz = AuthzStore::open(Path::new(&directory), "fixture-auth-secret").unwrap();
     let server = crate::app::http_server(&cfg, authz, state).unwrap();
+    let catalog_snapshot = server.catalog.snapshot();
     let mut projected = Map::new();
-    projected.insert("_catalog".into(), snapshot_json(server.catalog));
+    projected.insert("_catalog".into(), snapshot_json(&catalog_snapshot));
     for case in spec["cases"].as_array().unwrap() {
         let id = case["id"].as_str().unwrap();
         let tool = case["tool"].as_str().unwrap();
@@ -45,6 +46,8 @@ fn durable_projection() {
             id: "control".into(),
             request: Default::default(),
             inherited: false,
+            created_at: None,
+            expires_at: None,
         };
         record_invocation(
             &server,
@@ -56,11 +59,11 @@ fn durable_projection() {
         );
         let secrets = BTreeSet::from(["recipeSecret".into()]);
         let document =
-            crate::evidence::redact_plan_document(&case["document"], &secrets, server.catalog);
+            crate::evidence::redact_plan_document(&case["document"], &secrets, &catalog_snapshot);
         let run_state = crate::evidence::redact_plan_run_state(
             case["state"].as_object().unwrap(),
             case["document"].as_object(),
-            server.catalog,
+            &catalog_snapshot,
         );
         let mut state = server.host.state.lock().unwrap();
         state
@@ -70,7 +73,7 @@ fn durable_projection() {
                 generation: 1,
                 idempotency_key: id.into(),
                 document_hash: "sha256:fixture".into(),
-                catalog_revision: server.catalog.revision.clone(),
+                catalog_revision: catalog_snapshot.revision.clone(),
                 status: "completed".into(),
                 plan_json: document.to_string(),
                 recipe_json: document.to_string(),

@@ -1,0 +1,1 @@
+Historical fixture error: its Client.call name argument was blank for tools/call. Native correctly refused HeaderMismatch before lifecycle dispatch. The fixture was corrected to pass its exact declared tool name; production header validation was not changed. The saved batch contains no provider connections. This is not a runtime divergence or current passing receipt.

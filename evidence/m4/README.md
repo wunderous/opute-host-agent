@@ -8,7 +8,23 @@ the admission part of tasks 2.3 and 3.2. The evidence is in
 WSL2). Every run used isolated sandboxes and Incus shims only; no real Incus,
 Kubernetes, tunnel or shared state was touched.
 
-## Gate results
+## Native validation refresh, 2026-10-05
+
+The [native report](../local-e2e/native-2026-10-05/README.md) tracks the
+current run. A diagnostic native rerun caught all 14 Go canaries; the C12
+and C14 waivers have been removed from the manifest. The saturation case
+now supplies explicit fixture capacity, proves two held leases, uses a
+bounded independent contender, and requires successful admission after
+release. Cancellation checks the stored task snapshot after graceful
+worker drain, preserving D12's absence of refused Rust operation records.
+The former C14 result was a synchronization gap: its live poll ran before
+the cancelled worker's late completion. It was not proof that the guard
+could never be reached. Fresh provenance-bound evidence is being collected.
+
+The results and waiver discussion below are historical WSL evidence;
+they do not describe the current manifest or native refresh.
+
+## Historical WSL gate results
 
 | Check | Result |
 | --- | --- |
@@ -161,3 +177,11 @@ Kubernetes, tunnel or shared state was touched.
   other canary (C1–C11, C13) and every other check in gates m0–m4 passes
   with no waiver. **This decision has not yet been reviewed by the repo
   owner** and should be before the milestone is treated as closed.
+
+## Three-role seam revision (D14), 2026-10-11
+
+The M4 capabilities now run on the built-in provider in the one service
+context. The M4 admission matrix, rejection and task scenarios, the D10–D12 contracts and the Rust canaries were rerun against the pinned Go agent with no new
+normalization: [`m4-captures-validation.json`](../seam/m4-captures-validation.json) (44/44 Go/Rust, five iterations; secret sweep 16 fields, 0 failures; D10 8/8, D11 3/3, D12 3/3; Rust canaries 24/24 after the K23 re-anchor) and the verifier receipt [`m4-validation.json`](../seam/m4-validation.json). The full rerun on the committed tree is in
+[`native-2026-10-11-r3`](../local-e2e/native-2026-10-11-r3/), and the seam
+evidence index is [`evidence/seam/README.md`](../seam/README.md).

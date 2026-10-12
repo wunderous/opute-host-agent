@@ -145,6 +145,7 @@ fn load_host_local_recipe(
     args: &Map<String, J>,
     require_hash: bool,
 ) -> Result<HostLoaded, String> {
+    let catalog_snapshot = server.catalog.snapshot();
     let sourced = host_recipe::load_host(&source_request(args, require_hash))?;
     if !sourced.document.execution.is_host_local() {
         return Err(format!(
@@ -160,23 +161,24 @@ fn load_host_local_recipe(
     let mut resolved = host_recipe::resolve_host_inputs(sourced.document, &values)?;
     resolved.source = sourced.source;
     resolved.raw = sourced.raw;
-    let capabilities = capabilities_from_snapshot(server.catalog);
-    resolved.validate(&capabilities, &server.catalog.revision)?;
+    let capabilities = capabilities_from_snapshot(&catalog_snapshot);
+    resolved.validate(&capabilities, &catalog_snapshot.revision)?;
     assert_host_local_targets(server, &resolved)?;
     Ok(resolved)
 }
 
 /// `handleValidateHostLocalRecipe`.
 pub fn handle_validate_host_local_recipe(server: &Server, args: &Map<String, J>) -> J {
+    let catalog_snapshot = server.catalog.snapshot();
     let loaded = match load_host_local_recipe(server, args, false) {
         Ok(l) => l,
         Err(e) => return crate::tools::error_result(&e),
     };
-    let plan_result = match validate_host_plan_with_snapshot(&loaded.expanded_plan, server.catalog)
-    {
-        Ok(r) => r,
-        Err(e) => return crate::tools::error_result(&e),
-    };
+    let plan_result =
+        match validate_host_plan_with_snapshot(&loaded.expanded_plan, &catalog_snapshot) {
+            Ok(r) => r,
+            Err(e) => return crate::tools::error_result(&e),
+        };
     crate::tools::structured_result(
         json!({
             "valid": true,
@@ -253,7 +255,7 @@ mod tests {
         let authz =
             crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.opute_client_secret)
                 .unwrap();
-        Arc::new(crate::app::http_server(&cfg, authz, runtime.state.clone()).unwrap())
+        crate::app::http_server(&cfg, authz, runtime.state.clone()).unwrap()
     }
 
     fn write_recipe(dir: &std::path::Path, document: &J) -> String {
@@ -369,6 +371,8 @@ mod tests {
                     ..Default::default()
                 },
                 inherited: false,
+                created_at: None,
+                expires_at: None,
             },
             Arc::new(std::sync::atomic::AtomicBool::new(false)),
         );

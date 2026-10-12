@@ -1,0 +1,3602 @@
+{
+  "go-writes-rust-reads.cancelled.0": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "ee7ba678-1c80-4db9-a243-5ecf7cca014b": {
+                "created_at": "2026-10-12T04:28:17.968061089Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:17Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:17Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"ee7ba678-1c80-4db9-a243-5ecf7cca014b\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:18"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:17Z",
+              "lastUpdatedAt": "2026-10-12T04:28:17Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.cancelled.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26430",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-h8_0zs3o",
+          "TASK_ID": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.cancelled.0-writer",
+          "TOOL_PREFIX": "6cbf1b95"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "ee7ba678-1c80-4db9-a243-5ecf7cca014b": {
+                "created_at": "2026-10-12T04:28:17.968061089Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:17Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:17Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"ee7ba678-1c80-4db9-a243-5ecf7cca014b\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:18"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:17Z",
+              "lastUpdatedAt": "2026-10-12T04:28:17Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.cancelled.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26430",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-h8_0zs3o",
+          "TASK_ID": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.cancelled.0-writer",
+          "TOOL_PREFIX": "6cbf1b95"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:17Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:17Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "ee7ba678-1c80-4db9-a243-5ecf7cca014b": {
+            "created_at": "2026-10-12T04:28:17.968061089Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "ee7ba678-1c80-4db9-a243-5ecf7cca014b",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:17Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:17Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"ee7ba678-1c80-4db9-a243-5ecf7cca014b\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:17.968982104Z"
+          }
+        },
+        "taskId": "ee7ba678-1c80-4db9-a243-5ecf7cca014b"
+      }
+    }
+  },
+  "go-writes-rust-reads.cancelled.1": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "4bafd806-dbe7-4bf3-9564-ff8ca17c386c": {
+                "created_at": "2026-10-12T04:28:24.748693064Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:24Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:24Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"4bafd806-dbe7-4bf3-9564-ff8ca17c386c\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:25"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:24Z",
+              "lastUpdatedAt": "2026-10-12T04:28:24Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.cancelled.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26448",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-zniqnwy3",
+          "TASK_ID": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.cancelled.1-writer",
+          "TOOL_PREFIX": "f6672097"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "4bafd806-dbe7-4bf3-9564-ff8ca17c386c": {
+                "created_at": "2026-10-12T04:28:24.748693064Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:24Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:24Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"4bafd806-dbe7-4bf3-9564-ff8ca17c386c\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:24"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:24Z",
+              "lastUpdatedAt": "2026-10-12T04:28:24Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.cancelled.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26448",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-zniqnwy3",
+          "TASK_ID": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.cancelled.1-writer",
+          "TOOL_PREFIX": "f6672097"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:24Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:24Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "4bafd806-dbe7-4bf3-9564-ff8ca17c386c": {
+            "created_at": "2026-10-12T04:28:24.748693064Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:24Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:24Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"4bafd806-dbe7-4bf3-9564-ff8ca17c386c\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:24.749732544Z"
+          }
+        },
+        "taskId": "4bafd806-dbe7-4bf3-9564-ff8ca17c386c"
+      }
+    }
+  },
+  "go-writes-rust-reads.cancelled.2": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "b317c917-fa77-4825-8533-0d704497c9f5": {
+                "created_at": "2026-10-12T04:28:31.328211718Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "b317c917-fa77-4825-8533-0d704497c9f5",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:31Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:31Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"b317c917-fa77-4825-8533-0d704497c9f5\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:32"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "b317c917-fa77-4825-8533-0d704497c9f5",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:31Z",
+              "lastUpdatedAt": "2026-10-12T04:28:31Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "b317c917-fa77-4825-8533-0d704497c9f5",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.cancelled.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26466",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-r8n_o0w3",
+          "TASK_ID": "b317c917-fa77-4825-8533-0d704497c9f5",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.cancelled.2-writer",
+          "TOOL_PREFIX": "84d39341"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "b317c917-fa77-4825-8533-0d704497c9f5": {
+                "created_at": "2026-10-12T04:28:31.328211718Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "b317c917-fa77-4825-8533-0d704497c9f5",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:31Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:31Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"b317c917-fa77-4825-8533-0d704497c9f5\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:31"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "b317c917-fa77-4825-8533-0d704497c9f5",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:31Z",
+              "lastUpdatedAt": "2026-10-12T04:28:31Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "b317c917-fa77-4825-8533-0d704497c9f5",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.cancelled.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26466",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-r8n_o0w3",
+          "TASK_ID": "b317c917-fa77-4825-8533-0d704497c9f5",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.cancelled.2-writer",
+          "TOOL_PREFIX": "84d39341"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:31Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:31Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "b317c917-fa77-4825-8533-0d704497c9f5",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "b317c917-fa77-4825-8533-0d704497c9f5": {
+            "created_at": "2026-10-12T04:28:31.328211718Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "b317c917-fa77-4825-8533-0d704497c9f5",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:31Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:31Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"b317c917-fa77-4825-8533-0d704497c9f5\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:31.329161818Z"
+          }
+        },
+        "taskId": "b317c917-fa77-4825-8533-0d704497c9f5"
+      }
+    }
+  },
+  "go-writes-rust-reads.input-required.0": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "8425e9a1-1d26-434d-8ee1-29395465559d": {
+                "created_at": "2026-10-12T04:28:15.612229172Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "8425e9a1-1d26-434d-8ee1-29395465559d",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:15Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:15Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"8425e9a1-1d26-434d-8ee1-29395465559d\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:16"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "8425e9a1-1d26-434d-8ee1-29395465559d",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:15Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:15Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "8425e9a1-1d26-434d-8ee1-29395465559d",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.input-required.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26424",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-elb4ha6y",
+          "TASK_ID": "8425e9a1-1d26-434d-8ee1-29395465559d",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.input-required.0-writer",
+          "TOOL_PREFIX": "c8e3f3a5"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "8425e9a1-1d26-434d-8ee1-29395465559d": {
+                "created_at": "2026-10-12T04:28:15.612229172Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "8425e9a1-1d26-434d-8ee1-29395465559d",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:15Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:15Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"8425e9a1-1d26-434d-8ee1-29395465559d\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:15"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "8425e9a1-1d26-434d-8ee1-29395465559d",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:15Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:15Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "8425e9a1-1d26-434d-8ee1-29395465559d",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.input-required.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26424",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-elb4ha6y",
+          "TASK_ID": "8425e9a1-1d26-434d-8ee1-29395465559d",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.input-required.0-writer",
+          "TOOL_PREFIX": "c8e3f3a5"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:15Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:15Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "8425e9a1-1d26-434d-8ee1-29395465559d",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "8425e9a1-1d26-434d-8ee1-29395465559d": {
+            "created_at": "2026-10-12T04:28:15.612229172Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "8425e9a1-1d26-434d-8ee1-29395465559d",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:15Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:15Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"8425e9a1-1d26-434d-8ee1-29395465559d\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:15.612356555Z"
+          }
+        },
+        "taskId": "8425e9a1-1d26-434d-8ee1-29395465559d"
+      }
+    }
+  },
+  "go-writes-rust-reads.input-required.1": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735": {
+                "created_at": "2026-10-12T04:28:22.561147437Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:22Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:22Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"d3ae9e6f-0d7c-4fca-a2ac-b8a808404735\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:23"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:22Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:22Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.input-required.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26442",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-p4_4mywd",
+          "TASK_ID": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.input-required.1-writer",
+          "TOOL_PREFIX": "650b145a"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735": {
+                "created_at": "2026-10-12T04:28:22.561147437Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:22Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:22Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"d3ae9e6f-0d7c-4fca-a2ac-b8a808404735\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:22"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:22Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:22Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.input-required.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26442",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-p4_4mywd",
+          "TASK_ID": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.input-required.1-writer",
+          "TOOL_PREFIX": "650b145a"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:22Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:22Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735": {
+            "created_at": "2026-10-12T04:28:22.561147437Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:22Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:22Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"d3ae9e6f-0d7c-4fca-a2ac-b8a808404735\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:22.561282644Z"
+          }
+        },
+        "taskId": "d3ae9e6f-0d7c-4fca-a2ac-b8a808404735"
+      }
+    }
+  },
+  "go-writes-rust-reads.input-required.2": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "2dab9d02-e813-4979-bb77-e9be9aa26f51": {
+                "created_at": "2026-10-12T04:28:29.133754573Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:29Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:29Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"2dab9d02-e813-4979-bb77-e9be9aa26f51\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:29"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:29Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:29Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.input-required.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26460",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-vhea_nzs",
+          "TASK_ID": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.input-required.2-writer",
+          "TOOL_PREFIX": "fc528953"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "2dab9d02-e813-4979-bb77-e9be9aa26f51": {
+                "created_at": "2026-10-12T04:28:29.133754573Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:29Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:29Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"2dab9d02-e813-4979-bb77-e9be9aa26f51\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:29"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:29Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:29Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.input-required.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26460",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-vhea_nzs",
+          "TASK_ID": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.input-required.2-writer",
+          "TOOL_PREFIX": "fc528953"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:29Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:29Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "2dab9d02-e813-4979-bb77-e9be9aa26f51": {
+            "created_at": "2026-10-12T04:28:29.133754573Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "2dab9d02-e813-4979-bb77-e9be9aa26f51",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:29Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:29Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"2dab9d02-e813-4979-bb77-e9be9aa26f51\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:29.133884901Z"
+          }
+        },
+        "taskId": "2dab9d02-e813-4979-bb77-e9be9aa26f51"
+      }
+    }
+  },
+  "go-writes-rust-reads.resumed.0": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "cb63dd94-ae5b-4369-9c7b-f6387750bf47": {
+                "created_at": "2026-10-12T04:28:20.381495147Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:20Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:20Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"cb63dd94-ae5b-4369-9c7b-f6387750bf47\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:21"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:20Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:20Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.resumed.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26436",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-f5dt9_72",
+          "TASK_ID": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.resumed.0-writer",
+          "TOOL_PREFIX": "3c9a9950"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "cb63dd94-ae5b-4369-9c7b-f6387750bf47": {
+                "created_at": "2026-10-12T04:28:20.381495147Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:20Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:20Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"cb63dd94-ae5b-4369-9c7b-f6387750bf47\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:20"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:20Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:20Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.resumed.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26436",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-f5dt9_72",
+          "TASK_ID": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.resumed.0-writer",
+          "TOOL_PREFIX": "3c9a9950"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:20Z",
+              "lastUpdatedAt": "2026-10-12T04:28:20Z",
+              "pollIntervalMs": 3000,
+              "result": {
+                "content": null,
+                "isError": false,
+                "structuredContent": {
+                  "response": true
+                }
+              },
+              "resultType": "complete",
+              "status": "completed",
+              "statusMessage": "The operation completed successfully.",
+              "taskId": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "cb63dd94-ae5b-4369-9c7b-f6387750bf47": {
+            "created_at": "2026-10-12T04:28:20.381495147Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "cb63dd94-ae5b-4369-9c7b-f6387750bf47",
+            "result_json": "{\"structuredContent\":{\"response\":true}}",
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:20Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:20Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"cb63dd94-ae5b-4369-9c7b-f6387750bf47\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:20.382462761Z"
+          }
+        },
+        "taskId": "cb63dd94-ae5b-4369-9c7b-f6387750bf47"
+      }
+    }
+  },
+  "go-writes-rust-reads.resumed.1": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92": {
+                "created_at": "2026-10-12T04:28:26.954557471Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:26Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:26Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"3d6e4559-5774-4dae-a0f6-f5d65fdbfb92\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:27"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:26Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:26Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.resumed.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26454",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-teqczgwo",
+          "TASK_ID": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.resumed.1-writer",
+          "TOOL_PREFIX": "294da26e"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92": {
+                "created_at": "2026-10-12T04:28:26.954557471Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:26Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:26Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"3d6e4559-5774-4dae-a0f6-f5d65fdbfb92\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:27"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:26Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:26Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.resumed.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26454",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-teqczgwo",
+          "TASK_ID": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.resumed.1-writer",
+          "TOOL_PREFIX": "294da26e"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:26Z",
+              "lastUpdatedAt": "2026-10-12T04:28:26Z",
+              "pollIntervalMs": 3000,
+              "result": {
+                "content": null,
+                "isError": false,
+                "structuredContent": {
+                  "response": true
+                }
+              },
+              "resultType": "complete",
+              "status": "completed",
+              "statusMessage": "The operation completed successfully.",
+              "taskId": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92": {
+            "created_at": "2026-10-12T04:28:26.954557471Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92",
+            "result_json": "{\"structuredContent\":{\"response\":true}}",
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:26Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:26Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"3d6e4559-5774-4dae-a0f6-f5d65fdbfb92\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:26.955547056Z"
+          }
+        },
+        "taskId": "3d6e4559-5774-4dae-a0f6-f5d65fdbfb92"
+      }
+    }
+  },
+  "go-writes-rust-reads.resumed.2": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "5666a330-8120-4386-a79e-35a1704b2524": {
+                "created_at": "2026-10-12T04:28:33.497762823Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "5666a330-8120-4386-a79e-35a1704b2524",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:33Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:33Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"5666a330-8120-4386-a79e-35a1704b2524\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:34"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "5666a330-8120-4386-a79e-35a1704b2524",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:33Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:33Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "5666a330-8120-4386-a79e-35a1704b2524",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.resumed.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26472",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-anp8b5l3",
+          "TASK_ID": "5666a330-8120-4386-a79e-35a1704b2524",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.resumed.2-writer",
+          "TOOL_PREFIX": "9dc654b6"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "5666a330-8120-4386-a79e-35a1704b2524": {
+                "created_at": "2026-10-12T04:28:33.497762823Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "5666a330-8120-4386-a79e-35a1704b2524",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:33Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:33Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"5666a330-8120-4386-a79e-35a1704b2524\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:33"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "5666a330-8120-4386-a79e-35a1704b2524",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:33Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:33Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "5666a330-8120-4386-a79e-35a1704b2524",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-go-go-writes-rust-reads.resumed.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26472",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-go-anp8b5l3",
+          "TASK_ID": "5666a330-8120-4386-a79e-35a1704b2524",
+          "TOKEN": "parity-token-go-go-writes-rust-reads.resumed.2-writer",
+          "TOOL_PREFIX": "9dc654b6"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:33Z",
+              "lastUpdatedAt": "2026-10-12T04:28:33Z",
+              "pollIntervalMs": 3000,
+              "result": {
+                "content": null,
+                "isError": false,
+                "structuredContent": {
+                  "response": true
+                }
+              },
+              "resultType": "complete",
+              "status": "completed",
+              "statusMessage": "The operation completed successfully.",
+              "taskId": "5666a330-8120-4386-a79e-35a1704b2524",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "5666a330-8120-4386-a79e-35a1704b2524": {
+            "created_at": "2026-10-12T04:28:33.497762823Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "5666a330-8120-4386-a79e-35a1704b2524",
+            "result_json": "{\"structuredContent\":{\"response\":true}}",
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:33Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:33Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"5666a330-8120-4386-a79e-35a1704b2524\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:33.499117644Z"
+          }
+        },
+        "taskId": "5666a330-8120-4386-a79e-35a1704b2524"
+      }
+    }
+  },
+  "rust-writes-go-reads.cancelled.0": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "d9a31286-e4db-4202-bc3e-476896e41d8e": {
+                "created_at": "2026-10-12T04:28:18.917933366Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:18Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:18Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"d9a31286-e4db-4202-bc3e-476896e41d8e\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:19"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:18Z",
+              "lastUpdatedAt": "2026-10-12T04:28:18Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.cancelled.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26433",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-htqwzyke",
+          "TASK_ID": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.cancelled.0-writer",
+          "TOOL_PREFIX": "e330a3f8"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "d9a31286-e4db-4202-bc3e-476896e41d8e": {
+                "created_at": "2026-10-12T04:28:18.917933366Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:18Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:18Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"d9a31286-e4db-4202-bc3e-476896e41d8e\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:18"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:18Z",
+              "lastUpdatedAt": "2026-10-12T04:28:18Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.cancelled.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26433",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-htqwzyke",
+          "TASK_ID": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.cancelled.0-writer",
+          "TOOL_PREFIX": "e330a3f8"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:18Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:18Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "d9a31286-e4db-4202-bc3e-476896e41d8e": {
+            "created_at": "2026-10-12T04:28:18.917933366Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "d9a31286-e4db-4202-bc3e-476896e41d8e",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:18Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:18Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"d9a31286-e4db-4202-bc3e-476896e41d8e\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:18.920865883Z"
+          }
+        },
+        "taskId": "d9a31286-e4db-4202-bc3e-476896e41d8e"
+      }
+    }
+  },
+  "rust-writes-go-reads.cancelled.1": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "70dff6b7-4751-4105-bb8e-84525bcad5d2": {
+                "created_at": "2026-10-12T04:28:25.529131504Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:25Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:25Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"70dff6b7-4751-4105-bb8e-84525bcad5d2\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:25"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:25Z",
+              "lastUpdatedAt": "2026-10-12T04:28:25Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.cancelled.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26451",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-3ewlvro_",
+          "TASK_ID": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.cancelled.1-writer",
+          "TOOL_PREFIX": "3595f908"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "70dff6b7-4751-4105-bb8e-84525bcad5d2": {
+                "created_at": "2026-10-12T04:28:25.529131504Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:25Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:25Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"70dff6b7-4751-4105-bb8e-84525bcad5d2\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:25"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:25Z",
+              "lastUpdatedAt": "2026-10-12T04:28:25Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.cancelled.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26451",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-3ewlvro_",
+          "TASK_ID": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.cancelled.1-writer",
+          "TOOL_PREFIX": "3595f908"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:25Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:25Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "70dff6b7-4751-4105-bb8e-84525bcad5d2": {
+            "created_at": "2026-10-12T04:28:25.529131504Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "70dff6b7-4751-4105-bb8e-84525bcad5d2",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:25Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:25Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"70dff6b7-4751-4105-bb8e-84525bcad5d2\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:25.532507506Z"
+          }
+        },
+        "taskId": "70dff6b7-4751-4105-bb8e-84525bcad5d2"
+      }
+    }
+  },
+  "rust-writes-go-reads.cancelled.2": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "1887ce18-3374-4d37-aaed-c7999df43a12": {
+                "created_at": "2026-10-12T04:28:32.106219718Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "1887ce18-3374-4d37-aaed-c7999df43a12",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:32Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:32Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"1887ce18-3374-4d37-aaed-c7999df43a12\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:32"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "1887ce18-3374-4d37-aaed-c7999df43a12",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:32Z",
+              "lastUpdatedAt": "2026-10-12T04:28:32Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "1887ce18-3374-4d37-aaed-c7999df43a12",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.cancelled.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26469",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-nuimgo8u",
+          "TASK_ID": "1887ce18-3374-4d37-aaed-c7999df43a12",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.cancelled.2-writer",
+          "TOOL_PREFIX": "de01e6f5"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "1887ce18-3374-4d37-aaed-c7999df43a12": {
+                "created_at": "2026-10-12T04:28:32.106219718Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "1887ce18-3374-4d37-aaed-c7999df43a12",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:32Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:32Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"1887ce18-3374-4d37-aaed-c7999df43a12\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:32"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "1887ce18-3374-4d37-aaed-c7999df43a12",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:32Z",
+              "lastUpdatedAt": "2026-10-12T04:28:32Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "1887ce18-3374-4d37-aaed-c7999df43a12",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.cancelled.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26469",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-nuimgo8u",
+          "TASK_ID": "1887ce18-3374-4d37-aaed-c7999df43a12",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.cancelled.2-writer",
+          "TOOL_PREFIX": "de01e6f5"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:32Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:32Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "cancelled",
+              "statusMessage": "The task was cancelled by request.",
+              "taskId": "1887ce18-3374-4d37-aaed-c7999df43a12",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "1887ce18-3374-4d37-aaed-c7999df43a12": {
+            "created_at": "2026-10-12T04:28:32.106219718Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "1887ce18-3374-4d37-aaed-c7999df43a12",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:32Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:32Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"cancelled\",\"statusMessage\":\"The task was cancelled by request.\",\"taskId\":\"1887ce18-3374-4d37-aaed-c7999df43a12\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:32.109051813Z"
+          }
+        },
+        "taskId": "1887ce18-3374-4d37-aaed-c7999df43a12"
+      }
+    }
+  },
+  "rust-writes-go-reads.input-required.0": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "c272b930-fcdc-4599-a237-3c77beaf8c17": {
+                "created_at": "2026-10-12T04:28:16.440626631Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:16Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:16Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"c272b930-fcdc-4599-a237-3c77beaf8c17\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:16"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:16Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:16Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.input-required.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26427",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-5kreoucx",
+          "TASK_ID": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.input-required.0-writer",
+          "TOOL_PREFIX": "751ab4ea"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "c272b930-fcdc-4599-a237-3c77beaf8c17": {
+                "created_at": "2026-10-12T04:28:16.440626631Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:16Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:16Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"c272b930-fcdc-4599-a237-3c77beaf8c17\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:16"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:16Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:16Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.input-required.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26427",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-5kreoucx",
+          "TASK_ID": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.input-required.0-writer",
+          "TOOL_PREFIX": "751ab4ea"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:16Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:16Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "c272b930-fcdc-4599-a237-3c77beaf8c17": {
+            "created_at": "2026-10-12T04:28:16.440626631Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "c272b930-fcdc-4599-a237-3c77beaf8c17",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:16Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:16Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"c272b930-fcdc-4599-a237-3c77beaf8c17\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:16.440774393Z"
+          }
+        },
+        "taskId": "c272b930-fcdc-4599-a237-3c77beaf8c17"
+      }
+    }
+  },
+  "rust-writes-go-reads.input-required.1": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "0ce49486-ff9d-4893-a126-b22ff5d24936": {
+                "created_at": "2026-10-12T04:28:23.373966156Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:23Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:23Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"0ce49486-ff9d-4893-a126-b22ff5d24936\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:23"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:23Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:23Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.input-required.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26445",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-wvc7lj9o",
+          "TASK_ID": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.input-required.1-writer",
+          "TOOL_PREFIX": "a4f7f490"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "0ce49486-ff9d-4893-a126-b22ff5d24936": {
+                "created_at": "2026-10-12T04:28:23.373966156Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:23Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:23Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"0ce49486-ff9d-4893-a126-b22ff5d24936\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:23"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:23Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:23Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.input-required.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26445",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-wvc7lj9o",
+          "TASK_ID": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.input-required.1-writer",
+          "TOOL_PREFIX": "a4f7f490"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:23Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:23Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "0ce49486-ff9d-4893-a126-b22ff5d24936": {
+            "created_at": "2026-10-12T04:28:23.373966156Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "0ce49486-ff9d-4893-a126-b22ff5d24936",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:23Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:23Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"0ce49486-ff9d-4893-a126-b22ff5d24936\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:23.374143154Z"
+          }
+        },
+        "taskId": "0ce49486-ff9d-4893-a126-b22ff5d24936"
+      }
+    }
+  },
+  "rust-writes-go-reads.input-required.2": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "45590363-6c62-4632-8fa3-381e636929c1": {
+                "created_at": "2026-10-12T04:28:29.93843116Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "45590363-6c62-4632-8fa3-381e636929c1",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:29Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:29Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"45590363-6c62-4632-8fa3-381e636929c1\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:30"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "45590363-6c62-4632-8fa3-381e636929c1",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:29Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:29Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "45590363-6c62-4632-8fa3-381e636929c1",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.input-required.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26463",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-5ef0i6zn",
+          "TASK_ID": "45590363-6c62-4632-8fa3-381e636929c1",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.input-required.2-writer",
+          "TOOL_PREFIX": "fa46948e"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "45590363-6c62-4632-8fa3-381e636929c1": {
+                "created_at": "2026-10-12T04:28:29.93843116Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "45590363-6c62-4632-8fa3-381e636929c1",
+                "result_json": null,
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:29Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:29Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"45590363-6c62-4632-8fa3-381e636929c1\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:29"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "45590363-6c62-4632-8fa3-381e636929c1",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:29Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:29Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "45590363-6c62-4632-8fa3-381e636929c1",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.input-required.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26463",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-5ef0i6zn",
+          "TASK_ID": "45590363-6c62-4632-8fa3-381e636929c1",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.input-required.2-writer",
+          "TOOL_PREFIX": "fa46948e"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:29Z",
+              "inputRequests": {
+                "response": {
+                  "prompt": "Continue?",
+                  "type": "boolean"
+                }
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:29Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "input_required",
+              "statusMessage": "The task requires input before it can continue.",
+              "taskId": "45590363-6c62-4632-8fa3-381e636929c1",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "45590363-6c62-4632-8fa3-381e636929c1": {
+            "created_at": "2026-10-12T04:28:29.93843116Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "45590363-6c62-4632-8fa3-381e636929c1",
+            "result_json": null,
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:29Z\",\"description\":\"Waiting for operator input...\",\"inputRequests\":{\"response\":{\"prompt\":\"Continue?\",\"type\":\"boolean\"}},\"lastUpdatedAt\":\"2026-10-12T04:28:29Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"input_required\",\"statusMessage\":\"The task requires input before it can continue.\",\"taskId\":\"45590363-6c62-4632-8fa3-381e636929c1\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:29.938548454Z"
+          }
+        },
+        "taskId": "45590363-6c62-4632-8fa3-381e636929c1"
+      }
+    }
+  },
+  "rust-writes-go-reads.resumed.0": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "856b2341-5596-4f5c-aa0c-6781ffd2f18f": {
+                "created_at": "2026-10-12T04:28:21.139658721Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:21Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:21Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"856b2341-5596-4f5c-aa0c-6781ffd2f18f\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:21"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:21Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:21Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.resumed.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26439",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-i544j6tl",
+          "TASK_ID": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.resumed.0-writer",
+          "TOOL_PREFIX": "3c382352"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "856b2341-5596-4f5c-aa0c-6781ffd2f18f": {
+                "created_at": "2026-10-12T04:28:21.139658721Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:21Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:21Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"856b2341-5596-4f5c-aa0c-6781ffd2f18f\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:21"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:21Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:21Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.resumed.0-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26439",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-i544j6tl",
+          "TASK_ID": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.resumed.0-writer",
+          "TOOL_PREFIX": "3c382352"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:21Z",
+              "lastUpdatedAt": "2026-10-12T04:28:21Z",
+              "pollIntervalMs": 3000,
+              "result": {
+                "content": null,
+                "isError": false,
+                "structuredContent": {
+                  "response": true
+                }
+              },
+              "resultType": "complete",
+              "status": "completed",
+              "statusMessage": "The operation completed successfully.",
+              "taskId": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "856b2341-5596-4f5c-aa0c-6781ffd2f18f": {
+            "created_at": "2026-10-12T04:28:21.139658721Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "856b2341-5596-4f5c-aa0c-6781ffd2f18f",
+            "result_json": "{\"structuredContent\":{\"response\":true}}",
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:21Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:21Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"856b2341-5596-4f5c-aa0c-6781ffd2f18f\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:21.142709814Z"
+          }
+        },
+        "taskId": "856b2341-5596-4f5c-aa0c-6781ffd2f18f"
+      }
+    }
+  },
+  "rust-writes-go-reads.resumed.1": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "ba5ac2a5-24f1-41f7-b626-c392a7cb6629": {
+                "created_at": "2026-10-12T04:28:27.708638406Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:27Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:27Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"ba5ac2a5-24f1-41f7-b626-c392a7cb6629\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:27"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:27Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:27Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.resumed.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26457",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-i1i4bvfh",
+          "TASK_ID": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.resumed.1-writer",
+          "TOOL_PREFIX": "d2f1fdc5"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "ba5ac2a5-24f1-41f7-b626-c392a7cb6629": {
+                "created_at": "2026-10-12T04:28:27.708638406Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:27Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:27Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"ba5ac2a5-24f1-41f7-b626-c392a7cb6629\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:27"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:27Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:27Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.resumed.1-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26457",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-i1i4bvfh",
+          "TASK_ID": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.resumed.1-writer",
+          "TOOL_PREFIX": "d2f1fdc5"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:27Z",
+              "lastUpdatedAt": "2026-10-12T04:28:27Z",
+              "pollIntervalMs": 3000,
+              "result": {
+                "content": null,
+                "isError": false,
+                "structuredContent": {
+                  "response": true
+                }
+              },
+              "resultType": "complete",
+              "status": "completed",
+              "statusMessage": "The operation completed successfully.",
+              "taskId": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "ba5ac2a5-24f1-41f7-b626-c392a7cb6629": {
+            "created_at": "2026-10-12T04:28:27.708638406Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629",
+            "result_json": "{\"structuredContent\":{\"response\":true}}",
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:27Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:27Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"ba5ac2a5-24f1-41f7-b626-c392a7cb6629\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:27.711523302Z"
+          }
+        },
+        "taskId": "ba5ac2a5-24f1-41f7-b626-c392a7cb6629"
+      }
+    }
+  },
+  "rust-writes-go-reads.resumed.2": {
+    "diff": [],
+    "maskViolations": {
+      "reader": [],
+      "reference": []
+    },
+    "raw": {
+      "readBack": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "63b679af-c287-45cf-92d8-511a5ff36c62": {
+                "created_at": "2026-10-12T04:28:34.299365454Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "63b679af-c287-45cf-92d8-511a5ff36c62",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:34Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:34Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"63b679af-c287-45cf-92d8-511a5ff36c62\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:34"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "63b679af-c287-45cf-92d8-511a5ff36c62",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:34Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:34Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "63b679af-c287-45cf-92d8-511a5ff36c62",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.resumed.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26475",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-qiby3l7t",
+          "TASK_ID": "63b679af-c287-45cf-92d8-511a5ff36c62",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.resumed.2-writer",
+          "TOOL_PREFIX": "8f71a56f"
+        }
+      },
+      "reference": {
+        "stateRows": {
+          "tables": {
+            "active_capabilities": {},
+            "active_runtimes": {},
+            "capability_invocations": {},
+            "operations": {
+              "63b679af-c287-45cf-92d8-511a5ff36c62": {
+                "created_at": "2026-10-12T04:28:34.299365454Z",
+                "description": "Waiting for operator input...",
+                "error_message": null,
+                "operation_id": "63b679af-c287-45cf-92d8-511a5ff36c62",
+                "result_json": "{\"structuredContent\":{\"response\":true}}",
+                "status": "unknown",
+                "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:34Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:34Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"63b679af-c287-45cf-92d8-511a5ff36c62\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+                "tool_name": "request_task_input",
+                "updated_at": "2026-10-12 04:28:34"
+              }
+            },
+            "plan_runs": {},
+            "provider_generations": {},
+            "resource_registry": {}
+          },
+          "userVersion": 0
+        },
+        "taskId": "63b679af-c287-45cf-92d8-511a5ff36c62",
+        "tasksGet": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:34Z",
+              "error": {
+                "code": -32603,
+                "message": "The Host Agent restarted before the task completed."
+              },
+              "lastUpdatedAt": "2026-10-12T04:28:34Z",
+              "pollIntervalMs": 3000,
+              "resultType": "complete",
+              "status": "failed",
+              "statusMessage": "The Host Agent restarted before the task completed.",
+              "taskId": "63b679af-c287-45cf-92d8-511a5ff36c62",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "tasksList": {
+          "body": {
+            "error": {
+              "code": -32601,
+              "message": "Method not found: tasks/list"
+            },
+            "id": 1,
+            "jsonrpc": "2.0"
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 404
+        },
+        "variables": {
+          "AGENT_ID": "parity-rust-rust-writes-go-reads.resumed.2-writer",
+          "HOST_IP": "192.168.1.145",
+          "PORT": "26475",
+          "REPO_ROOT": "/home/houman/github/wunderous/opute-host-agent",
+          "SANDBOX": "/tmp/parity-rust-qiby3l7t",
+          "TASK_ID": "63b679af-c287-45cf-92d8-511a5ff36c62",
+          "TOKEN": "parity-token-rust-rust-writes-go-reads.resumed.2-writer",
+          "TOOL_PREFIX": "8f71a56f"
+        }
+      },
+      "written": {
+        "live": {
+          "body": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "createdAt": "2026-10-12T04:28:34Z",
+              "lastUpdatedAt": "2026-10-12T04:28:34Z",
+              "pollIntervalMs": 3000,
+              "result": {
+                "content": null,
+                "isError": false,
+                "structuredContent": {
+                  "response": true
+                }
+              },
+              "resultType": "complete",
+              "status": "completed",
+              "statusMessage": "The operation completed successfully.",
+              "taskId": "63b679af-c287-45cf-92d8-511a5ff36c62",
+              "ttlMs": 3600000
+            }
+          },
+          "headers": {
+            "content-type": "application/json"
+          },
+          "status": 200
+        },
+        "persisted": {
+          "63b679af-c287-45cf-92d8-511a5ff36c62": {
+            "created_at": "2026-10-12T04:28:34.299365454Z",
+            "description": "Waiting for operator input...",
+            "error_message": null,
+            "operation_id": "63b679af-c287-45cf-92d8-511a5ff36c62",
+            "result_json": "{\"structuredContent\":{\"response\":true}}",
+            "status": "working",
+            "task_snapshot_json": "{\"createdAt\":\"2026-10-12T04:28:34Z\",\"description\":\"Waiting for operator input...\",\"lastUpdatedAt\":\"2026-10-12T04:28:34Z\",\"pollIntervalMs\":3000,\"resultType\":\"complete\",\"status\":\"working\",\"statusMessage\":\"Input received; resuming the task.\",\"taskId\":\"63b679af-c287-45cf-92d8-511a5ff36c62\",\"toolArgs\":{\"prompt\":\"Continue?\",\"responseType\":\"boolean\"},\"toolName\":\"request_task_input\",\"ttlMs\":3600000}",
+            "tool_name": "request_task_input",
+            "updated_at": "2026-10-12T04:28:34.302599856Z"
+          }
+        },
+        "taskId": "63b679af-c287-45cf-92d8-511a5ff36c62"
+      }
+    }
+  }
+}

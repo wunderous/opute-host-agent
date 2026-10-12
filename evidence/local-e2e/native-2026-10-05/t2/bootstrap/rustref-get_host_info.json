@@ -1,0 +1,343 @@
+{
+  "impl": "rustref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_host_info",
+      "arguments": {},
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "host-agent",
+          "version": "0.2.3"
+        }
+      },
+      "content": [
+        {
+          "text": "{\"uri\":\"host:local:parity-native-t2-rustref-opaque\",\"hostName\":\"opute-parity-t2\",\"providerId\":\"incus\",\"lxcBinaryPath\":\"incus\",\"systemctlPath\":\"/usr/bin/systemctl\",\"supportedTools\":[\"apply_manifest\",\"build_and_push_oci_image\",\"check_local_llm_prerequisites\",\"cleanup_container_storage\",\"compact_wsl_disk\",\"configure_agent_connection\",\"configure_local_llm_model\",\"configure_local_llm_runtime\",\"configure_network\",\"configure_oci_storage\",\"create_vm\",\"delete_k8s_resource\",\"delete_oci_registry\",\"delete_vm\",\"detect_host_platform\",\"diagnose_bridge\",\"discover_service_ingress\",\"ensure_docker\",\"ensure_host_artifact\",\"ensure_host_file\",\"ensure_host_service_supervisor\",\"ensure_host_tool\",\"ensure_local_llm_k3s_proxy\",\"ensure_local_llm_relay\",\"ensure_local_llm_server_binary\",\"ensure_oci_builder\",\"ensure_public_mcp_quick_tunnel\",\"ensure_public_mcp_tunnel\",\"ensure_sqlite_database\",\"exec_kubernetes_command\",\"extract_host_archive\",\"garbage_collect_cluster_registry\",\"get_capability_catalog\",\"get_host_capacity\",\"get_host_info\",\"get_host_plan_run\",\"get_k8s_resource\",\"get_k8s_resource_status\",\"get_oci_registry_status\",\"get_postgresql_service_status\",\"get_runtime_recipe_run\",\"get_sqlite_database_status\",\"get_tunnel_run\",\"get_vm_info\",\"inspect_container_storage\",\"inspect_guest_storage\",\"inspect_host_file\",\"inspect_host_service\",\"inspect_host_service_supervisor\",\"inspect_workload\",\"install_cluster_agent\",\"install_helm_chart\",\"install_incus_stack\",\"install_local_llm_model\",\"install_oci_registry\",\"install_provider_tools\",\"list_agents\",\"list_certificate_issuers\",\"list_configmap_keys\",\"list_deployments\",\"list_host_services\",\"list_ingress_classes\",\"list_k8s_events\",\"list_kubernetes_clusters\",\"list_local_llm_models\",\"list_namespaces\",\"list_pods\",\"list_secret_keys\",\"list_services\",\"list_storage_classes\",\"list_vms\",\"open_assistant_session\",\"opute.provider.install\",\"opute.provider.reload\",\"opute.provider.status\",\"opute.provider.teardown\",\"opute.provider.validate\",\"prepare_host_agent_artifacts\",\"probe_gpu_container\",\"probe_http_endpoint\",\"probe_incus_gpu\",\"probe_local_llm\",\"probe_openai_compatible_server\",\"provision_container\",\"provision_vm\",\"prune_unused_cluster_images\",\"put_k8s_secret\",\"reconcile_host_resource_policy\",\"reconcile_postgresql_service\",\"reconcile_serving_assignment\",\"recover_bridge\",\"register_kubernetes_cluster\",\"release_postgresql_service_relay\",\"remove_host_file\",\"remove_local_llm_k3s_proxy\",\"remove_local_llm_model\",\"remove_local_llm_relay\",\"remove_postgresql_service\",\"remove_public_mcp_quick_tunnel\",\"remove_sqlite_database\",\"remove_vm_network_device\",\"render_helm_template\",\"reset_incus_stack\",\"resize_console\",\"restart_host_service\",\"restart_vm\",\"run_host_command\",\"run_host_local_recipe\",\"run_host_plan\",\"run_instance_command\",\"run_runtime_recipe\",\"run_tunnel_recipe\",\"send_console_input\",\"set_host_service_state\",\"shutdown_wsl\",\"stage_build_context\",\"start_local_llm_runtime\",\"start_vm\",\"stop_local_llm_runtime\",\"stop_vm\",\"stream_vm_console\",\"terminate_wsl_distribution\",\"trim_guest_storage\",\"uninstall_incus_stack\",\"uninstall_provider_tools\",\"update_vm_resources\",\"validate_host_local_recipe\",\"validate_host_plan\",\"validate_runtime_recipe\",\"validate_tunnel_recipe\"],\"capacity\":{\"runningVmCount\":0,\"totalVmCount\":0,\"runningVmCpuLimitCores\":0,\"totalVmCpuLimitCores\":0,\"runningVmMemoryLimitBytes\":0,\"totalVmMemoryLimitBytes\":0,\"runningVmDiskLimitBytes\":0,\"totalVmDiskLimitBytes\":0,\"runningQemuCount\":0,\"totalQemuCount\":0,\"runningContainerCount\":0,\"totalContainerCount\":0},\"system\":{\"cgroupControllers\":[\"cpu\",\"memory\",\"pids\"],\"cgroupMemory\":{\"limitBytes\":0,\"usageBytes\":12619776},\"cpuCount\":4,\"cpuLoad15m\":0.06,\"cpuLoad1m\":0.75,\"cpuLoad5m\":0.2,\"diskAvailableBytes\":28777361408,\"diskFilesystems\":[{\"availableBytes\":28777361408,\"mount\":\"/\",\"pressure\":\"normal\",\"totalBytes\":32162967552}],\"diskMount\":\"/\",\"diskPressure\":\"normal\",\"diskTotalBytes\":32162967552,\"enforcement\":\"enforced\",\"memoryAvailableBytes\":5587447808,\"memoryEvents\":{\"high\":0,\"low\":0,\"max\":0,\"oom\":0,\"oom_group_kill\":0,\"oom_kill\":0},\"memoryFreeBytes\":5587447808,\"memoryPressure\":\"normal\",\"memoryTotalBytes\":6213009408,\"memoryUsageBytes\":12619776,\"memoryUsedBytes\":625561600,\"psi\":{\"cpu\":{\"someAvg10\":1.62,\"someAvg60\":0.39,\"someAvg300\":0.17,\"someTotalUsec\":1669389},\"io\":{\"someAvg10\":12.54,\"someAvg60\":5.17,\"someAvg300\":1.35,\"someTotalUsec\":5202704,\"fullAvg10\":11.95,\"fullAvg60\":4.99,\"fullAvg300\":1.29,\"fullTotalUsec\":4871329},\"memory\":{\"someTotalUsec\":71,\"fullTotalUsec\":44}},\"resourceAdmission\":{\"checkedAt\":\"2026-10-05T09:31:09Z\",\"currentUsage\":{\"memoryBytes\":625561600,\"memoryAvailableBytes\":5587447808,\"diskBytes\":3385606144,\"diskAvailableBytes\":28777361408,\"tasks\":3},\"diskAvailableBytes\":28777361408,\"diskPressure\":\"normal\",\"effectiveLimits\":{\"cpuCores\":4,\"memoryBytes\":6213009408,\"diskBytes\":32162967552,\"tasks\":1024},\"enforcement\":\"enforced\",\"heavyInFlight\":0,\"memoryAvailableBytes\":5587447808,\"memoryEvents\":{\"high\":0,\"low\":0,\"max\":0,\"oom\":0,\"oom_group_kill\":0,\"oom_kill\":0},\"normalInFlight\":0,\"policyRevision\":\"opute-host-resource-policy.v2\",\"pressure\":\"normal\",\"psi\":{\"cpu\":{\"someAvg10\":1.62,\"someAvg60\":0.39,\"someAvg300\":0.17,\"someTotalUsec\":1669389},\"io\":{\"someAvg10\":12.54,\"someAvg60\":5.17,\"someAvg300\":1.35,\"someTotalUsec\":5202704,\"fullAvg10\":11.95,\"fullAvg60\":4.99,\"fullAvg300\":1.29,\"fullTotalUsec\":4871329},\"memory\":{\"someTotalUsec\":71,\"fullTotalUsec\":44}},\"queue\":{\"queued\":0,\"heavyQueued\":0,\"normalActive\":0,\"heavyActive\":0},\"queued\":0,\"reason\":\"\",\"reservations\":{\"count\":0}},\"tasks\":{\"current\":3,\"limit\":1024}},\"agent\":{\"agentId\":\"parity-native-t2-rustref-opaque\",\"instanceId\":\"rustref\",\"instanceRoot\":\"/opt/parity/instance-rustref\",\"homeDir\":\"/root\",\"serviceScope\":\"system\",\"serviceUnitDir\":\"/etc/systemd/system\",\"serviceWantedBy\":\"multi-user.target\",\"mcpEndpoint\":\"http://127.0.0.1:3015/mcp\",\"providerRoot\":\"/root/.local/share/opute/providers\"}}",
+          "type": "text"
+        }
+      ],
+      "resultType": "complete",
+      "structuredContent": {
+        "agent": {
+          "agentId": "parity-native-t2-rustref-opaque",
+          "homeDir": "/root",
+          "instanceId": "rustref",
+          "instanceRoot": "/opt/parity/instance-rustref",
+          "mcpEndpoint": "http://127.0.0.1:3015/mcp",
+          "providerRoot": "/root/.local/share/opute/providers",
+          "serviceScope": "system",
+          "serviceUnitDir": "/etc/systemd/system",
+          "serviceWantedBy": "multi-user.target"
+        },
+        "capacity": {
+          "runningContainerCount": 0,
+          "runningQemuCount": 0,
+          "runningVmCount": 0,
+          "runningVmCpuLimitCores": 0,
+          "runningVmDiskLimitBytes": 0,
+          "runningVmMemoryLimitBytes": 0,
+          "totalContainerCount": 0,
+          "totalQemuCount": 0,
+          "totalVmCount": 0,
+          "totalVmCpuLimitCores": 0,
+          "totalVmDiskLimitBytes": 0,
+          "totalVmMemoryLimitBytes": 0
+        },
+        "hostName": "opute-parity-t2",
+        "lxcBinaryPath": "incus",
+        "providerId": "incus",
+        "supportedTools": [
+          "apply_manifest",
+          "build_and_push_oci_image",
+          "check_local_llm_prerequisites",
+          "cleanup_container_storage",
+          "compact_wsl_disk",
+          "configure_agent_connection",
+          "configure_local_llm_model",
+          "configure_local_llm_runtime",
+          "configure_network",
+          "configure_oci_storage",
+          "create_vm",
+          "delete_k8s_resource",
+          "delete_oci_registry",
+          "delete_vm",
+          "detect_host_platform",
+          "diagnose_bridge",
+          "discover_service_ingress",
+          "ensure_docker",
+          "ensure_host_artifact",
+          "ensure_host_file",
+          "ensure_host_service_supervisor",
+          "ensure_host_tool",
+          "ensure_local_llm_k3s_proxy",
+          "ensure_local_llm_relay",
+          "ensure_local_llm_server_binary",
+          "ensure_oci_builder",
+          "ensure_public_mcp_quick_tunnel",
+          "ensure_public_mcp_tunnel",
+          "ensure_sqlite_database",
+          "exec_kubernetes_command",
+          "extract_host_archive",
+          "garbage_collect_cluster_registry",
+          "get_capability_catalog",
+          "get_host_capacity",
+          "get_host_info",
+          "get_host_plan_run",
+          "get_k8s_resource",
+          "get_k8s_resource_status",
+          "get_oci_registry_status",
+          "get_postgresql_service_status",
+          "get_runtime_recipe_run",
+          "get_sqlite_database_status",
+          "get_tunnel_run",
+          "get_vm_info",
+          "inspect_container_storage",
+          "inspect_guest_storage",
+          "inspect_host_file",
+          "inspect_host_service",
+          "inspect_host_service_supervisor",
+          "inspect_workload",
+          "install_cluster_agent",
+          "install_helm_chart",
+          "install_incus_stack",
+          "install_local_llm_model",
+          "install_oci_registry",
+          "install_provider_tools",
+          "list_agents",
+          "list_certificate_issuers",
+          "list_configmap_keys",
+          "list_deployments",
+          "list_host_services",
+          "list_ingress_classes",
+          "list_k8s_events",
+          "list_kubernetes_clusters",
+          "list_local_llm_models",
+          "list_namespaces",
+          "list_pods",
+          "list_secret_keys",
+          "list_services",
+          "list_storage_classes",
+          "list_vms",
+          "open_assistant_session",
+          "opute.provider.install",
+          "opute.provider.reload",
+          "opute.provider.status",
+          "opute.provider.teardown",
+          "opute.provider.validate",
+          "prepare_host_agent_artifacts",
+          "probe_gpu_container",
+          "probe_http_endpoint",
+          "probe_incus_gpu",
+          "probe_local_llm",
+          "probe_openai_compatible_server",
+          "provision_container",
+          "provision_vm",
+          "prune_unused_cluster_images",
+          "put_k8s_secret",
+          "reconcile_host_resource_policy",
+          "reconcile_postgresql_service",
+          "reconcile_serving_assignment",
+          "recover_bridge",
+          "register_kubernetes_cluster",
+          "release_postgresql_service_relay",
+          "remove_host_file",
+          "remove_local_llm_k3s_proxy",
+          "remove_local_llm_model",
+          "remove_local_llm_relay",
+          "remove_postgresql_service",
+          "remove_public_mcp_quick_tunnel",
+          "remove_sqlite_database",
+          "remove_vm_network_device",
+          "render_helm_template",
+          "reset_incus_stack",
+          "resize_console",
+          "restart_host_service",
+          "restart_vm",
+          "run_host_command",
+          "run_host_local_recipe",
+          "run_host_plan",
+          "run_instance_command",
+          "run_runtime_recipe",
+          "run_tunnel_recipe",
+          "send_console_input",
+          "set_host_service_state",
+          "shutdown_wsl",
+          "stage_build_context",
+          "start_local_llm_runtime",
+          "start_vm",
+          "stop_local_llm_runtime",
+          "stop_vm",
+          "stream_vm_console",
+          "terminate_wsl_distribution",
+          "trim_guest_storage",
+          "uninstall_incus_stack",
+          "uninstall_provider_tools",
+          "update_vm_resources",
+          "validate_host_local_recipe",
+          "validate_host_plan",
+          "validate_runtime_recipe",
+          "validate_tunnel_recipe"
+        ],
+        "system": {
+          "cgroupControllers": [
+            "cpu",
+            "memory",
+            "pids"
+          ],
+          "cgroupMemory": {
+            "limitBytes": 0,
+            "usageBytes": 12619776
+          },
+          "cpuCount": 4,
+          "cpuLoad15m": 0.06,
+          "cpuLoad1m": 0.75,
+          "cpuLoad5m": 0.2,
+          "diskAvailableBytes": 28777361408,
+          "diskFilesystems": [
+            {
+              "availableBytes": 28777361408,
+              "mount": "/",
+              "pressure": "normal",
+              "totalBytes": 32162967552
+            }
+          ],
+          "diskMount": "/",
+          "diskPressure": "normal",
+          "diskTotalBytes": 32162967552,
+          "enforcement": "enforced",
+          "memoryAvailableBytes": 5587447808,
+          "memoryEvents": {
+            "high": 0,
+            "low": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_group_kill": 0,
+            "oom_kill": 0
+          },
+          "memoryFreeBytes": 5587447808,
+          "memoryPressure": "normal",
+          "memoryTotalBytes": 6213009408,
+          "memoryUsageBytes": 12619776,
+          "memoryUsedBytes": 625561600,
+          "psi": {
+            "cpu": {
+              "someAvg10": 1.62,
+              "someAvg300": 0.17,
+              "someAvg60": 0.39,
+              "someTotalUsec": 1669389
+            },
+            "io": {
+              "fullAvg10": 11.95,
+              "fullAvg300": 1.29,
+              "fullAvg60": 4.99,
+              "fullTotalUsec": 4871329,
+              "someAvg10": 12.54,
+              "someAvg300": 1.35,
+              "someAvg60": 5.17,
+              "someTotalUsec": 5202704
+            },
+            "memory": {
+              "fullTotalUsec": 44,
+              "someTotalUsec": 71
+            }
+          },
+          "resourceAdmission": {
+            "checkedAt": "2026-10-05T09:31:09Z",
+            "currentUsage": {
+              "diskAvailableBytes": 28777361408,
+              "diskBytes": 3385606144,
+              "memoryAvailableBytes": 5587447808,
+              "memoryBytes": 625561600,
+              "tasks": 3
+            },
+            "diskAvailableBytes": 28777361408,
+            "diskPressure": "normal",
+            "effectiveLimits": {
+              "cpuCores": 4,
+              "diskBytes": 32162967552,
+              "memoryBytes": 6213009408,
+              "tasks": 1024
+            },
+            "enforcement": "enforced",
+            "heavyInFlight": 0,
+            "memoryAvailableBytes": 5587447808,
+            "memoryEvents": {
+              "high": 0,
+              "low": 0,
+              "max": 0,
+              "oom": 0,
+              "oom_group_kill": 0,
+              "oom_kill": 0
+            },
+            "normalInFlight": 0,
+            "policyRevision": "opute-host-resource-policy.v2",
+            "pressure": "normal",
+            "psi": {
+              "cpu": {
+                "someAvg10": 1.62,
+                "someAvg300": 0.17,
+                "someAvg60": 0.39,
+                "someTotalUsec": 1669389
+              },
+              "io": {
+                "fullAvg10": 11.95,
+                "fullAvg300": 1.29,
+                "fullAvg60": 4.99,
+                "fullTotalUsec": 4871329,
+                "someAvg10": 12.54,
+                "someAvg300": 1.35,
+                "someAvg60": 5.17,
+                "someTotalUsec": 5202704
+              },
+              "memory": {
+                "fullTotalUsec": 44,
+                "someTotalUsec": 71
+              }
+            },
+            "queue": {
+              "heavyActive": 0,
+              "heavyQueued": 0,
+              "normalActive": 0,
+              "queued": 0
+            },
+            "queued": 0,
+            "reason": "",
+            "reservations": {
+              "count": 0
+            }
+          },
+          "tasks": {
+            "current": 3,
+            "limit": 1024
+          }
+        },
+        "systemctlPath": "/usr/bin/systemctl",
+        "uri": "host:local:parity-native-t2-rustref-opaque"
+      }
+    }
+  },
+  "elapsedSeconds": 0.09785938262939453,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

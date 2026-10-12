@@ -1,0 +1,41 @@
+cd tools/parity && python3 -m parity verify --gate cutover
+gate cutover: FAIL
+  go-vs-go     pass=0 fail=0 unverified=137
+  go-vs-rust   pass=0 fail=0 unverified=137
+  canaries     caught=0/14
+  inventory    pass
+  go oracles   pass
+  contracts    fail
+  M5 shape              unverified
+  M5 cross-read         unverified
+  M5 crash              unverified
+  M5 secrets            unverified
+  M5 unknown-projection unverified
+  M5 migration          unverified
+  problem: [go-vs-go] go-vs-go: stale: harness changed since evidence was produced
+  problem: [go-vs-rust] go-vs-rust: stale: harness changed since evidence was produced
+  problem: [canaries] canaries: stale results (source, Go binary, harness or canary list changed)
+  problem: [m5:shape] shape: stale harness provenance
+  problem: [m5:cross-read] cross-read: stale harness provenance
+  problem: [m5:crash] crash: stale harness provenance
+  problem: [m5:secrets] secrets: stale harness provenance
+  problem: [m5:unknown-projection] unknown-projection: stale harness provenance
+  problem: [m5:migration] migration: stale harness provenance
+  problem: [contracts] contracts/oauth-issuance: stale: contract or harness changed since the run
+  problem: [contracts] contracts/standalone-read-only-gate: stale: contract or harness changed since the run
+  problem: [contracts] contracts/reject-without-audit-writes: stale: contract or harness changed since the run
+  problem: [contracts] contracts/refuse-before-operation-record: stale: contract or harness changed since the run
+  problem: [contracts] rust-canaries: stale results (Rust candidate, canary list or contract changed)
+  gate failure: M5 shape: unverified
+  gate failure: M5 cross-read: unverified
+  gate failure: M5 crash: unverified
+  gate failure: M5 secrets: unverified
+  gate failure: M5 unknown-projection: unverified
+  gate failure: M5 migration: unverified
+  gate failure: go-vs-go: 137 item(s) not pass: admission.binding.canonical-uri, admission.catalog-revision.stale, admission.enforcement.default-policy, admission.headroom.min-disk, admission.headroom.min-memory, admission.matrix.binding, admission.matrix.gate-closed, admission.matrix.stale-revision ...
+  gate failure: go-vs-rust: 137 item(s) not pass: admission.binding.canonical-uri, admission.catalog-revision.stale, admission.enforcement.default-policy, admission.headroom.min-disk, admission.headroom.min-memory, admission.matrix.binding, admission.matrix.gate-closed, admission.matrix.stale-revision ...
+  gate failure: canaries not all caught: ['C1-descriptor-text', 'C2-auth-status', 'C3-extra-argv-token', 'C4-legacy-bypass-widened', 'C5-retired-env-accepted', 'C6-mutation-gate-open', 'C7-envelope-status', 'C8-ipv6-loopback-origin', 'C9-vm-release-default', 'C10-schema-type-text', 'C11-normal-slot-limit', 'C12-enforcement-fail-open', 'C13-release-keeps-lease', 'C14-late-result-overwrites-cancel']
+  gate failure: inventory gaps remain: 76
+  gate failure: contracts fail
+  gate failure: 14 provenance/evidence problem(s)
+make: *** [Makefile:95: parity-verify-cutover] Error 1

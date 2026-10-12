@@ -1,0 +1,601 @@
+{
+  "scope": "native read-only admission; not T2 external-effect evidence",
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "harnessSha256": "3fac8124240924bf80258d8f7537dc561620ad34a57c92bceeec54cab4107040",
+  "driverSha256": "feb1239a9532025d97ff0da7747ccb447ce5856cf4ef50706b14e2cff4279078",
+  "expectedMemoryBytes": 25769803776,
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "results": {
+    "go": {
+      "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+      "policies": {
+        "default": {
+          "ready": {
+            "ready": true
+          },
+          "capacity": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "jsonrpc": "2.0",
+              "id": 1,
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Host capacity and enforcement state observed."
+                  }
+                ],
+                "structuredContent": {
+                  "cgroupControllers": [
+                    "memory",
+                    "pids"
+                  ],
+                  "checkedAt": "2026-10-05T08:55:50Z",
+                  "currentUsage": {
+                    "diskAvailableBytes": 454446923776,
+                    "diskBytes": 85530320896,
+                    "memoryAvailableBytes": 20528492544,
+                    "memoryBytes": 12004581376,
+                    "tasks": 680
+                  },
+                  "diskAvailableBytes": 454446989312,
+                  "diskPressure": "normal",
+                  "effectiveLimits": {
+                    "cpuCores": 6,
+                    "diskBytes": 539977244672,
+                    "memoryBytes": 25769803776,
+                    "tasks": 4096
+                  },
+                  "enforcement": "unknown",
+                  "heavyInFlight": 0,
+                  "memoryAvailableBytes": 20534083584,
+                  "memoryEvents": {
+                    "high": 0,
+                    "low": 0,
+                    "max": 0,
+                    "oom": 0,
+                    "oom_group_kill": 0,
+                    "oom_kill": 0,
+                    "sock_throttled": 0
+                  },
+                  "normalInFlight": 0,
+                  "observedLimits": {
+                    "diskBytes": 539977244672,
+                    "tasks": 32684
+                  },
+                  "policyRevision": "opute-host-resource-policy.v2",
+                  "pressure": "normal",
+                  "psi": {
+                    "cpu": {
+                      "someAvg10": 49.2,
+                      "someAvg300": 64.48,
+                      "someAvg60": 60.69,
+                      "someTotalUsec": 1582384421
+                    },
+                    "io": {
+                      "fullAvg300": 0.04,
+                      "fullAvg60": 0.04,
+                      "fullTotalUsec": 18500254,
+                      "someAvg10": 0.55,
+                      "someAvg300": 1.31,
+                      "someAvg60": 1.26,
+                      "someTotalUsec": 33640573
+                    },
+                    "memory": {
+                      "fullTotalUsec": 60845,
+                      "someTotalUsec": 62746
+                    }
+                  },
+                  "queue": {
+                    "heavyActive": 0,
+                    "heavyQueued": 0,
+                    "normalActive": 0,
+                    "queued": 0
+                  },
+                  "queued": 0,
+                  "reservations": {
+                    "count": 0
+                  },
+                  "tasksCurrent": 680,
+                  "tasksLimit": 32684
+                },
+                "resultType": "complete"
+              }
+            }
+          },
+          "inspection": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "jsonrpc": "2.0",
+              "id": 1,
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Error: host_resource_enforcement_unknown: class=normal pressure=normal reason=workload cgroup enforcement is not verified retryAfterMs=1000"
+                  }
+                ],
+                "structuredContent": {
+                  "class": "normal",
+                  "code": "host_resource_enforcement_unknown",
+                  "owner": "admission",
+                  "pressure": "normal",
+                  "reason": "workload cgroup enforcement is not verified",
+                  "retryAfterMs": 1000
+                },
+                "isError": true,
+                "resultType": "complete"
+              }
+            }
+          },
+          "expectedRefusal": true,
+          "fileUnchanged": true
+        },
+        "advisory": {
+          "ready": {
+            "ready": true
+          },
+          "capacity": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "jsonrpc": "2.0",
+              "id": 1,
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Host capacity and enforcement state observed."
+                  }
+                ],
+                "structuredContent": {
+                  "cgroupControllers": [
+                    "memory",
+                    "pids"
+                  ],
+                  "checkedAt": "2026-10-05T08:55:52Z",
+                  "currentUsage": {
+                    "diskAvailableBytes": 454435770368,
+                    "diskBytes": 85541474304,
+                    "memoryAvailableBytes": 20524376064,
+                    "memoryBytes": 12142882816,
+                    "tasks": 673
+                  },
+                  "diskAvailableBytes": 454435770368,
+                  "diskPressure": "normal",
+                  "effectiveLimits": {
+                    "cpuCores": 6,
+                    "diskBytes": 539977244672,
+                    "memoryBytes": 25769803776,
+                    "tasks": 4096
+                  },
+                  "enforcement": "unknown",
+                  "heavyInFlight": 0,
+                  "memoryAvailableBytes": 20524175360,
+                  "memoryEvents": {
+                    "high": 0,
+                    "low": 0,
+                    "max": 0,
+                    "oom": 0,
+                    "oom_group_kill": 0,
+                    "oom_kill": 0,
+                    "sock_throttled": 0
+                  },
+                  "normalInFlight": 0,
+                  "observedLimits": {
+                    "diskBytes": 539977244672,
+                    "tasks": 32684
+                  },
+                  "policyRevision": "opute-host-resource-policy.v2",
+                  "pressure": "normal",
+                  "psi": {
+                    "cpu": {
+                      "someAvg10": 46.08,
+                      "someAvg300": 64.26,
+                      "someAvg60": 59.75,
+                      "someTotalUsec": 1583014948
+                    },
+                    "io": {
+                      "fullAvg300": 0.04,
+                      "fullAvg60": 0.03,
+                      "fullTotalUsec": 18504468,
+                      "someAvg10": 0.45,
+                      "someAvg300": 1.3,
+                      "someAvg60": 1.22,
+                      "someTotalUsec": 33650159
+                    },
+                    "memory": {
+                      "fullTotalUsec": 60845,
+                      "someTotalUsec": 62746
+                    }
+                  },
+                  "queue": {
+                    "heavyActive": 0,
+                    "heavyQueued": 0,
+                    "normalActive": 0,
+                    "queued": 0
+                  },
+                  "queued": 0,
+                  "reservations": {
+                    "count": 0
+                  },
+                  "tasksCurrent": 673,
+                  "tasksLimit": 32684
+                },
+                "resultType": "complete"
+              }
+            }
+          },
+          "inspection": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "jsonrpc": "2.0",
+              "id": 1,
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Managed host file inspected."
+                  }
+                ],
+                "structuredContent": {
+                  "executable": false,
+                  "exists": true,
+                  "matches": true,
+                  "mode": "664",
+                  "path": "/tmp/parity-go-ly6d7ajd/home/native-admission.txt",
+                  "regular": true,
+                  "sha256": "sha256:898632ad690cdd203d8253fb25f634824fdfd26b2d63e7b4b101bb58a2d61343"
+                },
+                "resultType": "complete"
+              }
+            }
+          },
+          "expectedRefusal": false,
+          "fileUnchanged": true
+        }
+      }
+    },
+    "rust": {
+      "binarySha256": "78a5fe8ab57e3b37704db2d8289e186f206c7b8bf848b1d97f7139afe6c72223",
+      "policies": {
+        "default": {
+          "ready": {
+            "ready": true
+          },
+          "capacity": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "id": 1,
+              "jsonrpc": "2.0",
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "text": "Host capacity and enforcement state observed.",
+                    "type": "text"
+                  }
+                ],
+                "resultType": "complete",
+                "structuredContent": {
+                  "cgroupControllers": [
+                    "memory",
+                    "pids"
+                  ],
+                  "checkedAt": "2026-10-05T08:55:52Z",
+                  "currentUsage": {
+                    "diskAvailableBytes": 454435401728,
+                    "diskBytes": 85541842944,
+                    "memoryAvailableBytes": 20474937344,
+                    "memoryBytes": 12172177408,
+                    "tasks": 664
+                  },
+                  "diskAvailableBytes": 454435401728,
+                  "diskPressure": "normal",
+                  "effectiveLimits": {
+                    "cpuCores": 6,
+                    "diskBytes": 539977244672,
+                    "memoryBytes": 25769803776,
+                    "tasks": 4096
+                  },
+                  "enforcement": "unknown",
+                  "heavyInFlight": 0,
+                  "memoryAvailableBytes": 20476801024,
+                  "memoryEvents": {
+                    "high": 0,
+                    "low": 0,
+                    "max": 0,
+                    "oom": 0,
+                    "oom_group_kill": 0,
+                    "oom_kill": 0,
+                    "sock_throttled": 0
+                  },
+                  "normalInFlight": 0,
+                  "observedLimits": {
+                    "diskBytes": 539977244672,
+                    "tasks": 32684
+                  },
+                  "policyRevision": "opute-host-resource-policy.v2",
+                  "pressure": "normal",
+                  "psi": {
+                    "cpu": {
+                      "someAvg10": 46.08,
+                      "someAvg300": 64.26,
+                      "someAvg60": 59.75,
+                      "someTotalUsec": 1583110297
+                    },
+                    "io": {
+                      "fullAvg300": 0.04,
+                      "fullAvg60": 0.03,
+                      "fullTotalUsec": 18504468,
+                      "someAvg10": 0.45,
+                      "someAvg300": 1.3,
+                      "someAvg60": 1.22,
+                      "someTotalUsec": 33650159
+                    },
+                    "memory": {
+                      "fullTotalUsec": 60845,
+                      "someTotalUsec": 62746
+                    }
+                  },
+                  "queue": {
+                    "heavyActive": 0,
+                    "heavyQueued": 0,
+                    "normalActive": 0,
+                    "queued": 0
+                  },
+                  "queued": 0,
+                  "reservations": {
+                    "count": 0
+                  },
+                  "tasksCurrent": 664,
+                  "tasksLimit": 32684
+                }
+              }
+            }
+          },
+          "inspection": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "id": 1,
+              "jsonrpc": "2.0",
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "text": "Error: host_resource_enforcement_unknown: class=normal pressure=normal reason=workload cgroup enforcement is not verified retryAfterMs=1000",
+                    "type": "text"
+                  }
+                ],
+                "isError": true,
+                "resultType": "complete",
+                "structuredContent": {
+                  "class": "normal",
+                  "code": "host_resource_enforcement_unknown",
+                  "owner": "admission",
+                  "pressure": "normal",
+                  "reason": "workload cgroup enforcement is not verified",
+                  "retryAfterMs": 1000
+                }
+              }
+            }
+          },
+          "expectedRefusal": true,
+          "fileUnchanged": true
+        },
+        "advisory": {
+          "ready": {
+            "ready": true
+          },
+          "capacity": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "id": 1,
+              "jsonrpc": "2.0",
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "text": "Host capacity and enforcement state observed.",
+                    "type": "text"
+                  }
+                ],
+                "resultType": "complete",
+                "structuredContent": {
+                  "cgroupControllers": [
+                    "memory",
+                    "pids"
+                  ],
+                  "checkedAt": "2026-10-05T08:55:52Z",
+                  "currentUsage": {
+                    "diskAvailableBytes": 454435176448,
+                    "diskBytes": 85542068224,
+                    "memoryAvailableBytes": 20441780224,
+                    "memoryBytes": 12206931968,
+                    "tasks": 666
+                  },
+                  "diskAvailableBytes": 454435270656,
+                  "diskPressure": "normal",
+                  "effectiveLimits": {
+                    "cpuCores": 6,
+                    "diskBytes": 539977244672,
+                    "memoryBytes": 25769803776,
+                    "tasks": 4096
+                  },
+                  "enforcement": "unknown",
+                  "heavyInFlight": 0,
+                  "memoryAvailableBytes": 20443242496,
+                  "memoryEvents": {
+                    "high": 0,
+                    "low": 0,
+                    "max": 0,
+                    "oom": 0,
+                    "oom_group_kill": 0,
+                    "oom_kill": 0,
+                    "sock_throttled": 0
+                  },
+                  "normalInFlight": 0,
+                  "observedLimits": {
+                    "diskBytes": 539977244672,
+                    "tasks": 32684
+                  },
+                  "policyRevision": "opute-host-resource-policy.v2",
+                  "pressure": "normal",
+                  "psi": {
+                    "cpu": {
+                      "someAvg10": 46.08,
+                      "someAvg300": 64.26,
+                      "someAvg60": 59.75,
+                      "someTotalUsec": 1583181852
+                    },
+                    "io": {
+                      "fullAvg300": 0.04,
+                      "fullAvg60": 0.03,
+                      "fullTotalUsec": 18504468,
+                      "someAvg10": 0.45,
+                      "someAvg300": 1.3,
+                      "someAvg60": 1.22,
+                      "someTotalUsec": 33650159
+                    },
+                    "memory": {
+                      "fullTotalUsec": 60845,
+                      "someTotalUsec": 62746
+                    }
+                  },
+                  "queue": {
+                    "heavyActive": 0,
+                    "heavyQueued": 0,
+                    "normalActive": 0,
+                    "queued": 0
+                  },
+                  "queued": 0,
+                  "reservations": {
+                    "count": 0
+                  },
+                  "tasksCurrent": 664,
+                  "tasksLimit": 32684
+                }
+              }
+            }
+          },
+          "inspection": {
+            "status": 200,
+            "headers": {
+              "cache-control": "no-cache, no-transform",
+              "content-type": "application/json"
+            },
+            "body": {
+              "id": 1,
+              "jsonrpc": "2.0",
+              "result": {
+                "_meta": {
+                  "io.modelcontextprotocol/serverInfo": {
+                    "name": "host-agent",
+                    "version": "0.2.3"
+                  }
+                },
+                "content": [
+                  {
+                    "text": "Managed host file inspected.",
+                    "type": "text"
+                  }
+                ],
+                "resultType": "complete",
+                "structuredContent": {
+                  "executable": false,
+                  "exists": true,
+                  "matches": true,
+                  "mode": "664",
+                  "path": "/tmp/parity-rust-3wmr09vo/home/native-admission.txt",
+                  "regular": true,
+                  "sha256": "sha256:898632ad690cdd203d8253fb25f634824fdfd26b2d63e7b4b101bb58a2d61343"
+                }
+              }
+            }
+          },
+          "expectedRefusal": false,
+          "fileUnchanged": true
+        }
+      }
+    }
+  }
+}

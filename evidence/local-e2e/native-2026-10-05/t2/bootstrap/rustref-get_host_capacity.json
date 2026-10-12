@@ -1,0 +1,121 @@
+{
+  "impl": "rustref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_host_capacity",
+      "arguments": {},
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "host-agent",
+          "version": "0.2.3"
+        }
+      },
+      "content": [
+        {
+          "text": "Host capacity and enforcement state observed.",
+          "type": "text"
+        }
+      ],
+      "resultType": "complete",
+      "structuredContent": {
+        "cgroupControllers": [
+          "cpu",
+          "memory",
+          "pids"
+        ],
+        "checkedAt": "2026-10-05T09:31:09Z",
+        "currentUsage": {
+          "diskAvailableBytes": 28777504768,
+          "diskBytes": 3385462784,
+          "memoryAvailableBytes": 5567410176,
+          "memoryBytes": 645599232,
+          "tasks": 3
+        },
+        "diskAvailableBytes": 28777504768,
+        "diskPressure": "normal",
+        "effectiveLimits": {
+          "cpuCores": 4,
+          "diskBytes": 32162967552,
+          "memoryBytes": 6213009408,
+          "tasks": 1024
+        },
+        "enforcement": "enforced",
+        "heavyInFlight": 0,
+        "memoryAvailableBytes": 5584019456,
+        "memoryEvents": {
+          "high": 0,
+          "low": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_group_kill": 0,
+          "oom_kill": 0
+        },
+        "normalInFlight": 0,
+        "observedLimits": {
+          "diskBytes": 32162967552,
+          "tasks": 1024
+        },
+        "policyRevision": "opute-host-resource-policy.v2",
+        "pressure": "normal",
+        "psi": {
+          "cpu": {
+            "someAvg10": 1.62,
+            "someAvg300": 0.17,
+            "someAvg60": 0.39,
+            "someTotalUsec": 1680294
+          },
+          "io": {
+            "fullAvg10": 11.95,
+            "fullAvg300": 1.29,
+            "fullAvg60": 4.99,
+            "fullTotalUsec": 4944679,
+            "someAvg10": 12.54,
+            "someAvg300": 1.35,
+            "someAvg60": 5.17,
+            "someTotalUsec": 5287163
+          },
+          "memory": {
+            "fullTotalUsec": 44,
+            "someTotalUsec": 72
+          }
+        },
+        "queue": {
+          "heavyActive": 0,
+          "heavyQueued": 0,
+          "normalActive": 0,
+          "queued": 0
+        },
+        "queued": 0,
+        "reservations": {
+          "count": 0
+        },
+        "tasksCurrent": 3,
+        "tasksLimit": 1024
+      }
+    }
+  },
+  "elapsedSeconds": 0.02013111114501953,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

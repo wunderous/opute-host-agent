@@ -144,8 +144,26 @@ pub fn redact_recipe_metadata_secrets(metadata: &mut Map<String, J>) {
         .and_then(|v| v.get_mut("inputs"))
     {
         for name in &secret_names {
-            if inputs.contains_key(name) {
-                inputs.insert(name.clone(), J::String(REDACTED.to_string()));
+            inputs.insert(name.clone(), J::String(REDACTED.to_string()));
+        }
+    }
+    let names = metadata
+        .get("activationInputNames")
+        .and_then(J::as_object)
+        .cloned()
+        .unwrap_or_default();
+    if let Some(bindings) = metadata
+        .get_mut("activation")
+        .and_then(J::as_object_mut)
+        .and_then(|activation| activation.get_mut("inputBindings"))
+        .and_then(J::as_object_mut)
+    {
+        for (binding, input) in &names {
+            if input
+                .as_str()
+                .is_some_and(|name| secret_names.contains(name))
+            {
+                bindings.insert(binding.clone(), J::String(REDACTED.to_string()));
             }
         }
     }

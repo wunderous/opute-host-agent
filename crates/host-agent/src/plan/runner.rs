@@ -34,14 +34,20 @@ pub struct RunCtx {
     /// independently. Carried like cancellation -- set once near the root,
     /// read by walking up through `with_cancel`/`with_timeout` children.
     reservation: Option<Arc<crate::resource::Reservation>>,
+    operation_identity: Option<Arc<(String, String)>>,
+    resource_delegation: Option<Arc<String>>,
 }
 
 #[derive(Clone)]
-pub struct CancelHandle(Arc<AtomicBool>);
+pub struct CancelHandle(Arc<AtomicBool>, RunCtx);
 
 impl CancelHandle {
     pub fn cancel(&self) {
-        self.0.store(true, Ordering::SeqCst);
+        // Go cancelCtx keeps an existing deadline or inherited refusal cause.
+        // Calling a cleanup cancel after expiry must not change ctx.Err().
+        if self.1.err().is_none() {
+            self.0.store(true, Ordering::SeqCst);
+        }
     }
 }
 
@@ -56,6 +62,8 @@ impl RunCtx {
             parent: None,
             deadline: None,
             reservation: None,
+            operation_identity: None,
+            resource_delegation: None,
         }
     }
 
@@ -65,6 +73,8 @@ impl RunCtx {
             parent: None,
             deadline: None,
             reservation: None,
+            operation_identity: None,
+            resource_delegation: None,
         }
     }
 
@@ -73,7 +83,9 @@ impl RunCtx {
     /// `with_cancel`/`with_timeout` child), in place of the one it had.
     pub fn with_reservation(&self, reservation: crate::resource::Reservation) -> Self {
         let mut ctx = self.clone();
-        ctx.reservation = Some(Arc::new(reservation));
+        if !reservation.id.trim().is_empty() {
+            ctx.reservation = Some(Arc::new(reservation));
+        }
         ctx
     }
 
@@ -82,6 +94,43 @@ impl RunCtx {
         self.reservation
             .clone()
             .or_else(|| self.parent.as_ref().and_then(|p| p.reservation()))
+    }
+
+    /// Typed durable ownership is independent of the reservation's request.
+    pub fn with_operation_identity(&self, operation: &str, task: &str) -> Self {
+        let mut ctx = self.clone();
+        ctx.operation_identity = Some(Arc::new((operation.trim().into(), task.trim().into())));
+        ctx
+    }
+    pub fn operation_identity(&self) -> (String, String) {
+        self.operation_identity
+            .as_ref()
+            .map(|value| (**value).clone())
+            .or_else(|| {
+                self.parent
+                    .as_ref()
+                    .map(|parent| parent.operation_identity())
+            })
+            .unwrap_or_default()
+    }
+    /// Reserved callback metadata, never an argument or authorization token.
+    pub fn with_resource_delegation(&self, token: &str) -> Self {
+        let mut ctx = self.clone();
+        if !token.trim().is_empty() {
+            ctx.resource_delegation = Some(Arc::new(token.trim().into()));
+        }
+        ctx
+    }
+    pub fn resource_delegation(&self) -> String {
+        self.resource_delegation
+            .as_ref()
+            .map(|value| value.trim().into())
+            .or_else(|| {
+                self.parent
+                    .as_ref()
+                    .map(|parent| parent.resource_delegation())
+            })
+            .unwrap_or_default()
     }
 
     pub fn err(&self) -> Option<String> {
@@ -103,8 +152,10 @@ impl RunCtx {
             parent: Some(Arc::new(self.clone())),
             deadline: None,
             reservation: None,
+            operation_identity: None,
+            resource_delegation: None,
         };
-        (child, CancelHandle(flag))
+        (child.clone(), CancelHandle(flag, child))
     }
 
     pub fn with_timeout(&self, duration: Duration) -> (Self, CancelHandle) {
@@ -114,8 +165,10 @@ impl RunCtx {
             parent: Some(Arc::new(self.clone())),
             deadline: Some(Instant::now() + duration),
             reservation: None,
+            operation_identity: None,
+            resource_delegation: None,
         };
-        (child, CancelHandle(flag))
+        (child.clone(), CancelHandle(flag, child))
     }
 
     /// Sleeps `duration` in short slices, checking cancellation between each

@@ -1,0 +1,199 @@
+package main
+
+import (
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	provider "github.com/wunderous/host-agents/contracts/provider"
+	registry "github.com/wunderous/host-agents/internal/catalog"
+	"github.com/wunderous/host-agents/internal/hostmcp"
+	"github.com/wunderous/host-agents/internal/tools"
+	"net/url"
+	"os"
+	"regexp"
+)
+
+func main() {
+	var rows []struct {
+		Regexp *string `json:"regexp"`
+		URI    *struct {
+			Base string  `json:"base"`
+			Ref  *string `json:"ref"`
+		} `json:"uri"`
+		Manifest        json.RawMessage           `json:"manifest"`
+		Previous        *provider.InstallManifest `json:"previous"`
+		Generation      string                    `json:"generation"`
+		CandidateLookup *struct {
+			ManifestPresent bool   `json:"manifestPresent"`
+			AdapterPresent  bool   `json:"adapterPresent"`
+			Generation      string `json:"generation"`
+			Name            string `json:"name"`
+		} `json:"candidateLookup"`
+		Standalone     bool            `json:"standalone"`
+		Registry       json.RawMessage `json:"registry"`
+		Publication    json.RawMessage `json:"publication"`
+		Callback       json.RawMessage `json:"callback"`
+		Issuance       json.RawMessage `json:"issuance"`
+		Delegation     json.RawMessage `json:"delegation"`
+		Observation    json.RawMessage `json:"observation"`
+		Mounts         json.RawMessage `json:"mounts"`
+		Schema         json.RawMessage `json:"schema"`
+		Group          string          `json:"group"`
+		DecodeOnly     bool            `json:"decodeOnly"`
+		ResolverAction string          `json:"resolverAction"`
+		BaseURI        string          `json:"baseURI"`
+		Pointer        string          `json:"pointer"`
+	}
+	if err := json.NewDecoder(os.Stdin).Decode(&rows); err != nil {
+		panic(err)
+	}
+	results := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		if len(row.Publication) > 0 {
+			results = append(results, map[string]any{"observations": hostmcp.ParityProviderPublication(row.Publication)})
+			continue
+		}
+		if len(row.Callback) > 0 {
+			results = append(results, hostmcp.ParityProviderCallback(row.Callback))
+			continue
+		}
+		if len(row.Issuance) > 0 {
+			results = append(results, hostmcp.ParityProviderIssuance(row.Issuance))
+			continue
+		}
+		if len(row.Delegation) > 0 {
+			claims, message := hostmcp.ParityProviderDelegation(row.Delegation)
+			results = append(results, map[string]any{"claims": claims, "error": message})
+			continue
+		}
+		if len(row.Observation) > 0 {
+			observation, message := hostmcp.ParityProviderObservation(row.Observation)
+			results = append(results, map[string]any{"observation": observation, "error": message})
+			continue
+		}
+		if len(row.Mounts) > 0 {
+			results = append(results, map[string]any{"observations": hostmcp.ParityProviderMounts(row.Mounts)})
+			continue
+		}
+		if row.Regexp != nil {
+			_, err := regexp.Compile(*row.Regexp)
+			message := ""
+			if err != nil {
+				message = err.Error()
+			}
+			results = append(results, map[string]any{"error": message})
+			continue
+		}
+		if row.URI != nil {
+			u, err := url.Parse(row.URI.Base)
+			if err == nil && row.URI.Ref != nil {
+				var ref *url.URL
+				ref, err = url.Parse(*row.URI.Ref)
+				if err == nil {
+					u = u.ResolveReference(ref)
+				}
+			}
+			if err != nil {
+				results = append(results, map[string]any{"error": err.Error()})
+				continue
+			}
+			var user any
+			if u.User != nil {
+				password, present := u.User.Password()
+				var p any
+				if present {
+					p = hex.EncodeToString([]byte(password))
+				}
+				user = map[string]any{"name": hex.EncodeToString([]byte(u.User.Username())), "password": p}
+			}
+			results = append(results, map[string]any{"error": "", "scheme": u.Scheme, "opaque": u.Opaque, "user": user, "host": hex.EncodeToString([]byte(u.Host)), "path": hex.EncodeToString([]byte(u.Path)), "rawPath": u.RawPath, "omitHost": u.OmitHost, "forceQuery": u.ForceQuery, "query": u.RawQuery, "fragment": hex.EncodeToString([]byte(u.Fragment)), "rawFragment": u.RawFragment, "escapedPath": u.EscapedPath(), "escapedFragment": u.EscapedFragment(), "string": u.String()})
+			continue
+		}
+		if len(row.Schema) > 0 {
+			var value map[string]any
+			if err := json.Unmarshal(row.Schema, &value); err != nil {
+				panic(err)
+			}
+			if row.ResolverAction != "" {
+				results = append(results, registry.ParitySchemaResolver(value, row.ResolverAction, row.Pointer, row.BaseURI))
+				continue
+			}
+			if row.DecodeOnly {
+				results = append(results, registry.ParityDecodeSchema(value))
+				continue
+			}
+			err := registry.ParityCheckSchema("fixture", value)
+			message := ""
+			if err != nil {
+				message = err.Error()
+			}
+			observation := map[string]any{"error": message}
+			if row.Group == "integer" {
+				observation["value"] = nil
+				if err == nil {
+					observation["value"] = registry.ParitySchemaInteger(value)
+				}
+			}
+			results = append(results, observation)
+			continue
+		}
+		if len(row.Registry) > 0 {
+			results = append(results, map[string]any{"observations": registryScenario(row.Registry)})
+			continue
+		}
+		var manifest provider.InstallManifest
+		if err := json.Unmarshal(row.Manifest, &manifest); err != nil {
+			results = append(results, map[string]any{"error": err.Error()})
+			continue
+		}
+		definitions, err := tools.HostToolDefinitionsForProvider("incus")
+		if err != nil {
+			panic(err)
+		}
+		if row.Standalone {
+			definitions = append(definitions, tools.StandaloneToolDefinitions()...)
+			all, err := tools.LoadAllToolDefinitions("all")
+			if err != nil {
+				panic(err)
+			}
+			for _, def := range all {
+				if tools.StandaloneToolNames[def.Name] {
+					definitions = append(definitions, def)
+				}
+			}
+		}
+		active := tools.BuildCapabilityCatalog("incus", tools.CanonicalizeToolDefinitions(definitions))
+		if row.Previous != nil {
+			_, active, _ = hostmcp.ParityProviderCatalog(active, *row.Previous, "old-generation")
+		}
+		descriptors, candidate, ok := hostmcp.ParityProviderCatalog(active, manifest, row.Generation)
+		if !ok && row.CandidateLookup == nil {
+			panic("fixture generation must identify a candidate")
+		}
+		encoded := func(value any) string {
+			raw, err := json.Marshal(value)
+			if err != nil {
+				panic(err)
+			}
+			return string(raw)
+		}
+		if row.CandidateLookup != nil {
+			query := row.CandidateLookup
+			snapshot, found, descriptor := hostmcp.ParityCandidateLookup(active, manifest, row.Generation, query.ManifestPresent, query.AdapterPresent, query.Generation, query.Name)
+			var private any
+			if found {
+				private = encoded(snapshot)
+			}
+			var bound any
+			if descriptor != nil {
+				bound = encoded(descriptor)
+			}
+			results = append(results, map[string]any{"active": encoded(active), "candidate": private, "descriptor": bound})
+			continue
+		}
+		results = append(results, map[string]any{"descriptors": encoded(descriptors), "active": encoded(active), "candidate": encoded(candidate)})
+	}
+	if err := json.NewEncoder(os.Stdout).Encode(results); err != nil {
+		panic(fmt.Errorf("encode: %w", err))
+	}
+}

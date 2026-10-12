@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/current/canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-12-r8/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
@@ -9,21 +9,25 @@
   "standalone": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
  },
  "contracts": {
+  "evidence-redaction": {
+   "decision": "D13",
+   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/evidence-redaction/summary.json"
+  },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/current/contracts/oauth-issuance/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/current/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/current/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/current/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -59,6 +63,46 @@
    "status": "approved",
    "summary": "Rust's redact_for_storage fails closed on any unmarked/open-schema durable content, replacing it with a redaction marker; Go's pinned reference persists it verbatim. Delivery to a caller (tasks/get, live or restored) is unaffected by this divergence."
   },
+  "D14": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/three-role-capability-seam",
+   "date": "2026-10-11",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D14)",
+   "status": "approved",
+   "summary": "Every Rust capability, built-in or external, follows one architecture: a Service Definition, a Service Provider mounted in one service context, and a Consumer; they differ only in distribution, trust and declared Go-observable contracts; built-in identities are unreachable by provider families; no observable change; M1-M7 capabilities are revised onto the seam before M8 starts"
+  },
+  "D15": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/reimplement-host-agent-in-rust",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D15)",
+   "status": "approved",
+   "summary": "The ollama provider is out of the Rust migration scope: excluded from the M7 exit gate and the inventory; Rust behaviour unchanged"
+  },
+  "D16": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/atomic-provider-family-publication",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D16)",
+   "status": "approved",
+   "summary": "Rust validates a provider candidate before displacing other providers' family operations; a failed candidate leaves registry, catalog, bindings and MCP tools intact"
+  },
+  "D17": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/reject-null-provider-input-requests",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D17)",
+   "status": "approved",
+   "summary": "Rust refuses a null provider input-request entry with 'nil InputRequest entry' instead of Go's SDK panic"
+  },
+  "D18": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/unadmitted-callback-task-record",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D18)",
+   "status": "approved",
+   "summary": "Extend D12: a delegated callback child that never starts leaves no durable row; after a restart its handle is unknown"
+  },
   "D8": {
    "approvedBy": "owner",
    "change": "openspec/changes/secure-oauth-issuance",
@@ -73,24 +117,31 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/current/go-vs-go/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/go-vs-go-final/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/current/go-vs-rust/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/go-vs-rust-final/summary.json"
   }
  },
  "gates": {
   "cutover": {
-   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here",
+   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here. It also requires each reviewed cutoverEvidence file (package first success, isolated external effects, rollback rehearsal, owners' cutover review) the parity-gate invariant names",
    "requireCanaries": true,
    "requireContracts": [
+    "evidence-redaction",
     "oauth-issuance",
-    "standalone-read-only-gate",
+    "refuse-before-operation-record",
     "reject-without-audit-writes",
-    "refuse-before-operation-record"
+    "standalone-read-only-gate"
+   ],
+   "requireCutoverEvidence": [
+    "packageFirstSuccess",
+    "externalEffects",
+    "rollbackRehearsal",
+    "ownerReview"
    ],
    "requireInventory": true,
    "requireM5": true,
@@ -107,11 +158,7 @@
    "requireInventory": true,
    "requirePass": [
     "go-vs-go"
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m1": {
    "description": "M1 exit: harness valid (Go-vs-Go x20, canaries, inventory) and the Rust candidate matches Go on every CLI, config and lifecycle item (x5), and passes the Go black-box startup tests; other surfaces may still differ (M2+)",
@@ -128,11 +175,7 @@
       "lifecycle"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m2": {
    "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
@@ -155,11 +198,7 @@
       "auth"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m3": {
    "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
@@ -189,11 +228,7 @@
       "read-only-tools"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m4": {
    "description": "M4 exit: everything M3 requires, plus admission and tasks matching Go on every scenario (x5): canonical URIs and kinds, tenant scope, the admission matrix over every non-read tool (gate closed, stale revision, binding, unknown target) with X2, coordinator saturation N+k, min-memory/min-disk headroom, normal-class host reads, the task registry, input_required, and cancellation before start, mid-shim and after completion with zero orphans; the D12 contract suite and its Rust canaries pass",
@@ -225,11 +260,7 @@
       "tasks"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m5": {
    "description": "M5 exit: M1-M4 regression gates plus all six provenance-bound durable-state and redaction validations; missing evidence fails closed.",
@@ -262,11 +293,7 @@
       "tasks"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   },
   "m6": {
    "description": "M6 exit: M1-M5 regression gates plus the single plan executor -- recipe/plan validation (valid and invalid corpora), execution-trace fault scripts (retry-then-success, permanent-failure-with-compensation, readiness-never-true-timeout, cancel-mid-node) and restart-mid-plan reconcile -- all matching Go byte-for-byte except the declared, scoped-out probe_http_endpoint cancellation-framing note in evidence/m6/README.md (not a Rust/Go behavioral divergence requiring a decision: both sides now interrupt a cancelled in-flight dispatch promptly, masked only on the exact terminal literal).",
@@ -300,11 +327,7 @@
       "tasks"
      ]
     }
-   ],
-   "waivedCanaries": {
-    "C12-enforcement-fail-open": "environment-dependent: this host's WSL2 user session has working memory/CPU cgroup controls, so CgroupEnforcement is Enforced on both sides and the fail-closed-on-unknown refusal path is never reached by the scenario corpus here; the refusal path itself is proven by unit tests on both sides (see evidence/m4/README.md)",
-    "C14-late-result-overwrites-cancel": "no scenario reaches registry.Complete's internal status guard: tried both tasks.cancel.mid-shim (its assigned scenario) and tasks.input-required.cancel, zero diff on either; every public MCP entry point traced has its own earlier guard that discards a late result before Complete is ever called, making this specific internal check unreachable defense-in-depth in the current implementation (see evidence/m4/README.md)"
-   }
+   ]
   }
  },
  "goReference": {
@@ -491,6 +514,16 @@
   },
   {
    "anchors": [
+    "internal/hostmcp/plan_run.go:reservationLease.bindTask",
+    "internal/hostmcp/server.go:reclaimTerminalTaskReservations"
+   ],
+   "id": "admission.restart.plan-run-reservation-after-kill",
+   "owner": "core",
+   "scenario": "admission.restart.plan-run-reservation-after-kill",
+   "surface": "admission"
+  },
+  {
+   "anchors": [
     "internal/tools/standalone.go:StandaloneToolDefinitions",
     "test/contract/standalone_catalog_test.go"
    ],
@@ -526,6 +559,16 @@
    "id": "catalog.standalone-prefixed-names",
    "owner": "contracts",
    "scenario": "catalog.standalone-prefixed-names",
+   "surface": "catalog"
+  },
+  {
+   "anchors": [
+    "internal/tools/catalog.go:CatalogExcludedToolNames",
+    "internal/hostmcp/server.go:handleToolsCall"
+   ],
+   "id": "catalog.unpublished-dispatch",
+   "owner": "contracts",
+   "scenario": "catalog.unpublished-dispatch",
    "surface": "catalog"
   },
   {
@@ -599,6 +642,47 @@
    "owner": "cli",
    "scenario": "cli.dispatch",
    "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load",
+    "internal/resource/service.go:capacitySnapshot",
+    "internal/resource/service.go:Admit"
+   ],
+   "id": "config.env.resource-policy",
+   "owner": "config",
+   "scenario": "config.env.resource-policy",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/config/config.go:Load",
+    "internal/app/app.go:Run",
+    "internal/transport/http.go:handleHealth"
+   ],
+   "id": "config.env.local-instance-id",
+   "owner": "config",
+   "scenario": "config.env.local-instance-id",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/hostruntime/runtime.go:ConfigFromEnv"
+   ],
+   "id": "config.env.incus-binary-path",
+   "owner": "config",
+   "scenario": "config.env.incus-binary-path",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "docs/adr/0012-mcp-tool-name-prefix.md",
+    "internal/transport/http.go:handleHealth"
+   ],
+   "id": "config.env.tool-prefix-health",
+   "owner": "config",
+   "scenario": "config.env.tool-prefix-health",
+   "surface": "config"
   },
   {
    "anchors": [
@@ -1011,6 +1095,76 @@
   },
   {
    "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-activate",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-activate",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-activate-tunneling",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-activate-tunneling",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-tunneling-managed",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-tunneling-managed",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-tunneling-public-host",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-tunneling-public-host",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.cloudflare-tunneling",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.cloudflare-tunneling",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.k3s-kubernetes",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.k3s-kubernetes",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/host_recipe_run.go:handleValidateHostLocalRecipe",
+    "internal/plan/schema.go:DocumentHash"
+   ],
+   "id": "host-recipe-corpus.fixture-cloudflared",
+   "owner": "plan",
+   "scenario": "host-recipe-corpus.fixture-cloudflared",
+   "surface": "recipe-corpus"
+  },
+  {
+   "anchors": [
     "internal/app/app.go:Run",
     "internal/app/runtime.go:NewRuntime"
    ],
@@ -1179,6 +1333,570 @@
   },
   {
    "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.install-call-teardown",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.install-call-teardown",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.unpinned-recipe",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.unpinned-recipe",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.provider-mismatch",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.provider-mismatch",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.schema",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.schema",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.no-recipe-for-mode",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.no-recipe-for-mode",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.tool-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.tool-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.rpc-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.rpc-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.validation-operation-undeclared",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.validation-operation-undeclared",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.bad-manifest.service-capability-not-provided",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.bad-manifest.service-capability-not-provided",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.schema-drift.operation-not-listed",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.schema-drift.operation-not-listed",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.schema-drift.invalid-input-schema",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.schema-drift.invalid-input-schema",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.schema-drift.result-violates-output-schema",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.schema-drift.result-violates-output-schema",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.missing-dependency.requires",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.missing-dependency.requires",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.missing-dependency.descriptor-requires",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.missing-dependency.descriptor-requires",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.missing-dependency.recipe-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.missing-dependency.recipe-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.builtin-family.publish",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.builtin-family.publish",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.builtin-family.depend",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.builtin-family.depend",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.builtin-family.require",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.builtin-family.require",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.readiness.activation-probe-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.activation-probe-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.readiness.activation-probe-is-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.activation-probe-is-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.readiness.plan-assert-fails",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.plan-assert-fails",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.readiness.discover-unavailable",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.discover-unavailable",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.readiness.flapping",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.flapping",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.readiness.slow-probe",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.readiness.slow-probe",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.call.rpc-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.call.rpc-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.call.is-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.call.is-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.call.task-result-sync-only",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.call.task-result-sync-only",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.crash.after-activation",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.crash.after-activation",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.publish.conflicting-host-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.publish.conflicting-host-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.publish.invalid-operation-name",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.publish.invalid-operation-name",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.teardown.idempotent",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.teardown.idempotent",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.teardown.prepare-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.teardown.prepare-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.teardown.finalize-error",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.teardown.finalize-error",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.install.reuse-and-reload",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.install.reuse-and-reload",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.replacement.in-flight",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.replacement.in-flight",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.restart.active-provider",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.restart.active-provider",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.restart.provider-down",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.restart.provider-down",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.restart.after-teardown",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.restart.after-teardown",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.restart.after-replacement",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.restart.after-replacement",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.host-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.host-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.no-delegation",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.no-delegation",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.tampered",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.tampered",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.malformed",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.malformed",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.stale",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.stale",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.lifecycle-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.lifecycle-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.provider-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.provider-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.standalone-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.standalone-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.unknown-tool",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.unknown-tool",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.child-task-acknowledged",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.child-task-acknowledged",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.restart-during-bridged-task",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.restart-during-bridged-task",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.cancel-bridged-task-refused",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.cancel-bridged-task-refused",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.callback.bridged-without-task-extension",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.callback.bridged-without-task-extension",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.family.rejected-candidate-keeps-owner",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.family.rejected-candidate-keeps-owner",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.family.rollback-restores-owner",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.family.rollback-restores-owner",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+   ],
+   "id": "provider-lifecycle.family.replacement-keeps-accepted-call",
+   "owner": "provider",
+   "scenario": "provider-lifecycle.family.replacement-keeps-accepted-call",
+   "surface": "provider-lifecycle"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/platform/hostos"
+   ],
+   "id": "provider-real.hostos",
+   "owner": "provider",
+   "scenario": "provider-real.hostos",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/llm/ollama"
+   ],
+   "id": "provider-real.ollama",
+   "owner": "provider",
+   "scenario": "provider-real.ollama",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "provider-real.k3s",
+   "owner": "provider",
+   "scenario": "provider-real.k3s",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/tunneling/cloudflare"
+   ],
+   "id": "provider-real.cloudflare",
+   "owner": "provider",
+   "scenario": "provider-real.cloudflare",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/tunneling/tailscale"
+   ],
+   "id": "provider-real.tailscale",
+   "owner": "provider",
+   "scenario": "provider-real.tailscale",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
+    "internal/hostmcp/provider_install.go:handleProviderInstallContext",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "provider-real.k3s.restart",
+   "owner": "provider",
+   "scenario": "provider-real.k3s.restart",
+   "surface": "provider-real"
+  },
+  {
+   "anchors": [
     "internal/capability/adapters.go:adapter.Invoke",
     "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
    ],
@@ -1340,34 +2058,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m5/crash/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m5/cross-read/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m5/migration/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m5/secrets/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m5/shape/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/shape-final/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m5/unknown-projection/summary.json"
+   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/current/go-oracles.json",
+  "results": "evidence/local-e2e/native-2026-10-12-r8/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/current/rust-canaries.json"
+  "results": "evidence/local-e2e/native-2026-10-12-r8/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "c30fda4f47367061f5cf3e2aa31756bf6b5ffbd2d119d0d369a7fdadfb1ef79b",
+  "binarySha256": "ff02f076824e792d36107638e6516192829c249932ae64af170a326d17079f3b",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },

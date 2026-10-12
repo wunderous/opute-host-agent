@@ -1,0 +1,14 @@
+go: creating work dir: mkdir /tmp/go-build2415544595: no space left on device
+Traceback (most recent call last):
+  File "/home/houman/github/wunderous/opute-host-agent/tools/parity/oauth-sdk-client/run.py", line 80, in <module>
+    main()
+    ~~~~^^
+  File "/home/houman/github/wunderous/opute-host-agent/tools/parity/oauth-sdk-client/run.py", line 63, in main
+    subprocess.run([GO, "build", "-o", client, "."], cwd=HERE, check=True,
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   env={**os.environ, "GOPROXY": "off", "GOFLAGS": "-mod=readonly"})
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '[PosixPath('/home/houman/github/wunderous/opute-host-agent/.parity/setup/go/bin/go'), 'build', '-o', PosixPath('/home/houman/github/wunderous/opute-host-agent/evidence/local-e2e/native-2026-10-12-r4/oauth-sdk-client/oauth-sdk-client'), '.']' returned non-zero exit status 1.

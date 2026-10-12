@@ -1,0 +1,20 @@
+gate m6: FAIL
+  go-vs-go     pass=160 fail=0 unverified=0
+  go-vs-rust   pass=160 fail=0 unverified=0
+  canaries     caught=14/14
+  inventory    pass
+  go oracles   pass
+  contracts    pass
+  M5 shape              fail
+  M5 cross-read         pass
+  M5 crash              pass
+  M5 secrets            pass
+  M5 unknown-projection pass
+  M5 migration          pass
+  problem: [m5:shape] provider-lifecycle.callback.child-task-acknowledged.0: D12 hides an admitted or unidentified operation row
+  problem: [m5:shape] provider-lifecycle.callback.child-task-acknowledged.1: D12 hides an admitted or unidentified operation row
+  problem: [m5:shape] provider-lifecycle.callback.child-task-acknowledged.2: D12 hides an admitted or unidentified operation row
+  problem: [m5:shape] provider-lifecycle.callback.child-task-acknowledged.3: D12 hides an admitted or unidentified operation row
+  problem: [m5:shape] provider-lifecycle.callback.child-task-acknowledged.4: D12 hides an admitted or unidentified operation row
+  gate failure: M5 shape: fail
+  gate failure: 5 provenance/evidence problem(s)

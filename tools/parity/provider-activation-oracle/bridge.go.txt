@@ -1,0 +1,334 @@
+// Build-only overlay. Calls the pinned activation composition without adapting it.
+package hostmcp
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	hostcapability "github.com/wunderous/host-agents/internal/capability"
+	"github.com/wunderous/host-agents/internal/resource"
+	"os"
+	"path/filepath"
+	"sort"
+
+	providercontract "github.com/wunderous/host-agents/contracts/provider"
+	"github.com/wunderous/host-agents/internal/cordis"
+	provideradapter "github.com/wunderous/host-agents/internal/cordis/mcp"
+	"github.com/wunderous/host-agents/internal/hostagent"
+	"github.com/wunderous/host-agents/internal/tools"
+)
+
+type parityActivationObserver struct {
+	observe func(string, any) error
+}
+
+func (parityActivationObserver) ID() string                  { return "parity.activation.observer" }
+func (parityActivationObserver) Inject() []cordis.ServiceKey { return nil }
+func (p parityActivationObserver) Apply(ctx *cordis.Context) (cordis.Effect, error) {
+	names := make([]string, 0, len(providerEventDefinitions))
+	for name := range providerEventDefinitions {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		name := name
+		if _, err := ctx.On(name, func(_ context.Context, value any, _ cordis.Next) (any, error) {
+			return value, p.observe(name, value)
+		}); err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// Optional connected adapters exercise real loopback transport and mount ownership.
+// All endpoints and durable state belong to the isolated differential driver.
+func ParityProviderActivation(raw json.RawMessage) map[string]any {
+	var input struct {
+		Standalone    bool
+		ObserveMounts bool
+		Steps         []struct {
+			Action, ID, Provider, Denial, PreviousID, Cause string
+			Descriptor                                      *providercontract.PluginDescriptor
+			Operation                                       string
+			Manifest                                        *providercontract.InstallManifest
+			Generation                                      cordis.ProviderGeneration
+			Metadata                                        map[string]any
+		}
+	}
+	if err := json.Unmarshal(raw, &input); err != nil {
+		panic(err)
+	}
+	dir, err := os.MkdirTemp("", "opute-activation-owner-")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(dir)
+	ops := hostagent.New(hostagent.Options{AgentID: "parity.activation.owner", ProviderID: "incus", ToolsForProvider: func(provider string) []string {
+		names, err := tools.HostToolNamesForProvider(provider)
+		if err != nil {
+			panic(err)
+		}
+		return names
+	}})
+	server, err := NewServer(Options{ProviderID: "incus", Ops: ops, Standalone: input.Standalone, AllowMutations: true, StateDir: dir})
+	if err != nil {
+		panic(err)
+	}
+	defer server.Close()
+	events := []providercontract.ProviderEvent{}
+	denial := ""
+	if _, err := server.providerContext.Plugin(parityActivationObserver{observe: func(name string, value any) error {
+		events = append(events, value.(providercontract.ProviderEvent))
+		if name == ProviderEventAdmission && denial != "" {
+			return errors.New(denial)
+		}
+		return nil
+	}}); err != nil {
+		panic(err)
+	}
+	ids := map[string]bool{}
+	providers := map[string]bool{}
+	observations := []map[string]any{}
+	adapters := map[string]*provideradapter.Adapter{}
+	defer func() {
+		for _, adapter := range adapters {
+			_ = adapter.Close()
+		}
+	}()
+	for _, step := range input.Steps {
+		var failure error
+		var probe any
+		switch step.Action {
+		case "restore":
+			ids[step.Generation.ID] = true
+			providers[step.Generation.Provider.ID] = true
+			failure = server.providerLifecycle.Restore(step.Generation)
+		case "connect":
+			var adapter *provideradapter.Adapter
+			adapter, failure = provideradapter.Connect(context.Background(), *step.Descriptor, provideradapter.Options{})
+			if failure == nil {
+				adapters[step.ID] = adapter
+				server.providerCandidates[step.ID] = adapter
+			}
+		case "mount":
+			failure = server.mountProviderGeneration(*step.Manifest, step.ID, adapters[step.ID])
+		case "unmount":
+			failure = server.unmountProviderGeneration(step.Provider, step.ID)
+		case "cleanup":
+			server.cleanupProviderCandidate(step.ID, "")
+		case "probe":
+			if adapter := adapters[step.ID]; adapter != nil {
+				result, err := adapter.CallSynchronousOnly(context.Background(), step.Operation, map[string]any{})
+				failure = err
+				if result != nil {
+					probe = result.StructuredContent
+				}
+			} else {
+				failure = errors.New("fixture adapter is absent")
+			}
+		case "candidate":
+			if step.Manifest == nil {
+				delete(server.providerCandidateManifests, step.ID)
+			} else {
+				server.providerCandidateManifests[step.ID] = *step.Manifest
+			}
+		case "remember":
+			if step.Manifest == nil {
+				delete(server.providerManifests, step.Provider)
+			} else {
+				server.providerManifests[step.Manifest.Provider.ID] = *step.Manifest
+			}
+		case "register":
+			failure = server.registerProviderServicesForGeneration(*step.Manifest, step.ID)
+		case "admission":
+			denial = step.Denial
+		case "activate":
+			failure = server.activateProviderGeneration(step.Metadata)
+		case "complete":
+			server.completeProviderCandidate(step.ID)
+		case "closeState":
+			failure = server.state.Close()
+		case "rollback":
+			activated, _ := server.providerLifecycle.Get(step.ID)
+			var previous *cordis.ProviderGeneration
+			if value, ok := server.providerLifecycle.Get(step.PreviousID); ok {
+				previous = &value
+			}
+			manifest := providercontract.InstallManifest{}
+			if step.Manifest != nil {
+				manifest = *step.Manifest
+			}
+			old, ok := server.providerManifests[manifest.Provider.ID]
+			failure = server.rollbackProviderActivation(manifest, step.Manifest != nil, old, ok, activated, previous, errors.New(step.Cause))
+		default:
+			panic("unknown activation fixture action")
+		}
+		message := ""
+		if failure != nil {
+			message = failure.Error()
+		}
+		generations := map[string]cordis.ProviderGeneration{}
+		for id := range ids {
+			if value, ok := server.providerLifecycle.Get(id); ok {
+				generations[id] = value
+			}
+		}
+		active := map[string]cordis.ProviderGeneration{}
+		for provider := range providers {
+			if value, ok := server.providerLifecycle.Active(provider); ok {
+				active[provider] = value
+			}
+		}
+		candidate := map[string]providercontract.InstallManifest{}
+		for id, value := range server.providerCandidateManifests {
+			candidate[id] = value
+		}
+		manifests := map[string]providercontract.InstallManifest{}
+		for id, value := range server.providerManifests {
+			manifests[id] = value
+		}
+		validation := map[string]string{}
+		for id, value := range server.providerValidation {
+			validation[id] = value
+		}
+		eventSnapshot := append([]providercontract.ProviderEvent{}, events...)
+		durable, durableError := server.state.ListProviderGenerations()
+		durableMessage := ""
+		if durableError != nil {
+			durableMessage = durableError.Error()
+		}
+		observation := map[string]any{"error": message, "generations": generations, "active": active, "candidates": candidate, "manifests": manifests, "validation": validation, "events": eventSnapshot, "catalog": server.CatalogSnapshot(), "registry": server.registry.Snapshot(), "durable": durable, "durableError": durableMessage}
+		if input.ObserveMounts {
+			mounts := []map[string]any{}
+			for _, id := range server.providerContext.PluginIDs() {
+				service, ok := server.providerContext.Resolve(cordis.ServiceKey(id))
+				if !ok {
+					continue
+				}
+				value, ok := service.(*providerServiceValue)
+				if !ok {
+					continue
+				}
+				inject := append([]cordis.ServiceKey{}, value.inject...)
+				mounts = append(mounts, map[string]any{"key": id, "provider": value.providerID, "generation": value.generationID, "capability": value.capabilityID, "inject": inject})
+			}
+			candidateAdapters := []string{}
+			for id, adapter := range server.providerCandidates {
+				if adapter != nil {
+					candidateAdapters = append(candidateAdapters, id)
+				}
+			}
+			sort.Strings(candidateAdapters)
+			observation["mounts"] = mounts
+			observation["candidateAdapters"] = candidateAdapters
+			if step.Action == "probe" {
+				observation["probe"] = probe
+			}
+		}
+		observations = append(observations, observation)
+	}
+	return map[string]any{"observations": observations}
+}
+
+// Uses production lifecycle handlers through the actual SDK. Trusted fixture
+// setup and retained capability invocation are distinct from public admission.
+func ParityProviderRuntime(raw json.RawMessage) map[string]any {
+	var input struct {
+		Standalone bool
+		Steps      []struct {
+			Action, ID, Provider, Operation string
+			Generation                      cordis.ProviderGeneration
+			Manifest                        providercontract.InstallManifest
+			Descriptor                      providercontract.PluginDescriptor
+			Metadata, Arguments             map[string]any
+		}
+	}
+	if err := json.Unmarshal(raw, &input); err != nil {
+		panic(err)
+	}
+	dir, err := os.MkdirTemp("", "opute-runtime-owner-")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(dir)
+	config := resource.DefaultConfig(filepath.Join(dir, "locks"))
+	config.DiskPaths = []string{dir}
+	config.MemoryCapacityBytes = 64 * 1024 * 1024 * 1024
+	admission, err := resource.NewCoordinator(config)
+	if err != nil {
+		panic(err)
+	}
+	defer admission.Close()
+	ops := hostagent.New(hostagent.Options{AgentID: "parity.runtime.owner", ProviderID: "incus", ResourceService: admission, ToolsForProvider: func(provider string) []string {
+		names, err := tools.HostToolNamesForProvider(provider)
+		if err != nil {
+			panic(err)
+		}
+		return names
+	}})
+	server, err := NewServer(Options{ProviderID: "incus", Ops: ops, Standalone: input.Standalone, AllowMutations: true, StateDir: dir, Version: "0.2.3", Admission: admission})
+	if err != nil {
+		panic(err)
+	}
+	defer server.Close()
+	ctx := context.Background()
+	serverTransport, clientTransport := mcp.NewInMemoryTransports()
+	session, err := server.mcpServer.Connect(ctx, serverTransport, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	client := mcp.NewClient(&mcp.Implementation{Name: "runtime-fixture-client", Version: "1"}, nil)
+	connected, err := client.Connect(ctx, clientTransport, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer connected.Close()
+	adapters := map[string]*provideradapter.Adapter{}
+	defer func() {
+		for _, adapter := range adapters {
+			_ = adapter.Close()
+		}
+	}()
+	handles := map[string]hostcapability.Capability{}
+	observations := []map[string]any{}
+	for _, step := range input.Steps {
+		var failure error
+		var result *mcp.CallToolResult
+		switch step.Action {
+		case "restore":
+			failure = server.providerLifecycle.Restore(step.Generation)
+		case "candidate":
+			server.providerCandidateManifests[step.ID] = step.Manifest
+		case "connect":
+			var adapter *provideradapter.Adapter
+			adapter, failure = provideradapter.Connect(ctx, step.Descriptor, provideradapter.Options{})
+			if failure == nil {
+				adapters[step.ID] = adapter
+				server.providerCandidates[step.ID] = adapter
+			}
+		case "activate":
+			failure = server.activateProviderGeneration(step.Metadata)
+		case "fail":
+			failure = server.providerLifecycle.Fail(step.ID, "fixture failure")
+		case "unmount":
+			failure = server.unmountProviderGeneration(step.Provider, step.ID)
+		case "handle":
+			handles[step.ID] = server.capabilities[step.Operation]
+		case "invoke":
+			result, failure = handles[step.ID].Invoke(ctx, hostcapability.RawArguments(step.Arguments), tools.ExecutionBinding{}, nil)
+		case "status", "validate":
+			result, failure = connected.CallTool(ctx, &mcp.CallToolParams{Name: "opute.provider." + step.Action, Arguments: step.Arguments})
+		default:
+			panic("unknown runtime fixture action")
+		}
+		message := ""
+		if failure != nil {
+			message = failure.Error()
+		}
+		observations = append(observations, map[string]any{"error": message, "result": result})
+	}
+	return map[string]any{"observations": observations}
+}

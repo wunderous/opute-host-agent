@@ -23,14 +23,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import agent, canon, shims
+from . import agent, canon, provider_stub, shims
 
 TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 SCENARIO_DIR = TOOLS_DIR / "scenarios"
 FIXTURE_DIR = TOOLS_DIR / "fixtures"
 DIVERGENCE_FILE = TOOLS_DIR / "divergences.json"
-OBSERVING_MODULES = ("agent", "canon", "runner", "shims")
+OBSERVING_MODULES = ("agent", "canon", "provider_stub", "runner", "shims")
 
 # Environment profiles. Values may use ${AGENT_ID}, ${PORT}, ${TOKEN} and
 # ${SANDBOX}; each side expands them with its own values.
@@ -121,6 +121,10 @@ def _env(step: dict) -> dict:
 
 def _lookup(doc: Any, path: list) -> Any:
     for key in path:
+        # "$len" reads the length of the list it follows (an until that
+        # waits for a catalog to be whole again, say).
+        if key == "$len":
+            return len(doc) if isinstance(doc, list) else None
         if isinstance(doc, dict):
             doc = doc.get(key)
         elif isinstance(doc, list) and isinstance(key, int) and -len(doc) <= key < len(doc):
@@ -130,7 +134,7 @@ def _lookup(doc: Any, path: list) -> Any:
     return doc
 
 
-def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
+def _mcp_step(sandbox: agent.Sandbox, spec: dict, optional_captures: set[str] | None = None) -> dict:
     """One MCP request, optionally polled until a response field settles.
 
     "expand": run variables (for example ${TOOL_PREFIX} or a captured
@@ -139,6 +143,8 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
     at path is one of the listed values (or the timeout passes); only the
     final response is observed, so poll counts never reach the comparison.
     "capture": {"NAME": [...]} stores the value at a path as a run variable.
+    "observe": [...] records only the value at that path, for a step that
+    synchronizes on volatile state (a host capacity snapshot, say).
     """
     expand = (lambda v: _expand_all(sandbox, v)) if spec.get("expand") else (lambda v: v)
     until = spec.get("until")
@@ -153,10 +159,16 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict) -> dict:
         if not until or _lookup(result, until["path"]) in until["in"] or time.monotonic() > deadline:
             break
         time.sleep(0.05)
+    if until and _lookup(result, until["path"]) not in until["in"]:
+        raise RuntimeError(f"MCP polling timed out before {until['path']} reached {until['in']}")
     for name, path in spec.get("capture", {}).items():
         value = _lookup(result, path)
         if isinstance(value, str) and value:
             sandbox.captured[name] = value
+        elif name not in (optional_captures or set()):
+            raise RuntimeError(f"MCP response did not provide required capture {name}")
+    if "observe" in spec:
+        return {"observed": _lookup(result, spec["observe"])}
     return result
 
 
@@ -194,6 +206,9 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
     stubs: dict[str, agent.HttpStub] = {}
     background: dict[str, concurrent.futures.Future] = {}
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+    # A follow-up guarded by requires explicitly permits synchronous refusal
+    # without a task handle. Unguarded captures remain mandatory.
+    optional_captures = {name for step in scenario["steps"] for name in step.get("requires", [])}
     try:
         for index, step in enumerate(scenario["steps"]):
             label = step.get("as", f"step{index}")
@@ -214,6 +229,8 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 chosen = other if spec.get("impl") == "other" and other is not None else impl
                 server = agent.Server(chosen, sandbox, spec.get("argv", ["serve"]), _env(spec))
                 steps[label] = server.wait_ready(spec.get("timeout", 30), spec.get("readyPort"))
+                if not steps[label].get("ready"):
+                    raise RuntimeError(f"agent did not become ready: {steps[label]}")
             elif "http" in step:
                 spec = step["http"]
                 body = spec.get("body")
@@ -231,10 +248,10 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 if "background" in spec:
                     # Runs concurrently with the following steps; a "join"
                     # step records its response.
-                    background[spec["background"]] = pool.submit(_mcp_step, sandbox, spec)
+                    background[spec["background"]] = pool.submit(_mcp_step, sandbox, spec, optional_captures)
                     steps[label] = {"background": spec["background"]}
                 else:
-                    steps[label] = _mcp_step(sandbox, spec)
+                    steps[label] = _mcp_step(sandbox, spec, optional_captures)
             elif "join" in step:
                 steps[label] = background.pop(step["join"]).result(timeout=320)
             elif "drain" in step:
@@ -263,6 +280,19 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 spec = step["sql"]
                 steps[label] = agent.run_sql(Path(sandbox.expand(spec["db"])),
                                              [sandbox.expand(x) for x in spec["statements"]])
+            elif "query" in step:
+                spec = step["query"]
+                # "until": {"query": name, "path": [...], "in": [...]} re-reads
+                # until a row settles (a drained generation reaching stopped).
+                until = spec.get("until")
+                deadline = time.monotonic() + spec.get("timeout", 15)
+                while True:
+                    result = agent.query_sql(Path(sandbox.expand(spec["db"])), spec["sql"])
+                    if not until or _lookup(result[until["query"]], until["path"]) in until["in"] \
+                            or time.monotonic() > deadline:
+                        break
+                    time.sleep(0.05)
+                steps[label] = result
             elif "listeners" in step:
                 steps[label] = {"listeners": agent.listeners_of(server.proc.pid)} if server else {"listeners": None}
             elif "write" in step:
@@ -292,6 +322,37 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 stubs[label] = stub
                 sandbox.captured[spec.get("portVar", "STUB_PORT")] = str(stub.port)
                 steps[label] = {"port": stub.port}
+            elif "providerStub" in step:
+                spec = step["providerStub"]
+                stub = provider_stub.ProviderStub(json.loads(sandbox.expand(json.dumps(spec))))
+                stubs[label] = stub
+                sandbox.captured[spec.get("portVar", "PROVIDER_PORT")] = str(stub.port)
+                steps[label] = {"started": True}
+            elif "providerProcess" in step:
+                spec = step["providerProcess"]
+                process = agent.ProviderProcess(sandbox, spec["binary"])
+                stubs[label] = process
+                sandbox.captured[spec.get("portVar", "PROVIDER_PORT")] = str(process.port)
+                steps[label] = {"started": True}
+            elif "providerProcessStop" in step:
+                steps[label] = stubs[step["providerProcessStop"]["process"]].close()
+            elif "agentProcesses" in step:
+                steps[label] = {"descendants": agent.descendants(server.proc.pid) if server else None}
+            elif "providerStop" in step:
+                # A provider crash: the listener goes away mid-life.
+                stubs[step["providerStop"]["stub"]].close()
+                steps[label] = {"stopped": True}
+            elif "providerGate" in step:
+                spec = step["providerGate"]
+                stub = stubs[spec["stub"]]
+                if "release" in spec:
+                    stub.release_gate(spec["release"])
+                    steps[label] = {"released": spec["release"]}
+                else:
+                    steps[label] = {"gate": spec["await"], "reached": stub.await_gate(spec["await"], spec.get("timeout", 15))}
+            elif "providerRequests" in step:
+                spec = step["providerRequests"]
+                steps[label] = {"requests": stubs[spec["stub"]].requests(spec.get("clear", False))}
             elif "sleep" in step:
                 time.sleep(step["sleep"].get("seconds", 0))
                 steps[label] = {"slept": step["sleep"].get("seconds", 0)}
@@ -339,6 +400,12 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
         observation["sqlite"] = sandbox.sqlite_schemas()
     if "sqliteRows" in collect:
         observation["sqliteRows"] = sandbox.sqlite_rows()
+    if "taskSnapshotStatuses" in collect:
+        rows = sandbox.sqlite_rows().get("state/state.db", {}).get("tables", {}).get("operations", {})
+        statuses = sorted(
+            json.loads(row["task_snapshot_json"])["status"]
+            for row in rows.values() if row.get("task_snapshot_json"))
+        observation["cancellationEvidence"] = {"taskSnapshotStatuses": statuses}
     if "serverLog" in collect:
         log = sandbox.root / "server.log"
         observation["serverLog"] = agent._strip_log_prefix(log.read_text(errors="replace")) if log.exists() else None
@@ -359,6 +426,19 @@ def invariant_violations(scenario: dict, observation: dict, label: str = "") -> 
     the state store records no operations, plan runs or invocations.
     """
     violations = []
+    implementation = "rust" if label.startswith("rust") else "go"
+    for expectation in scenario.get("expectations", []):
+        if implementation not in expectation.get("implementations", ["go", "rust"]):
+            continue
+        path = expectation.get("path")
+        if not isinstance(path, list) or not path or "equals" not in expectation:
+            violations.append({"invariant": "EXPECTATION", "reason": "invalid scenario expectation"})
+            continue
+        value = _get_at(observation, path)
+        if value is _MISSING or canon.canonical_json(value) != canon.canonical_json(expectation["equals"]):
+            violations.append({"invariant": "EXPECTATION", "path": path,
+                               "expected": expectation["equals"],
+                               "value": "$absent" if value is _MISSING else value})
     # Equal harness failures are not parity. Disk exhaustion or a driver
     # exception on both sides must fail even when no scenario mask happens
     # to require a missing field.

@@ -83,6 +83,45 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   candidate, active, and draining generation transitions. Gate: failed
   candidate activation leaves the prior catalog and provider usable;
   generation and catalog revisions change only under the Go contract.
+  Progress: private publication, retirement, restore, executable descriptor
+  ownership, immutable retained handles, and native schema compilation are
+  implemented. The owning Go function and actual SDK tool listing expose a
+  competing-family displacement failure before schema validation; the separate
+  `atomic-provider-family-publication` proposal is pending owner review. Public
+  activation, durable rollback, unchanged provider processes and the M7 gate
+  remain open.
+  The private activation owner now composes readiness, admission, publication,
+  durable generation rows, mounting, predecessor disposal and rollback in the
+  pinned order. Its metadata/durable matrix covers 170 cases over five
+  iterations; caller-abort ownership has a focused regression. Connected adapter
+  activation, mount rollback, replacement and explicit candidate cleanup now
+  pass 24 cases over five iterations, including retained-connection probes and
+  actual loopback MCP request comparison. Provider process execution, public
+  wiring, enclosing recipe cleanup and restart remain required.
+  Public catalog readers now share the existing publication owner, while MCP
+  listing retains its own last-completed projection, including the pinned
+  no-op retirement behavior. Public provider lifecycle command composition
+  and executable dispatch are still required.
+  A server-owned provider runtime now serves provider status and validation
+  through the shared owners, with 120 exact comparisons over five iterations
+  ([evidence/m7/README.md](../../../evidence/m7/README.md)). Public install,
+  activation and teardown commands remain required.
+  Public install, reload, teardown (normal, forced, idempotent), generation
+  routed calls, in-flight replacement and restart restore now match Go over a
+  35-scenario fake-provider matrix, five iterations each, inside 137/137
+  public scenarios. Callbacks, bridged tasks, supervision and the five real
+  providers remain required.
+  Done for M7: the five pinned Go providers run unchanged through the public
+  lifecycle (install with their own recipes, catalog cell, a provider-reached
+  call, validation, teardown) and match Go over five iterations, with no agent
+  descendants or orphaned shims. A flapping readiness probe leaves the prior
+  catalog and a later install activates. `inspect_host_service` and
+  host-service adoption are ported. Owner decisions still pending, with Go's
+  behaviour kept or the difference reported:
+  `atomic-provider-family-publication` (Go ordering kept),
+  `reject-null-provider-input-requests` and `unadmitted-callback-task-record`
+  (open divergences). Evidence: `provider-journeys-validation.json` in
+  [evidence/m7/README.md](../../../evidence/m7/README.md).
 - [ ] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
@@ -93,6 +132,14 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   done in M4 ([evidence/m4/README.md](../../../evidence/m4/README.md)).
   Provider generations, callback routing, readiness, replacement during
   in-flight work and bounded disposal remain open for M7.
+  Done for M7: signed callback admission with Go's refusals, delegated child
+  tasks started on acknowledgement, bridged tasks (task extension required,
+  `tasks/cancel` refused as in Go), shutdown cancelling unacknowledged and
+  working tasks and aborting in-flight provider calls, in-flight replacement,
+  readiness faults, and normal, forced and idempotent teardown. Reverse-order
+  disposal is proven against Go's own container functions (385/385, T0) and
+  in each provider's teardown plan. A shutdown before a delegated child is
+  acknowledged is the open divergence `unadmitted-callback-task-record`.
 - [ ] 3.3 Port every supported provider integration and conditional catalog
   projection behind neutral typed contracts. Gate: the equivalent configured
   Go and Rust fixture has no missing, extra, or differently shaped tool; an
@@ -104,12 +151,15 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   typed seams; maintain `vm:` versus `container:` target separation. Gate:
   focused contract tests and isolated external-effect comparisons cover
   success, failure, cleanup, and absence of unauthorized side effects.
-- [ ] 4.2 Implement recipe validation, canonical hashing, typed plan
+  Each operation is a built-in provider of a three-role service and the
+  seam verifier passes for its domain (decision D14,
+  [`three-role-capability-seam`](../three-role-capability-seam/tasks.md)).
+- [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,
   errors, cancellation, and externally observed outcome; no provider adds a
   second workflow runner.
-- [ ] 4.3 Reproduce durable operation, task, plan, generation, and observation
+- [x] 4.3 Reproduce durable operation, task, plan, generation, and observation
   semantics with schema-derived redaction. Gate: restart and secret-bearing
   fixtures preserve truthful state and leave no credentials in records, logs,
   or client-visible evidence; unknown projection fails closed.
@@ -118,6 +168,8 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   and in-flight state, revisions, permissions, and redaction reconcile; an
   ambiguous record blocks conversion. Never allow two writers on one state
   directory or discard Rust-era accepted work on rollback.
+
+Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native-2026-10-05/README.md), with provenance-bound M5/M6 gates and explicit owner acceptance of M6. Subsequent domain operations remain open under 4.1.
 
 ## 5. Prove the distributed operator surface
 
@@ -155,3 +207,13 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
 - [ ] 6.4 After the rollback window, make a separate, evidenced retirement
   decision for Go and a separate ownership decision for releases and the
   website. Gate: no Go artifact or registration is removed by this spec alone.
+
+## 7. Revise delivered capabilities onto the three-role seam
+
+- [x] 7.1 Revise every capability delivered in M1–M7 onto the three-role
+  seam (decision D14). Tasks and gates live in
+  [`three-role-capability-seam`](../three-role-capability-seam/tasks.md),
+  section 4. Gate: the seam verifier reports no gap and every affected
+  milestone's parity captures rerun green. By owner decision D14 this gates
+  4.1: M8 does not start until it is done. Done 2026-10-11: the seam
+  verifier reports no gap and gates m0–m6 pass (`evidence/seam/README.md`).

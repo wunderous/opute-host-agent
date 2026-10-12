@@ -1,0 +1,70 @@
+{
+  "impl": "goref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "list_vms",
+      "arguments": {
+        "fast": true
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "host-agent",
+          "version": "0.2.3"
+        }
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"vms\":[{\"uri\":\"container:local:parity-native-read\",\"kind\":\"container\",\"name\":\"parity-native-read\",\"type\":\"container\",\"status\":\"running\",\"state\":{\"incusStatus\":\"Running\"},\"ipv4\":[\"10.0.100.205\"],\"release\":\"noble\",\"providerId\":\"incus\",\"cpus\":1,\"memory\":\"512MiB\",\"hostId\":\"parity-native-t2-goref-opaque\"}]}"
+        }
+      ],
+      "structuredContent": {
+        "vms": [
+          {
+            "cpus": 1,
+            "hostId": "parity-native-t2-goref-opaque",
+            "ipv4": [
+              "10.0.100.205"
+            ],
+            "kind": "container",
+            "memory": "512MiB",
+            "name": "parity-native-read",
+            "providerId": "incus",
+            "release": "noble",
+            "state": {
+              "incusStatus": "Running"
+            },
+            "status": "running",
+            "type": "container",
+            "uri": "container:local:parity-native-read"
+          }
+        ]
+      },
+      "resultType": "complete"
+    }
+  },
+  "elapsedSeconds": 0.05770540237426758,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

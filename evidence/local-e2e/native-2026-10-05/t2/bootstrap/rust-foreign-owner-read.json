@@ -1,0 +1,55 @@
+{
+  "impl": "rustref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_vm_info",
+      "arguments": {
+        "uri": "container:local:parity-native-read",
+        "fast": true
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "host-agent",
+          "version": "0.2.3"
+        }
+      },
+      "content": [
+        {
+          "text": "Error: resolve get_vm_info argument \"uri\": resource not found: container:local:parity-native-read",
+          "type": "text"
+        }
+      ],
+      "isError": true,
+      "resultType": "complete",
+      "structuredContent": {
+        "code": "resource_binding",
+        "message": "resolve get_vm_info argument \"uri\": resource not found: container:local:parity-native-read",
+        "owner": "admission"
+      }
+    }
+  },
+  "elapsedSeconds": 0.023247957229614258,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

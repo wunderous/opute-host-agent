@@ -6,6 +6,8 @@
 //! `os.PathError` ("op path: reason"), syscall reason text, `%q` quoting, and
 //! `os.MkdirAll`'s choice of which path to report.
 
+mod printable;
+
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -122,7 +124,7 @@ pub fn quote(s: &str) -> String {
             c if (c as u32) < 0x20 || c as u32 == 0x7f => {
                 out.push_str(&format!("\\x{:02x}", c as u32));
             }
-            c if c.is_control() => {
+            c if !printable::is_print(c) => {
                 if (c as u32) <= 0xffff {
                     out.push_str(&format!("\\u{:04x}", c as u32));
                 } else {

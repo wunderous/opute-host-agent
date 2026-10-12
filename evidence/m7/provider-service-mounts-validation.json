@@ -1,0 +1,103 @@
+{
+  "scope": "M7 private generation service mounts and owned cleanup; no full M7/M8 or provider process/public activation claim",
+  "rustReleaseSha256": "ec63341311ec3ad41e5b30e6c5707a965bd95a7e42670f420e800ee0594323ab",
+  "checks": {
+    "provider-service-mounts-bound": {
+      "comparisons": 385,
+      "fullRawEqualityVerified": true,
+      "sourceHashesVerified": true,
+      "indexVerified": true
+    },
+    "provider-service-mounts-registry-recheck": {
+      "comparisons": 5315,
+      "fullRawEqualityVerified": true,
+      "sourceHashesVerified": true,
+      "indexVerified": true
+    },
+    "publicRuntimeReuse": {
+      "summary": "evidence/m7/provider-registry-schema-runtime-fixed/summary.json",
+      "scenarios": 102,
+      "iterations": 5,
+      "exactArtifactAndHarnessMatch": true,
+      "rawHashesVerified": true,
+      "scope": "existing public runtime only; provider activation remains absent"
+    },
+    "secretReuse": {
+      "summary": "evidence/m7/provider-registry-schema-secret-fixed/summary.json",
+      "fields": 16,
+      "modes": [
+        "standalone",
+        "platform"
+      ],
+      "rawOutcomesVerified": true,
+      "exactArtifactHarnessAndProjectionSourcesMatch": true
+    }
+  },
+  "validation": {
+    "workspace": "180 passed; 17 dedicated fixtures ignored",
+    "goFocused": "12 selected tests, five repetitions; 60 passes",
+    "cancelledTeardown": "real loopback accepted-call barrier; owner finishes after caller cancellation",
+    "fmt": "pass",
+    "clippyWarningsDenied": "pass",
+    "lockedRelease": "pass; byte-identical public artifact",
+    "openspec": "9 passed",
+    "cutover": "FAIL; 76 inventory gaps and stale historical manifest provenance"
+  },
+  "sourceHashes": {
+    "crates/host-agent/src/provider.rs": "c0cf910e209a20aca5dfa50ab6cc1c1ceffbeae84d5564a589fac7ae90dc1008",
+    "crates/host-agent/src/provider/mounts.rs": "fe9eb37f699c35d75e8736db4785cc6f06898848ec77395b20150e01a38183b0",
+    "crates/host-agent/src/provider/adapter.rs": "edc81ae15fc88ad3424bb7f23d7064c807b7406a10893d102fa036b84ec89072",
+    "tools/parity/provider_mounts.py": "7456fd8fda496c6bcc2e90bca79e310759991ad2929d24ab63a712e6b4f9c037",
+    "tools/parity/build-provider-catalog-oracle.py": "82bae1f90cc3ef063c7ac2fc36eb2ed349b1bedbaf3316afd749b2f5b330c161",
+    "tools/parity/provider-catalog-oracle/main.go": "2f6d9a1a62d5bfc585d121dd9fc039d13c4f6e0080f9b82da9c3eb458a511208",
+    "tools/parity/provider-catalog-oracle/mounts-bridge.go.txt": "78359387681ba5673643379fdec5cdd15575ff18826fd230c220474bc779125f",
+    ".parity/go-src/internal/hostmcp/provider_service_plugin_test.go": "5ec6bae5e502e2be8fd8828219fc4db0609202e755a538edb5e482b5577f31a7",
+    ".parity/go-src/internal/cordis/context_test.go": "718b9fc6238b221e6f86dc7f6f305afc9096f74823a96257a0bc95c993f657dc"
+  },
+  "files": {
+    "evidence/m7/provider-service-mounts-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/m7/provider-service-mounts-clippy.log": "60e7a91edb33e9f3548b654d01afe3b192cca0c6ce4c3b700cd157a98eb3e0e0",
+    "evidence/m7/provider-service-mounts-release.log": "34623f3cfe1d924fc4ad13607d9fe03d0ad6877a8980798cdefe2a54f73cf172",
+    "evidence/m7/provider-service-mounts-workspace.log": "fd896fcbf8188374b36e29f0dffd36d4f70838c89ca70c903cb83699bff821fc",
+    "evidence/m7/provider-service-mounts-spec.log": "ceebafd39df5faca7e3a891384b307541b5491014e410b214f43eb2ff39a84ad",
+    "evidence/m7/provider-service-mounts-go-focused.log": "8693286ed01b5fb0dd97710ae0706783671ebd433e378817f5f12b1e64dc953e",
+    "evidence/m7/provider-service-mounts-cancelled-teardown.log": "ff39113865c7edbc4c32e7d94bd62a02dd3772bb0357bd8eaf445cf65f342415",
+    "evidence/m7/provider-service-mounts-cutover.log": "e2b5c28d8438d7940b749a88498a40f0eba7733dd0d117e4c59a343f73df9df4",
+    "evidence/m7/provider-service-mounts-bound.log": "aa35a2da5119b46d3d1895bb66293136158990126948081ea70b1f93d7d1afc2",
+    "evidence/m7/provider-service-mounts-registry-recheck.log": "a4a5c406b1ba65dc32627d4f8b0b3eca5746b361c99f4287abd91c61d56f8cbe",
+    "evidence/m7/provider-service-mounts-bound/0/go.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/0/input.json.gz": "e31f4c9ebb30f920582619367b8b26fa7abc57116866d8fa3de62af1ae17120a",
+    "evidence/m7/provider-service-mounts-bound/0/rust.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/1/go.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/1/input.json.gz": "e31f4c9ebb30f920582619367b8b26fa7abc57116866d8fa3de62af1ae17120a",
+    "evidence/m7/provider-service-mounts-bound/1/rust.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/2/go.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/2/input.json.gz": "e31f4c9ebb30f920582619367b8b26fa7abc57116866d8fa3de62af1ae17120a",
+    "evidence/m7/provider-service-mounts-bound/2/rust.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/3/go.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/3/input.json.gz": "e31f4c9ebb30f920582619367b8b26fa7abc57116866d8fa3de62af1ae17120a",
+    "evidence/m7/provider-service-mounts-bound/3/rust.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/4/go.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/4/input.json.gz": "e31f4c9ebb30f920582619367b8b26fa7abc57116866d8fa3de62af1ae17120a",
+    "evidence/m7/provider-service-mounts-bound/4/rust.json.gz": "55b0f17d7ad1fb9e48f116ab5ca3c2c699c31636914ca583f9e31668fd104426",
+    "evidence/m7/provider-service-mounts-bound/index.json": "093c9aa8a17c994875a8f8951f8c80ca87642674403bd85d03ec116818e67b2d",
+    "evidence/m7/provider-service-mounts-bound/summary.json": "7fda0c0cd5b123702531efb70dcbd2484d4f8f270efcc315b20150daaaa41154",
+    "evidence/m7/provider-service-mounts-registry-recheck/0/go.json.gz": "d75a5ae8bdab509029287203bbeee62a0058c0bcd0e6aa7a09686f12d3b18d21",
+    "evidence/m7/provider-service-mounts-registry-recheck/0/input.json.gz": "ba57d7df04be469ea039f7e4daa9b1f78df64aa77ffb24ba308dc4e65d3b0ca0",
+    "evidence/m7/provider-service-mounts-registry-recheck/0/rust.json.gz": "2735a815d594051cb76b79fd526e738f4cd943cfd90c694269c5a605de411e40",
+    "evidence/m7/provider-service-mounts-registry-recheck/1/go.json.gz": "d75a5ae8bdab509029287203bbeee62a0058c0bcd0e6aa7a09686f12d3b18d21",
+    "evidence/m7/provider-service-mounts-registry-recheck/1/input.json.gz": "ba57d7df04be469ea039f7e4daa9b1f78df64aa77ffb24ba308dc4e65d3b0ca0",
+    "evidence/m7/provider-service-mounts-registry-recheck/1/rust.json.gz": "2735a815d594051cb76b79fd526e738f4cd943cfd90c694269c5a605de411e40",
+    "evidence/m7/provider-service-mounts-registry-recheck/2/go.json.gz": "d75a5ae8bdab509029287203bbeee62a0058c0bcd0e6aa7a09686f12d3b18d21",
+    "evidence/m7/provider-service-mounts-registry-recheck/2/input.json.gz": "ba57d7df04be469ea039f7e4daa9b1f78df64aa77ffb24ba308dc4e65d3b0ca0",
+    "evidence/m7/provider-service-mounts-registry-recheck/2/rust.json.gz": "2735a815d594051cb76b79fd526e738f4cd943cfd90c694269c5a605de411e40",
+    "evidence/m7/provider-service-mounts-registry-recheck/3/go.json.gz": "d75a5ae8bdab509029287203bbeee62a0058c0bcd0e6aa7a09686f12d3b18d21",
+    "evidence/m7/provider-service-mounts-registry-recheck/3/input.json.gz": "ba57d7df04be469ea039f7e4daa9b1f78df64aa77ffb24ba308dc4e65d3b0ca0",
+    "evidence/m7/provider-service-mounts-registry-recheck/3/rust.json.gz": "2735a815d594051cb76b79fd526e738f4cd943cfd90c694269c5a605de411e40",
+    "evidence/m7/provider-service-mounts-registry-recheck/4/go.json.gz": "d75a5ae8bdab509029287203bbeee62a0058c0bcd0e6aa7a09686f12d3b18d21",
+    "evidence/m7/provider-service-mounts-registry-recheck/4/input.json.gz": "ba57d7df04be469ea039f7e4daa9b1f78df64aa77ffb24ba308dc4e65d3b0ca0",
+    "evidence/m7/provider-service-mounts-registry-recheck/4/rust.json.gz": "2735a815d594051cb76b79fd526e738f4cd943cfd90c694269c5a605de411e40",
+    "evidence/m7/provider-service-mounts-registry-recheck/index.json": "7fef67a6ad6bdd0931a1fa5e7b6f05f8c7fafded57883bf9c6ba98a35b6f57e6",
+    "evidence/m7/provider-service-mounts-registry-recheck/summary.json": "7bddd8311d1bea8c89d7377f2b39b0f1c87299336f752db96170908f50707192"
+  }
+}

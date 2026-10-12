@@ -47,9 +47,13 @@
 
 ## 4. Later milestones
 
-- [ ] 4.1 M3: the `list_oauth_authorizations` / `approve_oauth_authorization`
-  admin tools (local bootstrap bearer only).
-- [ ] 4.2 M7: the provider environment gains `OPUTE_HOST_AGENT_CLIENT_ID` and
+- [ ] 4.1 Cutover (moved from M3 by the owner, 2026-10-12): the
+  `list_oauth_authorizations` / `approve_oauth_authorization` admin tools
+  (local bootstrap bearer only). Publishing them changes every Rust catalog
+  revision against Go, so they land when catalog divergence is acceptable;
+  until then the `oauth` CLI is the only approval channel.
+- [ ] 4.2 M9 (moved from M7 by the owner, 2026-10-12, to land with the
+  provider-side change): the provider environment gains `OPUTE_HOST_AGENT_CLIENT_ID` and
   `OPUTE_HOST_AGENT_CLIENT_SECRET_FILE`, plus the provider-side
   `client_secret_basic` change for public-URL activation evidence.
 - [ ] 4.3 M8: in-process probe tokens for the agent's own endpoints, and

@@ -1,0 +1,1 @@
+Retained failing differential run: 4,985/5,015 comparisons passed; thirty invocation outcomes differed because native plan validation enforced numeric enum values that the owning Go validator ignores. Original inputs, outputs, source hashes and failure rows remain unchanged. The corrected run is provider-registry-schema-enum-fixed.

@@ -1,0 +1,89 @@
+// Build-only bridge to actual private JSON Schema resolver functions.
+package jsonschema
+
+import (
+	"fmt"
+	"net/url"
+	"sort"
+)
+
+func ParityDereference(s *Schema, pointer string) (*Schema, error) {
+	return dereferenceJSONPointer(s, pointer)
+}
+
+func ParityStructure(s *Schema) ([]string, error) {
+	infos := map[*Schema]*resolvedInfo{}
+	if err := s.checkStructure(infos); err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(infos))
+	for _, info := range infos {
+		paths = append(paths, info.path)
+	}
+	sort.Strings(paths)
+	return paths, nil
+}
+
+func ParityLocal(s *Schema) error {
+	return s.check(map[*Schema]*resolvedInfo{})
+}
+
+// Project actual resolver graph identity by typed tree paths. The graph is not
+// reconstructed from the generic input and no error strings are rewritten.
+func ParityGraph(s *Schema, base string, refs bool) map[string]any {
+	fail := func(err error) map[string]any { return map[string]any{"error": err.Error()} }
+	var rs *Resolved
+	if refs {
+		var err error
+		rs, err = s.Resolve(&ResolveOptions{BaseURI: base})
+		if err != nil {
+			return fail(err)
+		}
+	} else {
+		u := &url.URL{}
+		if base != "" {
+			var err error
+			u, err = url.Parse(base)
+			if err != nil {
+				return fail(fmt.Errorf("parsing base URI: %w", err))
+			}
+		}
+		if u.Fragment != "" {
+			return fail(fmt.Errorf("base URI %s must not have a fragment", u))
+		}
+		rs = newResolved(s)
+		if err := s.check(rs.resolvedInfos); err != nil {
+			return fail(err)
+		}
+		if err := resolveURIs(rs, u); err != nil {
+			return fail(err)
+		}
+	}
+	path := func(s *Schema) any {
+		if s == nil {
+			return nil
+		}
+		return rs.resolvedInfos[s].path
+	}
+	uris := map[string]any{}
+	for uri, target := range rs.resolvedURIs {
+		uris[uri] = path(target)
+	}
+	infos := map[string]any{}
+	for _, info := range rs.resolvedInfos {
+		var uri any
+		if info.uri != nil {
+			uri = info.uri.String()
+		}
+		var anchors any
+		if info.anchors != nil {
+			a := map[string]any{}
+			for name, anchor := range info.anchors {
+				a[name] = map[string]any{"path": path(anchor.schema), "dynamic": anchor.dynamic}
+			}
+			anchors = a
+		}
+		infos[info.path] = map[string]any{"base": path(info.base), "uri": uri, "ref": path(info.resolvedRef), "dynamicRef": path(info.resolvedDynamicRef), "dynamicAnchor": info.dynamicRefAnchor, "anchors": anchors, "required": info.isRequired}
+	}
+	return map[string]any{"error": "", "draft": int(rs.draft), "uris": uris, "infos": infos}
+}

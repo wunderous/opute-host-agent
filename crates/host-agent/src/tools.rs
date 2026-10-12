@@ -19,6 +19,7 @@ use std::sync::{Arc, Mutex};
 
 /// What host capabilities read: the agent's environment and identity, the
 /// incus provider, the resource coordinator, and the resource registry.
+#[derive(Clone)]
 pub struct Host {
     pub env: crate::config::Env,
     pub incus: crate::incus::Incus,
@@ -33,13 +34,14 @@ pub struct Host {
 
 /// Resolves a wire name to the catalog name it was registered under, if any.
 fn registered(server: &Server, wire: &str) -> Option<String> {
+    let catalog_snapshot = server.catalog.wire_snapshot();
     let name = if server.tool_prefix.trim().is_empty() {
         wire.to_string()
     } else {
         wire.strip_prefix(&format!("{}_", server.tool_prefix.trim()))?
             .to_string()
     };
-    let known = server.catalog.tools.iter().any(|d| d.name == name)
+    let known = catalog_snapshot.tools.iter().any(|d| d.name == name)
         || catalog::internal().tools.iter().any(|d| d.name == name);
     (known && catalog::wire_name(&server.tool_prefix, &name) == wire).then_some(name)
 }
@@ -100,18 +102,19 @@ fn requested_revision(params: Option<&Node>) -> String {
 }
 
 pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCallOutcome {
+    let catalog_snapshot = server.catalog.snapshot();
     let Some(name) = registered(server, wire) else {
         return ToolCallOutcome::Unknown;
     };
     let requested = requested_revision(params);
-    if !requested.is_empty() && requested != server.catalog.revision {
+    if !requested.is_empty() && requested != catalog_snapshot.revision {
         return ToolCallOutcome::Result(capability_error(
             "lifecycle",
             "catalog_revision_stale",
             &format!(
                 "catalog revision {} is stale; current revision is {}",
                 crate::goerr::quote(&requested),
-                crate::goerr::quote(&server.catalog.revision)
+                crate::goerr::quote(&catalog_snapshot.revision)
             ),
         ));
     }
@@ -119,11 +122,36 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         Ok(a) => a,
         Err(e) => return ToolCallOutcome::Result(error_result(&format!("invalid arguments: {e}"))),
     };
+    // `contextForProviderCallback`: a signed delegation re-attaches the
+    // calling provider task's reservation and identity, or refuses.
+    let meta = params
+        .and_then(|p| p.field("_meta"))
+        .map(crate::transport::go_any)
+        .and_then(|value| match value {
+            J::Object(map) => Some(map),
+            _ => None,
+        });
+    let host_tools = catalog::host_tool_names();
+    let scope = crate::provider::delegation::CallbackScope {
+        agent: &server.agent_id,
+        tasks: &server.tasks,
+        host_tools: &host_tools,
+        catalog: &catalog_snapshot,
+    };
+    let callback = match server.providers.delegations.callback(
+        &crate::plan::runner::RunCtx::background(),
+        meta.as_ref(),
+        &name,
+        &scope,
+    ) {
+        Ok(ctx) => ctx.reservation().is_some().then_some(ctx),
+        Err(e) => return ToolCallOutcome::Result(error_result(e)),
+    };
     // Decision D10 (standalone-read-only-gate): with mutations disabled,
     // standalone runs read tools only.
     if server.standalone
         && !server.allow_mutations
-        && !catalog::standalone_read_only(server.catalog, &name)
+        && !catalog::standalone_read_only(&catalog_snapshot, &name)
     {
         return ToolCallOutcome::Result(error_result(
             "standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
@@ -148,29 +176,18 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         // already-terminal run -- leaves it unclaimed for the plain release
         // below, same as every other lifecycle tool.
         let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let result = match name.as_str() {
-            "get_capability_catalog" => structured_result(snapshot_json(server.catalog), None),
-            "validate_host_plan" => {
-                crate::plan_mcp::handle_validate_host_plan(&args, server.catalog)
-            }
-            "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
-                server,
-                &args,
-                reservation.clone(),
-                Arc::clone(&claimed),
-            ),
-            "get_host_plan_run" => crate::plan_mcp::handle_get_host_plan_run(server, &args),
-            "validate_host_local_recipe" => {
-                crate::host_recipe_mcp::handle_validate_host_local_recipe(server, &args)
-            }
-            "run_host_local_recipe" => crate::host_recipe_mcp::handle_run_host_local_recipe(
-                server,
-                &args,
-                reservation.clone(),
-                Arc::clone(&claimed),
-            ),
-            _ => not_implemented(&name),
-        };
+        let ctx = crate::plan::runner::RunCtx::background().with_reservation(reservation.clone());
+        let result = run_lifecycle(
+            server,
+            &name,
+            &crate::builtin::Invocation {
+                ctx: &ctx,
+                args: &args,
+                binding: &binding,
+                snapshot: &catalog_snapshot,
+                claimed: Some(&claimed),
+            },
+        );
         if !claimed.load(std::sync::atomic::Ordering::SeqCst) {
             admission::release(server, &reservation);
         }
@@ -180,20 +197,107 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         if !task_extension_declared(params) {
             return missing_tasks_capability();
         }
-        return ToolCallOutcome::Result(create_input_task(server, &args));
+        return ToolCallOutcome::Result(run_task_input(server, &name, &args));
     }
-    if catalog::is_task_aware(&name) {
+    // Provider-declared bridged work crosses the Host Agent task boundary
+    // before the public request reaches the provider.
+    let bridged = catalog_snapshot
+        .tools
+        .iter()
+        .find(|d| d.name == name)
+        .is_some_and(|d| d.task_support == "bridged");
+    if bridged || catalog::is_task_aware(&name) {
         if !task_extension_declared(params) {
             return missing_tasks_capability();
         }
-        return ToolCallOutcome::Result(create_async_task(server, &name, args));
+        return ToolCallOutcome::Result(create_async_task(server, &name, args, callback.as_ref()));
     }
-    ToolCallOutcome::Result(dispatch(server, &name, &args, None, None))
+    ToolCallOutcome::Result(dispatch(server, &name, &args, None, callback.as_ref()))
+}
+
+/// Callback-owned async tasks whose handle has not been acknowledged yet
+/// (`pendingAsyncTaskStarts`). A delegated callback's parent reservation is
+/// bounded by the provider call, so the child does not start until the
+/// caller polls that exact task.
+#[derive(Default)]
+pub struct TaskStarts {
+    pending: std::sync::Mutex<std::collections::HashMap<String, Box<dyn FnOnce() + Send>>>,
+    closed: std::sync::atomic::AtomicBool,
+}
+
+/// `callbackTaskAcknowledgementTimeout`.
+const CALLBACK_ACKNOWLEDGEMENT: std::time::Duration = std::time::Duration::from_secs(120);
+
+fn cancel_pending_task(server: &Server, task_id: &str, message: &str) {
+    if let Some(snapshot) = server.tasks.cancel_with_message(task_id, message) {
+        persist_task(server, &snapshot);
+    }
+}
+
+/// `startPendingAsyncTask`, on `tasks/get`.
+pub fn start_pending_task(server: &Server, task_id: &str) {
+    let start = server.task_starts.pending.lock().unwrap().remove(task_id);
+    if let Some(start) = start {
+        if !server
+            .task_starts
+            .closed
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
+            start();
+        }
+    }
+}
+
+/// `closePendingAsyncTaskStarts`: shutdown cancels unacknowledged callback
+/// tasks and every task still working.
+pub fn close_task_starts(server: &Server) {
+    server
+        .task_starts
+        .closed
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    let pending: Vec<String> = server
+        .task_starts
+        .pending
+        .lock()
+        .unwrap()
+        .drain()
+        .map(|(id, _)| id)
+        .collect();
+    for id in pending {
+        cancel_pending_task(
+            server,
+            &id,
+            "The Host Agent shut down before the callback task handle was acknowledged.",
+        );
+    }
+    for id in server.tasks.working_ids() {
+        cancel_pending_task(
+            server,
+            &id,
+            "The Host Agent shut down before the task completed.",
+        );
+    }
+}
+
+/// The task-input operation, resolved through the service context.
+pub(crate) fn run_task_input(server: &Arc<Server>, name: &str, args: &Map<String, J>) -> J {
+    let ctx = crate::plan::runner::RunCtx::background();
+    let invocation = crate::builtin::Invocation {
+        ctx: &ctx,
+        args,
+        binding: &Binding::default(),
+        snapshot: &server.catalog.snapshot(),
+        claimed: None,
+    };
+    if let Some(outcome) = crate::builtin::invoke(server, name, &invocation) {
+        return outcome.unwrap_or_else(|e| error_result(&e));
+    }
+    not_implemented(name)
 }
 
 /// `createInputRequestTask`: a task that completes with the operator's
 /// response once `tasks/update` supplies it.
-fn create_input_task(server: &Arc<Server>, args: &Map<String, J>) -> J {
+pub(crate) fn create_input_task(server: &Arc<Server>, args: &Map<String, J>) -> J {
     let prompt = args.get("prompt").and_then(J::as_str).unwrap_or("");
     if prompt.trim().is_empty() {
         return error_result("request_task_input requires prompt");
@@ -303,7 +407,36 @@ pub(crate) fn persist_task(server: &Server, snapshot: &crate::tasks::Snapshot) {
 /// capability runs on its own thread under the task's operation identity.
 /// A tool-level error completes the task with `isError`; `failed` is
 /// reserved for execution errors.
-fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> J {
+fn create_async_task(
+    server: &Arc<Server>,
+    name: &str,
+    args: Map<String, J>,
+    callback: Option<&crate::plan::runner::RunCtx>,
+) -> J {
+    let owner = match callback {
+        None => None,
+        Some(ctx) => {
+            let host_tools = catalog::host_tool_names();
+            let catalog_snapshot = server.catalog.snapshot();
+            let scope = crate::provider::delegation::CallbackScope {
+                agent: &server.agent_id,
+                tasks: &server.tasks,
+                host_tools: &host_tools,
+                catalog: &catalog_snapshot,
+            };
+            match scope.task_owner(ctx) {
+                Ok(owner) => owner,
+                Err(e) => return error_result(e),
+            }
+        }
+    };
+    if server
+        .task_starts
+        .closed
+        .load(std::sync::atomic::Ordering::SeqCst)
+    {
+        return error_result("the Host Agent is shutting down and cannot start a task");
+    }
     let desc = match args.get("vmName").and_then(J::as_str) {
         Some(vm) if !vm.is_empty() => format!("Running {name} on '{vm}'..."),
         _ => format!("Executing {name}..."),
@@ -312,11 +445,43 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
     // even when the task is cancelled first, and the registry discards the
     // late result (a cancelled task stays cancelled).
     let tool_args = redact_task_args(server, name, &args);
-    let (rec, _cancelled) = server.tasks.create(name, &desc, tool_args);
+    let (rec, cancelled) = server.tasks.create(name, &desc, tool_args);
     let worker = Arc::clone(server);
     let (task_id, name) = (rec.task_id.clone(), name.to_string());
-    let handle = std::thread::spawn(move || {
-        let result = dispatch(&worker, &name, &args, Some((&name, &task_id)), None);
+    // Go runs the task under `CreateWithCancel`'s context, so tasks/cancel
+    // and shutdown abort an in-flight provider request. Host tools keep the
+    // cooperative path above.
+    let provider = server
+        .catalog
+        .snapshot()
+        .tools
+        .iter()
+        .any(|d| d.name == name && d.implementation.trim().starts_with("provider:"));
+    let base = if provider {
+        crate::plan::runner::RunCtx::from_flag(cancelled)
+    } else {
+        crate::plan::runner::RunCtx::background()
+    };
+    // A delegated child keeps its own task identity for its record while
+    // admission stays attached to the parent task's reservation.
+    let delegated = owner.is_some();
+    let child = match owner.as_ref() {
+        Some(owner) => Some(crate::provider::delegation::TaskOwner::child_context(
+            &base,
+            &name,
+            &task_id,
+            Some(owner),
+        )),
+        None => provider.then_some(base),
+    };
+    let start = move || {
+        let result = dispatch(
+            &worker,
+            &name,
+            &args,
+            Some((&name, &task_id)),
+            child.as_ref(),
+        );
         let content: Vec<J> = result
             .get("content")
             .and_then(J::as_array)
@@ -340,10 +505,43 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
         if let Some(completed) = worker.tasks.get(&task_id) {
             persist_task(&worker, &completed);
         }
-    });
-    if let Ok(mut workers) = server.task_workers.lock() {
-        workers.retain(|worker| !worker.is_finished());
-        workers.push(handle);
+    };
+    let spawner = Arc::downgrade(server);
+    let spawn = move || {
+        let Some(server) = spawner.upgrade() else {
+            return;
+        };
+        let handle = std::thread::spawn(start);
+        let workers = server.task_workers.lock();
+        if let Ok(mut workers) = workers {
+            workers.retain(|worker| !worker.is_finished());
+            workers.push(handle);
+        }
+    };
+    if delegated {
+        server
+            .task_starts
+            .pending
+            .lock()
+            .unwrap()
+            .insert(rec.task_id.clone(), Box::new(spawn));
+        let expiry = Arc::downgrade(server);
+        let task_id = rec.task_id.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(CALLBACK_ACKNOWLEDGEMENT);
+            if let Some(server) = expiry.upgrade() {
+                let expired = server.task_starts.pending.lock().unwrap().remove(&task_id);
+                if expired.is_some() {
+                    cancel_pending_task(
+                        &server,
+                        &task_id,
+                        "The callback task handle was not acknowledged before its timeout.",
+                    );
+                }
+            }
+        });
+    } else {
+        spawn();
     }
     json!({
         "content": [{"type": "text", "text": desc}],
@@ -356,8 +554,8 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) -> 
 /// nothing here -- the caller already holds whatever they sent -- while
 /// still ensuring a secret argument never carries into `state.db`.
 fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
-    let descriptor = server
-        .catalog
+    let catalog_snapshot = server.catalog.snapshot();
+    let descriptor = catalog_snapshot
         .tools
         .iter()
         .chain(catalog::internal().tools.iter())
@@ -376,8 +574,8 @@ fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
 /// reaches the caller exactly as Go returns it, since the caller already
 /// owns it and this is its one delivery channel.
 fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<J> {
-    let descriptor = server
-        .catalog
+    let catalog_snapshot = server.catalog.snapshot();
+    let descriptor = catalog_snapshot
         .tools
         .iter()
         .chain(catalog::internal().tools.iter())
@@ -390,7 +588,7 @@ fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<
 }
 
 /// `isLifecycleTool`: transport-owned operations routed before tasks.
-const LIFECYCLE: &[&str] = &[
+pub(crate) const LIFECYCLE: &[&str] = &[
     "validate_host_plan",
     "run_host_plan",
     "get_host_plan_run",
@@ -410,6 +608,18 @@ const LIFECYCLE: &[&str] = &[
     "get_capability_catalog",
     "open_assistant_session",
 ];
+
+/// A lifecycle operation, resolved through the service context.
+pub(crate) fn run_lifecycle(
+    server: &Arc<Server>,
+    name: &str,
+    call: &crate::builtin::Invocation,
+) -> J {
+    match crate::builtin::invoke(server, name, call) {
+        Some(outcome) => outcome.unwrap_or_else(|e| error_result(&e)),
+        None => not_implemented(name),
+    }
+}
 
 /// A capability whose handler this build does not carry yet. It fails
 /// closed with a typed error rather than doing anything.
@@ -443,11 +653,27 @@ pub(crate) fn dispatch(
         Err(refusal) => return refusal.render(),
     };
     let parent = cancel_ctx.and_then(|ctx| ctx.reservation());
-    let reservation =
-        match admission::admit(server, name, args, &binding, identity, parent.as_deref()) {
-            Ok(r) => r,
-            Err(refusal) => return refusal.render(),
-        };
+    // Go reads the admission identity from the context; a delegated
+    // callback's context carries its parent task, which the parent
+    // reservation is bound to.
+    let context_identity = cancel_ctx
+        .map(|ctx| ctx.operation_identity())
+        .filter(|(operation, task)| !operation.is_empty() || !task.is_empty());
+    let admission_identity = context_identity
+        .as_ref()
+        .map(|(operation, task)| (operation.as_str(), task.as_str()))
+        .or(identity);
+    let reservation = match admission::admit(
+        server,
+        name,
+        args,
+        &binding,
+        admission_identity,
+        parent.as_deref(),
+    ) {
+        Ok(r) => r,
+        Err(refusal) => return refusal.render(),
+    };
     if let Some((_, task_id)) = identity {
         if let Some(snapshot) = server.tasks.get(task_id) {
             let _ = server
@@ -457,6 +683,41 @@ pub(crate) fn dispatch(
                 .map(|state| state.create_operation(task_id, name, &snapshot.description));
             persist_task(server, &snapshot);
         }
+    }
+    let catalog_snapshot = server.catalog.snapshot();
+    let provider = catalog_snapshot
+        .tools
+        .iter()
+        .find(|d| d.name == name && d.implementation.trim().starts_with("provider:"));
+    if let (Some(descriptor), Some(capability)) = (provider, server.catalog.capability(name)) {
+        let base = cancel_ctx
+            .cloned()
+            .unwrap_or_else(crate::plan::runner::RunCtx::background);
+        let mut ctx = base.with_reservation(reservation.clone());
+        if let Some((operation, task)) = identity {
+            ctx = ctx.with_operation_identity(operation, task);
+        }
+        let result = dispatch_provider(
+            server,
+            &catalog_snapshot,
+            descriptor,
+            &capability,
+            &ctx,
+            args,
+            &binding,
+            &reservation,
+        );
+        admission::release(server, &reservation);
+        return result;
+    }
+    // The same invocation context a provider capability receives: the
+    // caller's cancellation, the admitted reservation and the task identity.
+    let mut invocation_ctx = cancel_ctx
+        .cloned()
+        .unwrap_or_else(crate::plan::runner::RunCtx::background)
+        .with_reservation(reservation.clone());
+    if let Some((operation, task)) = identity {
+        invocation_ctx = invocation_ctx.with_operation_identity(operation, task);
     }
     let result = match cancel_ctx {
         Some(ctx) => {
@@ -472,12 +733,12 @@ pub(crate) fn dispatch(
                         std::thread::sleep(std::time::Duration::from_millis(20));
                     }
                 });
-                let r = invoke(server, name, args, &binding);
+                let r = invoke(server, &invocation_ctx, name, args, &binding);
                 finished.store(true, std::sync::atomic::Ordering::SeqCst);
                 r
             })
         }
-        None => invoke(server, name, args, &binding),
+        None => invoke(server, &invocation_ctx, name, args, &binding),
     };
     // Schema-invalid arguments are an owner-approved reject-without-audit
     // divergence (D11). Admission refusals returned above never get here.
@@ -493,6 +754,396 @@ pub(crate) fn dispatch(
     result
 }
 
+/// `dispatchCapabilityValue` for a provider-contributed capability, shared by
+/// ordinary dispatch and a candidate's private setup recipe. The capability
+/// owns generation affinity and delegation; this owns result admission and
+/// durable invocation evidence.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn dispatch_provider(
+    server: &Server,
+    snapshot: &catalog::Snapshot,
+    descriptor: &catalog::Descriptor,
+    capability: &catalog::registry::Capability,
+    ctx: &crate::plan::runner::RunCtx,
+    args: &Map<String, J>,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+) -> J {
+    let binding = complete_produced_binding(server, descriptor, args, binding);
+    let record = |result: Option<&J>, observation: J, error: Option<(&str, &str)>| {
+        record_provider_invocation(
+            server,
+            snapshot,
+            descriptor,
+            args,
+            &binding,
+            reservation,
+            result,
+            observation,
+            error,
+        )
+    };
+    let mut result = match (capability.invoke)(ctx, args) {
+        Ok(result) => result,
+        Err(error) => {
+            let failed = error_result(&error);
+            record(
+                Some(&failed),
+                provider_observation(snapshot, descriptor, "invoke_error", None, ""),
+                Some(("", "")),
+            );
+            return failed;
+        }
+    };
+    if result.get("isError") != Some(&J::Bool(true)) {
+        let structured = result.remove("structuredContent").unwrap_or(J::Null);
+        result.insert(
+            "structuredContent".into(),
+            materialize_bound_outputs(descriptor, structured, &binding),
+        );
+    }
+    let observation = match crate::provider::observation::validate(descriptor, Some(&result)) {
+        Ok(observation) => observation,
+        Err(error) => {
+            let message = format!(
+                "capability {} returned invalid result: {error}",
+                crate::goerr::quote(name_of(descriptor))
+            );
+            let failed = capability_error("capability", "invalid_result", &message);
+            record(
+                Some(&failed),
+                provider_observation(snapshot, descriptor, "invalid_result", None, ""),
+                Some(("capability", "invalid_result")),
+            );
+            return failed;
+        }
+    };
+    if result.get("isError") != Some(&J::Bool(true)) {
+        let structured = result.get("structuredContent").cloned().unwrap_or(J::Null);
+        if let Err(error) = validate_produced(descriptor, &structured, &server.host.tenant_id) {
+            let failed = capability_error("capability", "invalid_resource_output", &error);
+            record(
+                Some(&failed),
+                provider_observation(snapshot, descriptor, "invalid_result", None, ""),
+                Some(("capability", "invalid_resource_output")),
+            );
+            return failed;
+        }
+    }
+    let result = J::Object(result);
+    record(
+        Some(&result),
+        provider_observation(
+            snapshot,
+            descriptor,
+            &observation.status,
+            observation.structured.as_ref(),
+            &observation.retryability,
+        ),
+        None,
+    );
+    result
+}
+
+fn name_of(descriptor: &catalog::Descriptor) -> &str {
+    &descriptor.name
+}
+
+/// `normalizeCapabilityObservation` over the pass-through provider observation.
+fn provider_observation(
+    snapshot: &catalog::Snapshot,
+    descriptor: &catalog::Descriptor,
+    status: &str,
+    structured: Option<&J>,
+    retryability: &str,
+) -> J {
+    let mut observation = json!({
+        "schemaVersion": "opute-capability-observation.v1",
+        "operationId": descriptor.operation_id,
+        "capabilityVersion": descriptor.version,
+        "status": if status.is_empty() { "unknown" } else { status },
+        "catalogRevision": snapshot.revision,
+    });
+    if let Some(structured) = structured {
+        observation["structured"] = redact_for_storage(
+            structured,
+            descriptor.output_schema.as_ref().and_then(J::as_object),
+        );
+    }
+    if !retryability.is_empty() {
+        observation["retryability"] = J::from(retryability);
+    }
+    if !descriptor.generation_id.is_empty() {
+        observation["generationId"] = J::from(descriptor.generation_id.clone());
+    }
+    observation
+}
+
+fn execution_binding_json(
+    server: &Server,
+    revision: &str,
+    generation: &str,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+) -> J {
+    let mut execution_binding = json!({
+        "schemaVersion": "opute-capability-execution-binding.v1",
+        "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
+        "authorization": "admitted", "catalogRevision": revision,
+        "reservationId": reservation.id,
+        "resourcePolicyRevision": server.host.coordinator.policy_revision(),
+    });
+    if !generation.is_empty() {
+        execution_binding["generationId"] = J::from(generation);
+    }
+    if !binding.resources.is_empty() {
+        let resources: Vec<J> = binding
+            .resources
+            .iter()
+            .filter_map(|bound| {
+                let uri = crate::resource::Uri::parse(&bound.uri).ok()?;
+                Some(json!({"argument": bound.argument, "uri": bound.uri,
+                        "resourceType": uri.resource_type, "tenantId": uri.tenant_id,
+                        "resourceId": uri.resource_id, "coordinates": bound.coordinates}))
+            })
+            .collect();
+        execution_binding["resources"] = J::from(resources);
+    }
+    execution_binding
+}
+
+/// `recordCapabilityInvocation` for a provider capability.
+#[allow(clippy::too_many_arguments)]
+fn record_provider_invocation(
+    server: &Server,
+    snapshot: &catalog::Snapshot,
+    descriptor: &catalog::Descriptor,
+    args: &Map<String, J>,
+    binding: &Binding,
+    reservation: &crate::resource::Reservation,
+    result: Option<&J>,
+    observation: J,
+    error: Option<(&str, &str)>,
+) {
+    let mut envelope = json!({"isError": false});
+    if let Some(result) = result {
+        envelope["isError"] = J::Bool(result.get("isError") == Some(&J::Bool(true)));
+        envelope["structured"] = redact_for_storage(
+            result.get("structuredContent").unwrap_or(&J::Null),
+            descriptor.output_schema.as_ref().and_then(J::as_object),
+        );
+        envelope["content"] = json!([]);
+    }
+    if let Some((owner, code)) = error {
+        envelope["error"] = if owner.is_empty() {
+            json!({"message": "capability invocation failed"})
+        } else {
+            json!({"owner": owner, "code": code, "message": "capability invocation failed"})
+        };
+    }
+    let status = observation
+        .get("status")
+        .and_then(J::as_str)
+        .unwrap_or("unknown")
+        .to_string();
+    let record = crate::store::CapabilityInvocationRecord {
+        invocation_id: crate::tasks::new_task_id(),
+        operation_id: descriptor.operation_id.clone(),
+        capability_version: descriptor.version,
+        catalog_revision: snapshot.revision.clone(),
+        generation_id: descriptor.generation_id.clone(),
+        authorization: "admitted".into(),
+        arguments_json: redact_for_storage(
+            &J::Object(args.clone()),
+            descriptor.input_schema.as_object(),
+        )
+        .to_string(),
+        binding_json: execution_binding_json(
+            server,
+            &snapshot.revision,
+            &descriptor.generation_id,
+            binding,
+            reservation,
+        )
+        .to_string(),
+        result_json: envelope.to_string(),
+        observation_json: observation.to_string(),
+        terminal_status: if error.is_some() {
+            "error".into()
+        } else {
+            status
+        },
+        ..Default::default()
+    };
+    if let Ok(state) = server.host.state.lock() {
+        let _ = state.record_capability_invocation(&record);
+    }
+}
+
+/// `completeProducedResourceBinding`.
+fn complete_produced_binding(
+    server: &Server,
+    descriptor: &catalog::Descriptor,
+    args: &Map<String, J>,
+    binding: &Binding,
+) -> Binding {
+    let mut binding = binding.clone();
+    for produced in &descriptor.produces {
+        if produced.source_path.trim() != "uri" {
+            continue;
+        }
+        let bound = binding.resources.iter().any(|resource| {
+            !resource.uri.trim().is_empty()
+                && crate::resource::Uri::parse(&resource.uri)
+                    .is_ok_and(|uri| uri.resource_type == produced.resource_type)
+        });
+        if bound {
+            return binding;
+        }
+        let Some(candidate) = args.get("uri").and_then(J::as_str) else {
+            continue;
+        };
+        if candidate.trim().is_empty() {
+            continue;
+        }
+        if let Ok((parsed, coordinates)) =
+            admission::resolve_resource(&server.host, candidate, &produced.resource_type)
+        {
+            binding.resources.push(admission::Bound {
+                argument: "uri".into(),
+                uri: parsed.to_string(),
+                coordinates,
+            });
+        }
+    }
+    binding
+}
+
+/// `materializeBoundResourceOutputs`.
+fn materialize_bound_outputs(
+    descriptor: &catalog::Descriptor,
+    structured: J,
+    binding: &Binding,
+) -> J {
+    let mut object = match structured {
+        J::Object(object) => object,
+        J::Null => Map::new(),
+        other => return other,
+    };
+    for produced in &descriptor.produces {
+        let existing = object
+            .get("uri")
+            .and_then(J::as_str)
+            .is_some_and(|uri| !uri.trim().is_empty());
+        if produced.source_path.trim() != "uri" || existing {
+            continue;
+        }
+        if let Some(resource) = binding.resources.iter().find(|resource| {
+            !resource.uri.trim().is_empty()
+                && crate::resource::Uri::parse(&resource.uri)
+                    .is_ok_and(|uri| uri.resource_type == produced.resource_type)
+        }) {
+            object.insert("uri".into(), J::from(resource.uri.clone()));
+        }
+    }
+    J::Object(object)
+}
+
+/// `validateProducedResources`. Provider selectors require the host selector
+/// registry, which no pinned provider declares; such a binding fails closed.
+fn validate_produced(
+    descriptor: &catalog::Descriptor,
+    structured: &J,
+    tenant: &str,
+) -> Result<(), String> {
+    if descriptor.produces.is_empty() {
+        return Ok(());
+    }
+    let operation = crate::goerr::quote(&descriptor.operation_id);
+    let mut allowed: std::collections::BTreeMap<String, std::collections::BTreeSet<String>> =
+        Default::default();
+    for produced in &descriptor.produces {
+        let path = produced.source_path.trim();
+        let kind = produced.resource_type.trim();
+        if path.is_empty() || kind.is_empty() {
+            return Err(format!(
+                "capability {operation} has an incomplete produced resource binding"
+            ));
+        }
+        if !produced.selector_id.is_empty() {
+            return Err(format!(
+                "capability {operation} selector {} failed: provider selectors are not supported",
+                crate::goerr::quote(&produced.selector_id)
+            ));
+        }
+        allowed.entry(path.into()).or_default().insert(kind.into());
+    }
+    for (path, kinds) in &allowed {
+        let segments: Vec<&str> = path.split('.').collect();
+        let Some(values) = values_at_path(structured, &segments) else {
+            return Err(format!(
+                "capability {operation} did not return declared resource output {}",
+                crate::goerr::quote(path)
+            ));
+        };
+        if values.is_empty() {
+            if segments.iter().any(|segment| segment.ends_with("[]")) {
+                continue;
+            }
+            return Err(format!(
+                "capability {operation} did not return declared resource output {}",
+                crate::goerr::quote(path)
+            ));
+        }
+        for value in values {
+            let J::String(uri) = value else {
+                return Err(format!(
+                    "capability {operation} produced non-string resource output {}",
+                    crate::goerr::quote(path)
+                ));
+            };
+            let parsed = crate::resource::Uri::parse(&uri).map_err(|e| {
+                format!(
+                    "capability {operation} produced invalid resource output {}: {e}",
+                    crate::goerr::quote(path)
+                )
+            })?;
+            if parsed.tenant_id != tenant {
+                return Err(format!(
+                    "capability {operation} produced foreign-tenant resource output {}",
+                    crate::goerr::quote(path)
+                ));
+            }
+            if !kinds.contains(&parsed.resource_type) {
+                let declared: Vec<&str> = kinds.iter().map(String::as_str).collect();
+                return Err(format!(
+                    "capability {operation} produced resource kind {} at {}; declared kinds are [{}]",
+                    crate::goerr::quote(&parsed.resource_type),
+                    crate::goerr::quote(path),
+                    declared.join(" ")
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn values_at_path(value: &J, segments: &[&str]) -> Option<Vec<J>> {
+    let Some((segment, rest)) = segments.split_first() else {
+        return Some(vec![value.clone()]);
+    };
+    let object = value.as_object()?;
+    if let Some(key) = segment.strip_suffix("[]") {
+        let items = object.get(key)?.as_array()?;
+        let mut values = Vec::new();
+        for item in items {
+            values.extend(values_at_path(item, rest)?);
+        }
+        return Some(values);
+    }
+    values_at_path(object.get(*segment)?, rest)
+}
+
 /// Go's recordCapabilityInvocation for the built-in compatibility adapters.
 /// The raw MCP text is deliberately absent from durable evidence.
 fn record_invocation(
@@ -503,7 +1154,8 @@ fn record_invocation(
     reservation: &crate::resource::Reservation,
     result: &J,
 ) {
-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
+    let catalog_snapshot = server.catalog.snapshot();
+    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return;
     };
     let invalid_result = result
@@ -526,7 +1178,7 @@ fn record_invocation(
     let mut observation = json!({
         "schemaVersion": "opute-capability-observation.v1",
         "operationId": name, "capabilityVersion": 1,
-        "catalogRevision": server.catalog.revision, "status": status,
+        "catalogRevision": catalog_snapshot.revision, "status": status,
     });
     if invalid_result {
         envelope["error"] = json!({"owner": "capability", "code": "invalid_result",
@@ -545,9 +1197,9 @@ fn record_invocation(
     let mut execution_binding = json!({
         "schemaVersion": "opute-capability-execution-binding.v1",
         "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
-        "authorization": "admitted", "catalogRevision": server.catalog.revision,
+        "authorization": "admitted", "catalogRevision": catalog_snapshot.revision,
         "reservationId": reservation.id,
-        "resourcePolicyRevision": crate::resource::POLICY_REVISION,
+        "resourcePolicyRevision": server.host.coordinator.policy_revision(),
     });
     if !binding.resources.is_empty() {
         let resources: Vec<J> = binding
@@ -566,7 +1218,7 @@ fn record_invocation(
         invocation_id: crate::tasks::new_task_id(),
         operation_id: name.into(),
         capability_version: 1,
-        catalog_revision: server.catalog.revision.clone(),
+        catalog_revision: catalog_snapshot.revision.clone(),
         authorization: "admitted".into(),
         arguments_json: redact_for_storage(
             &J::Object(args.clone()),
@@ -585,85 +1237,22 @@ fn record_invocation(
     }
 }
 
-type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
-
-fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding) -> J {
-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
+pub(crate) fn invoke(
+    server: &Server,
+    ctx: &crate::plan::runner::RunCtx,
+    name: &str,
+    args: &Map<String, J>,
+    binding: &Binding,
+) -> J {
+    let catalog_snapshot = server.catalog.snapshot();
+    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
         return not_implemented(name);
     };
-    let handler: Handler = match name {
-        "get_host_info" => |host, _, _| Ok(structured_with_text(&describe_host(host), &HOST_INFO)),
-        "get_vm_info" => |host, args, binding| {
-            // The provider-native name comes from the canonical binding,
-            // never from a raw argument.
-            let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
-            let register = |uri: &str, coordinates: Map<String, J>| {
-                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-            };
-            host.incus
-                .get_vm_info(&binding.provider_instance_name(), fast, &register)
-                .map(|v| structured_with_text(&v, &VM_INFO))
-        },
-        "probe_incus_gpu" => |host, args, _| {
-            Ok(structured_result(
-                probe_incus_gpu(host, args),
-                Some("Incus GPU capability report generated"),
-            ))
-        },
-        "list_vms" => |host, args, _| {
-            let fast = args.get("fast").and_then(J::as_bool).unwrap_or(false);
-            let register = |uri: &str, coordinates: Map<String, J>| {
-                let _ = crate::resource::register(&host.state, &host.tenant_id, uri, &coordinates);
-            };
-            host.incus
-                .list_vms(fast, &register)
-                .map(|v| structured_with_text(&v, &VM_LIST))
-        },
-        "detect_host_platform" => |host, _, _| {
-            let platform = crate::hostobs::detect_platform(&host.env);
-            let text = format!(
-                "Host platform detected: {} on {}.",
-                platform["kind"].as_str().unwrap_or(""),
-                platform["cpu"]["architecture"].as_str().unwrap_or("")
-            );
-            Ok(json!({"content": [{"type": "text", "text": text}], "structuredContent": platform}))
-        },
-        "get_host_capacity" => |host, _, _| {
-            Ok(json!({
-                "content": [{"type": "text", "text": "Host capacity and enforcement state observed."}],
-                "structuredContent": host.coordinator.snapshot(),
-            }))
-        },
-        "inspect_host_file" => |_, args, _| {
-            // expectedContent is read raw: ensure_host_file writes it raw.
-            let field = |k: &str| args.get(k).and_then(J::as_str).map(str::trim).unwrap_or("");
-            let raw = args
-                .get("expectedContent")
-                .and_then(J::as_str)
-                .unwrap_or("");
-            crate::hostread::inspect_host_file(
-                field("path"),
-                field("scope"),
-                field("expectedSha256"),
-                raw,
-            )
-            .map(|v| structured_result(v, Some("Managed host file inspected.")))
-        },
-        "probe_http_endpoint" => |_, args, _| {
-            let endpoint = args
-                .get("endpoint")
-                .and_then(J::as_str)
-                .map(str::trim)
-                .unwrap_or("");
-            let accept = args
-                .get("acceptAuthenticationChallenge")
-                .and_then(J::as_bool)
-                .unwrap_or(false);
-            crate::hostread::probe_http_endpoint(endpoint, accept)
-                .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
-        },
-        _ => return not_implemented(name),
-    };
+    // As in Go's registry lookup, an operation no service offers fails
+    // closed before its arguments are checked.
+    if crate::builtin::resolve(server, name).is_none() {
+        return not_implemented(name);
+    }
     // The legacy adapter's declarative gate: arguments against the input
     // schema, then a successful structured result against the output schema.
     let input = descriptor
@@ -676,7 +1265,17 @@ fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding)
         let message = format!("invalid capability arguments: {e}");
         return capability_error("capability", "invalid_arguments", &message);
     }
-    let result = match handler(&server.host, args, binding) {
+    let invocation = crate::builtin::Invocation {
+        ctx,
+        args,
+        binding,
+        snapshot: &catalog_snapshot,
+        claimed: None,
+    };
+    let Some(outcome) = crate::builtin::invoke(server, name, &invocation) else {
+        return not_implemented(name);
+    };
+    let result = match outcome {
         Ok(result) => result,
         Err(e) => return error_result(&e),
     };
@@ -706,14 +1305,14 @@ use crate::gojson::Shape;
 mod evidence_fixture;
 
 /// `host.HTTPObservation`.
-const HTTP_OBSERVATION: Shape = Shape::Struct(&[
+pub(crate) const HTTP_OBSERVATION: Shape = Shape::Struct(&[
     ("endpoint", Shape::Any),
     ("statusCode", Shape::Any),
     ("ready", Shape::Any),
     ("error", Shape::Any),
 ]);
 
-const VM_INFO: Shape = Shape::Struct(&[
+pub(crate) const VM_INFO: Shape = Shape::Struct(&[
     ("uri", Shape::Any),
     ("kind", Shape::Any),
     ("name", Shape::Any),
@@ -729,7 +1328,7 @@ const VM_INFO: Shape = Shape::Struct(&[
     ("agentReady", Shape::Any),
     ("hostId", Shape::Any),
 ]);
-const VM_LIST: Shape = Shape::Struct(&[("vms", Shape::List(&VM_INFO))]);
+pub(crate) const VM_LIST: Shape = Shape::Struct(&[("vms", Shape::List(&VM_INFO))]);
 const STALL: Shape = Shape::Struct(&[
     ("someAvg10", Shape::Any),
     ("someAvg60", Shape::Any),
@@ -780,7 +1379,7 @@ const ADMISSION: Shape = Shape::Keys(&[
     ),
     ("psi", Shape::Map(&STALL)),
 ]);
-const HOST_INFO: Shape = Shape::Struct(&[
+pub(crate) const HOST_INFO: Shape = Shape::Struct(&[
     ("uri", Shape::Any),
     ("hostName", Shape::Any),
     ("providerId", Shape::Any),
@@ -839,14 +1438,14 @@ const HOST_INFO: Shape = Shape::Struct(&[
 
 /// tools' `structuredResult(value, "")`: the value, and its JSON (as the Go
 /// type `shape` marshals) as text.
-fn structured_with_text(value: &J, shape: &Shape) -> J {
+pub(crate) fn structured_with_text(value: &J, shape: &Shape) -> J {
     let mut text = String::new();
     crate::gojson::encode_shaped(value, shape, &mut text);
     json!({"content": [{"type": "text", "text": text}], "structuredContent": value})
 }
 
 /// `host.Service.DescribeHost`.
-fn describe_host(host: &Host) -> J {
+pub(crate) fn describe_host(host: &Host) -> J {
     let host_name = nix::unistd::gethostname()
         .map(|h: std::ffi::OsString| h.to_string_lossy().into_owned())
         .unwrap_or_default();
@@ -896,7 +1495,7 @@ fn describe_host(host: &Host) -> J {
 /// only when its command succeeds), WSL GPU device and library presence, and
 /// the version gate. Go iterates its command table in map order, so the
 /// three commands run in no fixed order there; here they run in key order.
-fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
+pub(crate) fn probe_incus_gpu(env: &crate::config::Env, args: &Map<String, J>) -> J {
     // exec.Command(...).CombinedOutput(): no deadline.
     const NO_DEADLINE: std::time::Duration = std::time::Duration::from_secs(365 * 24 * 3600);
     let mut out = Map::new();
@@ -909,7 +1508,7 @@ fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
         ),
     ] {
         let argv: Vec<String> = argv.iter().map(|s| s.to_string()).collect();
-        let res = crate::hostobs::run_command(&host.env, &argv, NO_DEADLINE);
+        let res = crate::hostobs::run_command(env, &argv, NO_DEADLINE);
         if res.exit_code == 0 {
             let combined = format!("{}{}", res.stdout, res.stderr);
             out.insert(key.into(), J::from(combined.trim()));
@@ -919,14 +1518,14 @@ fn probe_incus_gpu(host: &Host, args: &Map<String, J>) -> J {
     let dxg = exists("/dev/dxg");
     let libraries =
         exists("/usr/lib/wsl/lib/libcuda.so") || exists("/usr/lib/wsl/lib/libcuda.so.1");
-    let nvidia_smi = crate::hostobs::look_path(&host.env, "nvidia-smi").is_some()
+    let nvidia_smi = crate::hostobs::look_path(env, "nvidia-smi").is_some()
         || exists("/usr/lib/wsl/lib/nvidia-smi");
     out.insert("dxg".into(), J::Bool(dxg));
     out.insert("wslGpuLibraries".into(), J::Bool(libraries));
     out.insert("nvidiaSmi".into(), J::Bool(nvidia_smi));
     out.insert(
         "incusGpuDevice".into(),
-        J::Bool(crate::hostobs::look_path(&host.env, "incus").is_some()),
+        J::Bool(crate::hostobs::look_path(env, "incus").is_some()),
     );
     let incus_ok = version_at_least(out.get("incus"), 7, 2);
     let qemu_required = args
@@ -1009,7 +1608,7 @@ fn missing_tasks_capability() -> ToolCallOutcome {
 }
 
 /// `CapabilityCatalogSnapshot` as published.
-fn snapshot_json(snapshot: &catalog::Snapshot) -> J {
+pub(crate) fn snapshot_json(snapshot: &catalog::Snapshot) -> J {
     let mut s = String::new();
     snapshot.encode(&mut s);
     serde_json::from_str(&s).expect("snapshot encodes as JSON")

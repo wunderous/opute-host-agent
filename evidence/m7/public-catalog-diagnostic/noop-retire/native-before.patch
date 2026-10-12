@@ -1,0 +1,496 @@
+diff --git a/crates/host-agent/src/admission.rs b/crates/host-agent/src/admission.rs
+index 825536ea..68811756 100644
+--- a/crates/host-agent/src/admission.rs
++++ b/crates/host-agent/src/admission.rs
+@@ -261,8 +261,9 @@ pub fn resolve_binding(
+     name: &str,
+     args: &Map<String, J>,
+ ) -> Result<Binding, Refusal> {
++    let catalog_snapshot = server.catalog.snapshot();
+     let mut binding = Binding::default();
+-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
++    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
+         return Ok(binding);
+     };
+     // Declared bindings are authoritative for their argument; there is no
+@@ -338,11 +339,12 @@ pub fn admit(
+     identity: Option<(&str, &str)>,
+     parent: Option<&Reservation>,
+ ) -> Result<Reservation, Refusal> {
++    let catalog_snapshot = server.catalog.snapshot();
+     let registered = catalog::admission_class(name);
+     let declared = registered.is_some();
+     let class = registered.unwrap_or_else(|| "control".into());
+     let mut cost = resource::default_cost_for_class(&class);
+-    let descriptor = server.catalog.tools.iter().find(|d| d.name == name);
++    let descriptor = catalog_snapshot.tools.iter().find(|d| d.name == name);
+     let found = descriptor.is_some();
+     let effect_read = descriptor.is_some_and(|d| d.effect == "read");
+     let provider = descriptor.is_some_and(|d| d.implementation.trim().starts_with("provider:"));
+diff --git a/crates/host-agent/src/app.rs b/crates/host-agent/src/app.rs
+index 5357d63c..5ecabedd 100644
+--- a/crates/host-agent/src/app.rs
++++ b/crates/host-agent/src/app.rs
+@@ -270,7 +270,12 @@ pub(crate) fn http_server(
+     let identity = cfg.identity.as_ref().ok();
+     let standalone = cfg.agent_mode == "standalone";
+     let catalog = crate::catalog::for_mode(standalone);
+-    let prefix_for_tools = prefix.clone();
++    let publication = std::sync::Arc::new(crate::provider::publication::Publication::new(
++        std::sync::Arc::new(crate::catalog::registry::Registry::native(
++            catalog.clone(),
++            Default::default(),
++        )),
++    ));
+     // `restoreTasks`: rebuild the in-memory registry from the durable
+     // snapshots before anything can observe it. Admission's reservation
+     // reclaim for terminal tasks after a restart (Go's
+@@ -314,8 +319,7 @@ pub(crate) fn http_server(
+         bootstrap_token: cfg.mcp_auth_token.trim().to_string(),
+         authz: std::sync::Mutex::new(authz),
+         grant_backoff: crate::oauth::Backoff::default(),
+-        catalog,
+-        published_tools: crate::catalog::published_tools(catalog, &prefix_for_tools),
++        catalog: publication,
+         standalone,
+         allow_mutations: cfg.standalone_allow_mutations,
+         host: crate::tools::Host {
+diff --git a/crates/host-agent/src/evidence_fixture.rs b/crates/host-agent/src/evidence_fixture.rs
+index 3b45831f..b65cc50a 100644
+--- a/crates/host-agent/src/evidence_fixture.rs
++++ b/crates/host-agent/src/evidence_fixture.rs
+@@ -17,8 +17,9 @@ fn durable_projection() {
+     let state = Arc::new(Mutex::new(StateStore::open(Path::new(&directory)).unwrap()));
+     let authz = AuthzStore::open(Path::new(&directory), "fixture-auth-secret").unwrap();
+     let server = crate::app::http_server(&cfg, authz, state).unwrap();
++    let catalog_snapshot = server.catalog.snapshot();
+     let mut projected = Map::new();
+-    projected.insert("_catalog".into(), snapshot_json(server.catalog));
++    projected.insert("_catalog".into(), snapshot_json(&catalog_snapshot));
+     for case in spec["cases"].as_array().unwrap() {
+         let id = case["id"].as_str().unwrap();
+         let tool = case["tool"].as_str().unwrap();
+@@ -58,11 +59,11 @@ fn durable_projection() {
+         );
+         let secrets = BTreeSet::from(["recipeSecret".into()]);
+         let document =
+-            crate::evidence::redact_plan_document(&case["document"], &secrets, server.catalog);
++            crate::evidence::redact_plan_document(&case["document"], &secrets, &catalog_snapshot);
+         let run_state = crate::evidence::redact_plan_run_state(
+             case["state"].as_object().unwrap(),
+             case["document"].as_object(),
+-            server.catalog,
++            &catalog_snapshot,
+         );
+         let mut state = server.host.state.lock().unwrap();
+         state
+@@ -72,7 +73,7 @@ fn durable_projection() {
+                 generation: 1,
+                 idempotency_key: id.into(),
+                 document_hash: "sha256:fixture".into(),
+-                catalog_revision: server.catalog.revision.clone(),
++                catalog_revision: catalog_snapshot.revision.clone(),
+                 status: "completed".into(),
+                 plan_json: document.to_string(),
+                 recipe_json: document.to_string(),
+diff --git a/crates/host-agent/src/host_recipe_mcp.rs b/crates/host-agent/src/host_recipe_mcp.rs
+index 59b23fd8..e7f02272 100644
+--- a/crates/host-agent/src/host_recipe_mcp.rs
++++ b/crates/host-agent/src/host_recipe_mcp.rs
+@@ -145,6 +145,7 @@ fn load_host_local_recipe(
+     args: &Map<String, J>,
+     require_hash: bool,
+ ) -> Result<HostLoaded, String> {
++    let catalog_snapshot = server.catalog.snapshot();
+     let sourced = host_recipe::load_host(&source_request(args, require_hash))?;
+     if !sourced.document.execution.is_host_local() {
+         return Err(format!(
+@@ -160,23 +161,24 @@ fn load_host_local_recipe(
+     let mut resolved = host_recipe::resolve_host_inputs(sourced.document, &values)?;
+     resolved.source = sourced.source;
+     resolved.raw = sourced.raw;
+-    let capabilities = capabilities_from_snapshot(server.catalog);
+-    resolved.validate(&capabilities, &server.catalog.revision)?;
++    let capabilities = capabilities_from_snapshot(&catalog_snapshot);
++    resolved.validate(&capabilities, &catalog_snapshot.revision)?;
+     assert_host_local_targets(server, &resolved)?;
+     Ok(resolved)
+ }
+ 
+ /// `handleValidateHostLocalRecipe`.
+ pub fn handle_validate_host_local_recipe(server: &Server, args: &Map<String, J>) -> J {
++    let catalog_snapshot = server.catalog.snapshot();
+     let loaded = match load_host_local_recipe(server, args, false) {
+         Ok(l) => l,
+         Err(e) => return crate::tools::error_result(&e),
+     };
+-    let plan_result = match validate_host_plan_with_snapshot(&loaded.expanded_plan, server.catalog)
+-    {
+-        Ok(r) => r,
+-        Err(e) => return crate::tools::error_result(&e),
+-    };
++    let plan_result =
++        match validate_host_plan_with_snapshot(&loaded.expanded_plan, &catalog_snapshot) {
++            Ok(r) => r,
++            Err(e) => return crate::tools::error_result(&e),
++        };
+     crate::tools::structured_result(
+         json!({
+             "valid": true,
+diff --git a/crates/host-agent/src/plan_mcp.rs b/crates/host-agent/src/plan_mcp.rs
+index f9fe93fb..2b31d97b 100644
+--- a/crates/host-agent/src/plan_mcp.rs
++++ b/crates/host-agent/src/plan_mcp.rs
+@@ -303,11 +303,12 @@ pub fn handle_run_host_plan_with_metadata(
+     reservation: crate::resource::Reservation,
+     claimed: Arc<std::sync::atomic::AtomicBool>,
+ ) -> J {
++    let catalog_snapshot = server.catalog.snapshot();
+     let doc = match decode_plan_argument(args) {
+         Ok(doc) => doc,
+         Err(e) => return crate::tools::error_result(&e),
+     };
+-    let snapshot = server.catalog;
++    let snapshot = &catalog_snapshot;
+     if let Err(e) = validate_host_plan_with_snapshot(&doc, snapshot) {
+         return crate::tools::error_result(&e);
+     }
+@@ -416,6 +417,7 @@ fn resolve_plan_record(
+     recipe_metadata: Option<&Map<String, J>>,
+     capabilities: &BTreeMap<String, Capability>,
+ ) -> Result<ResolvedRecord, String> {
++    let catalog_snapshot = server.catalog.snapshot();
+     let state = server
+         .host
+         .state
+@@ -436,7 +438,7 @@ fn resolve_plan_record(
+             }
+         }
+         if let Some(result) =
+-            short_circuit_if_live_or_reconcile(&state, &mut record, &server.catalog.revision)?
++            short_circuit_if_live_or_reconcile(&state, &mut record, &catalog_snapshot.revision)?
+         {
+             return Ok(ResolvedRecord::Terminal(result));
+         }
+@@ -448,7 +450,7 @@ fn resolve_plan_record(
+         generation: doc.generation,
+         idempotency_key: doc.idempotency_key.clone(),
+         document_hash: hash.to_string(),
+-        catalog_revision: server.catalog.revision.clone(),
++        catalog_revision: catalog_snapshot.revision.clone(),
+         status: "working".to_string(),
+         plan_json: redacted_plan.to_string(),
+         recipe_json: redacted_metadata(recipe_metadata)
+@@ -464,7 +466,7 @@ fn resolve_plan_record(
+     ensure_plan_document_hash(&state, &mut record, hash)?;
+     if !created {
+         if let Some(result) =
+-            short_circuit_if_live_or_reconcile(&state, &mut record, &server.catalog.revision)?
++            short_circuit_if_live_or_reconcile(&state, &mut record, &catalog_snapshot.revision)?
+         {
+             return Ok(ResolvedRecord::Terminal(result));
+         }
+@@ -539,7 +541,8 @@ fn spawn_plan_execution(
+     cancelled: Arc<std::sync::atomic::AtomicBool>,
+     reservation: crate::resource::Reservation,
+ ) {
+-    let capabilities = capabilities_from_snapshot(server.catalog);
++    let catalog_snapshot = server.catalog.snapshot();
++    let capabilities = capabilities_from_snapshot(&catalog_snapshot);
+     let sink_capabilities = capabilities.clone();
+     let final_capabilities = capabilities.clone();
+     let host_agent_id = server.host.agent_id.clone();
+diff --git a/crates/host-agent/src/provider/publication.rs b/crates/host-agent/src/provider/publication.rs
+index 980854e3..ad4c5bb8 100644
+--- a/crates/host-agent/src/provider/publication.rs
++++ b/crates/host-agent/src/provider/publication.rs
+@@ -184,9 +184,9 @@ impl Publication {
+ mod tests {
+     use super::*;
+     use serde_json::{json, Value};
+-    #[test]
++    #[tokio::test]
+     #[ignore = "requires actual owning Go publication and retirement driver"]
+-    fn publication_fixture() {
++    async fn publication_fixture() {
+         let rows: Value = serde_json::from_slice(
+             &std::fs::read(std::env::var("PARITY_PROVIDER_PUBLICATION_INPUT").unwrap()).unwrap(),
+         )
+@@ -199,7 +199,61 @@ mod tests {
+                 crate::catalog::for_mode(standalone).clone(),
+                 Default::default(),
+             ));
+-            let owner = Publication::new(registry.clone());
++            let owner = Arc::new(Publication::new(registry.clone()));
++            let directory = tempfile::tempdir().unwrap();
++            let http = if std::env::var("PARITY_PROVIDER_PUBLICATION_HTTP").as_deref() == Ok("1") {
++                let environment = crate::config::Env::from_pairs([
++                    ("OPUTE_REMOTE_AGENT_ID", "publication-http-fixture"),
++                    (
++                        "OPUTE_AGENT_MODE",
++                        if standalone { "standalone" } else { "platform" },
++                    ),
++                ]);
++                let mut config = crate::config::Config::load(&environment);
++                config.prefix_tool_names = false;
++                config.mcp_auth_token = "publication-fixture-bearer".into();
++                let store = Arc::new(Mutex::new(
++                    crate::store::StateStore::open(directory.path()).unwrap(),
++                ));
++                let auth =
++                    crate::store::AuthzStore::open(directory.path(), "publication-fixture-secret")
++                        .unwrap();
++                let mut server = crate::app::http_server(&config, auth, store).unwrap();
++                server.catalog = owner.clone();
++                let server = Arc::new(server);
++                let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
++                let endpoint = format!("http://{}/mcp", listener.local_addr().unwrap());
++                let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
++                let serving = tokio::spawn(async move {
++                    let mut stopped = stopped;
++                    let mut connections = tokio::task::JoinSet::new();
++                    loop {
++                        tokio::select! {
++                            _ = &mut stopped => break,
++                            connection = listener.accept() => {
++                                let (socket, _) = connection.unwrap();
++                                let server = server.clone();
++                                connections.spawn(crate::http1::serve_conn(socket, move |request, body| crate::transport::route(server.clone(), request, body)));
++                            }
++                        }
++                    }
++                    connections.abort_all();
++                    while connections.join_next().await.is_some() {}
++                });
++                Some((
++                    super::super::adapter::Client::new(
++                        endpoint,
++                        "publication-fixture-bearer".into(),
++                        "publication-fixture".into(),
++                        "1".into(),
++                    )
++                    .unwrap(),
++                    stop,
++                    serving,
++                ))
++            } else {
++                None
++            };
+             let lifecycle = Lifecycle::new(Default::default());
+             let mut updates = 0;
+             let mut wire = owner.snapshot();
+@@ -320,10 +374,25 @@ mod tests {
+                     }
+                     _ => panic!("unknown publication fixture action"),
+                 }
++                let wire_tools = if let Some((client, _, _)) = &http {
++                    let result = client
++                        .call(
++                            &crate::plan::runner::RunCtx::background(),
++                            "tools/list",
++                            "",
++                            serde_json::Map::new(),
++                            "",
++                        )
++                        .await
++                        .unwrap();
++                    result.get("tools").unwrap().clone()
++                } else {
++                    json!(crate::catalog::published_tools(&wire, ""))
++                };
+                 let state = owner.state.lock().unwrap();
+                 extra["error"] = json!(error);
+                 extra["updates"] = json!(updates);
+-                extra["wire"] = json!(crate::catalog::published_tools(&wire, ""));
++                extra["wire"] = wire_tools;
+                 extra["published"] = snapshot_json(&state.catalog);
+                 extra["registry"] = snapshot_json(&registry.snapshot());
+                 extra["capabilities"] = Value::Object(
+@@ -348,6 +417,10 @@ mod tests {
+                 );
+                 observations.push(extra);
+             }
++            if let Some((_, stop, serving)) = http {
++                stop.send(()).unwrap();
++                serving.await.unwrap();
++            }
+             results.push(json!({"observations":observations}));
+         }
+         std::fs::write(
+diff --git a/crates/host-agent/src/tools.rs b/crates/host-agent/src/tools.rs
+index 731de28e..11e4452d 100644
+--- a/crates/host-agent/src/tools.rs
++++ b/crates/host-agent/src/tools.rs
+@@ -33,13 +33,14 @@ pub struct Host {
+ 
+ /// Resolves a wire name to the catalog name it was registered under, if any.
+ fn registered(server: &Server, wire: &str) -> Option<String> {
++    let catalog_snapshot = server.catalog.snapshot();
+     let name = if server.tool_prefix.trim().is_empty() {
+         wire.to_string()
+     } else {
+         wire.strip_prefix(&format!("{}_", server.tool_prefix.trim()))?
+             .to_string()
+     };
+-    let known = server.catalog.tools.iter().any(|d| d.name == name)
++    let known = catalog_snapshot.tools.iter().any(|d| d.name == name)
+         || catalog::internal().tools.iter().any(|d| d.name == name);
+     (known && catalog::wire_name(&server.tool_prefix, &name) == wire).then_some(name)
+ }
+@@ -100,18 +101,19 @@ fn requested_revision(params: Option<&Node>) -> String {
+ }
+ 
+ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCallOutcome {
++    let catalog_snapshot = server.catalog.snapshot();
+     let Some(name) = registered(server, wire) else {
+         return ToolCallOutcome::Unknown;
+     };
+     let requested = requested_revision(params);
+-    if !requested.is_empty() && requested != server.catalog.revision {
++    if !requested.is_empty() && requested != catalog_snapshot.revision {
+         return ToolCallOutcome::Result(capability_error(
+             "lifecycle",
+             "catalog_revision_stale",
+             &format!(
+                 "catalog revision {} is stale; current revision is {}",
+                 crate::goerr::quote(&requested),
+-                crate::goerr::quote(&server.catalog.revision)
++                crate::goerr::quote(&catalog_snapshot.revision)
+             ),
+         ));
+     }
+@@ -123,7 +125,7 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
+     // standalone runs read tools only.
+     if server.standalone
+         && !server.allow_mutations
+-        && !catalog::standalone_read_only(server.catalog, &name)
++        && !catalog::standalone_read_only(&catalog_snapshot, &name)
+     {
+         return ToolCallOutcome::Result(error_result(
+             "standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+@@ -149,9 +151,9 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
+         // below, same as every other lifecycle tool.
+         let claimed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+         let result = match name.as_str() {
+-            "get_capability_catalog" => structured_result(snapshot_json(server.catalog), None),
++            "get_capability_catalog" => structured_result(snapshot_json(&catalog_snapshot), None),
+             "validate_host_plan" => {
+-                crate::plan_mcp::handle_validate_host_plan(&args, server.catalog)
++                crate::plan_mcp::handle_validate_host_plan(&args, &catalog_snapshot)
+             }
+             "run_host_plan" => crate::plan_mcp::handle_run_host_plan(
+                 server,
+@@ -356,8 +358,8 @@ fn create_async_task(server: &Arc<Server>, name: &str, args: Map<String, J>) ->
+ /// nothing here -- the caller already holds whatever they sent -- while
+ /// still ensuring a secret argument never carries into `state.db`.
+ fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
+-    let descriptor = server
+-        .catalog
++    let catalog_snapshot = server.catalog.snapshot();
++    let descriptor = catalog_snapshot
+         .tools
+         .iter()
+         .chain(catalog::internal().tools.iter())
+@@ -376,8 +378,8 @@ fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
+ /// reaches the caller exactly as Go returns it, since the caller already
+ /// owns it and this is its one delivery channel.
+ fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<J> {
+-    let descriptor = server
+-        .catalog
++    let catalog_snapshot = server.catalog.snapshot();
++    let descriptor = catalog_snapshot
+         .tools
+         .iter()
+         .chain(catalog::internal().tools.iter())
+@@ -503,7 +505,8 @@ fn record_invocation(
+     reservation: &crate::resource::Reservation,
+     result: &J,
+ ) {
+-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
++    let catalog_snapshot = server.catalog.snapshot();
++    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
+         return;
+     };
+     let invalid_result = result
+@@ -526,7 +529,7 @@ fn record_invocation(
+     let mut observation = json!({
+         "schemaVersion": "opute-capability-observation.v1",
+         "operationId": name, "capabilityVersion": 1,
+-        "catalogRevision": server.catalog.revision, "status": status,
++        "catalogRevision": catalog_snapshot.revision, "status": status,
+     });
+     if invalid_result {
+         envelope["error"] = json!({"owner": "capability", "code": "invalid_result",
+@@ -545,7 +548,7 @@ fn record_invocation(
+     let mut execution_binding = json!({
+         "schemaVersion": "opute-capability-execution-binding.v1",
+         "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
+-        "authorization": "admitted", "catalogRevision": server.catalog.revision,
++        "authorization": "admitted", "catalogRevision": catalog_snapshot.revision,
+         "reservationId": reservation.id,
+         "resourcePolicyRevision": crate::resource::POLICY_REVISION,
+     });
+@@ -566,7 +569,7 @@ fn record_invocation(
+         invocation_id: crate::tasks::new_task_id(),
+         operation_id: name.into(),
+         capability_version: 1,
+-        catalog_revision: server.catalog.revision.clone(),
++        catalog_revision: catalog_snapshot.revision.clone(),
+         authorization: "admitted".into(),
+         arguments_json: redact_for_storage(
+             &J::Object(args.clone()),
+@@ -588,7 +591,8 @@ fn record_invocation(
+ type Handler = fn(&Host, &Map<String, J>, &Binding) -> Result<J, String>;
+ 
+ fn invoke(server: &Server, name: &str, args: &Map<String, J>, binding: &Binding) -> J {
+-    let Some(descriptor) = server.catalog.tools.iter().find(|d| d.name == name) else {
++    let catalog_snapshot = server.catalog.snapshot();
++    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
+         return not_implemented(name);
+     };
+     let handler: Handler = match name {
+diff --git a/crates/host-agent/src/transport.rs b/crates/host-agent/src/transport.rs
+index cfef25f5..4a68f2d9 100644
+--- a/crates/host-agent/src/transport.rs
++++ b/crates/host-agent/src/transport.rs
+@@ -52,9 +52,8 @@ pub struct Server {
+     pub authz: Mutex<AuthzStore>,
+     pub health_observer: Box<dyn Fn() -> Map<String, J> + Send + Sync>,
+     pub grant_backoff: crate::oauth::Backoff,
+-    /// The catalog for this mode, and its `tools/list` projection.
+-    pub catalog: &'static crate::catalog::Snapshot,
+-    pub published_tools: Vec<J>,
++    /// Committed provider-neutral publication, shared by all catalog readers.
++    pub catalog: Arc<crate::provider::publication::Publication>,
+     pub standalone: bool,
+     pub allow_mutations: bool,
+     pub host: crate::tools::Host,
+@@ -1293,10 +1292,12 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
+     let protected = !server.disable_localhost_protection && is_local_host_address(req.host.trim());
+     let serve = move |server: &Arc<Server>, req: &Request, raw: &[u8]| {
+         let call = |name: &str, params: Option<&Node>| crate::tools::call(server, name, params);
++        let snapshot = server.catalog.snapshot();
++        let tools = crate::catalog::published_tools(&snapshot, &server.tool_prefix);
+         let sdk = crate::mcpsdk::Sdk {
+             implementation_name: &server.implementation_name,
+             version: &server.version,
+-            tools: &server.published_tools,
++            tools: &tools,
+             call_tool: &call,
+         };
+         crate::mcpsdk::serve(&sdk, req, raw, protected)
+@@ -1328,7 +1329,13 @@ fn resolve_tool_name(server: &Server, name: &str) -> String {
+     if prefix.is_empty() || name.is_empty() || name.starts_with(&format!("{prefix}_")) {
+         return name.to_string();
+     }
+-    if server.catalog.tools.iter().any(|d| d.name == name) {
++    if server
++        .catalog
++        .snapshot()
++        .tools
++        .iter()
++        .any(|d| d.name == name)
++    {
+         return crate::catalog::wire_name(prefix, name);
+     }
+     name.to_string()

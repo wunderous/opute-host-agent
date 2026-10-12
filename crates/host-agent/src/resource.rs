@@ -15,7 +15,7 @@ use std::path::PathBuf;
 
 pub const POLICY_REVISION: &str = "opute-host-resource-policy.v2";
 
-const KNOWN_TYPES: &[&str] = &[
+pub(crate) const KNOWN_TYPES: &[&str] = &[
     "vm",
     "container",
     "pod",
@@ -488,6 +488,8 @@ pub struct Reservation {
     pub id: String,
     pub request: AdmissionRequest,
     pub inherited: bool,
+    pub created_at: Option<std::time::SystemTime>,
+    pub expires_at: Option<std::time::SystemTime>,
 }
 
 static RESERVATION_SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -881,6 +883,8 @@ impl Coordinator {
                 id: parent.id.clone(),
                 request,
                 inherited: true,
+                created_at: parent.created_at,
+                expires_at: parent.expires_at,
             });
         }
         if request.class == "control"
@@ -893,6 +897,8 @@ impl Coordinator {
                 id: "control".into(),
                 request,
                 inherited: false,
+                created_at: Some(std::time::SystemTime::now()),
+                expires_at: Some(std::time::SystemTime::now() + RESERVATION_TTL),
             });
         }
         let _lock = self.lock(true)?;
@@ -948,6 +954,8 @@ impl Coordinator {
             id,
             request,
             inherited: false,
+            created_at: Some(now),
+            expires_at: Some(now + RESERVATION_TTL),
         })
     }
 
@@ -974,6 +982,79 @@ impl Coordinator {
         }
         records.remove(&reservation.id);
         self.write_records(&records)
+    }
+
+    /// `BindReservationTask`: transfers a launcher's unscoped reservation to
+    /// the durable task that now owns it, before the run's first node.
+    pub fn bind_reservation_task(
+        &self,
+        reservation: &mut Reservation,
+        operation_id: &str,
+        task_id: &str,
+    ) -> Result<(), AdmitError> {
+        let _lock = self.lock(true)?;
+        let mut records = self.read_records()?;
+        let Some(record) = records.get_mut(&reservation.id) else {
+            return Err(AdmitError::request(
+                "host_reservation_expired",
+                "",
+                "the reservation being bound is no longer held",
+            ));
+        };
+        let held = AdmissionRequest::from_json(record.get("request").unwrap_or(&J::Null));
+        if held.agent_id != reservation.request.agent_id
+            || (!held.operation_id.is_empty() && held.operation_id != operation_id)
+        {
+            return Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "reservation ownership does not match the binding operation",
+            ));
+        }
+        if !held.task_id.trim().is_empty() && held.task_id != task_id {
+            return Err(AdmitError::request(
+                "host_reservation_owner_mismatch",
+                "",
+                "reservation is already bound to another task",
+            ));
+        }
+        if let Some(request) = record.get_mut("request").and_then(J::as_object_mut) {
+            request.insert("operationId".into(), J::from(operation_id));
+            request.insert("taskId".into(), J::from(task_id));
+        }
+        self.write_records(&records)?;
+        reservation.request.operation_id = operation_id.into();
+        reservation.request.task_id = task_id.into();
+        Ok(())
+    }
+
+    /// `ReclaimTerminalTaskReservations`: after a restart, drop every
+    /// reservation owned by a task that is now terminal. Its owner died with
+    /// the previous process, so nothing else would ever release it.
+    pub fn reclaim_terminal_task_reservations(
+        &self,
+        task_ids: &std::collections::HashSet<String>,
+    ) -> Result<usize, AdmitError> {
+        if task_ids.is_empty() {
+            return Ok(0);
+        }
+        let _lock = self.lock(true)?;
+        let mut records = self.read_records()?;
+        let before = records.len();
+        records.retain(|_, record| {
+            let task_id = record
+                .pointer("/request/taskId")
+                .and_then(J::as_str)
+                .unwrap_or("")
+                .trim();
+            task_id.is_empty() || !task_ids.contains(task_id)
+        });
+        let removed = before - records.len();
+        if removed == 0 {
+            return Ok(0);
+        }
+        self.write_records(&records)?;
+        Ok(removed)
     }
 
     /// `reservationTotals` over the live records, read under the shared
@@ -1015,6 +1096,15 @@ impl Coordinator {
         J::Object(totals)
     }
 
+    /// The policy revision admission records, as `NewCoordinator` resolves
+    /// it: the configured value, or the versioned default when empty.
+    pub fn policy_revision(&self) -> &str {
+        if self.policy_revision.is_empty() {
+            POLICY_REVISION
+        } else {
+            &self.policy_revision
+        }
+    }
     /// `Coordinator.Snapshot`: `CapacitySnapshot` with the embedded
     /// `PressureSnapshot` flattened (its `enforcement` is shadowed by the
     /// outer field, as Go's encoder does). The in-flight and queue counters
@@ -1114,10 +1204,7 @@ impl Coordinator {
         if pressure.tasks_limit != 0 {
             out.insert("tasksLimit".into(), J::from(pressure.tasks_limit));
         }
-        out.insert(
-            "policyRevision".into(),
-            J::from(self.policy_revision.clone()),
-        );
+        out.insert("policyRevision".into(), J::from(self.policy_revision()));
         out.insert("observedLimits".into(), observed);
         out.insert("effectiveLimits".into(), limits(cpu, memory, disk, tasks));
         out.insert("currentUsage".into(), J::Object(usage));
@@ -1272,6 +1359,37 @@ mod tests {
     }
 
     #[test]
+    fn reclaim_drops_only_reservations_of_terminal_tasks() {
+        let dir = std::env::temp_dir().join(format!(
+            "opute-coordinator-test-{}-{}",
+            std::process::id(),
+            RESERVATION_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let c = coordinator(&dir);
+        let records: Records = [
+            lease("done", "task-done", "2999-01-01T00:00:00Z"),
+            lease("running", "task-running", "2999-01-01T00:00:00Z"),
+            lease("untasked", "", "2999-01-01T00:00:00Z"),
+        ]
+        .into_iter()
+        .collect();
+        c.write_records(&records).unwrap();
+        let terminal: std::collections::HashSet<String> =
+            ["task-done".to_string(), "".to_string()].into();
+        assert_eq!(c.reclaim_terminal_task_reservations(&terminal), Ok(1));
+        let left = c.read_records().unwrap();
+        assert!(!left.contains_key("done"));
+        assert!(left.contains_key("running") && left.contains_key("untasked"));
+        // Nothing terminal, nothing written.
+        assert_eq!(
+            c.reclaim_terminal_task_reservations(&Default::default()),
+            Ok(0)
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn release_checks_owner_and_expired_leases_are_pruned() {
         let dir = std::env::temp_dir().join(format!(
             "opute-coordinator-test-{}-{}",
@@ -1298,6 +1416,8 @@ mod tests {
             id: "live".into(),
             request: request.clone(),
             inherited: false,
+            created_at: None,
+            expires_at: None,
         };
         assert_eq!(
             c.release(&foreign),
@@ -1312,6 +1432,8 @@ mod tests {
             id: "live".into(),
             request,
             inherited: false,
+            created_at: None,
+            expires_at: None,
         };
         c.release(&owner).unwrap();
         // Releasing twice, or the control lease, is a no-op; the empty
@@ -1321,6 +1443,8 @@ mod tests {
             id: "control".into(),
             request: AdmissionRequest::default(),
             inherited: false,
+            created_at: None,
+            expires_at: None,
         })
         .unwrap();
         assert!(!dir.join("reservations.json").exists());

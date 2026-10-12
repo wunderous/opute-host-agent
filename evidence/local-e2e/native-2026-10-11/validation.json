@@ -1,0 +1,182 @@
+{
+  "binaries": {
+    "go": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+    "rust": "e20ee4f99a471d8d01bd4d9c190e534bf25cd024b749de68ad67850dc66087b6"
+  },
+  "canaries": {
+    "go": 14,
+    "rust": 24
+  },
+  "contracts": {
+    "evidence-redaction": {
+      "passed": 4,
+      "total": 4
+    },
+    "oauth-issuance": {
+      "passed": 24,
+      "total": 24
+    },
+    "refuse-before-operation-record": {
+      "passed": 3,
+      "total": 3
+    },
+    "reject-without-audit-writes": {
+      "passed": 3,
+      "total": 3
+    },
+    "standalone-read-only-gate": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "gates": {
+    "cutover": {
+      "inventoryGaps": 76,
+      "pass": false,
+      "problemKinds": [
+        "m5:shape"
+      ],
+      "problems": 200
+    },
+    "m0": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m1": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m2": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m3": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m4": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m5": {
+      "pass": false,
+      "problemKinds": [
+        "m5:shape"
+      ],
+      "problems": 200
+    },
+    "m6": {
+      "pass": false,
+      "problemKinds": [
+        "m5:shape"
+      ],
+      "problems": 200
+    }
+  },
+  "goVsGo": {
+    "pass": 160
+  },
+  "goVsRust": {
+    "pass": 160
+  },
+  "head": "9878d67fbe75ca9b2ba21ec4d3565d1e45caba8e",
+  "m5": {
+    "crash": {
+      "failed": 0,
+      "passed": 200,
+      "seeds": 200
+    },
+    "cross-read": {
+      "failed": 0,
+      "passed": 18
+    },
+    "migration": {
+      "failed": 0,
+      "passed": 6,
+      "repeats": 3,
+      "total": 6
+    },
+    "secrets": {
+      "fieldCount": 16
+    },
+    "shape-final": {
+      "failed": 200,
+      "passed": 585,
+      "repeats": 5,
+      "total": 785
+    },
+    "unknown-projection": {}
+  },
+  "schemaVersion": "opute-native-validation.v1",
+  "shapeAttribution": {
+    "diffPaths": [
+      "sqlite/state/state.db/rowCounts/capability_invocations",
+      "sqlite/state/state.db/rowCounts/resource_registry",
+      "sqliteRows/state/state.db/tables/active_capabilities/activated_at",
+      "sqliteRows/state/state.db/tables/capability_invocations/observation_json",
+      "sqliteRows/state/state.db/tables/capability_invocations/result_json",
+      "sqliteRows/state/state.db/tables/operations",
+      "sqliteRows/state/state.db/tables/operations/result_json",
+      "sqliteRows/state/state.db/tables/operations/task_snapshot_json",
+      "sqliteRows/state/state.db/tables/operations/updated_at",
+      "sqliteRows/state/state.db/tables/provider_generations/active_at",
+      "sqliteRows/state/state.db/tables/resource_registry"
+    ],
+    "failingRuns": 200,
+    "failingScenarios": [
+      "provider-lifecycle.bad-manifest.validation-operation-undeclared",
+      "provider-lifecycle.builtin-family.require",
+      "provider-lifecycle.call.is-error",
+      "provider-lifecycle.call.rpc-error",
+      "provider-lifecycle.call.task-result-sync-only",
+      "provider-lifecycle.callback.bridged-without-task-extension",
+      "provider-lifecycle.callback.cancel-bridged-task-refused",
+      "provider-lifecycle.callback.child-task-acknowledged",
+      "provider-lifecycle.callback.host-tool",
+      "provider-lifecycle.callback.lifecycle-tool",
+      "provider-lifecycle.callback.malformed",
+      "provider-lifecycle.callback.no-delegation",
+      "provider-lifecycle.callback.provider-tool",
+      "provider-lifecycle.callback.restart-during-bridged-task",
+      "provider-lifecycle.callback.stale",
+      "provider-lifecycle.callback.standalone-tool",
+      "provider-lifecycle.callback.tampered",
+      "provider-lifecycle.callback.unknown-tool",
+      "provider-lifecycle.crash.after-activation",
+      "provider-lifecycle.install-call-teardown",
+      "provider-lifecycle.install.reuse-and-reload",
+      "provider-lifecycle.missing-dependency.descriptor-requires",
+      "provider-lifecycle.missing-dependency.requires",
+      "provider-lifecycle.readiness.flapping",
+      "provider-lifecycle.readiness.slow-probe",
+      "provider-lifecycle.replacement.in-flight",
+      "provider-lifecycle.restart.active-provider",
+      "provider-lifecycle.restart.after-replacement",
+      "provider-lifecycle.restart.after-teardown",
+      "provider-lifecycle.restart.provider-down",
+      "provider-lifecycle.schema-drift.operation-not-listed",
+      "provider-lifecycle.schema-drift.result-violates-output-schema",
+      "provider-lifecycle.teardown.finalize-error",
+      "provider-lifecycle.teardown.idempotent",
+      "provider-lifecycle.teardown.prepare-error",
+      "provider-real.cloudflare",
+      "provider-real.k3s",
+      "provider-real.k3s.restart",
+      "provider-real.ollama",
+      "provider-real.tailscale"
+    ],
+    "identicalWithPreseamBuild": true,
+    "preseamCommit": "598d016d7c50a9e26bcc14753bd283e4f531e49f",
+    "previouslyCoveredFailing": 0,
+    "previouslyCoveredScenarios": 99
+  },
+  "workspaceTests": {
+    "failed": 0,
+    "passed": 200
+  }
+}

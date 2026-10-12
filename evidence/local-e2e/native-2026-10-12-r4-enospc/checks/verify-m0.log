@@ -1,0 +1,22 @@
+gate m0: FAIL
+  go-vs-go     pass=0 fail=177 unverified=0
+  go-vs-rust   pass=164 fail=13 unverified=0
+  canaries     caught=0/14
+  inventory    pass
+  problem: [canaries] canary C1-descriptor-text: scenario catalog.standalone stayed green (harness gap)
+  problem: [canaries] canary C2-auth-status: scenario mcp.auth stayed green (harness gap)
+  problem: [canaries] canary C3-extra-argv-token: scenario mcp.get-host-info stayed green (harness gap)
+  problem: [canaries] canary C4-legacy-bypass-widened: scenario mcp.legacy-handshake.enabled-bounded stayed green (harness gap)
+  problem: [canaries] canary C5-retired-env-accepted: scenario startup.fail-closed stayed green (harness gap)
+  problem: [canaries] canary C6-mutation-gate-open: scenario admission.standalone-mutation-denied stayed green (harness gap)
+  problem: [canaries] canary C7-envelope-status: scenario wire.envelope stayed green (harness gap)
+  problem: [canaries] canary C8-ipv6-loopback-origin: scenario wire.origin.standalone stayed green (harness gap)
+  problem: [canaries] canary C9-vm-release-default: scenario host-read.list-vms.inventory-mix stayed green (harness gap)
+  problem: [canaries] canary C10-schema-type-text: scenario host-read.list-vms.inventory-mix stayed green (harness gap)
+  problem: [canaries] canary C11-normal-slot-limit: scenario admission.saturation.normal-class stayed green (harness gap)
+  problem: [canaries] canary C12-enforcement-fail-open: scenario admission.enforcement.default-policy stayed green (harness gap)
+  problem: [canaries] canary C13-release-keeps-lease: scenario admission.saturation.normal-class stayed green (harness gap)
+  problem: [canaries] canary C14-late-result-overwrites-cancel: scenario tasks.cancel.mid-shim stayed green (harness gap)
+  gate failure: go-vs-go: 177 item(s) not pass: admission.binding.canonical-uri, admission.catalog-revision.stale, admission.enforcement.default-policy, admission.headroom.min-disk, admission.headroom.min-memory, admission.matrix.binding, admission.matrix.gate-closed, admission.matrix.stale-revision ...
+  gate failure: canaries not all caught: ['C1-descriptor-text', 'C2-auth-status', 'C3-extra-argv-token', 'C4-legacy-bypass-widened', 'C5-retired-env-accepted', 'C6-mutation-gate-open', 'C7-envelope-status', 'C8-ipv6-loopback-origin', 'C9-vm-release-default', 'C10-schema-type-text', 'C11-normal-slot-limit', 'C12-enforcement-fail-open', 'C13-release-keeps-lease', 'C14-late-result-overwrites-cancel']
+  gate failure: 14 provenance/evidence problem(s)

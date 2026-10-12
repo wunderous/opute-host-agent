@@ -1,0 +1,1292 @@
+{
+  "scope": "T1 loopback modern discovery, registered core calls, sync-only guards, typed manifest retrieval and flat-task polling/cancellation RPCs; SDK content union/input-request projection, TLS, proxy, malformed envelopes, transport failures, cancelled/deadline differential waits, lifecycle and M7 E2E remain open",
+  "provenance": {
+    "tools/parity/provider_adapter.py": "e86cd084118c51d342a5dc205c01524c5461c0169a527180f70fa9591b24ff44",
+    "crates/host-agent/src/provider/adapter.rs": "b5d9f8ea949175da3d671157f5db4b1ad5e6bbe3c172fe5b1a5fb2cdca92d588",
+    "Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "tools/parity/provider-core-oracle/main.go": "d43420ae23f3268907b35d0606d74cffc8dbd75ec370b4eb05d4e749e57b2da5",
+    "tools/parity/provider-core-oracle/go.mod": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+    "tools/parity/provider-core-oracle/go.sum": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc"
+  },
+  "binarySnapshots": {
+    "go": ".parity/bin/provider-adapter-go-3ecb6a8cb465eac71d86b5b300e2bab37215eb39619cc68d49a37c9b29ea21ec",
+    "rust": ".parity/bin/provider-adapter-rust-54b09d66af5d63d77352a16a11597610f1fca102ef33f4806234396299e1327f"
+  },
+  "rows": [
+    {
+      "case": "valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "explicit-client",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "blank-client",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "versions-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-empty",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "tools-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "missing-tools",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-http-403",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "list-http-503",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "discover-rpc-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "list-rpc-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-closed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "call-unregistered",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "sync-structured-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-valid",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "manifest-invalid-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-completed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-failed",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-cancelled",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-input_required",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-no-result",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-poll-error",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "task-cancel-error",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "total": 250,
+  "passed": 250,
+  "normalization": "HTTP header names are lowercased (case-insensitive HTTP semantics); ToolNames are projected as a sorted set (Go map iteration is unspecified). Body bytes and header values remain exact; the same exclusively bound OS-assigned port serves both implementations.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "goBinarySha256": "3ecb6a8cb465eac71d86b5b300e2bab37215eb39619cc68d49a37c9b29ea21ec",
+  "rustTestBinarySha256": "54b09d66af5d63d77352a16a11597610f1fca102ef33f4806234396299e1327f",
+  "driverSha256": "e86cd084118c51d342a5dc205c01524c5461c0169a527180f70fa9591b24ff44",
+  "rustSourceSha256": "b5d9f8ea949175da3d671157f5db4b1ad5e6bbe3c172fe5b1a5fb2cdca92d588",
+  "cargoLockSha256": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+  "goOracleSourceSha256": "d43420ae23f3268907b35d0606d74cffc8dbd75ec370b4eb05d4e749e57b2da5",
+  "goOracleModSha256": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+  "goOracleSumSha256": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc"
+}

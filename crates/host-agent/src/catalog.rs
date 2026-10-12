@@ -13,6 +13,13 @@ use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
+// M7 registry is not connected to public provider activation yet.
+#[allow(dead_code)]
+pub mod registry;
+// Assembled native compiler, also exercised through the private registry fixture.
+#[allow(dead_code)]
+pub(crate) mod schema;
+
 const SOURCE: &str = include_str!("../catalog/source.json");
 const RESOURCE_TYPE_KEYWORD: &str = "x-opute-resource-type";
 
@@ -310,6 +317,13 @@ pub struct Edge {
 /// Go's `CapabilityDescriptor`, with the fields the built-in catalog uses.
 #[derive(Clone, Debug)]
 pub struct Descriptor {
+    pub operation_id: String,
+    pub capability_id: String,
+    pub version: i64,
+    pub task_support: String,
+    pub validation_schema: String,
+    pub observation_schema: String,
+    pub generation_id: String,
     pub name: String,
     pub title: String,
     pub description: String,
@@ -576,6 +590,13 @@ fn descriptor(provider: &str, def: &Definition) -> Descriptor {
         })
         .unwrap_or_default();
     Descriptor {
+        operation_id: def.name.clone(),
+        capability_id: String::new(),
+        version: 1,
+        task_support: String::new(),
+        validation_schema: String::new(),
+        observation_schema: String::new(),
+        generation_id: String::new(),
         name: def.name.clone(),
         title: def.title.clone(),
         description: def.description.clone(),
@@ -700,15 +721,44 @@ impl Snapshot {
 
 /// `BuildCapabilityCatalog`: first definition per name wins, sorted by
 /// operation id, then defaults, edges and the revision.
-pub fn build(provider: &str, defs: &[Definition]) -> Snapshot {
+pub fn build(_provider: &str, defs: &[Definition]) -> Snapshot {
+    let provider = "incus";
     let mut by_name: BTreeMap<&str, &Definition> = BTreeMap::new();
     for def in defs {
         if !def.name.trim().is_empty() {
             by_name.entry(def.name.as_str()).or_insert(def);
         }
     }
-    let mut tools: Vec<Descriptor> = by_name.values().map(|d| descriptor(provider, d)).collect();
+    let tools: Vec<Descriptor> = by_name.values().map(|d| descriptor(provider, d)).collect();
+    build_from_descriptors(provider, &tools)
+}
+
+/// Trusted dynamic descriptors enter the same default, relationship and hash path.
+/// First name wins; generated edges are rebuilt rather than carried from an old snapshot.
+pub fn build_from_descriptors(_provider: &str, descriptors: &[Descriptor]) -> Snapshot {
+    // Pinned NormalizeProviderID resolves every supported value to incus.
+    let provider = "incus";
+    let mut seen = std::collections::BTreeSet::new();
+    let mut tools: Vec<Descriptor> = descriptors
+        .iter()
+        .filter(|d| !d.name.trim().is_empty() && seen.insert(d.name.clone()))
+        .cloned()
+        .collect();
+    tools.sort_by(|a, b| a.operation_id.cmp(&b.operation_id));
     for d in &mut tools {
+        // Go clones descriptors by JSON round-trip: omitempty maps become nil.
+        if d.output_schema
+            .as_ref()
+            .is_some_and(|s| s.as_object().is_some_and(Map::is_empty))
+        {
+            d.output_schema = None;
+        }
+        if d.default_labels.as_ref().is_some_and(BTreeMap::is_empty) {
+            d.default_labels = None;
+        }
+        d.input_edges.clear();
+        d.output_edges.clear();
+        d.argument_producers.clear();
         if d.default_labels.is_none() {
             d.default_labels = default_labels(&d.input_schema);
         }
@@ -764,6 +814,142 @@ pub fn build(provider: &str, defs: &[Definition]) -> Snapshot {
         tools,
         edges,
     }
+}
+
+/// The single manifest-operation projection used by candidate and active generations.
+/// Pinned to hostmcp.providerOperationDescriptor; it does not infer host defaults.
+// Public activation remains closed until the M7 runtime seam is wired.
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn provider_descriptors(
+    manifest: &crate::provider::definition::InstallManifest,
+    generation: &str,
+) -> Vec<Descriptor> {
+    use crate::provider::definition::ResourceBinding;
+    let bindings = |items: &[ResourceBinding]| {
+        items
+            .iter()
+            .map(|b| Binding {
+                argument: b.argument.clone(),
+                resource_type: b.resource_type.clone(),
+                source_path: b.source_path.clone(),
+                selector_id: b.selector_id.clone(),
+                required: b.required,
+            })
+            .collect()
+    };
+    let mut descriptors = Vec::new();
+    for service in &manifest.services {
+        for operation in &service.operations {
+            let description = operation.description.trim();
+            descriptors.push(Descriptor {
+                operation_id: operation.id.clone(),
+                capability_id: service.capability_id.trim().into(),
+                version: if operation.version == 0 {
+                    1
+                } else {
+                    operation.version
+                },
+                task_support: operation.task_support.clone(),
+                validation_schema: operation.validation_schema.clone(),
+                observation_schema: if operation.observation_schema.trim().is_empty() {
+                    "opute-capability-observation.v1".into()
+                } else {
+                    operation.observation_schema.trim().into()
+                },
+                generation_id: generation.into(),
+                name: operation.id.clone(),
+                title: String::new(),
+                description: if description.is_empty() {
+                    format!("Provider service {} operation {}", service.id, operation.id)
+                } else {
+                    description.into()
+                },
+                input_schema: operation
+                    .input_schema
+                    .clone()
+                    .map(J::Object)
+                    .unwrap_or(J::Null),
+                output_schema: operation.output_schema.clone().map(J::Object),
+                output_type: operation.output_type.clone(),
+                result_types: operation
+                    .result_types
+                    .iter()
+                    .map(|r| ResultType {
+                        id: r.id.clone(),
+                        version: r.version,
+                        selectors: r
+                            .selectors
+                            .iter()
+                            .map(|s| Selector {
+                                id: s.id.clone(),
+                                source_path: s.source_path.clone(),
+                                cardinality: s.cardinality.clone(),
+                                label_path: s.label_path.clone(),
+                            })
+                            .collect(),
+                    })
+                    .collect(),
+                effect: operation.effect.clone(),
+                privilege: operation.effect.clone(),
+                requires_approval: operation.effect != "read",
+                provider: manifest.provider.id.clone(),
+                implementation: format!("provider:{}", manifest.provider.id),
+                resource_kinds: operation.resource_kinds.to_vec(),
+                required_fields: operation
+                    .input_schema
+                    .as_ref()
+                    .and_then(|m| m.get("required"))
+                    .and_then(J::as_array)
+                    .map(|a| a.iter().filter_map(J::as_str).map(str::to_string).collect())
+                    .unwrap_or_default(),
+                produced_observables: Vec::new(),
+                argument_producers: BTreeMap::new(),
+                default_labels: None,
+                gate_message: String::new(),
+                consequence: String::new(),
+                resource_cost: operation.resource_cost.as_ref().map(|c| ResourceCost {
+                    cpu_cores: c.cpu_cores,
+                    memory_bytes: c.memory_bytes,
+                    disk_bytes: c.disk_bytes,
+                    tasks: c.tasks,
+                    class: c.class.clone(),
+                    argument_bindings: c.argument_bindings.as_ref().map(|b| {
+                        [
+                            b.cpu_cores.clone(),
+                            b.memory_bytes.clone(),
+                            b.disk_bytes.clone(),
+                            b.tasks.clone(),
+                        ]
+                    }),
+                }),
+                idempotent: operation.idempotent,
+                supports_readiness: operation.supports_readiness,
+                requires: bindings(&operation.requires),
+                produces: bindings(&operation.produces),
+                input_edges: Vec::new(),
+                output_edges: Vec::new(),
+            });
+        }
+    }
+    descriptors
+}
+
+/// Project a candidate's own generation over the active snapshot without mutating it.
+/// The runtime must still check its candidate connection and generation admission.
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn with_provider_generation(
+    active: &Snapshot,
+    manifest: &crate::provider::definition::InstallManifest,
+    generation: &str,
+) -> Snapshot {
+    let mut descriptors: Vec<Descriptor> = active
+        .tools
+        .iter()
+        .filter(|d| d.provider != manifest.provider.id)
+        .cloned()
+        .collect();
+    descriptors.extend(provider_descriptors(manifest, generation));
+    build_from_descriptors(&active.provider_id, &descriptors)
 }
 
 // --- encoding/json projections ----------------------------------------------------------
@@ -924,8 +1110,9 @@ impl Descriptor {
     /// `json.Marshal(CapabilityDescriptor)`.
     pub fn encode(&self, out: &mut String) {
         let mut o = Obj::new(out);
-        o.str("operationId", &self.name, false);
-        o.int("version", 1, true);
+        o.str("operationId", &self.operation_id, false);
+        o.str("capabilityId", &self.capability_id, true);
+        o.int("version", self.version, true);
         o.str("name", &self.name, false);
         o.str("title", &self.title, true);
         o.str("description", &self.description, true);
@@ -975,6 +1162,10 @@ impl Descriptor {
         }
         o.bool("idempotent", self.idempotent, false);
         o.bool("supportsReadiness", self.supports_readiness, false);
+        o.str("taskSupport", &self.task_support, true);
+        o.str("validationSchema", &self.validation_schema, true);
+        o.str("observationSchema", &self.observation_schema, true);
+        o.str("generationId", &self.generation_id, true);
         o.list("requires", &self.requires, Binding::encode);
         o.list("produces", &self.produces, Binding::encode);
         o.list("inputEdges", &self.input_edges, Edge::encode);
@@ -1012,6 +1203,40 @@ pub fn for_mode(standalone: bool) -> &'static Snapshot {
 pub fn internal() -> &'static Snapshot {
     static INTERNAL: OnceLock<Snapshot> = OnceLock::new();
     INTERNAL.get_or_init(|| build(&source().provider_id, &canonicalize(&source().internal)))
+}
+
+/// The `implementation` every built-in descriptor publishes.
+pub fn builtin_implementation() -> String {
+    format!("host-agent:{}", source().provider_id)
+}
+
+/// A descriptor from the one descriptor source, in either serving mode or
+/// among the host-internal tools: a built-in Service Definition.
+pub fn source_descriptor(name: &str) -> Option<Descriptor> {
+    [for_mode(false), for_mode(true), internal()]
+        .into_iter()
+        .flat_map(|snapshot| snapshot.tools.iter())
+        .find(|descriptor| descriptor.name == name)
+        .cloned()
+}
+
+/// Every name the descriptor source defines, in source order.
+#[cfg(test)]
+pub fn source_names() -> Vec<String> {
+    let src = source();
+    let mut names: Vec<String> = Vec::new();
+    for def in src
+        .host
+        .iter()
+        .chain(&src.standalone)
+        .chain(&src.standalone_from_all)
+        .chain(&src.internal)
+    {
+        if !names.contains(&def.name) {
+            names.push(def.name.clone());
+        }
+    }
+    names
 }
 
 /// `HostToolNamesForProvider`: the host catalog's tool names.
@@ -1059,6 +1284,79 @@ pub fn published_tools(snapshot: &Snapshot, prefix: &str) -> Vec<J> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "requires the pinned provider catalog differential driver"]
+    fn provider_catalog_fixture() {
+        let input: J = serde_json::from_slice(
+            &std::fs::read(std::env::var("PARITY_PROVIDER_CATALOG_INPUT").unwrap()).unwrap(),
+        )
+        .unwrap();
+        let rows = input
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| {
+                let raw = serde_json::to_string(&row["manifest"]).unwrap();
+                let node = crate::gojson::parse(raw.as_bytes()).unwrap();
+                let manifest = match crate::provider::definition::decode_manifest(&node) {
+                    Ok(manifest) => manifest,
+                    Err(error) => return json!({"error": error}),
+                };
+                let generation = row["generation"].as_str().unwrap_or_default();
+                let descriptors = provider_descriptors(&manifest, generation);
+                let mut encoded = String::from("[");
+                for (i, descriptor) in descriptors.iter().enumerate() {
+                    if i > 0 {
+                        encoded.push(',');
+                    }
+                    descriptor.encode(&mut encoded);
+                }
+                encoded.push(']');
+                let standalone = row["standalone"].as_bool().unwrap_or(false);
+                let base = for_mode(standalone);
+                let mut active = base.clone();
+                // Replacements compare already-materialized edges with a fresh rebuild.
+                if let Some(old) = row.get("previous").filter(|p| !p.is_null()) {
+                    let raw = serde_json::to_string(old).unwrap();
+                    let old = crate::provider::definition::decode_manifest(
+                        &crate::gojson::parse(raw.as_bytes()).unwrap(),
+                    )
+                    .unwrap();
+                    active = with_provider_generation(&active, &old, "old-generation");
+                }
+                if let Some(query) = row.get("candidateLookup") {
+                    let candidates = crate::provider::candidates::Candidates::default();
+                    if query["manifestPresent"].as_bool().unwrap_or(false) {
+                        candidates.set_manifest(generation, manifest);
+                    }
+                    if query["adapterPresent"].as_bool().unwrap_or(false) {
+                        candidates.set_adapter(generation, None);
+                    }
+                    let query_generation = query["generation"].as_str().unwrap_or_default();
+                    let snapshot = candidates.snapshot(&active, query_generation).map(|snapshot| {
+                        let mut encoded = String::new(); snapshot.encode(&mut encoded); encoded
+                    });
+                    let descriptor = candidates.descriptor(query_generation, query["name"].as_str().unwrap_or_default()).map(|descriptor| {
+                        let mut encoded = String::new(); descriptor.encode(&mut encoded); encoded
+                    });
+                    let mut active_encoded = String::new(); active.encode(&mut active_encoded);
+                    return json!({"active":active_encoded,"candidate":snapshot,"descriptor":descriptor});
+                }
+                let private = with_provider_generation(&active, &manifest, generation);
+                let mut active_encoded = String::new();
+                active.encode(&mut active_encoded);
+                let mut private_encoded = String::new();
+                private.encode(&mut private_encoded);
+                json!({"descriptors":encoded,"active":active_encoded,"candidate":private_encoded})
+            })
+            .collect::<Vec<_>>();
+        std::fs::write(
+            std::env::var("PARITY_PROVIDER_CATALOG_OUTPUT").unwrap(),
+            serde_json::to_vec_pretty(&rows).unwrap(),
+        )
+        .unwrap();
+    }
 
     #[test]
     fn catalog_sizes_match_go() {

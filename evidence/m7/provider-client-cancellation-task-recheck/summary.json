@@ -1,0 +1,212 @@
+{
+  "scope": "T1 actual native HTTP clients: pre-request cancellation/expiration, header waits and observed partial body reads; exact error/request comparison and socket closure. Go body-read wrapper and Rust cfg(test) progress markers observe stages only; parent/child task waits, TLS/proxy/redirect cancellation and lifecycle remain open",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "provenance": {
+    "tools/parity/provider_cancellation.py": "64ebc1a6d194a4a6c6953ed41526a4614ebf0b3f4a88b38b63429e5c8f707f29",
+    "tools/parity/provider_adapter.py": "72b1793b66594abc06f3ace24d1037a631221aa476fb9f4e132545d8e1d94969",
+    "tools/parity/provider-core-oracle/main.go": "b48923088d0019865eac3750f11a4c5d7b832b846f414c8b7ec205b5e1aab7c8",
+    "tools/parity/provider-core-oracle/go.mod": "24efb4368afbf620f42460a2ca57b4c034f0b62cf57170ad5009a2fc15cdcc33",
+    "tools/parity/provider-core-oracle/go.sum": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+    "crates/host-agent/src/provider/adapter.rs": "5c4a4553413a2785b0dccb711c8b2e5fc94f51534bc71113e45fde47a7d33471",
+    "crates/host-agent/src/provider/adapter/envelope.rs": "f05a71d853231f57f8b463c5bf9a7bbfe3521318e2ffa768692b553580e8183c",
+    "crates/host-agent/src/plan/runner.rs": "1b94064d8f8e822adca2edd3a1b4e8c74267151bcd5df6f66f040ef0fbb16e39",
+    "crates/host-agent/src/goerr.rs": "de1eedb230fb53352a58147cdece20949b808cd6617985b3d4b5616404d94458",
+    "crates/host-agent/src/goerr/printable.rs": "ec6a7b8d06450d6ab7ba11897324c2d53c3146ba0d7bd8153c71873dc191773e",
+    "Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169"
+  },
+  "goBinarySha256": "ed39c9dc4bc7db208b9482d9f54560d743b6ec27fcaba7ee5d621fcf70ecf460",
+  "rustTestBinarySha256": "1259814f3129960b06c85468199c83a2f6c4808c676de76e4c6e9590d55510ff",
+  "rows": [
+    {
+      "case": "cancel-before",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "cancel-before",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "cancel-before",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "cancel-before",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "cancel-before",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "expired-before",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "expired-before",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "expired-before",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "expired-before",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "expired-before",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "expired-then-cancel",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "expired-then-cancel",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "expired-then-cancel",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "expired-then-cancel",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "expired-then-cancel",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "cancel-headers",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "cancel-headers",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "cancel-headers",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "cancel-headers",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "cancel-headers",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "deadline-headers",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "deadline-headers",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "deadline-headers",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "deadline-headers",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "deadline-headers",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "cancel-body",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "cancel-body",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "cancel-body",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "cancel-body",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "cancel-body",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "deadline-body",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "deadline-body",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "deadline-body",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "deadline-body",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "deadline-body",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "passed": 35,
+  "total": 35,
+  "normalization": "none; body-read progress, request bytes/header values, error strings and socket EOF are exact"
+}

@@ -38,7 +38,9 @@ class Tree:
             "sourceLockSha256": _sha(lock_bytes),
             "goReference": {"binarySha256": GO_SHA},
             "decisions": {"D8": {"status": "approved"}, "D11": {"status": "approved"},
-                          "D12": {"status": "approved"}, "D13": {"status": "approved"}},
+                          "D12": {"status": "approved"}, "D13": {"status": "approved"},
+                          "D16": {"status": "approved"}, "D17": {"status": "approved"},
+                          "D18": {"status": "approved"}},
             "rustCandidate": {"binarySha256": RUST_SHA},
             "evidence": {
                 "go-vs-go": {"summary": "evidence/gg/summary.json", "right": "go", "minRepeat": 2},
@@ -212,6 +214,21 @@ class VerifyTest(unittest.TestCase):
         report = self.assertGate(False, "cutover")
         self.assertIn("inventory gaps remain: 3", report["gate"]["failures"])
         self.assertGate(True, "m0")
+
+    def test_cutover_requires_each_reviewed_cutover_evidence_file(self):
+        self.tree.rust_evidence()
+        self.tree.manifest["gates"]["cutover"]["requireCutoverEvidence"] = ["ownerReview"]
+        self.tree.save()
+        report = self.assertGate(False, "cutover")
+        self.assertIn("cutover evidence ownerReview: missing or not the reviewed file", report["gate"]["failures"])
+        review = self.tree.root / "evidence/owner-review.json"
+        review.write_text("{}")
+        self.tree.manifest["cutoverEvidence"] = {"ownerReview": {"path": "evidence/owner-review.json",
+                                                                  "sha256": _sha(b"{}")}}
+        self.tree.save()
+        self.assertGate(True, "cutover")
+        review.write_text('{"edited": true}')
+        self.assertGate(False, "cutover")
 
     def test_cutover_fails_when_gap_count_is_missing(self):
         self.tree.rust_evidence()

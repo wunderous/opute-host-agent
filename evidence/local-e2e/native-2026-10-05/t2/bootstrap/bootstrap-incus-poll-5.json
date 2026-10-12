@@ -1,0 +1,56 @@
+{
+  "impl": "goref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tasks/get",
+    "params": {
+      "taskId": "442832a4-f815-47dc-8054-4039a911fe23",
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "createdAt": "2026-10-05T09:27:55Z",
+      "lastUpdatedAt": "2026-10-05T09:31:12Z",
+      "pollIntervalMs": 3000,
+      "result": {
+        "content": [
+          {
+            "text": "Incus virtualization prerequisites installed",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "incus": "Client version: 7.0.1\nServer version: 7.0.1",
+          "optionalPackages": {
+            "virglrenderer": "libvirglrenderer1"
+          },
+          "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)\nCopyright (c) 2003-2023 Fabrice Bellard and the QEMU Project developers"
+        }
+      },
+      "resultType": "complete",
+      "status": "completed",
+      "statusMessage": "The operation completed successfully.",
+      "taskId": "442832a4-f815-47dc-8054-4039a911fe23",
+      "ttlMs": 3600000
+    }
+  },
+  "elapsedSeconds": 0.0018405914306640625,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

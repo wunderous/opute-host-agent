@@ -1,0 +1,188 @@
+{
+ "canaryFileSha256": "98fe888abaea81b9c95812909add550a34392a0c98396bf595604f5ed2e1cd23",
+ "goBinarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+ "harnessSha256": "3fac8124240924bf80258d8f7537dc561620ad34a57c92bceeec54cab4107040",
+ "results": [
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "d759a54f1b662450f692bba365f67ca6993fe2b11ac36a287aab16e2b9317a9f",
+   "caught": true,
+   "failedScenarios": [
+    "catalog.platform",
+    "catalog.standalone",
+    "catalog.standalone-mutations-enabled",
+    "catalog.standalone-prefixed-names",
+    "host-read.call-envelope",
+    "host-read.capability-catalog.platform",
+    "host-read.capability-catalog.standalone",
+    "host-read.lifecycle-without-tasks.platform"
+   ],
+   "id": "C1-descriptor-text",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "9dc2330c9e1672d9b77a80033fc6bc60772732b6db74aa0a8847ce8b798443ea",
+   "caught": true,
+   "failedScenarios": [
+    "authz.store-cross-read",
+    "mcp.auth",
+    "wire.auth.platform",
+    "wire.auth.standalone"
+   ],
+   "id": "C2-auth-status",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "b9122b50c97a09f00eef6c6d7778dc696255bfda806df46e8517eb4ccb646c4e",
+   "caught": true,
+   "failedScenarios": [
+    "host-read.host-info.inventory-mix",
+    "host-read.host-info.list-fails",
+    "host-read.host-info.platform",
+    "host-read.host-info.storage-zfs",
+    "host-read.list-vms.empty",
+    "host-read.list-vms.inventory-mix",
+    "host-read.list-vms.list-fails",
+    "host-read.list-vms.malformed",
+    "host-read.list-vms.ownership-enforced",
+    "host-read.list-vms.platform",
+    "host-read.list-vms.two-containers",
+    "mcp.auth",
+    "mcp.get-host-info",
+    "serve.health",
+    "wire.framing",
+    "wire.routing"
+   ],
+   "id": "C3-extra-argv-token",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "e40237ea398531a636bc716d9b12079b15b1555bc0f527b56ba8a352b713a7b5",
+   "caught": true,
+   "failedScenarios": [
+    "mcp.legacy-handshake.enabled-bounded",
+    "wire.methods.legacy-on"
+   ],
+   "id": "C4-legacy-bypass-widened",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "1b7fba4b299e982a0060a6d9dfdf1531b696b75f5c3d188f4ed98514f4982c61",
+   "caught": true,
+   "failedScenarios": [
+    "startup.fail-closed"
+   ],
+   "id": "C5-retired-env-accepted",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "63579b307df8d3e353c8e9934ef3d7391d92646a5f0fa773d515ee4dda7b9a93",
+   "caught": true,
+   "failedScenarios": [
+    "admission.standalone-mutation-denied",
+    "host-read.standalone-mutation-set-denied",
+    "host-read.standalone-mutation-set-denied.prefixed"
+   ],
+   "id": "C6-mutation-gate-open",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "a54e2d906da54811c739ff627be535121c434547d0079748fc9c06769a79f945",
+   "caught": true,
+   "failedScenarios": [
+    "mcp.transport-rules",
+    "wire.envelope"
+   ],
+   "id": "C7-envelope-status",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "406df807c423ba2f060306f8d2408d1373ae4efe6fa398a61caa99bc8e090ed7",
+   "caught": true,
+   "failedScenarios": [
+    "wire.origin.platform",
+    "wire.origin.standalone",
+    "wire.origin.standalone.public-opt-in"
+   ],
+   "id": "C8-ipv6-loopback-origin",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "a16b252d9c645bc093b26ea88644705c1a7be39070c0762eee221d7079e6d77e",
+   "caught": true,
+   "failedScenarios": [
+    "host-read.list-vms.inventory-mix",
+    "host-read.list-vms.platform",
+    "host-read.list-vms.two-containers"
+   ],
+   "id": "C9-vm-release-default",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "9689ff52c3e1dd7cf98bb97556d151838ab747043bec8ae46ff3b3923ab1f87d",
+   "caught": true,
+   "failedScenarios": [
+    "host-read.list-vms.absent",
+    "host-read.list-vms.empty",
+    "host-read.list-vms.inventory-mix",
+    "host-read.list-vms.list-fails",
+    "host-read.list-vms.malformed",
+    "host-read.list-vms.two-containers",
+    "rejection.schema-invalid-no-audit"
+   ],
+   "id": "C10-schema-type-text",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "7128f101a7186e6b13a529d7a332d0dec33664a9519c90e1ed32b1631480fa39",
+   "caught": true,
+   "failedScenarios": [
+    "admission.saturation.normal-class"
+   ],
+   "id": "C11-normal-slot-limit",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "097db0e37b19855ddc20bc9c4ff708dc63f7c2e9b473feea5e36621c61d9c61f",
+   "caught": true,
+   "failedScenarios": [
+    "admission.enforcement.default-policy"
+   ],
+   "id": "C12-enforcement-fail-open",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "130d6bab6f2c48626422653572012312ab21c4de0fa7d75652660676a13bdb2a",
+   "caught": true,
+   "failedScenarios": [
+    "admission.saturation.normal-class"
+   ],
+   "id": "C13-release-keeps-lease",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "canaryBinarySha256": "043e6a906b5bd15ea24768154c8c7bad9ea30554d8eb37cb531de8c4e8a9698c",
+   "caught": true,
+   "failedScenarios": [
+    "tasks.cancel.mid-shim"
+   ],
+   "id": "C14-late-result-overwrites-cancel",
+   "patchApplied": true
+  }
+ ],
+ "schemaVersion": 1,
+ "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b"
+}

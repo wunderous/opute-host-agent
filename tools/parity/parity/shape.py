@@ -8,10 +8,19 @@ from __future__ import annotations
 import copy
 import concurrent.futures
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from . import agent, canon, runner
+
+# Go's restart recovery stamps interrupted rows with SQLite's datetime('now')
+# (internal/state/store.go), so a recovered updated_at is "YYYY-MM-DD
+# HH:MM:SS" rather than RFC 3339. Either form is a wall-clock time; nothing
+# else passes.
+_SQLITE_DATETIME = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
+canon.MASK_TYPES.setdefault("wall-clock", lambda v: canon.MASK_TYPES["rfc3339"](v) or (
+    isinstance(v, str) and bool(_SQLITE_DATETIME.fullmatch(v))))
 
 
 def scenario_for_shape(original: dict) -> dict:
@@ -37,20 +46,31 @@ def database_observation(raw: dict) -> tuple[dict, dict]:
 def compare_spec(scenario: dict | None = None) -> dict:
     root = ["sqliteRows", "state/state.db", "tables"]
     masks = []
+    # Every wall-clock column of Go's DDL (internal/state/store.go).
     for table, columns in {
         "operations": ("created_at", "updated_at"),
         "plan_runs": ("created_at", "updated_at"),
         "provider_generations": ("created_at",),
         "capability_invocations": ("created_at",),
         "resource_registry": ("created_at", "updated_at"),
+        "active_runtimes": ("activated_at",),
+        "active_capabilities": ("activated_at",),
     }.items():
         for column in columns:
-            masks.append({"path": root + [table, "*", column], "type": "rfc3339",
+            recovered = table in ("operations", "plan_runs") and column == "updated_at"
+            masks.append({"path": root + [table, "*", column], "type": "wall-clock" if recovered else "rfc3339",
                           "reason": "runtime write wall-clock time", "optional": True})
     for column in ["createdAt", "lastUpdatedAt"]:
         masks.append({"path": root + ["operations", "*", "task_snapshot_json", "$json", column],
                       "type": "rfc3339", "reason": "persisted task wall-clock time", "optional": True})
-    spec = {"masks": masks,
+    # Inventory finding F-2: Go emits supportedTools in map-iteration order;
+    # membership is the contract. A host tool reached through a provider
+    # callback persists it without a scenario step that declares the set,
+    # and a plan run persists each node's output in its state.
+    sets = [root + ["capability_invocations", "*", column, "$json", "structured", "supportedTools"]
+            for column in ["result_json", "observation_json"]]
+    sets.append(root + ["plan_runs", "*", "state_json", "$json", "outputs", "*", "supportedTools"])
+    spec = {"masks": masks, "sets": sets,
             "parseJson": [root + ["*", "*", column] for column in
                           ["task_snapshot_json", "result_json", "plan_json", "recipe_json", "state_json",
                            "arguments_json", "binding_json", "observation_json", "coordinates_json",
@@ -88,6 +108,12 @@ def compare_spec(scenario: dict | None = None) -> dict:
             if "structuredContent" not in path:
                 continue
             suffix = path[path.index("structuredContent") + 1:]
+            # A task's result persists its structuredContent in its operations
+            # row and task snapshot.
+            if key == "masks":
+                for prefix in (["result_json", "$json"], ["task_snapshot_json", "$json", "result"]):
+                    add(root + ["operations", "*"] + prefix + ["structuredContent"] + suffix,
+                        {**rule, "optional": True})
             for column in ["result_json", "observation_json"]:
                 target = root + ["capability_invocations", "*", column, "$json", "structured"] + suffix
                 add(target, {**rule, "optional": True} if key == "masks" else rule)
@@ -105,11 +131,63 @@ def compare_spec(scenario: dict | None = None) -> dict:
     return spec
 
 
+def callback_children(raw: dict) -> set[str]:
+    """Handles of delegated child tasks a provider callback created.
+
+    A provider callback into a task-aware host tool creates a child task whose
+    handle the bridged task's result reports; it is that child's operations
+    row key.
+    """
+    children = set()
+    for result in raw["observation"].get("steps", {}).values():
+        child = runner._lookup(result, ["body", "result", "result", "structuredContent",
+                                        "callback", "body", "result", "taskId"])
+        if isinstance(child, str) and child:
+            children.add(child)
+    return children
+
+
+def polled_tools(scenario: dict) -> set[str]:
+    """Tools the scenario calls only through `until` polls.
+
+    The number of polls, and every observation but the last, depend on wall
+    clock time, so their audit rows are not comparable; the final observed
+    value is compared on the wire.
+    """
+    calls: dict[str, bool] = {}
+    for step in scenario.get("steps", []):
+        call = step.get("mcp") or {}
+        if call.get("method") == "tools/call":
+            calls[call.get("name")] = calls.get(call.get("name"), True) and "until" in call
+    return {name for name, polled in calls.items() if polled}
+
+
+DATABASE_COMPANIONS = {
+    "D16.rejected-candidate-keeps-owner": [
+        "D16.invocation-rows", "D16.invocation-count",
+        "D16.other-run-catalog-revision-row", "D16.other-generation-catalog-revision-row"],
+    "D16.rollback-restores-owner": ["D16.invocation-rows", "D16.invocation-count"],
+    "D18.unacknowledged-callback-child": [
+        "D18.unacknowledged-callback-child-row", "D18.unacknowledged-callback-child-count"],
+}
+
+
 def evaluate(scenario: dict, raw: dict) -> dict:
     normalized, violations = {}, {}
+    polled = polled_tools(scenario)
     for side, label in [("a", "go"), ("b", "rust")]:
         document, variables = database_observation(raw[side])
         spec = compare_spec(scenario)
+        # active_at stays NULL until a generation activates; only a set value
+        # is a wall-clock time.
+        generations = runner._lookup(document, ["sqliteRows", "state/state.db", "tables", "provider_generations"])
+        if isinstance(generations, dict):
+            for key, row in generations.items():
+                if isinstance(row, dict) and row.get("active_at") is not None:
+                    spec["masks"].append({
+                        "path": ["sqliteRows", "state/state.db", "tables", "provider_generations", key, "active_at"],
+                        "type": "rfc3339", "reason": "generation activation wall-clock time",
+                    })
         rows = runner._lookup(document, ["sqliteRows", "state/state.db", "tables", "capability_invocations"])
         if isinstance(rows, dict):
             for key, row in rows.items():
@@ -145,9 +223,17 @@ def evaluate(scenario: dict, raw: dict) -> dict:
     # so declaring these there would always be stale in the regular
     # (non-shape) comparison. Detect and apply them dynamically instead,
     # from the actual normalized documents, exactly like D11 below.
+    # A declared wire divergence whose difference is also durable brings its
+    # database companions, only for that scenario (owner decisions D16, D18).
+    for wire, companions in DATABASE_COMPANIONS.items():
+        if wire in declared:
+            declared += [rule for rule in companions if rule not in declared]
     for rule in ["D8.authz-tables", "D8.authz-row-counts", "D8.authz-rows",
                  "D12.refused-task-operation-count"]:
         if rule in declared:
+            continue
+        # D18's child row is the operations count difference there.
+        if rule == "D12.refused-task-operation-count" and "D18.unacknowledged-callback-child-count" in declared:
             continue
         _, _, applied = canon.apply_divergences(normalized["a"], normalized["b"], [rule], registry)
         if applied and not applied[0]["stale"]:
@@ -168,11 +254,14 @@ def evaluate(scenario: dict, raw: dict) -> dict:
             operations = runner._lookup(value, ["sqliteRows", "state/state.db", "tables", "operations"])
             if isinstance(operations, dict):
                 retained = {}
+                children = callback_children(raw["a"])
                 for key, row in operations.items():
                     # A captured task handle and the actual typed refusal are
                     # both required. An admitted operation cannot be dropped.
+                    # A refused delegated child is identified by the handle its
+                    # callback reported (decision D12, refused callback child).
                     error = runner._lookup(row, ["result_json", "$json", "structuredContent"]) or {}
-                    if (key.startswith("${") and row.get("operation_id") == key
+                    if ((key.startswith("${") or key in children) and row.get("operation_id") == key
                             and error.get("owner") == "admission"
                             and error.get("code") == "resource_binding"
                             and runner._lookup(row, ["result_json", "$json", "isError"]) is True):
@@ -186,6 +275,8 @@ def evaluate(scenario: dict, raw: dict) -> dict:
             if side == "a" and "D11.rejected-invocation-count" in declared:
                 invocations = {key: row for key, row in invocations.items()
                                if runner._lookup(row, ["result_json", "$json", "error", "code"]) != "invalid_arguments"}
+            if polled:
+                invocations = {key: row for key, row in invocations.items() if row.get("operation_id") not in polled}
             rows = []
             for key, row in invocations.items():
                 if key != row.get("invocation_id") or not canon.MASK_TYPES["uuid"](key):
@@ -195,7 +286,7 @@ def evaluate(scenario: dict, raw: dict) -> dict:
                 rows.append(row)
             value["sqliteRows"]["state/state.db"]["tables"]["capability_invocations"] = sorted(rows, key=canon.canonical_json)
             # Derive the comparable count from the same retained rows.
-            if "D11.rejected-invocation-count" in declared:
+            if "D11.rejected-invocation-count" in declared or polled:
                 value["sqlite"]["state/state.db"]["rowCounts"].pop("capability_invocations", None)
     # D13 reaches inside each capability_invocations row's own structured
     # content, but those rows are keyed by a random invocation_id that never
@@ -239,11 +330,12 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path, repeats: int = 5,
     # comparison (not this driver) is that scenario's correctness proof.
     # Exempting is never silent: `scenarioHashes` below still fingerprints
     # these scenarios, so a future edit to drop the exemption is visible.
-    scenarios = [s for s in runner.load_scenarios(ids) if not s.get("shapeExempt")]
+    all_scenarios = runner.load_scenarios(ids)
+    scenarios = [s for s in all_scenarios if not s.get("shapeExempt")]
     provenance = {"sourceLock": json.loads((runner.REPO_ROOT / "baseline/source-lock.json").read_text()),
                   "goBinarySha256": go.sha256(), "rustBinarySha256": rust.sha256(),
                   "harnessSha256": runner.harness_sha256(), "driverSha256": runner.sha256_file(Path(__file__)),
-                  "scenarioHashes": {s["id"]: s["_sha256"] for s in scenarios}}
+                  "scenarioHashes": {s["id"]: s["_sha256"] for s in all_scenarios}}
 
     def job(item: tuple[dict, int]) -> tuple[str, dict]:
         original, iteration = item
@@ -270,8 +362,7 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path, repeats: int = 5,
         provenance["goBinarySha256"] != go.sha256(), provenance["rustBinarySha256"] != rust.sha256(),
         provenance["harnessSha256"] != runner.harness_sha256(),
         provenance["driverSha256"] != runner.sha256_file(Path(__file__)),
-        provenance["scenarioHashes"] != {s["id"]: s["_sha256"] for s in runner.load_scenarios(ids)
-                                          if not s.get("shapeExempt")},
+        provenance["scenarioHashes"] != {s["id"]: s["_sha256"] for s in runner.load_scenarios(ids)},
     ])
     summary = {"repeats": repeats, "total": len(outcomes), "passed": len(outcomes) - len(failed),
                "failed": len(failed), "failedCases": failed, "provenance": provenance,

@@ -15,6 +15,9 @@
 //! The parser keeps object members in document order (duplicates included)
 //! and the raw bytes of every value, which is what `json.RawMessage` holds.
 
+pub(crate) mod validate;
+pub(crate) use validate::syntax as validate_syntax;
+
 const MAX_DEPTH: usize = 10_000;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -484,6 +487,13 @@ pub fn float_value(f: f64) -> serde_json::Value {
 
 /// `json.Marshal` of a value decoded into `any`: object keys sorted (as Go
 /// sorts map keys), numbers as float64 unless they are exact integers.
+/// `json.Marshal` of a generic value, as a string.
+pub fn encode_to_string(v: &serde_json::Value) -> String {
+    let mut out = String::new();
+    encode(v, &mut out);
+    out
+}
+
 pub fn encode(v: &serde_json::Value, out: &mut String) {
     use serde_json::Value as J;
     match v {
@@ -522,6 +532,56 @@ pub fn encode(v: &serde_json::Value, out: &mut String) {
                 encode(value, out);
             }
             out.push('}');
+        }
+    }
+}
+
+/// Validate Go standard base64, retaining corruption offsets and CR/LF rules.
+pub(crate) fn validate_base64(bytes: &[u8]) -> Result<(), String> {
+    let error = |i| format!("illegal base64 data at input byte {i}");
+    let mut index = 0;
+    loop {
+        let mut digit = 0;
+        while digit < 4 {
+            if index == bytes.len() {
+                return if digit == 0 {
+                    Ok(())
+                } else {
+                    Err(error(index - digit))
+                };
+            }
+            let value = bytes[index];
+            index += 1;
+            if value.is_ascii_alphanumeric() || matches!(value, b'+' | b'/') {
+                digit += 1;
+                continue;
+            }
+            if matches!(value, b'\r' | b'\n') {
+                continue;
+            }
+            if value != b'=' || digit < 2 {
+                return Err(error(index - 1));
+            }
+            if digit == 2 {
+                while index < bytes.len() && matches!(bytes[index], b'\r' | b'\n') {
+                    index += 1;
+                }
+                if index == bytes.len() {
+                    return Err(error(bytes.len()));
+                }
+                if bytes[index] != b'=' {
+                    return Err(error(index - 1));
+                }
+                index += 1;
+            }
+            while index < bytes.len() && matches!(bytes[index], b'\r' | b'\n') {
+                index += 1;
+            }
+            return if index == bytes.len() {
+                Ok(())
+            } else {
+                Err(error(index))
+            };
         }
     }
 }

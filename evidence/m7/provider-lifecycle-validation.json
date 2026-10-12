@@ -1,0 +1,59 @@
+{
+  "scope": "Public fake-provider lifecycle through opute.provider.install/status/validate/teardown/reload, generation-routed calls, in-flight replacement, normal/forced/idempotent teardown and restart restore. Callbacks, bridged tasks, process supervision and the five real providers remain open.",
+  "publicScenarios": {
+    "total": 137,
+    "lifecycle": 35,
+    "iterations": 5,
+    "rawRecomputed": true
+  },
+  "lifecycleGoTwins": {
+    "scenarios": 35,
+    "iterations": 5,
+    "rawRecomputed": true
+  },
+  "freshSecretSweep": {
+    "fields": 16,
+    "failures": 0
+  },
+  "workspaceTests": 192,
+  "ignoredFixtures": 24,
+  "harnessTests": 141,
+  "owningGoTests": 17,
+  "owningGoTestRuns": 85,
+  "goTransientsDocumented": [
+    "tools/list and tools/call race the post-retire MCP tool refresh (unknown tool); scenarios wait for the whole catalog",
+    "a provider teardown run reads completed before its finalize hook records failed; that case waits for the post-hook state",
+    "a plan task completes after its run reads completed; journeys wait on tasks/get before stopping the agent"
+  ],
+  "openGaps": [
+    "provider callbacks and bridged task support",
+    "Close cancelling still-working tasks",
+    "inspect_host_service and named host-service cleanup (M8)",
+    "process supervision",
+    "five real providers in a leased disposable runtime"
+  ],
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "rustReleaseSha256": "efbdbd8712ae99334e5eccbbf0e83f26aa224bc21da1dd5af5c9e7ced0b98961",
+  "goReferenceSha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+  "harnessSha256": "d2d7ae8b9fe55f4e41da9c46432bffe71610c9bc258267db57302b4b94c9f37b",
+  "evidenceSummaries": {
+    "evidence/m7/provider-lifecycle-public/summary.json": "e6dc2ab8c88969b6524d7596c0de9c5a1cad3fee441d214c01eadedf344f1e27",
+    "evidence/m7/provider-lifecycle-go-vs-go/summary.json": "cf8525e56cfbea48b718f6c18a7f9336f3c4b6f4607464281648397a5e6e5a2a",
+    "evidence/m7/provider-lifecycle-secret/summary.json": "1b28cc6277be72e858be3e0b7e904294b690b18b1c5b57d69fc241e51760f492"
+  },
+  "verificationScriptSha256": "e4d53364c4d8eab5ec55119a1694aac20b84fd34f49562b015f6ceaafa294941",
+  "globalCutover": "FAIL; candidate hash preserved, derived scenario items synced"
+}

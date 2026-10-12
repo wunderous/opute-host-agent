@@ -9,6 +9,7 @@ between sides.
 from __future__ import annotations
 
 import http.client
+import fcntl
 import json
 import os
 import random
@@ -92,25 +93,43 @@ _PORT_RANGE = range(20000, 30000)
 _PORT_LOCK = threading.Lock()
 _PORTS_HANDED_OUT: set[int] = set()
 _PORT_CURSOR = [random.randrange(len(_PORT_RANGE))]
+_PORT_LEASES: dict[int, Any] = {}
+
+
+def release_port(port: int) -> None:
+    with _PORT_LOCK:
+        lease = _PORT_LEASES.pop(port, None)
+        if lease is not None:
+            lease.close()
 
 
 def free_port() -> int:
     with _PORT_LOCK:
-        for _ in range(len(_PORT_RANGE)):
-            _PORT_CURSOR[0] = (_PORT_CURSOR[0] + 1) % len(_PORT_RANGE)
-            port = _PORT_RANGE[_PORT_CURSOR[0]]
-            if port in _PORTS_HANDED_OUT:
-                continue
-            with socket.socket() as probe:
-                try:
-                    probe.bind(("0.0.0.0", port))
-                except OSError:
+        for attempt in range(2):
+            for _ in range(len(_PORT_RANGE)):
+                _PORT_CURSOR[0] = (_PORT_CURSOR[0] + 1) % len(_PORT_RANGE)
+                port = _PORT_RANGE[_PORT_CURSOR[0]]
+                if port in _PORTS_HANDED_OUT:
                     continue
-            _PORTS_HANDED_OUT.add(port)
-            return port
-        _PORTS_HANDED_OUT.clear()
-    return free_port()
-
+                leases = Path.home() / ".cache/opute-parity/ports"
+                leases.mkdir(parents=True, exist_ok=True)
+                lease = (leases / f"{port}.lock").open("a+b")
+                try:
+                    fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    lease.close()
+                    continue
+                with socket.socket() as probe:
+                    try:
+                        probe.bind(("0.0.0.0", port))
+                    except OSError:
+                        lease.close()
+                        continue
+                _PORT_LEASES[port] = lease
+                _PORTS_HANDED_OUT.add(port)
+                return port
+            _PORTS_HANDED_OUT.clear()
+    raise RuntimeError("no free leased parity ports")
 
 def port_open(port: int) -> bool:
     with socket.socket() as s:
@@ -140,6 +159,10 @@ class Sandbox:
     agent_id: str = field(init=False)
     token: str = field(init=False)
     port: int = field(init=False)
+
+    def __del__(self) -> None:
+        if hasattr(self, "port"):
+            release_port(self.port)
 
     def __post_init__(self) -> None:
         self.root = Path(tempfile.mkdtemp(prefix=f"parity-{self.side}-"))
@@ -413,6 +436,84 @@ class Server:
         return {"exit": self.proc.returncode, "killed": False}
 
 
+PROVIDER_BIN = Path(__file__).resolve().parent.parent.parent.parent / ".parity" / "bin" / "providers"
+
+
+class ProviderProcess:
+    """One pinned Go provider executable, unchanged, on a loopback port.
+
+    It runs in the sandbox with the recording shims first on PATH, the
+    sandbox's isolated user bus, and every outbound HTTP(S) request sent to a
+    dead loopback proxy, so it can reach nothing but loopback. The core never
+    spawns a provider; the harness owns this process and always stops it.
+    """
+
+    def __init__(self, sandbox: "Sandbox", binary: str):
+        if "/" in binary or not binary.startswith("opute-provider-"):
+            raise ValueError(f"not a pinned provider executable: {binary!r}")
+        holder = socket.socket()
+        holder.bind(("127.0.0.1", 0))
+        self.port = holder.getsockname()[1]
+        holder.close()
+        env = sandbox.base_env()
+        env.update({
+            "OPUTE_PROVIDER_PORT": str(self.port),
+            "XDG_RUNTIME_DIR": str(sandbox.root / "run"),
+            "DBUS_SESSION_BUS_ADDRESS": f"unix:path={sandbox.root / 'run' / 'bus'}",
+            "HTTP_PROXY": "http://127.0.0.1:9", "HTTPS_PROXY": "http://127.0.0.1:9",
+            "http_proxy": "http://127.0.0.1:9", "https_proxy": "http://127.0.0.1:9",
+            "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost",
+        })
+        self.log = open(sandbox.root / f"{binary}.log", "wb")
+        self.proc = subprocess.Popen([str(PROVIDER_BIN / binary), "serve"], env=env, cwd=sandbox.root,
+                                     stdin=subprocess.DEVNULL, stdout=self.log, stderr=subprocess.STDOUT)
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                socket.create_connection(("127.0.0.1", self.port), 0.2).close()
+                break
+            except OSError:
+                if self.proc.poll() is not None or time.monotonic() > deadline:
+                    raise RuntimeError(f"{binary} did not listen on {self.port}")
+                time.sleep(0.05)
+        self.result: dict | None = None
+
+    def close(self) -> dict:
+        if self.result is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
+            self.log.close()
+            self.result = {"stopped": True, "signal": -self.proc.returncode if self.proc.returncode < 0 else None}
+        return self.result
+
+
+def descendants(pid: int) -> list[str]:
+    """Sorted command names of every live descendant of `pid`."""
+    children: dict[int, list[int]] = {}
+    names: dict[int, str] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat_line = (entry / "stat").read_text()
+        except OSError:
+            continue
+        name = stat_line[stat_line.index("(") + 1:stat_line.rindex(")")]
+        ppid = int(stat_line[stat_line.rindex(")") + 2:].split()[1])
+        children.setdefault(ppid, []).append(int(entry.name))
+        names[int(entry.name)] = name
+    found, todo = [], list(children.get(pid, []))
+    while todo:
+        child = todo.pop()
+        found.append(names[child])
+        todo.extend(children.get(child, []))
+    return sorted(found)
+
+
 class HttpStub:
     """A scripted HTTP endpoint for fault-injection scenarios.
 
@@ -453,8 +554,11 @@ class HttpStub:
                 pass
 
         stub = self
-        self.port = free_port()
-        self._server = _http_server.HTTPServer(("127.0.0.1", self.port), Handler)
+        # Unlike an external agent, the stub can keep the listener the kernel
+        # allocates. Bind atomically rather than probing and releasing a port
+        # before constructing the server under concurrent fixture load.
+        self._server = _http_server.HTTPServer(("127.0.0.1", 0), Handler)
+        self.port = self._server.server_address[1]
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
 
@@ -614,6 +718,16 @@ def run_sql(path: Path, statements: list[str]) -> dict:
     finally:
         conn.close()
     return {"sql": len(statements)}
+
+
+def query_sql(path: Path, statements: dict[str, str]) -> dict:
+    """Read rows from a SQLite file the agent owns, read-only, while it runs."""
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        return {name: [dict(row) for row in conn.execute(sql)] for name, sql in statements.items()}
+    finally:
+        conn.close()
 
 
 def _decode_body(headers: dict[str, str], raw: bytes) -> Any:

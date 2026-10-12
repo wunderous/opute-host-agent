@@ -1,0 +1,5258 @@
+{
+  "scope": "T0 actual owning Go validateJSONSchema baseline, plus native int32 keyword decoding only. Full Rust schema decoding/resolution and registry wiring remain open. Compiler-only rows are Go observations, not Rust parity passes.",
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "provenance": {
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_schema.py": "458621fee1849702d428db12308bb1fe2954db304c8748d85030d5525c04ddfa",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider_adapter.py": "72b1793b66594abc06f3ace24d1037a631221aa476fb9f4e132545d8e1d94969",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/build-provider-catalog-oracle.py": "906d741e6171d30efe34ca12a3b9f35c377f782014d5a0a6f52c5472a13e06c2",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog/schema.rs": "56df63a21d206f6f46ef51452022423ec757852e5efe281950eb965e44a12728",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/catalog.rs": "7dd789df972ff996c52d5ffcdd43794e3c16bac13a55f2aeda78cffa124aa10a",
+    "/home/houman/github/wunderous/opute-host-agent/crates/host-agent/src/gojson.rs": "194b799ebcf38edc6b6a550bff2937db85391d4ecca35ecf212796ac687df021",
+    "/home/houman/github/wunderous/opute-host-agent/Cargo.lock": "dbd288d6c5a9a833c15b9a0216fd8194efe49a6cc0ef5b1d205e607fc186e169",
+    "/home/houman/github/wunderous/opute-host-agent/.parity/go-src/internal/catalog/registry.go": "2a9812ab3d98db71511e53a1ccb3c79235f1a335dcf43faf154a990124f4d227",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/bridge.go.txt": "747e915d48ac67025464db7d742b0056a7f15686b1053a4cf63819046b2d2bd1",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/go.mod": "18e342d34094c69e1f20b98d55c6a0e207a71d104f64508fbec6d09b155003f6",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/go.sum": "9728025ae5889cc14a630e33a5038123060191a5f6f73af5bdbb5bb76a7ca1c4",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/main.go": "e6159cfee3b04e6051dd7e041f99a38f9c5f3e0f282c8892d434d571515433f1",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/registry.go": "8f84a4a32f657af82381fa831e0b66ae346b64d80bd7b1c245f846fa013296c4",
+    "/home/houman/github/wunderous/opute-host-agent/tools/parity/provider-catalog-oracle/schema-bridge.go.txt": "67b7398a358e1c2e6fc081bc470671740e473fc344c890e08ae55c03d0438e24",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/annotations.go": "dbdbbab8fa17c91b142f3d7a0dcab843f8312a6c882f3072e5ca78cb35354876",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/doc.go": "9f03907c14de58eaba0646317454dfeae1e7a61d5b530d30fe4c626bc1a7cdf8",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/draft07_test.go": "e0ce2b39c301151663883ab7fd8e51463ff1e32f582c84603edf8cac74a3f626",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/infer.go": "96988fed72b38040ccc7e98c48babefdfd7e85117200e4ad79148ae72225b94f",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/infer_test.go": "2c8970422e78770b43e8133bf118b04deea934ce14a62fa620129a1a776e1e22",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/json_pointer.go": "1f71e60308fe4c4f85877b85a2e0499783e1848cc0e39c8b5f6b0c465a4f112f",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/json_pointer_test.go": "af0d54f07d32efe726f21965861c62cf60186f9fed084fd7314898b0799caa46",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/resolve.go": "e4835e4452469d329818c837e47b6acf3d42ef74c7d3907d1be2ce087068f362",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/resolve_test.go": "2bf995a64fa35712885c94f0bedbdc976813b8bf1ee0cf35119f4435d26d30db",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/schema.go": "399b9570f57ae543d41a2231a7b831ca940a195ded7b781565cf6c835bdd3f29",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/schema_test.go": "581e6081cf121eac1a6514842c15ec524e63727fcafe91e279fffd02df7faff5",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/util.go": "d52738054e929bf59bc693136b84df41e17d1a4422cc434122a9395e84f43248",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/util_test.go": "0f4bbe39e4b3d7d311d7354c3f77f7324779618d21a2a60d5618fae94fecdfd1",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/validate.go": "16b9d77d029e6890ed911e51f8f30f07a93b7f18175714160e104b0ccf9dca77",
+    "/home/houman/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3/jsonschema/validate_test.go": "039894e3097178bee0fbdcab51280dedcf5251f5fb95804c7995f279d7c03be4"
+  },
+  "goBinarySha256": "946091bd6b7fe87da72be158988c47326814704561d78d1d0a0c75170226c5cc",
+  "rustTestBinarySha256": "d342f9c4df85045e3374f503f9e89af0caaa02e47aef64ad6585fdba709fab5c",
+  "oracleCases": 1520,
+  "oracleIterations": 5,
+  "unstableGoCases": [],
+  "rows": [
+    {
+      "case": "integer-minLength-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-0",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-1",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-2",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-3",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-4",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-5",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-6",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-7",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-8",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-9",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-10",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-11",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-12",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-13",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-14",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-15",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-16",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-17",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-18",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-19",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-20",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-21",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-22",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-23",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-24",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-25",
+      "iteration": 0,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-0",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-1",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-2",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-3",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-4",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-5",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-6",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-7",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-8",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-9",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-10",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-11",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-12",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-13",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-14",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-15",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-16",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-17",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-18",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-19",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-20",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-21",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-22",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-23",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-24",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-25",
+      "iteration": 1,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-0",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-1",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-2",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-3",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-4",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-5",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-6",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-7",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-8",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-9",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-10",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-11",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-12",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-13",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-14",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-15",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-16",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-17",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-18",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-19",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-20",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-21",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-22",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-23",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-24",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-25",
+      "iteration": 2,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-0",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-1",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-2",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-3",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-4",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-5",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-6",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-7",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-8",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-9",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-10",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-11",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-12",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-13",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-14",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-15",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-16",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-17",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-18",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-19",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-20",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-21",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-22",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-23",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-24",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-25",
+      "iteration": 3,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minLength-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxLength-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minItems-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxItems-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minProperties-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxProperties-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-minContains-25",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-0",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-1",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-2",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-3",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-4",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-5",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-6",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-7",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-8",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-9",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-10",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-11",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-12",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-13",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-14",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-15",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-16",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-17",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-18",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-19",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-20",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-21",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-22",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-23",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-24",
+      "iteration": 4,
+      "pass": true
+    },
+    {
+      "case": "integer-maxContains-25",
+      "iteration": 4,
+      "pass": true
+    }
+  ],
+  "passed": 1040,
+  "total": 1040,
+  "normalization": "none; integer decoded values, nullable pointers and malformed error strings are exact; all full compiler inputs and Go outputs retained"
+}

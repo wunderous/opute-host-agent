@@ -1,0 +1,80 @@
+{
+  "scope": "Provider callbacks and bridged tasks, a flapping readiness probe, and the five pinned Go providers unchanged through the public lifecycle (install with their own activation recipes, catalog cell, a provider-reached call, validation, teardown), with no agent descendants and no orphaned shims. The 35 lifecycle scenarios are rerun.",
+  "publicScenarios": {
+    "total": 157,
+    "lifecycle": 49,
+    "realProviders": 6,
+    "iterations": 5,
+    "rawRecomputed": true
+  },
+  "providerGoTwins": {
+    "scenarios": 55,
+    "iterations": 5,
+    "rawRecomputed": true
+  },
+  "freshSecretSweep": {
+    "fields": 16,
+    "failures": 0
+  },
+  "workspaceTests": 194,
+  "ignoredFixtures": 24,
+  "harnessTests": 141,
+  "owningGoTests": 27,
+  "owningGoTestRuns": 135,
+  "realProviders": {
+    "binaries": {
+      "opute-provider-cloudflare": "9df9a02d5b69fe092e9931de55b606624a9e70d76ebb9f1dc2258db29811c4dc",
+      "opute-provider-hostos": "2fc89359b348ab6e46e44e43df9388f9b81519708e14c2af8a86044d66d3492d",
+      "opute-provider-k3s": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915",
+      "opute-provider-ollama": "6a741a4eba9cf7100bb60649acbf3f2ce1e16b988ee831eeb2d7cb9c2b8f0cf7",
+      "opute-provider-tailscale": "6f888f8f850f8d57f95a37db46f5a76ab545364fe5051b4e8f059614872c1397"
+    },
+    "reproducibleBuild": "tools/parity/build-go-providers.sh",
+    "isolation": "loopback port, sandbox HOME and recording shims, isolated user bus (preflight: bus-isolation.log), dead egress proxy",
+    "goOutcomes": {
+      "hostos": "public install refused: the manifest declares no recipe",
+      "ollama": "installed and called; teardown refused by plan validation (set_host_service_state requires uri); stays active",
+      "k3s": "installed, called, validated, torn down",
+      "cloudflare": "installed, called, torn down; validation reaches the provider and reports its error",
+      "tailscale": "installed, called against the recording Incus inventory (container:local:worker-01), torn down; validation reaches the provider and reports its error",
+      "k3s.restart": "installed and called, agent restarted with the provider still running: generation, catalog and connection restored, called again, torn down"
+    }
+  },
+  "goTransientsSynchronized": [
+    "Go releases the install run heavy reservation after its task reports completion and refuses normal-class work while it is held; bridged calls first poll get_host_capacity until no reservation is held (only the settled count is observed, and the poll audit rows are excluded)"
+  ],
+  "adapterPathsHit": "none: no provider journey on either side shows a redirect, TLS, proxy or cancel-cause failure",
+  "declaredDivergences": {
+    "D12.refused-callback-child-operation": "the refused callback child operation row, isolated into its own query"
+  },
+  "openDivergences": {
+    "unadmitted-callback-task-record": "open divergence, pending owner decision; not Go parity",
+    "reject-null-provider-input-requests": "open divergence, pending owner decision; not Go parity"
+  },
+  "sourceLock": {
+    "sourceRepository": "https://github.com/wunderous/host-agents",
+    "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+    "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+    "goModule": "github.com/wunderous/host-agents",
+    "goToolchain": "go1.25.4",
+    "publishedPackage": "@opute/host-agent@0.2.3",
+    "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+    "publicCatalogToolCount": 142,
+    "staticAllToolsSchemaCount": 115,
+    "capturedOn": "2026-09-28",
+    "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+    "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers."
+  },
+  "rustReleaseSha256": "7aeff419bf4ceb0586b51a9221c4f3e4dfdd49241fcfd0dd66179f7993349c26",
+  "goReferenceSha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+  "harnessSha256": "8bee7abbbe4d9578677f07ca76a867b6703c8d1665e6cbb3b8de5c01dd1cf454",
+  "evidenceSummaries": {
+    "evidence/m7/provider-journeys-public/summary.json": "3f7d057cd22e9890deb0370daae07ac36be5404e885213e749621fead7625d0d",
+    "evidence/m7/provider-journeys-go-vs-go/summary.json": "50518fb2113b5c6d4a25271e8dbba5a4140c54d46f6ccf4e0cab93799f8bbe2c",
+    "evidence/m7/provider-journeys-secret/summary.json": "5780bffc0a5ffd266897e0bc948ee6b3aeaee6da4ffb13c81e9ba8f1edeb7cbb",
+    "evidence/m7/unadmitted-callback-task/capture/summary.json": "ac79e8608625bd0487ba8538364b2b05f5ee92bd37b40e830f36fa03944b1909",
+    "evidence/m7/provider-journeys-checks/providers.json": "99b01b4d3931d06119b5a795872f5d79a245a14f5d463ae511386801f1af3c53"
+  },
+  "verificationScriptSha256": "9c7ba01779702d362c76d3d490466f4e1ba10b252c44ae41d3f4fe0bd6c9bf51",
+  "globalCutover": "FAIL; candidate hash preserved, derived scenario items synced"
+}

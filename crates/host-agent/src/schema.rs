@@ -202,16 +202,18 @@ pub fn validate(schema: &Map<String, J>, value: &J) -> Result<(), String> {
                 }
             }
             if let Some(pattern) = schema.get("pattern").and_then(J::as_str) {
-                let re = regex::Regex::new(pattern)
+                let matched = crate::catalog::schema::regexp_match(pattern, text)
                     .map_err(|e| format!("invalid schema pattern: {e}"))?;
-                if !re.is_match(text) {
+                if !matched {
                     return Err("string does not match pattern".into());
                 }
             }
         }
         "integer" => match value.as_f64() {
             Some(n) if n.trunc() == n => {}
-            _ => return Err(format!("expected integer, got {}", go_type(value))),
+            // Go shadows the input with number(value), so even non-numbers
+            // report the float64 conversion result on this branch.
+            _ => return Err("expected integer, got float64".into()),
         },
         "number" => {
             if value.as_f64().is_none() {

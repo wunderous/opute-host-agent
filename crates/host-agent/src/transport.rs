@@ -52,9 +52,9 @@ pub struct Server {
     pub authz: Mutex<AuthzStore>,
     pub health_observer: Box<dyn Fn() -> Map<String, J> + Send + Sync>,
     pub grant_backoff: crate::oauth::Backoff,
-    /// The catalog for this mode, and its `tools/list` projection.
-    pub catalog: &'static crate::catalog::Snapshot,
-    pub published_tools: Vec<J>,
+    /// Committed provider-neutral publication, shared by all catalog readers.
+    pub catalog: Arc<crate::provider::publication::Publication>,
+    pub providers: Arc<crate::provider::runtime::Runtime>,
     pub standalone: bool,
     pub allow_mutations: bool,
     pub host: crate::tools::Host,
@@ -63,6 +63,8 @@ pub struct Server {
     /// Accepted task workers must finish their durable writes before state
     /// closes, like Go's asyncTaskStartWG.
     pub task_workers: Mutex<Vec<std::thread::JoinHandle<()>>>,
+    /// Callback-owned tasks held until their handle is acknowledged.
+    pub task_starts: crate::tools::TaskStarts,
 }
 
 const ROUTES: [&str; 9] = [
@@ -79,6 +81,7 @@ const ROUTES: [&str; 9] = [
 
 /// `serverHandler` + `ServeMux.ServeHTTP` + route handlers.
 pub async fn route(server: Arc<Server>, req: Request, mut body: Body) -> (Response, Body) {
+    server.providers.bind(&server);
     if req.request_uri == "*" {
         if req.method == "OPTIONS" {
             let mut r = Response::new(200);
@@ -1162,6 +1165,7 @@ fn extension(server: &Server, method: &str, raw: &[u8]) -> Result<J, ExtError> {
         })),
         "tasks/get" => {
             let id = task_id();
+            crate::tools::start_pending_task(server, &id);
             match server.tasks.get(&id) {
                 Some(rec) => Ok(rec.get_result()),
                 None => Err(ExtError::Plain(format!("task not found: {id}"))),
@@ -1293,10 +1297,12 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
     let protected = !server.disable_localhost_protection && is_local_host_address(req.host.trim());
     let serve = move |server: &Arc<Server>, req: &Request, raw: &[u8]| {
         let call = |name: &str, params: Option<&Node>| crate::tools::call(server, name, params);
+        let snapshot = server.catalog.wire_snapshot();
+        let tools = crate::catalog::published_tools(&snapshot, &server.tool_prefix);
         let sdk = crate::mcpsdk::Sdk {
             implementation_name: &server.implementation_name,
             version: &server.version,
-            tools: &server.published_tools,
+            tools: &tools,
             call_tool: &call,
         };
         crate::mcpsdk::serve(&sdk, req, raw, protected)
@@ -1328,7 +1334,13 @@ fn resolve_tool_name(server: &Server, name: &str) -> String {
     if prefix.is_empty() || name.is_empty() || name.starts_with(&format!("{prefix}_")) {
         return name.to_string();
     }
-    if server.catalog.tools.iter().any(|d| d.name == name) {
+    if server
+        .catalog
+        .snapshot()
+        .tools
+        .iter()
+        .any(|d| d.name == name)
+    {
         return crate::catalog::wire_name(prefix, name);
     }
     name.to_string()

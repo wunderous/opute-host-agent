@@ -1,0 +1,51 @@
+{
+  "impl": "goref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "provision_container",
+      "arguments": {
+        "containerName": "parity-native-read",
+        "image": "images:ubuntu/24.04",
+        "cpus": 1,
+        "memory": "512MiB"
+      },
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "_meta": {
+        "io.modelcontextprotocol/serverInfo": {
+          "name": "host-agent",
+          "version": "0.2.3"
+        }
+      },
+      "createdAt": "2026-10-05T09:32:43Z",
+      "lastUpdatedAt": "2026-10-05T09:32:43Z",
+      "pollIntervalMs": 3000,
+      "resultType": "task",
+      "status": "working",
+      "taskId": "5f5149e2-10f7-4abd-879c-87e2b10930bd",
+      "ttlMs": 3600000
+    }
+  },
+  "elapsedSeconds": 0.01136326789855957,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

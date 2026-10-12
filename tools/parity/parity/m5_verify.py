@@ -95,6 +95,9 @@ def refused_row_failures(scenario: dict, raw: dict) -> list[str]:
         document, variables = shape.database_observation(raw[side])
         document = canon.substitute(document, variables)
         rows[side] = runner._lookup(document, ["sqliteRows", "state/state.db", "tables", "operations"]) or {}
+    # A refused delegated child is identified by the handle its provider
+    # callback reported (D12.refused-callback-child-operation).
+    children = shape.callback_children(raw["a"])
     failures = []
     for key, row in rows["a"].items():
         if key in rows["b"]:
@@ -102,7 +105,7 @@ def refused_row_failures(scenario: dict, raw: dict) -> list[str]:
         try:
             result = json.loads(row["result_json"])
             error = result.get("structuredContent", {})
-            if (not key.startswith("${") or row.get("operation_id") != key
+            if (not (key.startswith("${") or key in children) or row.get("operation_id") != key
                     or result.get("isError") is not True
                     or error.get("owner") != "admission" or error.get("code") != "resource_binding"):
                 raise ValueError("omitted row is not a captured, typed refusal")
@@ -119,6 +122,9 @@ def shape_failures(summary: dict, outcomes: dict) -> list[str]:
     hashes = {s["id"]: s["_sha256"] for s in scenarios}
     if summary.get("provenance", {}).get("scenarioHashes") != hashes:
         return ["database shape scenario matrix changed or incomplete"]
+    # Exemptions belong to the versioned scenario, not to the submitted
+    # evidence. Their hashes above still bind the full corpus.
+    scenarios = [s for s in scenarios if not s.get("shapeExempt")]
     expected = {f"{s['id']}.{i}" for s in scenarios for i in range(repeats)}
     failures = []
     if set(outcomes) != expected:

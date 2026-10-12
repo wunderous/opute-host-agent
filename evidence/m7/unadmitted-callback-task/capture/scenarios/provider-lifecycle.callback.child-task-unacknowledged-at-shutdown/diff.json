@@ -1,0 +1,63 @@
+{
+ "diff": [
+  {
+   "left": "$absent",
+   "path": [
+    "steps",
+    "childRestored",
+    "body",
+    "error"
+   ],
+   "right": {
+    "code": -32603,
+    "message": "task not found: ${CHILD}"
+   }
+  },
+  {
+   "left": {
+    "createdAt": {
+     "$masked": "rfc3339"
+    },
+    "lastUpdatedAt": {
+     "$masked": "rfc3339"
+    },
+    "pollIntervalMs": 3000,
+    "resultType": "complete",
+    "status": "cancelled",
+    "statusMessage": "The Host Agent shut down before the callback task handle was acknowledged.",
+    "taskId": "${CHILD}",
+    "ttlMs": 3600000
+   },
+   "path": [
+    "steps",
+    "childRestored",
+    "body",
+    "result"
+   ],
+   "right": "$absent"
+  },
+  {
+   "left": "$len=2",
+   "path": [
+    "steps",
+    "state",
+    "operations"
+   ],
+   "right": "$len=1"
+  },
+  {
+   "left": "$len=2",
+   "path": [
+    "steps",
+    "stateRestored",
+    "operations"
+   ],
+   "right": "$len=1"
+  }
+ ],
+ "divergences": [],
+ "maskViolations": {
+  "a": [],
+  "b": []
+ }
+}

@@ -1,0 +1,57 @@
+{
+  "impl": "goref",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tasks/get",
+    "params": {
+      "taskId": "5f5149e2-10f7-4abd-879c-87e2b10930bd",
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "native-t2",
+          "version": "1"
+        },
+        "io.modelcontextprotocol/clientCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    }
+  },
+  "status": 200,
+  "body": {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "createdAt": "2026-10-05T09:32:43Z",
+      "lastUpdatedAt": "2026-10-05T09:33:24Z",
+      "pollIntervalMs": 3000,
+      "result": {
+        "content": [
+          {
+            "text": "Provisioned Incus container 'parity-native-read'.",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "containerName": "parity-native-read",
+          "image": "images:ubuntu/24.04",
+          "instanceType": "container",
+          "status": "running",
+          "uri": "container:local:parity-native-read",
+          "vmName": "parity-native-read"
+        }
+      },
+      "resultType": "complete",
+      "status": "completed",
+      "statusMessage": "The operation completed successfully.",
+      "taskId": "5f5149e2-10f7-4abd-879c-87e2b10930bd",
+      "ttlMs": 3600000
+    }
+  },
+  "elapsedSeconds": 0.0015633106231689453,
+  "driverSha256": "01306e6ff6fad40d1dd53ce0c8502e31d52f4fe3fd56e345e79eec00562999bd"
+}

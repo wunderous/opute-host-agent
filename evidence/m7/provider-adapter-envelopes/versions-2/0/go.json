@@ -1,0 +1,38 @@
+{
+  "result": {
+    "tools": [
+      "opute.provider.get_install_manifest",
+      "test.operation"
+    ]
+  },
+  "requests": [
+    {
+      "path": "/mcp",
+      "headers": {
+        "host": "127.0.0.1:38703",
+        "user-agent": "Go-http-client/1.1",
+        "content-length": "305",
+        "accept": "application/json, text/event-stream",
+        "content-type": "application/json",
+        "mcp-method": "server/discover",
+        "mcp-protocol-version": "2026-07-28",
+        "accept-encoding": "gzip"
+      },
+      "body": "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}},\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-host-agent\",\"version\":\"dev\"},\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\"}}}"
+    },
+    {
+      "path": "/mcp",
+      "headers": {
+        "host": "127.0.0.1:38703",
+        "user-agent": "Go-http-client/1.1",
+        "content-length": "300",
+        "accept": "application/json, text/event-stream",
+        "content-type": "application/json",
+        "mcp-method": "tools/list",
+        "mcp-protocol-version": "2026-07-28",
+        "accept-encoding": "gzip"
+      },
+      "body": "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/clientCapabilities\":{\"extensions\":{\"io.modelcontextprotocol/tasks\":{}}},\"io.modelcontextprotocol/clientInfo\":{\"name\":\"opute-host-agent\",\"version\":\"dev\"},\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\"}}}"
+    }
+  ]
+}

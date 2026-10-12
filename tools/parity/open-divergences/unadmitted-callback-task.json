@@ -1,0 +1,860 @@
+[
+ {
+  "id": "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+  "surface": "provider-lifecycle",
+  "owner": "provider",
+  "anchors": [
+   "internal/hostmcp/provider_install.go:handleProviderInstallContext"
+  ],
+  "fixture": null,
+  "collect": [],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "provider",
+    "providerStub": {
+     "host": {
+      "url": "http://127.0.0.1:${PORT}/mcp",
+      "token": "${TOKEN}"
+     },
+     "manifest": {
+      "schema": "opute-provider-install-manifest.v1",
+      "provider": {
+       "id": "com.opute.fixture",
+       "version": "1.0.0"
+      },
+      "provides": [
+       {
+        "id": "opute.capability.llm-serving.v1",
+        "version": 1
+       }
+      ],
+      "hostAgent": {},
+      "recipes": [
+       {
+        "id": "fixture.activate",
+        "source": {
+         "uri": "recipes/activate.yaml",
+         "revision": "working-tree",
+         "sha256": "sha256:9a090713015da8d71fca872c4ea9d471cd2b00576adeae110cca442eb40554f3"
+        },
+        "mode": "activate"
+       }
+      ],
+      "services": [
+       {
+        "id": "opute.capability.fixture",
+        "capabilityId": "opute.capability.llm-serving.v1",
+        "version": 1,
+        "operations": [
+         {
+          "id": "opute.capability.fixture.probe",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "sync_only"
+         },
+         {
+          "id": "opute.capability.fixture.bridge",
+          "version": 1,
+          "inputSchema": {
+           "type": "object"
+          },
+          "outputSchema": {
+           "type": "object"
+          },
+          "effect": "read",
+          "idempotent": true,
+          "supportsReadiness": false,
+          "taskSupport": "bridged",
+          "resourceCost": {
+           "class": "normal",
+           "cpuCores": 0.25,
+           "memoryBytes": 268435456,
+           "tasks": 1
+          }
+         }
+        ]
+       }
+      ],
+      "teardown": {
+       "id": "opute.provider.teardown",
+       "version": 1,
+       "inputSchema": {
+        "type": "object",
+        "required": [
+         "inputs"
+        ],
+        "properties": {
+         "inputs": {
+          "type": "object"
+         }
+        }
+       },
+       "outputSchema": {
+        "type": "object"
+       },
+       "effect": "destructive",
+       "idempotent": true,
+       "supportsReadiness": false,
+       "taskSupport": "sync_only",
+       "resourceKinds": [
+        "service"
+       ]
+      },
+      "validation": {
+       "capability": "opute.capability.llm-serving.v1",
+       "operation": "opute.capability.fixture.probe"
+      }
+     },
+     "tools": {
+      "opute.capability.fixture.probe": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "ready": true
+         }
+        }
+       }
+      },
+      "opute.provider.teardown": {
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "contractVersion": "host-plan.v1",
+          "plan": {
+           "contractVersion": "host-plan.v1",
+           "planId": "fixture.teardown",
+           "generation": 1,
+           "idempotencyKey": "fixture.teardown",
+           "nodes": [
+            {
+             "id": "host",
+             "action": {
+              "tool": "inspect_host_file",
+              "args": {
+               "path": "~/.fixture-marker"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      },
+      "opute.capability.fixture.bridge": {
+       "responses": [
+        {
+         "callback": {
+          "tool": "configure_network",
+          "arguments": {
+           "uri": "vm:local:fixture-vm"
+          }
+         },
+         "echoCallback": true
+        }
+       ],
+       "default": {
+        "result": {
+         "content": [],
+         "structuredContent": {
+          "bridged": true
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "as": "recipe",
+    "write": {
+     "path": "${SANDBOX}/recipes/activate.yaml",
+     "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.fixture.activate\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-llm-serving\n  servingContract: llm-serving.v1\n  capabilities: [llm-serving]\nactivation:\n  capability: llm-serving\n  servingContract: llm-serving.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [inspect_host_file]\ninputs:\n  providerId:\n    default: com.opute.fixture\n    schema: {type: string, const: com.opute.fixture}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.fixture.activate\n  generation: 1\n  idempotencyKey: com.opute.fixture.activate-${vars.inputs.providerId}-${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: inspect_host_file\n        args:\n          path: ~/.fixture-marker\n"
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.provider.install",
+     "params": {
+      "name": "opute.provider.install",
+      "arguments": {
+       "descriptor": {
+        "schema": "opute-provider-plugin.v1",
+        "pluginId": "com.opute.fixture",
+        "version": "1.0.0",
+        "capabilities": [
+         {
+          "id": "opute.capability.llm-serving.v1",
+          "version": 1
+         }
+        ],
+        "server": {
+         "transport": "streamable_http",
+         "endpoint": "http://127.0.0.1:${PROVIDER_PORT}/mcp"
+        }
+       },
+       "recipeSource": "${SANDBOX}/recipes/activate.yaml",
+       "activate": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "RUN_ID": [
+       "body",
+       "result",
+       "structuredContent",
+       "runId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_runtime_recipe_run",
+     "params": {
+      "name": "get_runtime_recipe_run",
+      "arguments": {
+       "runId": "${RUN_ID}"
+      }
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "unknown",
+       "cancelled"
+      ]
+     },
+     "timeout": 15
+    },
+    "requires": [
+     "RUN_ID"
+    ]
+   },
+   {
+    "as": "installTask",
+    "requires": [
+     "RUN_ID"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${RUN_ID}",
+     "params": {
+      "taskId": "${RUN_ID}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "idle0",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_host_capacity",
+     "params": {
+      "name": "get_host_capacity",
+      "arguments": {}
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "structuredContent",
+       "reservations",
+       "count"
+      ],
+      "in": [
+       0
+      ]
+     },
+     "timeout": 15,
+     "observe": [
+      "body",
+      "result",
+      "structuredContent",
+      "reservations",
+      "count"
+     ]
+    }
+   },
+   {
+    "as": "bridge0",
+    "mcp": {
+     "method": "tools/call",
+     "name": "opute.capability.fixture.bridge",
+     "params": {
+      "name": "opute.capability.fixture.bridge",
+      "arguments": {}
+     },
+     "capture": {
+      "BRIDGE0": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "bridged0",
+    "requires": [
+     "BRIDGE0"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${BRIDGE0}",
+     "params": {
+      "taskId": "${BRIDGE0}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20,
+     "capture": {
+      "CHILD": [
+       "body",
+       "result",
+       "result",
+       "structuredContent",
+       "callback",
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "requests",
+    "providerRequests": {
+     "stub": "provider"
+    }
+   },
+   {
+    "as": "state",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "generations": "SELECT generation_id, provider_id, provider_version, status, endpoint, manifest_hash, active_at IS NOT NULL AS activated FROM provider_generations ORDER BY generation_id",
+      "planRuns": "SELECT plan_id, status, error_message FROM plan_runs ORDER BY plan_id, created_at",
+      "invocations": "SELECT operation_id, generation_id, terminal_status, authorization FROM capability_invocations WHERE operation_id <> 'get_host_capacity' ORDER BY created_at, operation_id",
+      "activeCapabilities": "SELECT * FROM active_capabilities ORDER BY 1",
+      "activeRuntimes": "SELECT * FROM active_runtimes ORDER BY 1",
+      "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "restart",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "XDG_RUNTIME_DIR": "${SANDBOX}/run",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=${SANDBOX}/run/bus"
+     }
+    }
+   },
+   {
+    "as": "childRestored",
+    "requires": [
+     "CHILD"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${CHILD}",
+     "params": {
+      "taskId": "${CHILD}"
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stateRestored",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "operations": "SELECT tool_name, status, error_message FROM operations ORDER BY created_at"
+     }
+    }
+   },
+   {
+    "as": "stop2",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "supportedTools"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ],
+    [
+     "steps",
+     "*",
+     "body",
+     "result",
+     "structuredContent",
+     "state",
+     "nodes",
+     "*",
+     "output",
+     "services"
+    ]
+   ],
+   "notes": "Go emits supportedTools in map-iteration order (inventory finding F-2). After teardown Go removes and re-adds every MCP tool, so a call racing that refresh sees unknown tool; post-teardown reads poll until the status answers. Go also reports a provider teardown run completed while its finalize hook is still running, then records it failed when finalize fails; that case waits for the post-hook terminal state.",
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "state",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeRuntime",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "activeCapability",
+      "activatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "CreatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "generation",
+      "ActiveAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeCapabilities",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "activeRuntimes",
+      "*",
+      "activated_at"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "startedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "nodes",
+      "*",
+      "completedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "requests",
+      "*",
+      "callback",
+      "acknowledged",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ }
+]
