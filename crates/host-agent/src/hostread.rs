@@ -46,7 +46,7 @@ fn absolute(p: &str) -> Result<String, String> {
 }
 
 /// `hostHomeDir`: `os.UserHomeDir` ($HOME), then the account database.
-fn home_dir() -> Result<String, String> {
+pub(crate) fn home_dir() -> Result<String, String> {
     if let Ok(home) = std::env::var("HOME") {
         if !home.trim().is_empty() {
             return Ok(home);
@@ -60,7 +60,7 @@ fn home_dir() -> Result<String, String> {
 }
 
 /// `hostOwnedPath`: beneath the home directory, through no symlink.
-fn host_owned_path(home: &str, raw: &str) -> Result<String, String> {
+pub(crate) fn host_owned_path(home: &str, raw: &str) -> Result<String, String> {
     let raw = raw.trim();
     if raw.is_empty() {
         return Err("path is required".into());
@@ -108,7 +108,7 @@ fn host_owned_path(home: &str, raw: &str) -> Result<String, String> {
 }
 
 /// `systemdUnitPath`.
-fn systemd_unit_path(raw: &str) -> Result<String, String> {
+pub(crate) fn systemd_unit_path(raw: &str) -> Result<String, String> {
     let path = clean(raw.trim());
     if !path.starts_with("/etc/systemd/system/") {
         return Err(
@@ -128,7 +128,7 @@ fn systemd_unit_path(raw: &str) -> Result<String, String> {
 }
 
 /// `managedHostPath`.
-fn managed_host_path(scope: &str, raw: &str) -> Result<String, String> {
+pub(crate) fn managed_host_path(scope: &str, raw: &str) -> Result<String, String> {
     match scope.trim().to_lowercase().as_str() {
         "" | "user" => {
             let home = home_dir().map_err(|e| format!("resolve home directory: {e}"))?;
@@ -139,7 +139,7 @@ fn managed_host_path(scope: &str, raw: &str) -> Result<String, String> {
     }
 }
 
-fn sha256_label(bytes: &[u8]) -> String {
+pub(crate) fn sha256_label(bytes: &[u8]) -> String {
     format!("sha256:{}", hex::encode(Sha256::digest(bytes)))
 }
 

@@ -28,6 +28,9 @@ pub struct Host {
     pub tenant_id: String,
     pub agent_id: String,
     pub instance_id: String,
+    /// `OPUTE_SHARED_HOST_OWNER_INSTANCE`: when set, only that instance may
+    /// change the shared host (`RequireSharedHostOwner`).
+    pub shared_host_owner_instance: String,
     pub instance_root: String,
     pub mcp_port: i64,
 }

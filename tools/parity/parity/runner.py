@@ -302,6 +302,12 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 path.write_text(sandbox.expand(spec.get("content", "")))
                 path.chmod(int(spec.get("mode", "0644"), 8))
                 steps[label] = {"wrote": spec["path"]}
+            elif "symlink" in step:
+                spec = step["symlink"]
+                link = Path(sandbox.expand(spec["path"]))
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.symlink_to(sandbox.expand(spec["target"]))
+                steps[label] = {"symlink": spec["path"]}
             elif "mkdir" in step:
                 Path(sandbox.expand(step["mkdir"]["path"])).mkdir(parents=True, exist_ok=True)
                 steps[label] = {"mkdir": step["mkdir"]["path"]}
@@ -396,6 +402,8 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
         observation["trace"] = sandbox.trace()
     if "files" in collect:
         observation["files"] = sandbox.files()
+    if "homeTree" in collect:
+        observation["homeTree"] = sandbox.tree("home")
     if "sqlite" in collect:
         observation["sqlite"] = sandbox.sqlite_schemas()
     if "sqliteRows" in collect:

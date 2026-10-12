@@ -715,6 +715,63 @@
   },
   {
    "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.files.lifecycle",
+   "owner": "host",
+   "scenario": "host-domain.files.lifecycle",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.files.path-forms",
+   "owner": "host",
+   "scenario": "host-domain.files.path-forms",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.files.refusals",
+   "owner": "host",
+   "scenario": "host-domain.files.refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.files.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.files.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.files.shared-owner-matches",
+   "owner": "host",
+   "scenario": "host-domain.files.shared-owner-matches",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
     "internal/plan/runner.go:runNode"
    ],
    "id": "host-plan-fault-scripts.retry-then-success",

@@ -352,6 +352,7 @@ pub(crate) fn compose(
         tenant_id: cfg.tenant_id.clone(),
         agent_id: cfg.remote_agent_id.clone(),
         instance_id: cfg.instance_id.clone(),
+        shared_host_owner_instance: cfg.shared_host_owner_instance.clone(),
         instance_root: cfg.instance_root.to_string_lossy().into_owned(),
         mcp_port: cfg.host_mcp_port,
     };

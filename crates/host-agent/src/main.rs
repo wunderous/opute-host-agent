@@ -15,6 +15,7 @@ mod evidence;
 mod goflag;
 mod gojson;
 mod host_recipe_mcp;
+mod hostfiles;
 mod hostobs;
 mod hostread;
 mod http1;

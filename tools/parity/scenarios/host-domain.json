@@ -1,0 +1,1282 @@
+[
+ {
+  "id": "host-domain.files.lifecycle",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/file.go:EnsureHostFile",
+   "internal/domain/host/file.go:RemoveHostFile",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "create",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "content": "alpha\n"
+      }
+     }
+    }
+   },
+   {
+    "as": "unchanged",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "content": "alpha\n",
+       "mode": 384
+      }
+     }
+    }
+   },
+   {
+    "as": "modeChange",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "content": "alpha\n",
+       "mode": 420
+      }
+     }
+    }
+   },
+   {
+    "as": "contentChange",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "content": "beta\n",
+       "mode": 420
+      }
+     }
+    }
+   },
+   {
+    "as": "back",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "content": "alpha\n",
+       "mode": 420
+      }
+     }
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_file",
+     "params": {
+      "name": "inspect_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "expectedSha256": "sha256:b6a98d9ce9a2d9149288fa3df42d377c3e42737afdcdaf714e33c0a100b51060"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongHash",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "confirm": true,
+       "expectedSha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      }
+     },
+     "capture": {
+      "T_WRONGHASH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongHashDone",
+    "requires": [
+     "T_WRONGHASH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGHASH}",
+     "params": {
+      "taskId": "${T_WRONGHASH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "unconfirmed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf"
+      }
+     },
+     "capture": {
+      "T_UNCONFIRMED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "unconfirmedDone",
+    "requires": [
+     "T_UNCONFIRMED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNCONFIRMED}",
+     "params": {
+      "taskId": "${T_UNCONFIRMED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "remove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "confirm": true,
+       "expectedSha256": "B6A98D9CE9A2D9149288FA3DF42D377C3E42737AFDCDAF714E33C0A100B51060"
+      }
+     },
+     "capture": {
+      "T_REMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDone",
+    "requires": [
+     "T_REMOVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVE}",
+     "params": {
+      "taskId": "${T_REMOVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "~/.config/parity/app.conf",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_AGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "againDone",
+    "requires": [
+     "T_AGAIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_AGAIN}",
+     "params": {
+      "taskId": "${T_AGAIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.files.path-forms",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/file.go:EnsureHostFile",
+   "internal/domain/host/file.go:RemoveHostFile",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "relative",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "  bin/run.sh ",
+       "content": " #!/bin/sh\n",
+       "mode": 493
+      }
+     }
+    }
+   },
+   {
+    "as": "homeRoot",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "~/top.txt",
+       "content": "",
+       "scope": " USER "
+      }
+     }
+    }
+   },
+   {
+    "as": "absolute",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "${SANDBOX}/home/abs/x.txt",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "inspectExec",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_file",
+     "params": {
+      "name": "inspect_host_file",
+      "arguments": {
+       "path": "bin/run.sh"
+      }
+     }
+    }
+   },
+   {
+    "as": "removeRelative",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "bin/run.sh",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_REMOVERELATIVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeRelativeDone",
+    "requires": [
+     "T_REMOVERELATIVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVERELATIVE}",
+     "params": {
+      "taskId": "${T_REMOVERELATIVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.files.refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/file.go:EnsureHostFile",
+   "internal/domain/host/file.go:RemoveHostFile",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "outside",
+    "mkdir": {
+     "path": "${SANDBOX}/outside"
+    }
+   },
+   {
+    "as": "link",
+    "symlink": {
+     "path": "${SANDBOX}/home/linked",
+     "target": "${SANDBOX}/outside"
+    }
+   },
+   {
+    "as": "dir",
+    "mkdir": {
+     "path": "${SANDBOX}/home/adir"
+    }
+   },
+   {
+    "as": "scope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "x",
+       "content": "x",
+       "scope": "bogus"
+      }
+     }
+    }
+   },
+   {
+    "as": "empty",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "  ",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "escape",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "../escape.txt",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "absoluteOutside",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "/etc/hostname",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "throughLink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "linked/x.txt",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "linkItself",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "linked",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_LINKITSELF": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "linkItselfDone",
+    "requires": [
+     "T_LINKITSELF"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_LINKITSELF}",
+     "params": {
+      "taskId": "${T_LINKITSELF}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "modeLow",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "m.txt",
+       "content": "x",
+       "mode": 256
+      }
+     }
+    }
+   },
+   {
+    "as": "modeHigh",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "m.txt",
+       "content": "x",
+       "mode": 511
+      }
+     }
+    }
+   },
+   {
+    "as": "modeNegative",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "m.txt",
+       "content": "x",
+       "mode": -1
+      }
+     }
+    }
+   },
+   {
+    "as": "modeFraction",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "m.txt",
+       "content": "x",
+       "mode": 420.9
+      }
+     }
+    }
+   },
+   {
+    "as": "modeString",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "s.txt",
+       "content": "x",
+       "mode": "644"
+      }
+     }
+    }
+   },
+   {
+    "as": "modeTypeBits",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "t.txt",
+       "content": "x",
+       "mode": 33188
+      }
+     }
+    }
+   },
+   {
+    "as": "isDirectory",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "adir",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "removeDirectory",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "adir",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_REMOVEDIRECTORY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDirectoryDone",
+    "requires": [
+     "T_REMOVEDIRECTORY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVEDIRECTORY}",
+     "params": {
+      "taskId": "${T_REMOVEDIRECTORY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "systemNotUnit",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "/etc/systemd/system/x.conf",
+       "content": "x",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "systemOutside",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "/etc/x.service",
+       "content": "x",
+       "scope": "system"
+      }
+     }
+    }
+   },
+   {
+    "as": "systemBadName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "/etc/systemd/system/a b.service",
+       "confirm": true,
+       "scope": "system"
+      }
+     },
+     "capture": {
+      "T_SYSTEMBADNAME": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "systemBadNameDone",
+    "requires": [
+     "T_SYSTEMBADNAME"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SYSTEMBADNAME}",
+     "params": {
+      "taskId": "${T_SYSTEMBADNAME}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "systemMissing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "/etc/systemd/system/opute-parity-absent.service",
+       "confirm": true,
+       "scope": "system"
+      }
+     },
+     "capture": {
+      "T_SYSTEMMISSING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "systemMissingDone",
+    "requires": [
+     "T_SYSTEMMISSING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SYSTEMMISSING}",
+     "params": {
+      "taskId": "${T_SYSTEMMISSING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.files.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/file.go:EnsureHostFile",
+   "internal/domain/host/file.go:RemoveHostFile",
+   "internal/tools/dispatch_host.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "x.txt",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "remove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "x.txt"
+      }
+     },
+     "capture": {
+      "T_REMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDone",
+    "requires": [
+     "T_REMOVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVE}",
+     "params": {
+      "taskId": "${T_REMOVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_file",
+     "params": {
+      "name": "inspect_host_file",
+      "arguments": {
+       "path": "x.txt"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.files.shared-owner-matches",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/file.go:EnsureHostFile",
+   "internal/domain/host/file.go:RemoveHostFile",
+   "internal/tools/dispatch_host.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": " parity-owner "
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_file",
+     "params": {
+      "name": "ensure_host_file",
+      "arguments": {
+       "path": "x.txt",
+       "content": "x"
+      }
+     }
+    }
+   },
+   {
+    "as": "remove",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_host_file",
+     "params": {
+      "name": "remove_host_file",
+      "arguments": {
+       "path": "x.txt",
+       "confirm": true
+      }
+     },
+     "capture": {
+      "T_REMOVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "removeDone",
+    "requires": [
+     "T_REMOVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REMOVE}",
+     "params": {
+      "taskId": "${T_REMOVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ }
+]

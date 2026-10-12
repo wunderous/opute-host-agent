@@ -144,6 +144,7 @@ pub struct Config {
     pub sqlite_database_root: PathBuf,
     pub standalone_allow_mutations: bool,
     pub standalone_instance_id: String,
+    pub shared_host_owner_instance: String,
     pub host_mcp_port: i64,
     pub host_mcp_bind_host: String,
     pub incus_network_name: String,
@@ -316,6 +317,10 @@ impl Config {
             standalone_allow_mutations: env.get("OPUTE_STANDALONE_ALLOW_MUTATIONS") == "true",
             standalone_instance_id: env
                 .value("OPUTE_LOCAL_HOST_AGENT_INSTANCE_ID")
+                .trim()
+                .to_string(),
+            shared_host_owner_instance: env
+                .value("OPUTE_SHARED_HOST_OWNER_INSTANCE")
                 .trim()
                 .to_string(),
             host_mcp_port: port,

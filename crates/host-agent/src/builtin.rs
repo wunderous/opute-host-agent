@@ -216,6 +216,19 @@ fn flag(args: &Map<String, J>, key: &str) -> bool {
     args.get(key).and_then(J::as_bool).unwrap_or(false)
 }
 
+/// `intField`: a JSON number truncated toward zero; anything else is 0.
+fn int_field(args: &Map<String, J>, key: &str) -> i64 {
+    args.get(key)
+        .and_then(J::as_f64)
+        .map(|v| v as i64)
+        .unwrap_or(0)
+}
+
+/// `rawStringField`: the string as sent, untrimmed.
+fn raw_text<'a>(args: &'a Map<String, J>, key: &str) -> &'a str {
+    args.get(key).and_then(J::as_str).unwrap_or("")
+}
+
 fn text<'a>(args: &'a Map<String, J>, key: &str) -> &'a str {
     args.get(key)
         .and_then(J::as_str)
@@ -230,6 +243,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_info(host),
         incus_inventory(host),
         host_observation(host),
+        host_files(host),
         catalog_service(),
         host_resources(host),
         tasks(server),
@@ -572,6 +586,58 @@ fn host_observation(host: &crate::tools::Host) -> Service {
                         flag(call.args, "acceptAuthenticationChallenge"),
                     )
                     .map(|v| structured_with_text(&v, &HTTP_OBSERVATION))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8a: managed host files (`internal/domain/host/file.go`). Each mutation
+/// first runs the shared-host owner check, so the service is built from the
+/// instance identity alone.
+fn host_files(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let ensure_owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let remove_owner = ensure_owner.clone();
+    Service {
+        id: "host-files",
+        dependencies: &[],
+        operations: vec![
+            (
+                "ensure_host_file",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &ensure_owner.0,
+                        owner_instance: &ensure_owner.1,
+                    };
+                    crate::hostfiles::ensure_host_file(
+                        &owner,
+                        text(call.args, "path"),
+                        raw_text(call.args, "content"),
+                        int_field(call.args, "mode"),
+                        text(call.args, "scope"),
+                    )
+                    .map(|v| structured_result(v, Some("Managed host file reconciled.")))
+                }),
+            ),
+            (
+                "remove_host_file",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &remove_owner.0,
+                        owner_instance: &remove_owner.1,
+                    };
+                    crate::hostfiles::remove_host_file(
+                        &owner,
+                        text(call.args, "path"),
+                        text(call.args, "expectedSha256"),
+                        flag(call.args, "confirm"),
+                        text(call.args, "scope"),
+                    )
+                    .map(|v| structured_result(v, Some("Managed host file removed.")))
                 }),
             ),
         ],

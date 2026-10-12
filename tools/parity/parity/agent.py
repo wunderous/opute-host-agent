@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import http.client
 import fcntl
+import hashlib
 import json
 import os
 import random
@@ -224,6 +225,26 @@ class Sandbox:
 
     def trace(self) -> list[dict]:
         return shims.read_trace(self.trace_path)
+
+    def tree(self, relative: str) -> list[dict]:
+        """Every entry beneath one sandbox directory: type, permission bits,
+        a regular file's sha256, a symlink's target. The external effect of a
+        host mutation, compared between twins."""
+        out = []
+        base = self.root / relative
+        for path in sorted(base.rglob("*")) if base.exists() else []:
+            st = path.lstat()
+            entry = {"path": str(path.relative_to(self.root)), "mode": oct(stat.S_IMODE(st.st_mode))}
+            if stat.S_ISLNK(st.st_mode):
+                entry.update(type="symlink", target=os.readlink(path))
+            elif stat.S_ISDIR(st.st_mode):
+                entry["type"] = "dir"
+            elif stat.S_ISREG(st.st_mode):
+                entry.update(type="file", sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            else:
+                entry["type"] = "other"
+            out.append(entry)
+        return out
 
     def files(self) -> list[dict]:
         """Files the agent created, with type and permission bits."""
