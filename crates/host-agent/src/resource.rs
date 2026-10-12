@@ -1204,10 +1204,7 @@ impl Coordinator {
         if pressure.tasks_limit != 0 {
             out.insert("tasksLimit".into(), J::from(pressure.tasks_limit));
         }
-        out.insert(
-            "policyRevision".into(),
-            J::from(self.policy_revision()),
-        );
+        out.insert("policyRevision".into(), J::from(self.policy_revision()));
         out.insert("observedLimits".into(), observed);
         out.insert("effectiveLimits".into(), limits(cpu, memory, disk, tasks));
         out.insert("currentUsage".into(), J::Object(usage));
