@@ -414,6 +414,15 @@ def verify(manifest_path: Path, gate: str) -> dict:
         count = None if err else gaps.get("count")
         if not isinstance(count, int) or count != 0:
             failures.append(f"inventory gaps remain: {count if isinstance(count, int) else 'unknown'}")
+    for key in rules.get("requireCutoverEvidence", []):
+        # Evidence the parity-gate invariant names that no differential suite
+        # produces (published package first success, isolated external
+        # effects, rollback rehearsal, the owners' cutover review). Each is a
+        # reviewed file pinned by hash; absent or changed fails closed.
+        entry = (manifest.get("cutoverEvidence") or {}).get(key) or {}
+        path = root / entry["path"] if entry.get("path") else None
+        if path is None or not path.is_file() or _sha(path) != entry.get("sha256"):
+            failures.append(f"cutover evidence {key}: missing or not the reviewed file")
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")

@@ -9,6 +9,10 @@
   "standalone": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
  },
  "contracts": {
+  "evidence-redaction": {
+   "decision": "D13",
+   "results": "evidence/local-e2e/native-2026-10-12-r4/contracts/evidence-redaction/summary.json"
+  },
   "oauth-issuance": {
    "decision": "D8",
    "results": "evidence/local-e2e/native-2026-10-12-r4/contracts/oauth-issuance/summary.json"
@@ -124,13 +128,20 @@
  },
  "gates": {
   "cutover": {
-   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here",
+   "description": "Whole-agent cutover (task 6.1). Fails until every surface has passing Rust evidence and the inventory has no gaps, owned or not; later milestones add T2/T3/T4 suites here. It also requires each reviewed cutoverEvidence file (package first success, isolated external effects, rollback rehearsal, owners' cutover review) the parity-gate invariant names",
    "requireCanaries": true,
    "requireContracts": [
+    "evidence-redaction",
     "oauth-issuance",
-    "standalone-read-only-gate",
+    "refuse-before-operation-record",
     "reject-without-audit-writes",
-    "refuse-before-operation-record"
+    "standalone-read-only-gate"
+   ],
+   "requireCutoverEvidence": [
+    "packageFirstSuccess",
+    "externalEffects",
+    "rollbackRehearsal",
+    "ownerReview"
    ],
    "requireInventory": true,
    "requireM5": true,
@@ -661,6 +672,16 @@
    "id": "config.env.incus-binary-path",
    "owner": "config",
    "scenario": "config.env.incus-binary-path",
+   "surface": "config"
+  },
+  {
+   "anchors": [
+    "docs/adr/0012-mcp-tool-name-prefix.md",
+    "internal/transport/http.go:handleHealth"
+   ],
+   "id": "config.env.tool-prefix-health",
+   "owner": "config",
+   "scenario": "config.env.tool-prefix-health",
    "surface": "config"
   },
   {

@@ -107,9 +107,9 @@ upgrade is checked by `migration.revokes-live-tokens` instead.
 
 - **5.3:** the go-sdk real client completing an operator-approved
   authorization against Rust.
-- **M3:** the `list_oauth_authorizations` / `approve_oauth_authorization`
-  admin tools.
-- **M7:** the provider environment gains `OPUTE_HOST_AGENT_CLIENT_ID` and
+- **Cutover** (moved from M3 by the owner, 2026-10-12): the
+  `list_oauth_authorizations` / `approve_oauth_authorization` admin tools.
+- **M9** (moved from M7 by the owner, 2026-10-12): the provider environment gains `OPUTE_HOST_AGENT_CLIENT_ID` and
   `OPUTE_HOST_AGENT_CLIENT_SECRET_FILE`; public-URL activation evidence
   needs the provider-side `client_secret_basic` change and fails closed
   until then.

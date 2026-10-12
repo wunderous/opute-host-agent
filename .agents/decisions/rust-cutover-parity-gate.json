@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "rust-cutover-parity-gate",
   "title": "Rust Host Agent cutover requires complete behavior parity evidence",
-  "status": "proposed-unverified",
+  "status": "accepted",
   "claim": "No Rust slice may receive production traffic or justify Go retirement until a provenance-bound manifest passes every CLI, schema/catalog, auth, MCP wire, provider, plan, durable-state, package, client, and isolated external-effect parity gate for the selected current Go revision. Missing, stale, malformed, or blocked evidence fails the gate. Cutover and Go retirement are separate decisions.",
   "owner": "The new host-agent Rust repository owns the parity manifest and verifier; the Host Agent, Platform, release, and deployment owners retain their respective cutover decisions.",
   "authority": {
@@ -72,7 +72,51 @@
     "m0": "make parity-verify",
     "manifest": "parity-manifest.json"
   },
-  "verificationStatus": "Verifier implemented and fail closed. `make parity-verify-cutover` currently FAILS, as intended: it requires an inventory with no gaps (`requireNoGaps`), and owned gaps with no covering scenario remain, so passing every existing scenario is not enough. The M0 gate (`make parity-verify`) checks harness self-validation, canaries and inventory. Owner review of this invariant (task 0.5) is still pending, so status stays proposed.",
+  "verificationStatus": "Verifier implemented and fail closed. `make parity-verify-cutover` FAILS, as intended, until the inventory has no gaps (38 remain, all M8 or M10) and every reviewed cutoverEvidence file exists. Task 0.5 review recorded in `review`.",
   "supersedes": [],
-  "withdrawn": false
+  "withdrawn": false,
+  "review": {
+    "date": "2026-10-12",
+    "reviewer": "Claude, performing task 0.5 at the owner's request",
+    "against": [
+      "pinned Go docs/adr/0001-0016",
+      "pinned Go .agents/decisions/public-documentation-release-parity.json",
+      "openspec/changes/reimplement-host-agent-in-rust/design.md (invariant delta)"
+    ],
+    "adrCoverage": {
+      "0001 standalone MVP": "read-only default and mutation flag: standalone-read-only-gate contract (D10) and the standalone catalog cells",
+      "0002 provider extension, 0003 cloudflare delegation": "provider-lifecycle matrix, callback delegation scenarios and the D14 three-role seam",
+      "0003 resource URIs, 0004 typed edges, 0005 selectors": "catalog descriptor and edge comparison per cell, admission binding scenarios",
+      "0006 canonical identity": "config validation matrix and agentId in every /health and catalog observation; Rust preserves OPUTE_REMOTE_AGENT_ID exactly",
+      "0007 runtime kind, 0010 and 0014 storage quotas": "domain operations, owned by M8 and present as M8 inventory gaps",
+      "0008 product-neutral transport": "wire and auth scenarios; default listen ports are not observable in the harness, which always sets a port (finding 2)",
+      "0009 catalog authority": "catalog matrix, the provider cells, and catalog.unpublished-dispatch (dispatch names absent from the catalog are unreachable)",
+      "0011 legacy handshake gate": "wire and mcp scenarios with OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE",
+      "0012 tool-name prefix": "catalog.standalone-prefixed-names and config.env.tool-prefix-health (finding 3)",
+      "0013, 0015, 0016 k3s and HA networking": "k3s and tailscale provider journeys and the recipe corpus; their domain execution is M8"
+    },
+    "findings": [
+      {
+        "id": 1,
+        "finding": "The cutover gate checked differential suites, canaries, contracts, oracles, M5 and inventory gaps, but none of the required evidence no suite produces: published package and real client first success, isolated external effects, rollback rehearsal, and the owners' cutover review. Once the inventory reached zero gaps it could have passed without them.",
+        "resolution": "verify.py rule requireCutoverEvidence: the cutover gate requires each reviewed file in manifest.cutoverEvidence, pinned by hash; negative test test_cutover_requires_each_reviewed_cutover_evidence_file"
+      },
+      {
+        "id": 2,
+        "finding": "ADR 0008 default listen addresses (standalone 127.0.0.1:3014, platform 0.0.0.0:3004) are never observed, because every harness profile sets HOST_MCP_PORT.",
+        "resolution": "owned by the packageFirstSuccess cutover evidence, which runs the published launcher on its defaults (M10)"
+      },
+      {
+        "id": 3,
+        "finding": "ADR 0012's /health mcpToolNamePrefix and the release-parity decision's launcher-local identity were not observed.",
+        "resolution": "scenarios config.env.tool-prefix-health and config.env.local-instance-id (Go/Rust)"
+      },
+      {
+        "id": 4,
+        "finding": "The D13 evidence-redaction contract ran in every cycle but the cutover gate did not require it.",
+        "resolution": "added to the cutover gate's requireContracts and the manifest contracts"
+      }
+    ],
+    "outcome": "The invariant is preserved as written, with no product capability introduced and none retired. Its verifier is active and fails closed. The Host Agent, Platform, release and deployment owners' review of an actual cutover remains a separate decision, recorded as the ownerReview cutover evidence."
+  }
 }

@@ -349,5 +349,72 @@
     "stop": {}
    }
   ]
+ },
+ {
+  "id": "config.env.tool-prefix-health",
+  "surface": "config",
+  "owner": "config",
+  "anchors": [
+   "docs/adr/0012-mcp-tool-name-prefix.md",
+   "internal/transport/http.go:handleHealth"
+  ],
+  "fixture": "incus-empty",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_MCP_PREFIX_TOOL_NAMES": "true"
+     }
+    }
+   },
+   {
+    "as": "health",
+    "http": {
+     "method": "GET",
+     "path": "/health"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "startUnprefixed",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone"
+    }
+   },
+   {
+    "as": "healthUnprefixed",
+    "http": {
+     "method": "GET",
+     "path": "/health"
+    }
+   },
+   {
+    "as": "stopUnprefixed",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "sets": [
+    [
+     "trace"
+    ]
+   ]
+  }
  }
 ]
