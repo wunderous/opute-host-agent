@@ -65,9 +65,11 @@ def compare_spec(scenario: dict | None = None) -> dict:
                       "type": "rfc3339", "reason": "persisted task wall-clock time", "optional": True})
     # Inventory finding F-2: Go emits supportedTools in map-iteration order;
     # membership is the contract. A host tool reached through a provider
-    # callback persists it without a scenario step that declares the set.
+    # callback persists it without a scenario step that declares the set,
+    # and a plan run persists each node's output in its state.
     sets = [root + ["capability_invocations", "*", column, "$json", "structured", "supportedTools"]
             for column in ["result_json", "observation_json"]]
+    sets.append(root + ["plan_runs", "*", "state_json", "$json", "outputs", "*", "supportedTools"])
     spec = {"masks": masks, "sets": sets,
             "parseJson": [root + ["*", "*", column] for column in
                           ["task_snapshot_json", "result_json", "plan_json", "recipe_json", "state_json",

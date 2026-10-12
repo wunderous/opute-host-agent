@@ -891,7 +891,7 @@ fn execution_binding_json(
         "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
         "authorization": "admitted", "catalogRevision": revision,
         "reservationId": reservation.id,
-        "resourcePolicyRevision": crate::resource::POLICY_REVISION,
+        "resourcePolicyRevision": server.host.coordinator.policy_revision(),
     });
     if !generation.is_empty() {
         execution_binding["generationId"] = J::from(generation);
@@ -1199,7 +1199,7 @@ fn record_invocation(
         "tenantId": server.host.tenant_id, "admission": "tenant-resource-registry",
         "authorization": "admitted", "catalogRevision": catalog_snapshot.revision,
         "reservationId": reservation.id,
-        "resourcePolicyRevision": crate::resource::POLICY_REVISION,
+        "resourcePolicyRevision": server.host.coordinator.policy_revision(),
     });
     if !binding.resources.is_empty() {
         let resources: Vec<J> = binding

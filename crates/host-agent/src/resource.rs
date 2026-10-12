@@ -1096,6 +1096,15 @@ impl Coordinator {
         J::Object(totals)
     }
 
+    /// The policy revision admission records, as `NewCoordinator` resolves
+    /// it: the configured value, or the versioned default when empty.
+    pub fn policy_revision(&self) -> &str {
+        if self.policy_revision.is_empty() {
+            POLICY_REVISION
+        } else {
+            &self.policy_revision
+        }
+    }
     /// `Coordinator.Snapshot`: `CapacitySnapshot` with the embedded
     /// `PressureSnapshot` flattened (its `enforcement` is shadowed by the
     /// outer field, as Go's encoder does). The in-flight and queue counters
@@ -1197,7 +1206,7 @@ impl Coordinator {
         }
         out.insert(
             "policyRevision".into(),
-            J::from(self.policy_revision.clone()),
+            J::from(self.policy_revision()),
         );
         out.insert("observedLimits".into(), observed);
         out.insert("effectiveLimits".into(), limits(cpu, memory, disk, tasks));

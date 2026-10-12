@@ -249,3 +249,20 @@ class DatabaseCompanions(unittest.TestCase):
         self.assertFalse(result["diff"] or runner.stale_divergences(result))
         raw["b"]["observation"]["sqliteRows"]["state/state.db"]["tables"]["provider_generations"]["com.opute.fixture.other-3"]["status"] = "failed"
         self.assertTrue(shape.evaluate(declared, raw)["diff"])
+
+
+class PlanRunSupportedTools(unittest.TestCase):
+    """F-2: a plan run's persisted node output compares supportedTools as a set."""
+
+    def raw(self, a, b):
+        def side(tools):
+            state = json.dumps({"outputs": {"n1": {"supportedTools": tools}}})
+            tables = {"plan_runs": {"run": {"state_json": state}}}
+            return {"observation": {"sqlite": {"state/state.db": {"rowCounts": {"plan_runs": 1}}},
+                                    "sqliteRows": {"state/state.db": {"tables": tables}}, "steps": {}},
+                    "variables": {}}
+        return {"a": side(a), "b": side(b)}
+
+    def test_order_is_not_a_difference_but_membership_is(self):
+        self.assertFalse(shape.evaluate({}, self.raw(["x", "y"], ["y", "x"]))["diff"])
+        self.assertTrue(shape.evaluate({}, self.raw(["x", "y"], ["y", "z"]))["diff"])
