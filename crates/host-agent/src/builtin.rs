@@ -244,6 +244,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         incus_inventory(host),
         host_observation(host),
         host_files(host),
+        host_archives(host),
         catalog_service(),
         host_resources(host),
         tasks(server),
@@ -641,6 +642,36 @@ fn host_files(host: &crate::tools::Host) -> Service {
                 }),
             ),
         ],
+    }
+}
+
+/// M8a: verified archives extracted beneath the account home
+/// (`internal/domain/host/archive.go`).
+fn host_archives(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    Service {
+        id: "host-archives",
+        dependencies: &[],
+        operations: vec![(
+            "extract_host_archive",
+            op(move |call| {
+                let owner = crate::hostfiles::Owner {
+                    instance_id: &owner.0,
+                    owner_instance: &owner.1,
+                };
+                crate::hostarchive::extract_host_archive(
+                    &owner,
+                    text(call.args, "archivePath"),
+                    text(call.args, "destination"),
+                    text(call.args, "format"),
+                )
+                .map(|v| structured_result(v, Some("Verified host archive extracted.")))
+            }),
+        )],
     }
 }
 

@@ -1278,5 +1278,1617 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.archives.valid",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "put-basic",
+    "write": {
+     "path": "${SANDBOX}/home/in/basic.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "basic",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out/basic"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-gnu-long",
+    "write": {
+     "path": "${SANDBOX}/home/in/gnu-long.tar.zst",
+     "base64": "KLUv/WAAJ/UDALLEEBeAtToAQYf57/YfhmxGr2yCtFCHxcqjpIGvPukY4Xb6j5DyDMzS4DO2bbEuSmhVhJgJwEyt0Fq/zfl9xMdclGzYsiUUAJYh5+HT1nQAA2Q1AJAcJwIYdAWF84IGuwggDBApqAMqApAwgFTogOIApONW+KnNCgCAXTMBJQ=="
+    }
+   },
+   {
+    "as": "gnu-long",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/gnu-long.tar.zst",
+       "destination": "out/gnu-long"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-pax-long",
+    "write": {
+     "path": "${SANDBOX}/home/in/pax-long.tar.zst",
+     "base64": "KLUv/WAAJ00GAGIHGBqAqTpA9JEYojHgd2CjqLKpu4mUcSGLJcKSAos2+4SepRwShOEiNVi2po7ZZA561ai5jf6fk2y458piCCFXHllIEAxgcKohOurfCeUUCz/0da+3dfd3Yh1qCZ4aBLJkCSYg8AKaUMZ2/aeH+QrAwD8FQgMpW+YBrGNBn2mkIbEUJDYImZI0GiUciqRhWFZlnz0wgClLQEXbXSkMsBX4A5QC4jLSkQAw6Ebh/Gm2WwBBXwrWqh5IGEh1npJAmr5o/QksxspU6g=="
+    }
+   },
+   {
+    "as": "pax-long",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/pax-long.tar.zst",
+       "destination": "out/pax-long"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-legacy-rega",
+    "write": {
+     "path": "${SANDBOX}/home/in/legacy-rega.tar.zst",
+     "base64": "KLUv/WAACT0DAHQDb2xkLwAwMDAwNzU1MDAwADAwNjQzNgAgAHVzdGFyADAwAG9sZC9mADY0NDAwMDMANjYwNGFiYxEAleU/EGorHWMDhKIR4gGA6QqF86XBXgFYMJU5oE4AiWDBzwewAoBj5TI8AS0="
+    }
+   },
+   {
+    "as": "legacy-rega",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/legacy-rega.tar.zst",
+       "destination": "out/legacy-rega"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-sparse",
+    "write": {
+     "path": "${SANDBOX}/home/in/sparse.tar.zst",
+     "base64": "KLUv/WAADeUFAMKIHR5QhaoNKFhk8O40Ox7iDwbC7CAzQ779XjrhyCzId2TIMMwAyWsq+byBqiyi16+GGuHwOE0uyjqgPYjbLZtSQxwUxawjlhIkz9wktVTmJgVHq59j6q3HaYxd/NHx4gFgZWBg93pU9P+TZPl/dJ3gLlRsEBzrWAEYAPSBJxx7CqZgaVqoJwyoBiAzQDYwxEeAesUyQISIVwAgoIAcbFFpK16+yg7gjpxdmwPqAJCOW+GmNgCOlcuQCdQB"
+    }
+   },
+   {
+    "as": "sparse",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/sparse.tar.zst",
+       "destination": "out/sparse"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.archives.stream-faults",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "put-empty-tar",
+    "write": {
+     "path": "${SANDBOX}/home/in/empty-tar.tar.zst",
+     "base64": "KLUv/WAAA00AABAAAAEA+yuABQ=="
+    }
+   },
+   {
+    "as": "empty-tar",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/empty-tar.tar.zst",
+       "destination": "out/empty-tar"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-empty-frame",
+    "write": {
+     "path": "${SANDBOX}/home/in/empty-frame.tar.zst",
+     "base64": "KLUv/SAAAQAA"
+    }
+   },
+   {
+    "as": "empty-frame",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/empty-frame.tar.zst",
+       "destination": "out/empty-frame"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-zero-bytes",
+    "write": {
+     "path": "${SANDBOX}/home/in/zero-bytes.tar.zst",
+     "base64": ""
+    }
+   },
+   {
+    "as": "zero-bytes",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/zero-bytes.tar.zst",
+       "destination": "out/zero-bytes"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-not-zstd",
+    "write": {
+     "path": "${SANDBOX}/home/in/not-zstd.tar.zst",
+     "base64": "cGxhaW4gdGV4dCwgbm90IGEgenN0ZCBmcmFtZQo="
+    }
+   },
+   {
+    "as": "not-zstd",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/not-zstd.tar.zst",
+       "destination": "out/not-zstd"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-zstd-garbage",
+    "write": {
+     "path": "${SANDBOX}/home/in/zstd-garbage.tar.zst",
+     "base64": "KLUv/WAAAlUIAAQQAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wEAAP0D6poC"
+    }
+   },
+   {
+    "as": "zstd-garbage",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/zstd-garbage.tar.zst",
+       "destination": "out/zstd-garbage"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-truncated-zstd",
+    "write": {
+     "path": "${SANDBOX}/home/in/truncated-zstd.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zg=="
+    }
+   },
+   {
+    "as": "truncated-zstd",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/truncated-zstd.tar.zst",
+       "destination": "out/truncated-zstd"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-truncated-tar",
+    "write": {
+     "path": "${SANDBOX}/home/in/truncated-tar.tar.zst",
+     "base64": "KLUv/WAsEr0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6JiBQg0hR7ChQFWMDVMmOiGmJcnWdfkyCbEB1srsBEnzMGgAbGtACgFRBc8LEMstSmG6x46fCMfWRG9tpZgdoVmhGBS7kBRAwWJVHxgHGUKc0pw6Yrla8hysoOHYZnrAW"
+    }
+   },
+   {
+    "as": "truncated-tar",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/truncated-tar.tar.zst",
+       "destination": "out/truncated-tar"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-crc-corrupt",
+    "write": {
+     "path": "${SANDBOX}/home/in/crc-corrupt.tar.zst",
+     "base64": "KLUv/WQAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEtyZWUSg=="
+    }
+   },
+   {
+    "as": "crc-corrupt",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/crc-corrupt.tar.zst",
+       "destination": "out/crc-corrupt"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-bad-header-checksum",
+    "write": {
+     "path": "${SANDBOX}/home/in/bad-header-checksum.tar.zst",
+     "base64": "KLUv/WAAJwUHAELIGx5gRdQGAJb22OyijiDEHDRk/KGxdEX3jtSxA2CVfAfRPrluYovaIEqrWyVurBjqoioGYnkcEhLxjXVjgA5Q3E9e93vV5JSDoaAgjIVzOIuijYUFBD8O88fMBnpSwyTSWvzfw41ByOF/BNn/v7QWBysgEIMZSSN2/KIHARRw8eqODVAlOyJKS1Sp6/RjEmQDUke6G2DBxqwBsKEBWQAgKmhOnJjM8hTULXb8VDhWfeXWdnqzA5AVmlWBF3kBBAxW5SfjAByD/WdyeCm0LENYzcz5BGrhEQyA4tjL8ES1"
+    }
+   },
+   {
+    "as": "bad-header-checksum",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/bad-header-checksum.tar.zst",
+       "destination": "out/bad-header-checksum"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-zero-then-header",
+    "write": {
+     "path": "${SANDBOX}/home/in/zero-then-header.tar.zst",
+     "base64": "KLUv/WAAKfUGALKIHB5gRdsGAEYt3v5F/U/GbLSyTKGxdEX3Jl/dASmguAwPf31Z8z1v8CSmNZb6NXO5nMsSxynCJGjmn2uvAVoA69bol8/fXXgcDIUDYSwWtCCKZiAuIDjC1D9VFadJSpLAH5t+zkGFUKlaP/5Xiv8fE8M0YikgQIORotgB/NKDHAq4qOqODaCSHRGnJarUdfoxCbIB1enuBkiwMGsAfmhACwBaBc0JE5NZTiG7xY6fCsfUR25tp54doK3QjAq8yAsgYDAqJ+OLtAFWMEcdIB2seA9WcHDsMmzS++rEAg=="
+    }
+   },
+   {
+    "as": "zero-then-header",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/zero-then-header.tar.zst",
+       "destination": "out/zero-then-header"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-partial-magic",
+    "write": {
+     "path": "${SANDBOX}/home/in/partial-magic.tar.zst",
+     "base64": "KLU="
+    }
+   },
+   {
+    "as": "partial-magic",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/partial-magic.tar.zst",
+       "destination": "out/partial-magic"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-header-only",
+    "write": {
+     "path": "${SANDBOX}/home/in/header-only.tar.zst",
+     "base64": "KLUv/WA="
+    }
+   },
+   {
+    "as": "header-only",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/header-only.tar.zst",
+       "destination": "out/header-only"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-bitflip-middle",
+    "write": {
+     "path": "${SANDBOX}/home/in/bitflip-middle.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zhuFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "bitflip-middle",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/bitflip-middle.tar.zst",
+       "destination": "out/bitflip-middle"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-two-frames",
+    "write": {
+     "path": "${SANDBOX}/home/in/two-frames.tar.zst",
+     "base64": "KLUv/WAAByUEAHJFExpwadMByNpqARKnUzwh1wHQftNNqCCYXr0EGfdis9cyehAGgqNwFApSkAPiIAwgMKq6V3dNmiUlCUPKbP0ubcE0RVQ8NL4/IvtvymwBFABjQNVAxsAeCsYGyBZo5lTgAHkBQsBgQOVAxgFiDAWmNAfUASAdrPj5AFYAcKxchiegBSi1L/1gAB/9BABiRhQYoKcZAwBERLQ7+SxIVdGT1mK3ZL4r3oEyzVycpmBbgUbQ7iG69KjhCqY5/AnC5H8Mpu4v6VLsDpbIYQzKcCgoiN+fWfzfUruUQBDSA2zh6KYaAPwCehCAAi5cdccGyCoBHQ2YG2AQzJNm5ioAs5Uef4BQQVyuVCPEAwDTFQrnS5gEWEMDhAXmgDoSTABrPylAAACOlcsYmHy9Crg="
+    }
+   },
+   {
+    "as": "two-frames",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/two-frames.tar.zst",
+       "destination": "out/two-frames"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-skippable-first",
+    "write": {
+     "path": "${SANDBOX}/home/in/skippable-first.tar.zst",
+     "base64": "UCpNGAMAAABhYmMotS/9YAAn7QYA4ggdHmBF2wYARi3a2kX9T8ZstLJMobF8V/cmX90BKaC4DA//+LLme97gSY2xlfr1crmcuxTHKcIkaOafY68BWMBq1uiXz989EDkYCgjCWDCISRTMSFxAcISpf6ri4jRpURKptcYfm37OQYVQqTp+/K8U/z+m1jooIECDkaLYAfzSgxwKuKjqjg2gkh0RpyWq1HX6MQmyAdXp7gZIsDBrAH5oQAsAWgXNCROTWU4hu8WOnwrH1EdubaeeHaCt0IwKvMgLIGAwKreMA4yhTGmOOiD9rngPVnBw7DI8cS0="
+    }
+   },
+   {
+    "as": "skippable-first",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/skippable-first.tar.zst",
+       "destination": "out/skippable-first"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-skippable-truncated",
+    "write": {
+     "path": "${SANDBOX}/home/in/skippable-truncated.tar.zst",
+     "base64": "UCpNGB4AAABhYmM="
+    }
+   },
+   {
+    "as": "skippable-truncated",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/skippable-truncated.tar.zst",
+       "destination": "out/skippable-truncated"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-trailing-garbage",
+    "write": {
+     "path": "${SANDBOX}/home/in/trailing-garbage.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEtZ2FyYmFnZSBhZnRlciB0aGUgZnJhbWU="
+    }
+   },
+   {
+    "as": "trailing-garbage",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/trailing-garbage.tar.zst",
+       "destination": "out/trailing-garbage"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.archives.unsafe-entries",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "put-dotdot",
+    "write": {
+     "path": "${SANDBOX}/home/in/dotdot.tar.zst",
+     "base64": "KLUv/WAAJzUDAHQDb2sudHh0ADAwMDA2NDQwMDAwMDAyAAAwMDcxMDcAIDAAdXN0YXIAMG9rAC4uL2V2aWwxNjRlABAA+I/SAQhgH6iYDKgIEB4gO1YRyJPRB+pAgALiDakBIDkQAQwa4Fi5jE7ACA=="
+    }
+   },
+   {
+    "as": "dotdot",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/dotdot.tar.zst",
+       "destination": "out/dotdot"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-absolute",
+    "write": {
+     "path": "${SANDBOX}/home/in/absolute.tar.zst",
+     "base64": "KLUv/WAABf0BAFQCL2Ficy50eHQAMDAwMDY0NDAwMAAwMDczMjAAIDAAdXN0YXIAMAkAkMAPxBtSA0A6WPHzAawA4Fi5DE7gCA=="
+    }
+   },
+   {
+    "as": "absolute",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/absolute.tar.zst",
+       "destination": "out/absolute"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-inner-dotdot",
+    "write": {
+     "path": "${SANDBOX}/home/in/inner-dotdot.tar.zst",
+     "base64": "KLUv/WAAJ20CAAQDYS8uLmV2aWwudHh0ADAwMDA2NDQwMDAwMDAxAAAwMTAzMDIAIDAAdXN0YXIAMGUACgD7BfAIASqIN6QGgORABDBogGPlMoCbo+WI"
+    }
+   },
+   {
+    "as": "inner-dotdot",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/inner-dotdot.tar.zst",
+       "destination": "out/inner-dotdot"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-backslash",
+    "write": {
+     "path": "${SANDBOX}/home/in/backslash.tar.zst",
+     "base64": "KLUv/WAAJzUCALQCYVxiLnR4dAAwMDAwNjQ0MDAwMDAwMQAAMDA3MjEzACAwAHVzdGFyADBlAAkA+wXwCAEqiDekBoDkQAQwaIBj5TI5AS4="
+    }
+   },
+   {
+    "as": "backslash",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/backslash.tar.zst",
+       "destination": "out/backslash"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-dot",
+    "write": {
+     "path": "${SANDBOX}/home/in/dot.tar.zst",
+     "base64": "KLUv/WAABb0BAAQCLgAwMDAwNzU1MDAwADAwNjAyMwAgNQB1c3RhcgAwMAAIAPOA/wCQDlb8fAArADhWLvMTwAI="
+    }
+   },
+   {
+    "as": "dot",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/dot.tar.zst",
+       "destination": "out/dot"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-link-escape",
+    "write": {
+     "path": "${SANDBOX}/home/in/link-escape.tar.zst",
+     "base64": "KLUv/WAAJ/UBAHQCbAAwMDAwNjQ0MDAwADAwNjczMQAgMi4uLy4uL3gAdXN0YXIAMDAACADzBvBHgglg7ScFCADAsXKZnwAW"
+    }
+   },
+   {
+    "as": "link-escape",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/link-escape.tar.zst",
+       "destination": "out/link-escape"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-link-absolute",
+    "write": {
+     "path": "${SANDBOX}/home/in/link-absolute.tar.zst",
+     "base64": "KLUv/WAAJxUCALQCbAAwMDAwNjQ0MDAwADAxMDE2NwAgMi9ldGMvcGFzc3dkAHVzdGFyADAwAAgA8wbwR4FpYOEnAQgAwLFymZ8AFg=="
+    }
+   },
+   {
+    "as": "link-absolute",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/link-absolute.tar.zst",
+       "destination": "out/link-absolute"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-link-dotdot-inside",
+    "write": {
+     "path": "${SANDBOX}/home/in/link-dotdot-inside.tar.zst",
+     "base64": "KLUv/WAAJ+0BAGQCYS9sADAwMDA2NDQwMDAAMDA2NzEwACAyLi4vYgB1c3RhcgAwMAAIAPMG8AeDKWD3JxkIAsCxcpmeABE="
+    }
+   },
+   {
+    "as": "link-dotdot-inside",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/link-dotdot-inside.tar.zst",
+       "destination": "out/link-dotdot-inside"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-hardlink",
+    "write": {
+     "path": "${SANDBOX}/home/in/hardlink.tar.zst",
+     "base64": "KLUv/WAAJ8UCAPQCZgAwMDAwNjQ0MDAwMDAwMQAAMDA2MTA0ACAwAHVzdGFyADBmAGgAMDI1NAAgMWYOAP0B8OALqAaQGyA74cGE94GKEKCCeENqAEgORACDBjhWLvMTwAI="
+    }
+   },
+   {
+    "as": "hardlink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/hardlink.tar.zst",
+       "destination": "out/hardlink"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-fifo",
+    "write": {
+     "path": "${SANDBOX}/home/in/fifo.tar.zst",
+     "base64": "KLUv/WAAJ70BAAQCcAAwMDAwNjQ0MDAwADAwNjEyMwAgNgB1c3RhcgAwMAAIAPMG8AeAdLDi5wNYAcCxcpmfABY="
+    }
+   },
+   {
+    "as": "fifo",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/fifo.tar.zst",
+       "destination": "out/fifo"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-chardev",
+    "write": {
+     "path": "${SANDBOX}/home/in/chardev.tar.zst",
+     "base64": "KLUv/WAABb0BAAQCYwAwMDAwNjQ0MDAwADAwNjEwMwAgMwB1c3RhcgAwMAAIAPOA/wCQDlb8fAArADhWLvMTwAI="
+    }
+   },
+   {
+    "as": "chardev",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/chardev.tar.zst",
+       "destination": "out/chardev"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-global-pax",
+    "write": {
+     "path": "${SANDBOX}/home/in/global-pax.tar.zst",
+     "base64": "KLUv/WAAB8UCAELEDxiAxToA0UXwfbBHgIqOxDMRhITHBzI1TQEOEEW8ZBlrhkn0b6dvATgZ5yAg3j74/888/2+3h65CS4u2EgqoEggA7oG/zgElAUgDcIH2AXQr1/YoCAM="
+    }
+   },
+   {
+    "as": "global-pax",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/global-pax.tar.zst",
+       "destination": "out/global-pax"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.archives.corrupt-blocks",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "put-bitflip-early",
+    "write": {
+     "path": "${SANDBOX}/home/in/bitflip-early.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEZ32tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "bitflip-early",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/bitflip-early.tar.zst",
+       "destination": "out/bitflip-early"
+      }
+     }
+    }
+   },
+   {
+    "as": "put-bitflip-late",
+    "write": {
+     "path": "${SANDBOX}/home/in/bitflip-late.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjogp654D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "bitflip-late",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/bitflip-late.tar.zst",
+       "destination": "out/bitflip-late"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D20.corrupt-zstd-block"
+   ]
+  },
+  "expectations": [
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "bitflip-early",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    "equals": "Error: extract host archive: corrupt input: last value not power of two"
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "bitflip-early",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    "equals": "Error: extract host archive: zstd: Failed to parse block header: DecompressLiteralsError(HuffmanTableError(LeftoverIsNotAPowerOf2 { got: 3 }))"
+   },
+   {
+    "implementations": [
+     "go"
+    ],
+    "path": [
+     "steps",
+     "bitflip-late",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    "equals": "Error: extract host archive: unexpected literal count, want 12 bytes, but only 10 is available"
+   },
+   {
+    "implementations": [
+     "rust"
+    ],
+    "path": [
+     "steps",
+     "bitflip-late",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    "equals": "Error: extract host archive: zstd: Failed to parse block header: DecodeSequenceError(NotEnoughBytesForNumSequences)"
+   }
+  ]
+ },
+ {
+  "id": "host-domain.archives.over-existing",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "put-basic",
+    "write": {
+     "path": "${SANDBOX}/home/in/basic.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "put-overwrite",
+    "write": {
+     "path": "${SANDBOX}/home/in/overwrite.tar.zst",
+     "base64": "KLUv/WAAJ80DAMJEEBeQp+mEbagl9Pi8U8hYv9+fbFjshRSVAYbU2G33nOs60kJVMrEFIh1QZTKugetIdNLAAQTfmv1//0UFwgAZSiYGEwD9AfDAHyATAAs0J3kQZ8EFmYMVBM4LGu0iAAYmPw9UhAAFxBtSA0BygAG0CpyttNsm4AU="
+    }
+   },
+   {
+    "as": "put-symlink-over-file",
+    "write": {
+     "path": "${SANDBOX}/home/in/symlink-over-file.tar.zst",
+     "base64": "KLUv/WAAJz0CAAQDYXBwL1JFQURNRQAwMDAwNjQ0MDAwADAxMDY3MgAgMmJpbi9ydW4AdXN0YXIAMDAACADzBvBHgglg7ScFCADAsXIZm4AX"
+    }
+   },
+   {
+    "as": "put-file-over-symlink",
+    "write": {
+     "path": "${SANDBOX}/home/in/file-over-symlink.tar.zst",
+     "base64": "KLUv/WAAJ00CAOQCYXBwL2xhdGVzdAAwMDAwNjQ0MDAwMDAwMQAAMDA3NzMzACAwAHVzdGFyADBmAAkA+wXwCAEqiDekBoDkQAQwaIBj5TI2AS8="
+    }
+   },
+   {
+    "as": "put-through-symlink",
+    "write": {
+     "path": "${SANDBOX}/home/in/through-symlink.tar.zst",
+     "base64": "KLUv/WAAJ0UCANQCdmlhL3gudHh0ADAwMDA2NDQwMDAwMDAxAAAwMDc1MjMAIDAAdXN0YXIAMHgACQD7BfAIASqIN6QGgORABDBogGPlMjcBJA=="
+    }
+   },
+   {
+    "as": "outside",
+    "mkdir": {
+     "path": "${SANDBOX}/outside"
+    }
+   },
+   {
+    "as": "first",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "overwrite",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/overwrite.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "symlinkOverFile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/symlink-over-file.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "fileOverSymlink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/file-over-symlink.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "viaLink",
+    "symlink": {
+     "path": "${SANDBOX}/home/out/via",
+     "target": "${SANDBOX}/outside"
+    }
+   },
+   {
+    "as": "throughSymlink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/through-symlink.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.archives.arguments",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "put-basic",
+    "write": {
+     "path": "${SANDBOX}/home/in/basic.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "dirArchive",
+    "mkdir": {
+     "path": "${SANDBOX}/home/in/dir.tar.zst"
+    }
+   },
+   {
+    "as": "fileDest",
+    "write": {
+     "path": "${SANDBOX}/home/plain",
+     "content": "x"
+    }
+   },
+   {
+    "as": "outside",
+    "mkdir": {
+     "path": "${SANDBOX}/outside"
+    }
+   },
+   {
+    "as": "destLink",
+    "symlink": {
+     "path": "${SANDBOX}/home/linkdest",
+     "target": "${SANDBOX}/outside"
+    }
+   },
+   {
+    "as": "zip",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out",
+       "format": "zip"
+      }
+     }
+    }
+   },
+   {
+    "as": "formatCase",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "fmt",
+       "format": " TAR.ZST "
+      }
+     }
+    }
+   },
+   {
+    "as": "missing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/none.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "dirArchive",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/dir.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "archiveOutside",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "/etc/hostname",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "destOutside",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "../escape"
+      }
+     }
+    }
+   },
+   {
+    "as": "destIsFile",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "plain/sub"
+      }
+     }
+    }
+   },
+   {
+    "as": "destThroughLink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "linkdest/x"
+      }
+     }
+    }
+   },
+   {
+    "as": "noArchive",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "noDestination",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": ""
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.archives.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/archive.go:ExtractHostArchive",
+   "internal/tools/dispatch_host.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "put-basic",
+    "write": {
+     "path": "${SANDBOX}/home/in/basic.tar.zst",
+     "base64": "KLUv/WAAJ+0GAOIIHR5gRdsGAEYt2tpF/U/GbLSyTKGxfFf3Jl/dASmguAwP//iy5nve4EmNsZX69XK5nLsUxynCJGjmn2OvAVjAatbol8/fPRA5GAoIwlgwiEkUzEhcQHCEqX+q4uI0aVESqbXGH5t+zkGFUKk6fvyvFP8/ptY6KCBAg5Gi2AH80oMcCrio6o4NoJIdEaclqtR1+jEJsgHV6e4GSLAwawB+aEALAFoFzQkTk1lOIbvFjp8Kx9RHbm2nnh2grdCMCrzICyBgMCq3jAOMoUxpjjog/a54D1ZwcOwyPHEt"
+    }
+   },
+   {
+    "as": "extract",
+    "mcp": {
+     "method": "tools/call",
+     "name": "extract_host_archive",
+     "params": {
+      "name": "extract_host_archive",
+      "arguments": {
+       "archivePath": "in/basic.tar.zst",
+       "destination": "out"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
  }
 ]

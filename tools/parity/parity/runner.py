@@ -9,6 +9,7 @@ re-checks.
 
 from __future__ import annotations
 
+import base64
 import concurrent.futures
 import contextlib
 import fcntl
@@ -299,7 +300,10 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 spec = step["write"]
                 path = Path(sandbox.expand(spec["path"]))
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(sandbox.expand(spec.get("content", "")))
+                if "base64" in spec:
+                    path.write_bytes(base64.b64decode(spec["base64"]))
+                else:
+                    path.write_text(sandbox.expand(spec.get("content", "")))
                 path.chmod(int(spec.get("mode", "0644"), 8))
                 steps[label] = {"wrote": spec["path"]}
             elif "symlink" in step:

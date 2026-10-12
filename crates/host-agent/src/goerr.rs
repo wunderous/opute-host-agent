@@ -138,6 +138,21 @@ pub fn quote(s: &str) -> String {
     out
 }
 
+/// Go `%q` for a byte string: valid UTF-8 runs as [`quote`], each invalid
+/// byte as `\xNN`.
+pub fn quote_bytes(b: &[u8]) -> String {
+    let mut out = String::from("\"");
+    for chunk in b.utf8_chunks() {
+        let valid = quote(chunk.valid());
+        out.push_str(&valid[1..valid.len() - 1]);
+        for byte in chunk.invalid() {
+            out.push_str(&format!("\\x{byte:02x}"));
+        }
+    }
+    out.push('"');
+    out
+}
+
 /// Go `strconv.ParseFloat(s, 64)` for decimal input (signs, exponents,
 /// `inf`, `infinity`, `nan`). Hexadecimal floats and digit separators are
 /// rejected here; no capacity argument uses them.

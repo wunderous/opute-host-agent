@@ -174,3 +174,28 @@ class SubstituteTest(unittest.TestCase):
         # boundary check alone would still match and corrupt the hash.
         text = "d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98"
         self.assertEqual(canon.substitute(text, {"PORT": "20331"}), text)
+
+
+class KeepPrefixTest(unittest.TestCase):
+    """D20: only the text after a declared prefix is the declared difference."""
+
+    REGISTRY = {"tail": {"id": "tail", "decision": "D20", "reason": "r",
+                         "path": ["steps", "*", "text"], "keepPrefix": "Error: x: "}}
+
+    def test_text_after_the_prefix_is_dropped(self):
+        a = {"steps": {"s": {"text": "Error: x: go reason"}}}
+        b = {"steps": {"s": {"text": "Error: x: rust reason"}}}
+        a2, b2, rec = canon.apply_divergences(a, b, ["tail"], self.REGISTRY)
+        self.assertEqual(canon.diff(a2, b2), [])
+        self.assertEqual(rec, [{"id": "tail", "decision": "D20", "stale": False}])
+
+    def test_text_without_the_prefix_stays_a_diff(self):
+        a = {"steps": {"s": {"text": "Error: x: reason"}}}
+        b = {"steps": {"s": {"text": "Error: y: reason"}}}
+        a2, b2, _ = canon.apply_divergences(a, b, ["tail"], self.REGISTRY)
+        self.assertNotEqual(canon.diff(a2, b2), [])
+
+    def test_identical_tails_are_stale(self):
+        a = {"steps": {"s": {"text": "Error: x: same"}}}
+        _, _, rec = canon.apply_divergences(a, {"steps": {"s": {"text": "Error: x: same"}}}, ["tail"], self.REGISTRY)
+        self.assertTrue(rec[0]["stale"])

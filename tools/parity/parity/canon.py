@@ -375,7 +375,14 @@ def _split(value: Any, rule: dict) -> tuple[Any, Any]:
         lines = value.split("\n")
         return ("\n".join(x for x in lines if needle not in x),
                 [x for x in lines if needle in x])
-    raise DivergenceError(f"divergence {rule.get('id')} has no drop, dropKeys or dropLines")
+    if "keepPrefix" in rule:
+        # A string keeps only its declared prefix; the rest is the declared
+        # difference. A string without the prefix stays compared whole.
+        prefix = rule["keepPrefix"]
+        if not isinstance(value, str) or not value.startswith(prefix):
+            return value, ""
+        return prefix, value[len(prefix):]
+    raise DivergenceError(f"divergence {rule.get('id')} has no drop, dropKeys, dropLines or keepPrefix")
 
 
 def load_divergences(path: Any) -> dict[str, dict]:
@@ -384,8 +391,8 @@ def load_divergences(path: Any) -> dict[str, dict]:
         for key in ("id", "decision", "reason", "path"):
             if not rule.get(key):
                 raise DivergenceError(f"divergence {rule.get('id')!r} has no {key}")
-        if sum(k in rule for k in ("drop", "dropKeys", "dropLines", "dropValueDeep")) != 1:
-            raise DivergenceError(f"divergence {rule['id']} needs exactly one of drop, dropKeys, dropLines, dropValueDeep")
+        if sum(k in rule for k in ("drop", "dropKeys", "dropLines", "dropValueDeep", "keepPrefix")) != 1:
+            raise DivergenceError(f"divergence {rule['id']} needs exactly one of drop, dropKeys, dropLines, dropValueDeep, keepPrefix")
         if rule["id"] in rules:
             raise DivergenceError(f"duplicate divergence {rule['id']}")
         rules[rule["id"]] = rule

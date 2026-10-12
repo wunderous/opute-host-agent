@@ -111,6 +111,14 @@
    "status": "approved",
    "summary": "Rust publishes provider-neutral names for eight host tools (and packageName for incusPackage); the Go names stay hidden, deprecated aliases until cutover"
   },
+  "D20": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/zstd-corrupt-block-error-text",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D20)",
+   "status": "approved",
+   "summary": "For a corrupt compressed zstd block, extract_host_archive keeps Go's failure, prefix and tree, but the text after 'extract host archive: ' is the Rust decoder's own"
+  },
   "D8": {
    "approvedBy": "owner",
    "change": "openspec/changes/secure-oauth-issuance",
@@ -768,6 +776,77 @@
    "id": "host-domain.files.shared-owner-matches",
    "owner": "host",
    "scenario": "host-domain.files.shared-owner-matches",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.valid",
+   "owner": "host",
+   "scenario": "host-domain.archives.valid",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.stream-faults",
+   "owner": "host",
+   "scenario": "host-domain.archives.stream-faults",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.unsafe-entries",
+   "owner": "host",
+   "scenario": "host-domain.archives.unsafe-entries",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.corrupt-blocks",
+   "owner": "host",
+   "scenario": "host-domain.archives.corrupt-blocks",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.over-existing",
+   "owner": "host",
+   "scenario": "host-domain.archives.over-existing",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.arguments",
+   "owner": "host",
+   "scenario": "host-domain.archives.arguments",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.archives.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.archives.shared-owner-refused",
    "surface": "host-domain"
   },
   {
