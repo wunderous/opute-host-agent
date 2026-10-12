@@ -312,7 +312,10 @@ def callback_case(id,callbacks,extra=()):
             "tools":tools(**{BRIDGE:{"responses":replies,"default":ok({"bridged":True})}})}},
         WRITE,install("install"),wait("installed"),task_done("installTask","RUN_ID")]+
         [step for i in range(len(callbacks)) for step in (dict(IDLE,**{"as":"idle%d"%i}),bridge_call("bridge%d"%i,"BRIDGE%d"%i),task_done("bridged%d"%i,"BRIDGE%d"%i))]+
-        list(extra)+[{"as":"requests","providerRequests":{"stub":"provider"}},stateq("state"),{"as":"stop","stop":{}}])
+        # tasks/get reports a bridged task complete before Go writes its
+        # operation row's final status; the durable read waits for it.
+        list(extra)+[{"as":"requests","providerRequests":{"stub":"provider"}},
+        stateq("state",until={"query":"operations","path":[-1,"status"],"in":["completed","failed","cancelled"]}),{"as":"stop","stop":{}}])
 READ={"tool":"inspect_host_file","arguments":{"path":"~/.fixture-marker"}}
 cases.append(callback_case("callback.host-tool",[READ]))
 cases.append(callback_case("callback.no-delegation",[dict(READ,token="none")]))
