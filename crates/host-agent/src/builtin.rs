@@ -246,6 +246,11 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_files(host),
         host_archives(host),
         host_tools(host),
+        host_exec(host),
+        host_services(host),
+        bridge(host),
+        container_engine(),
+        instance_exec(host),
         host_artifacts(host),
         catalog_service(),
         host_resources(host),
@@ -726,6 +731,225 @@ fn host_artifacts(host: &crate::tools::Host) -> Service {
                 }),
             ),
         ],
+    }
+}
+
+/// M8a: caller-declared host commands in a workload unit, and the internal
+/// guest exec on a bound instance.
+fn host_exec(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let shell_env = host.env.clone();
+    let command_env = host.env.clone();
+    let incus = host.incus.clone();
+    Service {
+        id: "host-exec",
+        dependencies: &[],
+        operations: vec![
+            (
+                "agent_shell",
+                op(move |call| {
+                    crate::hostcommand::run_host_command(
+                        &shell_env,
+                        call.ctx,
+                        call.args,
+                        int_field(call.args, "timeoutMs"),
+                    )
+                }),
+            ),
+            (
+                "run_host_command",
+                op(move |call| {
+                    crate::hostcommand::run_host_command(
+                        &command_env,
+                        call.ctx,
+                        call.args,
+                        int_field(call.args, "timeoutMs"),
+                    )
+                }),
+            ),
+            (
+                "exec_command",
+                op(move |call| {
+                    let out = crate::hostcommand::exec_command(
+                        &incus,
+                        &call.binding.provider_instance_name(),
+                        text(call.args, "command"),
+                        &string_slice(call.args, "args"),
+                        int_field(call.args, "timeout"),
+                    )?;
+                    let output = out["output"].as_str().unwrap_or("").to_string();
+                    Ok(structured_result(out, Some(&output)))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8a: the typed guest command on a resolved `vm:` or `container:` URI.
+fn instance_exec(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let resolve = crate::admission::resolver(host);
+    let incus = host.incus.clone();
+    Service {
+        id: "instance-exec",
+        dependencies: &[],
+        operations: vec![(
+            "run_instance_command",
+            op(move |call| {
+                let out = crate::hostcommand::run_instance_command(
+                    &resolve,
+                    &incus,
+                    call.ctx,
+                    text(call.args, "uri"),
+                    text(call.args, "command"),
+                    &string_slice(call.args, "args"),
+                    raw_text(call.args, "stdin"),
+                    int_field(call.args, "timeoutMs"),
+                )?;
+                let text = format!("Executed command on {}.", out["uri"].as_str().unwrap_or(""));
+                Ok(structured_result(out, Some(&text)))
+            }),
+        )],
+    }
+}
+
+/// M8a: host service lifecycle through the matching systemd manager.
+fn host_services(host: &crate::tools::Host) -> Service {
+    use crate::hostservice as svc;
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let env = host.env.clone();
+    let (o1, o2, o3) = (owner.clone(), owner.clone(), owner);
+    let (e1, e2, e3, e4) = (env.clone(), env.clone(), env.clone(), env);
+    Service {
+        id: "host-services",
+        dependencies: &[],
+        operations: vec![
+            (
+                "restart_host_service",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &o1.0,
+                        owner_instance: &o1.1,
+                    };
+                    let out =
+                        svc::restart_host_service(&e1, &owner, text(call.args, "serviceName"))?;
+                    let text = format!(
+                        "Restarted service '{}'.",
+                        out["serviceName"].as_str().unwrap_or("")
+                    );
+                    Ok(structured_result(out, Some(&text)))
+                }),
+            ),
+            (
+                "set_host_service_state",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &o2.0,
+                        owner_instance: &o2.1,
+                    };
+                    let service = binding_or(call, "serviceName");
+                    let scope = binding_or(call, "scope");
+                    let out = svc::set_host_service_state(
+                        &e2,
+                        &owner,
+                        &service,
+                        text(call.args, "state"),
+                        &scope,
+                    )?;
+                    let text = format!(
+                        "Applied service state '{}' to '{}'.",
+                        out["state"].as_str().unwrap_or(""),
+                        out["serviceName"].as_str().unwrap_or("")
+                    );
+                    Ok(structured_result(out, Some(&text)))
+                }),
+            ),
+            (
+                "ensure_host_service_supervisor",
+                op(move |call| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &o3.0,
+                        owner_instance: &o3.1,
+                    };
+                    svc::ensure_host_service_supervisor(&e3, &owner, text(call.args, "scope"))
+                        .map(|v| structured_result(v, Some("Host service supervisor is ready.")))
+                }),
+            ),
+            (
+                "inspect_host_service_supervisor",
+                op(move |call| {
+                    svc::inspect_host_service_supervisor(&e4, text(call.args, "scope"))
+                        .map(|v| structured_result(v, Some("Host service supervisor inspected.")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// `serviceNameFromBinding` / `serviceScopeFromBinding`: the argument, else
+/// the bound host service's coordinate.
+fn binding_or(call: &Invocation, key: &str) -> String {
+    let value = text(call.args, key);
+    if !value.is_empty() {
+        return value.to_string();
+    }
+    call.binding
+        .coordinate(key)
+        .and_then(J::as_str)
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
+}
+
+/// M8a: the platform bridge probe and its recovery by unit restart.
+fn bridge(host: &crate::tools::Host) -> Service {
+    use crate::hostservice as svc;
+    use crate::tools::structured_result;
+    let owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let (diagnose_env, recover_env) = (host.env.clone(), host.env.clone());
+    Service {
+        id: "bridge",
+        dependencies: &["host-services"],
+        operations: vec![
+            (
+                "diagnose_bridge",
+                op(move |_| {
+                    let out = svc::diagnose_bridge(&diagnose_env);
+                    let text = svc::bridge_text(&out);
+                    Ok(structured_result(out, Some(&text)))
+                }),
+            ),
+            (
+                "recover_bridge",
+                op(move |_| {
+                    let owner = crate::hostfiles::Owner {
+                        instance_id: &owner.0,
+                        owner_instance: &owner.1,
+                    };
+                    let out = svc::recover_bridge(&recover_env, &owner)?;
+                    let text = format!(
+                        "Attempted bridge recovery by restarting '{}'.",
+                        out["bridgeProcess"]["command"].as_str().unwrap_or("")
+                    );
+                    Ok(structured_result(out, Some(&text)))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8a: the container engine an Incus host refuses.
+fn container_engine() -> Service {
+    Service {
+        id: "container-engine",
+        dependencies: &[],
+        operations: vec![("ensure_docker", op(|_| crate::hostservice::ensure_docker()))],
     }
 }
 

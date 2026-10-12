@@ -158,6 +158,17 @@ fn registry_lookup(host: &Host, uri: &Uri) -> Result<Option<ResourceRecord>, Str
     store.get_resource(uri)
 }
 
+/// The resource-resolution seam a built-in service is given: canonical URI
+/// and wanted type in, registry coordinates out.
+pub type Resolver =
+    std::sync::Arc<dyn Fn(&str, &str) -> Result<(Uri, Map<String, J>), String> + Send + Sync>;
+
+/// `Service.ResolveResource` as a seam.
+pub fn resolver(host: &Host) -> Resolver {
+    let host = host.clone();
+    std::sync::Arc::new(move |uri: &str, want: &str| resolve_resource(&host, uri, want))
+}
+
 /// `Shared.ResolveResource` with the Host service's adopter.
 pub fn resolve_resource(
     host: &Host,

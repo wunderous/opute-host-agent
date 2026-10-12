@@ -87,6 +87,22 @@ pub fn run_command_until(
     deadline: Option<Instant>,
     timeout: Duration,
 ) -> CommandResult {
+    run_command_with(env, argv, None, deadline, timeout, None)
+}
+
+/// `runCommandContext` in full: optional stdin (kept off argv), the
+/// effective deadline, the reported `timeout`, and the caller's context.
+/// An expired deadline (ours or the caller's) reports a timeout; a caller
+/// cancellation kills the process group, and a child that still exited 0
+/// is reported as cancelled.
+pub fn run_command_with(
+    env: &Env,
+    argv: &[String],
+    stdin: Option<&[u8]>,
+    deadline: Option<Instant>,
+    timeout: Duration,
+    ctx: Option<&crate::plan::runner::RunCtx>,
+) -> CommandResult {
     if argv.is_empty() {
         return CommandResult {
             exit_code: 1,
@@ -114,7 +130,11 @@ pub fn run_command_until(
     cmd.args(&argv[1..])
         .env_clear()
         .envs(command_env.pairs())
-        .stdin(Stdio::null())
+        .stdin(if stdin.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .process_group(0);
@@ -132,6 +152,14 @@ pub fn run_command_until(
             }
         }
     };
+    let writer = stdin.map(|input| {
+        let mut pipe = child.stdin.take().expect("piped stdin");
+        let input = input.to_vec();
+        std::thread::spawn(move || {
+            use std::io::Write;
+            let _ = pipe.write_all(&input);
+        })
+    });
     let mut out_pipe = child.stdout.take().expect("piped stdout");
     let mut err_pipe = child.stderr.take().expect("piped stderr");
     let out_reader = std::thread::spawn(move || {
@@ -145,19 +173,32 @@ pub fn run_command_until(
         s
     });
     let mut timed_out = false;
+    let mut cancelled = false;
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Some(status),
-            Ok(None) if deadline.is_some_and(|d| Instant::now() >= d) => {
-                timed_out = true;
-                let pgid = nix::unistd::Pid::from_raw(child.id() as i32);
-                let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
-                break child.wait().ok();
+            Ok(None) => {
+                let expired = deadline.is_some_and(|d| Instant::now() >= d);
+                let caller = if expired {
+                    None
+                } else {
+                    ctx.and_then(|c| c.err())
+                };
+                if expired || caller.is_some() {
+                    timed_out = expired || caller.as_deref() == Some("context deadline exceeded");
+                    cancelled = !timed_out;
+                    let pgid = nix::unistd::Pid::from_raw(child.id() as i32);
+                    let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
+                    break child.wait().ok();
+                }
+                std::thread::sleep(Duration::from_millis(5));
             }
-            Ok(None) => std::thread::sleep(Duration::from_millis(5)),
             Err(_) => break None,
         }
     };
+    if let Some(writer) = writer {
+        let _ = writer.join();
+    }
     let stdout = String::from_utf8_lossy(&out_reader.join().unwrap_or_default()).into_owned();
     let mut stderr = String::from_utf8_lossy(&err_reader.join().unwrap_or_default()).into_owned();
     if timed_out {
@@ -174,7 +215,14 @@ pub fn run_command_until(
             stderr,
         };
     }
-    let exit_code = status.and_then(|s| s.code()).unwrap_or(-1);
+    let mut exit_code = status.and_then(|s| s.code()).unwrap_or(-1);
+    if cancelled && exit_code == 0 {
+        exit_code = 130;
+        if !stderr.is_empty() {
+            stderr.push('\n');
+        }
+        stderr.push_str("Error: Command cancelled");
+    }
     CommandResult {
         exit_code,
         stdout,
@@ -182,18 +230,45 @@ pub fn run_command_until(
     }
 }
 
-/// `time.Duration.String` for whole seconds.
-fn go_duration(d: Duration) -> String {
+/// `time.Duration.String`.
+pub fn go_duration(d: Duration) -> String {
+    let nanos = d.as_nanos();
+    if nanos == 0 {
+        return "0s".into();
+    }
+    // Below one second Go switches to the largest unit that keeps an
+    // integer part, with trailing zeros trimmed from the fraction.
+    let frac = |value: u128, unit: u128| {
+        let whole = value / unit;
+        let rest = value % unit;
+        if rest == 0 {
+            return whole.to_string();
+        }
+        let digits = unit.to_string().len() - 1;
+        let fraction = format!("{rest:0digits$}");
+        format!("{whole}.{}", fraction.trim_end_matches('0'))
+    };
+    if nanos < 1_000 {
+        return format!("{nanos}ns");
+    }
+    if nanos < 1_000_000 {
+        return format!("{}µs", frac(nanos, 1_000));
+    }
+    if nanos < 1_000_000_000 {
+        return format!("{}ms", frac(nanos, 1_000_000));
+    }
     let secs = d.as_secs();
+    let seconds = frac(
+        u128::from(secs % 60) * 1_000_000_000 + u128::from(d.subsec_nanos()),
+        1_000_000_000,
+    );
     if secs >= 3600 {
-        let (h, m, s) = (secs / 3600, secs % 3600 / 60, secs % 60);
-        return format!("{h}h{m}m{s}s");
+        format!("{}h{}m{seconds}s", secs / 3600, secs % 3600 / 60)
+    } else if secs >= 60 {
+        format!("{}m{seconds}s", secs / 60)
+    } else {
+        format!("{seconds}s")
     }
-    if secs >= 60 {
-        let (m, s) = (secs / 60, secs % 60);
-        return format!("{m}m{s}s");
-    }
-    format!("{secs}s")
 }
 
 fn is_wsl(env: &Env) -> bool {

@@ -522,6 +522,187 @@ cases += [
         STOP], PREPARE + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
 ]
 
+# Commands. A valid host command would reach the absolute
+# /usr/bin/systemd-run, so T1 covers only the refusals that precede the
+# workload unit; execution is a T2 case. Guest commands run through the
+# recorded incus shim, which also records stdin by hash.
+EXEC = ["internal/domain/host/exec_command.go:RunInstanceCommandContext",
+        "internal/domain/host/exec_command.go:ExecCommand",
+        "internal/domain/incus/vm_lifecycle.go:RunVMExecContext",
+        "internal/tools/dispatch_host.go"]
+SHELL = ["internal/tools/dispatch_unassigned.go", "internal/domain/host/host_service.go:RunWorkloadCommandContext"]
+C1 = "container:local:worker-01"
+cases += [
+    scenario("exec.host-refusals", [
+        serve(),
+        task_call("blank", "run_host_command", {"command": "   "}),
+        task_call("missing", "run_host_command", {}),
+        task_call("negative", "run_host_command", {"command": "true", "timeoutMs": -1}),
+        task_call("tooLong", "run_host_command", {"command": "true", "timeoutMs": 7200001}),
+        call("shellBlank", "agent_shell", {"command": " "}),
+        call("shellNegative", "agent_shell", {"command": "true", "timeoutMs": -1}),
+        call("shellTooLong", "agent_shell", {"command": "true", "timeoutMs": 7200001}),
+        call("shellNotString", "agent_shell", {"command": 7}),
+        STOP], SHELL),
+    with_fixture(scenario("exec.instance", [
+        serve(),
+        call("hello", "run_instance_command", {"uri": C1, "command": " echo ", "args": ["hello"]}),
+        call("stdin", "run_instance_command", {"uri": C1, "command": "cat", "stdin": "secret-input\n"}),
+        call("fails", "run_instance_command", {"uri": C1, "command": "false"}),
+        call("stderr", "run_instance_command", {"uri": C1, "command": "warn", "timeoutMs": 1500}),
+        call("vm", "run_instance_command", {"uri": "vm:local:vm-01", "command": "uname", "args": ["-a", "--x"]}),
+        call("wrongKind", "run_instance_command", {"uri": "vm:local:worker-01", "command": "true"}),
+        call("absent", "run_instance_command", {"uri": "container:local:nobody", "command": "true"}),
+        call("otherTenant", "run_instance_command", {"uri": "container:other:worker-01", "command": "true"}),
+        call("badUri", "run_instance_command", {"uri": "worker-01", "command": "true"}),
+        call("blankCommand", "run_instance_command", {"uri": C1, "command": " "}),
+        call("execMissingName", "exec_command", {"command": "echo"}),
+        call("execNamed", "exec_command", {"name": "worker-01", "command": "echo", "args": ["hello"]}),
+        STOP], EXEC, collect=("trace",)), "incus-exec"),
+    scenario("exec.instance-no-provider", [
+        serve(),
+        call("noIncus", "run_instance_command", {"uri": C1, "command": "true"}),
+        STOP], EXEC, collect=("trace",)),
+]
+
+# Services. The service manager is the absolute /usr/bin/systemctl: user-
+# scope changes and restarts would act on the developer's own managers, so
+# T1 covers them only up to validation (T2 runs them). System scope goes
+# through the recorded sudo shim; linger through the loginctl shim. The
+# supervisor's final user-bus check and is-system-running are reads of the
+# real managers, identical for both twins.
+SERVICE = ["internal/domain/host/host_service.go", "internal/domain/host/types.go",
+           "internal/tools/dispatch_unassigned.go"]
+BRIDGE = ["internal/domain/host/host_service.go:DiagnoseBridge", "internal/domain/host/types.go:probeBridgeHealth",
+          "internal/domain/host/probe.go:probeTCPPort"]
+
+
+# A real system unit, adopted by a read of the system manager; the state
+# change itself goes through the sudo shim. Every case keeps system scope:
+# user scope would reach the real user manager.
+DBUS = "host-service:local:system/dbus.service"
+
+
+def state(as_, service, st, scope="system", uri=DBUS):
+    args = {"state": st} if uri is None else {"uri": uri, "state": st}
+    if service is not None:
+        args["serviceName"] = service
+    if scope is not None:
+        args["scope"] = scope
+    return call(as_, "set_host_service_state", args)
+
+
+def plain_stub(responses, default={"status": 404, "body": "missing"}):
+    return {"as": "stub", "httpStub": {"responses": responses, "default": default}}
+
+
+HEALTHY = {"status": 200, "body": '{"database":{"status":"healthy"},"lastHeartbeatAt":"2026-01-01T00:00:00Z"}'}
+BRIDGE_MASKS = [{"path": ["steps", "*", "body", "result", "structuredContent", "checkedAt"], "type": "rfc3339",
+                 "reason": TS, "optional": True},
+                {"path": ["steps", "*", "body", "result", "structuredContent", "bridgePort", "port"],
+                 "type": "non-negative-int", "optional": True,
+                 "reason": "the stub listens on a freshly allocated ephemeral port per side"},
+                ]
+
+
+def bridge_case(id_, steps):
+    case = scenario(id_, steps, BRIDGE, collect=("trace",))
+    # diagnose_bridge's text is its JSON, holding the per-side timestamp
+    # (and stub port); its structured content is compared field by field.
+    texts = [{"path": ["steps", step["as"], "body", "result", "content", 0, "text"], "type": "string",
+              "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"}
+             for step in case["steps"] if step.get("mcp", {}).get("name") == "diagnose_bridge"]
+    case["compare"]["masks"] = MASKS + BRIDGE_MASKS + texts
+    return case
+
+
+cases += [
+    with_fixture(scenario("services.system-state", [
+        shims_only(),
+        state("start", "web.service", "start"),
+        state("upper", "web.service", "Start"),
+        state("restart", "web.service", "restart"),
+        state("stopFails", "bad.service", "stop"),
+        state("silentFails", "quiet.service", "enable"),
+        state("badState", "web.service", "reload"),
+        state("badScope", "web.service", "start", scope="global"),
+        state("badName", "web service", "start"),
+        state("blankName", " ", "start"),
+        state("bound", None, "start", scope=None),
+        state("notFound", None, "start", uri="host-service:local:system/parity-absent.service"),
+        state("noUri", "web.service", "start", uri=None),
+        STOP], SERVICE), "host-services"),
+    with_fixture(scenario("services.reload-fails", [
+        shims_only(), state("reload", "web.service", "start"), STOP], SERVICE), "host-services-reload-fails"),
+    scenario("services.refusals", [
+        shims_only(),
+        call("restartBlank", "restart_host_service", {"uri": DBUS, "serviceName": " "}),
+        call("restartBad", "restart_host_service", {"uri": DBUS, "serviceName": "web;reboot"}),
+        call("restartNoUri", "restart_host_service", {"serviceName": "web.service"}),
+        call("badState", "set_host_service_state", {"uri": DBUS, "state": "kill"}),
+        call("supervisorScope", "ensure_host_service_supervisor", {"scope": "machine"}),
+        call("inspectScope", "inspect_host_service_supervisor", {"scope": "machine"}),
+        call("docker", "ensure_docker", {}),
+        call("k3d", "ensure_k3d", {}),
+        STOP], SERVICE),
+    scenario("services.shared-owner-refused", [
+        shims_only(OPUTE_SHARED_HOST_OWNER_INSTANCE="parity-other-instance"),
+        call("restart", "restart_host_service", {"uri": DBUS, "serviceName": "web.service"}),
+        state("state", "web.service", "start"),
+        call("supervisor", "ensure_host_service_supervisor", {"scope": "system"}),
+        call("recover", "recover_bridge", {}),
+        STOP], SERVICE + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
+    with_fixture(scenario("services.supervisor-linger", [
+        shims_only(USER="parity-user"),
+        call("ensure", "ensure_host_service_supervisor", {}),
+        call("inspect", "inspect_host_service_supervisor", {"scope": "USER"}),
+        call("system", "inspect_host_service_supervisor", {"scope": "system"}),
+        call("systemEnsure", "ensure_host_service_supervisor", {"scope": "system"}),
+        STOP], SERVICE), "host-services"),
+    with_fixture(scenario("services.supervisor-sudo", [
+        shims_only(USER="sudo-user"), call("ensure", "ensure_host_service_supervisor", {}), STOP], SERVICE),
+        "host-services"),
+    with_fixture(scenario("services.supervisor-denied", [
+        shims_only(USER="denied-user"),
+        call("ensure", "ensure_host_service_supervisor", {}),
+        call("inspect", "inspect_host_service_supervisor", {}),
+        STOP], SERVICE), "host-services"),
+    with_fixture(scenario("services.supervisor-unseen", [
+        shims_only(USER="unseen-user"), call("ensure", "ensure_host_service_supervisor", {}), STOP], SERVICE),
+        "host-services"),
+    scenario("services.supervisor-bad-user", [
+        shims_only(USER="bad\nuser"),
+        call("ensure", "ensure_host_service_supervisor", {}),
+        call("inspect", "inspect_host_service_supervisor", {}),
+        STOP], SERVICE),
+    bridge_case("bridge.healthy", [
+        plain_stub([HEALTHY]), shims_only(PLATFORM_MCP_PORT="${STUB_PORT}"),
+        call("diagnose", "diagnose_bridge", {}), STOP]),
+    bridge_case("bridge.unhealthy", [
+        plain_stub([{"status": 200, "body": '{"Database":{"Status":"down","ERROR":"pool exhausted"}}'},
+                    {"status": 200, "body": '{"database":{"status":7}}'},
+                    {"status": 200, "body": 'null'},
+                    {"status": 503, "body": "busy"}]),
+        shims_only(PLATFORM_MCP_PORT="${STUB_PORT}x"),
+        call("named", "diagnose_bridge", {}),
+        call("mistyped", "diagnose_bridge", {}),
+        call("null", "diagnose_bridge", {}),
+        call("status", "diagnose_bridge", {}),
+        STOP]),
+    bridge_case("bridge.offline", [
+        shims_only(PLATFORM_MCP_PORT="1"), call("diagnose", "diagnose_bridge", {}), STOP]),
+    bridge_case("bridge.custom-url", [
+        plain_stub([HEALTHY]),
+        shims_only(PLATFORM_MCP_PORT="1", BRIDGE_URL="http://127.0.0.1:${STUB_PORT}/base/",
+                   BRIDGE_SERVICE_NAME="bad name"),
+        call("diagnose", "diagnose_bridge", {}),
+        call("recover", "recover_bridge", {}),
+        {"as": "hits", "httpRequests": {"stub": "stub"}},
+        STOP]),
+    bridge_case("bridge.unsupported-scheme", [
+        shims_only(BRIDGE_URL="ftp://127.0.0.1:1"), call("diagnose", "diagnose_bridge", {}), STOP]),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

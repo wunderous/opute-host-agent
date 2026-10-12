@@ -6928,5 +6928,2714 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.exec.host-refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/tools/dispatch_unassigned.go",
+   "internal/domain/host/host_service.go:RunWorkloadCommandContext"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "blank",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "   "
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BLANK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "blankDone",
+    "requires": [
+     "T_BLANK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BLANK}",
+     "params": {
+      "taskId": "${T_BLANK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "missing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {}
+     },
+     "expand": true,
+     "capture": {
+      "T_MISSING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "missingDone",
+    "requires": [
+     "T_MISSING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MISSING}",
+     "params": {
+      "taskId": "${T_MISSING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "negative",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "true",
+       "timeoutMs": -1
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NEGATIVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "negativeDone",
+    "requires": [
+     "T_NEGATIVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NEGATIVE}",
+     "params": {
+      "taskId": "${T_NEGATIVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "tooLong",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_host_command",
+     "params": {
+      "name": "run_host_command",
+      "arguments": {
+       "command": "true",
+       "timeoutMs": 7200001
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_TOOLONG": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "tooLongDone",
+    "requires": [
+     "T_TOOLONG"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TOOLONG}",
+     "params": {
+      "taskId": "${T_TOOLONG}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "shellBlank",
+    "mcp": {
+     "method": "tools/call",
+     "name": "agent_shell",
+     "params": {
+      "name": "agent_shell",
+      "arguments": {
+       "command": " "
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shellNegative",
+    "mcp": {
+     "method": "tools/call",
+     "name": "agent_shell",
+     "params": {
+      "name": "agent_shell",
+      "arguments": {
+       "command": "true",
+       "timeoutMs": -1
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shellTooLong",
+    "mcp": {
+     "method": "tools/call",
+     "name": "agent_shell",
+     "params": {
+      "name": "agent_shell",
+      "arguments": {
+       "command": "true",
+       "timeoutMs": 7200001
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shellNotString",
+    "mcp": {
+     "method": "tools/call",
+     "name": "agent_shell",
+     "params": {
+      "name": "agent_shell",
+      "arguments": {
+       "command": 7
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.exec.instance",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/exec_command.go:RunInstanceCommandContext",
+   "internal/domain/host/exec_command.go:ExecCommand",
+   "internal/domain/incus/vm_lifecycle.go:RunVMExecContext",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "incus-exec",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "hello",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:worker-01",
+       "command": " echo ",
+       "args": [
+        "hello"
+       ]
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stdin",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:worker-01",
+       "command": "cat",
+       "stdin": "secret-input\n"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "fails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:worker-01",
+       "command": "false"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stderr",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:worker-01",
+       "command": "warn",
+       "timeoutMs": 1500
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "vm:local:vm-01",
+       "command": "uname",
+       "args": [
+        "-a",
+        "--x"
+       ]
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "wrongKind",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "vm:local:worker-01",
+       "command": "true"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "absent",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:nobody",
+       "command": "true"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "otherTenant",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:other:worker-01",
+       "command": "true"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "worker-01",
+       "command": "true"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "blankCommand",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:worker-01",
+       "command": " "
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "execMissingName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "exec_command",
+     "params": {
+      "name": "exec_command",
+      "arguments": {
+       "command": "echo"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "execNamed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "exec_command",
+     "params": {
+      "name": "exec_command",
+      "arguments": {
+       "name": "worker-01",
+       "command": "echo",
+       "args": [
+        "hello"
+       ]
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.exec.instance-no-provider",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/exec_command.go:RunInstanceCommandContext",
+   "internal/domain/host/exec_command.go:ExecCommand",
+   "internal/domain/incus/vm_lifecycle.go:RunVMExecContext",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "noIncus",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:worker-01",
+       "command": "true"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.system-state",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "upper",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "Start",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "restart",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stopFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "stop",
+       "serviceName": "bad.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "silentFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "enable",
+       "serviceName": "quiet.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badState",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "reload",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badScope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start",
+       "serviceName": "web.service",
+       "scope": "global"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start",
+       "serviceName": "web service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "blankName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start",
+       "serviceName": " ",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "bound",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "notFound",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/parity-absent.service",
+       "state": "start",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "noUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "state": "start",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.reload-fails",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "host-services-reload-fails",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "reload",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.refusals",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "restartBlank",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": " "
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "restartBad",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "web;reboot"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "restartNoUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "serviceName": "web.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "badState",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "kill"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "supervisorScope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {
+       "scope": "machine"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "inspectScope",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service_supervisor",
+     "params": {
+      "name": "inspect_host_service_supervisor",
+      "arguments": {
+       "scope": "machine"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "docker",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_docker",
+     "params": {
+      "name": "ensure_docker",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "k3d",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_k3d",
+     "params": {
+      "name": "ensure_k3d",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.shared-owner-refused",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go",
+   "internal/hostruntime/shared.go:RequireSharedHostOwner"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_host_service",
+     "params": {
+      "name": "restart_host_service",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "serviceName": "web.service"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "state",
+    "mcp": {
+     "method": "tools/call",
+     "name": "set_host_service_state",
+     "params": {
+      "name": "set_host_service_state",
+      "arguments": {
+       "uri": "host-service:local:system/dbus.service",
+       "state": "start",
+       "serviceName": "web.service",
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "supervisor",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "recover",
+    "mcp": {
+     "method": "tools/call",
+     "name": "recover_bridge",
+     "params": {
+      "name": "recover_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.supervisor-linger",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "USER": "parity-user"
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service_supervisor",
+     "params": {
+      "name": "inspect_host_service_supervisor",
+      "arguments": {
+       "scope": "USER"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "system",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service_supervisor",
+     "params": {
+      "name": "inspect_host_service_supervisor",
+      "arguments": {
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "systemEnsure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {
+       "scope": "system"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.supervisor-sudo",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "USER": "sudo-user"
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.supervisor-denied",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "USER": "denied-user"
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service_supervisor",
+     "params": {
+      "name": "inspect_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.supervisor-unseen",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "host-services",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "USER": "unseen-user"
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.services.supervisor-bad-user",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go",
+   "internal/domain/host/types.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "USER": "bad\nuser"
+     }
+    }
+   },
+   {
+    "as": "ensure",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_host_service_supervisor",
+     "params": {
+      "name": "ensure_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "inspect",
+    "mcp": {
+     "method": "tools/call",
+     "name": "inspect_host_service_supervisor",
+     "params": {
+      "name": "inspect_host_service_supervisor",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.bridge.healthy",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go:DiagnoseBridge",
+   "internal/domain/host/types.go:probeBridgeHealth",
+   "internal/domain/host/probe.go:probeTCPPort"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "responses": [
+      {
+       "status": 200,
+       "body": "{\"database\":{\"status\":\"healthy\"},\"lastHeartbeatAt\":\"2026-01-01T00:00:00Z\"}"
+      }
+     ],
+     "default": {
+      "status": 404,
+      "body": "missing"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "PLATFORM_MCP_PORT": "${STUB_PORT}"
+     }
+    }
+   },
+   {
+    "as": "diagnose",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "bridgePort",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "diagnose",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.bridge.unhealthy",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go:DiagnoseBridge",
+   "internal/domain/host/types.go:probeBridgeHealth",
+   "internal/domain/host/probe.go:probeTCPPort"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "responses": [
+      {
+       "status": 200,
+       "body": "{\"Database\":{\"Status\":\"down\",\"ERROR\":\"pool exhausted\"}}"
+      },
+      {
+       "status": 200,
+       "body": "{\"database\":{\"status\":7}}"
+      },
+      {
+       "status": 200,
+       "body": "null"
+      },
+      {
+       "status": 503,
+       "body": "busy"
+      }
+     ],
+     "default": {
+      "status": 404,
+      "body": "missing"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "PLATFORM_MCP_PORT": "${STUB_PORT}x"
+     }
+    }
+   },
+   {
+    "as": "named",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "mistyped",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "null",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "status",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "bridgePort",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "named",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    },
+    {
+     "path": [
+      "steps",
+      "mistyped",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    },
+    {
+     "path": [
+      "steps",
+      "null",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.bridge.offline",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go:DiagnoseBridge",
+   "internal/domain/host/types.go:probeBridgeHealth",
+   "internal/domain/host/probe.go:probeTCPPort"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "PLATFORM_MCP_PORT": "1"
+     }
+    }
+   },
+   {
+    "as": "diagnose",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "bridgePort",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "diagnose",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.bridge.custom-url",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go:DiagnoseBridge",
+   "internal/domain/host/types.go:probeBridgeHealth",
+   "internal/domain/host/probe.go:probeTCPPort"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "stub",
+    "httpStub": {
+     "responses": [
+      {
+       "status": 200,
+       "body": "{\"database\":{\"status\":\"healthy\"},\"lastHeartbeatAt\":\"2026-01-01T00:00:00Z\"}"
+      }
+     ],
+     "default": {
+      "status": 404,
+      "body": "missing"
+     }
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "PLATFORM_MCP_PORT": "1",
+      "BRIDGE_URL": "http://127.0.0.1:${STUB_PORT}/base/",
+      "BRIDGE_SERVICE_NAME": "bad name"
+     }
+    }
+   },
+   {
+    "as": "diagnose",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "recover",
+    "mcp": {
+     "method": "tools/call",
+     "name": "recover_bridge",
+     "params": {
+      "name": "recover_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "hits",
+    "httpRequests": {
+     "stub": "stub"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "bridgePort",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "diagnose",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.bridge.unsupported-scheme",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/host_service.go:DiagnoseBridge",
+   "internal/domain/host/types.go:probeBridgeHealth",
+   "internal/domain/host/probe.go:probeTCPPort"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "BRIDGE_URL": "ftp://127.0.0.1:1"
+     }
+    }
+   },
+   {
+    "as": "diagnose",
+    "mcp": {
+     "method": "tools/call",
+     "name": "diagnose_bridge",
+     "params": {
+      "name": "diagnose_bridge",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "bridgePort",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "steps",
+      "diagnose",
+      "body",
+      "result",
+      "content",
+      0,
+      "text"
+     ],
+     "type": "string",
+     "reason": "diagnose_bridge text is the structured result's JSON with a per-side timestamp"
+    }
+   ]
+  }
  }
 ]

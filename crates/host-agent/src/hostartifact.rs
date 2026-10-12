@@ -170,6 +170,11 @@ fn transport_cause(url: &str, err: &ureq::Transport) -> String {
     err.to_string()
 }
 
+/// A failed `http.Client.Get`, as Go's `*url.Error` prints it.
+pub(crate) fn get_error(url: &str, err: &ureq::Transport) -> String {
+    format!("Get \"{url}\": {}", transport_cause(url, err))
+}
+
 fn tls_cause(e: &rustls::Error) -> String {
     use rustls::{CertificateError, Error};
     let x509 = match e {
@@ -501,6 +506,7 @@ pub fn prepare_host_agent_artifacts(
             &format!("prepare-host-agent-artifacts-{arch}"),
             &["bash".into(), "-lc".into(), script],
             Duration::from_secs(15 * 60),
+            None,
         )?;
         if result.exit_code != 0 {
             return Err(crate::incus::first_non_empty(&[

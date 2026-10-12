@@ -10,7 +10,7 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
 use crate::config::Env;
-use crate::hostobs::{look_path, run_command, CommandResult};
+use crate::hostobs::{look_path, CommandResult};
 
 /// `(*exec.ExitError).Error()` / `os.ProcessState.String()`.
 pub fn exit_text(status: ExitStatus) -> String {
@@ -181,6 +181,7 @@ pub fn run_host_workload(
     scope: &str,
     command: &[String],
     timeout: Duration,
+    ctx: Option<&crate::plan::runner::RunCtx>,
 ) -> Result<CommandResult, String> {
     if command.first().is_none_or(|c| c.trim().is_empty()) {
         return Err("workload command is required".into());
@@ -212,7 +213,15 @@ pub fn run_host_workload(
         argv.insert(1, "--user".into());
     }
     argv.extend(command.iter().cloned());
-    Ok(run_command(env, &argv, timeout + Duration::from_secs(30)))
+    let budget = timeout + Duration::from_secs(30);
+    Ok(crate::hostobs::run_command_with(
+        env,
+        &argv,
+        None,
+        Some(Instant::now() + budget),
+        budget,
+        ctx,
+    ))
 }
 
 #[cfg(test)]
@@ -224,6 +233,19 @@ mod tests {
         assert_eq!(exit_text(ExitStatus::from_raw(3 << 8)), "exit status 3");
         assert_eq!(exit_text(ExitStatus::from_raw(9)), "signal: killed");
         assert_eq!(exit_text(ExitStatus::from_raw(15)), "signal: terminated");
+    }
+
+    #[test]
+    fn durations_print_like_go() {
+        use crate::hostobs::go_duration;
+        let ms = Duration::from_millis;
+        assert_eq!(go_duration(Duration::ZERO), "0s");
+        assert_eq!(go_duration(ms(1500)), "1.5s");
+        assert_eq!(go_duration(ms(250)), "250ms");
+        assert_eq!(go_duration(Duration::from_micros(1500)), "1.5ms");
+        assert_eq!(go_duration(Duration::from_secs(90)), "1m30s");
+        assert_eq!(go_duration(Duration::from_secs(7230)), "2h0m30s");
+        assert_eq!(go_duration(ms(60_500)), "1m0.5s");
     }
 
     #[test]

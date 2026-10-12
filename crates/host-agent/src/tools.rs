@@ -1248,7 +1248,15 @@ pub(crate) fn invoke(
     binding: &Binding,
 ) -> J {
     let catalog_snapshot = server.catalog.snapshot();
-    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
+    // A catalog-excluded tool is dispatchable with its internal descriptor,
+    // which never joins the agent-facing snapshot
+    // (`registerInternalDispatchTools`).
+    let Some(descriptor) = catalog_snapshot
+        .tools
+        .iter()
+        .chain(&catalog::internal().tools)
+        .find(|d| d.name == name)
+    else {
         return not_implemented(name);
     };
     // As in Go's registry lookup, an operation no service offers fails

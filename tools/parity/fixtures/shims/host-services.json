@@ -1,0 +1,25 @@
+{
+  "description": "Recorded service-manager paths that never reach a real manager: system scope through sudo, linger through loginctl.",
+  "commands": {
+    "sudo": [
+      {"argv": ["-n", "/usr/bin/systemctl", "daemon-reload"]},
+      {"argv": ["-n", "/usr/bin/systemctl", "start", "web.service"]},
+      {"argv": ["-n", "/usr/bin/systemctl", "restart", "web.service"], "stdout": "restarting"},
+      {"argv": ["-n", "/usr/bin/systemctl", "stop", "bad.service"], "exit": 5, "stderr": "Failed to stop bad.service: Unit bad.service not loaded.\n"},
+      {"argv": ["-n", "/usr/bin/systemctl", "enable", "quiet.service"], "exit": 1},
+      {"argv": ["-n", "loginctl", "enable-linger", "sudo-user"]},
+      {"argv": ["-n", "loginctl", "enable-linger", "denied-user"], "exit": 1, "stderr": "sudo: a password is required\n"}
+    ],
+    "loginctl": [
+      {"argv": ["enable-linger", "parity-user"]},
+      {"argv": ["show-user", "parity-user", "-p", "Linger"], "stdout": "Linger=yes"},
+      {"argv": ["enable-linger", "sudo-user"], "exit": 1, "stderr": "Access denied\n"},
+      {"argv": ["show-user", "sudo-user", "-p", "Linger"], "stdout": "Linger=yes"},
+      {"argv": ["enable-linger", "denied-user"], "exit": 1, "stderr": "Access denied\n"},
+      {"argv": ["show-user", "denied-user", "-p", "Linger"], "stdout": "Linger=no"},
+      {"argv": ["enable-linger", "unseen-user"]},
+      {"argv": ["show-user", "unseen-user", "-p", "Linger"], "stdout": "Linger=no"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}
