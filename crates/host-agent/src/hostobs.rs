@@ -103,11 +103,36 @@ pub fn run_command_with(
     timeout: Duration,
     ctx: Option<&crate::plan::runner::RunCtx>,
 ) -> CommandResult {
+    let raw = run_command_raw(env, argv, stdin, deadline, timeout, ctx);
+    CommandResult {
+        exit_code: raw.exit_code,
+        stdout: String::from_utf8_lossy(&raw.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&raw.stderr).into_owned(),
+    }
+}
+
+/// A command's output as the bytes it wrote (Go keeps them in a string
+/// unchanged; decoders such as the Windows CLI one need them raw).
+pub struct RawResult {
+    pub exit_code: i32,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
+
+/// `runCommandContext` with the output kept as raw bytes.
+pub fn run_command_raw(
+    env: &Env,
+    argv: &[String],
+    stdin: Option<&[u8]>,
+    deadline: Option<Instant>,
+    timeout: Duration,
+    ctx: Option<&crate::plan::runner::RunCtx>,
+) -> RawResult {
     if argv.is_empty() {
-        return CommandResult {
+        return RawResult {
             exit_code: 1,
-            stdout: String::new(),
-            stderr: "empty command".into(),
+            stdout: Vec::new(),
+            stderr: b"empty command".to_vec(),
         };
     }
     let program = if argv[0].contains('/') {
@@ -116,13 +141,14 @@ pub fn run_command_with(
         look_path(env, &argv[0])
     };
     let Some(program) = program else {
-        return CommandResult {
+        return RawResult {
             exit_code: 1,
-            stdout: String::new(),
+            stdout: Vec::new(),
             stderr: format!(
                 "exec: {}: executable file not found in $PATH",
                 crate::goerr::quote(&argv[0])
-            ),
+            )
+            .into_bytes(),
         };
     };
     let command_env = command_environment(env, argv);
@@ -141,14 +167,15 @@ pub fn run_command_with(
     let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => {
-            return CommandResult {
+            return RawResult {
                 exit_code: 1,
-                stdout: String::new(),
+                stdout: Vec::new(),
                 stderr: format!(
                     "fork/exec {}: {}",
                     program.display(),
                     crate::goerr::errno_text(&e)
-                ),
+                )
+                .into_bytes(),
             }
         }
     };
@@ -199,17 +226,16 @@ pub fn run_command_with(
     if let Some(writer) = writer {
         let _ = writer.join();
     }
-    let stdout = String::from_utf8_lossy(&out_reader.join().unwrap_or_default()).into_owned();
-    let mut stderr = String::from_utf8_lossy(&err_reader.join().unwrap_or_default()).into_owned();
+    let stdout = out_reader.join().unwrap_or_default();
+    let mut stderr = err_reader.join().unwrap_or_default();
     if timed_out {
         if !stderr.is_empty() {
-            stderr.push('\n');
+            stderr.push(b'\n');
         }
-        stderr.push_str(&format!(
-            "Error: Command timed out after {}",
-            go_duration(timeout)
-        ));
-        return CommandResult {
+        stderr.extend_from_slice(
+            format!("Error: Command timed out after {}", go_duration(timeout)).as_bytes(),
+        );
+        return RawResult {
             exit_code: 124,
             stdout,
             stderr,
@@ -219,11 +245,11 @@ pub fn run_command_with(
     if cancelled && exit_code == 0 {
         exit_code = 130;
         if !stderr.is_empty() {
-            stderr.push('\n');
+            stderr.push(b'\n');
         }
-        stderr.push_str("Error: Command cancelled");
+        stderr.extend_from_slice(b"Error: Command cancelled");
     }
-    CommandResult {
+    RawResult {
         exit_code,
         stdout,
         stderr,
@@ -271,7 +297,8 @@ pub fn go_duration(d: Duration) -> String {
     }
 }
 
-fn is_wsl(env: &Env) -> bool {
+/// `fingerprint.isWSL`.
+pub(crate) fn is_wsl(env: &Env) -> bool {
     if !env.get("WSL_INTEROP").trim().is_empty() || !env.get("WSL_DISTRO_NAME").trim().is_empty() {
         return true;
     }
@@ -283,7 +310,9 @@ fn is_wsl(env: &Env) -> bool {
         .unwrap_or(false)
 }
 
-fn windows_interop_command(env: &Env, name: &str) -> bool {
+/// `fingerprint.WindowsInteropCommand`: the first candidate that resolves,
+/// returned as written (a bare name stays bare and runs through PATH).
+pub(crate) fn windows_interop_command(env: &Env, name: &str) -> Option<String> {
     let mut candidates: Vec<String> = Vec::new();
     match name {
         "powershell.exe" => {
@@ -296,16 +325,16 @@ fn windows_interop_command(env: &Env, name: &str) -> bool {
         _ => {}
     }
     candidates.push(name.into());
-    candidates.iter().any(|c| look_path(env, c).is_some())
+    candidates.into_iter().find(|c| look_path(env, c).is_some())
 }
 
 /// `fingerprint.DetectCapabilities` on Linux.
 pub fn detect_capabilities(env: &Env) -> J {
     let wsl = is_wsl(env);
     let interop = wsl
-        && (windows_interop_command(env, "powershell.exe")
-            || windows_interop_command(env, "reg.exe"));
-    let manage = wsl && windows_interop_command(env, "wsl.exe");
+        && (windows_interop_command(env, "powershell.exe").is_some()
+            || windows_interop_command(env, "reg.exe").is_some());
+    let manage = wsl && windows_interop_command(env, "wsl.exe").is_some();
     json!({
         "canInvokeWindowsInterop": interop,
         "canManageWsl": manage,

@@ -1009,6 +1009,77 @@ cases += [
         STOP], PUBLIC + QUICK + ["internal/hostruntime/shared.go:RequireSharedHostOwner"]),
 ]
 
+# The WSL2 host VM subsystem. WSL is detected from WSL_INTEROP, and the
+# interop commands resolve through PATH when /mnt/c is absent, so with a
+# shims-only PATH wsl.exe, reg.exe and powershell.exe are recorded shims
+# replaying UTF-16 Windows output; no Windows host is reached. Host identity
+# under WSL reads the Windows MachineGuid through the same interop, so every
+# WSL fixture answers that query too. This is the
+# T1 argv/result parity only: effects on a real WSL2 VHDX need a WSL2 runner.
+WSL = ["internal/domain/host/wsl_lifecycle.go", "internal/domain/host/wsl_compact.go",
+       "internal/fingerprint/capabilities.go:DetectCapabilities", "internal/tools/dispatch_host.go",
+       "internal/tools/dispatch.go:CompactClosedError"]
+
+
+def wsl_serve(**env):
+    return shims_only(WSL_INTEROP="/run/WSL/parity_interop", **env)
+
+
+def compact(as_, distro, **extra):
+    return task_call(as_, "compact_wsl_disk", {"distro": distro, **extra})
+
+
+def wsl_case(id_, steps, fixture):
+    return with_fixture(scenario(id_, steps, WSL, collect=("trace",)), fixture)
+
+
+cases += [
+    wsl_case("wsl.lifecycle", [
+        wsl_serve(),
+        call("terminate", "terminate_wsl_distribution", {"distro": " Ubuntu "}),
+        call("terminateFails", "terminate_wsl_distribution", {"distro": "Busy"}),
+        call("terminateBlank", "terminate_wsl_distribution", {"distro": " "}),
+        call("shutdown", "shutdown_wsl", {}),
+        STOP], "wsl"),
+    wsl_case("wsl.compact", [
+        wsl_serve(),
+        compact("running", "ubuntu"),
+        compact("missing", "Absent"),
+        compact("noVhdx", "NoVhdx"),
+        compact("locked", "Locked"),
+        compact("quirk", "Quirk", dryRun=True),
+        compact("dryRun", "Other", dryRun=True),
+        compact("compact", "Other"),
+        compact("denied", "Denied"),
+        compact("failing", "Failing"),
+        compact("badSize", "BadSize", dryRun=True),
+        compact("sizeFails", "SizeFails"),
+        compact("blank", "  "),
+        STOP], "wsl"),
+    wsl_case("wsl.live-distro", [
+        wsl_serve(WSL_DISTRO_NAME="Other"), compact("live", "OTHER"), STOP], "wsl"),
+    wsl_case("wsl.commands-fail", [
+        wsl_serve(),
+        call("terminate", "terminate_wsl_distribution", {"distro": "Ubuntu"}),
+        call("shutdown", "shutdown_wsl", {}),
+        compact("compact", "Other"),
+        STOP], "wsl-fails"),
+    wsl_case("wsl.no-registry", [wsl_serve(), compact("compact", "Other"), STOP], "wsl-noreg"),
+    wsl_case("wsl.no-powershell", [wsl_serve(), compact("compact", "Other"), STOP], "wsl-nops"),
+    wsl_case("wsl.not-wsl", [
+        shims_only(),
+        call("terminate", "terminate_wsl_distribution", {"distro": "Ubuntu"}),
+        call("shutdown", "shutdown_wsl", {}),
+        compact("compact", "Other"),
+        STOP], "wsl"),
+    wsl_case("wsl.no-interop", [
+        wsl_serve(),
+        call("terminate", "terminate_wsl_distribution", {"distro": "Ubuntu"}),
+        call("shutdown", "shutdown_wsl", {}),
+        compact("compact", "Other"),
+        STOP], "wsl-guid-only"),
+]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

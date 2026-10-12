@@ -16335,5 +16335,1644 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.wsl.lifecycle",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop"
+     }
+    }
+   },
+   {
+    "as": "terminate",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distro": " Ubuntu "
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "terminateFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distro": "Busy"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "terminateBlank",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distro": " "
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shutdown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "shutdown_wsl",
+     "params": {
+      "name": "shutdown_wsl",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.compact",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop"
+     }
+    }
+   },
+   {
+    "as": "running",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "ubuntu"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_RUNNING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "runningDone",
+    "requires": [
+     "T_RUNNING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RUNNING}",
+     "params": {
+      "taskId": "${T_RUNNING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "missing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Absent"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_MISSING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "missingDone",
+    "requires": [
+     "T_MISSING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MISSING}",
+     "params": {
+      "taskId": "${T_MISSING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "noVhdx",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "NoVhdx"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOVHDX": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noVhdxDone",
+    "requires": [
+     "T_NOVHDX"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOVHDX}",
+     "params": {
+      "taskId": "${T_NOVHDX}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "locked",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Locked"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_LOCKED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "lockedDone",
+    "requires": [
+     "T_LOCKED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_LOCKED}",
+     "params": {
+      "taskId": "${T_LOCKED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "quirk",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Quirk",
+       "dryRun": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_QUIRK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "quirkDone",
+    "requires": [
+     "T_QUIRK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_QUIRK}",
+     "params": {
+      "taskId": "${T_QUIRK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "dryRun",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other",
+       "dryRun": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DRYRUN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "dryRunDone",
+    "requires": [
+     "T_DRYRUN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DRYRUN}",
+     "params": {
+      "taskId": "${T_DRYRUN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "compact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_COMPACT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "compactDone",
+    "requires": [
+     "T_COMPACT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_COMPACT}",
+     "params": {
+      "taskId": "${T_COMPACT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "denied",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Denied"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DENIED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "deniedDone",
+    "requires": [
+     "T_DENIED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DENIED}",
+     "params": {
+      "taskId": "${T_DENIED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "failing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Failing"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FAILING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "failingDone",
+    "requires": [
+     "T_FAILING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FAILING}",
+     "params": {
+      "taskId": "${T_FAILING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "badSize",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "BadSize",
+       "dryRun": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BADSIZE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "badSizeDone",
+    "requires": [
+     "T_BADSIZE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BADSIZE}",
+     "params": {
+      "taskId": "${T_BADSIZE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "sizeFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "SizeFails"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_SIZEFAILS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "sizeFailsDone",
+    "requires": [
+     "T_SIZEFAILS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_SIZEFAILS}",
+     "params": {
+      "taskId": "${T_SIZEFAILS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "blank",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "  "
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BLANK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "blankDone",
+    "requires": [
+     "T_BLANK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BLANK}",
+     "params": {
+      "taskId": "${T_BLANK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.live-distro",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop",
+      "WSL_DISTRO_NAME": "Other"
+     }
+    }
+   },
+   {
+    "as": "live",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "OTHER"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_LIVE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "liveDone",
+    "requires": [
+     "T_LIVE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_LIVE}",
+     "params": {
+      "taskId": "${T_LIVE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.commands-fail",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl-fails",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop"
+     }
+    }
+   },
+   {
+    "as": "terminate",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distro": "Ubuntu"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shutdown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "shutdown_wsl",
+     "params": {
+      "name": "shutdown_wsl",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "compact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_COMPACT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "compactDone",
+    "requires": [
+     "T_COMPACT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_COMPACT}",
+     "params": {
+      "taskId": "${T_COMPACT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.no-registry",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl-noreg",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop"
+     }
+    }
+   },
+   {
+    "as": "compact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_COMPACT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "compactDone",
+    "requires": [
+     "T_COMPACT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_COMPACT}",
+     "params": {
+      "taskId": "${T_COMPACT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.no-powershell",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl-nops",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop"
+     }
+    }
+   },
+   {
+    "as": "compact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_COMPACT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "compactDone",
+    "requires": [
+     "T_COMPACT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_COMPACT}",
+     "params": {
+      "taskId": "${T_COMPACT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.not-wsl",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "terminate",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distro": "Ubuntu"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shutdown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "shutdown_wsl",
+     "params": {
+      "name": "shutdown_wsl",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "compact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_COMPACT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "compactDone",
+    "requires": [
+     "T_COMPACT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_COMPACT}",
+     "params": {
+      "taskId": "${T_COMPACT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
+ },
+ {
+  "id": "host-domain.wsl.no-interop",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "internal/domain/host/wsl_lifecycle.go",
+   "internal/domain/host/wsl_compact.go",
+   "internal/fingerprint/capabilities.go:DetectCapabilities",
+   "internal/tools/dispatch_host.go",
+   "internal/tools/dispatch.go:CompactClosedError"
+  ],
+  "fixture": "wsl-guid-only",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "WSL_INTEROP": "/run/WSL/parity_interop"
+     }
+    }
+   },
+   {
+    "as": "terminate",
+    "mcp": {
+     "method": "tools/call",
+     "name": "terminate_wsl_distribution",
+     "params": {
+      "name": "terminate_wsl_distribution",
+      "arguments": {
+       "distro": "Ubuntu"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "shutdown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "shutdown_wsl",
+     "params": {
+      "name": "shutdown_wsl",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "compact",
+    "mcp": {
+     "method": "tools/call",
+     "name": "compact_wsl_disk",
+     "params": {
+      "name": "compact_wsl_disk",
+      "arguments": {
+       "distro": "Other"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_COMPACT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "compactDone",
+    "requires": [
+     "T_COMPACT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_COMPACT}",
+     "params": {
+      "taskId": "${T_COMPACT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    }
+   ]
+  }
  }
 ]

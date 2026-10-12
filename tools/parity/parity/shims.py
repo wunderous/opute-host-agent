@@ -24,7 +24,10 @@ argument ("argvContains"). The first match wins. An unmatched invocation uses
 paths written as executables after the call is recorded, standing in for an
 installer's effect; "writes" ({"after": flag, "content": text}) writes the
 content to the argument following the flag; "hashFiles" records the
-sha256 of each sandbox file named in the argv.
+sha256 of each sandbox file named in the argv. "ifExists" / "unlessExists"
+(sandbox-relative paths) make a rule match only while that file does or does
+not exist, so a later call can see an earlier rule's "creates".
+"stdoutBase64" writes raw bytes (UTF-16 output, say) with nothing appended.
 
 A rule with "gate": "<name>" blocks after it is recorded: the shim marks
 gates/<name>.waiting.<pid> and waits on the FIFO gates/<name>.fifo until the
@@ -36,6 +39,7 @@ NO_ORPHANS invariant).
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import sys
@@ -233,7 +237,7 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
     rules = fixture.get("commands", {}).get(name, [])
     chosen, index = fixture.get("default", {"exit": 1}), None
     for i, rule in enumerate(rules):
-        if _match(rule, argv):
+        if _match(rule, argv) and _holds(rule, root):
             chosen, index = rule, i
             break
     entry = {"cmd": name, "argv": argv, "rule": index}
@@ -260,6 +264,10 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("#!/bin/sh\nexit 0\n")
         target.chmod(0o755)
+    if chosen.get("stdoutBase64"):
+        sys.stdout.flush()
+        sys.stdout.buffer.write(base64.b64decode(chosen["stdoutBase64"]))
+        sys.stdout.buffer.flush()
     if chosen.get("stdout"):
         sys.stdout.write(chosen["stdout"])
         if not chosen["stdout"].endswith("\n"):
@@ -267,6 +275,14 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
     if chosen.get("stderr"):
         sys.stderr.write(chosen["stderr"])
     return int(chosen.get("exit", 0))
+
+
+def _holds(rule: dict, root: Path) -> bool:
+    if "ifExists" in rule and not (root / rule["ifExists"]).exists():
+        return False
+    if "unlessExists" in rule and (root / rule["unlessExists"]).exists():
+        return False
+    return True
 
 
 def read_trace(log_path: Path) -> list[dict]:

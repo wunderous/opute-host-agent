@@ -29,6 +29,7 @@ mod hostread;
 mod hostservice;
 mod hosttool;
 mod hostvirt;
+mod hostwsl;
 mod http1;
 mod identity;
 mod incus;

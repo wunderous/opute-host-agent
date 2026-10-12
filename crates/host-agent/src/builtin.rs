@@ -256,6 +256,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         instance_exec(host),
         host_artifacts(host),
         public_mcp(host),
+        host_vm_subsystem(host),
         catalog_service(),
         host_resources(host),
         tasks(server),
@@ -1090,6 +1091,54 @@ fn public_mcp(host: &crate::tools::Host) -> Service {
                             Some("Authenticated public MCP quick tunnel cleanup reconciled."),
                         )
                     })
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8a: the WSL2 host VM subsystem: distribution termination, subsystem
+/// shutdown and fail-closed disk compaction.
+fn host_vm_subsystem(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let (terminate_env, shutdown_env, compact_env) =
+        (host.env.clone(), host.env.clone(), host.env.clone());
+    Service {
+        id: "host-vm-subsystem",
+        dependencies: &[],
+        operations: vec![
+            (
+                "terminate_wsl_distribution",
+                op(move |call| {
+                    crate::hostwsl::terminate_distribution(
+                        &terminate_env,
+                        call.ctx,
+                        text(call.args, "distro"),
+                    )
+                    .map(|v| structured_result(v, Some("WSL distribution terminated.")))
+                }),
+            ),
+            (
+                "shutdown_wsl",
+                op(move |call| {
+                    crate::hostwsl::shutdown(&shutdown_env, call.ctx)
+                        .map(|v| structured_result(v, Some("WSL environment shut down.")))
+                }),
+            ),
+            (
+                "compact_wsl_disk",
+                op(move |call| {
+                    match crate::hostwsl::compact_disk(
+                        &compact_env,
+                        call.ctx,
+                        text(call.args, "distro"),
+                        flag(call.args, "dryRun"),
+                    )? {
+                        crate::hostwsl::Compact::Report(v) => {
+                            Ok(structured_result(v, Some("WSL disk compact completed.")))
+                        }
+                        crate::hostwsl::Compact::Closed(result) => Ok(result),
+                    }
                 }),
             ),
         ],
