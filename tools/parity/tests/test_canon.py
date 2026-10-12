@@ -208,3 +208,63 @@ class KeepPrefixTest(unittest.TestCase):
         a = {"steps": {"s": {"text": "Error: x: same"}}}
         _, _, rec = canon.apply_divergences(a, {"steps": {"s": {"text": "Error: x: same"}}}, ["tail"], self.REGISTRY)
         self.assertTrue(rec[0]["stale"])
+
+
+class NeutralNamesTest(unittest.TestCase):
+    """D19.neutral-host-tool-names: the Rust side is rewritten to Go's names
+    through the one name map and the pinned revision pairs, nothing else."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from parity import runner
+        cls.registry = canon.load_divergences(runner.DIVERGENCE_FILE)
+        manifest = json.loads((canon._REPO / "parity-manifest.json").read_text())
+        cls.pair = manifest["catalogRevisions"]["platform"]
+
+    def apply(self, go, rust):
+        return canon.apply_divergences(go, rust, ["D19.neutral-host-tool-names"], self.registry)
+
+    def catalog(self, revision, install, install_field, compact_text):
+        return {"steps": {"list": {"revision": revision, "tools": sorted([
+            {"name": install, "inputSchema": {"properties": {install_field: {"type": "string"}},
+                                               "required": [install_field]}},
+            {"name": "get_host_info", "inputSchema": {"properties": {"packageName": {}}}},
+            {"name": "install_k3s"},
+            {"name": compact_text},
+        ], key=lambda t: t["name"]), "text": "compact needs " + compact_text}}}
+
+    def test_renamed_catalog_matches_go(self):
+        go = self.catalog(self.pair["go"], "install_incus_stack", "incusPackage", "shutdown_wsl")
+        rust = self.catalog(self.pair["rust"], "install_virtualization_stack", "packageName",
+                            "shutdown_host_vm_subsystem")
+        self.assertNotEqual([t["name"] for t in go["steps"]["list"]["tools"]].index("install_k3s"),
+                            [t["name"] for t in rust["steps"]["list"]["tools"]].index("install_k3s"))
+        a, b, rec = self.apply(go, rust)
+        self.assertEqual(canon.diff(a, b), [])
+        self.assertEqual(rec, [{"id": "D19.neutral-host-tool-names", "decision": "D19", "stale": False}])
+        self.assertEqual(a, go)
+
+    def test_unrelated_field_and_partial_words_are_kept(self):
+        rust = {"steps": {"s": {"name": "get_host_info", "inputSchema": {"properties": {"packageName": 1}},
+                                "text": "xshutdown_host_vm_subsystem"}}}
+        _, b, rec = self.apply({}, rust)
+        self.assertEqual(b, rust)
+        self.assertTrue(rec[0]["stale"])
+
+    def test_canary_unmapped_rename_and_unpinned_revision_stay_diffs(self):
+        go = self.catalog(self.pair["go"], "install_incus_stack", "incusPackage", "shutdown_wsl")
+        unmapped = self.catalog(self.pair["rust"], "install_virt_stack", "packageName",
+                                "shutdown_host_vm_subsystem")
+        a, b, _ = self.apply(go, unmapped)
+        self.assertNotEqual(canon.diff(a, b), [])
+        unpinned = self.catalog("sha256:" + "0" * 64, "install_virtualization_stack", "packageName",
+                                "shutdown_host_vm_subsystem")
+        a, b, _ = self.apply(go, unpinned)
+        self.assertEqual([d["path"] for d in canon.diff(a, b)], [["steps", "list", "revision"]])
+
+    def test_only_the_rust_side_is_rewritten(self):
+        rust = {"steps": {"s": "shutdown_host_vm_subsystem"}}
+        a, b, _ = canon.apply_divergences(rust, {"steps": {"s": "x"}}, ["D19.neutral-host-tool-names"],
+                                          self.registry, rust_side="b")
+        self.assertEqual(a, rust)

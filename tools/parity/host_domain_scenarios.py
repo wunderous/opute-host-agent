@@ -1080,6 +1080,29 @@ cases += [
         STOP], "wsl-guid-only"),
 ]
 
+# D19 (neutral-host-tool-names): Rust lists the neutral names and keeps each
+# Go name as a hidden alias with Go's input schema. tools/list is compared
+# through the declared divergence; the Go-name call with incusPackage must
+# match Go exactly (the package reaches apt), an unmapped near-name stays an
+# unknown tool, and the operation and audit rows name the called alias.
+D19 = ["openspec/changes/neutral-host-tool-names", "crates/host-agent/catalog/neutral-names.json",
+       "internal/tools/dispatch_host.go"]
+ROWS = {"as": "rows", "query": {"db": "${SANDBOX}/state/state.db", "sql": {
+    "operations": "SELECT tool_name, status FROM operations ORDER BY tool_name",
+    "invocations": "SELECT operation_id, catalog_revision, terminal_status FROM capability_invocations "
+                   "ORDER BY operation_id"}}}
+d19 = virt_case("d19.aliases", [
+    virt_serve(),
+    {"as": "list", "mcp": {"method": "tools/list"}},
+    install("alias", incusPackage="incus-parity", incusChannel="stable"),
+    install("aliasBoth", incusPackage="incus-parity", packageName="ignored"),
+    call("unknown", "install_virt_stack", {}),
+    ROWS,
+    STOP], "virt-install")
+d19["compare"]["divergences"] = ["D19.neutral-host-tool-names"]
+d19["anchors"] = D19 + d19["anchors"]
+cases += [d19]
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "scenarios/host-domain.json"
     with open(out, "w") as f:

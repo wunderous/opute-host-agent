@@ -57,7 +57,10 @@ None. Go is unchanged.
 - **Catalog revisions:** the published tools/list differs from Go only by
   the map above, but every catalog revision Rust publishes changes. Each new
   Rust revision is pinned per mode in `parity-manifest.json`
-  (`catalogRevisions`), next to the Go revision it stands for.
+  (`catalogRevisions`), next to the Go revision it stands for; a crate test
+  proves each Go value is the revision of the same catalog under Go's names.
+  The catalogs the provider-lifecycle fixtures publish are pinned the same
+  way (`providerFixtures`), each pair observed one-to-one in its scenarios.
 - **Divergence:** `D19.neutral-host-tool-names` is declared in
   `tools/parity/divergences.json`. Applied to the Rust side only, it rewrites
   the mapped names and the one field and replaces each pinned Rust revision

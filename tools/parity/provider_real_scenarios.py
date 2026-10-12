@@ -128,5 +128,13 @@ def restart_scenario():
     return base
 
 
+def with_d19(case):
+    """D19 (neutral-host-tool-names): every case observes the host catalog
+    or a catalog revision, which Rust publishes under the neutral names."""
+    case["compare"]["divergences"] = case["compare"].get("divergences", []) + ["D19.neutral-host-tool-names"]
+    return case
+
+
 if __name__ == "__main__":
-    json.dump([scenario(*p) for p in PROVIDERS] + [restart_scenario()], open(sys.argv[1], "w"), indent=1)
+    json.dump([with_d19(scenario(*p)) for p in PROVIDERS] + [with_d19(restart_scenario())],
+              open(sys.argv[1], "w"), indent=1)

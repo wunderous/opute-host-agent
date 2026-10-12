@@ -372,7 +372,8 @@
       ],
       "divergences": [
         "D8.authz-tables",
-        "D8.authz-row-counts"
+        "D8.authz-row-counts",
+        "D19.neutral-host-tool-names"
       ]
     }
   },
@@ -429,7 +430,11 @@
         "stop": {}
       }
     ],
-    "compare": {}
+    "compare": {
+      "divergences": [
+        "D19.neutral-host-tool-names"
+      ]
+    }
   },
   {
     "id": "admission.saturation.normal-class",
@@ -697,6 +702,9 @@
           "zero": 0,
           "reason": "internal/heartbeat/capacity.go PSI fields are omitempty: a zero sample is omitted, so absent and 0 are the same value"
         }
+      ],
+      "divergences": [
+        "D19.neutral-host-tool-names"
       ]
     },
     "expectations": [
@@ -821,7 +829,11 @@
         "stop": {}
       }
     ],
-    "compare": {}
+    "compare": {
+      "divergences": [
+        "D19.neutral-host-tool-names"
+      ]
+    }
   },
   {
     "id": "admission.headroom.min-disk",
@@ -4807,7 +4819,8 @@
       ],
       "divergences": [
         "D8.authz-tables",
-        "D8.authz-row-counts"
+        "D8.authz-row-counts",
+        "D19.neutral-host-tool-names"
       ]
     }
   },
@@ -11508,6 +11521,9 @@
           "reason": "get_host_info reports live host measurements that vary between any two calls",
           "optional": true
         }
+      ],
+      "divergences": [
+        "D19.neutral-host-tool-names"
       ]
     },
     "expectations": [

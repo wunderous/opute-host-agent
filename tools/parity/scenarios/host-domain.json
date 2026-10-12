@@ -17974,5 +17974,235 @@
     }
    ]
   }
+ },
+ {
+  "id": "host-domain.d19.aliases",
+  "surface": "host-domain",
+  "owner": "host",
+  "anchors": [
+   "openspec/changes/neutral-host-tool-names",
+   "crates/host-agent/catalog/neutral-names.json",
+   "internal/tools/dispatch_host.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/domain/host/incus_uninstall.go",
+   "internal/exec/process.go:RunPrivilegedPackage",
+   "internal/tools/dispatch_host.go"
+  ],
+  "fixture": "virt-install",
+  "collect": [
+   "homeTree",
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp"
+     }
+    }
+   },
+   {
+    "as": "list",
+    "mcp": {
+     "method": "tools/list"
+    }
+   },
+   {
+    "as": "alias",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {
+       "incusPackage": "incus-parity",
+       "incusChannel": "stable"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ALIAS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "aliasDone",
+    "requires": [
+     "T_ALIAS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ALIAS}",
+     "params": {
+      "taskId": "${T_ALIAS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "aliasBoth",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_incus_stack",
+     "params": {
+      "name": "install_incus_stack",
+      "arguments": {
+       "incusPackage": "incus-parity",
+       "packageName": "ignored"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ALIASBOTH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "aliasBothDone",
+    "requires": [
+     "T_ALIASBOTH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ALIASBOTH}",
+     "params": {
+      "taskId": "${T_ALIASBOTH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 20
+    }
+   },
+   {
+    "as": "unknown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_virt_stack",
+     "params": {
+      "name": "install_virt_stack",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "rows",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "operations": "SELECT tool_name, status FROM operations ORDER BY tool_name",
+      "invocations": "SELECT operation_id, catalog_revision, terminal_status FROM capability_invocations ORDER BY operation_id"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "stub",
+      "port"
+     ],
+     "type": "non-negative-int",
+     "optional": true,
+     "reason": "the stub listens on a freshly allocated ephemeral port per side"
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    }
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ]
+  }
  }
 ]

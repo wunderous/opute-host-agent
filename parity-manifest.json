@@ -4,9 +4,150 @@
   "results": "evidence/local-e2e/native-2026-10-12-r8/canaries.json"
  },
  "catalogRevisions": {
-  "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
-  "platform": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-  "standalone": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
+  "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
+  "platform": {
+   "rust": "sha256:c465a4d1ca3705cfac2d8749c2524a9a0daef7bf293227a60408bf75b09a7b0e",
+   "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec"
+  },
+  "standalone": {
+   "rust": "sha256:d159c59e1cdb9e06a5ee837462c8038f380503f31fea3bb578423dea773799e5",
+   "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
+  },
+  "providerFixtures": [
+   {
+    "rust": "sha256:ef69b4f48d394e97f0da3f00a271a666ad39e6da512f73e76756e5804c165bf9",
+    "go": "sha256:1a276524cb4b16825e7b3bf57c6eac46bc06eb18006c0498dfd3546c335bbf76",
+    "scenarios": [
+     "provider-lifecycle.bad-manifest.service-capability-not-provided"
+    ]
+   },
+   {
+    "rust": "sha256:0afad61db88e09319eb6a2aa5331b4b4547884c06d29b2b29370a3059bafda06",
+    "go": "sha256:5232386ef9e128383d080cfac767b78b2e87421ae5c894b2163b3920e1d3fcad",
+    "scenarios": [
+     "provider-lifecycle.bad-manifest.validation-operation-undeclared",
+     "provider-lifecycle.builtin-family.require",
+     "provider-lifecycle.call.is-error",
+     "provider-lifecycle.call.rpc-error",
+     "provider-lifecycle.call.task-result-sync-only",
+     "provider-lifecycle.crash.after-activation",
+     "provider-lifecycle.family.rejected-candidate-keeps-owner",
+     "provider-lifecycle.family.replacement-keeps-accepted-call",
+     "provider-lifecycle.family.rollback-restores-owner",
+     "provider-lifecycle.install-call-teardown",
+     "provider-lifecycle.install.reuse-and-reload",
+     "provider-lifecycle.missing-dependency.descriptor-requires",
+     "provider-lifecycle.missing-dependency.requires",
+     "provider-lifecycle.readiness.activation-probe-error",
+     "provider-lifecycle.readiness.activation-probe-is-error",
+     "provider-lifecycle.readiness.flapping",
+     "provider-lifecycle.readiness.slow-probe",
+     "provider-lifecycle.replacement.in-flight",
+     "provider-lifecycle.restart.active-provider",
+     "provider-lifecycle.restart.after-replacement",
+     "provider-lifecycle.restart.after-teardown",
+     "provider-lifecycle.restart.provider-down",
+     "provider-lifecycle.schema-drift.operation-not-listed",
+     "provider-lifecycle.teardown.finalize-error",
+     "provider-lifecycle.teardown.idempotent",
+     "provider-lifecycle.teardown.prepare-error"
+    ]
+   },
+   {
+    "rust": "sha256:3fd190f4818e213ccf2bc4292f78fbfa655435cee3137a681f9128124d711813",
+    "go": "sha256:5d13b1a6d3393d07ecaf48cf57f51db506d374a74a2286cf368dea9a658e7a6f",
+    "scenarios": [
+     "provider-lifecycle.callback.bridged-without-task-extension",
+     "provider-lifecycle.callback.cancel-bridged-task-refused",
+     "provider-lifecycle.callback.child-task-acknowledged",
+     "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+     "provider-lifecycle.callback.host-tool",
+     "provider-lifecycle.callback.lifecycle-tool",
+     "provider-lifecycle.callback.malformed",
+     "provider-lifecycle.callback.no-delegation",
+     "provider-lifecycle.callback.provider-tool",
+     "provider-lifecycle.callback.restart-during-bridged-task",
+     "provider-lifecycle.callback.stale",
+     "provider-lifecycle.callback.standalone-tool",
+     "provider-lifecycle.callback.tampered",
+     "provider-lifecycle.callback.unknown-tool"
+    ]
+   },
+   {
+    "rust": "sha256:94b56e4b8b616d6fe318d0e43159b6556ddb92774f38b52e6ed7f08b06a1d86d",
+    "go": "sha256:34b809740a5f3a396d5e86a5a3c73d06988ad8156cbbda3b406935d11d99748e",
+    "scenarios": [
+     "provider-lifecycle.family.rejected-candidate-keeps-owner"
+    ]
+   },
+   {
+    "rust": "sha256:7b4ae0a194629cf495193c9c89480e6f2574dd4b941479e7bab7cd8423d526c3",
+    "go": "sha256:0b13468ed1005c919c2e0309dd67a406ac824c9791648a25fbe1248845ef6385",
+    "scenarios": [
+     "provider-lifecycle.family.replacement-keeps-accepted-call",
+     "provider-lifecycle.family.rollback-restores-owner"
+    ]
+   },
+   {
+    "rust": "sha256:9b4253bde00d66319cf37fa8969d4aa0a3a9481ad1266e510bee4d68c8b51420",
+    "go": "sha256:850550e436d511df91f0266999c2f7eb2e0530873e1c4b5e57207d90b623b210",
+    "scenarios": [
+     "provider-lifecycle.readiness.flapping",
+     "provider-lifecycle.replacement.in-flight",
+     "provider-lifecycle.restart.after-replacement"
+    ]
+   },
+   {
+    "rust": "sha256:2bd1bcaf7b6d7054cc41b1717582a63efa6ad8475149026711ea72969367df27",
+    "go": "sha256:01ef1a6fc58380741eaaaeed6efa90f16149096e99e1dbf93335dbaadf4da3e3",
+    "scenarios": [
+     "provider-lifecycle.schema-drift.invalid-input-schema"
+    ]
+   },
+   {
+    "rust": "sha256:4f40df95d7a5723f12d89fd839249d89db9d8b180f5911864ff610025ee9c960",
+    "go": "sha256:458ee103973df0ada45cdb01281c1076f9435186ca59372201ba2d7ac3451b9d",
+    "scenarios": [
+     "provider-lifecycle.schema-drift.result-violates-output-schema"
+    ]
+   },
+   {
+    "rust": "sha256:328f039bd58d38c60a36c4bfe1e49db0382dbdfaabcdee268f7ff6e4cbb2f082",
+    "go": "sha256:6465833d5b1e77645d22a87d2af32fce63aef95657698ebdc0f2d2fcee0f299a",
+    "scenarios": [
+     "provider-real.cloudflare"
+    ]
+   },
+   {
+    "rust": "sha256:74db1306775d1e148e7571e9fe3ced4254bead2309ab7d240699046473b684a3",
+    "go": "sha256:bc838403419c1a260fa45ad9e8def0604fe52622909f676bea2b353b8cc44fec",
+    "scenarios": [
+     "provider-real.cloudflare"
+    ]
+   },
+   {
+    "rust": "sha256:5e9b425ed0727c875dd1a0ae72e315f2b5bdf8d15032e058e8042e5a172aa8da",
+    "go": "sha256:6eeefc25fdaa7b1fbe9d0257c561a08a2d271f5fbcfdf5072e62399fa116c34b",
+    "scenarios": [
+     "provider-real.k3s",
+     "provider-real.k3s.restart"
+    ]
+   },
+   {
+    "rust": "sha256:2398537b9c30804da73deb814650e603f7ad8c8245dd53c384e950f66a39de81",
+    "go": "sha256:688008d9922fd3314c34ad11d1d7584690edcdf194fcacf56151f9f4368be3f6",
+    "scenarios": [
+     "provider-real.ollama"
+    ]
+   },
+   {
+    "rust": "sha256:9870d7f5d811e2654c78e1e5db91f77786f2479e928d8fae5c5bf2dd175858ec",
+    "go": "sha256:7a643de2aecceb1f3a82cb085974a359d385af08e33c671d7b92fec052081dcf",
+    "scenarios": [
+     "provider-real.tailscale"
+    ]
+   }
+  ]
  },
  "contracts": {
   "evidence-redaction": {

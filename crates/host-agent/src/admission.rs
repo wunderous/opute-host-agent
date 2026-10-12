@@ -293,7 +293,7 @@ pub fn resolve_binding_in(
     args: &Map<String, J>,
 ) -> Result<Binding, Refusal> {
     let mut binding = Binding::default();
-    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
+    let Some(descriptor) = catalog_snapshot.find(name) else {
         return Ok(binding);
     };
     // Declared bindings are authoritative for their argument; there is no
@@ -395,7 +395,7 @@ pub fn admit_in(
     let declared = registered.is_some();
     let class = registered.unwrap_or_else(|| "control".into());
     let mut cost = resource::default_cost_for_class(&class);
-    let descriptor = catalog_snapshot.tools.iter().find(|d| d.name == name);
+    let descriptor = catalog_snapshot.find(name);
     let found = descriptor.is_some();
     let effect_read = descriptor.is_some_and(|d| d.effect == "read");
     let provider = descriptor.is_some_and(|d| d.implementation.trim().starts_with("provider:"));

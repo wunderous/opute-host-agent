@@ -501,5 +501,9 @@ affinity=scenario("family.replacement-keeps-accepted-call",[SERVE,alpha_held[0],
     call("rivalProbe","opute.capability.rival.probe",{}),call("alphaProbe","opute.capability.fixture.probe",{}),
     {"as":"requests","providerRequests":{"stub":"provider-activate"}},STATE,{"as":"stop","stop":{}}])
 cases.append(affinity)
+# D19 (neutral-host-tool-names): every case observes the host catalog or a
+# catalog revision, which Rust publishes under the neutral names.
+for case in cases:
+    case["compare"]["divergences"]=case["compare"].get("divergences",[])+["D19.neutral-host-tool-names"]
 if __name__=="__main__":
     json.dump(cases,open(sys.argv[1],'w'),indent=1)

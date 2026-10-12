@@ -488,7 +488,7 @@ fn incus_inventory(host: &crate::tools::Host) -> Service {
     let (listing, listed) = (host.incus.clone(), registrar(host));
     let env = host.env.clone();
     Service {
-        id: "incus-inventory",
+        id: "instance-inventory",
         dependencies: &[],
         operations: vec![
             (
@@ -504,7 +504,7 @@ fn incus_inventory(host: &crate::tools::Host) -> Service {
                 }),
             ),
             (
-                "probe_incus_gpu",
+                "probe_virtualization_gpu",
                 op(move |call| {
                     Ok(structured_result(
                         probe_incus_gpu(&env, call.args),
@@ -1108,7 +1108,7 @@ fn host_vm_subsystem(host: &crate::tools::Host) -> Service {
         dependencies: &[],
         operations: vec![
             (
-                "terminate_wsl_distribution",
+                "terminate_host_vm_distribution",
                 op(move |call| {
                     crate::hostwsl::terminate_distribution(
                         &terminate_env,
@@ -1119,14 +1119,14 @@ fn host_vm_subsystem(host: &crate::tools::Host) -> Service {
                 }),
             ),
             (
-                "shutdown_wsl",
+                "shutdown_host_vm_subsystem",
                 op(move |call| {
                     crate::hostwsl::shutdown(&shutdown_env, call.ctx)
                         .map(|v| structured_result(v, Some("WSL environment shut down.")))
                 }),
             ),
             (
-                "compact_wsl_disk",
+                "compact_host_vm_disk",
                 op(move |call| {
                     match crate::hostwsl::compact_disk(
                         &compact_env,
@@ -1179,14 +1179,14 @@ fn virtualization_stack(host: &crate::tools::Host) -> Service {
         dependencies: &[],
         operations: vec![
             (
-                "install_incus_stack",
+                "install_virtualization_stack",
                 op(move |call| {
                     let owner = crate::hostfiles::Owner {
                         instance_id: &owner.0,
                         owner_instance: &owner.1,
                     };
                     let args = crate::hostvirt::InstallArgs {
-                        package_name: text(call.args, "incusPackage").into(),
+                        package_name: text(call.args, "packageName").into(),
                         qemu_package: text(call.args, "qemuPackage").into(),
                         gpu_packages: string_slice(call.args, "gpuPackages"),
                         channel: text(call.args, "incusChannel").into(),
@@ -1199,7 +1199,7 @@ fn virtualization_stack(host: &crate::tools::Host) -> Service {
                 }),
             ),
             (
-                "uninstall_incus_stack",
+                "uninstall_virtualization_stack",
                 op(move |call| {
                     let owner = crate::hostfiles::Owner {
                         instance_id: &uninstall_owner.0,
@@ -1230,7 +1230,10 @@ fn container_engine() -> Service {
     Service {
         id: "container-engine",
         dependencies: &[],
-        operations: vec![("ensure_docker", op(|_| crate::hostservice::ensure_docker()))],
+        operations: vec![(
+            "ensure_container_engine",
+            op(|_| crate::hostservice::ensure_docker()),
+        )],
     }
 }
 
@@ -1342,21 +1345,38 @@ fn catalog_service() -> Service {
 
 /// The mounted built-in service that implements `name`, if any.
 pub fn resolve(server: &Server, name: &str) -> Option<Arc<crate::provider::mounts::Service>> {
+    // A D19 alias reaches the published operation's Consumer.
+    let operation = catalog::neutral_name(name).unwrap_or(name);
     server
         .providers
         .activation
         .mounts
-        .resolve_operation(&provider_id(), GENERATION, name)
+        .resolve_operation(&provider_id(), GENERATION, operation)
 }
 
 /// Invoke `name` through the service context. `None` when no mounted
 /// service implements it.
 pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Result<J, String>> {
     let service = resolve(server, name)?;
-    match &service.implementation {
-        Implementation::Builtin(provider) => provider.call(name, invocation),
-        Implementation::Adapter(_) => None,
-    }
+    let Implementation::Builtin(provider) = &service.implementation else {
+        return None;
+    };
+    let Some(operation) = catalog::neutral_name(name) else {
+        return provider.call(name, invocation);
+    };
+    // An alias call validated against Go's schema; its renamed fields move
+    // to the published names before the Consumer reads them.
+    let args = catalog::alias_arguments(name, invocation.args);
+    provider.call(
+        operation,
+        &Invocation {
+            ctx: invocation.ctx,
+            args: &args,
+            binding: invocation.binding,
+            snapshot: invocation.snapshot,
+            claimed: invocation.claimed,
+        },
+    )
 }
 
 #[cfg(test)]

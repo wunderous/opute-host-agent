@@ -132,7 +132,13 @@ fn go_published(mode: &str) -> BTreeSet<String> {
         .as_array()
         .unwrap()
         .iter()
-        .map(|tool| tool["name"].as_str().unwrap().to_string())
+        .map(|tool| tool["name"].as_str().unwrap())
+        // D19: Rust publishes the neutral name in place of each mapped Go name.
+        .map(|name| {
+            crate::catalog::neutral_name(name)
+                .unwrap_or(name)
+                .to_string()
+        })
         .collect()
 }
 
@@ -158,7 +164,7 @@ pub(crate) fn report() -> J {
             .collect();
         if published != go_published(mode) {
             problems.push(format!(
-                "{mode}: published names differ from Go's captured tools/list"
+                "{mode}: published names differ from Go's captured tools/list under the D19 map"
             ));
         }
         let mounts = &server.providers.activation.mounts;

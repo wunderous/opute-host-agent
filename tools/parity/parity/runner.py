@@ -601,7 +601,8 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
     divergences: list[dict] = []
     if cross_implementation(left, right):
         norm_l, norm_r, divergences = canon.apply_divergences(
-            norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE))
+            norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE),
+            rust_side="b" if right.label.startswith("rust") else "a")
     norm_l, norm_r = _reconcile_optional_masks(norm_l, norm_r, spec.get("masks", []))
     differences = canon.diff(norm_l, norm_r)
     return {

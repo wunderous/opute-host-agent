@@ -44,7 +44,7 @@ fn registered(server: &Server, wire: &str) -> Option<String> {
         wire.strip_prefix(&format!("{}_", server.tool_prefix.trim()))?
             .to_string()
     };
-    let known = catalog_snapshot.tools.iter().any(|d| d.name == name)
+    let known = catalog_snapshot.find(&name).is_some()
         || catalog::internal().tools.iter().any(|d| d.name == name);
     (known && catalog::wire_name(&server.tool_prefix, &name) == wire).then_some(name)
 }
@@ -134,7 +134,8 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
             J::Object(map) => Some(map),
             _ => None,
         });
-    let host_tools = catalog::host_tool_names();
+    // A provider callback may name a host tool by its D19 alias.
+    let host_tools = catalog::callable_host_tool_names();
     let scope = crate::provider::delegation::CallbackScope {
         agent: &server.agent_id,
         tasks: &server.tasks,
@@ -205,9 +206,7 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
     // Provider-declared bridged work crosses the Host Agent task boundary
     // before the public request reaches the provider.
     let bridged = catalog_snapshot
-        .tools
-        .iter()
-        .find(|d| d.name == name)
+        .find(&name)
         .is_some_and(|d| d.task_support == "bridged");
     if bridged || catalog::is_task_aware(&name) {
         if !task_extension_declared(params) {
@@ -419,7 +418,8 @@ fn create_async_task(
     let owner = match callback {
         None => None,
         Some(ctx) => {
-            let host_tools = catalog::host_tool_names();
+            // A provider callback may name a host tool by its D19 alias.
+            let host_tools = catalog::callable_host_tool_names();
             let catalog_snapshot = server.catalog.snapshot();
             let scope = crate::provider::delegation::CallbackScope {
                 agent: &server.agent_id,
@@ -559,10 +559,8 @@ fn create_async_task(
 fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
     let catalog_snapshot = server.catalog.snapshot();
     let descriptor = catalog_snapshot
-        .tools
-        .iter()
-        .chain(catalog::internal().tools.iter())
-        .find(|d| d.name == name);
+        .find(name)
+        .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name));
     let Some(descriptor) = descriptor else {
         return json!({"redacted": true});
     };
@@ -579,10 +577,8 @@ fn redact_task_args(server: &Server, name: &str, args: &Map<String, J>) -> J {
 fn redact_task_result(server: &Server, name: &str, value: Option<&J>) -> Option<J> {
     let catalog_snapshot = server.catalog.snapshot();
     let descriptor = catalog_snapshot
-        .tools
-        .iter()
-        .chain(catalog::internal().tools.iter())
-        .find(|d| d.name == name);
+        .find(name)
+        .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name));
     let Some(descriptor) = descriptor else {
         return Some(json!({"redacted": true}));
     };
@@ -1158,7 +1154,7 @@ fn record_invocation(
     result: &J,
 ) {
     let catalog_snapshot = server.catalog.snapshot();
-    let Some(descriptor) = catalog_snapshot.tools.iter().find(|d| d.name == name) else {
+    let Some(descriptor) = catalog_snapshot.find(name) else {
         return;
     };
     let invalid_result = result
@@ -1252,10 +1248,8 @@ pub(crate) fn invoke(
     // which never joins the agent-facing snapshot
     // (`registerInternalDispatchTools`).
     let Some(descriptor) = catalog_snapshot
-        .tools
-        .iter()
-        .chain(&catalog::internal().tools)
-        .find(|d| d.name == name)
+        .find(name)
+        .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name))
     else {
         return not_implemented(name);
     };

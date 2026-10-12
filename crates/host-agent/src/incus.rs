@@ -216,7 +216,7 @@ impl Incus {
         if binary.is_empty() || look_path(&self.env, binary).is_none() {
             return Err(format!(
                 "virtualization_stack_absent: the incus virtualization stack is not installed on this host; install it with {}",
-                "install_incus_stack"
+                "install_virtualization_stack"
             ));
         }
         let mut argv = vec![binary.to_string()];

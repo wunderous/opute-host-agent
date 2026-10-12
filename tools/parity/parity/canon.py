@@ -392,14 +392,124 @@ def _split(value: Any, rule: dict) -> tuple[Any, Any]:
     raise DivergenceError(f"divergence {rule.get('id')} has no drop, dropKeys, dropLines or keepPrefix")
 
 
+# --- renameToGo: a declared rename on the Rust side only ------------------------
+#
+# D19 (neutral-host-tool-names): Rust publishes provider-neutral names where
+# Go publishes provider-named ones, renames one input field, and so publishes
+# different catalog revisions. The rule rewrites the Rust observation back to
+# Go's spelling using the one name map the Rust catalog itself is built from
+# (crates/host-agent/catalog/neutral-names.json) and the revision pairs pinned
+# in parity-manifest.json. It changes nothing else: a neutral name is replaced
+# only as a whole word, the field only inside the renamed tool's input
+# schema, and a revision only when it is a pinned Rust revision. A list that
+# was sorted by name (or by a name-bearing key) and whose order the rename
+# changed is sorted again, since Go sorts the same list under its own names.
+# The rule is stale when it rewrites nothing.
+
+_REPO = __import__("pathlib").Path(__file__).resolve().parents[3]
+_WORD = re.compile(r"[A-Za-z0-9_]")
+# A wire name is "<prefix>_<name>"; after substitution the prefix is this
+# placeholder, and the name after it is still a whole name.
+_WIRE_PREFIX = "${TOOL_PREFIX}_"
+_SORT_KEYS = ("name", "operationId", "tool", "sourceTool", "targetTool")
+
+
+def _rename_tables(rule: dict) -> tuple[dict, dict, dict]:
+    spec = rule["renameToGo"]
+    names = json.loads((_REPO / spec["names"]).read_text())
+    to_go = {neutral: go for go, neutral in names["tools"].items()}
+    fields = {names["tools"][go]: {new: old for old, new in renamed.items()}
+              for go, renamed in names.get("fields", {}).items()}
+    manifest = json.loads((_REPO / spec["revisions"]).read_text())
+    pinned = manifest["catalogRevisions"]
+    pairs = [pair for pair in pinned.values() if isinstance(pair, dict)]
+    pairs += pinned.get("providerFixtures", [])
+    revisions = {pair["rust"]: pair["go"] for pair in pairs if pair.get("rust") and pair.get("go")}
+    return to_go, fields, revisions
+
+
+def _rename_text(text: str, to_go: dict, revisions: dict) -> str:
+    out, i = [], 0
+    names = sorted(to_go, key=len, reverse=True)
+    while i < len(text):
+        if i == 0 or not _WORD.match(text[i - 1]) or text.endswith(_WIRE_PREFIX, 0, i):
+            for neutral in names:
+                end = i + len(neutral)
+                if text.startswith(neutral, i) and (end == len(text) or not _WORD.match(text[end])):
+                    out.append(to_go[neutral])
+                    i = end
+                    break
+            else:
+                out.append(text[i])
+                i += 1
+            continue
+        out.append(text[i])
+        i += 1
+    renamed = "".join(out)
+    for rust, go in revisions.items():
+        renamed = renamed.replace(rust, go)
+    return renamed
+
+
+def _sorted_by(items: list, key: str | None) -> bool:
+    values = [x if key is None else x.get(key) for x in items]
+    if any(not isinstance(v, str) for v in values):
+        return False
+    return values == sorted(values)
+
+
+def _rename_to_go(doc: Any, tables: tuple[dict, dict, dict]) -> Any:
+    to_go, fields, revisions = tables
+
+    def walk(value: Any) -> Any:
+        if isinstance(value, str):
+            return _rename_text(value, to_go, revisions)
+        if isinstance(value, list):
+            renamed = [walk(x) for x in value]
+            if renamed != value and len(value) > 1:
+                if all(isinstance(x, str) for x in value) and _sorted_by(value, None):
+                    return sorted(renamed)
+                if all(isinstance(x, dict) for x in value):
+                    for key in _SORT_KEYS:
+                        if all(key in x for x in value) and _sorted_by(value, key):
+                            return sorted(renamed, key=lambda x: x[key])
+            return renamed
+        if isinstance(value, dict):
+            name = value.get("name")
+            if isinstance(name, str) and name.startswith(_WIRE_PREFIX):
+                name = name[len(_WIRE_PREFIX):]
+            renamed_fields = fields.get(name) if isinstance(name, str) else None
+            out = {}
+            for key, item in value.items():
+                if renamed_fields and key == "inputSchema" and isinstance(item, dict):
+                    item = _rename_schema_fields(item, renamed_fields)
+                out[_rename_text(key, to_go, revisions)] = walk(item)
+            return out
+        return value
+
+    return walk(doc)
+
+
+def _rename_schema_fields(schema: dict, renamed: dict) -> dict:
+    schema = dict(schema)
+    if isinstance(schema.get("properties"), dict):
+        schema["properties"] = {renamed.get(k, k): v for k, v in schema["properties"].items()}
+    if isinstance(schema.get("required"), list):
+        schema["required"] = [renamed.get(k, k) if isinstance(k, str) else k for k in schema["required"]]
+    return schema
+
+
+_KINDS = ("drop", "dropKeys", "dropLines", "dropValueDeep", "keepPrefix", "renameToGo")
+
+
 def load_divergences(path: Any) -> dict[str, dict]:
     rules = {}
     for rule in json.loads(path.read_text()):
         for key in ("id", "decision", "reason", "path"):
             if not rule.get(key):
                 raise DivergenceError(f"divergence {rule.get('id')!r} has no {key}")
-        if sum(k in rule for k in ("drop", "dropKeys", "dropLines", "dropValueDeep", "keepPrefix")) != 1:
-            raise DivergenceError(f"divergence {rule['id']} needs exactly one of drop, dropKeys, dropLines, dropValueDeep, keepPrefix")
+        if sum(k in rule for k in _KINDS) != 1:
+            raise DivergenceError(f"divergence {rule['id']} needs exactly one of {', '.join(_KINDS)}")
         if rule["id"] in rules:
             raise DivergenceError(f"duplicate divergence {rule['id']}")
         rules[rule["id"]] = rule
@@ -407,17 +517,29 @@ def load_divergences(path: Any) -> dict[str, dict]:
 
 
 def apply_divergences(left: Any, right: Any, ids: Iterable[str],
-                      registry: dict[str, dict]) -> tuple[Any, Any, list[dict]]:
+                      registry: dict[str, dict], rust_side: str = "b") -> tuple[Any, Any, list[dict]]:
     """Remove declared divergent content from both sides.
 
     Returns the reduced documents and one record per declaration with the
-    decision it cites and whether it is stale.
+    decision it cites and whether it is stale. A `renameToGo` rule rewrites
+    only `rust_side` ("a" or "b").
     """
     records = []
     for did in ids:
         rule = registry.get(did)
         if rule is None:
             raise DivergenceError(f"undefined divergence {did!r}")
+        if "renameToGo" in rule:
+            tables = _rename_tables(rule)
+            target = right if rust_side == "b" else left
+            before = copy.deepcopy(target)
+            target, _ = _apply_at(target, list(rule["path"]), lambda v: _rename_to_go(v, tables))
+            if rust_side == "b":
+                right = target
+            else:
+                left = target
+            records.append({"id": did, "decision": rule["decision"], "stale": target == before})
+            continue
         if "dropValueDeep" in rule:
             captured_left: list = []
             captured_right: list = []

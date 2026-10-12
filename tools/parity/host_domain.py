@@ -19,17 +19,9 @@ GO = ROOT / ".parity/go-src"
 OUT = ROOT / "baseline/inventory/host-domain.json"
 HOST = GO / "internal/domain/host"
 
-# D19 (openspec/changes/neutral-host-tool-names): Go name -> published name.
-NEUTRAL = {
-    "install_incus_stack": "install_virtualization_stack",
-    "uninstall_incus_stack": "uninstall_virtualization_stack",
-    "probe_incus_gpu": "probe_virtualization_gpu",
-    "terminate_wsl_distribution": "terminate_host_vm_distribution",
-    "shutdown_wsl": "shutdown_host_vm_subsystem",
-    "compact_wsl_disk": "compact_host_vm_disk",
-    "ensure_docker": "ensure_container_engine",
-    "ensure_k3d": "ensure_local_cluster_runtime",
-}
+# D19 (openspec/changes/neutral-host-tool-names): Go name -> published name,
+# read from the one map the Rust catalog is built from.
+NEUTRAL = json.loads((ROOT / "crates/host-agent/catalog/neutral-names.json").read_text())["tools"]
 
 # Service Definitions the host domain is ported as (D14). A family is one
 # built-in service; dependencies follow the Go call graph. Reads ported in M3

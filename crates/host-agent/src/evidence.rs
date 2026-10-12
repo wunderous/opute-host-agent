@@ -204,9 +204,7 @@ pub fn redact_plan_run_state(
                 .and_then(|action| action.get("tool"))
                 .and_then(J::as_str);
             let id = node.get("id").and_then(J::as_str).unwrap_or("");
-            if let Some(descriptor) =
-                tool.and_then(|tool| catalog.tools.iter().find(|d| d.name == tool))
-            {
+            if let Some(descriptor) = tool.and_then(|tool| catalog.find(tool)) {
                 schemas.insert(id, descriptor.output_schema.as_ref().and_then(J::as_object));
             }
         }
