@@ -1154,7 +1154,12 @@ fn record_invocation(
     result: &J,
 ) {
     let catalog_snapshot = server.catalog.snapshot();
-    let Some(descriptor) = catalog_snapshot.find(name) else {
+    // Go records every registered capability, host-internal ones included,
+    // under the published catalog revision.
+    let Some(descriptor) = catalog_snapshot
+        .find(name)
+        .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name))
+    else {
         return;
     };
     let invalid_result = result
