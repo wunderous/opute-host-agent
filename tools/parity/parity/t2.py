@@ -56,7 +56,7 @@ BASE_IMAGE = "noble-server-cloudimg-amd64.img"
 BASE_SOURCE = "https://cloud-images.ubuntu.com/noble/20260926/noble-server-cloudimg-amd64.img"
 KEYRING = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 HOST_KEY_ALIAS = "opute-parity-t2-golden"
-VCPUS, MEMORY_MB = 2, 3072
+VCPUS, MEMORY_MB = 2, 2048
 AGENT_ENV = {
     "OPUTE_REMOTE_AGENT_ID": "parity-t2-agent",
     "OPUTE_AGENT_MODE": "standalone",
@@ -500,37 +500,40 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     scenarios = load_scenarios(ids)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    def run_scenario(scenario: dict) -> dict:
-        # Scenarios are independent (each twin is its own disposable VM), so
-        # they may run concurrently; a scenario's iterations run in order.
+    def run_iteration(scenario: dict, i: int) -> dict:
+        # Every (scenario, iteration) is independent: each runs in its own
+        # pair of disposable VMs booted from the golden image, so they may
+        # run concurrently. Receipts are written per iteration.
         sdir = out_dir / "scenarios" / scenario["id"]
         sdir.mkdir(parents=True, exist_ok=True)
-        iterations = []
-        for i in range(repeat):
-            outcome = compare_once(left, right, scenario, out_dir / "runs" / scenario["id"] / str(i))
-            bad = failed(outcome, {"a": outcome["a"]["error"], "b": outcome["b"]["error"]})
-            iteration = {"iteration": i, "pass": not bad, "diffCount": len(outcome["diff"])}
-            store = out_dir / "snapshots"
-            for side, label in (("a", left.label), ("b", right.label)):
-                (sdir / f"{side}{i}.json.gz").write_bytes(_gz(_store_snapshots(
-                    {"label": label, **outcome[side], "observation": outcome["observation"][side]}, store)))
-            (sdir / f"diff{i}.json").write_text(json.dumps({
-                "diff": outcome["diff"], "maskViolations": outcome["maskViolations"],
-                "unexpectedEffects": outcome["unexpectedEffects"], "harnessErrors": outcome["harnessErrors"],
-                "divergences": outcome["divergences"],
-                "errors": {"a": outcome["a"]["error"], "b": outcome["b"]["error"]}}, indent=1, sort_keys=True) + "\n")
-            iteration["receipts"] = {name: sha256_file(sdir / name)
-                                     for name in (f"a{i}.json.gz", f"b{i}.json.gz", f"diff{i}.json")}
-            iterations.append(iteration)
-            if bad:
-                break
-        status = "pass" if all(it["pass"] for it in iterations) and len(iterations) == repeat else "fail"
-        print(f"{status:4}  {scenario['id']}  ({len(iterations)} iterations)", flush=True)
-        return {"status": status, "iterations": iterations, "file": scenario["_file"]}
+        outcome = compare_once(left, right, scenario, out_dir / "runs" / scenario["id"] / str(i))
+        bad = failed(outcome, {"a": outcome["a"]["error"], "b": outcome["b"]["error"]})
+        iteration = {"iteration": i, "pass": not bad, "diffCount": len(outcome["diff"])}
+        store = out_dir / "snapshots"
+        for side, label in (("a", left.label), ("b", right.label)):
+            (sdir / f"{side}{i}.json.gz").write_bytes(_gz(_store_snapshots(
+                {"label": label, **outcome[side], "observation": outcome["observation"][side]}, store)))
+        (sdir / f"diff{i}.json").write_text(json.dumps({
+            "diff": outcome["diff"], "maskViolations": outcome["maskViolations"],
+            "unexpectedEffects": outcome["unexpectedEffects"], "harnessErrors": outcome["harnessErrors"],
+            "divergences": outcome["divergences"],
+            "errors": {"a": outcome["a"]["error"], "b": outcome["b"]["error"]}}, indent=1, sort_keys=True) + "\n")
+        iteration["receipts"] = {name: sha256_file(sdir / name)
+                                 for name in (f"a{i}.json.gz", f"b{i}.json.gz", f"diff{i}.json")}
+        print(f"{'pass' if not bad else 'FAIL':4}  {scenario['id']}#{i}", flush=True)
+        return iteration
 
+    # Slowest scenarios (largest declared task timeouts) first, so they do not start last.
+    order = sorted(scenarios, key=lambda s: -sum(st.get("mcp", {}).get("timeout", 0) for st in s["steps"]))
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        futures = {s["id"]: pool.submit(run_scenario, s) for s in scenarios}
-        results = {sid: fut.result() for sid, fut in futures.items()}
+        futures = {(s["id"], i): pool.submit(run_iteration, s, i) for s in order for i in range(repeat)}
+        done = {key: fut.result() for key, fut in futures.items()}
+    results = {}
+    for scenario in scenarios:
+        iterations = [done[(scenario["id"], i)] for i in range(repeat)]
+        status = "pass" if all(it["pass"] for it in iterations) else "fail"
+        results[scenario["id"]] = {"status": status, "iterations": iterations, "file": scenario["_file"]}
+        print(f"{status:4}  {scenario['id']}  ({repeat} iterations)", flush=True)
     changed = (binaries != {"left": left.sha256(), "right": right.sha256()}
                or guest_hashes != {name: sha256_file(GUEST_DIR / name) for name in GUEST_FILES}
                or harness_hash != sha256_file(Path(__file__))
