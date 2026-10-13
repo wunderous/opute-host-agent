@@ -661,6 +661,20 @@ three-role services, not as a name-switch dispatch table:
 | 8e | postgres / sqlite | platform and standalone Postgres, relay, storage, SQL connector, SQLite database provisioning | Postgres container |
 | 8f | llm / serving | Ollama, llama-server build and prerequisites, relay and gateway, serving assignment and ingress | CPU-only model stub |
 
+**8a status (2026-10-13): exit gate met.** Evidence:
+[`evidence/m8a/README.md`](../../../evidence/m8a/README.md). The m8a gate
+passes, and gates m0–m6 still pass:
+
+- T1 Go/Rust ×5 is 256/256 and Go/Go ×20 is 256/256.
+- T2 is 14/14 in both twin suites (Go/Go ×20, Go/Rust ×5). It covers effect,
+  cleanup and the M4 no-unauthorized-effect rerun.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+The three WSL tools remain `unverified` at T2: they need a WSL2 runner, and
+the gap is owned by M8a. `exec_command` and `run_instance_command` at T2 are
+owned by M8b. The cutover gate fails, as expected, on the remaining owned
+gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,

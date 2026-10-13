@@ -1,0 +1,88 @@
+{
+ "decision": "D10",
+ "items": {
+  "gate.mutations-allowed": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "5fced76420fdfbbd7b30f72130b7c75519cdc9b402a97185032fe1aee1cab7fb"
+   },
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Mutations allowed",
+   "status": "pass"
+  },
+  "gate.platform-unaffected": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "2385441b51b83af59cf053dc646b011b79befe5ae90ee1c737ce4183378bbc71"
+   },
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Platform mode",
+   "status": "pass"
+  },
+  "gate.published-non-read-refused": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "41cebfaaca96c00ecc992f9f21f5bfe472333bb3a4004ae75b7841c35c7af3f3"
+   },
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Published non-read tool",
+   "status": "pass"
+  },
+  "gate.published-read-not-refused": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "d1370220d012655ace2e4ecfc90572c62a0e6721ab27fbde45b849c706f4986e"
+   },
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Published read tool",
+   "status": "pass"
+  },
+  "gate.refused-leaves-no-trace": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "509d64ee47771f2a501e42bde1528015d1ce9132b5cb6408ad5a26555e92dd3e"
+   },
+   "requirement": "The gate refuses before any effect",
+   "specScenario": "Refused call leaves no trace",
+   "status": "pass"
+  },
+  "gate.stale-revision-first": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "03e6949dbcfc9e84021c1336c879078cdabf596dbb11448c479ce29177a6c1e9"
+   },
+   "requirement": "The gate refuses before any effect",
+   "specScenario": "Stale catalog revision still wins",
+   "status": "pass"
+  },
+  "gate.unpublished-with-declared-read": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "eae5e6cc97efca9d2051d5652c44865c3327d3f64947c0a24fd93ebd81e4de4d"
+   },
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Unpublished tool with a declared read effect",
+   "status": "pass"
+  },
+  "gate.unpublished-without-declared-read": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "cbe2e1f248f47ee218e3455ac091830632fef993a4c2f3d1caf036f9e5065a41"
+   },
+   "requirement": "Standalone without mutations runs read tools only",
+   "specScenario": "Unpublished tool without a declared read effect",
+   "status": "pass"
+  }
+ },
+ "provenance": {
+  "contractSha256": "ad533c790576e886a2428c77c9f86ea0513f9c778e0ba2d335e329b294fd8757",
+  "durationSeconds": 1.9,
+  "impl": {
+   "binarySha256": "b190b5975bd71a35e0a21844dd703687477f0f5b8194d789141236c128c314fe",
+   "label": "rust"
+  },
+  "startedAt": "2026-10-13T16:04:24Z"
+ },
+ "schemaVersion": 1,
+ "suite": "standalone-read-only-gate"
+}

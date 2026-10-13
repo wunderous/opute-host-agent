@@ -1,0 +1,281 @@
+{
+ "baselineFailures": {
+  "evidence-redaction": [],
+  "oauth-issuance": [],
+  "refuse-before-operation-record": [],
+  "reject-without-audit-writes": [],
+  "standalone-read-only-gate": []
+ },
+ "canaryFileSha256": "73f33cda1f3a21765c5a4e6ff72ac9c73f2019603b7889f49f13450a8cf37b0d",
+ "contractSha256": {
+  "evidence-redaction": "7fe265d912d4009d86dcb66df7a71236f9e27b74b2dbd6095fe37d6bfa3cb306",
+  "oauth-issuance": "93e0aa819bd542985d43c0be0bf5db455196d3c6e4f1e2ee72a345d65ecc1020",
+  "refuse-before-operation-record": "4a191dc4cada33728e018004e5b4ffc830fcf59f21092b85ff1caded70a9b4a6",
+  "reject-without-audit-writes": "4c47aa6a81554c8734e9ad7c2c71e6e607428fc4e4043695c633998dbfb2213e",
+  "standalone-read-only-gate": "ad533c790576e886a2428c77c9f86ea0513f9c778e0ba2d335e329b294fd8757"
+ },
+ "results": [
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "cc.no-secret",
+    "provider.public-without-credential"
+   ],
+   "id": "K1-empty-secret",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "cc.public-client"
+   ],
+   "id": "K2-public-client-credentials",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "audience.arbitrary-host"
+   ],
+   "id": "K3-any-audience",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "abuse.pending-flood",
+    "approval.cli-approve",
+    "approval.deny",
+    "approval.expiry",
+    "approval.not-over-http",
+    "approval.once-and-disabled",
+    "approval.remembered-consent",
+    "audit.issuance-line",
+    "authorize.unapproved",
+    "redirect.exact-and-loopback"
+   ],
+   "id": "K4-implicit-consent",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "redirect.exact-and-loopback"
+   ],
+   "id": "K5-redirect-prefix",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "credentials.first-start",
+    "credentials.operator-secret",
+    "credentials.rotation"
+   ],
+   "id": "K6-credential-mode",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "credentials.rotation"
+   ],
+   "id": "K7-rotation-keeps-tokens",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "migration.revokes-live-tokens"
+   ],
+   "id": "K8-migration-keeps-tokens",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.cli-approve"
+   ],
+   "id": "K9-code-replay",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "audit.issuance-line"
+   ],
+   "id": "K10-audit-secret",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "abuse.backoff-only-failures"
+   ],
+   "id": "K11-backoff-blocks-valid",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.cli-approve"
+   ],
+   "id": "K12-framable-page",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "abuse.pending-flood"
+   ],
+   "id": "K13-pending-cap",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.expiry"
+   ],
+   "id": "K14-long-pending",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "oauth-issuance",
+   "failedScenarios": [
+    "approval.not-over-http"
+   ],
+   "id": "K15-http-approval-route",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.published-non-read-refused",
+    "gate.refused-leaves-no-trace",
+    "gate.unpublished-without-declared-read"
+   ],
+   "id": "K16-gate-name-list",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.refused-leaves-no-trace",
+    "gate.unpublished-without-declared-read"
+   ],
+   "id": "K17-inferred-read-unpublished",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.mutations-allowed"
+   ],
+   "id": "K18-gate-ignores-allow",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.platform-unaffected"
+   ],
+   "id": "K19-gate-in-platform",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "standalone-read-only-gate",
+   "failedScenarios": [
+    "gate.published-read-not-refused"
+   ],
+   "id": "K20-gate-refuses-reads",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "reject-without-audit-writes",
+   "failedScenarios": [
+    "reject.platform",
+    "reject.standalone",
+    "reject.standalone-mutations-enabled"
+   ],
+   "id": "K21-rejected-call-audit-write",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "refuse-before-operation-record",
+   "failedScenarios": [
+    "refuse.binding-platform",
+    "refuse.binding-standalone"
+   ],
+   "id": "K22-binding-refusal-operation-row",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "refuse-before-operation-record",
+   "failedScenarios": [
+    "refuse.coordinator"
+   ],
+   "id": "K23-coordinator-refusal-operation-row",
+   "patchApplied": true
+  },
+  {
+   "buildStatus": "ok",
+   "caught": true,
+   "contract": "evidence-redaction",
+   "failedScenarios": [
+    "arg.unmarked",
+    "result.unmarked",
+    "task.unmarked"
+   ],
+   "id": "K24-unmarked-passthrough",
+   "patchApplied": true
+  }
+ ],
+ "rustBinarySha256": "b190b5975bd71a35e0a21844dd703687477f0f5b8194d789141236c128c314fe",
+ "schemaVersion": 1
+}

@@ -161,6 +161,10 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   Each operation is a built-in provider of a three-role service and the
   seam verifier passes for its domain (decision D14,
   [`three-role-capability-seam`](../three-role-capability-seam/tasks.md)).
+  8a (host) done 2026-10-13: T1 and T2 parity green, the seam verifier
+  reports no gap, and the m8a gate passes
+  ([`evidence/m8a`](../../../evidence/m8a/README.md)). The WSL tools are
+  `unverified` at T2 pending a WSL2 runner. 8b–8f remain open.
 - [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,

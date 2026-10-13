@@ -50,6 +50,7 @@ and after, which must be equal: no tracked file changed during a capture.
 | M4 | `053cdf5c` | [m4](m4-validation.json): 12 compliant, 16 gaps | [m4](m4-captures-validation.json) | M3 set plus the admission matrix, rejection and tasks (44/44); secret sweep 16 fields, 0 failures; D10 8/8, D11 3/3, D12 3/3; Rust canaries 24/24 |
 | M6 | `f23e6d75` | [m6](m6-validation.json): 23 compliant, 5 gaps | [m6](m6-captures-validation.json) | Plan fault scripts, invalid-plan and recipe corpora, the 49 provider-lifecycle scenarios (67/67); secret sweep clean |
 | M7 | `9878d67f` | [m7](m7-validation.json): 28 compliant, **0 gaps** | [m7](m7-captures-validation.json) | 52 provider-lifecycle (including the 3 `builtin-family` scenarios) and 6 real-provider journeys (58/58), plus Go/Go 58/58; secret sweep clean |
+| M8a | `58c8492b` | [m8a](m8a-validation.json): 56 compliant, 0 gaps, canary red | [m8a](../m8a/validation.json) | The host domain as built-in providers: T1 256/256 Go/Rust ×5 and Go/Go ×20, T2 14/14 twin suites, M5 suites and secret sweep clean ([README](../m8a/README.md)) |
 | Final | `5d439346` | [final](final-validation.json): 28 compliant, 0 gaps | the r3 cycle below | Everything, after the host-service resolver joined the providers service's declared `host-observation` dependency |
 
 The M7-stage report was rebuilt at HEAD with `verify.py m7 --rerun` and

@@ -1,0 +1,27 @@
+
+running 1 test
+test seam::seam_verifier ... FAILED
+
+failures:
+
+failures:
+    seam::seam_verifier
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 256 filtered out; finished in 0.74s
+
+   Compiling opute-host-agent v0.2.3 (/tmp/tmpikozl8sv/crates/host-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.07s
+     Running unittests src/main.rs (/home/houman/github/wunderous/opute-host-agent/target/seam-canary/debug/deps/opute_host_agent-243fb5043b717fdc)
+time=2026-10-13T17:45:38.069Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-13T17:45:38.069Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-13T17:45:38.069Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-10-13T17:45:38.423Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-10-13T17:45:38.424Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-10-13T17:45:38.424Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+
+thread 'seam::seam_verifier' (2318801) panicked at crates/host-agent/src/seam.rs:279:5:
+assertion `left == right` failed: seam gaps differ from seam-gaps.json: a capability is reached outside the service context, or a revised one is still listed
+  left: ["list_operations"]
+ right: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p opute-host-agent --bin opute-host-agent`
