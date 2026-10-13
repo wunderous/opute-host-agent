@@ -472,10 +472,11 @@ class ProviderProcess:
     def __init__(self, sandbox: "Sandbox", binary: str):
         if "/" in binary or not binary.startswith("opute-provider-"):
             raise ValueError(f"not a pinned provider executable: {binary!r}")
-        holder = socket.socket()
-        holder.bind(("127.0.0.1", 0))
-        self.port = holder.getsockname()[1]
-        holder.close()
+        # A leased port, never a kernel-chosen one: provider stubs take
+        # ephemeral ports, and a number freed here could be handed to a
+        # concurrent scenario's stub, which this sandbox's agent would then
+        # install from.
+        self.port = free_port()
         env = sandbox.base_env()
         env.update({
             "OPUTE_PROVIDER_PORT": str(self.port),
@@ -490,13 +491,14 @@ class ProviderProcess:
                                      stdin=subprocess.DEVNULL, stdout=self.log, stderr=subprocess.STDOUT)
         deadline = time.monotonic() + 10
         while True:
-            try:
-                socket.create_connection(("127.0.0.1", self.port), 0.2).close()
+            # The provider itself must hold the listener, not whatever else
+            # answers on the port.
+            if (any(address.rsplit(":", 1)[-1] == str(self.port) for address in listeners_of(self.proc.pid))
+                    and port_open(self.port)):
                 break
-            except OSError:
-                if self.proc.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{binary} did not listen on {self.port}")
-                time.sleep(0.05)
+            if self.proc.poll() is not None or time.monotonic() > deadline:
+                raise RuntimeError(f"{binary} did not listen on {self.port}")
+            time.sleep(0.05)
         self.result: dict | None = None
 
     def close(self) -> dict:
@@ -508,6 +510,7 @@ class ProviderProcess:
                 self.proc.kill()
                 self.proc.wait()
             self.log.close()
+            release_port(self.port)
             self.result = {"stopped": True, "signal": -self.proc.returncode if self.proc.returncode < 0 else None}
         return self.result
 
