@@ -1,0 +1,360 @@
+{
+ "items": [
+  {
+   "effect": "EffectMutation",
+   "neutralName": "agent_shell",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [],
+   "t2Scenarios": [
+    "t2.host-domain.exec.workloads"
+   ],
+   "tool": "agent_shell"
+  },
+  {
+   "effect": "EffectDestructive",
+   "gapReason": "T2 unverified: needs a WSL2 runner: the effect is a VHDX compact on the Windows host through wsl.exe and PowerShell; the Linux T2 sandbox has no WSL",
+   "milestone": "M8a",
+   "neutralName": "compact_host_vm_disk",
+   "owner": "host",
+   "status": "gap",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "compact_wsl_disk"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "configure_agent_connection",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.connection.restart-user-service"
+   ],
+   "tool": "configure_agent_connection"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_container_engine",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.linux.no-effect-tools"
+   ],
+   "tool": "ensure_docker"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_host_artifact",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.artifacts.download-and-agent-build"
+   ],
+   "tool": "ensure_host_artifact"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_host_file",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.connection.restart-user-service",
+    "t2.host-domain.services.system-lifecycle",
+    "t2.host-domain.services.user-lifecycle"
+   ],
+   "tool": "ensure_host_file"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_host_firewall_rule",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [],
+   "t2Scenarios": [
+    "t2.host-domain.linux.no-effect-tools"
+   ],
+   "tool": "ensure_host_firewall_rule"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_host_service_supervisor",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.connection.restart-user-service",
+    "t2.host-domain.exec.workloads",
+    "t2.host-domain.services.system-lifecycle",
+    "t2.host-domain.services.user-lifecycle"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_host_tool",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.tools.apt-ninja"
+   ],
+   "tool": "ensure_host_tool"
+  },
+  {
+   "effect": "EffectMutation",
+   "inertReason": "omitted from every Go catalog (IncusOmittedToolNames) and unregistered in Rust; no call reaches it",
+   "neutralName": "ensure_local_cluster_runtime",
+   "owner": "host",
+   "status": "inert",
+   "t2RejectedScenarios": [],
+   "t2Scenarios": [],
+   "tool": "ensure_k3d"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_public_mcp_quick_tunnel",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.public.tunnel-and-quick"
+   ],
+   "tool": "ensure_public_mcp_quick_tunnel"
+  },
+  {
+   "effect": "EffectCredential",
+   "neutralName": "ensure_public_mcp_tunnel",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.public.tunnel-and-quick"
+   ],
+   "tool": "ensure_public_mcp_tunnel"
+  },
+  {
+   "effect": "EffectMutation",
+   "gapReason": "T2 unverified: executes inside an Incus instance; needs the M8b nested-Incus sandbox",
+   "milestone": "M8b",
+   "neutralName": "exec_command",
+   "owner": "host",
+   "status": "gap",
+   "t2RejectedScenarios": [],
+   "t2Scenarios": [],
+   "tool": "exec_command"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "extract_host_archive",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.archives.extract"
+   ],
+   "tool": "extract_host_archive"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "install_virtualization_stack",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tool": "install_incus_stack"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "prepare_host_agent_artifacts",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.artifacts.download-and-agent-build"
+   ],
+   "tool": "prepare_host_agent_artifacts"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "reconcile_host_resource_policy",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.policy.system-agent-unit",
+    "t2.host-domain.policy.user-agent-unit"
+   ],
+   "tool": "reconcile_host_resource_policy"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "recover_bridge",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.bridge.recover"
+   ],
+   "tool": "recover_bridge"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "remove_host_file",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.connection.restart-user-service",
+    "t2.host-domain.services.system-lifecycle",
+    "t2.host-domain.services.user-lifecycle"
+   ],
+   "tool": "remove_host_file"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "remove_public_mcp_quick_tunnel",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.public.tunnel-and-quick"
+   ],
+   "tool": "remove_public_mcp_quick_tunnel"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "restart_host_service",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.services.system-lifecycle"
+   ],
+   "tool": "restart_host_service"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "run_host_command",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.exec.workloads",
+    "t2.host-domain.policy.user-agent-unit"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "effect": "EffectMutation",
+   "gapReason": "T2 unverified: executes inside an Incus instance; needs the M8b nested-Incus sandbox",
+   "milestone": "M8b",
+   "neutralName": "run_instance_command",
+   "owner": "host",
+   "status": "gap",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "run_instance_command"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "set_host_service_state",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.connection.restart-user-service",
+    "t2.host-domain.services.system-lifecycle",
+    "t2.host-domain.services.user-lifecycle"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "effect": "EffectDestructive",
+   "gapReason": "T2 unverified: needs a WSL2 runner: wsl.exe --shutdown acts on the Windows host's WSL VM",
+   "milestone": "M8a",
+   "neutralName": "shutdown_host_vm_subsystem",
+   "owner": "host",
+   "status": "gap",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "shutdown_wsl"
+  },
+  {
+   "effect": "EffectMutation",
+   "gapReason": "T2 unverified: needs a WSL2 runner: wsl.exe --terminate acts on a Windows-hosted distribution",
+   "milestone": "M8a",
+   "neutralName": "terminate_host_vm_distribution",
+   "owner": "host",
+   "status": "gap",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "terminate_wsl_distribution"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "uninstall_virtualization_stack",
+   "owner": "host",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.host-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tool": "uninstall_incus_stack"
+  }
+ ],
+ "note": "Each mutating host-domain tool and the T2 scenarios that execute it in the twin sandboxes. Coverage is proven by passing T2 evidence (verify gate requireT2), not by this listing.",
+ "owner": "host",
+ "surface": "t2-effects"
+}

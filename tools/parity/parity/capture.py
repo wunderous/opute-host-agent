@@ -671,7 +671,8 @@ def collect_gaps(inventory: dict, catalogs: dict) -> dict:
             continue
         for item in doc.get("items", []):
             if item.get("status") == "gap":
-                key = item.get("name") or item.get("route") or item.get("command") or item.get("recipe")
+                key = (item.get("name") or item.get("route") or item.get("command") or item.get("recipe")
+                       or item.get("tool"))
                 gaps.append({"file": fname, "item": key, "owner": item.get("owner"),
                              "milestone": item.get("milestone"),
                              "reason": item.get("gapReason", "no covering scenario yet")})
