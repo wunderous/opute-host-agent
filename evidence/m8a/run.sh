@@ -16,7 +16,8 @@ G=$ROOT/.parity/bin/go-reference
 R=$ROOT/target/release/opute-host-agent
 GO=$ROOT/.parity/setup/go/bin/go
 P="python3 -m parity"
-export PATH=$ROOT/.parity/setup/node-v22.14.0-linux-x64/bin:$PATH
+export PATH=$ROOT/.parity/setup/go/bin:$ROOT/.parity/setup/node-v22.14.0-linux-x64/bin:$PATH
+command -v go >/dev/null && go version | grep -q "go1.25.4" || { echo "pinned Go toolchain missing" >&2; exit 1; }
 mkdir -p "$C"
 
 tree() { { git status --porcelain --untracked-files=no; git diff HEAD; } | sha256sum; }
