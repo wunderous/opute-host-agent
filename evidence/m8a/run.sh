@@ -18,6 +18,11 @@ GO=$ROOT/.parity/setup/go/bin/go
 P="python3 -m parity"
 export PATH=$ROOT/.parity/setup/go/bin:$ROOT/.parity/setup/node-v22.14.0-linux-x64/bin:$PATH
 command -v go >/dev/null && go version | grep -q "go1.25.4" || { echo "pinned Go toolchain missing" >&2; exit 1; }
+# Each capture leaves its sandboxes under TMPDIR (about 15k directories a
+# round); a full tmpfs fails captures mid-round, so require room up front.
+TMPROOT=${TMPDIR:-/tmp}
+[ "$(df --output=iavail "$TMPROOT" | tail -1)" -ge 200000 ] && [ "$(df --output=avail "$TMPROOT" | tail -1)" -ge 6000000 ] \
+  || { echo "$TMPROOT needs 200k free inodes and 6 GB; clear old parity-a-*/parity-b-* sandboxes" >&2; exit 1; }
 mkdir -p "$C"
 
 tree() { { git status --porcelain --untracked-files=no; git diff HEAD; } | sha256sum; }
