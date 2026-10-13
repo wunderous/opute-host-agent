@@ -172,6 +172,43 @@ DATABASE_COMPANIONS = {
 }
 
 
+def _redacted_match(go: Any, rust: Any) -> bool:
+    """Whether a Rust value equals Go's except where Rust stored D13's marker."""
+    if rust == canon.REDACTED_MARKER:
+        return True
+    if isinstance(go, dict) and isinstance(rust, dict):
+        return go.keys() == rust.keys() and all(_redacted_match(go[k], rust[k]) for k in go)
+    if isinstance(go, list) and isinstance(rust, list):
+        return len(go) == len(rust) and all(map(_redacted_match, go, rust))
+    return go == rust
+
+
+def align_redacted_rows(a: Any, b: Any) -> Any:
+    """Reorder Rust's audit rows opposite the Go rows they match.
+
+    A Rust row is placed opposite the first unpaired Go row it equals leaf
+    for leaf, a "[redacted]" leaf standing for any Go value; rows that pair
+    with nothing keep their order after the paired ones and are compared
+    (and fail) as they are. Only the order changes, never a row.
+    """
+    path = ["sqliteRows", "state/state.db", "tables", "capability_invocations"]
+    go_rows, rust_rows = runner._lookup(a, path), runner._lookup(b, path)
+    if not (isinstance(go_rows, list) and isinstance(rust_rows, list)):
+        return b
+    remaining = list(rust_rows)
+    aligned = []
+    for go_row in go_rows:
+        match = next((i for i, row in enumerate(remaining) if _redacted_match(go_row, row)), None)
+        if match is None:
+            break
+        aligned.append(remaining.pop(match))
+    if not aligned:
+        return b
+    b = copy.deepcopy(b)
+    runner._lookup(b, path[:-1])[path[-1]] = aligned + remaining
+    return b
+
+
 def evaluate(scenario: dict, raw: dict) -> dict:
     normalized, violations = {}, {}
     polled = polled_tools(scenario)
@@ -214,6 +251,16 @@ def evaluate(scenario: dict, raw: dict) -> dict:
             invariant_observation.pop("sqliteRows", None)
         violations[side] += runner.invariant_violations(scenario, invariant_observation, label)
     registry = canon.load_divergences(runner.DIVERGENCE_FILE)
+    # D19 (neutral-host-tool-names) renames tools and so changes the catalog
+    # revision Rust publishes; the durable rows record that same revision and
+    # those same names (catalog_revision, supportedTools). Rewrite the Rust
+    # side back to Go's spelling first, with the one rule the wire comparison
+    # uses, whenever it rewrites something. Every other difference remains.
+    renamed_a, renamed_b, renamed = canon.apply_divergences(
+        normalized["a"], normalized["b"], ["D19.neutral-host-tool-names"], registry)
+    d19 = [record for record in renamed if not record["stale"]]
+    if d19:
+        normalized["a"], normalized["b"] = renamed_a, renamed_b
     # Apply approved database rules only when their path exists on either side.
     # Missing tables are otherwise compared and never inferred from a count.
     declared = list(scenario.get("compare", {}).get("divergences", []))
@@ -249,6 +296,7 @@ def evaluate(scenario: dict, raw: dict) -> dict:
              and any(runner._lookup(value, registry[rule]["path"]) is not None
                      for value in normalized.values())]
     a, b, divergences = canon.apply_divergences(normalized["a"], normalized["b"], rules, registry)
+    divergences = d19 + divergences
     for side, value in [("a", a), ("b", b)]:
         if side == "a" and "D12.refused-task-operation-count" in declared:
             operations = runner._lookup(value, ["sqliteRows", "state/state.db", "tables", "operations"])
@@ -299,6 +347,10 @@ def evaluate(scenario: dict, raw: dict) -> dict:
     # "trace"-only collection ever touches sqliteRows, so declaring it there
     # is always stale); detect and apply it dynamically here instead,
     # exactly like the D8.authz-* rules above.
+    # The rows were ordered by their content, and a leaf Rust stores as
+    # "[redacted]" sorts differently from Go's value, so D13's positional
+    # drop would pair different rows. Align Rust's rows to Go's first.
+    b = align_redacted_rows(a, b)
     probe_a, probe_b, probe = canon.apply_divergences(a, b, ["D13.redacted-structured-content"], registry)
     if probe and not probe[0]["stale"]:
         a, b = probe_a, probe_b

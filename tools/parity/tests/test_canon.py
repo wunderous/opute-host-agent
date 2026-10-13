@@ -268,3 +268,14 @@ class NeutralNamesTest(unittest.TestCase):
         a, b, _ = canon.apply_divergences(rust, {"steps": {"s": "x"}}, ["D19.neutral-host-tool-names"],
                                           self.registry, rust_side="b")
         self.assertEqual(a, rust)
+
+
+class EmbeddedNumberTest(unittest.TestCase):
+    def test_substituted_port_parses_back_as_that_sides_number(self):
+        doc = canon.substitute({"row": '{"port":43131,"url":"http://127.0.0.1:43131/"}'}, {"STUB_PORT": "43131"})
+        parsed = canon.parse_embedded(doc, [["row"]], {"STUB_PORT": "43131"})
+        self.assertEqual(parsed, {"row": {"$json": {"port": 43131, "url": "http://127.0.0.1:${STUB_PORT}/"}}})
+
+    def test_unknown_placeholder_stays_text(self):
+        doc = {"row": '{"port":${OTHER}}'}
+        self.assertEqual(canon.parse_embedded(doc, [["row"]], {"STUB_PORT": "1"}), doc)

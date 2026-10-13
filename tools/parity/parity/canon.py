@@ -91,6 +91,10 @@ def substitute(value: Any, variables: dict[str, str]) -> Any:
     return walk(value)
 
 
+# A numeric variable (a port) substituted where embedded JSON had a number.
+_BARE_PLACEHOLDER = re.compile(r'(?<=[:\[,])\$\{([A-Z][A-Z0-9_]*)\}(?=[,\]}])')
+
+
 def _apply_at(doc: Any, path: Path, fn: Callable[[Any], Any]) -> tuple[Any, int]:
     """Apply fn to every value addressed by path. Returns (doc, hit_count)."""
     if not path:
@@ -133,10 +137,32 @@ def _apply_at(doc: Any, path: Path, fn: Callable[[Any], Any]) -> tuple[Any, int]
     return doc, hits
 
 
-def parse_embedded(doc: Any, paths: Iterable[Path]) -> Any:
-    """Expand JSON-in-string fields (for example MCP text content)."""
+def parse_embedded(doc: Any, paths: Iterable[Path], variables: dict[str, str] | None = None) -> Any:
+    """Expand JSON-in-string fields (for example MCP text content).
+
+    Substitution runs first and also rewrites a numeric variable (a port)
+    that embedded JSON held as a bare number, which leaves it unparseable.
+    Such a placeholder is put back as that side's own number, so the field
+    is a number exactly as on the wire, where only strings are substituted.
+    """
+    numbers = {name: lit for name, lit in (variables or {}).items() if lit and lit.isdigit()}
+
+    def parse(value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+        try:
+            return {"$json": json.loads(value)}
+        except ValueError:
+            pass
+        restored = _BARE_PLACEHOLDER.sub(
+            lambda m: numbers.get(m.group(1), m.group(0)), value)
+        try:
+            return {"$json": json.loads(restored)} if restored != value else value
+        except ValueError:
+            return value
+
     for path in paths:
-        doc, _ = _apply_at(doc, list(path) + ["@json"], lambda v: v)
+        doc, _ = _apply_at(doc, list(path), parse)
     return doc
 
 
@@ -263,7 +289,7 @@ def apply_omitempty(doc: Any, rules: Iterable[dict]) -> Any:
 def normalize(observation: Any, spec: dict, variables: dict[str, str]) -> tuple[Any, list[dict]]:
     """Full pipeline for one side: substitute → parse embedded → omitempty → sets → masks."""
     doc = substitute(copy.deepcopy(observation), variables)
-    doc = parse_embedded(doc, spec.get("parseJson", []))
+    doc = parse_embedded(doc, spec.get("parseJson", []), variables)
     doc = apply_omitempty(doc, spec.get("omitempty", []))
     doc = apply_sets(doc, spec.get("sets", []))
     return apply_masks(doc, spec.get("masks", []))

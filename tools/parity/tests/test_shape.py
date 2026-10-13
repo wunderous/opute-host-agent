@@ -266,3 +266,25 @@ class PlanRunSupportedTools(unittest.TestCase):
     def test_order_is_not_a_difference_but_membership_is(self):
         self.assertFalse(shape.evaluate({}, self.raw(["x", "y"], ["y", "x"]))["diff"])
         self.assertTrue(shape.evaluate({}, self.raw(["x", "y"], ["y", "z"]))["diff"])
+
+
+class RedactedRowAlignment(unittest.TestCase):
+    path = ["sqliteRows", "state/state.db", "tables", "capability_invocations"]
+
+    def doc(self, rows):
+        return {"sqliteRows": {"state/state.db": {"tables": {"capability_invocations": rows}}}}
+
+    def test_rust_rows_are_placed_opposite_the_go_rows_they_redact(self):
+        go = self.doc([{"args": {"name": "a.service", "state": "start"}},
+                       {"args": {"name": "b.service", "state": "stop"}}])
+        rust = self.doc([{"args": {"name": "[redacted]", "state": "stop"}},
+                         {"args": {"name": "[redacted]", "state": "start"}}])
+        aligned = shape.align_redacted_rows(go, rust)
+        self.assertEqual([r["args"]["state"] for r in runner._lookup(aligned, self.path)], ["start", "stop"])
+
+    def test_a_real_difference_is_not_paired_away(self):
+        go = self.doc([{"args": {"state": "start"}}])
+        rust = self.doc([{"args": {"state": "stop"}}])
+        aligned = shape.align_redacted_rows(go, rust)
+        self.assertEqual(runner._lookup(aligned, self.path), [{"args": {"state": "stop"}}])
+        self.assertTrue(canon.diff(go, aligned))

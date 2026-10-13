@@ -7,7 +7,7 @@
 
 - [x] 2.1 Define the name map once in the descriptor source, and derive from it the published descriptors, the alias table and the field rename. `crates/host-agent/catalog/neutral-names.json`; `catalog.rs` renames definitions, registrations and task-aware names when the source loads, and builds the alias descriptors from Go's own definitions.
 - [x] 2.2 Accept aliases in `tools/call` with Go's input schema, routing to the same Consumer and recording the called name. Every name lookup goes through `Snapshot::find`; `builtin::invoke` moves `incusPackage` to `packageName` before the Consumer reads it; provider callbacks may name an alias.
-- [x] 2.3 Pin the new Rust catalog revisions per mode, each with its Go pair, and update `catalog::tests::revisions_match_manifest`. The test also proves each Go value is the un-renamed catalog's revision. The 13 provider-fixture catalog pairs are pinned under `providerFixtures`.
+- [x] 2.3 Pin the new Rust catalog revisions per mode, each with its Go pair, and update `catalog::tests::revisions_match_manifest`. The test also proves each Go value is the un-renamed catalog's revision. The 14 provider-fixture catalog pairs are pinned under `providerFixtures`.
 
 ## 3. Evidence
 
