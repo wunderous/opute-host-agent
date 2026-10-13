@@ -253,7 +253,12 @@ class Twin:
         self.record = {"qemuArgv": argv, "booted": time.time()}
         _wait_ssh(self.port, self.process)
         ssh = _ssh_base(self.port)
+        # systemd-fsckd serves the boot-time fsck and exits on its own about
+        # 30s after going idle, which can land inside a scenario and show as
+        # a unit change on one twin only. Wait for it to leave, never stop it.
         subprocess.run(ssh + ["systemctl is-system-running --wait >/dev/null 2>&1; "
+                              "timeout 180 sh -c 'while systemctl is-active --quiet systemd-fsckd.service; "
+                              "do sleep 1; done'; "
                               "mkdir -p /opt/parity-t2/state /opt/parity-t2/instance && "
                               "chown -R ubuntu:ubuntu /opt/parity-t2"], check=True, capture_output=True)
         scp = ["scp", "-q"] + [a for a in _ssh_base(self.port)[1:-3] if a != "-p"] + ["-P", str(self.port)]
