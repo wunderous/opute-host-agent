@@ -55,6 +55,23 @@ def host_info_masks():
     return out
 
 
+def host_info_omitempty():
+    """M3's omitempty rules for the same output (PSI averages are omitempty
+    in Go: a zero sample is omitted, so absent and 0 are one value),
+    re-rooted like host_info_masks."""
+    source = json.load(open(Path(__file__).resolve().parent / "scenarios/host-read.json"))
+    [base] = [s for s in source if s["id"] == "host-read.host-info.inventory-mix"]
+    out = []
+    for rule in base["compare"].get("omitempty", []):
+        path = rule["path"]
+        if "structuredContent" not in path or "text" in path:
+            continue
+        tail = path[path.index("structuredContent") + 1:]
+        for root in HOST_INFO_ROOTS:
+            out.append(dict(rule, path=root + tail))
+    return out
+
+
 # Where the activation node's get_host_info output appears: in the run (and
 # its task result) per node and again under the run's outputs.
 HOST_INFO_ROOTS = [prefix + inner
@@ -108,6 +125,7 @@ def scenario(plugin, provider, recipe_uri, operations, operation, arguments, val
             "anchors": ["internal/hostmcp/provider_install.go:handleProviderInstallContext", "plugins/" + plugin],
             "fixture": "incus-two-containers" if name == "tailscale" else None, "collect": ["orphans"], "steps": steps,
             "compare": {"sets": SETS + TOOL_SETS, "masks": MASKS + host_info_masks(),
+                        "omitempty": host_info_omitempty(),
                         "notes": "One pinned Go provider executable, unchanged, launched by the harness on loopback with recording shims and a dead egress proxy; the core never spawns providers."}}
 
 
