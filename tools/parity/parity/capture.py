@@ -280,18 +280,20 @@ T2_UNVERIFIED = {
     "shutdown_wsl": ("M8a", "needs a WSL2 runner: wsl.exe --shutdown acts on the Windows host's WSL VM"),
     "terminate_wsl_distribution": ("M8a", "needs a WSL2 runner: wsl.exe --terminate acts on a Windows-hosted "
                                           "distribution"),
-    "exec_command": ("M8b", "executes inside an Incus instance; needs the M8b nested-Incus sandbox"),
-    "run_instance_command": ("M8b", "executes inside an Incus instance; needs the M8b nested-Incus sandbox"),
 }
 # Mutating host tools that cannot be called at all.
 T2_INERT = {
     "ensure_k3d": "omitted from every Go catalog (IncusOmittedToolNames) and unregistered in Rust; no call reaches it",
+    "exec_command": "catalog-excluded (CatalogExcludedToolNames), so Go resolves it no resource binding and every "
+                    "call refuses with 'name is required' before running anything; t2.incus-domain."
+                    "container.lifecycle calls it by name and by URI against a live owned container and checks "
+                    "inside the guest that nothing ran",
 }
 
 
 def capture_t2() -> dict:
-    """T2 coverage of every mutating host-domain tool (M8 validations 2-4)."""
-    host = json.loads((INVENTORY_DIR / "host-domain.json").read_text())
+    """T2 coverage of every mutating host- and incus-domain tool (M8 validations 2-4)."""
+    domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text()) for d in ("host", "incus")]
     calls: dict[str, set[str]] = {}
     refused: dict[str, set[str]] = {}
     for path in sorted(T2_SCENARIO_DIR.glob("*.json")):
@@ -303,12 +305,13 @@ def capture_t2() -> dict:
                 if mcp.get("method") == "tools/call":
                     target.setdefault(mcp["params"]["name"], set()).add(scenario["id"])
     items = []
-    for tool in sorted(host["tools"], key=lambda t: t["tool"]):
+    tools = [(doc["owner"], tool) for doc in domains for tool in doc["tools"]]
+    for owner, tool in sorted(tools, key=lambda t: t[1]["tool"]):
         if tool["effect"] == "EffectRead":
             continue
         name = tool["tool"]
         covered = sorted(calls.get(name, set()) | calls.get(tool.get("neutralName") or name, set()))
-        item = {"tool": name, "neutralName": tool.get("neutralName"), "owner": "host", "effect": tool["effect"],
+        item = {"tool": name, "neutralName": tool.get("neutralName"), "owner": owner, "effect": tool["effect"],
                 "t2Scenarios": covered, "t2RejectedScenarios": sorted(refused.get(name, set()))}
         if name in T2_INERT:
             item.update(status="inert", inertReason=T2_INERT[name])
@@ -318,10 +321,12 @@ def capture_t2() -> dict:
         elif covered:
             item["status"] = "covered"
         else:
-            item.update(status="gap", milestone="M8a", gapReason="no T2 scenario executes this tool")
+            item.update(status="gap", milestone="M8a" if owner == "host" else "M8b",
+                        gapReason="no T2 scenario executes this tool")
         items.append(item)
     return {"surface": "t2-effects", "owner": "host",
-            "note": "Each mutating host-domain tool and the T2 scenarios that execute it in the twin sandboxes. "
+            "note": "Each mutating host- and incus-domain tool and the T2 scenarios that execute it in the twin "
+                    "sandboxes (incus-domain scenarios boot the nested-Incus golden). "
                     "Coverage is proven by passing T2 evidence (verify gate requireT2), not by this listing.",
             "items": items}
 
