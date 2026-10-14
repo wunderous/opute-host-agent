@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 pub const DISCOVERY_TIMEOUT: Duration = Duration::from_secs(45);
-const OWNER_LABEL: &str = "user.opute.host_agent_instance";
+pub const OWNER_LABEL: &str = "user.opute.host_agent_instance";
 
 /// What the incus domain needs from the agent's configuration.
 #[derive(Clone, Debug)]
@@ -205,6 +205,17 @@ impl Incus {
         self.run_with(&args, stdin, timeout, Some(ctx))
     }
 
+    /// `Runtime.RunProviderContext`: the provider command, cancelled with
+    /// the call.
+    pub fn run_ctx(
+        &self,
+        args: &[&str],
+        timeout: Duration,
+        ctx: &crate::plan::runner::RunCtx,
+    ) -> Result<CommandResult, String> {
+        self.run_with(args, None, timeout, Some(ctx))
+    }
+
     fn run_with(
         &self,
         args: &[&str],
@@ -307,7 +318,7 @@ impl Incus {
     }
 
     /// `assertIncusOwnership`.
-    fn assert_ownership(&self, vm: &str, operation: &str) -> Result<(), String> {
+    pub(crate) fn assert_ownership(&self, vm: &str, operation: &str) -> Result<(), String> {
         let vm = vm.trim();
         if vm.is_empty() || !self.ownership_enforced() {
             return Ok(());
@@ -363,7 +374,7 @@ impl Incus {
     }
 
     /// `readIncusInstanceIPv4`.
-    fn instance_ipv4(&self, vm: &str) -> Result<Vec<String>, String> {
+    pub(crate) fn instance_ipv4(&self, vm: &str) -> Result<Vec<String>, String> {
         self.assert_ownership(vm, "read_instance_state")?;
         let path = format!("/1.0/instances/{}/state", vm.replace('/', "%2F"));
         let res = self.run(&["query", &path], DISCOVERY_TIMEOUT)?;
@@ -567,6 +578,12 @@ impl Incus {
                 }
             }
         }
+        self.default_storage_pool()
+    }
+
+    /// `resolveDefaultStoragePool`: "default" when it exists, else the
+    /// first pool.
+    pub(crate) fn default_storage_pool(&self) -> Result<String, String> {
         let out = self.query("/1.0/storage-pools", "storage pool query failed")?;
         let entries: Vec<String> = serde_json::from_str(&out).map_err(|e| go_json_error(&e))?;
         let names: Vec<String> = entries
@@ -592,13 +609,22 @@ impl Incus {
     /// `DescribeRootDiskQuotaSupport`.
     pub fn root_disk_quota(&self) -> Result<J, String> {
         let pool_name = self.root_disk_pool()?;
+        self.pool_quota(&pool_name)
+    }
+
+    /// `describePoolQuotaSupport`.
+    pub(crate) fn pool_quota(&self, pool_name: &str) -> Result<J, String> {
+        let pool_name = pool_name.trim();
+        if pool_name.is_empty() {
+            return Err("storage pool name is required".into());
+        }
         let out = self.query(
             &format!("/1.0/storage-pools/{}", pool_name.replace('/', "%2F")),
             "storage pool query failed",
         )?;
         let payload: J = serde_json::from_str(&out).map_err(|e| go_json_error(&e))?;
         let text = |k: &str| payload.get(k).and_then(J::as_str).unwrap_or("").to_string();
-        let name = first_non_empty(&[&text("name"), &pool_name]).to_string();
+        let name = first_non_empty(&[&text("name"), pool_name]).to_string();
         let driver = text("driver");
         let source = payload
             .get("config")
@@ -768,7 +794,7 @@ fn cpu_count(item: &ListItem) -> i64 {
 }
 
 /// `extractIncusRootDeviceSize`.
-fn root_device_size(devices: Option<&Map<String, J>>) -> String {
+pub(crate) fn root_device_size(devices: Option<&Map<String, J>>) -> String {
     let Some(root) = devices.and_then(|d| d.get("root")).and_then(J::as_object) else {
         return String::new();
     };

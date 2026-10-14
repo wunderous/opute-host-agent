@@ -33,6 +33,7 @@ mod hostwsl;
 mod http1;
 mod identity;
 mod incus;
+mod incusops;
 mod mcpprobe;
 mod mcpsdk;
 mod oauth;

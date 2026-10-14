@@ -94,6 +94,9 @@ fn ensure_column(
 /// A registry record: its status and provider-native coordinates.
 pub type ResourceRecord = (String, Map<String, J>);
 
+/// A registry row: its URI and decoded coordinates (`None` for JSON null).
+pub type RegisteredResource = (String, Option<Map<String, J>>);
+
 pub struct StateStore {
     conn: Option<Connection>,
 }
@@ -256,6 +259,49 @@ impl StateStore {
             ));
         }
         Ok(Some((status, coordinates)))
+    }
+
+    /// `Store.DeleteResource` for a parsed URI.
+    pub fn delete_resource(&self, uri: &crate::resource::Uri) -> std::result::Result<(), String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        conn.execute(
+            "DELETE FROM resource_registry WHERE uri = ?",
+            [uri.to_string()],
+        )
+        .map_err(sqlite_err)?;
+        Ok(())
+    }
+
+    /// `Store.ListResources("", tenant)`: every record of the tenant (all
+    /// tenants when empty) as (uri, coordinates), in URI order. A record whose
+    /// coordinates do not decode fails the whole listing, as in Go.
+    pub fn list_resources(
+        &self,
+        tenant_id: &str,
+    ) -> std::result::Result<Vec<RegisteredResource>, String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT uri, coordinates_json FROM resource_registry
+        WHERE (? = '' OR tenant_id = ?) ORDER BY uri",
+            )
+            .map_err(sqlite_err)?;
+        let rows = stmt
+            .query_map([tenant_id, tenant_id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })
+            .map_err(sqlite_err)?;
+        let mut out = Vec::new();
+        for row in rows {
+            let (uri, coordinates) = row.map_err(sqlite_err)?;
+            let coordinates = match serde_json::from_str::<J>(&coordinates) {
+                Ok(J::Object(m)) => Some(m),
+                Ok(J::Null) => None,
+                Ok(_) | Err(_) => return Err("decode resource coordinates: invalid JSON".into()),
+            };
+            out.push((uri, coordinates));
+        }
+        Ok(out)
     }
 
     /// Go's `sql.DB.Begin()` under the DSN's `_txlock=immediate`: a bare
