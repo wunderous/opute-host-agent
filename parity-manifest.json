@@ -267,14 +267,6 @@
    "status": "approved",
    "summary": "For a corrupt compressed zstd block, extract_host_archive keeps Go's failure, prefix and tree, but the text after 'extract host archive: ' is the Rust decoder's own"
   },
-  "D8": {
-   "approvedBy": "owner",
-   "change": "openspec/changes/secure-oauth-issuance",
-   "date": "2026-10-01",
-   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
-   "status": "approved",
-   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
-  },
   "D21": {
    "approvedBy": "owner",
    "change": "openspec/changes/neutral-instance-tool-names",
@@ -282,6 +274,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D21)",
    "status": "approved",
    "summary": "Extends D19's map for M8b: reset_incus_stack is published as reset_virtualization_stack and provision_container.wslGpuLibs as hostGpuLibs; Go names stay hidden, accepted aliases until cutover. Also confirms D19's use on durable rows (M5 shape) and the secret sweep's catalog"
+  },
+  "D8": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/secure-oauth-issuance",
+   "date": "2026-10-01",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
+   "status": "approved",
+   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
   }
  },
  "evidence": {
@@ -289,13 +289,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m8a/go-vs-go/summary.json"
+   "summary": "evidence/m8b/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m8a/go-vs-rust/summary.json"
+   "summary": "evidence/m8b/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -539,6 +539,46 @@
     }
    ],
    "requireT2": true
+  },
+  "m8b": {
+   "description": "M8b exit (incus domain): the M8a gate (M1-M7 regression gates, host domain at T1 and T2) plus every incus-domain item matching Go (x5) at T1 shim-trace parity, every T2 incus-domain scenario in nested-Incus twins (create, mutate, read and delete of real containers and VMs, the stack reset, cleanup and residue, and the M4 admission-rejected incus calls leaving Incus unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts, and the Go baseline's live Incus tests (test/live) passing against Go and Rust inside the twins with a failing negative control.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "mcp-wire",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
   }
  },
  "goReference": {
@@ -2273,6 +2313,251 @@
   },
   {
    "anchors": [
+    "internal/domain/incus/vm_lifecycle.go",
+    "internal/domain/incus/incus_launch.go",
+    "internal/domain/incus/incus_root_disk.go",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_unassigned.go",
+    "internal/domain/incus/incus_container.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.provision.existing",
+   "owner": "incus",
+   "scenario": "incus-domain.provision.existing",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/vm_lifecycle.go",
+    "internal/domain/incus/incus_launch.go",
+    "internal/domain/incus/incus_root_disk.go",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_unassigned.go",
+    "internal/domain/incus/incus_container.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.provision.new-refused",
+   "owner": "incus",
+   "scenario": "incus-domain.provision.new-refused",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/vm_lifecycle.go",
+    "internal/domain/incus/incus_launch.go",
+    "internal/domain/incus/incus_root_disk.go",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "incus-domain.provision.dir-pool",
+   "owner": "incus",
+   "scenario": "incus-domain.provision.dir-pool",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/vm_lifecycle.go",
+    "internal/domain/incus/incus_launch.go",
+    "internal/domain/incus/incus_root_disk.go",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "incus-domain.provision.unowned",
+   "owner": "incus",
+   "scenario": "incus-domain.provision.unowned",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_container.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.container.reuse",
+   "owner": "incus",
+   "scenario": "incus-domain.container.reuse",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_container.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.container.unmanaged-bridge",
+   "owner": "incus",
+   "scenario": "incus-domain.container.unmanaged-bridge",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/vm_lifecycle.go",
+    "internal/domain/incus/incus_launch.go",
+    "internal/domain/incus/incus_root_disk.go",
+    "internal/domain/incus/incus_storage_quota.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "incus-domain.lifecycle.vm",
+   "owner": "incus",
+   "scenario": "incus-domain.lifecycle.vm",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_container.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_incus.go",
+    "internal/domain/host/gpu.go"
+   ],
+   "id": "incus-domain.container.gpu-probe",
+   "owner": "incus",
+   "scenario": "incus-domain.container.gpu-probe",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/standalone.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "incus-domain.standalone.status",
+   "owner": "incus",
+   "scenario": "incus-domain.standalone.status",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/standalone.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "incus-domain.standalone.dir-pool",
+   "owner": "incus",
+   "scenario": "incus-domain.standalone.dir-pool",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/standalone.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "incus-domain.standalone.no-provider",
+   "owner": "incus",
+   "scenario": "incus-domain.standalone.no-provider",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.refusals",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.refusals",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.ownership-required",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.ownership-required",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.shared-owner-required",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.shared-owner-required",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.shared-owner-other",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.shared-owner-other",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.lifecycle",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.lifecycle",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.interrupted",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.interrupted",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.resumed",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.resumed",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.reset.checkpoint-invalid",
+   "owner": "incus",
+   "scenario": "incus-domain.reset.checkpoint-invalid",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
+    "openspec/changes/neutral-instance-tool-names",
+    "crates/host-agent/catalog/neutral-names.json",
+    "internal/tools/dispatch_incus.go",
+    "internal/domain/incus/incus_stack.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/tools/dispatch_incus.go",
+    "internal/domain/incus/incus_container.go",
+    "internal/domain/incus/incus_ownership.go",
+    "internal/tools/dispatch_incus.go"
+   ],
+   "id": "incus-domain.d21.aliases",
+   "owner": "incus",
+   "scenario": "incus-domain.d21.aliases",
+   "surface": "incus-domain"
+  },
+  {
+   "anchors": [
     "internal/app/app.go:Run",
     "internal/app/runtime.go:NewRuntime"
    ],
@@ -3185,7 +3470,7 @@
   }
  },
  "oracles": {
-  "results": "evidence/m8a/oracles.json",
+  "results": "evidence/m8b/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
@@ -3193,7 +3478,7 @@
   "results": "evidence/m8a/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "b190b5975bd71a35e0a21844dd703687477f0f5b8194d789141236c128c314fe",
+  "binarySha256": "e5468fbbcd01b0a29770865f469fbd5a602417488e0769ff8db1be5099507b4a",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
@@ -3202,23 +3487,31 @@
  "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6",
  "t2Evidence": {
   "golden": {
-   "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
    "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+   "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
    "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
+  },
+  "incusGolden": {
+   "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+   "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399"
   },
   "suites": {
    "go-vs-go": {
-    "summary": "evidence/m8a/t2-go-vs-go/summary.json",
     "minRepeat": 20,
+    "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "purpose": "T2 harness self-validation: Go twins from one golden must agree"
+    "summary": "evidence/m8b/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
-    "summary": "evidence/m8a/t2-go-vs-rust/summary.json",
     "minRepeat": 5,
+    "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate"
+    "summary": "evidence/m8b/t2-go-vs-rust/summary.json"
    }
   }
+ },
+ "t2Oracles": {
+  "results": "evidence/m8b/oracles-t2.json",
+  "suites": "tools/parity/oracles-t2.json"
  }
 }
