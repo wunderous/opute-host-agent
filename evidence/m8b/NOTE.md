@@ -64,3 +64,14 @@ then re-pinned with their Go pairs.
    class, Go tests).
 3. Add nested Incus to the T2 golden.
 4. Port by service family.
+
+## Resolved 2026-10-14
+
+The owner confirmed both items. This is recorded as D21
+(`openspec/changes/neutral-instance-tool-names`):
+
+- D19's use on durable rows and the secret sweep is confirmed.
+- `reset_incus_stack` is published as `reset_virtualization_stack`.
+- `provision_container.wslGpuLibs` is published as `hostGpuLibs`.
+
+The Go names stay hidden aliases until cutover. Entry is met.

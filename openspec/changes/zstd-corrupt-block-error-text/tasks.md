@@ -7,4 +7,4 @@
 
 - [x] 2.1 Add the `keepPrefix` divergence operation, with a harness test showing that a text without the prefix stays a diff.
 - [x] 2.2 Declare `D20.corrupt-zstd-block` and add `host-domain.archives.corrupt-blocks`, with per-side expectations. Go/Go 3/3, Go/Rust 2/2.
-- [ ] 2.3 Include the case in the M8a closing captures: Go/Go x20 and Go/Rust x5.
+- [x] 2.3 Include the case in the M8a closing captures: Go/Go x20 and Go/Rust x5. Round 7 (`evidence/m8a`): pass in both suites.
