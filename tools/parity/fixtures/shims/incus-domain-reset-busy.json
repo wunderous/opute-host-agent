@@ -1,0 +1,209 @@
+{
+ "description": "M8b: the stack-reset estate where deleting box1 fails.",
+ "commands": {
+  "apt-cache": [
+   {
+    "argv": [
+     "show",
+     "virglrenderer2"
+    ],
+    "stdout": "Package: virglrenderer2"
+   },
+   {
+    "argv": [
+     "show",
+     "gpu-ok"
+    ],
+    "stdout": "Package: gpu-ok"
+   },
+   {
+    "argv": [
+     "show",
+     "gpu-missing"
+    ],
+    "exit": 100,
+    "stderr": "E: No packages found\n"
+   },
+   {
+    "argv": [
+     "policy",
+     "incus"
+    ],
+    "stdout": "incus:\n  Installed: (none)\n  Candidate: 1:7.3-ubuntu24.04\n"
+   }
+  ],
+  "apt-get": [],
+  "curl": [
+   {
+    "argvPrefix": [
+     "-fsSL",
+     "https://pkgs.zabbly.com/key.asc",
+     "-o"
+    ],
+    "writes": {
+     "after": "-o",
+     "content": "-----BEGIN PGP PUBLIC KEY BLOCK-----\nparity\n-----END PGP PUBLIC KEY BLOCK-----\n"
+    }
+   }
+  ],
+  "dpkg": [
+   {
+    "argv": [
+     "--print-architecture"
+    ],
+    "stdout": "amd64"
+   }
+  ],
+  "sudo": [
+   {
+    "argvPrefix": [
+     "-n",
+     "install"
+    ],
+    "hashFiles": true
+   },
+   {
+    "argvPrefix": [
+     "-n"
+    ]
+   }
+  ],
+  "incus": [
+   {
+    "argv": [
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"alien1\",\"status\":\"Running\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"someone-else\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}},{\"name\":\"boxer2\",\"status\":\"Running\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}}]",
+    "ifExists": "markers/box1-deleted"
+   },
+   {
+    "argv": [
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"box1\",\"status\":\"Stopped\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}},{\"name\":\"alien1\",\"status\":\"Running\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"someone-else\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}},{\"name\":\"boxer2\",\"status\":\"Running\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}}]"
+   },
+   {
+    "argv": [
+     "config",
+     "get",
+     "box1",
+     "user.opute.host_agent_instance"
+    ],
+    "stdout": "parity-owner"
+   },
+   {
+    "argv": [
+     "config",
+     "get",
+     "boxer2",
+     "user.opute.host_agent_instance"
+    ],
+    "stdout": "parity-owner"
+   },
+   {
+    "argv": [
+     "delete",
+     "box1",
+     "--force"
+    ],
+    "exit": 1,
+    "stderr": "Error: Instance is busy\n"
+   },
+   {
+    "argv": [
+     "delete",
+     "boxer2",
+     "--force"
+    ]
+   },
+   {
+    "argv": [
+     "version"
+    ],
+    "stdout": "7.3"
+   },
+   {
+    "argv": [
+     "storage",
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"default\",\"driver\":\"dir\"}]",
+    "ifExists": "markers/pool"
+   },
+   {
+    "argv": [
+     "storage",
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[]"
+   },
+   {
+    "argv": [
+     "storage",
+     "create",
+     "default",
+     "dir"
+    ],
+    "creates": [
+     "markers/pool"
+    ]
+   },
+   {
+    "argv": [
+     "network",
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"lxdbr0\"},{\"name\":\"incusbr0\"}]",
+    "ifExists": "markers/bridge"
+   },
+   {
+    "argv": [
+     "network",
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"lxdbr0\"}]"
+   },
+   {
+    "argvPrefix": [
+     "network",
+     "create"
+    ],
+    "creates": [
+     "markers/bridge"
+    ]
+   },
+   {
+    "argv": [
+     "profile",
+     "device",
+     "show",
+     "default"
+    ],
+    "stdout": "root:\n  path: /\n  pool: default\n  type: disk\n"
+   },
+   {
+    "argvPrefix": [
+     "profile",
+     "device",
+     "add"
+    ]
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}
