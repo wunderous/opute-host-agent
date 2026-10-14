@@ -444,7 +444,8 @@ def _rename_tables(rule: dict) -> tuple[dict, dict, dict]:
     spec = rule["renameToGo"]
     names = json.loads((_REPO / spec["names"]).read_text())
     to_go = {neutral: go for go, neutral in names["tools"].items()}
-    fields = {names["tools"][go]: {new: old for old, new in renamed.items()}
+    # A tool that keeps its Go name may still rename a field (D21).
+    fields = {names["tools"].get(go, go): {new: old for old, new in renamed.items()}
               for go, renamed in names.get("fields", {}).items()}
     manifest = json.loads((_REPO / spec["revisions"]).read_text())
     pinned = manifest["catalogRevisions"]

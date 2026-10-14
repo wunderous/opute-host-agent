@@ -1362,7 +1362,19 @@ pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Re
         return None;
     };
     let Some(operation) = catalog::neutral_name(name) else {
-        return provider.call(name, invocation);
+        let Some(args) = catalog::renamed_field_arguments(name, invocation.args) else {
+            return provider.call(name, invocation);
+        };
+        return provider.call(
+            name,
+            &Invocation {
+                ctx: invocation.ctx,
+                args: &args,
+                binding: invocation.binding,
+                snapshot: invocation.snapshot,
+                claimed: invocation.claimed,
+            },
+        );
     };
     // An alias call validated against Go's schema; its renamed fields move
     // to the published names before the Consumer reads them.

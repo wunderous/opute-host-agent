@@ -5,8 +5,8 @@
 
 ## 2. Implementation
 
-- [ ] 2.1 Add the entries to `crates/host-agent/catalog/neutral-names.json`, with the field rename on a tool that keeps its own name.
-- [ ] 2.2 Re-pin every Rust catalog revision with its Go pair, and update `catalog::tests::revisions_match_manifest`.
+- [x] 2.1 Add the entries to `crates/host-agent/catalog/neutral-names.json`, with the field rename on a tool that keeps its own name.
+- [x] 2.2 Re-pin every Rust catalog revision with its Go pair, and update `catalog::tests::revisions_match_manifest`.
 
 ## 3. Evidence
 

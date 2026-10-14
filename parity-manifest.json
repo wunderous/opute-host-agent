@@ -7,19 +7,19 @@
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
   "platform": {
    "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-   "rust": "sha256:c465a4d1ca3705cfac2d8749c2524a9a0daef7bf293227a60408bf75b09a7b0e"
+   "rust": "sha256:6b738ab682f1e5fed01c35644c75c51d62709f3947e36010237b9aa808de742e"
   },
   "providerFixtures": [
    {
     "go": "sha256:1a276524cb4b16825e7b3bf57c6eac46bc06eb18006c0498dfd3546c335bbf76",
-    "rust": "sha256:ef69b4f48d394e97f0da3f00a271a666ad39e6da512f73e76756e5804c165bf9",
+    "rust": "sha256:bdd1784206fc05a8b59f085984820a78b9e13c688bf0de93cca576c3407677ee",
     "scenarios": [
      "provider-lifecycle.bad-manifest.service-capability-not-provided"
     ]
    },
    {
     "go": "sha256:5232386ef9e128383d080cfac767b78b2e87421ae5c894b2163b3920e1d3fcad",
-    "rust": "sha256:0afad61db88e09319eb6a2aa5331b4b4547884c06d29b2b29370a3059bafda06",
+    "rust": "sha256:aa1a6e43033a28d4d28277800a8f1a4f16d523e50f33f1e43e4378eb72aab569",
     "scenarios": [
      "provider-lifecycle.bad-manifest.validation-operation-undeclared",
      "provider-lifecycle.builtin-family.require",
@@ -51,7 +51,7 @@
    },
    {
     "go": "sha256:5d13b1a6d3393d07ecaf48cf57f51db506d374a74a2286cf368dea9a658e7a6f",
-    "rust": "sha256:3fd190f4818e213ccf2bc4292f78fbfa655435cee3137a681f9128124d711813",
+    "rust": "sha256:388d7c57cf7b1317ebed6fe03743478ed1deacf3d0af283d6d2ec0497b3908fb",
     "scenarios": [
      "provider-lifecycle.callback.bridged-without-task-extension",
      "provider-lifecycle.callback.cancel-bridged-task-refused",
@@ -71,14 +71,14 @@
    },
    {
     "go": "sha256:34b809740a5f3a396d5e86a5a3c73d06988ad8156cbbda3b406935d11d99748e",
-    "rust": "sha256:94b56e4b8b616d6fe318d0e43159b6556ddb92774f38b52e6ed7f08b06a1d86d",
+    "rust": "sha256:b086a7fc54513db8d80d0e8f573072ff243a00b587107c1b8b39bc0ccb13a969",
     "scenarios": [
      "provider-lifecycle.family.rejected-candidate-keeps-owner"
     ]
    },
    {
     "go": "sha256:0b13468ed1005c919c2e0309dd67a406ac824c9791648a25fbe1248845ef6385",
-    "rust": "sha256:7b4ae0a194629cf495193c9c89480e6f2574dd4b941479e7bab7cd8423d526c3",
+    "rust": "sha256:024b8325b7db5c01dd40a2e5f4d2eb1af37be2a5f43e248992b369d601b41c8c",
     "scenarios": [
      "provider-lifecycle.family.replacement-keeps-accepted-call",
      "provider-lifecycle.family.rollback-restores-owner"
@@ -86,7 +86,7 @@
    },
    {
     "go": "sha256:850550e436d511df91f0266999c2f7eb2e0530873e1c4b5e57207d90b623b210",
-    "rust": "sha256:9b4253bde00d66319cf37fa8969d4aa0a3a9481ad1266e510bee4d68c8b51420",
+    "rust": "sha256:6147f01e5b0ac7165c618e9d107c3a7b66336121ba939e346ae21ae73213378f",
     "scenarios": [
      "provider-lifecycle.readiness.flapping",
      "provider-lifecycle.replacement.in-flight",
@@ -95,35 +95,35 @@
    },
    {
     "go": "sha256:01ef1a6fc58380741eaaaeed6efa90f16149096e99e1dbf93335dbaadf4da3e3",
-    "rust": "sha256:2bd1bcaf7b6d7054cc41b1717582a63efa6ad8475149026711ea72969367df27",
+    "rust": "sha256:be7cb3962ea6dfdb89da0b4428c7276c2a87ccadf8b182e9524f28be5c0b3787",
     "scenarios": [
      "provider-lifecycle.schema-drift.invalid-input-schema"
     ]
    },
    {
     "go": "sha256:458ee103973df0ada45cdb01281c1076f9435186ca59372201ba2d7ac3451b9d",
-    "rust": "sha256:4f40df95d7a5723f12d89fd839249d89db9d8b180f5911864ff610025ee9c960",
+    "rust": "sha256:17d2f314ba1b2894513aeef14eb6e91af3c49111698f45b95e81fff7b2b76c80",
     "scenarios": [
      "provider-lifecycle.schema-drift.result-violates-output-schema"
     ]
    },
    {
     "go": "sha256:6465833d5b1e77645d22a87d2af32fce63aef95657698ebdc0f2d2fcee0f299a",
-    "rust": "sha256:328f039bd58d38c60a36c4bfe1e49db0382dbdfaabcdee268f7ff6e4cbb2f082",
+    "rust": "sha256:80a683f1ad1d9bbcc8be41d34a2d7c0146a8ed9293052b51193413a1e856e70a",
     "scenarios": [
      "provider-real.cloudflare"
     ]
    },
    {
     "go": "sha256:bc838403419c1a260fa45ad9e8def0604fe52622909f676bea2b353b8cc44fec",
-    "rust": "sha256:74db1306775d1e148e7571e9fe3ced4254bead2309ab7d240699046473b684a3",
+    "rust": "sha256:868a2bbe564c7ce67d2c5a5f3bd34f7620f7519ed4a78ff2b8d9021130dcfe01",
     "scenarios": [
      "provider-real.cloudflare"
     ]
    },
    {
     "go": "sha256:6eeefc25fdaa7b1fbe9d0257c561a08a2d271f5fbcfdf5072e62399fa116c34b",
-    "rust": "sha256:5e9b425ed0727c875dd1a0ae72e315f2b5bdf8d15032e058e8042e5a172aa8da",
+    "rust": "sha256:8a6917227aad6748ae90534c86c548f9c14f3d95926999dfee79ba5210fb68e7",
     "scenarios": [
      "provider-real.k3s",
      "provider-real.k3s.restart"
@@ -131,21 +131,21 @@
    },
    {
     "go": "sha256:688008d9922fd3314c34ad11d1d7584690edcdf194fcacf56151f9f4368be3f6",
-    "rust": "sha256:2398537b9c30804da73deb814650e603f7ad8c8245dd53c384e950f66a39de81",
+    "rust": "sha256:b7fc36a4baebb721cbde6b0dec50560278a46378188c7daee701fe5fd616505d",
     "scenarios": [
      "provider-real.ollama"
     ]
    },
    {
     "go": "sha256:7a643de2aecceb1f3a82cb085974a359d385af08e33c671d7b92fec052081dcf",
-    "rust": "sha256:9870d7f5d811e2654c78e1e5db91f77786f2479e928d8fae5c5bf2dd175858ec",
+    "rust": "sha256:ac6dd0a630b01ad8dd936514e2c1804927a72823e3539ed46c8f6c918b892942",
     "scenarios": [
      "provider-real.tailscale"
     ]
    },
    {
     "go": "sha256:c1d912d9693412f3b0e6151fd7ee1da354a488935d83fe2d039e4fa161a2b648",
-    "rust": "sha256:7de2ffdebf473f26c961366c35228e47aa89b4c7941c02349117c9aa9d6917c3",
+    "rust": "sha256:504950f2357a35749b4be8d23e1b64d0f6a2a139f62d500b7eb3975949fa5f2b",
     "scenarios": [
      "provider-lifecycle.family.replacement-keeps-accepted-call"
     ]
@@ -153,7 +153,7 @@
   ],
   "standalone": {
    "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
-   "rust": "sha256:d159c59e1cdb9e06a5ee837462c8038f380503f31fea3bb578423dea773799e5"
+   "rust": "sha256:63d590a5de9cf83c357f4919a09ec63ee67e77d2dc41da872764e6af69ab4ad3"
   }
  },
  "contracts": {

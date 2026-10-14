@@ -224,6 +224,20 @@ pub fn alias_arguments(alias: &str, args: &Map<String, J>) -> Map<String, J> {
     out
 }
 
+/// A call to a tool that keeps its Go name but renames a field (D21):
+/// Go's field is still accepted and moves to the published name, unless the
+/// caller already sent the published one.
+pub fn renamed_field_arguments(name: &str, args: &Map<String, J>) -> Option<Map<String, J>> {
+    let fields = name_map().fields.get(name)?;
+    let mut out = args.clone();
+    for (from, to) in fields {
+        if let Some(v) = out.remove(from) {
+            out.entry(to.clone()).or_insert(v);
+        }
+    }
+    Some(out)
+}
+
 /// Replaces every mapped Go tool name that stands as a whole word.
 fn rename_text(text: &str) -> String {
     let word = |c: char| c.is_ascii_alphanumeric() || c == '_';

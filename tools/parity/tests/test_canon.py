@@ -234,6 +234,20 @@ class NeutralNamesTest(unittest.TestCase):
             {"name": compact_text},
         ], key=lambda t: t["name"]), "text": "compact needs " + compact_text}}}
 
+    def test_field_rename_on_a_tool_that_keeps_its_name(self):
+        # D21: provision_container keeps its name but publishes hostGpuLibs.
+        def tool(field):
+            return {"steps": {"list": {"tools": [{"name": "provision_container", "inputSchema": {
+                "properties": {field: {"type": "boolean"}, "gpu": {"type": "boolean"}}}}]}}}
+        _, b, records = self.apply(tool("wslGpuLibs"), tool("hostGpuLibs"))
+        self.assertEqual(b, tool("wslGpuLibs"))
+        self.assertFalse(records[0]["stale"])
+        # Outside that tool's input schema the field name is left alone.
+        other = {"steps": {"x": {"hostGpuLibs": True}}}
+        _, b, records = self.apply(other, other)
+        self.assertEqual(b, other)
+        self.assertTrue(records[0]["stale"])
+
     def test_renamed_catalog_matches_go(self):
         go = self.catalog(self.pair["go"], "install_incus_stack", "incusPackage", "shutdown_wsl")
         rust = self.catalog(self.pair["rust"], "install_virtualization_stack", "packageName",
