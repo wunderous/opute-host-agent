@@ -22,7 +22,7 @@ A rule matches on exact argv, on an argv prefix, or on a substring of one
 argument ("argvContains"). The first match wins. An unmatched invocation uses
 "default", and is still recorded. A rule's "creates" lists sandbox-relative
 paths written as executables after the call is recorded, standing in for an
-installer's effect; "writes" ({"after": flag, "content": text}) writes the
+installer's effect, and "removes" deletes such paths; "writes" ({"after": flag, "content": text}) writes the
 content to the argument following the flag; "hashFiles" records the
 sha256 of each sandbox file named in the argv. "ifExists" / "unlessExists"
 (sandbox-relative paths) make a rule match only while that file does or does
@@ -257,6 +257,10 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
         # The effect of e.g. `curl -o PATH`: content written to the argument
         # that follows the flag.
         Path(argv[argv.index(writes["after"]) + 1]).write_text(writes["content"])
+    for relative in chosen.get("removes", []):
+        # The inverse effect: a sandbox-relative path an earlier rule
+        # created, so a later call no longer sees it.
+        (root / relative).unlink(missing_ok=True)
     for relative in chosen.get("creates", []):
         # The effect an installer would have: an executable at a
         # sandbox-relative path.
