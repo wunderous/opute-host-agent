@@ -1,0 +1,13 @@
+{
+  "commands": {
+    "apt-get": [],
+    "sudo": [
+      {"argv": ["-n", "apt-get", "update"], "exit": 100}
+    ],
+    "bash": [
+      {"argvContains": "https://bun.sh/install", "exit": 0},
+      {"argvContains": "get-helm-3", "exit": 0, "creates": ["shims/helm"]}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

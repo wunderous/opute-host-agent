@@ -1,0 +1,20 @@
+{
+ "description": "WSL2 interop that answers only the host identity's MachineGuid query: no wsl.exe.",
+ "commands": {
+  "powershell.exe": [
+   {
+    "argv": [
+     "-NoProfile",
+     "-NonInteractive",
+     "-Command",
+     "(Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Cryptography' -Name MachineGuid).MachineGuid"
+    ],
+    "stdout": "5f0c2a8e-1b3d-4c6e-9a7f-0123456789ab"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

@@ -1,0 +1,1297 @@
+{
+ "families": [
+  "agent-connection",
+  "bridge",
+  "container-engine",
+  "host-archives",
+  "host-artifacts",
+  "host-exec",
+  "host-files",
+  "host-firewall",
+  "host-info",
+  "host-observation",
+  "host-resources",
+  "host-services",
+  "host-tools",
+  "host-vm-subsystem",
+  "instance-exec",
+  "local-cluster-runtime",
+  "public-mcp",
+  "virtualization-stack"
+ ],
+ "milestone": "M8a",
+ "note": "Static inventory of the Go host domain. commandsStatic is a lower bound from literal command names; effects.json records the commands each tool is observed running. publishedIn lists the captured catalog cells that publish the tool; a tool in no cell is reachable only as catalogExclusion says, which runtime evidence must confirm.",
+ "owner": "host",
+ "source": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+ "surface": "host-domain",
+ "tools": [
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_cluster.go:78",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/generic_agent_connection.go:121:ConfigureAgentConnection",
+    "internal/domain/host/host_service.go:121:SetHostServiceState",
+    "internal/domain/host/types.go:105:serviceStateCommand",
+    "internal/domain/host/types.go:101:serviceStateUnit",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/generic_agent_connection.go:11:upsertEnvFile"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "agent-connection",
+   "goTests": [],
+   "neutralName": "configure_agent_connection",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "configure_agent_connection"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:459",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:323:DiagnoseBridge",
+    "internal/domain/host/types.go:133:probeBridgeHealth",
+    "internal/domain/host/wsl_compact.go:158:Error",
+    "internal/domain/host/probe.go:14:probeTCPPort"
+   ],
+   "effect": "EffectRead",
+   "envReads": [
+    "PLATFORM_MCP_PORT"
+   ],
+   "family": "bridge",
+   "goTests": [],
+   "neutralName": "diagnose_bridge",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "diagnose_bridge"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:469",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:327:RecoverBridge",
+    "internal/domain/host/types.go:133:probeBridgeHealth",
+    "internal/domain/host/wsl_compact.go:158:Error",
+    "internal/domain/host/probe.go:14:probeTCPPort",
+    "internal/domain/host/host_service.go:92:RestartHostService",
+    "internal/domain/host/types.go:94:serviceStatusCommand",
+    "internal/domain/host/types.go:79:restartServiceCommand",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [
+    "PLATFORM_MCP_PORT"
+   ],
+   "family": "bridge",
+   "goTests": [],
+   "neutralName": "recover_bridge",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "recover_bridge"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:354",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:303:EnsureDocker",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "container-engine",
+   "goTests": [],
+   "neutralName": "ensure_container_engine",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "ensure_docker"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:261",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/archive.go:30:ExtractHostArchive",
+    "internal/domain/host/archive.go:72:extractZstdTar",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/archive.go:240:rejectExistingArchiveSymlink",
+    "internal/domain/host/archive.go:201:safeArchiveLinkTarget",
+    "internal/domain/host/archive.go:189:safeArchiveTarget",
+    "internal/domain/host/archive.go:218:rejectArchiveSymlinkParents",
+    "internal/domain/host/archive.go:173:safeArchiveEntryName",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-archives",
+   "goTests": [],
+   "neutralName": "extract_host_archive",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "extract_host_archive"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:209",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/artifact.go:35:EnsureHostArtifact",
+    "internal/domain/host/artifact.go:61:ensureHostArtifactAt",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/artifact.go:153:hostArtifactFileSHA256",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/artifact.go:145:normalizeSHA256",
+    "internal/domain/host/artifact.go:137:validateHostArtifactURI"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-artifacts",
+   "goTests": [],
+   "neutralName": "ensure_host_artifact",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "ensure_host_artifact"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:297",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "apt-get",
+    "bash",
+    "cloudflared"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/artifacts_agent.go:23:PrepareHostAgentArtifacts",
+    "internal/domain/host/tool.go:343:EnsureHostTool",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/tool.go:417:ensureHelmTool",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/tool.go:385:ensureBunTool",
+    "internal/domain/host/artifacts_agent.go:96:hostAgentArtifactDestAllowed"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-artifacts",
+   "goTests": [
+    "internal/resource/admission_test.go:TestCoResidentCoordinatorsShareHeavyLock",
+    "internal/resource/admission_test.go:TestHeavyAdmissionIsSerialized"
+   ],
+   "neutralName": "prepare_host_agent_artifacts",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "prepare_host_agent_artifacts"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:119",
+   "catalogExclusion": "CatalogExcludedToolNames",
+   "commandsStatic": [
+    "bash"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:84:RunWorkloadCommandContext",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-exec",
+   "goTests": [],
+   "neutralName": "agent_shell",
+   "publishedIn": [],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "agent_shell"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:143",
+   "catalogExclusion": "CatalogExcludedToolNames",
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/exec_command.go:108:ExecCommand"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-exec",
+   "goTests": [
+    "internal/domain/host/exec_command_test.go:TestExecCommandRequiresCommand",
+    "internal/domain/host/exec_command_test.go:TestExecCommandRequiresName"
+   ],
+   "neutralName": "exec_command",
+   "publishedIn": [],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "exec_command"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:120",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "bash"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:84:RunWorkloadCommandContext",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-exec",
+   "goTests": [
+    "internal/hostmcp/server_test.go:TestCloseWaitsForAcceptedAsyncTaskRegistrationToPersistCancellation",
+    "internal/hostmcp/server_test.go:TestTaskAugmentedResultUsesMCPCreateTaskShape",
+    "internal/resource/admission_test.go:TestServingReconciliationCanCoexistWithNormalWork",
+    "internal/state/store_test.go:TestTaskSnapshotSurvivesStoreRestart",
+    "internal/tasks/registry_test.go:TestRestoreSnapshotKeepsTerminalTaskFindableAfterRestart"
+   ],
+   "neutralName": "run_host_command",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "run_host_command"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:189",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/file.go:40:EnsureHostFile",
+    "internal/domain/host/file.go:117:systemdUnitPath",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-files",
+   "goTests": [
+    "internal/domain/host/file_test.go:TestEnsureAndInspectHostFile",
+    "internal/domain/host/file_test.go:TestInspectHostFileMatchesExpectedContentWithoutReturningIt",
+    "internal/domain/host/file_test.go:TestInspectHostFileResolvesTheSameScopesEnsureDoes",
+    "internal/domain/host/file_test.go:TestRemoveHostFileRequiresConfirmationAndHash",
+    "internal/domain/host/file_test.go:TestUserScopedFileRejectsSymlinkedParent",
+    "internal/hostmcp/inspect_host_file_test.go:TestInspectHostFileMatchesContentEndingInANewline",
+    "internal/hostmcp/plan_reconcile_test.go:TestFailedHostPlanIsReconciledNotReplayed",
+    "internal/hostmcp/server_test.go:TestCompletedHostPlanIsReconciledNotReplayed",
+    "internal/hostmcp/server_test.go:TestTaskProjectionUsesDeclaredWriteOnlySchema",
+    "internal/tools/catalog_test.go:TestCredentialBearingHostInputsAreWriteOnly"
+   ],
+   "neutralName": "ensure_host_file",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "ensure_host_file"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:199",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/file.go:183:RemoveHostFile",
+    "internal/domain/host/file.go:117:systemdUnitPath",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "host-files",
+   "goTests": [
+    "internal/domain/host/file_test.go:TestRemoveHostFileRequiresConfirmationAndHash",
+    "internal/domain/host/file_test.go:TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits",
+    "internal/domain/host/file_test.go:TestUserScopedFileRejectsSymlinkedParent"
+   ],
+   "neutralName": "remove_host_file",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "remove_host_file"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:155",
+   "catalogExclusion": "CatalogExcludedToolNames",
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/firewall.go:35:EnsureHostFirewallRule",
+    "internal/domain/host/firewall.go:16:isWindowsAdmin"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [
+    "OPUTE_HOST_AGENT_ELEVATED"
+   ],
+   "family": "host-firewall",
+   "goTests": [],
+   "neutralName": "ensure_host_firewall_rule",
+   "publishedIn": [],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "ensure_host_firewall_rule"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_host.go:87",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/platform.go:11:DetectHostPlatform"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "host-info",
+   "goTests": [
+    "internal/hostmcp/reservation_lease_test.go:TestPlanRunNodesInheritTheLaunchingLifecycleReservation",
+    "internal/hostmcp/server_test.go:TestHostPlanWaitSurvivesRestartAndResumesThroughTasks"
+   ],
+   "neutralName": "detect_host_platform",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "detect_host_platform"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:26",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:19:DescribeHost",
+    "internal/domain/host/agent_installation.go:57:describeAgentInstallation",
+    "internal/domain/host/agent_installation.go:101:agentServiceScope",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "host-info",
+   "goTests": [
+    "internal/domain/host/agent_installation_test.go:TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep",
+    "internal/hostmcp/mcp_probe_test.go:TestProbeAuthenticatedMCPEndpointUsesAudienceBoundClientCredentials",
+    "internal/hostmcp/resource_delegation_test.go:TestProviderResourceDelegationIsScopedToLiveTaskAndRevocable",
+    "internal/hostmcp/resource_delegation_test.go:TestProviderResourceDelegationRejectsExpiredAndWrongAgent",
+    "internal/hostmcp/server_test.go:TestHostPlanMCPValidationAndDurableRun",
+    "internal/mcphttp/resource_delegation_test.go:TestClientForwardsResourceDelegationOnlyAsMetadata",
+    "internal/resource/admission_test.go:TestClassifyTool",
+    "internal/resource/service_test.go:TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity",
+    "internal/session/contract_test.go:TestRequestValidatesTypedHistoryAndProvenance"
+   ],
+   "neutralName": "get_host_info",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "get_host_info"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:271",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/file.go:134:InspectHostFile",
+    "internal/domain/host/file.go:243:managedHostPath",
+    "internal/domain/host/file.go:117:systemdUnitPath",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "host-observation",
+   "goTests": [
+    "internal/domain/host/file_test.go:TestEnsureAndInspectHostFile",
+    "internal/domain/host/file_test.go:TestInspectHostFileMatchesExpectedContentWithoutReturningIt",
+    "internal/domain/host/file_test.go:TestInspectHostFileResolvesTheSameScopesEnsureDoes",
+    "internal/domain/host/file_test.go:TestUserScopedFileRejectsSymlinkedParent",
+    "internal/hostmcp/plan_reconcile_test.go:TestFailedHostPlanIsReconciledNotReplayed",
+    "internal/hostmcp/server_test.go:TestCompletedHostPlanIsReconciledNotReplayed"
+   ],
+   "neutralName": "inspect_host_file",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "inspect_host_file"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:169",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/service_probe.go:21:InspectHostService",
+    "internal/domain/host/service_listener.go:14:listenerOwnedByPID",
+    "internal/domain/host/service_probe.go:89:parseUnitMainPID",
+    "internal/domain/host/service_probe.go:106:parseUnitLaunchProperties"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "host-observation",
+   "goTests": [
+    "internal/domain/host/service_listener_test.go:TestInspectHostServiceRequiresListenerOwnedByItsProcess",
+    "internal/resource/service_test.go:TestRenewKeepsALongRunningOperationsReservationInheritable",
+    "internal/tools/catalog_test.go:TestProviderBootstrapProbeFieldsReachCanonicalCatalog"
+   ],
+   "neutralName": "inspect_host_service",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "inspect_host_service"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_host.go:179",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/service_probe.go:148:ListHostServices",
+    "internal/domain/host/service_probe.go:130:unitEnablement"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "host-observation",
+   "goTests": [
+    "internal/domain/host/service_enablement_test.go:TestListHostServicesEnablementFollowsUserScope",
+    "internal/domain/host/service_enablement_test.go:TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles",
+    "internal/domain/host/service_enablement_test.go:TestListHostServicesReportsRealEnablement",
+    "internal/domain/host/service_enablement_test.go:TestListHostServicesSurvivesUnreadableEnablement"
+   ],
+   "neutralName": "list_host_services",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_host_services"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:130",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/http_probe.go:28:ProbeHTTPEndpoint",
+    "internal/domain/host/wsl_compact.go:158:Error"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "host-observation",
+   "goTests": [
+    "internal/domain/host/http_probe_test.go:TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability"
+   ],
+   "neutralName": "probe_http_endpoint",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "probe_http_endpoint"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_resource.go:28",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/resource_policy.go:188:ReconcileHostResourcePolicy",
+    "internal/domain/host/resource_policy.go:452:parseSystemdProperties",
+    "internal/domain/host/resource_policy.go:511:firstHostResourceError",
+    "internal/domain/host/wsl_compact.go:158:Error",
+    "internal/domain/host/resource_policy.go:113:ensureResourceSliceUnits",
+    "internal/domain/host/resource_policy.go:160:writeManagedUnit",
+    "internal/domain/host/resource_policy.go:463:preservesStricterResourceUnit",
+    "internal/domain/host/resource_policy.go:499:parseSystemdUnitProperty",
+    "internal/domain/host/resource_policy.go:379:parseSystemdLimit",
+    "internal/domain/host/resource_policy.go:85:managedResourceUnitNeedsMigration",
+    "internal/domain/host/resource_policy.go:70:resourceUnitDescription",
+    "internal/domain/host/resource_policy.go:63:renderHostResourceSliceUnits",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/resource_policy.go:35:resourcePolicyTarget"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-resources",
+   "goTests": [
+    "internal/domain/host/resource_policy_test.go:TestReconcileHostResourcePolicyUsesExactSystemdUnit",
+    "internal/hostmcp/server_test.go:TestPolicyReconcileRemainsAdmissibleWhenWorkloadEnforcementIsUnknown"
+   ],
+   "neutralName": "reconcile_host_resource_policy",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "reconcile_host_resource_policy"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:334",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "loginctl",
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:198:EnsureHostServiceSupervisor",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [
+    "USER"
+   ],
+   "family": "host-services",
+   "goTests": [],
+   "neutralName": "ensure_host_service_supervisor",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:344",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "loginctl"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:257:InspectHostServiceSupervisor",
+    "internal/domain/host/host_service.go:296:statusWord",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [
+    "USER"
+   ],
+   "family": "host-services",
+   "goTests": [
+    "internal/domain/host/host_service_test.go:TestInspectHostServiceSupervisorObservesWithoutChanging"
+   ],
+   "neutralName": "inspect_host_service_supervisor",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "inspect_host_service_supervisor"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:314",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:92:RestartHostService",
+    "internal/domain/host/types.go:94:serviceStatusCommand",
+    "internal/domain/host/types.go:79:restartServiceCommand",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-services",
+   "goTests": [
+    "internal/hostagent/co_residency_test.go:TestSharedHostOwnershipBlocksHostServiceMutationBeforeCommand"
+   ],
+   "neutralName": "restart_host_service",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "restart_host_service"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:324",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:121:SetHostServiceState",
+    "internal/domain/host/types.go:105:serviceStateCommand",
+    "internal/domain/host/types.go:101:serviceStateUnit",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-services",
+   "goTests": [
+    "internal/recipe/provider_install_recipe_test.go:TestProviderInstallRecipesPassPinnedActivationProvenance"
+   ],
+   "neutralName": "set_host_service_state",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "set_host_service_state"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:287",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "apt-get",
+    "bash",
+    "cloudflared"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/tool.go:343:EnsureHostTool",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/tool.go:417:ensureHelmTool",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/tool.go:385:ensureBunTool"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-tools",
+   "goTests": [],
+   "neutralName": "ensure_host_tool",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "ensure_host_tool"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:117",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "powershell.exe",
+    "wsl.exe"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/wsl_compact.go:26:CompactWSLDisk",
+    "internal/domain/host/wsl_compact.go:239:windowsFileSize",
+    "internal/domain/host/wsl_compact.go:308:decodeWindowsCLI",
+    "internal/domain/host/wsl_compact.go:325:bytesToUTF16",
+    "internal/domain/host/wsl_compact.go:336:powershellLiteral",
+    "internal/domain/host/wsl_compact.go:182:optimizeVHDError",
+    "internal/domain/host/wsl_compact.go:158:Error",
+    "internal/domain/host/wsl_compact.go:139:compactClosed",
+    "internal/domain/host/wsl_compact.go:146:NewCompactClosedError",
+    "internal/domain/host/wsl_compact.go:129:compactPreconditions",
+    "internal/domain/host/wsl_compact.go:225:wslVHDXLocked",
+    "internal/domain/host/wsl_compact.go:206:wslDistributionVHDX",
+    "internal/domain/host/wsl_compact.go:278:parseWSLVHDXPath",
+    "internal/domain/host/wsl_compact.go:297:registryValue",
+    "internal/domain/host/wsl_compact.go:191:wslDistributionState",
+    "internal/domain/host/wsl_compact.go:260:parseWSLDistributionState",
+    "internal/domain/host/wsl_compact.go:103:currentWSLDistro",
+    "internal/domain/host/wsl_compact.go:115:wslDistroFromEnvironFile",
+    "internal/domain/host/wsl_compact.go:96:rejectLiveDistro"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [
+    "WSL_DISTRO_NAME"
+   ],
+   "family": "host-vm-subsystem",
+   "goTests": [],
+   "neutralName": "compact_host_vm_disk",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "compact_wsl_disk"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_host.go:107",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "wsl.exe"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/wsl_lifecycle.go:40:ShutdownWSL"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "host-vm-subsystem",
+   "goTests": [
+    "internal/domain/host/wsl_compact_test.go:TestCompactClosedErrorCarriesReport",
+    "internal/domain/host/wsl_compact_test.go:TestCompactPreconditionsFailClosedWhenLockedOrRunning",
+    "internal/tools/dispatch_test.go:TestErrorResultIncludesCompactClosedReport"
+   ],
+   "neutralName": "shutdown_host_vm_subsystem",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "shutdown_wsl"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_host.go:97",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "wsl.exe"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/wsl_lifecycle.go:15:TerminateWSLDistribution"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "host-vm-subsystem",
+   "goTests": [],
+   "neutralName": "terminate_host_vm_distribution",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "terminate_wsl_distribution"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:56",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/exec_command.go:46:RunInstanceCommandContext"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "instance-exec",
+   "goTests": [
+    "internal/domain/host/exec_command_test.go:TestRunInstanceCommandContextPropagatesCancellationToProvider",
+    "internal/hostmcp/server_test.go:TestTaskProjectionUsesDeclaredWriteOnlySchema",
+    "internal/tools/catalog_test.go:TestCredentialBearingHostInputsAreWriteOnly"
+   ],
+   "neutralName": "run_instance_command",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "run_instance_command"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_unassigned.go:363",
+   "catalogExclusion": "IncusOmittedToolNames",
+   "commandsStatic": [],
+   "domainFunctions": [
+    "internal/domain/host/host_service.go:307:EnsureK3d",
+    "internal/domain/host/service.go:54:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "local-cluster-runtime",
+   "goTests": [],
+   "neutralName": "ensure_local_cluster_runtime",
+   "publishedIn": [],
+   "rustServes": false,
+   "taskMode": "TaskInline",
+   "tool": "ensure_k3d"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:235",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "cloudflared",
+    "loginctl",
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/public_mcp_quick.go:76:EnsurePublicMcpQuickTunnel",
+    "internal/domain/host/public_mcp_quick.go:185:publicMCPQuickObservation",
+    "internal/domain/host/public_mcp_quick.go:490:writePublicMCPQuickState",
+    "internal/domain/host/public_mcp.go:408:ensurePrivateManagedFile",
+    "internal/domain/host/public_mcp.go:449:managedFileObservation",
+    "internal/domain/host/file.go:40:EnsureHostFile",
+    "internal/domain/host/file.go:117:systemdUnitPath",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/public_mcp.go:166:probePublicMCPWithRetry",
+    "internal/domain/host/public_mcp_quick.go:454:waitForPublicMCPQuickEndpoint",
+    "internal/domain/host/public_mcp_quick.go:423:readPublicMCPQuickEndpoint",
+    "internal/domain/host/public_mcp_quick.go:437:validatePublicMCPQuickEndpoint",
+    "internal/domain/host/host_service.go:121:SetHostServiceState",
+    "internal/domain/host/types.go:105:serviceStateCommand",
+    "internal/domain/host/types.go:101:serviceStateUnit",
+    "internal/domain/host/public_mcp_quick.go:504:truncatePublicMCPQuickLog",
+    "internal/domain/host/public_mcp.go:380:requireOwnedManagedFile",
+    "internal/domain/host/public_mcp_quick.go:478:readPublicMCPQuickState",
+    "internal/domain/host/service_probe.go:21:InspectHostService",
+    "internal/domain/host/service_listener.go:14:listenerOwnedByPID",
+    "internal/domain/host/service_probe.go:89:parseUnitMainPID",
+    "internal/domain/host/service_probe.go:106:parseUnitLaunchProperties",
+    "internal/domain/host/host_service.go:198:EnsureHostServiceSupervisor",
+    "internal/domain/host/public_mcp_quick.go:414:renderPublicMCPQuickUnit",
+    "internal/domain/host/public_mcp.go:468:shellQuote",
+    "internal/domain/host/public_mcp_quick.go:399:ensurePublicMCPQuickLog",
+    "internal/domain/host/public_mcp_quick.go:366:ensurePublicMCPQuickArtifact",
+    "internal/domain/host/artifact.go:61:ensureHostArtifactAt",
+    "internal/domain/host/artifact.go:153:hostArtifactFileSHA256",
+    "internal/domain/host/public_mcp_quick.go:281:resolvePublicMCPQuickPaths",
+    "internal/domain/host/public_mcp_quick.go:361:isLoopbackIP",
+    "internal/domain/host/public_mcp_quick.go:354:netParseIP",
+    "internal/domain/host/public_mcp.go:282:normalizePublicMCPInstanceID",
+    "internal/domain/host/public_mcp.go:312:minInt",
+    "internal/domain/host/public_mcp.go:472:firstNonEmptyString",
+    "internal/domain/host/artifact.go:145:normalizeSHA256",
+    "internal/domain/host/artifact.go:137:validateHostArtifactURI"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [
+    "USER"
+   ],
+   "family": "public-mcp",
+   "goTests": [],
+   "neutralName": "ensure_public_mcp_quick_tunnel",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "ensure_public_mcp_quick_tunnel"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:219",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "cloudflared",
+    "loginctl",
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/public_mcp.go:76:EnsurePublicMcpTunnel",
+    "internal/domain/host/public_mcp.go:166:probePublicMCPWithRetry",
+    "internal/domain/host/host_service.go:121:SetHostServiceState",
+    "internal/domain/host/types.go:105:serviceStateCommand",
+    "internal/domain/host/types.go:101:serviceStateUnit",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/host_service.go:198:EnsureHostServiceSupervisor",
+    "internal/domain/host/file.go:40:EnsureHostFile",
+    "internal/domain/host/file.go:117:systemdUnitPath",
+    "internal/domain/host/file.go:258:hostOwnedPath",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/public_mcp.go:380:requireOwnedManagedFile",
+    "internal/domain/host/public_mcp.go:459:renderPublicMCPUnit",
+    "internal/domain/host/public_mcp.go:468:shellQuote",
+    "internal/domain/host/public_mcp.go:401:ensurePublicMCPTokenFile",
+    "internal/domain/host/public_mcp.go:408:ensurePrivateManagedFile",
+    "internal/domain/host/public_mcp.go:449:managedFileObservation",
+    "internal/domain/host/public_mcp.go:364:ensurePublicMCPArtifact",
+    "internal/domain/host/artifact.go:61:ensureHostArtifactAt",
+    "internal/domain/host/artifact.go:153:hostArtifactFileSHA256",
+    "internal/domain/host/public_mcp.go:354:validatePublicMCPTunnelToken",
+    "internal/domain/host/public_mcp.go:196:resolvePublicMCPPaths",
+    "internal/domain/host/public_mcp.go:319:pathsForUserArg",
+    "internal/domain/host/public_mcp.go:472:firstNonEmptyString",
+    "internal/domain/host/artifact.go:145:normalizeSHA256",
+    "internal/domain/host/artifact.go:137:validateHostArtifactURI",
+    "internal/domain/host/public_mcp.go:282:normalizePublicMCPInstanceID",
+    "internal/domain/host/public_mcp.go:312:minInt",
+    "internal/domain/host/public_mcp.go:332:validatePublicMCPOrigin"
+   ],
+   "effect": "EffectCredential",
+   "envReads": [
+    "USER"
+   ],
+   "family": "public-mcp",
+   "goTests": [],
+   "neutralName": "ensure_public_mcp_tunnel",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "ensure_public_mcp_tunnel"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:248",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "cloudflared",
+    "sudo"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/public_mcp_quick.go:208:RemovePublicMcpQuickTunnel",
+    "internal/domain/host/wsl_compact.go:158:Error",
+    "internal/domain/host/public_mcp_quick.go:537:removeOwnedQuickArtifact",
+    "internal/domain/host/artifact.go:153:hostArtifactFileSHA256",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/public_mcp_quick.go:517:removeOwnedQuickFile",
+    "internal/domain/host/public_mcp.go:380:requireOwnedManagedFile",
+    "internal/domain/host/public_mcp_quick.go:566:errorString",
+    "internal/domain/host/public_mcp.go:472:firstNonEmptyString",
+    "internal/domain/host/public_mcp_quick.go:561:fileExists",
+    "internal/domain/host/public_mcp_quick.go:281:resolvePublicMCPQuickPaths",
+    "internal/domain/host/public_mcp_quick.go:361:isLoopbackIP",
+    "internal/domain/host/public_mcp_quick.go:354:netParseIP",
+    "internal/domain/host/paths.go:14:hostHomeDir",
+    "internal/domain/host/public_mcp.go:282:normalizePublicMCPInstanceID",
+    "internal/domain/host/public_mcp.go:312:minInt",
+    "internal/domain/host/artifact.go:145:normalizeSHA256",
+    "internal/domain/host/artifact.go:137:validateHostArtifactURI"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "public-mcp",
+   "goTests": [
+    "internal/domain/host/public_mcp_quick_test.go:TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt"
+   ],
+   "neutralName": "remove_public_mcp_quick_tunnel",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "remove_public_mcp_quick_tunnel"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:17",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "apt-cache",
+    "apt-get",
+    "curl",
+    "dpkg",
+    "dpkg-query",
+    "incus",
+    "install",
+    "systemctl",
+    "usermod"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/tool.go:38:InstallIncusStack",
+    "internal/domain/host/tool.go:284:virtualizationVersions",
+    "internal/domain/host/tool.go:135:ensureIncusContainerRuntime",
+    "internal/domain/host/tool.go:198:incusProfileHasDevice",
+    "internal/domain/host/tool.go:334:currentUserName",
+    "internal/domain/host/tool.go:208:aptCandidate",
+    "internal/domain/host/tool.go:223:incusCandidateSatisfies",
+    "internal/domain/host/tool.go:232:configureZabblyIncusRepository",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/tool.go:279:packageAvailable"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "virtualization-stack",
+   "goTests": [],
+   "neutralName": "install_virtualization_stack",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "install_incus_stack"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_host.go:46",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "dpkg-query",
+    "incus"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/tool.go:298:ProbeIncusGPU",
+    "internal/domain/host/tool.go:321:versionAtLeast",
+    "internal/domain/host/tool.go:332:commandAvailable",
+    "internal/domain/host/tool.go:284:virtualizationVersions"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "virtualization-stack",
+   "goTests": [],
+   "neutralName": "probe_virtualization_gpu",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "probe_incus_gpu"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_host.go:32",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "apt-get",
+    "dpkg-query",
+    "incus",
+    "rm",
+    "systemctl"
+   ],
+   "domainFunctions": [
+    "internal/domain/host/incus_uninstall.go:42:UninstallIncusStack",
+    "internal/domain/host/service.go:54:New",
+    "internal/domain/host/incus_uninstall.go:150:installedIncusPackages",
+    "internal/domain/host/incus_uninstall.go:126:remainingIncusInstances"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "virtualization-stack",
+   "goTests": [
+    "internal/domain/host/incus_uninstall_test.go:TestUninstallIncusStackRefusesWhileInstancesRemain",
+    "internal/domain/host/incus_uninstall_test.go:TestUninstallIncusStackReportsAnAbsentStack",
+    "internal/domain/host/incus_uninstall_test.go:TestUninstallIncusStackRequiresConfirmation"
+   ],
+   "neutralName": "uninstall_virtualization_stack",
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "uninstall_incus_stack"
+  }
+ ]
+}

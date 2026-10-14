@@ -1,0 +1,142 @@
+{
+  "binaries": {
+    "go": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+    "rust": "ff02f076824e792d36107638e6516192829c249932ae64af170a326d17079f3b"
+  },
+  "canaries": {
+    "go": 14,
+    "rust": 24
+  },
+  "contracts": {
+    "evidence-redaction": {
+      "passed": 4,
+      "total": 4
+    },
+    "oauth-issuance": {
+      "passed": 24,
+      "total": 24
+    },
+    "refuse-before-operation-record": {
+      "passed": 3,
+      "total": 3
+    },
+    "reject-without-audit-writes": {
+      "passed": 3,
+      "total": 3
+    },
+    "standalone-read-only-gate": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "decidedDivergences": {
+    "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown": [
+      "D18.unacknowledged-callback-child"
+    ],
+    "provider-lifecycle.family.rejected-candidate-keeps-owner": [
+      "D16.other-install-catalog-revision",
+      "D16.other-run-catalog-revision",
+      "D16.rejected-candidate-keeps-owner"
+    ],
+    "provider-lifecycle.family.rollback-restores-owner": [
+      "D16.rollback-restores-owner"
+    ]
+  },
+  "gates": {
+    "cutover": {
+      "inventoryGaps": 38,
+      "pass": false,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m0": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m1": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m2": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m3": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m4": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m5": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    },
+    "m6": {
+      "pass": true,
+      "problemKinds": [],
+      "problems": 0
+    }
+  },
+  "goVsGo": {
+    "pass": 177
+  },
+  "goVsRust": {
+    "pass": 177
+  },
+  "head": "01048a9eb34007d693f926b6350c1d9764e9c2fb",
+  "inventory": {
+    "byMilestone": {
+      "M10": 1,
+      "M8": 37
+    },
+    "gaps": 38
+  },
+  "m5": {
+    "crash": {
+      "failed": 0,
+      "passed": 200,
+      "seeds": 200
+    },
+    "cross-read": {
+      "failed": 0,
+      "passed": 18
+    },
+    "migration": {
+      "failed": 0,
+      "passed": 6,
+      "repeats": 3,
+      "total": 6
+    },
+    "secrets": {
+      "fieldCount": 16
+    },
+    "shape-final": {
+      "failed": 0,
+      "passed": 870,
+      "repeats": 5,
+      "total": 870
+    },
+    "unknown-projection": {}
+  },
+  "oauthGoSdkClient": {
+    "approve": 142,
+    "denyRefused": "access_denied"
+  },
+  "schemaVersion": "opute-native-validation.v1",
+  "shape": {
+    "passed": 870,
+    "total": 870
+  },
+  "workspaceTests": {
+    "failed": 0,
+    "passed": 205
+  }
+}

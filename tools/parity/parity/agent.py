@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import http.client
 import fcntl
+import hashlib
 import json
 import os
 import random
@@ -224,6 +225,26 @@ class Sandbox:
 
     def trace(self) -> list[dict]:
         return shims.read_trace(self.trace_path)
+
+    def tree(self, relative: str) -> list[dict]:
+        """Every entry beneath one sandbox directory: type, permission bits,
+        a regular file's sha256, a symlink's target. The external effect of a
+        host mutation, compared between twins."""
+        out = []
+        base = self.root / relative
+        for path in sorted(base.rglob("*")) if base.exists() else []:
+            st = path.lstat()
+            entry = {"path": str(path.relative_to(self.root)), "mode": oct(stat.S_IMODE(st.st_mode))}
+            if stat.S_ISLNK(st.st_mode):
+                entry.update(type="symlink", target=os.readlink(path))
+            elif stat.S_ISDIR(st.st_mode):
+                entry["type"] = "dir"
+            elif stat.S_ISREG(st.st_mode):
+                entry.update(type="file", sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            else:
+                entry["type"] = "other"
+            out.append(entry)
+        return out
 
     def files(self) -> list[dict]:
         """Files the agent created, with type and permission bits."""
@@ -451,10 +472,11 @@ class ProviderProcess:
     def __init__(self, sandbox: "Sandbox", binary: str):
         if "/" in binary or not binary.startswith("opute-provider-"):
             raise ValueError(f"not a pinned provider executable: {binary!r}")
-        holder = socket.socket()
-        holder.bind(("127.0.0.1", 0))
-        self.port = holder.getsockname()[1]
-        holder.close()
+        # A leased port, never a kernel-chosen one: provider stubs take
+        # ephemeral ports, and a number freed here could be handed to a
+        # concurrent scenario's stub, which this sandbox's agent would then
+        # install from.
+        self.port = free_port()
         env = sandbox.base_env()
         env.update({
             "OPUTE_PROVIDER_PORT": str(self.port),
@@ -469,13 +491,14 @@ class ProviderProcess:
                                      stdin=subprocess.DEVNULL, stdout=self.log, stderr=subprocess.STDOUT)
         deadline = time.monotonic() + 10
         while True:
-            try:
-                socket.create_connection(("127.0.0.1", self.port), 0.2).close()
+            # The provider itself must hold the listener, not whatever else
+            # answers on the port.
+            if (any(address.rsplit(":", 1)[-1] == str(self.port) for address in listeners_of(self.proc.pid))
+                    and port_open(self.port)):
                 break
-            except OSError:
-                if self.proc.poll() is not None or time.monotonic() > deadline:
-                    raise RuntimeError(f"{binary} did not listen on {self.port}")
-                time.sleep(0.05)
+            if self.proc.poll() is not None or time.monotonic() > deadline:
+                raise RuntimeError(f"{binary} did not listen on {self.port}")
+            time.sleep(0.05)
         self.result: dict | None = None
 
     def close(self) -> dict:
@@ -487,6 +510,7 @@ class ProviderProcess:
                 self.proc.kill()
                 self.proc.wait()
             self.log.close()
+            release_port(self.port)
             self.result = {"stopped": True, "signal": -self.proc.returncode if self.proc.returncode < 0 else None}
         return self.result
 
@@ -514,20 +538,47 @@ def descendants(pid: int) -> list[str]:
     return sorted(found)
 
 
-class HttpStub:
-    """A scripted HTTP endpoint for fault-injection scenarios.
+def make_test_tls(directory: Path) -> dict[str, str]:
+    """A throwaway CA and a 127.0.0.1/localhost server certificate it signs.
 
-    Each hit consumes the next entry in `responses` (status/body/delayMs);
-    once exhausted, `default` answers every further hit. Both sides script
-    identically, so a retry-then-succeed or an always-failing readiness
-    target behaves the same on Go and Rust -- only the host agent under
-    test differs.
+    The CA is trusted only by an agent whose SSL_CERT_FILE names ca.pem, so
+    a scenario chooses whether the endpoint is trusted.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    files = {k: str(directory / f"{k}.pem") for k in ("ca", "ca-key", "cert", "key")}
+    if Path(files["cert"]).exists():
+        return files
+    run = lambda *argv: subprocess.run(argv, check=True, capture_output=True)  # noqa: E731
+    run("openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1",
+        "-nodes", "-days", "2", "-subj", "/CN=parity test CA", "-keyout", files["ca-key"], "-out", files["ca"],
+        "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign")
+    csr = str(directory / "server.csr")
+    run("openssl", "req", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1", "-nodes",
+        "-subj", "/CN=127.0.0.1", "-keyout", files["key"], "-out", csr)
+    ext = directory / "server.ext"
+    ext.write_text("subjectAltName=IP:127.0.0.1,DNS:localhost\nextendedKeyUsage=serverAuth\n")
+    run("openssl", "x509", "-req", "-in", csr, "-CA", files["ca"], "-CAkey", files["ca-key"],
+        "-CAcreateserial", "-days", "2", "-out", files["cert"], "-extfile", str(ext))
+    return files
+
+
+class HttpStub:
+    """A scripted HTTP(S) endpoint for fault-injection scenarios.
+
+    Each hit consumes the next entry in `responses`; once exhausted,
+    `default` answers every further hit. An entry has status, body (or
+    base64), headers, contentLength (an announced length that may differ
+    from the body) and delayMs. Both sides script identically, so only the
+    host agent under test differs. With `tls`, the stub serves HTTPS with a
+    certificate from `make_test_tls`. Requested paths are recorded.
     """
 
-    def __init__(self, responses: list[dict], default: dict):
+    def __init__(self, responses: list[dict], default: dict, tls: dict[str, str] | None = None):
         import http.server as _http_server
+        import ssl as _ssl
 
         self.hits = 0
+        self.paths: list[str] = []
         self._lock = threading.Lock()
         responses_ref = responses
         default_ref = default
@@ -537,15 +588,27 @@ class HttpStub:
                 with stub._lock:
                     index = stub.hits
                     stub.hits += 1
+                    stub.paths.append(self.path)
                 spec = responses_ref[index] if index < len(responses_ref) else default_ref
                 delay_ms = spec.get("delayMs", 0)
                 if delay_ms:
                     time.sleep(delay_ms / 1000.0)
-                body = spec.get("body", "").encode()
+                if "base64" in spec:
+                    import base64 as _b64
+                    body = _b64.b64decode(spec["base64"])
+                else:
+                    body = spec.get("body", "").encode()
                 self.send_response(spec.get("status", 200))
-                self.send_header("Content-Length", str(len(body)))
+                for name, value in spec.get("headers", {}).items():
+                    self.send_header(name, value.replace("${STUB_PORT}", str(stub.port)))
+                self.send_header("Content-Length", str(spec.get("contentLength", len(body))))
                 self.end_headers()
-                self.wfile.write(body)
+                try:
+                    self.wfile.write(body)
+                except OSError:
+                    pass
+                if "contentLength" in spec:
+                    self.close_connection = True
 
             def do_GET(self) -> None:  # noqa: N802 (stdlib handler name)
                 self._respond()
@@ -558,6 +621,10 @@ class HttpStub:
         # allocates. Bind atomically rather than probing and releasing a port
         # before constructing the server under concurrent fixture load.
         self._server = _http_server.HTTPServer(("127.0.0.1", 0), Handler)
+        if tls:
+            context = _ssl.SSLContext(_ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(tls["cert"], tls["key"])
+            self._server.socket = context.wrap_socket(self._server.socket, server_side=True)
         self.port = self._server.server_address[1]
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()

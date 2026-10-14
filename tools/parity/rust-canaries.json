@@ -200,8 +200,8 @@
   "contract": "standalone-read-only-gate",
   "patch": {
    "file": "crates/host-agent/src/catalog.rs",
-   "old": "        return false;\n    }\n    if let Some(d) = catalog.tools.iter().find(|d| d.name == name) {",
-   "new": "        return false;\n    }\n    if !name.is_empty() {\n        return true;\n    }\n    if let Some(d) = catalog.tools.iter().find(|d| d.name == name) {"
+   "old": "        return false;\n    }\n    if let Some(d) = catalog.find(name) {",
+   "new": "        return false;\n    }\n    if !name.is_empty() {\n        return true;\n    }\n    if let Some(d) = catalog.find(name) {"
   },
   "scenario": "gate.published-non-read-refused",
   "mayAlsoFail": [

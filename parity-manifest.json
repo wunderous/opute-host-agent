@@ -1,33 +1,181 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/local-e2e/native-2026-10-12-r8/canaries.json"
+  "results": "evidence/m8a/canaries.json"
  },
  "catalogRevisions": {
-  "note": "X5: the Rust catalog revision per mode. Changing the catalog requires updating these reviewed values (crate test catalog::tests::revisions_match_manifest).",
-  "platform": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-  "standalone": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2"
+  "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
+  "platform": {
+   "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
+   "rust": "sha256:c465a4d1ca3705cfac2d8749c2524a9a0daef7bf293227a60408bf75b09a7b0e"
+  },
+  "providerFixtures": [
+   {
+    "go": "sha256:1a276524cb4b16825e7b3bf57c6eac46bc06eb18006c0498dfd3546c335bbf76",
+    "rust": "sha256:ef69b4f48d394e97f0da3f00a271a666ad39e6da512f73e76756e5804c165bf9",
+    "scenarios": [
+     "provider-lifecycle.bad-manifest.service-capability-not-provided"
+    ]
+   },
+   {
+    "go": "sha256:5232386ef9e128383d080cfac767b78b2e87421ae5c894b2163b3920e1d3fcad",
+    "rust": "sha256:0afad61db88e09319eb6a2aa5331b4b4547884c06d29b2b29370a3059bafda06",
+    "scenarios": [
+     "provider-lifecycle.bad-manifest.validation-operation-undeclared",
+     "provider-lifecycle.builtin-family.require",
+     "provider-lifecycle.call.is-error",
+     "provider-lifecycle.call.rpc-error",
+     "provider-lifecycle.call.task-result-sync-only",
+     "provider-lifecycle.crash.after-activation",
+     "provider-lifecycle.family.rejected-candidate-keeps-owner",
+     "provider-lifecycle.family.replacement-keeps-accepted-call",
+     "provider-lifecycle.family.rollback-restores-owner",
+     "provider-lifecycle.install-call-teardown",
+     "provider-lifecycle.install.reuse-and-reload",
+     "provider-lifecycle.missing-dependency.descriptor-requires",
+     "provider-lifecycle.missing-dependency.requires",
+     "provider-lifecycle.readiness.activation-probe-error",
+     "provider-lifecycle.readiness.activation-probe-is-error",
+     "provider-lifecycle.readiness.flapping",
+     "provider-lifecycle.readiness.slow-probe",
+     "provider-lifecycle.replacement.in-flight",
+     "provider-lifecycle.restart.active-provider",
+     "provider-lifecycle.restart.after-replacement",
+     "provider-lifecycle.restart.after-teardown",
+     "provider-lifecycle.restart.provider-down",
+     "provider-lifecycle.schema-drift.operation-not-listed",
+     "provider-lifecycle.teardown.finalize-error",
+     "provider-lifecycle.teardown.idempotent",
+     "provider-lifecycle.teardown.prepare-error"
+    ]
+   },
+   {
+    "go": "sha256:5d13b1a6d3393d07ecaf48cf57f51db506d374a74a2286cf368dea9a658e7a6f",
+    "rust": "sha256:3fd190f4818e213ccf2bc4292f78fbfa655435cee3137a681f9128124d711813",
+    "scenarios": [
+     "provider-lifecycle.callback.bridged-without-task-extension",
+     "provider-lifecycle.callback.cancel-bridged-task-refused",
+     "provider-lifecycle.callback.child-task-acknowledged",
+     "provider-lifecycle.callback.child-task-unacknowledged-at-shutdown",
+     "provider-lifecycle.callback.host-tool",
+     "provider-lifecycle.callback.lifecycle-tool",
+     "provider-lifecycle.callback.malformed",
+     "provider-lifecycle.callback.no-delegation",
+     "provider-lifecycle.callback.provider-tool",
+     "provider-lifecycle.callback.restart-during-bridged-task",
+     "provider-lifecycle.callback.stale",
+     "provider-lifecycle.callback.standalone-tool",
+     "provider-lifecycle.callback.tampered",
+     "provider-lifecycle.callback.unknown-tool"
+    ]
+   },
+   {
+    "go": "sha256:34b809740a5f3a396d5e86a5a3c73d06988ad8156cbbda3b406935d11d99748e",
+    "rust": "sha256:94b56e4b8b616d6fe318d0e43159b6556ddb92774f38b52e6ed7f08b06a1d86d",
+    "scenarios": [
+     "provider-lifecycle.family.rejected-candidate-keeps-owner"
+    ]
+   },
+   {
+    "go": "sha256:0b13468ed1005c919c2e0309dd67a406ac824c9791648a25fbe1248845ef6385",
+    "rust": "sha256:7b4ae0a194629cf495193c9c89480e6f2574dd4b941479e7bab7cd8423d526c3",
+    "scenarios": [
+     "provider-lifecycle.family.replacement-keeps-accepted-call",
+     "provider-lifecycle.family.rollback-restores-owner"
+    ]
+   },
+   {
+    "go": "sha256:850550e436d511df91f0266999c2f7eb2e0530873e1c4b5e57207d90b623b210",
+    "rust": "sha256:9b4253bde00d66319cf37fa8969d4aa0a3a9481ad1266e510bee4d68c8b51420",
+    "scenarios": [
+     "provider-lifecycle.readiness.flapping",
+     "provider-lifecycle.replacement.in-flight",
+     "provider-lifecycle.restart.after-replacement"
+    ]
+   },
+   {
+    "go": "sha256:01ef1a6fc58380741eaaaeed6efa90f16149096e99e1dbf93335dbaadf4da3e3",
+    "rust": "sha256:2bd1bcaf7b6d7054cc41b1717582a63efa6ad8475149026711ea72969367df27",
+    "scenarios": [
+     "provider-lifecycle.schema-drift.invalid-input-schema"
+    ]
+   },
+   {
+    "go": "sha256:458ee103973df0ada45cdb01281c1076f9435186ca59372201ba2d7ac3451b9d",
+    "rust": "sha256:4f40df95d7a5723f12d89fd839249d89db9d8b180f5911864ff610025ee9c960",
+    "scenarios": [
+     "provider-lifecycle.schema-drift.result-violates-output-schema"
+    ]
+   },
+   {
+    "go": "sha256:6465833d5b1e77645d22a87d2af32fce63aef95657698ebdc0f2d2fcee0f299a",
+    "rust": "sha256:328f039bd58d38c60a36c4bfe1e49db0382dbdfaabcdee268f7ff6e4cbb2f082",
+    "scenarios": [
+     "provider-real.cloudflare"
+    ]
+   },
+   {
+    "go": "sha256:bc838403419c1a260fa45ad9e8def0604fe52622909f676bea2b353b8cc44fec",
+    "rust": "sha256:74db1306775d1e148e7571e9fe3ced4254bead2309ab7d240699046473b684a3",
+    "scenarios": [
+     "provider-real.cloudflare"
+    ]
+   },
+   {
+    "go": "sha256:6eeefc25fdaa7b1fbe9d0257c561a08a2d271f5fbcfdf5072e62399fa116c34b",
+    "rust": "sha256:5e9b425ed0727c875dd1a0ae72e315f2b5bdf8d15032e058e8042e5a172aa8da",
+    "scenarios": [
+     "provider-real.k3s",
+     "provider-real.k3s.restart"
+    ]
+   },
+   {
+    "go": "sha256:688008d9922fd3314c34ad11d1d7584690edcdf194fcacf56151f9f4368be3f6",
+    "rust": "sha256:2398537b9c30804da73deb814650e603f7ad8c8245dd53c384e950f66a39de81",
+    "scenarios": [
+     "provider-real.ollama"
+    ]
+   },
+   {
+    "go": "sha256:7a643de2aecceb1f3a82cb085974a359d385af08e33c671d7b92fec052081dcf",
+    "rust": "sha256:9870d7f5d811e2654c78e1e5db91f77786f2479e928d8fae5c5bf2dd175858ec",
+    "scenarios": [
+     "provider-real.tailscale"
+    ]
+   },
+   {
+    "go": "sha256:c1d912d9693412f3b0e6151fd7ee1da354a488935d83fe2d039e4fa161a2b648",
+    "rust": "sha256:7de2ffdebf473f26c961366c35228e47aa89b4c7941c02349117c9aa9d6917c3",
+    "scenarios": [
+     "provider-lifecycle.family.replacement-keeps-accepted-call"
+    ]
+   }
+  ],
+  "standalone": {
+   "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+   "rust": "sha256:d159c59e1cdb9e06a5ee837462c8038f380503f31fea3bb578423dea773799e5"
+  }
  },
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m8a/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m8a/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m8a/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m8a/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/local-e2e/native-2026-10-12-r8/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m8a/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -103,6 +251,22 @@
    "status": "approved",
    "summary": "Extend D12: a delegated callback child that never starts leaves no durable row; after a restart its handle is unknown"
   },
+  "D19": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/neutral-host-tool-names",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D19)",
+   "status": "approved",
+   "summary": "Rust publishes provider-neutral names for eight host tools (and packageName for incusPackage); the Go names stay hidden, deprecated aliases until cutover"
+  },
+  "D20": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/zstd-corrupt-block-error-text",
+   "date": "2026-10-12",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D20)",
+   "status": "approved",
+   "summary": "For a corrupt compressed zstd block, extract_host_archive keeps Go's failure, prefix and tree, but the text after 'extract host archive: ' is the Rust decoder's own"
+  },
   "D8": {
    "approvedBy": "owner",
    "change": "openspec/changes/secure-oauth-issuance",
@@ -117,13 +281,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/go-vs-go-final/summary.json"
+   "summary": "evidence/m8a/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/go-vs-rust-final/summary.json"
+   "summary": "evidence/m8a/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -150,7 +314,8 @@
    "requirePass": [
     "go-vs-go",
     "go-vs-rust"
-   ]
+   ],
+   "requireT2": true
   },
   "m0": {
    "description": "M0 exit: harness proven (Go-vs-Go clean x20, every canary caught), inventory captured with zero unowned gaps, every Rust item present and unverified",
@@ -328,6 +493,44 @@
      ]
     }
    ]
+  },
+  "m8a": {
+   "description": "M8a exit (host domain): M1-M7 regression gates (Go-vs-Go x20, canaries, inventory, oracles, contracts, M5) plus every host-domain item matching Go (x5) at T1 shim-trace parity, the M7 provider surfaces, and T2 twin-sandbox parity: every T2 host-domain scenario (effects, cleanup and residue, and the M4 admission-rejected calls leaving the host unchanged) passes Go-vs-Go x20 and Go-vs-Rust x5, re-derived from committed receipts. Remaining host T2 gaps (WSL2 runner, Incus instances) stay owned in baseline/inventory/t2.json.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "lifecycle",
+      "mcp-wire",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true
   }
  },
  "goReference": {
@@ -704,6 +907,903 @@
    "owner": "config",
    "scenario": "config.validation-matrix",
    "surface": "config"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.files.lifecycle",
+   "owner": "host",
+   "scenario": "host-domain.files.lifecycle",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.files.path-forms",
+   "owner": "host",
+   "scenario": "host-domain.files.path-forms",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.files.refusals",
+   "owner": "host",
+   "scenario": "host-domain.files.refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.files.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.files.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/file.go:EnsureHostFile",
+    "internal/domain/host/file.go:RemoveHostFile",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.files.shared-owner-matches",
+   "owner": "host",
+   "scenario": "host-domain.files.shared-owner-matches",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.valid",
+   "owner": "host",
+   "scenario": "host-domain.archives.valid",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.stream-faults",
+   "owner": "host",
+   "scenario": "host-domain.archives.stream-faults",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.unsafe-entries",
+   "owner": "host",
+   "scenario": "host-domain.archives.unsafe-entries",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.corrupt-blocks",
+   "owner": "host",
+   "scenario": "host-domain.archives.corrupt-blocks",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.over-existing",
+   "owner": "host",
+   "scenario": "host-domain.archives.over-existing",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.archives.arguments",
+   "owner": "host",
+   "scenario": "host-domain.archives.arguments",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/archive.go:ExtractHostArchive",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.archives.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.archives.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifact.go:EnsureHostArtifact",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.artifacts.download",
+   "owner": "host",
+   "scenario": "host-domain.artifacts.download",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifact.go:EnsureHostArtifact",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.artifacts.faults",
+   "owner": "host",
+   "scenario": "host-domain.artifacts.faults",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifact.go:EnsureHostArtifact",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.artifacts.arguments",
+   "owner": "host",
+   "scenario": "host-domain.artifacts.arguments",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifact.go:EnsureHostArtifact",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.artifacts.untrusted",
+   "owner": "host",
+   "scenario": "host-domain.artifacts.untrusted",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifact.go:EnsureHostArtifact",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.artifacts.refused",
+   "owner": "host",
+   "scenario": "host-domain.artifacts.refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifact.go:EnsureHostArtifact",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.artifacts.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.artifacts.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:EnsureHostTool",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.tools.package-manager",
+   "owner": "host",
+   "scenario": "host-domain.tools.package-manager",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:EnsureHostTool",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.tools.user-local",
+   "owner": "host",
+   "scenario": "host-domain.tools.user-local",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:EnsureHostTool",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.tools.update-fails",
+   "owner": "host",
+   "scenario": "host-domain.tools.update-fails",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:EnsureHostTool",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.tools.no-sudo",
+   "owner": "host",
+   "scenario": "host-domain.tools.no-sudo",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:EnsureHostTool",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.tools.no-package-manager",
+   "owner": "host",
+   "scenario": "host-domain.tools.no-package-manager",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:EnsureHostTool",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.tools.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.tools.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifacts_agent.go:PrepareHostAgentArtifacts",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.prepare.arguments",
+   "owner": "host",
+   "scenario": "host-domain.prepare.arguments",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifacts_agent.go:PrepareHostAgentArtifacts",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.prepare.unsupported-arch",
+   "owner": "host",
+   "scenario": "host-domain.prepare.unsupported-arch",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/artifacts_agent.go:PrepareHostAgentArtifacts",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.prepare.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.prepare.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_unassigned.go",
+    "internal/domain/host/host_service.go:RunWorkloadCommandContext"
+   ],
+   "id": "host-domain.exec.host-refusals",
+   "owner": "host",
+   "scenario": "host-domain.exec.host-refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/exec_command.go:RunInstanceCommandContext",
+    "internal/domain/host/exec_command.go:ExecCommand",
+    "internal/domain/incus/vm_lifecycle.go:RunVMExecContext",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.exec.instance",
+   "owner": "host",
+   "scenario": "host-domain.exec.instance",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/exec_command.go:RunInstanceCommandContext",
+    "internal/domain/host/exec_command.go:ExecCommand",
+    "internal/domain/incus/vm_lifecycle.go:RunVMExecContext",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.exec.instance-no-provider",
+   "owner": "host",
+   "scenario": "host-domain.exec.instance-no-provider",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.system-state",
+   "owner": "host",
+   "scenario": "host-domain.services.system-state",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.reload-fails",
+   "owner": "host",
+   "scenario": "host-domain.services.reload-fails",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.refusals",
+   "owner": "host",
+   "scenario": "host-domain.services.refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.services.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.services.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.supervisor-linger",
+   "owner": "host",
+   "scenario": "host-domain.services.supervisor-linger",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.supervisor-sudo",
+   "owner": "host",
+   "scenario": "host-domain.services.supervisor-sudo",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.supervisor-denied",
+   "owner": "host",
+   "scenario": "host-domain.services.supervisor-denied",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.supervisor-unseen",
+   "owner": "host",
+   "scenario": "host-domain.services.supervisor-unseen",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go",
+    "internal/domain/host/types.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "host-domain.services.supervisor-bad-user",
+   "owner": "host",
+   "scenario": "host-domain.services.supervisor-bad-user",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DiagnoseBridge",
+    "internal/domain/host/types.go:probeBridgeHealth",
+    "internal/domain/host/probe.go:probeTCPPort"
+   ],
+   "id": "host-domain.bridge.healthy",
+   "owner": "host",
+   "scenario": "host-domain.bridge.healthy",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DiagnoseBridge",
+    "internal/domain/host/types.go:probeBridgeHealth",
+    "internal/domain/host/probe.go:probeTCPPort"
+   ],
+   "id": "host-domain.bridge.unhealthy",
+   "owner": "host",
+   "scenario": "host-domain.bridge.unhealthy",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DiagnoseBridge",
+    "internal/domain/host/types.go:probeBridgeHealth",
+    "internal/domain/host/probe.go:probeTCPPort"
+   ],
+   "id": "host-domain.bridge.offline",
+   "owner": "host",
+   "scenario": "host-domain.bridge.offline",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DiagnoseBridge",
+    "internal/domain/host/types.go:probeBridgeHealth",
+    "internal/domain/host/probe.go:probeTCPPort"
+   ],
+   "id": "host-domain.bridge.custom-url",
+   "owner": "host",
+   "scenario": "host-domain.bridge.custom-url",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/host_service.go:DiagnoseBridge",
+    "internal/domain/host/types.go:probeBridgeHealth",
+    "internal/domain/host/probe.go:probeTCPPort"
+   ],
+   "id": "host-domain.bridge.unsupported-scheme",
+   "owner": "host",
+   "scenario": "host-domain.bridge.unsupported-scheme",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/generic_agent_connection.go",
+    "internal/tools/dispatch_cluster.go"
+   ],
+   "id": "host-domain.connection.env-file",
+   "owner": "host",
+   "scenario": "host-domain.connection.env-file",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/generic_agent_connection.go",
+    "internal/tools/dispatch_cluster.go"
+   ],
+   "id": "host-domain.connection.refusals",
+   "owner": "host",
+   "scenario": "host-domain.connection.refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/generic_agent_connection.go",
+    "internal/tools/dispatch_cluster.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.connection.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.connection.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/firewall.go",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.firewall.linux",
+   "owner": "host",
+   "scenario": "host-domain.firewall.linux",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/firewall.go:isWindowsAdmin"
+   ],
+   "id": "host-domain.firewall.elevated-env",
+   "owner": "host",
+   "scenario": "host-domain.firewall.elevated-env",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/resource/service.go:Reconcile",
+    "internal/domain/host/resource_policy.go",
+    "internal/tools/dispatch_resource.go"
+   ],
+   "id": "host-domain.policy.refusals",
+   "owner": "host",
+   "scenario": "host-domain.policy.refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.install",
+   "owner": "host",
+   "scenario": "host-domain.virt.install",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.install-refusals",
+   "owner": "host",
+   "scenario": "host-domain.virt.install-refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.install-curl-fails",
+   "owner": "host",
+   "scenario": "host-domain.virt.install-curl-fails",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.install-not-armored",
+   "owner": "host",
+   "scenario": "host-domain.virt.install-not-armored",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.install-runtime-fails",
+   "owner": "host",
+   "scenario": "host-domain.virt.install-runtime-fails",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.install-no-apt",
+   "owner": "host",
+   "scenario": "host-domain.virt.install-no-apt",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall-busy",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall-busy",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall-malformed",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall-malformed",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall-object",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall-object",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall-list-fails",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall-list-fails",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall-no-packages",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall-no-packages",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.uninstall-absent",
+   "owner": "host",
+   "scenario": "host-domain.virt.uninstall-absent",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.virt.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.virt.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+    "internal/mcpprobe/probe.go:ValidateEndpoint",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.public.tunnel-arguments",
+   "owner": "host",
+   "scenario": "host-domain.public.tunnel-arguments",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+    "internal/mcpprobe/probe.go:ValidateEndpoint",
+    "internal/tools/dispatch_host.go",
+    "internal/domain/host/public_mcp.go:requireOwnedManagedFile",
+    "internal/domain/host/public_mcp.go:normalizePublicMCPInstanceID"
+   ],
+   "id": "host-domain.public.tunnel-install",
+   "owner": "host",
+   "scenario": "host-domain.public.tunnel-install",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+    "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.public.quick-arguments",
+   "owner": "host",
+   "scenario": "host-domain.public.quick-arguments",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+    "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+    "internal/tools/dispatch_host.go",
+    "internal/domain/host/public_mcp_quick.go:ensurePublicMCPQuickArtifact"
+   ],
+   "id": "host-domain.public.quick-install",
+   "owner": "host",
+   "scenario": "host-domain.public.quick-install",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+    "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.public.quick-remove-refusals",
+   "owner": "host",
+   "scenario": "host-domain.public.quick-remove-refusals",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/public_mcp.go:EnsurePublicMcpTunnel",
+    "internal/mcpprobe/probe.go:ValidateEndpoint",
+    "internal/tools/dispatch_host.go",
+    "internal/domain/host/public_mcp_quick.go:EnsurePublicMcpQuickTunnel",
+    "internal/domain/host/public_mcp_quick.go:RemovePublicMcpQuickTunnel",
+    "internal/tools/dispatch_host.go",
+    "internal/hostruntime/shared.go:RequireSharedHostOwner"
+   ],
+   "id": "host-domain.public.shared-owner-refused",
+   "owner": "host",
+   "scenario": "host-domain.public.shared-owner-refused",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.lifecycle",
+   "owner": "host",
+   "scenario": "host-domain.wsl.lifecycle",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.compact",
+   "owner": "host",
+   "scenario": "host-domain.wsl.compact",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.live-distro",
+   "owner": "host",
+   "scenario": "host-domain.wsl.live-distro",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.commands-fail",
+   "owner": "host",
+   "scenario": "host-domain.wsl.commands-fail",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.no-registry",
+   "owner": "host",
+   "scenario": "host-domain.wsl.no-registry",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.no-powershell",
+   "owner": "host",
+   "scenario": "host-domain.wsl.no-powershell",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.not-wsl",
+   "owner": "host",
+   "scenario": "host-domain.wsl.not-wsl",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/host/wsl_lifecycle.go",
+    "internal/domain/host/wsl_compact.go",
+    "internal/fingerprint/capabilities.go:DetectCapabilities",
+    "internal/tools/dispatch_host.go",
+    "internal/tools/dispatch.go:CompactClosedError"
+   ],
+   "id": "host-domain.wsl.no-interop",
+   "owner": "host",
+   "scenario": "host-domain.wsl.no-interop",
+   "surface": "host-domain"
+  },
+  {
+   "anchors": [
+    "openspec/changes/neutral-host-tool-names",
+    "crates/host-agent/catalog/neutral-names.json",
+    "internal/tools/dispatch_host.go",
+    "internal/domain/host/tool.go:InstallIncusStack",
+    "internal/domain/host/incus_uninstall.go",
+    "internal/exec/process.go:RunPrivilegedPackage",
+    "internal/tools/dispatch_host.go"
+   ],
+   "id": "host-domain.d19.aliases",
+   "owner": "host",
+   "scenario": "host-domain.d19.aliases",
+   "surface": "host-domain"
   },
   {
    "anchors": [
@@ -2058,38 +3158,59 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/crash/summary.json"
+   "summary": "evidence/m8a/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/cross-read/summary.json"
+   "summary": "evidence/m8a/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/migration/summary.json"
+   "summary": "evidence/m8a/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/secrets/summary.json"
+   "summary": "evidence/m8a/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/shape-final/summary.json"
+   "summary": "evidence/m8a/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/local-e2e/native-2026-10-12-r8/m5/unknown-projection/summary.json"
+   "summary": "evidence/m8a/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/local-e2e/native-2026-10-12-r8/oracles.json",
+  "results": "evidence/m8a/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/local-e2e/native-2026-10-12-r8/rust-canaries.json"
+  "results": "evidence/m8a/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "ff02f076824e792d36107638e6516192829c249932ae64af170a326d17079f3b",
+  "binarySha256": "b190b5975bd71a35e0a21844dd703687477f0f5b8194d789141236c128c314fe",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
  "schemaVersion": 1,
  "sourceLock": "baseline/source-lock.json",
- "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6"
+ "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6",
+ "t2Evidence": {
+  "golden": {
+   "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+   "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+   "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
+  },
+  "suites": {
+   "go-vs-go": {
+    "summary": "evidence/m8a/t2-go-vs-go/summary.json",
+    "minRepeat": 20,
+    "right": "go",
+    "purpose": "T2 harness self-validation: Go twins from one golden must agree"
+   },
+   "go-vs-rust": {
+    "summary": "evidence/m8a/t2-go-vs-rust/summary.json",
+    "minRepeat": 5,
+    "right": "rust",
+    "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate"
+   }
+  }
+ }
 }

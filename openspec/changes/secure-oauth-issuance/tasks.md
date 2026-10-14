@@ -66,5 +66,6 @@
   public-binding audience and self-probe scenarios join the suite with 4.3.
 - [x] 5.2 The M2 corpus stays Go-vs-Rust clean outside declared D8 paths,
   and the store cross-read still passes.
-- [ ] 5.3 The go-sdk real client completes an approved authorization against
-  Rust.
+- [x] 5.3 The go-sdk real client completes an approved authorization against
+  Rust. Receipt: `evidence/local-e2e/native-2026-10-12-r8/oauth-sdk-client/receipt.json`
+  (go-sdk v1.7.0 approve, plus a deny negative control).

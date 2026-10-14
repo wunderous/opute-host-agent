@@ -181,6 +181,49 @@ def capture_routes(src: Path, refs: dict[str, str]) -> dict:
     return {"surface": "http", "owner": "transport", "items": sorted(items, key=lambda i: i["route"])}
 
 
+# Commands whose effects M8a (host) does not own: they stay owned gaps of
+# the sub-milestone whose domain runs them (milestones.md, M8 table).
+EFFECT_OWNERS = {
+    "buildah": ("M8d", "oci", "run only by internal/domain/oci (image build); OCI effects are M8d"),
+    "podman": ("M8d", "oci", "run only by internal/domain/oci (builder and container runtime); OCI effects are M8d"),
+    "ollama": ("M8f", "llm", "run only by internal/domain/llm (Ollama runtime); LLM effects are M8f"),
+    "helm": ("M8c", "kubernetes", "host-domain code only looks helm up (ensure_host_tool) and installs it "
+                                  "through the remote installer script, observed as bash in T1; helm itself "
+                                  "runs in internal/domain/kubernetes (install_helm_chart), M8c"),
+    "kill": ("M8f", "serving", "run only by internal/domain/serving (assignment liveness probe, kill -0); "
+                               "serving effects are M8f"),
+}
+# Observed commands whose real effect T2 deliberately does not execute,
+# with the reason. T1 still proves their argv.
+T2_EXCLUDED = {
+    "bash": "the only host-domain bash runs are ensure_host_tool's bun and helm installers, which pipe a "
+            "third-party script fetched from the internet into bash; T2 never executes remote code, so "
+            "these stay T1 shim-observed",
+    "helm": "ensure_host_tool only looks helm up and installs it through the remote installer script (see bash)",
+}
+T2_SCENARIO_DIR = runner.REPO_ROOT / "tools" / "parity" / "scenarios-t2"
+
+
+def _elevated(entry: dict) -> str | None:
+    """The command a `sudo -n CMD ...` trace entry runs, by base name."""
+    if entry.get("cmd") != "sudo":
+        return None
+    for arg in entry.get("argv", []):
+        if not arg.startswith("-"):
+            return arg.rsplit("/", 1)[-1]
+    return None
+
+
+def _t2_commands() -> dict[str, list[str]]:
+    """T2 scenarios that execute a command's real effect, keyed by command."""
+    out: dict[str, list[str]] = {}
+    for path in sorted(T2_SCENARIO_DIR.glob("*.json")):
+        for scenario in json.loads(path.read_text()):
+            for cmd in scenario.get("commands", []):
+                out.setdefault(cmd, []).append(scenario["id"])
+    return out
+
+
 def capture_effects(src: Path, observed: list[dict]) -> dict:
     found: dict[str, list[str]] = {}
     for path in _go_files(src, "internal", "pkg") + _go_files(src, "plugins"):
@@ -190,29 +233,97 @@ def capture_effects(src: Path, observed: list[dict]) -> dict:
     observed_cmds: dict[str, set[str]] = {}
     for entry in observed:
         observed_cmds.setdefault(entry["cmd"], set()).add(" ".join(entry["argv"][:2]))
+        inner = _elevated(entry)
+        if inner:
+            # Recorded under the elevated command too, with its sudo argv.
+            observed_cmds.setdefault(inner, set()).add("sudo " + " ".join(entry["argv"][:3]))
+    t2 = _t2_commands()
     items = []
     for name in sorted(set(found) | set(observed_cmds)):
-        items.append({
+        item = {
             "command": name,
             "owner": "host",
             "anchors": sorted(set(found.get(name, []))),
             "observedInvocations": sorted(observed_cmds.get(name, [])),
-            # Shimmable when the harness can intercept it through PATH or an
-            # explicit *_BINARY_PATH override. The effect tier (T1 shim vs T2
-            # sandbox) is confirmed per command in M8; until then it is a gap.
-            "tier": "T1-shim-observed" if name in observed_cmds else "unclassified",
-            "status": "covered" if name in observed_cmds else "gap",
-            **({} if name in observed_cmds else {
-                "milestone": "M8", "gapReason": "host effect tiering of domain operations is M8"}),
-        })
+            "t2Scenarios": sorted(t2.get(name, [])),
+        }
+        if name in observed_cmds:
+            # T1 proves argv through the PATH (or sudo) shim; a T2 scenario
+            # additionally executes the real effect in the disposable sandbox.
+            item.update(status="covered", tier="T2-sandbox" if name in t2 else "T1-shim-observed")
+            if name not in t2 and name in T2_EXCLUDED:
+                item["t2Excluded"] = T2_EXCLUDED[name]
+        elif name in EFFECT_OWNERS:
+            milestone, owner, reason = EFFECT_OWNERS[name]
+            item.update(status="gap", tier="unclassified", owner=owner, milestone=milestone, gapReason=reason)
+        else:
+            item.update(status="gap", tier="unclassified", milestone="M8",
+                        gapReason="host effect tiering of domain operations is M8")
+        items.append(item)
     return {
         "surface": "effects",
         "owner": "host",
         "note": "Static scan finds literal command names only. Commands built from variables "
                 "(for example hostexec wrappers) are found through shim traces as scenarios grow; "
-                "a command never observed stays a gap.",
+                "a command run through `sudo -n` is recorded under its own name too. Tiers: "
+                "T1-shim-observed (argv proved by shim trace parity), T2-sandbox (also executed for real "
+                "in the twin T2 sandboxes, scenarios listed). A command never observed stays a gap.",
         "items": items,
     }
+
+
+# Mutating host tools no T2 scenario can execute here, with owner,
+# milestone and the reason. T1 shim parity still covers their argv.
+T2_UNVERIFIED = {
+    "compact_wsl_disk": ("M8a", "needs a WSL2 runner: the effect is a VHDX compact on the Windows host through "
+                                "wsl.exe and PowerShell; the Linux T2 sandbox has no WSL"),
+    "shutdown_wsl": ("M8a", "needs a WSL2 runner: wsl.exe --shutdown acts on the Windows host's WSL VM"),
+    "terminate_wsl_distribution": ("M8a", "needs a WSL2 runner: wsl.exe --terminate acts on a Windows-hosted "
+                                          "distribution"),
+    "exec_command": ("M8b", "executes inside an Incus instance; needs the M8b nested-Incus sandbox"),
+    "run_instance_command": ("M8b", "executes inside an Incus instance; needs the M8b nested-Incus sandbox"),
+}
+# Mutating host tools that cannot be called at all.
+T2_INERT = {
+    "ensure_k3d": "omitted from every Go catalog (IncusOmittedToolNames) and unregistered in Rust; no call reaches it",
+}
+
+
+def capture_t2() -> dict:
+    """T2 coverage of every mutating host-domain tool (M8 validations 2-4)."""
+    host = json.loads((INVENTORY_DIR / "host-domain.json").read_text())
+    calls: dict[str, set[str]] = {}
+    refused: dict[str, set[str]] = {}
+    for path in sorted(T2_SCENARIO_DIR.glob("*.json")):
+        for scenario in json.loads(path.read_text()):
+            # A rejectedOnly scenario proves calls change nothing; it executes no tool.
+            target = refused if scenario.get("rejectedOnly") else calls
+            for step in scenario["steps"]:
+                mcp = step.get("mcp") or {}
+                if mcp.get("method") == "tools/call":
+                    target.setdefault(mcp["params"]["name"], set()).add(scenario["id"])
+    items = []
+    for tool in sorted(host["tools"], key=lambda t: t["tool"]):
+        if tool["effect"] == "EffectRead":
+            continue
+        name = tool["tool"]
+        covered = sorted(calls.get(name, set()) | calls.get(tool.get("neutralName") or name, set()))
+        item = {"tool": name, "neutralName": tool.get("neutralName"), "owner": "host", "effect": tool["effect"],
+                "t2Scenarios": covered, "t2RejectedScenarios": sorted(refused.get(name, set()))}
+        if name in T2_INERT:
+            item.update(status="inert", inertReason=T2_INERT[name])
+        elif name in T2_UNVERIFIED:
+            milestone, reason = T2_UNVERIFIED[name]
+            item.update(status="gap", milestone=milestone, gapReason="T2 unverified: " + reason)
+        elif covered:
+            item["status"] = "covered"
+        else:
+            item.update(status="gap", milestone="M8a", gapReason="no T2 scenario executes this tool")
+        items.append(item)
+    return {"surface": "t2-effects", "owner": "host",
+            "note": "Each mutating host-domain tool and the T2 scenarios that execute it in the twin sandboxes. "
+                    "Coverage is proven by passing T2 evidence (verify gate requireT2), not by this listing.",
+            "items": items}
 
 
 def capture_toolnames(src: Path) -> list[str]:
@@ -448,6 +559,7 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
     inventory["findings.json"]["items"] += _plan_findings(inventory["plans.json"])
     inventory["findings.json"]["items"] += _registry_findings(registry)
     inventory["distribution.json"] = capture_distribution(src)
+    inventory["t2.json"] = capture_t2()
     inventory["gaps.json"] = collect_gaps(inventory, catalogs)
     inventory["index.json"] = {
         "sourceCommit": lock["sourceCommit"],
@@ -559,7 +671,8 @@ def collect_gaps(inventory: dict, catalogs: dict) -> dict:
             continue
         for item in doc.get("items", []):
             if item.get("status") == "gap":
-                key = item.get("name") or item.get("route") or item.get("command") or item.get("recipe")
+                key = (item.get("name") or item.get("route") or item.get("command") or item.get("recipe")
+                       or item.get("tool"))
                 gaps.append({"file": fname, "item": key, "owner": item.get("owner"),
                              "milestone": item.get("milestone"),
                              "reason": item.get("gapReason", "no covering scenario yet")})

@@ -1,0 +1,48 @@
+{
+ "commands": {
+  "incus": [
+   {
+    "argv": [
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "null"
+   }
+  ],
+  "sudo": [
+   {
+    "argv": [
+     "-n",
+     "systemctl",
+     "disable",
+     "--now",
+     "incus-user.socket"
+    ],
+    "exit": 1,
+    "stderr": "Failed to disable unit\n"
+   },
+   {
+    "argvPrefix": [
+     "-n"
+    ]
+   }
+  ],
+  "apt-get": [],
+  "dpkg-query": [
+   {
+    "argvPrefix": [
+     "-W",
+     "-f=${Package} ${Status}\n"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "dpkg-query: no packages found matching incus-agent\n"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

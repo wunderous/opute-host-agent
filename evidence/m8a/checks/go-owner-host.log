@@ -1,0 +1,1167 @@
+=== RUN   TestDescribeAgentInstallationAnswersWhereTheAgentIs
+--- PASS: TestDescribeAgentInstallationAnswersWhereTheAgentIs (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee
+--- PASS: TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee (0.00s)
+=== RUN   TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile
+--- PASS: TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint
+--- PASS: TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint (0.00s)
+=== RUN   TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep
+--- PASS: TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep (0.00s)
+=== RUN   TestSafeArchiveEntryName
+--- PASS: TestSafeArchiveEntryName (0.00s)
+=== RUN   TestSafeArchiveLinkTarget
+--- PASS: TestSafeArchiveLinkTarget (0.00s)
+=== RUN   TestValidateHostArtifactURI
+--- PASS: TestValidateHostArtifactURI (0.00s)
+=== RUN   TestNormalizeSHA256
+--- PASS: TestNormalizeSHA256 (0.00s)
+=== RUN   TestHostAgentArtifactDestAllowed
+--- PASS: TestHostAgentArtifactDestAllowed (0.00s)
+=== RUN   TestExecCommandRequiresName
+--- PASS: TestExecCommandRequiresName (0.00s)
+=== RUN   TestExecCommandRequiresCommand
+--- PASS: TestExecCommandRequiresCommand (0.00s)
+=== RUN   TestRunInstanceCommandResolvesContainerURIWithoutVMFallback
+--- PASS: TestRunInstanceCommandResolvesContainerURIWithoutVMFallback (0.00s)
+=== RUN   TestRunInstanceCommandRejectsForeignTenantAndWrongType
+--- PASS: TestRunInstanceCommandRejectsForeignTenantAndWrongType (0.00s)
+=== RUN   TestRunInstanceCommandContextPropagatesCancellationToProvider
+--- PASS: TestRunInstanceCommandContextPropagatesCancellationToProvider (0.00s)
+=== RUN   TestEnsureAndInspectHostFile
+--- PASS: TestEnsureAndInspectHostFile (0.00s)
+=== RUN   TestUserScopedFileRejectsSymlinkedParent
+--- PASS: TestUserScopedFileRejectsSymlinkedParent (0.00s)
+=== RUN   TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory
+--- PASS: TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory (0.00s)
+=== RUN   TestInspectHostFileMatchesExpectedContentWithoutReturningIt
+--- PASS: TestInspectHostFileMatchesExpectedContentWithoutReturningIt (0.00s)
+=== RUN   TestRemoveHostFileRequiresConfirmationAndHash
+--- PASS: TestRemoveHostFileRequiresConfirmationAndHash (0.00s)
+=== RUN   TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits
+--- PASS: TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits (0.00s)
+=== RUN   TestInspectHostFileResolvesTheSameScopesEnsureDoes
+--- PASS: TestInspectHostFileResolvesTheSameScopesEnsureDoes (0.00s)
+=== RUN   TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically
+--- PASS: TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically (0.00s)
+=== RUN   TestRestartHostServiceCommandUsesUserManagerForOputeUnits
+--- PASS: TestRestartHostServiceCommandUsesUserManagerForOputeUnits (0.00s)
+=== RUN   TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits
+--- PASS: TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits (0.00s)
+=== RUN   TestRestartHostServiceRejectsUnsafeUnitNames
+--- PASS: TestRestartHostServiceRejectsUnsafeUnitNames (0.00s)
+=== RUN   TestServiceStateRestartUsesUserManagerForNonAgentUnits
+--- PASS: TestServiceStateRestartUsesUserManagerForNonAgentUnits (0.00s)
+=== RUN   TestServiceStateRestartWaitsForNonAgentUserUnit
+--- PASS: TestServiceStateRestartWaitsForNonAgentUserUnit (0.00s)
+=== RUN   TestInspectHostServiceSupervisorObservesWithoutChanging
+--- PASS: TestInspectHostServiceSupervisorObservesWithoutChanging (0.00s)
+=== RUN   TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability
+--- PASS: TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability (0.00s)
+=== RUN   TestUninstallIncusStackRequiresConfirmation
+--- PASS: TestUninstallIncusStackRequiresConfirmation (0.00s)
+=== RUN   TestUninstallIncusStackRefusesWhileInstancesRemain
+--- PASS: TestUninstallIncusStackRefusesWhileInstancesRemain (0.00s)
+=== RUN   TestUninstallIncusStackReportsAnAbsentStack
+--- PASS: TestUninstallIncusStackReportsAnAbsentStack (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback
+--- PASS: TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query
+--- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query (0.00s)
+=== RUN   TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost
+--- PASS: TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost (0.00s)
+=== RUN   TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs
+--- PASS: TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs (0.00s)
+=== RUN   TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog
+--- PASS: TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog (0.00s)
+=== RUN   TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt
+--- PASS: TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt (0.00s)
+=== RUN   TestResolvePublicMCPPathsUsesOwnedUserLocations
+--- PASS: TestResolvePublicMCPPathsUsesOwnedUserLocations (0.00s)
+=== RUN   TestResolvePublicMCPPathsSupportsProviderBindingIdentity
+--- PASS: TestResolvePublicMCPPathsSupportsProviderBindingIdentity (0.00s)
+=== RUN   TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation
+--- PASS: TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation (0.00s)
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_https
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file
+--- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_https (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file (0.00s)
+=== RUN   TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin
+--- PASS: TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin (0.00s)
+=== RUN   TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit
+--- PASS: TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesForeignContent
+--- PASS: TestRequireOwnedManagedFileRefusesForeignContent (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesSymlink
+--- PASS: TestRequireOwnedManagedFileRefusesSymlink (0.00s)
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected
+--- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected (0.00s)
+=== RUN   TestRenderHostResourceSliceUnitsPreservesPolicyValues
+--- PASS: TestRenderHostResourceSliceUnitsPreservesPolicyValues (0.00s)
+=== RUN   TestReconcileHostResourcePolicyUsesExactSystemdUnit
+--- PASS: TestReconcileHostResourcePolicyUsesExactSystemdUnit (0.00s)
+=== RUN   TestWorkloadSystemdPropertiesRequireBoundedPolicy
+--- PASS: TestWorkloadSystemdPropertiesRequireBoundedPolicy (0.00s)
+=== RUN   TestParseSystemdLimit
+--- PASS: TestParseSystemdLimit (0.00s)
+=== RUN   TestPreservesOnlyStricterResourceUnits
+--- PASS: TestPreservesOnlyStricterResourceUnits (0.00s)
+=== RUN   TestMigratesKnownManagedResourceUnitRevisions
+--- PASS: TestMigratesKnownManagedResourceUnitRevisions (0.00s)
+=== RUN   TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice
+--- PASS: TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice (0.00s)
+=== RUN   TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone
+--- PASS: TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone (0.00s)
+=== RUN   TestListHostServicesReportsRealEnablement
+--- PASS: TestListHostServicesReportsRealEnablement (0.00s)
+=== RUN   TestListHostServicesEnablementFollowsUserScope
+--- PASS: TestListHostServicesEnablementFollowsUserScope (0.00s)
+=== RUN   TestListHostServicesSurvivesUnreadableEnablement
+--- PASS: TestListHostServicesSurvivesUnreadableEnablement (0.00s)
+=== RUN   TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles
+--- PASS: TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles (0.00s)
+=== RUN   TestInspectHostServiceRequiresListenerOwnedByItsProcess
+--- PASS: TestInspectHostServiceRequiresListenerOwnedByItsProcess (0.01s)
+=== RUN   TestIncusCandidateSatisfies
+--- PASS: TestIncusCandidateSatisfies (0.00s)
+=== RUN   TestIncusProfileHasDevice
+--- PASS: TestIncusProfileHasDevice (0.00s)
+=== RUN   TestRejectLiveDistro
+--- PASS: TestRejectLiveDistro (0.00s)
+=== RUN   TestCompactClosedErrorCarriesReport
+--- PASS: TestCompactClosedErrorCarriesReport (0.00s)
+=== RUN   TestOptimizeVHDErrorMentionsElevation
+--- PASS: TestOptimizeVHDErrorMentionsElevation (0.00s)
+=== RUN   TestWSLDistroFromEnvironFile
+--- PASS: TestWSLDistroFromEnvironFile (0.00s)
+=== RUN   TestCompactPreconditionsFailClosedWhenLockedOrRunning
+--- PASS: TestCompactPreconditionsFailClosedWhenLockedOrRunning (0.00s)
+=== RUN   TestParseWSLDistributionState
+--- PASS: TestParseWSLDistributionState (0.00s)
+=== RUN   TestParseWSLVHDXPath
+--- PASS: TestParseWSLVHDXPath (0.00s)
+=== RUN   TestDecodeWindowsCLIUTF16
+--- PASS: TestDecodeWindowsCLIUTF16 (0.00s)
+=== RUN   TestDescribeAgentInstallationAnswersWhereTheAgentIs
+--- PASS: TestDescribeAgentInstallationAnswersWhereTheAgentIs (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee
+--- PASS: TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee (0.00s)
+=== RUN   TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile
+--- PASS: TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint
+--- PASS: TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint (0.00s)
+=== RUN   TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep
+--- PASS: TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep (0.00s)
+=== RUN   TestSafeArchiveEntryName
+--- PASS: TestSafeArchiveEntryName (0.00s)
+=== RUN   TestSafeArchiveLinkTarget
+--- PASS: TestSafeArchiveLinkTarget (0.00s)
+=== RUN   TestValidateHostArtifactURI
+--- PASS: TestValidateHostArtifactURI (0.00s)
+=== RUN   TestNormalizeSHA256
+--- PASS: TestNormalizeSHA256 (0.00s)
+=== RUN   TestHostAgentArtifactDestAllowed
+--- PASS: TestHostAgentArtifactDestAllowed (0.00s)
+=== RUN   TestExecCommandRequiresName
+--- PASS: TestExecCommandRequiresName (0.00s)
+=== RUN   TestExecCommandRequiresCommand
+--- PASS: TestExecCommandRequiresCommand (0.00s)
+=== RUN   TestRunInstanceCommandResolvesContainerURIWithoutVMFallback
+--- PASS: TestRunInstanceCommandResolvesContainerURIWithoutVMFallback (0.00s)
+=== RUN   TestRunInstanceCommandRejectsForeignTenantAndWrongType
+--- PASS: TestRunInstanceCommandRejectsForeignTenantAndWrongType (0.00s)
+=== RUN   TestRunInstanceCommandContextPropagatesCancellationToProvider
+--- PASS: TestRunInstanceCommandContextPropagatesCancellationToProvider (0.00s)
+=== RUN   TestEnsureAndInspectHostFile
+--- PASS: TestEnsureAndInspectHostFile (0.00s)
+=== RUN   TestUserScopedFileRejectsSymlinkedParent
+--- PASS: TestUserScopedFileRejectsSymlinkedParent (0.00s)
+=== RUN   TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory
+--- PASS: TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory (0.00s)
+=== RUN   TestInspectHostFileMatchesExpectedContentWithoutReturningIt
+--- PASS: TestInspectHostFileMatchesExpectedContentWithoutReturningIt (0.00s)
+=== RUN   TestRemoveHostFileRequiresConfirmationAndHash
+--- PASS: TestRemoveHostFileRequiresConfirmationAndHash (0.00s)
+=== RUN   TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits
+--- PASS: TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits (0.00s)
+=== RUN   TestInspectHostFileResolvesTheSameScopesEnsureDoes
+--- PASS: TestInspectHostFileResolvesTheSameScopesEnsureDoes (0.00s)
+=== RUN   TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically
+--- PASS: TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically (0.00s)
+=== RUN   TestRestartHostServiceCommandUsesUserManagerForOputeUnits
+--- PASS: TestRestartHostServiceCommandUsesUserManagerForOputeUnits (0.00s)
+=== RUN   TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits
+--- PASS: TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits (0.00s)
+=== RUN   TestRestartHostServiceRejectsUnsafeUnitNames
+--- PASS: TestRestartHostServiceRejectsUnsafeUnitNames (0.00s)
+=== RUN   TestServiceStateRestartUsesUserManagerForNonAgentUnits
+--- PASS: TestServiceStateRestartUsesUserManagerForNonAgentUnits (0.00s)
+=== RUN   TestServiceStateRestartWaitsForNonAgentUserUnit
+--- PASS: TestServiceStateRestartWaitsForNonAgentUserUnit (0.00s)
+=== RUN   TestInspectHostServiceSupervisorObservesWithoutChanging
+--- PASS: TestInspectHostServiceSupervisorObservesWithoutChanging (0.00s)
+=== RUN   TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability
+--- PASS: TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability (0.00s)
+=== RUN   TestUninstallIncusStackRequiresConfirmation
+--- PASS: TestUninstallIncusStackRequiresConfirmation (0.00s)
+=== RUN   TestUninstallIncusStackRefusesWhileInstancesRemain
+--- PASS: TestUninstallIncusStackRefusesWhileInstancesRemain (0.00s)
+=== RUN   TestUninstallIncusStackReportsAnAbsentStack
+--- PASS: TestUninstallIncusStackReportsAnAbsentStack (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback
+--- PASS: TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query
+--- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query (0.00s)
+=== RUN   TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost
+--- PASS: TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost (0.00s)
+=== RUN   TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs
+--- PASS: TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs (0.00s)
+=== RUN   TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog
+--- PASS: TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog (0.00s)
+=== RUN   TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt
+--- PASS: TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt (0.00s)
+=== RUN   TestResolvePublicMCPPathsUsesOwnedUserLocations
+--- PASS: TestResolvePublicMCPPathsUsesOwnedUserLocations (0.00s)
+=== RUN   TestResolvePublicMCPPathsSupportsProviderBindingIdentity
+--- PASS: TestResolvePublicMCPPathsSupportsProviderBindingIdentity (0.00s)
+=== RUN   TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation
+--- PASS: TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation (0.00s)
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_https
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file
+--- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_https (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file (0.00s)
+=== RUN   TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin
+--- PASS: TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin (0.00s)
+=== RUN   TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit
+--- PASS: TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesForeignContent
+--- PASS: TestRequireOwnedManagedFileRefusesForeignContent (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesSymlink
+--- PASS: TestRequireOwnedManagedFileRefusesSymlink (0.00s)
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected
+--- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected (0.00s)
+=== RUN   TestRenderHostResourceSliceUnitsPreservesPolicyValues
+--- PASS: TestRenderHostResourceSliceUnitsPreservesPolicyValues (0.00s)
+=== RUN   TestReconcileHostResourcePolicyUsesExactSystemdUnit
+--- PASS: TestReconcileHostResourcePolicyUsesExactSystemdUnit (0.00s)
+=== RUN   TestWorkloadSystemdPropertiesRequireBoundedPolicy
+--- PASS: TestWorkloadSystemdPropertiesRequireBoundedPolicy (0.00s)
+=== RUN   TestParseSystemdLimit
+--- PASS: TestParseSystemdLimit (0.00s)
+=== RUN   TestPreservesOnlyStricterResourceUnits
+--- PASS: TestPreservesOnlyStricterResourceUnits (0.00s)
+=== RUN   TestMigratesKnownManagedResourceUnitRevisions
+--- PASS: TestMigratesKnownManagedResourceUnitRevisions (0.00s)
+=== RUN   TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice
+--- PASS: TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice (0.00s)
+=== RUN   TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone
+--- PASS: TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone (0.00s)
+=== RUN   TestListHostServicesReportsRealEnablement
+--- PASS: TestListHostServicesReportsRealEnablement (0.00s)
+=== RUN   TestListHostServicesEnablementFollowsUserScope
+--- PASS: TestListHostServicesEnablementFollowsUserScope (0.00s)
+=== RUN   TestListHostServicesSurvivesUnreadableEnablement
+--- PASS: TestListHostServicesSurvivesUnreadableEnablement (0.00s)
+=== RUN   TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles
+--- PASS: TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles (0.00s)
+=== RUN   TestInspectHostServiceRequiresListenerOwnedByItsProcess
+--- PASS: TestInspectHostServiceRequiresListenerOwnedByItsProcess (0.01s)
+=== RUN   TestIncusCandidateSatisfies
+--- PASS: TestIncusCandidateSatisfies (0.00s)
+=== RUN   TestIncusProfileHasDevice
+--- PASS: TestIncusProfileHasDevice (0.00s)
+=== RUN   TestRejectLiveDistro
+--- PASS: TestRejectLiveDistro (0.00s)
+=== RUN   TestCompactClosedErrorCarriesReport
+--- PASS: TestCompactClosedErrorCarriesReport (0.00s)
+=== RUN   TestOptimizeVHDErrorMentionsElevation
+--- PASS: TestOptimizeVHDErrorMentionsElevation (0.00s)
+=== RUN   TestWSLDistroFromEnvironFile
+--- PASS: TestWSLDistroFromEnvironFile (0.00s)
+=== RUN   TestCompactPreconditionsFailClosedWhenLockedOrRunning
+--- PASS: TestCompactPreconditionsFailClosedWhenLockedOrRunning (0.00s)
+=== RUN   TestParseWSLDistributionState
+--- PASS: TestParseWSLDistributionState (0.00s)
+=== RUN   TestParseWSLVHDXPath
+--- PASS: TestParseWSLVHDXPath (0.00s)
+=== RUN   TestDecodeWindowsCLIUTF16
+--- PASS: TestDecodeWindowsCLIUTF16 (0.00s)
+=== RUN   TestDescribeAgentInstallationAnswersWhereTheAgentIs
+--- PASS: TestDescribeAgentInstallationAnswersWhereTheAgentIs (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee
+--- PASS: TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee (0.00s)
+=== RUN   TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile
+--- PASS: TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint
+--- PASS: TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint (0.00s)
+=== RUN   TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep
+--- PASS: TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep (0.00s)
+=== RUN   TestSafeArchiveEntryName
+--- PASS: TestSafeArchiveEntryName (0.00s)
+=== RUN   TestSafeArchiveLinkTarget
+--- PASS: TestSafeArchiveLinkTarget (0.00s)
+=== RUN   TestValidateHostArtifactURI
+--- PASS: TestValidateHostArtifactURI (0.00s)
+=== RUN   TestNormalizeSHA256
+--- PASS: TestNormalizeSHA256 (0.00s)
+=== RUN   TestHostAgentArtifactDestAllowed
+--- PASS: TestHostAgentArtifactDestAllowed (0.00s)
+=== RUN   TestExecCommandRequiresName
+--- PASS: TestExecCommandRequiresName (0.00s)
+=== RUN   TestExecCommandRequiresCommand
+--- PASS: TestExecCommandRequiresCommand (0.00s)
+=== RUN   TestRunInstanceCommandResolvesContainerURIWithoutVMFallback
+--- PASS: TestRunInstanceCommandResolvesContainerURIWithoutVMFallback (0.00s)
+=== RUN   TestRunInstanceCommandRejectsForeignTenantAndWrongType
+--- PASS: TestRunInstanceCommandRejectsForeignTenantAndWrongType (0.00s)
+=== RUN   TestRunInstanceCommandContextPropagatesCancellationToProvider
+--- PASS: TestRunInstanceCommandContextPropagatesCancellationToProvider (0.00s)
+=== RUN   TestEnsureAndInspectHostFile
+--- PASS: TestEnsureAndInspectHostFile (0.00s)
+=== RUN   TestUserScopedFileRejectsSymlinkedParent
+--- PASS: TestUserScopedFileRejectsSymlinkedParent (0.00s)
+=== RUN   TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory
+--- PASS: TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory (0.00s)
+=== RUN   TestInspectHostFileMatchesExpectedContentWithoutReturningIt
+--- PASS: TestInspectHostFileMatchesExpectedContentWithoutReturningIt (0.00s)
+=== RUN   TestRemoveHostFileRequiresConfirmationAndHash
+--- PASS: TestRemoveHostFileRequiresConfirmationAndHash (0.00s)
+=== RUN   TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits
+--- PASS: TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits (0.00s)
+=== RUN   TestInspectHostFileResolvesTheSameScopesEnsureDoes
+--- PASS: TestInspectHostFileResolvesTheSameScopesEnsureDoes (0.00s)
+=== RUN   TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically
+--- PASS: TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically (0.00s)
+=== RUN   TestRestartHostServiceCommandUsesUserManagerForOputeUnits
+--- PASS: TestRestartHostServiceCommandUsesUserManagerForOputeUnits (0.00s)
+=== RUN   TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits
+--- PASS: TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits (0.00s)
+=== RUN   TestRestartHostServiceRejectsUnsafeUnitNames
+--- PASS: TestRestartHostServiceRejectsUnsafeUnitNames (0.00s)
+=== RUN   TestServiceStateRestartUsesUserManagerForNonAgentUnits
+--- PASS: TestServiceStateRestartUsesUserManagerForNonAgentUnits (0.00s)
+=== RUN   TestServiceStateRestartWaitsForNonAgentUserUnit
+--- PASS: TestServiceStateRestartWaitsForNonAgentUserUnit (0.00s)
+=== RUN   TestInspectHostServiceSupervisorObservesWithoutChanging
+--- PASS: TestInspectHostServiceSupervisorObservesWithoutChanging (0.00s)
+=== RUN   TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability
+--- PASS: TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability (0.00s)
+=== RUN   TestUninstallIncusStackRequiresConfirmation
+--- PASS: TestUninstallIncusStackRequiresConfirmation (0.00s)
+=== RUN   TestUninstallIncusStackRefusesWhileInstancesRemain
+--- PASS: TestUninstallIncusStackRefusesWhileInstancesRemain (0.00s)
+=== RUN   TestUninstallIncusStackReportsAnAbsentStack
+--- PASS: TestUninstallIncusStackReportsAnAbsentStack (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback
+--- PASS: TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query
+--- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query (0.00s)
+=== RUN   TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost
+--- PASS: TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost (0.00s)
+=== RUN   TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs
+--- PASS: TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs (0.00s)
+=== RUN   TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog
+--- PASS: TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog (0.00s)
+=== RUN   TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt
+--- PASS: TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt (0.00s)
+=== RUN   TestResolvePublicMCPPathsUsesOwnedUserLocations
+--- PASS: TestResolvePublicMCPPathsUsesOwnedUserLocations (0.00s)
+=== RUN   TestResolvePublicMCPPathsSupportsProviderBindingIdentity
+--- PASS: TestResolvePublicMCPPathsSupportsProviderBindingIdentity (0.00s)
+=== RUN   TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation
+--- PASS: TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation (0.00s)
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_https
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file
+--- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_https (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file (0.00s)
+=== RUN   TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin
+--- PASS: TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin (0.00s)
+=== RUN   TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit
+--- PASS: TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesForeignContent
+--- PASS: TestRequireOwnedManagedFileRefusesForeignContent (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesSymlink
+--- PASS: TestRequireOwnedManagedFileRefusesSymlink (0.00s)
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected
+--- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected (0.00s)
+=== RUN   TestRenderHostResourceSliceUnitsPreservesPolicyValues
+--- PASS: TestRenderHostResourceSliceUnitsPreservesPolicyValues (0.00s)
+=== RUN   TestReconcileHostResourcePolicyUsesExactSystemdUnit
+--- PASS: TestReconcileHostResourcePolicyUsesExactSystemdUnit (0.00s)
+=== RUN   TestWorkloadSystemdPropertiesRequireBoundedPolicy
+--- PASS: TestWorkloadSystemdPropertiesRequireBoundedPolicy (0.00s)
+=== RUN   TestParseSystemdLimit
+--- PASS: TestParseSystemdLimit (0.00s)
+=== RUN   TestPreservesOnlyStricterResourceUnits
+--- PASS: TestPreservesOnlyStricterResourceUnits (0.00s)
+=== RUN   TestMigratesKnownManagedResourceUnitRevisions
+--- PASS: TestMigratesKnownManagedResourceUnitRevisions (0.00s)
+=== RUN   TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice
+--- PASS: TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice (0.00s)
+=== RUN   TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone
+--- PASS: TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone (0.00s)
+=== RUN   TestListHostServicesReportsRealEnablement
+--- PASS: TestListHostServicesReportsRealEnablement (0.00s)
+=== RUN   TestListHostServicesEnablementFollowsUserScope
+--- PASS: TestListHostServicesEnablementFollowsUserScope (0.00s)
+=== RUN   TestListHostServicesSurvivesUnreadableEnablement
+--- PASS: TestListHostServicesSurvivesUnreadableEnablement (0.00s)
+=== RUN   TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles
+--- PASS: TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles (0.00s)
+=== RUN   TestInspectHostServiceRequiresListenerOwnedByItsProcess
+--- PASS: TestInspectHostServiceRequiresListenerOwnedByItsProcess (0.01s)
+=== RUN   TestIncusCandidateSatisfies
+--- PASS: TestIncusCandidateSatisfies (0.00s)
+=== RUN   TestIncusProfileHasDevice
+--- PASS: TestIncusProfileHasDevice (0.00s)
+=== RUN   TestRejectLiveDistro
+--- PASS: TestRejectLiveDistro (0.00s)
+=== RUN   TestCompactClosedErrorCarriesReport
+--- PASS: TestCompactClosedErrorCarriesReport (0.00s)
+=== RUN   TestOptimizeVHDErrorMentionsElevation
+--- PASS: TestOptimizeVHDErrorMentionsElevation (0.00s)
+=== RUN   TestWSLDistroFromEnvironFile
+--- PASS: TestWSLDistroFromEnvironFile (0.00s)
+=== RUN   TestCompactPreconditionsFailClosedWhenLockedOrRunning
+--- PASS: TestCompactPreconditionsFailClosedWhenLockedOrRunning (0.00s)
+=== RUN   TestParseWSLDistributionState
+--- PASS: TestParseWSLDistributionState (0.00s)
+=== RUN   TestParseWSLVHDXPath
+--- PASS: TestParseWSLVHDXPath (0.00s)
+=== RUN   TestDecodeWindowsCLIUTF16
+--- PASS: TestDecodeWindowsCLIUTF16 (0.00s)
+=== RUN   TestDescribeAgentInstallationAnswersWhereTheAgentIs
+--- PASS: TestDescribeAgentInstallationAnswersWhereTheAgentIs (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee
+--- PASS: TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee (0.00s)
+=== RUN   TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile
+--- PASS: TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint
+--- PASS: TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint (0.00s)
+=== RUN   TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep
+--- PASS: TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep (0.00s)
+=== RUN   TestSafeArchiveEntryName
+--- PASS: TestSafeArchiveEntryName (0.00s)
+=== RUN   TestSafeArchiveLinkTarget
+--- PASS: TestSafeArchiveLinkTarget (0.00s)
+=== RUN   TestValidateHostArtifactURI
+--- PASS: TestValidateHostArtifactURI (0.00s)
+=== RUN   TestNormalizeSHA256
+--- PASS: TestNormalizeSHA256 (0.00s)
+=== RUN   TestHostAgentArtifactDestAllowed
+--- PASS: TestHostAgentArtifactDestAllowed (0.00s)
+=== RUN   TestExecCommandRequiresName
+--- PASS: TestExecCommandRequiresName (0.00s)
+=== RUN   TestExecCommandRequiresCommand
+--- PASS: TestExecCommandRequiresCommand (0.00s)
+=== RUN   TestRunInstanceCommandResolvesContainerURIWithoutVMFallback
+--- PASS: TestRunInstanceCommandResolvesContainerURIWithoutVMFallback (0.00s)
+=== RUN   TestRunInstanceCommandRejectsForeignTenantAndWrongType
+--- PASS: TestRunInstanceCommandRejectsForeignTenantAndWrongType (0.00s)
+=== RUN   TestRunInstanceCommandContextPropagatesCancellationToProvider
+--- PASS: TestRunInstanceCommandContextPropagatesCancellationToProvider (0.00s)
+=== RUN   TestEnsureAndInspectHostFile
+--- PASS: TestEnsureAndInspectHostFile (0.00s)
+=== RUN   TestUserScopedFileRejectsSymlinkedParent
+--- PASS: TestUserScopedFileRejectsSymlinkedParent (0.00s)
+=== RUN   TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory
+--- PASS: TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory (0.00s)
+=== RUN   TestInspectHostFileMatchesExpectedContentWithoutReturningIt
+--- PASS: TestInspectHostFileMatchesExpectedContentWithoutReturningIt (0.00s)
+=== RUN   TestRemoveHostFileRequiresConfirmationAndHash
+--- PASS: TestRemoveHostFileRequiresConfirmationAndHash (0.00s)
+=== RUN   TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits
+--- PASS: TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits (0.00s)
+=== RUN   TestInspectHostFileResolvesTheSameScopesEnsureDoes
+--- PASS: TestInspectHostFileResolvesTheSameScopesEnsureDoes (0.00s)
+=== RUN   TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically
+--- PASS: TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically (0.00s)
+=== RUN   TestRestartHostServiceCommandUsesUserManagerForOputeUnits
+--- PASS: TestRestartHostServiceCommandUsesUserManagerForOputeUnits (0.00s)
+=== RUN   TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits
+--- PASS: TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits (0.00s)
+=== RUN   TestRestartHostServiceRejectsUnsafeUnitNames
+--- PASS: TestRestartHostServiceRejectsUnsafeUnitNames (0.00s)
+=== RUN   TestServiceStateRestartUsesUserManagerForNonAgentUnits
+--- PASS: TestServiceStateRestartUsesUserManagerForNonAgentUnits (0.00s)
+=== RUN   TestServiceStateRestartWaitsForNonAgentUserUnit
+--- PASS: TestServiceStateRestartWaitsForNonAgentUserUnit (0.00s)
+=== RUN   TestInspectHostServiceSupervisorObservesWithoutChanging
+--- PASS: TestInspectHostServiceSupervisorObservesWithoutChanging (0.00s)
+=== RUN   TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability
+--- PASS: TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability (0.00s)
+=== RUN   TestUninstallIncusStackRequiresConfirmation
+--- PASS: TestUninstallIncusStackRequiresConfirmation (0.00s)
+=== RUN   TestUninstallIncusStackRefusesWhileInstancesRemain
+--- PASS: TestUninstallIncusStackRefusesWhileInstancesRemain (0.00s)
+=== RUN   TestUninstallIncusStackReportsAnAbsentStack
+--- PASS: TestUninstallIncusStackReportsAnAbsentStack (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback
+--- PASS: TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query
+--- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query (0.00s)
+=== RUN   TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost
+--- PASS: TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost (0.00s)
+=== RUN   TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs
+--- PASS: TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs (0.00s)
+=== RUN   TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog
+--- PASS: TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog (0.00s)
+=== RUN   TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt
+--- PASS: TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt (0.00s)
+=== RUN   TestResolvePublicMCPPathsUsesOwnedUserLocations
+--- PASS: TestResolvePublicMCPPathsUsesOwnedUserLocations (0.00s)
+=== RUN   TestResolvePublicMCPPathsSupportsProviderBindingIdentity
+--- PASS: TestResolvePublicMCPPathsSupportsProviderBindingIdentity (0.00s)
+=== RUN   TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation
+--- PASS: TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation (0.00s)
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_https
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file
+--- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_https (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file (0.00s)
+=== RUN   TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin
+--- PASS: TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin (0.00s)
+=== RUN   TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit
+--- PASS: TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesForeignContent
+--- PASS: TestRequireOwnedManagedFileRefusesForeignContent (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesSymlink
+--- PASS: TestRequireOwnedManagedFileRefusesSymlink (0.00s)
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected
+--- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected (0.00s)
+=== RUN   TestRenderHostResourceSliceUnitsPreservesPolicyValues
+--- PASS: TestRenderHostResourceSliceUnitsPreservesPolicyValues (0.00s)
+=== RUN   TestReconcileHostResourcePolicyUsesExactSystemdUnit
+--- PASS: TestReconcileHostResourcePolicyUsesExactSystemdUnit (0.00s)
+=== RUN   TestWorkloadSystemdPropertiesRequireBoundedPolicy
+--- PASS: TestWorkloadSystemdPropertiesRequireBoundedPolicy (0.00s)
+=== RUN   TestParseSystemdLimit
+--- PASS: TestParseSystemdLimit (0.00s)
+=== RUN   TestPreservesOnlyStricterResourceUnits
+--- PASS: TestPreservesOnlyStricterResourceUnits (0.00s)
+=== RUN   TestMigratesKnownManagedResourceUnitRevisions
+--- PASS: TestMigratesKnownManagedResourceUnitRevisions (0.00s)
+=== RUN   TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice
+--- PASS: TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice (0.00s)
+=== RUN   TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone
+--- PASS: TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone (0.00s)
+=== RUN   TestListHostServicesReportsRealEnablement
+--- PASS: TestListHostServicesReportsRealEnablement (0.00s)
+=== RUN   TestListHostServicesEnablementFollowsUserScope
+--- PASS: TestListHostServicesEnablementFollowsUserScope (0.00s)
+=== RUN   TestListHostServicesSurvivesUnreadableEnablement
+--- PASS: TestListHostServicesSurvivesUnreadableEnablement (0.00s)
+=== RUN   TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles
+--- PASS: TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles (0.00s)
+=== RUN   TestInspectHostServiceRequiresListenerOwnedByItsProcess
+--- PASS: TestInspectHostServiceRequiresListenerOwnedByItsProcess (0.01s)
+=== RUN   TestIncusCandidateSatisfies
+--- PASS: TestIncusCandidateSatisfies (0.00s)
+=== RUN   TestIncusProfileHasDevice
+--- PASS: TestIncusProfileHasDevice (0.00s)
+=== RUN   TestRejectLiveDistro
+--- PASS: TestRejectLiveDistro (0.00s)
+=== RUN   TestCompactClosedErrorCarriesReport
+--- PASS: TestCompactClosedErrorCarriesReport (0.00s)
+=== RUN   TestOptimizeVHDErrorMentionsElevation
+--- PASS: TestOptimizeVHDErrorMentionsElevation (0.00s)
+=== RUN   TestWSLDistroFromEnvironFile
+--- PASS: TestWSLDistroFromEnvironFile (0.00s)
+=== RUN   TestCompactPreconditionsFailClosedWhenLockedOrRunning
+--- PASS: TestCompactPreconditionsFailClosedWhenLockedOrRunning (0.00s)
+=== RUN   TestParseWSLDistributionState
+--- PASS: TestParseWSLDistributionState (0.00s)
+=== RUN   TestParseWSLVHDXPath
+--- PASS: TestParseWSLVHDXPath (0.00s)
+=== RUN   TestDecodeWindowsCLIUTF16
+--- PASS: TestDecodeWindowsCLIUTF16 (0.00s)
+=== RUN   TestDescribeAgentInstallationAnswersWhereTheAgentIs
+--- PASS: TestDescribeAgentInstallationAnswersWhereTheAgentIs (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee
+--- PASS: TestDescribeAgentInstallationOmitsAnEnvironmentFileItCannotSee (0.00s)
+=== RUN   TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile
+--- PASS: TestDescribeAgentInstallationRejectsANonRegularEnvironmentFile (0.00s)
+=== RUN   TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint
+--- PASS: TestDescribeAgentInstallationOmitsAnUnconfiguredEndpoint (0.00s)
+=== RUN   TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep
+--- PASS: TestDescribeHostOmitsTheAgentBlockWithoutARuntimeDep (0.00s)
+=== RUN   TestSafeArchiveEntryName
+--- PASS: TestSafeArchiveEntryName (0.00s)
+=== RUN   TestSafeArchiveLinkTarget
+--- PASS: TestSafeArchiveLinkTarget (0.00s)
+=== RUN   TestValidateHostArtifactURI
+--- PASS: TestValidateHostArtifactURI (0.00s)
+=== RUN   TestNormalizeSHA256
+--- PASS: TestNormalizeSHA256 (0.00s)
+=== RUN   TestHostAgentArtifactDestAllowed
+--- PASS: TestHostAgentArtifactDestAllowed (0.00s)
+=== RUN   TestExecCommandRequiresName
+--- PASS: TestExecCommandRequiresName (0.00s)
+=== RUN   TestExecCommandRequiresCommand
+--- PASS: TestExecCommandRequiresCommand (0.00s)
+=== RUN   TestRunInstanceCommandResolvesContainerURIWithoutVMFallback
+--- PASS: TestRunInstanceCommandResolvesContainerURIWithoutVMFallback (0.00s)
+=== RUN   TestRunInstanceCommandRejectsForeignTenantAndWrongType
+--- PASS: TestRunInstanceCommandRejectsForeignTenantAndWrongType (0.00s)
+=== RUN   TestRunInstanceCommandContextPropagatesCancellationToProvider
+--- PASS: TestRunInstanceCommandContextPropagatesCancellationToProvider (0.00s)
+=== RUN   TestEnsureAndInspectHostFile
+--- PASS: TestEnsureAndInspectHostFile (0.00s)
+=== RUN   TestUserScopedFileRejectsSymlinkedParent
+--- PASS: TestUserScopedFileRejectsSymlinkedParent (0.00s)
+=== RUN   TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory
+--- PASS: TestSystemdUnitPathRejectsNonServiceOrOutsideSystemDirectory (0.00s)
+=== RUN   TestInspectHostFileMatchesExpectedContentWithoutReturningIt
+--- PASS: TestInspectHostFileMatchesExpectedContentWithoutReturningIt (0.00s)
+=== RUN   TestRemoveHostFileRequiresConfirmationAndHash
+--- PASS: TestRemoveHostFileRequiresConfirmationAndHash (0.00s)
+=== RUN   TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits
+--- PASS: TestRemoveHostFileSystemScopeAcceptsOnlyServiceUnits (0.00s)
+=== RUN   TestInspectHostFileResolvesTheSameScopesEnsureDoes
+--- PASS: TestInspectHostFileResolvesTheSameScopesEnsureDoes (0.00s)
+=== RUN   TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically
+--- PASS: TestUpsertEnvFileAppliesAssignmentsAndRemovalsAtomically (0.00s)
+=== RUN   TestRestartHostServiceCommandUsesUserManagerForOputeUnits
+--- PASS: TestRestartHostServiceCommandUsesUserManagerForOputeUnits (0.00s)
+=== RUN   TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits
+--- PASS: TestRestartHostServiceCommandKeepsSystemScopeForOtherUnits (0.00s)
+=== RUN   TestRestartHostServiceRejectsUnsafeUnitNames
+--- PASS: TestRestartHostServiceRejectsUnsafeUnitNames (0.00s)
+=== RUN   TestServiceStateRestartUsesUserManagerForNonAgentUnits
+--- PASS: TestServiceStateRestartUsesUserManagerForNonAgentUnits (0.00s)
+=== RUN   TestServiceStateRestartWaitsForNonAgentUserUnit
+--- PASS: TestServiceStateRestartWaitsForNonAgentUserUnit (0.00s)
+=== RUN   TestInspectHostServiceSupervisorObservesWithoutChanging
+--- PASS: TestInspectHostServiceSupervisorObservesWithoutChanging (0.00s)
+=== RUN   TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability
+--- PASS: TestProbeHTTPEndpointAcceptsAuthenticationChallengeForReachability (0.00s)
+=== RUN   TestUninstallIncusStackRequiresConfirmation
+--- PASS: TestUninstallIncusStackRequiresConfirmation (0.00s)
+=== RUN   TestUninstallIncusStackRefusesWhileInstancesRemain
+--- PASS: TestUninstallIncusStackRefusesWhileInstancesRemain (0.00s)
+=== RUN   TestUninstallIncusStackReportsAnAbsentStack
+--- PASS: TestUninstallIncusStackReportsAnAbsentStack (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback
+--- PASS: TestResolvePublicMCPQuickPathsRestrictsOriginToLoopback (0.00s)
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path
+=== RUN   TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query
+--- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/remote (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/wrong_path (0.00s)
+    --- PASS: TestResolvePublicMCPQuickPathsRejectsRemoteAndNonMCPOrigins/query (0.00s)
+=== RUN   TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost
+--- PASS: TestValidatePublicMCPQuickEndpointRequiresTryCloudflareHost (0.00s)
+=== RUN   TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs
+--- PASS: TestReadPublicMCPQuickEndpointIgnoresUntrustedURLs (0.00s)
+=== RUN   TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog
+--- PASS: TestRenderPublicMCPQuickUnitUsesLoopbackAndOwnedLog (0.00s)
+=== RUN   TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt
+--- PASS: TestRemovePublicMCPQuickTunnelReportsForeignFileAndDoesNotDeleteIt (0.00s)
+=== RUN   TestResolvePublicMCPPathsUsesOwnedUserLocations
+--- PASS: TestResolvePublicMCPPathsUsesOwnedUserLocations (0.00s)
+=== RUN   TestResolvePublicMCPPathsSupportsProviderBindingIdentity
+--- PASS: TestResolvePublicMCPPathsSupportsProviderBindingIdentity (0.00s)
+=== RUN   TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation
+--- PASS: TestNormalizePublicMCPInstanceIDIsInjectiveForPunctuation (0.00s)
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_https
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service
+=== RUN   TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file
+--- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_https (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/non_loopback_origin (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/unsafe_binding (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_service (0.00s)
+    --- PASS: TestResolvePublicMCPPathsRejectsUnownedInputs/foreign_token_file (0.00s)
+=== RUN   TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin
+--- PASS: TestResolvePublicMCPPathsAllowsExplicitRemoteOrigin (0.00s)
+=== RUN   TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit
+--- PASS: TestRenderPublicMCPUnitKeepsTunnelTokenOutOfUnit (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesForeignContent
+--- PASS: TestRequireOwnedManagedFileRefusesForeignContent (0.00s)
+=== RUN   TestRequireOwnedManagedFileRefusesSymlink
+--- PASS: TestRequireOwnedManagedFileRefusesSymlink (0.00s)
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected
+=== RUN   TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected
+--- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/templated_user_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/explicit_legacy_system_unit (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/arbitrary_unit_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/invalid_instance_rejected (0.00s)
+    --- PASS: TestResourcePolicyTargetRequiresExactHostAgentUnit/missing_scope_rejected (0.00s)
+=== RUN   TestRenderHostResourceSliceUnitsPreservesPolicyValues
+--- PASS: TestRenderHostResourceSliceUnitsPreservesPolicyValues (0.00s)
+=== RUN   TestReconcileHostResourcePolicyUsesExactSystemdUnit
+--- PASS: TestReconcileHostResourcePolicyUsesExactSystemdUnit (0.00s)
+=== RUN   TestWorkloadSystemdPropertiesRequireBoundedPolicy
+--- PASS: TestWorkloadSystemdPropertiesRequireBoundedPolicy (0.00s)
+=== RUN   TestParseSystemdLimit
+--- PASS: TestParseSystemdLimit (0.00s)
+=== RUN   TestPreservesOnlyStricterResourceUnits
+--- PASS: TestPreservesOnlyStricterResourceUnits (0.00s)
+=== RUN   TestMigratesKnownManagedResourceUnitRevisions
+--- PASS: TestMigratesKnownManagedResourceUnitRevisions (0.00s)
+=== RUN   TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice
+--- PASS: TestObserveHostResourceEnforcementMaterializesAnInactiveWorkloadSlice (0.00s)
+=== RUN   TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone
+--- PASS: TestObserveHostResourceEnforcementLeavesAnUnboundedSliceAlone (0.00s)
+=== RUN   TestListHostServicesReportsRealEnablement
+--- PASS: TestListHostServicesReportsRealEnablement (0.00s)
+=== RUN   TestListHostServicesEnablementFollowsUserScope
+--- PASS: TestListHostServicesEnablementFollowsUserScope (0.00s)
+=== RUN   TestListHostServicesSurvivesUnreadableEnablement
+--- PASS: TestListHostServicesSurvivesUnreadableEnablement (0.00s)
+=== RUN   TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles
+--- PASS: TestListHostServicesMarksUnknownWhenUnitIsAbsentFromUnitFiles (0.00s)
+=== RUN   TestInspectHostServiceRequiresListenerOwnedByItsProcess
+--- PASS: TestInspectHostServiceRequiresListenerOwnedByItsProcess (0.01s)
+=== RUN   TestIncusCandidateSatisfies
+--- PASS: TestIncusCandidateSatisfies (0.00s)
+=== RUN   TestIncusProfileHasDevice
+--- PASS: TestIncusProfileHasDevice (0.00s)
+=== RUN   TestRejectLiveDistro
+--- PASS: TestRejectLiveDistro (0.00s)
+=== RUN   TestCompactClosedErrorCarriesReport
+--- PASS: TestCompactClosedErrorCarriesReport (0.00s)
+=== RUN   TestOptimizeVHDErrorMentionsElevation
+--- PASS: TestOptimizeVHDErrorMentionsElevation (0.00s)
+=== RUN   TestWSLDistroFromEnvironFile
+--- PASS: TestWSLDistroFromEnvironFile (0.00s)
+=== RUN   TestCompactPreconditionsFailClosedWhenLockedOrRunning
+--- PASS: TestCompactPreconditionsFailClosedWhenLockedOrRunning (0.00s)
+=== RUN   TestParseWSLDistributionState
+--- PASS: TestParseWSLDistributionState (0.00s)
+=== RUN   TestParseWSLVHDXPath
+--- PASS: TestParseWSLVHDXPath (0.00s)
+=== RUN   TestDecodeWindowsCLIUTF16
+--- PASS: TestDecodeWindowsCLIUTF16 (0.00s)
+PASS
+ok  	github.com/wunderous/host-agents/internal/domain/host	0.072s
+=== RUN   TestEveryExportedMemberHasTwoDomainConsumers
+--- PASS: TestEveryExportedMemberHasTwoDomainConsumers (0.01s)
+=== RUN   TestHostruntimeStaysWithinBudget
+--- PASS: TestHostruntimeStaysWithinBudget (0.00s)
+=== RUN   TestRunProviderReportsAnAbsentVirtualizationStack
+--- PASS: TestRunProviderReportsAnAbsentVirtualizationStack (0.00s)
+=== RUN   TestWorkloadUnitNameIsStableForScopedCommand
+--- PASS: TestWorkloadUnitNameIsStableForScopedCommand (0.00s)
+=== RUN   TestWorkloadUnitNameDiffersAcrossCommandIdentity
+--- PASS: TestWorkloadUnitNameDiffersAcrossCommandIdentity (0.00s)
+=== RUN   TestEveryExportedMemberHasTwoDomainConsumers
+--- PASS: TestEveryExportedMemberHasTwoDomainConsumers (0.00s)
+=== RUN   TestHostruntimeStaysWithinBudget
+--- PASS: TestHostruntimeStaysWithinBudget (0.00s)
+=== RUN   TestRunProviderReportsAnAbsentVirtualizationStack
+--- PASS: TestRunProviderReportsAnAbsentVirtualizationStack (0.00s)
+=== RUN   TestWorkloadUnitNameIsStableForScopedCommand
+--- PASS: TestWorkloadUnitNameIsStableForScopedCommand (0.00s)
+=== RUN   TestWorkloadUnitNameDiffersAcrossCommandIdentity
+--- PASS: TestWorkloadUnitNameDiffersAcrossCommandIdentity (0.00s)
+=== RUN   TestEveryExportedMemberHasTwoDomainConsumers
+--- PASS: TestEveryExportedMemberHasTwoDomainConsumers (0.00s)
+=== RUN   TestHostruntimeStaysWithinBudget
+--- PASS: TestHostruntimeStaysWithinBudget (0.00s)
+=== RUN   TestRunProviderReportsAnAbsentVirtualizationStack
+--- PASS: TestRunProviderReportsAnAbsentVirtualizationStack (0.00s)
+=== RUN   TestWorkloadUnitNameIsStableForScopedCommand
+--- PASS: TestWorkloadUnitNameIsStableForScopedCommand (0.00s)
+=== RUN   TestWorkloadUnitNameDiffersAcrossCommandIdentity
+--- PASS: TestWorkloadUnitNameDiffersAcrossCommandIdentity (0.00s)
+=== RUN   TestEveryExportedMemberHasTwoDomainConsumers
+--- PASS: TestEveryExportedMemberHasTwoDomainConsumers (0.00s)
+=== RUN   TestHostruntimeStaysWithinBudget
+--- PASS: TestHostruntimeStaysWithinBudget (0.00s)
+=== RUN   TestRunProviderReportsAnAbsentVirtualizationStack
+--- PASS: TestRunProviderReportsAnAbsentVirtualizationStack (0.00s)
+=== RUN   TestWorkloadUnitNameIsStableForScopedCommand
+--- PASS: TestWorkloadUnitNameIsStableForScopedCommand (0.00s)
+=== RUN   TestWorkloadUnitNameDiffersAcrossCommandIdentity
+--- PASS: TestWorkloadUnitNameDiffersAcrossCommandIdentity (0.00s)
+=== RUN   TestEveryExportedMemberHasTwoDomainConsumers
+--- PASS: TestEveryExportedMemberHasTwoDomainConsumers (0.00s)
+=== RUN   TestHostruntimeStaysWithinBudget
+--- PASS: TestHostruntimeStaysWithinBudget (0.00s)
+=== RUN   TestRunProviderReportsAnAbsentVirtualizationStack
+--- PASS: TestRunProviderReportsAnAbsentVirtualizationStack (0.00s)
+=== RUN   TestWorkloadUnitNameIsStableForScopedCommand
+--- PASS: TestWorkloadUnitNameIsStableForScopedCommand (0.00s)
+=== RUN   TestWorkloadUnitNameDiffersAcrossCommandIdentity
+--- PASS: TestWorkloadUnitNameDiffersAcrossCommandIdentity (0.00s)
+PASS
+ok  	github.com/wunderous/host-agents/internal/hostruntime	0.031s
+?   	github.com/wunderous/host-agents/internal/hostruntime/windows	[no test files]
+=== RUN   TestClassifyTool
+--- PASS: TestClassifyTool (0.00s)
+=== RUN   TestHeavyAdmissionIsSerialized
+--- PASS: TestHeavyAdmissionIsSerialized (0.10s)
+=== RUN   TestServingReconciliationCanCoexistWithNormalWork
+--- PASS: TestServingReconciliationCanCoexistWithNormalWork (0.00s)
+=== RUN   TestCoResidentCoordinatorsShareHeavyLock
+--- PASS: TestCoResidentCoordinatorsShareHeavyLock (0.10s)
+=== RUN   TestCriticalPressureRejectsHeavyWork
+--- PASS: TestCriticalPressureRejectsHeavyWork (0.00s)
+=== RUN   TestResolveArgumentCostUsesDeclaredMemoryAndCPU
+--- PASS: TestResolveArgumentCostUsesDeclaredMemoryAndCPU (0.00s)
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB
+--- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB (0.00s)
+=== RUN   TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted
+--- PASS: TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted (0.00s)
+=== RUN   TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes
+--- PASS: TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes (0.00s)
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path
+--- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path (0.00s)
+=== RUN   TestParseByteCapacityAcceptsIncusAndKubernetesUnits
+--- PASS: TestParseByteCapacityAcceptsIncusAndKubernetesUnits (0.00s)
+=== RUN   TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation
+--- PASS: TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation (0.00s)
+=== RUN   TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry
+--- PASS: TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry (0.04s)
+=== RUN   TestInheritedAdmissionHonorsCancellationBeforeReusingParent
+--- PASS: TestInheritedAdmissionHonorsCancellationBeforeReusingParent (0.00s)
+=== RUN   TestParentReservationValidationWaitHonorsCancellation
+--- PASS: TestParentReservationValidationWaitHonorsCancellation (0.00s)
+=== RUN   TestBindReservationTaskPersistsOperationAndTaskOwner
+--- PASS: TestBindReservationTaskPersistsOperationAndTaskOwner (0.00s)
+=== RUN   TestTerminalTaskReservationsAreReclaimedAfterRestart
+--- PASS: TestTerminalTaskReservationsAreReclaimedAfterRestart (0.01s)
+=== RUN   TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget
+--- PASS: TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget (0.00s)
+=== RUN   TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend
+--- PASS: TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend (0.00s)
+=== RUN   TestRenewKeepsALongRunningOperationsReservationInheritable
+--- PASS: TestRenewKeepsALongRunningOperationsReservationInheritable (0.10s)
+=== RUN   TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity
+--- PASS: TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity (0.00s)
+=== RUN   TestClassifyTool
+--- PASS: TestClassifyTool (0.00s)
+=== RUN   TestHeavyAdmissionIsSerialized
+--- PASS: TestHeavyAdmissionIsSerialized (0.10s)
+=== RUN   TestServingReconciliationCanCoexistWithNormalWork
+--- PASS: TestServingReconciliationCanCoexistWithNormalWork (0.00s)
+=== RUN   TestCoResidentCoordinatorsShareHeavyLock
+--- PASS: TestCoResidentCoordinatorsShareHeavyLock (0.10s)
+=== RUN   TestCriticalPressureRejectsHeavyWork
+--- PASS: TestCriticalPressureRejectsHeavyWork (0.00s)
+=== RUN   TestResolveArgumentCostUsesDeclaredMemoryAndCPU
+--- PASS: TestResolveArgumentCostUsesDeclaredMemoryAndCPU (0.00s)
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB
+--- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB (0.00s)
+=== RUN   TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted
+--- PASS: TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted (0.00s)
+=== RUN   TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes
+--- PASS: TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes (0.00s)
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path
+--- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path (0.00s)
+=== RUN   TestParseByteCapacityAcceptsIncusAndKubernetesUnits
+--- PASS: TestParseByteCapacityAcceptsIncusAndKubernetesUnits (0.00s)
+=== RUN   TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation
+--- PASS: TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation (0.00s)
+=== RUN   TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry
+--- PASS: TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry (0.04s)
+=== RUN   TestInheritedAdmissionHonorsCancellationBeforeReusingParent
+--- PASS: TestInheritedAdmissionHonorsCancellationBeforeReusingParent (0.00s)
+=== RUN   TestParentReservationValidationWaitHonorsCancellation
+--- PASS: TestParentReservationValidationWaitHonorsCancellation (0.00s)
+=== RUN   TestBindReservationTaskPersistsOperationAndTaskOwner
+--- PASS: TestBindReservationTaskPersistsOperationAndTaskOwner (0.00s)
+=== RUN   TestTerminalTaskReservationsAreReclaimedAfterRestart
+--- PASS: TestTerminalTaskReservationsAreReclaimedAfterRestart (0.01s)
+=== RUN   TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget
+--- PASS: TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget (0.00s)
+=== RUN   TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend
+--- PASS: TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend (0.00s)
+=== RUN   TestRenewKeepsALongRunningOperationsReservationInheritable
+--- PASS: TestRenewKeepsALongRunningOperationsReservationInheritable (0.10s)
+=== RUN   TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity
+--- PASS: TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity (0.00s)
+=== RUN   TestClassifyTool
+--- PASS: TestClassifyTool (0.00s)
+=== RUN   TestHeavyAdmissionIsSerialized
+--- PASS: TestHeavyAdmissionIsSerialized (0.10s)
+=== RUN   TestServingReconciliationCanCoexistWithNormalWork
+--- PASS: TestServingReconciliationCanCoexistWithNormalWork (0.00s)
+=== RUN   TestCoResidentCoordinatorsShareHeavyLock
+--- PASS: TestCoResidentCoordinatorsShareHeavyLock (0.10s)
+=== RUN   TestCriticalPressureRejectsHeavyWork
+--- PASS: TestCriticalPressureRejectsHeavyWork (0.00s)
+=== RUN   TestResolveArgumentCostUsesDeclaredMemoryAndCPU
+--- PASS: TestResolveArgumentCostUsesDeclaredMemoryAndCPU (0.00s)
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB
+--- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB (0.00s)
+=== RUN   TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted
+--- PASS: TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted (0.00s)
+=== RUN   TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes
+--- PASS: TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes (0.00s)
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path
+--- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path (0.00s)
+=== RUN   TestParseByteCapacityAcceptsIncusAndKubernetesUnits
+--- PASS: TestParseByteCapacityAcceptsIncusAndKubernetesUnits (0.00s)
+=== RUN   TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation
+--- PASS: TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation (0.00s)
+=== RUN   TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry
+--- PASS: TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry (0.04s)
+=== RUN   TestInheritedAdmissionHonorsCancellationBeforeReusingParent
+--- PASS: TestInheritedAdmissionHonorsCancellationBeforeReusingParent (0.00s)
+=== RUN   TestParentReservationValidationWaitHonorsCancellation
+--- PASS: TestParentReservationValidationWaitHonorsCancellation (0.00s)
+=== RUN   TestBindReservationTaskPersistsOperationAndTaskOwner
+--- PASS: TestBindReservationTaskPersistsOperationAndTaskOwner (0.00s)
+=== RUN   TestTerminalTaskReservationsAreReclaimedAfterRestart
+--- PASS: TestTerminalTaskReservationsAreReclaimedAfterRestart (0.01s)
+=== RUN   TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget
+--- PASS: TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget (0.00s)
+=== RUN   TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend
+--- PASS: TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend (0.00s)
+=== RUN   TestRenewKeepsALongRunningOperationsReservationInheritable
+--- PASS: TestRenewKeepsALongRunningOperationsReservationInheritable (0.10s)
+=== RUN   TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity
+--- PASS: TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity (0.00s)
+=== RUN   TestClassifyTool
+--- PASS: TestClassifyTool (0.00s)
+=== RUN   TestHeavyAdmissionIsSerialized
+--- PASS: TestHeavyAdmissionIsSerialized (0.10s)
+=== RUN   TestServingReconciliationCanCoexistWithNormalWork
+--- PASS: TestServingReconciliationCanCoexistWithNormalWork (0.00s)
+=== RUN   TestCoResidentCoordinatorsShareHeavyLock
+--- PASS: TestCoResidentCoordinatorsShareHeavyLock (0.10s)
+=== RUN   TestCriticalPressureRejectsHeavyWork
+--- PASS: TestCriticalPressureRejectsHeavyWork (0.00s)
+=== RUN   TestResolveArgumentCostUsesDeclaredMemoryAndCPU
+--- PASS: TestResolveArgumentCostUsesDeclaredMemoryAndCPU (0.00s)
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB
+--- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB (0.00s)
+=== RUN   TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted
+--- PASS: TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted (0.00s)
+=== RUN   TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes
+--- PASS: TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes (0.00s)
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path
+--- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path (0.00s)
+=== RUN   TestParseByteCapacityAcceptsIncusAndKubernetesUnits
+--- PASS: TestParseByteCapacityAcceptsIncusAndKubernetesUnits (0.00s)
+=== RUN   TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation
+--- PASS: TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation (0.00s)
+=== RUN   TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry
+--- PASS: TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry (0.04s)
+=== RUN   TestInheritedAdmissionHonorsCancellationBeforeReusingParent
+--- PASS: TestInheritedAdmissionHonorsCancellationBeforeReusingParent (0.00s)
+=== RUN   TestParentReservationValidationWaitHonorsCancellation
+--- PASS: TestParentReservationValidationWaitHonorsCancellation (0.00s)
+=== RUN   TestBindReservationTaskPersistsOperationAndTaskOwner
+--- PASS: TestBindReservationTaskPersistsOperationAndTaskOwner (0.00s)
+=== RUN   TestTerminalTaskReservationsAreReclaimedAfterRestart
+--- PASS: TestTerminalTaskReservationsAreReclaimedAfterRestart (0.01s)
+=== RUN   TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget
+--- PASS: TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget (0.00s)
+=== RUN   TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend
+--- PASS: TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend (0.00s)
+=== RUN   TestRenewKeepsALongRunningOperationsReservationInheritable
+--- PASS: TestRenewKeepsALongRunningOperationsReservationInheritable (0.10s)
+=== RUN   TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity
+--- PASS: TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity (0.00s)
+=== RUN   TestClassifyTool
+--- PASS: TestClassifyTool (0.00s)
+=== RUN   TestHeavyAdmissionIsSerialized
+--- PASS: TestHeavyAdmissionIsSerialized (0.10s)
+=== RUN   TestServingReconciliationCanCoexistWithNormalWork
+--- PASS: TestServingReconciliationCanCoexistWithNormalWork (0.00s)
+=== RUN   TestCoResidentCoordinatorsShareHeavyLock
+--- PASS: TestCoResidentCoordinatorsShareHeavyLock (0.10s)
+=== RUN   TestCriticalPressureRejectsHeavyWork
+--- PASS: TestCriticalPressureRejectsHeavyWork (0.00s)
+=== RUN   TestResolveArgumentCostUsesDeclaredMemoryAndCPU
+--- PASS: TestResolveArgumentCostUsesDeclaredMemoryAndCPU (0.00s)
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB
+=== RUN   TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB
+--- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.5GiB (0.00s)
+    --- PASS: TestResolveArgumentCostAcceptsCapacityAwareLifecycleMemoryLimits/1.75GiB (0.00s)
+=== RUN   TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted
+--- PASS: TestResolveArgumentCostRetainsStaticDefaultsWhenArgumentsAreOmitted (0.00s)
+=== RUN   TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes
+--- PASS: TestResolveArgumentCostSupportsNestedDeclaredPathsAndDiskBytes (0.00s)
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks
+=== RUN   TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path
+--- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/zero_memory (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_disk_bytes (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/fractional_tasks (0.00s)
+    --- PASS: TestResolveArgumentCostRejectsInvalidValuesAndPaths/invalid_path (0.00s)
+=== RUN   TestParseByteCapacityAcceptsIncusAndKubernetesUnits
+--- PASS: TestParseByteCapacityAcceptsIncusAndKubernetesUnits (0.00s)
+=== RUN   TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation
+--- PASS: TestTypedAdmissionPersistsAcrossCoordinatorsAndReusesNestedReservation (0.00s)
+=== RUN   TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry
+--- PASS: TestTypedAdmissionRejectsOwnerMismatchAndHonorsCancellationAndExpiry (0.04s)
+=== RUN   TestInheritedAdmissionHonorsCancellationBeforeReusingParent
+--- PASS: TestInheritedAdmissionHonorsCancellationBeforeReusingParent (0.00s)
+=== RUN   TestParentReservationValidationWaitHonorsCancellation
+--- PASS: TestParentReservationValidationWaitHonorsCancellation (0.00s)
+=== RUN   TestBindReservationTaskPersistsOperationAndTaskOwner
+--- PASS: TestBindReservationTaskPersistsOperationAndTaskOwner (0.00s)
+=== RUN   TestTerminalTaskReservationsAreReclaimedAfterRestart
+--- PASS: TestTerminalTaskReservationsAreReclaimedAfterRestart (0.00s)
+=== RUN   TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget
+--- PASS: TestTypedAdmissionReconcileRequiresExactPolicyAndHostServiceTarget (0.00s)
+=== RUN   TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend
+--- PASS: TestTypedAdmissionReconcileFailsClosedWithoutConcreteBackend (0.00s)
+=== RUN   TestRenewKeepsALongRunningOperationsReservationInheritable
+--- PASS: TestRenewKeepsALongRunningOperationsReservationInheritable (0.10s)
+=== RUN   TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity
+--- PASS: TestWithoutReservationLetsANestedRunAdmitItsOwnCapacity (0.00s)
+PASS
+ok  	github.com/wunderous/host-agents/internal/resource	1.856s

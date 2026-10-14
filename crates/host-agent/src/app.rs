@@ -324,6 +324,8 @@ pub(crate) fn compose(
             ownership_mode: cfg.ownership_mode.clone(),
             agent_id: cfg.remote_agent_id.clone(),
             tenant_id: cfg.tenant_id.clone(),
+            network_name: cfg.incus_network_name.trim().to_string(),
+            network_address: cfg.incus_network_address.trim().to_string(),
         },
         coordinator: crate::resource::Coordinator {
             lock_dir: cfg.host_resource_lock_dir.clone(),
@@ -352,6 +354,7 @@ pub(crate) fn compose(
         tenant_id: cfg.tenant_id.clone(),
         agent_id: cfg.remote_agent_id.clone(),
         instance_id: cfg.instance_id.clone(),
+        shared_host_owner_instance: cfg.shared_host_owner_instance.clone(),
         instance_root: cfg.instance_root.to_string_lossy().into_owned(),
         mcp_port: cfg.host_mcp_port,
     };

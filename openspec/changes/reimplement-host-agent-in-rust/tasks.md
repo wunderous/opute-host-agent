@@ -11,29 +11,33 @@ defines the differential end-to-end harness and evidence each one requires.
 
 ## 0. Freeze and enumerate the behavior to preserve
 
-- [ ] 0.1 In the new repository, create a machine-readable parity manifest
+- [x] 0.1 In the new repository, create a machine-readable parity manifest
   keyed to `baseline/source-lock.json`: source SHA/tree, schema/catalog
   revisions, mode, active provider set, tested artifact versions, and evidence
   run IDs. Gate: an absent, stale, or mismatched key makes the verifier fail.
+  Done (2026-10-12): `parity-manifest.json` and `tools/parity verify`; the r8 gates rerun byte for byte in `evidence/local-e2e/native-2026-10-12-r8/validation.json`.
 - [ ] 0.2 Inventory the Go CLI, flags, environment precedence, defaults,
   startup/shutdown behavior, endpoints, auth modes, protocol methods, errors,
   installation, systemd, npm launcher, Linux archives, and operator commands.
   Own the capture in `baseline/`; compare it against Go source/tests and a
   packaged Go binary. Gate: every public surface has a named owner and test.
-- [ ] 0.3 Capture authenticated `tools/list` and schema projections from the
+- [x] 0.3 Capture authenticated `tools/list` and schema projections from the
   pinned Go binary for each supported serving mode and each configured
   provider fixture. Record conditional availability, effects, approval,
   idempotency, resource bindings, and catalog revision. Gate: no descriptor
   is accepted solely because it appears in a static list or count.
-- [ ] 0.4 Inventory recipes, plan node states, retries, readiness,
+  Done (2026-10-12): `baseline/inventory/catalog/` for every mode and provider cell, compared Go/Rust in the r8 suites (`evidence/local-e2e/native-2026-10-12-r8/validation.json`).
+- [x] 0.4 Inventory recipes, plan node states, retries, readiness,
   compensation, callbacks, Tasks/cancellation, provider generations, and all
   local durable stores. Record Go fixtures and expected wire/state outcomes.
   Gate: unknown state or unsupported fixture remains an explicit gap.
-- [ ] 0.5 Review the new parity-gate invariant against the Go ADRs, the
+  Done (2026-10-12): `baseline/inventory/{plans,state,runtime-gaps}.json`; every remaining gap is owned by M8 or M10 (`baseline/inventory/gaps.json`).
+- [x] 0.5 Review the new parity-gate invariant against the Go ADRs, the
   Platform owner, and the current public release parity decision. Anchor its
   typed decision and fail-closed verifier in this repository before writing a
   Rust runtime seam. Gate: preserved, introduced, and retired invariants have
   an owner, exception path, revision rule, and checkable evidence.
+  Done (2026-10-12): reviewed in `.agents/decisions/rust-cutover-parity-gate.json` (accepted), with the `requireCutoverEvidence` rule in the verifier.
 
 ## 1. Establish the smallest maintainable Rust ownership structure
 
@@ -79,7 +83,7 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
 
 ## 3. Prove provider and task lifecycle parity
 
-- [ ] 3.1 Implement provider manifest/schema/dependency validation and
+- [x] 3.1 Implement provider manifest/schema/dependency validation and
   candidate, active, and draining generation transitions. Gate: failed
   candidate activation leaves the prior catalog and provider usable;
   generation and catalog revisions change only under the Go contract.
@@ -122,7 +126,8 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   `reject-null-provider-input-requests` and `unadmitted-callback-task-record`
   (open divergences). Evidence: `provider-journeys-validation.json` in
   [evidence/m7/README.md](../../../evidence/m7/README.md).
-- [ ] 3.2 Implement generation-bound admission, callback primitive routing,
+  Done (2026-10-12): D15 settles hostos and ollama, D16 is implemented; see `evidence/m7/README.md` (M7 exit) and `evidence/local-e2e/native-2026-10-12-r8/validation.json`.
+- [x] 3.2 Implement generation-bound admission, callback primitive routing,
   readiness, task bridge, cancellation, and bounded disposal. Gate: wire and
   integration fixtures cover replacement during in-flight work, timeout,
   cancellation, stale revision, callback rejection, and reverse-order cleanup.
@@ -140,10 +145,12 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   disposal is proven against Go's own container functions (385/385, T0) and
   in each provider's teardown plan. A shutdown before a delegated child is
   acknowledged is the open divergence `unadmitted-callback-task-record`.
-- [ ] 3.3 Port every supported provider integration and conditional catalog
+  Done (2026-10-12): D17 and D18 applied; the lifecycle matrix passes Go/Go and Go/Rust in `evidence/local-e2e/native-2026-10-12-r8/validation.json`.
+- [x] 3.3 Port every supported provider integration and conditional catalog
   projection behind neutral typed contracts. Gate: the equivalent configured
   Go and Rust fixture has no missing, extra, or differently shaped tool; an
   unavailable provider is reported truthfully, not silently omitted.
+  Done (2026-10-12) for the supported providers (ollama out of scope, D15): each real provider's catalog is compared Go/Rust in its journey; `evidence/m7/README.md`.
 
 ## 4. Prove execution and durable-state parity
 
@@ -154,6 +161,10 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   Each operation is a built-in provider of a three-role service and the
   seam verifier passes for its domain (decision D14,
   [`three-role-capability-seam`](../three-role-capability-seam/tasks.md)).
+  8a (host) done 2026-10-13: T1 and T2 parity green, the seam verifier
+  reports no gap, and the m8a gate passes
+  ([`evidence/m8a`](../../../evidence/m8a/README.md)). The WSL tools are
+  `unverified` at T2 pending a WSL2 runner. 8b–8f remain open.
 - [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,

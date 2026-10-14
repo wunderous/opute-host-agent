@@ -112,6 +112,17 @@ def main(argv: list[str] | None = None) -> int:
     up.add_argument("--rust", required=True, type=Path)
     up.add_argument("--out", required=True, type=Path)
 
+    t2 = sub.add_parser("t2", help="M8a T2: external-effect parity in disposable twin VMs")
+    t2sub = t2.add_subparsers(dest="t2_command", required=True)
+    t2sub.add_parser("golden", help="build the golden twin image once")
+    t2run = t2sub.add_parser("run", help="run T2 scenarios Go vs Rust (or Go vs Go)")
+    t2run.add_argument("--left", required=True)
+    t2run.add_argument("--right", required=True)
+    t2run.add_argument("--out", required=True, type=Path)
+    t2run.add_argument("--repeat", type=int, default=1)
+    t2run.add_argument("--workers", type=int, default=1, help="scenarios run concurrently (each a twin pair)")
+    t2run.add_argument("scenarios", nargs="*")
+
     sub.add_parser("corpus", help="regenerate scenarios/wire.json from parity/corpus.py")
     man = sub.add_parser("manifest", help="sync derived manifest fields from scenarios and the source lock")
     man.add_argument("--go", type=Path, help="Go reference binary whose hash to record")
@@ -141,6 +152,13 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if fresh else 1
         print(f"wrote {catalog_source.write(args.go_src.resolve())}")
         return 0
+    if args.command == "t2":
+        from . import t2
+        if args.t2_command == "golden":
+            print(json.dumps(t2.build_golden(), indent=1))
+            return 0
+        summary = t2.run_suite(_impl(args.left), _impl(args.right), args.out, args.scenarios or None, args.repeat, args.workers)
+        return 0 if all(r["status"] == "pass" for r in summary["scenarios"].values()) else 1
     if args.command == "corpus":
         from . import corpus
         print(f"wire corpus v{corpus.VERSION}: {corpus.write()} steps -> {corpus.OUT_FILE.name}")

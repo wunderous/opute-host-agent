@@ -1334,13 +1334,7 @@ fn resolve_tool_name(server: &Server, name: &str) -> String {
     if prefix.is_empty() || name.is_empty() || name.starts_with(&format!("{prefix}_")) {
         return name.to_string();
     }
-    if server
-        .catalog
-        .snapshot()
-        .tools
-        .iter()
-        .any(|d| d.name == name)
-    {
+    if server.catalog.snapshot().find(name).is_some() {
         return crate::catalog::wire_name(prefix, name);
     }
     name.to_string()

@@ -7,7 +7,7 @@
 
 use crate::config::Env;
 use crate::gojson::{self, Node, Value};
-use crate::hostobs::{look_path, run_command, CommandResult};
+use crate::hostobs::{look_path, CommandResult};
 use serde_json::{json, Map, Value as J};
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -24,6 +24,9 @@ pub struct Incus {
     pub ownership_mode: String,
     pub agent_id: String,
     pub tenant_id: String,
+    /// `OPUTE_INCUS_NETWORK_NAME` / `_ADDRESS`: the managed container bridge.
+    pub network_name: String,
+    pub network_address: String,
 }
 
 /// `Runtime.ProviderBinary`.
@@ -178,16 +181,50 @@ pub fn status(s: &str) -> String {
 impl Incus {
     /// `Runtime.RunProviderContext` (without streaming).
     pub fn run(&self, args: &[&str], timeout: Duration) -> Result<CommandResult, String> {
+        self.run_with(args, None, timeout, None)
+    }
+
+    /// `Service.RunVMExecContext` / `RunVMExecWithStdinContext`: an
+    /// ownership-checked guest command; stdin never reaches the argv.
+    pub fn run_vm_exec(
+        &self,
+        vm: &str,
+        guest: &[String],
+        stdin: Option<&[u8]>,
+        timeout: Duration,
+        ctx: &crate::plan::runner::RunCtx,
+    ) -> Result<CommandResult, String> {
+        self.assert_ownership(vm, "exec")?;
+        if stdin.is_none() {
+            if let Some(err) = ctx.err() {
+                return Err(err);
+            }
+        }
+        let mut args: Vec<&str> = vec!["exec", vm, "--"];
+        args.extend(guest.iter().map(String::as_str));
+        self.run_with(&args, stdin, timeout, Some(ctx))
+    }
+
+    fn run_with(
+        &self,
+        args: &[&str],
+        stdin: Option<&[u8]>,
+        timeout: Duration,
+        ctx: Option<&crate::plan::runner::RunCtx>,
+    ) -> Result<CommandResult, String> {
         let binary = self.binary.trim();
         if binary.is_empty() || look_path(&self.env, binary).is_none() {
             return Err(format!(
                 "virtualization_stack_absent: the incus virtualization stack is not installed on this host; install it with {}",
-                "install_incus_stack"
+                "install_virtualization_stack"
             ));
         }
         let mut argv = vec![binary.to_string()];
         argv.extend(args.iter().map(|s| s.to_string()));
-        Ok(run_command(&self.env, &argv, timeout))
+        let deadline = (!timeout.is_zero()).then(|| std::time::Instant::now() + timeout);
+        Ok(crate::hostobs::run_command_with(
+            &self.env, &argv, stdin, deadline, timeout, ctx,
+        ))
     }
 
     fn ownership_enforced(&self) -> bool {

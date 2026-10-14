@@ -1,9 +1,14 @@
 {
  "byMilestone": {
   "M10": 1,
-  "M8": 37
+  "M8": 19,
+  "M8a": 3,
+  "M8b": 2,
+  "M8c": 1,
+  "M8d": 2,
+  "M8f": 2
  },
- "count": 38,
+ "count": 30,
  "items": [
   {
    "file": "distribution.json",
@@ -14,115 +19,38 @@
   },
   {
    "file": "effects.json",
-   "item": "apt-cache",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "apt-get",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "bash",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
    "item": "buildah",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "curl",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "dpkg",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "dpkg-query",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
+   "milestone": "M8d",
+   "owner": "oci",
+   "reason": "run only by internal/domain/oci (image build); OCI effects are M8d"
   },
   {
    "file": "effects.json",
    "item": "helm",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "install",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
+   "milestone": "M8c",
+   "owner": "kubernetes",
+   "reason": "host-domain code only looks helm up (ensure_host_tool) and installs it through the remote installer script, observed as bash in T1; helm itself runs in internal/domain/kubernetes (install_helm_chart), M8c"
   },
   {
    "file": "effects.json",
    "item": "kill",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
+   "milestone": "M8f",
+   "owner": "serving",
+   "reason": "run only by internal/domain/serving (assignment liveness probe, kill -0); serving effects are M8f"
   },
   {
    "file": "effects.json",
    "item": "ollama",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
+   "milestone": "M8f",
+   "owner": "llm",
+   "reason": "run only by internal/domain/llm (Ollama runtime); LLM effects are M8f"
   },
   {
    "file": "effects.json",
    "item": "podman",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "rm",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "sudo",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "systemctl",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
-  },
-  {
-   "file": "effects.json",
-   "item": "usermod",
-   "milestone": "M8",
-   "owner": "host",
-   "reason": "host effect tiering of domain operations is M8"
+   "milestone": "M8d",
+   "owner": "oci",
+   "reason": "run only by internal/domain/oci (builder and container runtime); OCI effects are M8d"
   },
   {
    "file": "env.json",
@@ -130,13 +58,6 @@
    "milestone": "M8",
    "owner": "config",
    "reason": "read only by internal/domain/cluster (cluster agent bridge relay); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_HOST_AGENT_ELEVATED",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/host (firewall); domain operations are M8"
   },
   {
    "file": "env.json",
@@ -265,11 +186,39 @@
    "reason": "read only by internal/domain/cluster (cluster agent); domain operations are M8"
   },
   {
-   "file": "env.json",
-   "item": "OPUTE_SHARED_HOST_OWNER_INSTANCE",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/incus (shared incus stack ownership); domain operations are M8"
+   "file": "t2.json",
+   "item": "compact_wsl_disk",
+   "milestone": "M8a",
+   "owner": "host",
+   "reason": "T2 unverified: needs a WSL2 runner: the effect is a VHDX compact on the Windows host through wsl.exe and PowerShell; the Linux T2 sandbox has no WSL"
+  },
+  {
+   "file": "t2.json",
+   "item": "exec_command",
+   "milestone": "M8b",
+   "owner": "host",
+   "reason": "T2 unverified: executes inside an Incus instance; needs the M8b nested-Incus sandbox"
+  },
+  {
+   "file": "t2.json",
+   "item": "run_instance_command",
+   "milestone": "M8b",
+   "owner": "host",
+   "reason": "T2 unverified: executes inside an Incus instance; needs the M8b nested-Incus sandbox"
+  },
+  {
+   "file": "t2.json",
+   "item": "shutdown_wsl",
+   "milestone": "M8a",
+   "owner": "host",
+   "reason": "T2 unverified: needs a WSL2 runner: wsl.exe --shutdown acts on the Windows host's WSL VM"
+  },
+  {
+   "file": "t2.json",
+   "item": "terminate_wsl_distribution",
+   "milestone": "M8a",
+   "owner": "host",
+   "reason": "T2 unverified: needs a WSL2 runner: wsl.exe --terminate acts on a Windows-hosted distribution"
   }
  ],
  "unownedCount": 0

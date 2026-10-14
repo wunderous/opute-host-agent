@@ -33,6 +33,15 @@ class CanonTest(unittest.TestCase):
         self.assertEqual(len(violations), 1)
         self.assertIn("$maskViolation", doc["t"])
 
+    def test_match_mask_covers_only_matching_values(self):
+        spec = {"masks": [{"path": ["argv", "*"], "type": "string", "match": r".*/tmp-\d+",
+                           "reason": "random temp name"}]}
+        left, vl = canon.normalize({"argv": ["-m", "/x/tmp-1"]}, spec, {})
+        right, vr = canon.normalize({"argv": ["-m", "/x/tmp-2"]}, spec, {})
+        self.assertEqual((vl, vr, canon.diff(left, right)), ([], [], []))
+        other, _ = canon.normalize({"argv": ["-n", "/x/tmp-2"]}, spec, {})
+        self.assertNotEqual(canon.diff(left, other), [])
+
     def test_mask_on_missing_path_is_a_violation(self):
         spec = {"masks": [{"path": ["t"], "type": "rfc3339", "reason": "clock"}]}
         _, violations = canon.normalize({}, spec, {})
@@ -174,3 +183,99 @@ class SubstituteTest(unittest.TestCase):
         # boundary check alone would still match and corrupt the hash.
         text = "d1b3b144e3b77a18c87b3a4354cfb20331e00759e222643251ca159f01550c98"
         self.assertEqual(canon.substitute(text, {"PORT": "20331"}), text)
+
+
+class KeepPrefixTest(unittest.TestCase):
+    """D20: only the text after a declared prefix is the declared difference."""
+
+    REGISTRY = {"tail": {"id": "tail", "decision": "D20", "reason": "r",
+                         "path": ["steps", "*", "text"], "keepPrefix": "Error: x: "}}
+
+    def test_text_after_the_prefix_is_dropped(self):
+        a = {"steps": {"s": {"text": "Error: x: go reason"}}}
+        b = {"steps": {"s": {"text": "Error: x: rust reason"}}}
+        a2, b2, rec = canon.apply_divergences(a, b, ["tail"], self.REGISTRY)
+        self.assertEqual(canon.diff(a2, b2), [])
+        self.assertEqual(rec, [{"id": "tail", "decision": "D20", "stale": False}])
+
+    def test_text_without_the_prefix_stays_a_diff(self):
+        a = {"steps": {"s": {"text": "Error: x: reason"}}}
+        b = {"steps": {"s": {"text": "Error: y: reason"}}}
+        a2, b2, _ = canon.apply_divergences(a, b, ["tail"], self.REGISTRY)
+        self.assertNotEqual(canon.diff(a2, b2), [])
+
+    def test_identical_tails_are_stale(self):
+        a = {"steps": {"s": {"text": "Error: x: same"}}}
+        _, _, rec = canon.apply_divergences(a, {"steps": {"s": {"text": "Error: x: same"}}}, ["tail"], self.REGISTRY)
+        self.assertTrue(rec[0]["stale"])
+
+
+class NeutralNamesTest(unittest.TestCase):
+    """D19.neutral-host-tool-names: the Rust side is rewritten to Go's names
+    through the one name map and the pinned revision pairs, nothing else."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from parity import runner
+        cls.registry = canon.load_divergences(runner.DIVERGENCE_FILE)
+        manifest = json.loads((canon._REPO / "parity-manifest.json").read_text())
+        cls.pair = manifest["catalogRevisions"]["platform"]
+
+    def apply(self, go, rust):
+        return canon.apply_divergences(go, rust, ["D19.neutral-host-tool-names"], self.registry)
+
+    def catalog(self, revision, install, install_field, compact_text):
+        return {"steps": {"list": {"revision": revision, "tools": sorted([
+            {"name": install, "inputSchema": {"properties": {install_field: {"type": "string"}},
+                                               "required": [install_field]}},
+            {"name": "get_host_info", "inputSchema": {"properties": {"packageName": {}}}},
+            {"name": "install_k3s"},
+            {"name": compact_text},
+        ], key=lambda t: t["name"]), "text": "compact needs " + compact_text}}}
+
+    def test_renamed_catalog_matches_go(self):
+        go = self.catalog(self.pair["go"], "install_incus_stack", "incusPackage", "shutdown_wsl")
+        rust = self.catalog(self.pair["rust"], "install_virtualization_stack", "packageName",
+                            "shutdown_host_vm_subsystem")
+        self.assertNotEqual([t["name"] for t in go["steps"]["list"]["tools"]].index("install_k3s"),
+                            [t["name"] for t in rust["steps"]["list"]["tools"]].index("install_k3s"))
+        a, b, rec = self.apply(go, rust)
+        self.assertEqual(canon.diff(a, b), [])
+        self.assertEqual(rec, [{"id": "D19.neutral-host-tool-names", "decision": "D19", "stale": False}])
+        self.assertEqual(a, go)
+
+    def test_unrelated_field_and_partial_words_are_kept(self):
+        rust = {"steps": {"s": {"name": "get_host_info", "inputSchema": {"properties": {"packageName": 1}},
+                                "text": "xshutdown_host_vm_subsystem"}}}
+        _, b, rec = self.apply({}, rust)
+        self.assertEqual(b, rust)
+        self.assertTrue(rec[0]["stale"])
+
+    def test_canary_unmapped_rename_and_unpinned_revision_stay_diffs(self):
+        go = self.catalog(self.pair["go"], "install_incus_stack", "incusPackage", "shutdown_wsl")
+        unmapped = self.catalog(self.pair["rust"], "install_virt_stack", "packageName",
+                                "shutdown_host_vm_subsystem")
+        a, b, _ = self.apply(go, unmapped)
+        self.assertNotEqual(canon.diff(a, b), [])
+        unpinned = self.catalog("sha256:" + "0" * 64, "install_virtualization_stack", "packageName",
+                                "shutdown_host_vm_subsystem")
+        a, b, _ = self.apply(go, unpinned)
+        self.assertEqual([d["path"] for d in canon.diff(a, b)], [["steps", "list", "revision"]])
+
+    def test_only_the_rust_side_is_rewritten(self):
+        rust = {"steps": {"s": "shutdown_host_vm_subsystem"}}
+        a, b, _ = canon.apply_divergences(rust, {"steps": {"s": "x"}}, ["D19.neutral-host-tool-names"],
+                                          self.registry, rust_side="b")
+        self.assertEqual(a, rust)
+
+
+class EmbeddedNumberTest(unittest.TestCase):
+    def test_substituted_port_parses_back_as_that_sides_number(self):
+        doc = canon.substitute({"row": '{"port":43131,"url":"http://127.0.0.1:43131/"}'}, {"STUB_PORT": "43131"})
+        parsed = canon.parse_embedded(doc, [["row"]], {"STUB_PORT": "43131"})
+        self.assertEqual(parsed, {"row": {"$json": {"port": 43131, "url": "http://127.0.0.1:${STUB_PORT}/"}}})
+
+    def test_unknown_placeholder_stays_text(self):
+        doc = {"row": '{"port":${OTHER}}'}
+        self.assertEqual(canon.parse_embedded(doc, [["row"]], {"STUB_PORT": "1"}), doc)

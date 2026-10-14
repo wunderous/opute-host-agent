@@ -586,6 +586,398 @@ pub(crate) fn validate_base64(bytes: &[u8]) -> Result<(), String> {
     }
 }
 
+// --- encoding/json scanner errors --------------------------------------------------
+
+/// `quoteChar`: how the scanner names an offending byte.
+fn quote_char(c: u8) -> String {
+    match c {
+        b'\'' => "'\\''".into(),
+        b'"' => "'\"'".into(),
+        _ => {
+            let ch = char::from(c);
+            let quoted = match ch {
+                '\x07' => "\\a".to_string(),
+                '\x08' => "\\b".to_string(),
+                '\x0c' => "\\f".to_string(),
+                '\n' => "\\n".to_string(),
+                '\r' => "\\r".to_string(),
+                '\t' => "\\t".to_string(),
+                '\x0b' => "\\v".to_string(),
+                '\\' => "\\\\".to_string(),
+                c if (c as u32) < 0x20 || c == '\x7f' => format!("\\x{:02x}", c as u32),
+                // U+0080..U+00A0 are not printable (U+00A0 is a non-ASCII
+                // space); Go quotes them as \u.
+                c if (0x80..=0xa0).contains(&(c as u32)) => format!("\\u{:04x}", c as u32),
+                // U+00AD (soft hyphen) is not printable either.
+                '\u{ad}' => "\\u00ad".to_string(),
+                c => c.to_string(),
+            };
+            format!("'{quoted}'")
+        }
+    }
+}
+
+/// `json.Valid`'s first error, as `checkValid` reports it: Go's scanner,
+/// state for state, so the message names the same byte and context.
+pub fn syntax_error(data: &[u8]) -> Option<String> {
+    scan(data, false).err()
+}
+
+/// `json.Decoder.Decode`'s framing: the end of the first JSON value, or the
+/// decoder's error (`EOF` before any value, `unexpected EOF` inside one).
+/// Bytes after the value are not read.
+pub fn first_value(data: &[u8]) -> Result<usize, String> {
+    if data
+        .iter()
+        .all(|c| matches!(c, b' ' | b'\t' | b'\r' | b'\n'))
+    {
+        return Err("EOF".into());
+    }
+    scan(data, true).map_err(|e| {
+        if e == "unexpected end of JSON input" {
+            "unexpected EOF".into()
+        } else {
+            e
+        }
+    })
+}
+
+fn scan(data: &[u8], stop_at_value: bool) -> Result<usize, String> {
+    #[derive(Clone, Copy, PartialEq)]
+    enum Parse {
+        ObjectKey,
+        ObjectValue,
+        ArrayValue,
+    }
+    #[derive(Clone, Copy, PartialEq)]
+    enum St {
+        BeginValue,
+        BeginValueOrEmpty,
+        BeginStringOrEmpty,
+        BeginString,
+        EndValue,
+        EndTop,
+        InString,
+        InStringEsc,
+        InStringEscU(u8),
+        Neg,
+        One,
+        Zero,
+        Dot,
+        Dot0,
+        E,
+        ESign,
+        E0,
+        Lit(&'static [u8], usize, &'static str),
+    }
+    let invalid =
+        |c: u8, context: &str| Err(format!("invalid character {} {context}", quote_char(c)));
+    let space = |c: u8| matches!(c, b' ' | b'\t' | b'\r' | b'\n');
+    let mut stack: Vec<Parse> = Vec::new();
+    let mut st = St::BeginValue;
+    let mut i = 0;
+    while i < data.len() {
+        let c = data[i];
+        // Each arm either consumes `c` (i += 1) or re-dispatches it in a
+        // new state, as Go's step functions do via stateEndValue.
+        match st {
+            St::BeginValueOrEmpty | St::BeginValue => {
+                if space(c) {
+                    i += 1;
+                    continue;
+                }
+                if st == St::BeginValueOrEmpty && c == b']' {
+                    stack.pop();
+                    st = St::EndValue;
+                    i += 1;
+                    continue;
+                }
+                st = match c {
+                    b'{' => {
+                        if stack.len() >= 10_000 {
+                            return Err("exceeded max depth".into());
+                        }
+                        stack.push(Parse::ObjectKey);
+                        St::BeginStringOrEmpty
+                    }
+                    b'[' => {
+                        if stack.len() >= 10_000 {
+                            return Err("exceeded max depth".into());
+                        }
+                        stack.push(Parse::ArrayValue);
+                        St::BeginValueOrEmpty
+                    }
+                    b'"' => St::InString,
+                    b'-' => St::Neg,
+                    b'0' => St::Zero,
+                    b'1'..=b'9' => St::One,
+                    b't' => St::Lit(b"rue", 0, "true"),
+                    b'f' => St::Lit(b"alse", 0, "false"),
+                    b'n' => St::Lit(b"ull", 0, "null"),
+                    _ => return invalid(c, "looking for beginning of value"),
+                };
+                i += 1;
+            }
+            St::BeginStringOrEmpty | St::BeginString => {
+                if space(c) {
+                    i += 1;
+                    continue;
+                }
+                if st == St::BeginStringOrEmpty && c == b'}' {
+                    stack.pop();
+                    st = St::EndValue;
+                    i += 1;
+                    continue;
+                }
+                if c != b'"' {
+                    return invalid(c, "looking for beginning of object key string");
+                }
+                st = St::InString;
+                i += 1;
+            }
+            St::EndValue => {
+                let Some(&top) = stack.last() else {
+                    if stop_at_value {
+                        return Ok(i);
+                    }
+                    st = St::EndTop;
+                    continue;
+                };
+                if space(c) {
+                    i += 1;
+                    continue;
+                }
+                match (top, c) {
+                    (Parse::ObjectKey, b':') => {
+                        *stack.last_mut().expect("in an object") = Parse::ObjectValue;
+                        st = St::BeginValue;
+                    }
+                    (Parse::ObjectKey, _) => return invalid(c, "after object key"),
+                    (Parse::ObjectValue, b',') => {
+                        *stack.last_mut().expect("in an object") = Parse::ObjectKey;
+                        st = St::BeginString;
+                    }
+                    (Parse::ObjectValue, b'}') => {
+                        stack.pop();
+                        st = St::EndValue;
+                    }
+                    (Parse::ObjectValue, _) => return invalid(c, "after object key:value pair"),
+                    (Parse::ArrayValue, b',') => st = St::BeginValue,
+                    (Parse::ArrayValue, b']') => {
+                        stack.pop();
+                        st = St::EndValue;
+                    }
+                    (Parse::ArrayValue, _) => return invalid(c, "after array element"),
+                }
+                i += 1;
+            }
+            St::EndTop => {
+                if !space(c) {
+                    return invalid(c, "after top-level value");
+                }
+                i += 1;
+            }
+            St::InString => {
+                match c {
+                    b'"' => st = St::EndValue,
+                    b'\\' => st = St::InStringEsc,
+                    c if c < 0x20 => return invalid(c, "in string literal"),
+                    _ => {}
+                }
+                i += 1;
+            }
+            St::InStringEsc => {
+                st = match c {
+                    b'b' | b'f' | b'n' | b'r' | b't' | b'\\' | b'/' | b'"' => St::InString,
+                    b'u' => St::InStringEscU(0),
+                    _ => return invalid(c, "in string escape code"),
+                };
+                i += 1;
+            }
+            St::InStringEscU(n) => {
+                if !c.is_ascii_hexdigit() {
+                    return invalid(c, "in \\u hexadecimal character escape");
+                }
+                st = if n == 3 {
+                    St::InString
+                } else {
+                    St::InStringEscU(n + 1)
+                };
+                i += 1;
+            }
+            St::Neg => {
+                st = match c {
+                    b'0' => St::Zero,
+                    b'1'..=b'9' => St::One,
+                    _ => return invalid(c, "in numeric literal"),
+                };
+                i += 1;
+            }
+            St::One | St::Zero => {
+                if st == St::One && c.is_ascii_digit() {
+                    i += 1;
+                    continue;
+                }
+                match c {
+                    b'.' => st = St::Dot,
+                    b'e' | b'E' => st = St::E,
+                    _ => {
+                        st = St::EndValue;
+                        continue;
+                    }
+                }
+                i += 1;
+            }
+            St::Dot => {
+                if !c.is_ascii_digit() {
+                    return invalid(c, "after decimal point in numeric literal");
+                }
+                st = St::Dot0;
+                i += 1;
+            }
+            St::Dot0 => {
+                if c.is_ascii_digit() {
+                    i += 1;
+                    continue;
+                }
+                if c == b'e' || c == b'E' {
+                    st = St::E;
+                    i += 1;
+                    continue;
+                }
+                st = St::EndValue;
+            }
+            St::E => {
+                st = match c {
+                    b'+' | b'-' => St::ESign,
+                    b'0'..=b'9' => St::E0,
+                    _ => return invalid(c, "in exponent of numeric literal"),
+                };
+                i += 1;
+            }
+            St::ESign => {
+                if !c.is_ascii_digit() {
+                    return invalid(c, "in exponent of numeric literal");
+                }
+                st = St::E0;
+                i += 1;
+            }
+            St::E0 => {
+                if c.is_ascii_digit() {
+                    i += 1;
+                    continue;
+                }
+                st = St::EndValue;
+            }
+            St::Lit(rest, k, word) => {
+                if c != rest[k] {
+                    return invalid(
+                        c,
+                        &format!("in literal {word} (expecting {})", quote_char(rest[k])),
+                    );
+                }
+                st = if k + 1 == rest.len() {
+                    St::EndValue
+                } else {
+                    St::Lit(rest, k + 1, word)
+                };
+                i += 1;
+            }
+        }
+    }
+    // `scanner.eof`: complete only after a whole top-level value.
+    let complete = stack.is_empty()
+        && matches!(
+            st,
+            St::EndValue | St::EndTop | St::One | St::Zero | St::Dot0 | St::E0
+        );
+    if complete {
+        Ok(data.len())
+    } else {
+        Err("unexpected end of JSON input".to_string())
+    }
+}
+
+/// `json.Unmarshal(data, &[]struct{ Name string `json:"name"` }{})`: the
+/// names, or Go's first syntax or type error.
+/// The JSON kind `UnmarshalTypeError` names (`number 1.5` for a non-integer
+/// number decoded into an int is the caller's concern).
+pub fn kind_name(v: &Value) -> &'static str {
+    match v {
+        Value::Object(_) => "object",
+        Value::Array(_) => "array",
+        Value::String(_) => "string",
+        Value::Bool(_) => "bool",
+        Value::Null => "null",
+        Value::Number(_) => "number",
+    }
+}
+
+pub fn unmarshal_names(data: &[u8]) -> Result<Vec<String>, String> {
+    const ELEMENT: &str = "struct { Name string \"json:\\\"name\\\"\" }";
+    if let Some(e) = syntax_error(data) {
+        return Err(e);
+    }
+    let root = parse(data).map_err(|_| "unexpected end of JSON input".to_string())?;
+    let kind = |v: &Value| match v {
+        Value::Object(_) => "object",
+        Value::Array(_) => "array",
+        Value::String(_) => "string",
+        Value::Bool(_) => "bool",
+        _ => "number",
+    };
+    let items = match &root.value {
+        Value::Null => return Ok(Vec::new()),
+        Value::Array(items) => items,
+        other => {
+            return Err(format!(
+                "json: cannot unmarshal {} into Go value of type []{ELEMENT}",
+                kind(other)
+            ))
+        }
+    };
+    let mut first: Option<String> = None;
+    let mut names = Vec::new();
+    for item in items {
+        let mut name = String::new();
+        match &item.value {
+            Value::Null => {}
+            Value::Object(members) => {
+                for (key, value) in members {
+                    if !equal_fold(key, "name") {
+                        continue;
+                    }
+                    match &value.value {
+                        Value::Null => {}
+                        Value::String(text) => name = text.clone(),
+                        other => {
+                            first.get_or_insert_with(|| {
+                                format!(
+                                    "json: cannot unmarshal {} into Go struct field .name of type string",
+                                    kind(other)
+                                )
+                            });
+                        }
+                    }
+                }
+            }
+            other => {
+                first.get_or_insert_with(|| {
+                    format!(
+                        "json: cannot unmarshal {} into Go value of type {ELEMENT}",
+                        kind(other)
+                    )
+                });
+            }
+        }
+        names.push(name);
+    }
+    match first {
+        Some(e) => Err(e),
+        None => Ok(names),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -656,5 +1048,78 @@ mod tests {
     fn invalid_utf8_is_replaced() {
         let n = parse(b"\"a\xffb\"").unwrap();
         assert_eq!(n.as_str(), Some("a\u{FFFD}b"));
+    }
+
+    #[test]
+    fn syntax_errors_match_go() {
+        let e = |s: &str| syntax_error(s.as_bytes());
+        assert_eq!(e("[]"), None);
+        assert_eq!(e(" [1, 2.5e3, \"a\\u00e9\", true, null] "), None);
+        assert_eq!(e("").as_deref(), Some("unexpected end of JSON input"));
+        assert_eq!(e("[1,").as_deref(), Some("unexpected end of JSON input"));
+        assert_eq!(
+            e("x").as_deref(),
+            Some("invalid character 'x' looking for beginning of value")
+        );
+        assert_eq!(
+            e("[] x").as_deref(),
+            Some("invalid character 'x' after top-level value")
+        );
+        assert_eq!(
+            e("{\"a\" 1}").as_deref(),
+            Some("invalid character '1' after object key")
+        );
+        assert_eq!(
+            e("{\"a\":1 2}").as_deref(),
+            Some("invalid character '2' after object key:value pair")
+        );
+        assert_eq!(
+            e("[1 2]").as_deref(),
+            Some("invalid character '2' after array element")
+        );
+        assert_eq!(
+            e("{1}").as_deref(),
+            Some("invalid character '1' looking for beginning of object key string")
+        );
+        assert_eq!(
+            e("[tru]").as_deref(),
+            Some("invalid character ']' in literal true (expecting 'e')")
+        );
+        assert_eq!(
+            e("[-]").as_deref(),
+            Some("invalid character ']' in numeric literal")
+        );
+        assert_eq!(
+            e("[1.]").as_deref(),
+            Some("invalid character ']' after decimal point in numeric literal")
+        );
+        assert_eq!(
+            e("\"\n\"").as_deref(),
+            Some("invalid character '\\n' in string literal")
+        );
+        assert_eq!(
+            e("01").as_deref(),
+            Some("invalid character '1' after top-level value")
+        );
+        assert_eq!(first_value(b"{} junk"), Ok(2));
+        assert_eq!(first_value(b"  ").unwrap_err(), "EOF");
+        assert_eq!(first_value(b"{\"a\"").unwrap_err(), "unexpected EOF");
+    }
+
+    #[test]
+    fn names_unmarshal_like_go() {
+        assert_eq!(
+            unmarshal_names(br#"[{"name":"a"},{"NAME":"b"},null,{}]"#).unwrap(),
+            ["a", "b", "", ""]
+        );
+        assert_eq!(unmarshal_names(b"null").unwrap(), Vec::<String>::new());
+        assert_eq!(
+            unmarshal_names(b"{}").unwrap_err(),
+            "json: cannot unmarshal object into Go value of type []struct { Name string \"json:\\\"name\\\"\" }"
+        );
+        assert_eq!(
+            unmarshal_names(br#"[{"name":1}]"#).unwrap_err(),
+            "json: cannot unmarshal number into Go struct field .name of type string"
+        );
     }
 }

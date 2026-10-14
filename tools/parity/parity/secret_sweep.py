@@ -276,7 +276,16 @@ def failures(data: dict) -> list[str]:
                         raise ValueError(f"{key}: unsupported result method changed")
                 if observation["responses"]["list"]["body"]["error"]["code"] != -32601:
                     raise ValueError(f"{key}: unsupported list method changed")
-                projected_sides.append(canon.substitute(projected, observation["variables"]))
+                projected = canon.substitute(projected, observation["variables"])
+                if side == "rust":
+                    # D19 (neutral-host-tool-names): the projected catalog
+                    # carries Rust's neutral names and revision. Rewrite them
+                    # to Go's spelling with the wire comparison's own rule;
+                    # everything else is compared as captured.
+                    projected, _, _ = canon.apply_divergences(
+                        projected, None, ["D19.neutral-host-tool-names"],
+                        canon.load_divergences(runner.DIVERGENCE_FILE), rust_side="a")
+                projected_sides.append(projected)
             # D13 (redact-unmarked-projections) reaches these same plan/state
             # documents through the forward-looking plan-document/run-state
             # storage projections: an untyped test field like "visible" or

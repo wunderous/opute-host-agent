@@ -50,6 +50,12 @@ impl Definition {
 
 struct Source {
     provider_id: String,
+    /// Go's own definitions, under Go's names: the host catalog's, then
+    /// those standalone adds. The D19 alias descriptors come from these;
+    /// the revision test proves each pinned Go revision from them.
+    #[cfg_attr(not(test), allow(dead_code))]
+    go_host: Vec<Definition>,
+    go_definitions: Vec<Definition>,
     host: Vec<Definition>,
     standalone: Vec<Definition>,
     standalone_from_all: Vec<Definition>,
@@ -63,15 +69,35 @@ fn source() -> &'static Source {
     static SRC: OnceLock<Source> = OnceLock::new();
     SRC.get_or_init(|| {
         let doc: J = serde_json::from_str(SOURCE).expect("catalog/source.json is valid JSON");
-        let defs = |k: &str| -> Vec<Definition> {
+        let go_defs = |k: &str| -> Vec<Definition> {
             doc[k]
                 .as_array()
                 .map(|a| a.iter().map(Definition::from_json).collect())
                 .unwrap_or_default()
         };
-        let obj = |k: &str| doc[k].as_object().cloned().unwrap_or_default();
+        let defs =
+            |k: &str| -> Vec<Definition> { go_defs(k).iter().map(rename_definition).collect() };
+        // Tables keyed by tool name are keyed by the published name.
+        let obj = |k: &str| -> Map<String, J> {
+            doc[k]
+                .as_object()
+                .map(|m| {
+                    m.iter()
+                        .map(|(name, v)| {
+                            (neutral_name(name).unwrap_or(name).to_string(), v.clone())
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        let go_host = go_defs("hostDefinitions");
+        let mut go_definitions = go_host.clone();
+        go_definitions.extend(go_defs("standaloneDefinitions"));
+        go_definitions.extend(go_defs("standaloneFromAll"));
         Source {
             provider_id: doc["providerId"].as_str().unwrap_or("incus").to_string(),
+            go_host,
+            go_definitions,
             host: defs("hostDefinitions"),
             standalone: defs("standaloneDefinitions"),
             standalone_from_all: defs("standaloneFromAll"),
@@ -80,14 +106,24 @@ fn source() -> &'static Source {
             registrations: obj("registrations"),
             task_aware: doc["taskAwareTools"]
                 .as_array()
-                .map(|a| a.iter().filter_map(J::as_str).map(str::to_string).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(J::as_str)
+                        .map(|n| neutral_name(n).unwrap_or(n).to_string())
+                        .collect()
+                })
                 .unwrap_or_default(),
         }
     })
 }
 
+/// A tool-keyed table's entry for a published name or a D19 alias.
+fn keyed<'a>(table: &'a Map<String, J>, name: &str) -> Option<&'a J> {
+    table.get(neutral_name(name).unwrap_or(name))
+}
+
 fn registration(name: &str) -> Option<&'static Map<String, J>> {
-    source().registrations.get(name).and_then(J::as_object)
+    keyed(&source().registrations, name).and_then(J::as_object)
 }
 
 /// `IsStandaloneMutation`: tools the standalone mutation gate closes.
@@ -105,7 +141,10 @@ pub fn is_task_aware(name: &str) -> bool {
         .and_then(|r| r.get("taskAware"))
         .and_then(J::as_bool)
         .unwrap_or(false)
-        || source().task_aware.iter().any(|n| n == name)
+        || source()
+            .task_aware
+            .iter()
+            .any(|n| n == neutral_name(name).unwrap_or(name))
 }
 
 /// `RegisteredAdmissionClass`: the class a capability declared at its
@@ -120,6 +159,160 @@ pub fn admission_class(name: &str) -> Option<String> {
 /// `StandaloneToolMetadata`.
 pub fn standalone_metadata(name: &str) -> Option<&'static J> {
     registration(name)?.get("standaloneMetadata")
+}
+
+// --- D19: provider-neutral names (neutral-host-tool-names) --------------------------
+
+const NEUTRAL_NAMES: &str = include_str!("../catalog/neutral-names.json");
+
+/// The one D19 map: Go name to published name, and the input fields a
+/// published tool renames.
+struct NameMap {
+    tools: Vec<(String, String)>,
+    fields: BTreeMap<String, Vec<(String, String)>>,
+}
+
+fn name_map() -> &'static NameMap {
+    static MAP: OnceLock<NameMap> = OnceLock::new();
+    MAP.get_or_init(|| {
+        let doc: J =
+            serde_json::from_str(NEUTRAL_NAMES).expect("catalog/neutral-names.json is valid JSON");
+        let pairs = |v: &J| -> Vec<(String, String)> {
+            v.as_object()
+                .map(|m| {
+                    m.iter()
+                        .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        NameMap {
+            tools: pairs(&doc["tools"]),
+            fields: doc["fields"]
+                .as_object()
+                .map(|m| m.iter().map(|(k, v)| (k.clone(), pairs(v))).collect())
+                .unwrap_or_default(),
+        }
+    })
+}
+
+/// The published name of a Go tool name the map renames.
+pub fn neutral_name(go: &str) -> Option<&'static str> {
+    name_map()
+        .tools
+        .iter()
+        .find(|(from, _)| from == go)
+        .map(|(_, to)| to.as_str())
+}
+
+/// Every Go name kept as a hidden alias.
+pub fn alias_names() -> Vec<String> {
+    name_map().tools.iter().map(|(go, _)| go.clone()).collect()
+}
+
+/// An alias call's arguments as the published tool takes them: each
+/// renamed field moves to its new name, replacing any value already there
+/// (Go's handler reads only the old field).
+pub fn alias_arguments(alias: &str, args: &Map<String, J>) -> Map<String, J> {
+    let mut out = args.clone();
+    for (from, to) in name_map().fields.get(alias).into_iter().flatten() {
+        out.remove(to);
+        if let Some(v) = out.remove(from) {
+            out.insert(to.clone(), v);
+        }
+    }
+    out
+}
+
+/// Replaces every mapped Go tool name that stands as a whole word.
+fn rename_text(text: &str) -> String {
+    let word = |c: char| c.is_ascii_alphanumeric() || c == '_';
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    'scan: while !rest.is_empty() {
+        let at_boundary = out.chars().last().is_none_or(|c| !word(c));
+        if at_boundary {
+            for (from, to) in &name_map().tools {
+                if let Some(after) = rest.strip_prefix(from.as_str()) {
+                    if after.chars().next().is_none_or(|c| !word(c)) {
+                        out.push_str(to);
+                        rest = after;
+                        continue 'scan;
+                    }
+                }
+            }
+        }
+        let c = rest.chars().next().expect("non-empty");
+        out.push(c);
+        rest = &rest[c.len_utf8()..];
+    }
+    out
+}
+
+/// Every `description` string in a schema, renamed.
+fn rename_descriptions(value: &J) -> J {
+    match value {
+        J::Object(m) => J::Object(
+            m.iter()
+                .map(|(k, v)| match (k.as_str(), v) {
+                    ("description", J::String(s)) => (k.clone(), J::String(rename_text(s))),
+                    _ => (k.clone(), rename_descriptions(v)),
+                })
+                .collect(),
+        ),
+        J::Array(items) => J::Array(items.iter().map(rename_descriptions).collect()),
+        other => other.clone(),
+    }
+}
+
+/// A Go definition as Rust publishes it: the neutral name, renamed input
+/// fields, and descriptions that name the neutral tools. Nothing else
+/// changes.
+fn rename_definition(def: &Definition) -> Definition {
+    let mut out = def.clone();
+    out.description = rename_text(&def.description);
+    out.input_schema = rename_descriptions(&def.input_schema);
+    out.output_schema = def.output_schema.as_ref().map(rename_descriptions);
+    for (from, to) in name_map().fields.get(&def.name).into_iter().flatten() {
+        if let Some(props) = out
+            .input_schema
+            .get_mut("properties")
+            .and_then(J::as_object_mut)
+        {
+            if let Some(v) = props.remove(from) {
+                props.insert(to.clone(), v);
+            }
+        }
+        if let Some(required) = out
+            .input_schema
+            .get_mut("required")
+            .and_then(J::as_array_mut)
+        {
+            for item in required.iter_mut() {
+                if item.as_str() == Some(from) {
+                    *item = J::from(to.clone());
+                }
+            }
+        }
+    }
+    if let Some(name) = neutral_name(&def.name) {
+        out.name = name.to_string();
+    }
+    out
+}
+
+/// Go's descriptors for the aliased tools, under Go's names, as Go's own
+/// catalog builds them (first definition per name wins).
+fn alias_descriptors() -> &'static Vec<Descriptor> {
+    static ALIASES: OnceLock<Vec<Descriptor>> = OnceLock::new();
+    ALIASES.get_or_init(|| {
+        let src = source();
+        build(&src.provider_id, &canonicalize(&src.go_definitions))
+            .tools
+            .into_iter()
+            .filter(|d| neutral_name(&d.name).is_some())
+            .collect()
+    })
 }
 
 // --- canonical bindings (CanonicalizeToolDefinitions) ------------------------------
@@ -528,7 +721,7 @@ fn declared_effect(def: &Definition) -> Option<String> {
     {
         return Some(e.to_string());
     }
-    if let Some(e) = source().residual_effects.get(&def.name).and_then(J::as_str) {
+    if let Some(e) = keyed(&source().residual_effects, &def.name).and_then(J::as_str) {
         return Some(e.to_string());
     }
     let classification = standalone_metadata(&def.name)
@@ -552,7 +745,7 @@ pub fn standalone_read_only(catalog: &Snapshot, name: &str) -> bool {
     if is_standalone_mutation(name) {
         return false;
     }
-    if let Some(d) = catalog.tools.iter().find(|d| d.name == name) {
+    if let Some(d) = catalog.find(name) {
         return d.effect == "read";
     }
     source()
@@ -700,6 +893,18 @@ pub struct Snapshot {
 }
 
 impl Snapshot {
+    /// The descriptor a call by `name` uses: a published tool, or, for a D19
+    /// alias of a tool this snapshot publishes, Go's own descriptor under
+    /// the Go name, which is never listed.
+    pub fn find(&self, name: &str) -> Option<&Descriptor> {
+        if let Some(d) = self.tools.iter().find(|d| d.name == name) {
+            return Some(d);
+        }
+        let neutral = neutral_name(name)?;
+        self.tools.iter().find(|d| d.name == neutral)?;
+        alias_descriptors().iter().find(|d| d.name == name)
+    }
+
     /// `json.Marshal(CapabilityCatalogSnapshot)`.
     pub fn encode(&self, out: &mut String) {
         let mut o = Obj::new(out);
@@ -1244,6 +1449,17 @@ pub fn host_tool_names() -> Vec<String> {
     source().host.iter().map(|d| d.name.clone()).collect()
 }
 
+/// The host tool names a provider callback may call: the published names
+/// and their D19 aliases.
+pub fn callable_host_tool_names() -> Vec<String> {
+    let published = host_tool_names();
+    let aliases: Vec<String> = alias_names()
+        .into_iter()
+        .filter(|go| neutral_name(go).is_some_and(|n| published.iter().any(|h| h == n)))
+        .collect();
+    published.into_iter().chain(aliases).collect()
+}
+
 /// `WireToolName`.
 pub fn wire_name(prefix: &str, name: &str) -> String {
     let (prefix, name) = (prefix.trim(), name.trim());
@@ -1372,12 +1588,76 @@ mod tests {
             serde_json::from_str(include_str!("../../../parity-manifest.json")).unwrap();
         let recorded = &manifest["catalogRevisions"];
         assert_eq!(
-            recorded["standalone"].as_str(),
+            recorded["standalone"]["rust"].as_str(),
             Some(for_mode(true).revision.as_str())
         );
         assert_eq!(
-            recorded["platform"].as_str(),
+            recorded["platform"]["rust"].as_str(),
             Some(for_mode(false).revision.as_str())
+        );
+        // Each Go pair is the revision of the same catalog under Go's names.
+        let src = source();
+        let go_platform = build(&src.provider_id, &canonicalize(&src.go_host));
+        let go_standalone = build(&src.provider_id, &canonicalize(&src.go_definitions));
+        assert_eq!(
+            recorded["platform"]["go"].as_str(),
+            Some(go_platform.revision.as_str())
+        );
+        assert_eq!(
+            recorded["standalone"]["go"].as_str(),
+            Some(go_standalone.revision.as_str())
+        );
+    }
+
+    /// D19: neutral names published in every mode, Go names only as
+    /// hidden aliases carrying Go's own descriptor.
+    #[test]
+    fn neutral_names_replace_go_names() {
+        for standalone in [false, true] {
+            let cat = for_mode(standalone);
+            for go in alias_names() {
+                assert!(cat.tools.iter().all(|d| d.name != go), "{go} is listed");
+                let Some(neutral) = neutral_name(&go) else {
+                    unreachable!()
+                };
+                match cat.tools.iter().find(|d| d.name == neutral) {
+                    Some(published) => {
+                        let alias = cat.find(&go).expect("alias resolves");
+                        assert_eq!(alias.name, go);
+                        assert_eq!(alias.effect, published.effect);
+                    }
+                    None => assert!(cat.find(&go).is_none(), "{go} without {neutral}"),
+                }
+            }
+        }
+        let cat = for_mode(false);
+        let install = cat.find("install_virtualization_stack").unwrap();
+        assert!(install.input_schema["properties"]
+            .get("packageName")
+            .is_some());
+        assert!(install.input_schema["properties"]
+            .get("incusPackage")
+            .is_none());
+        let alias = cat.find("install_incus_stack").unwrap();
+        assert!(alias.input_schema["properties"]
+            .get("incusPackage")
+            .is_some());
+        let compact = cat.find("compact_host_vm_disk").unwrap();
+        assert!(compact.description.contains("shutdown_host_vm_subsystem"));
+        assert!(!compact.description.contains("shutdown_wsl"));
+        assert!(cat.find("install_virtualization_stack_x").is_none());
+    }
+
+    #[test]
+    fn alias_arguments_move_renamed_fields() {
+        let args = json!({"incusPackage": "incus", "packageName": "ignored", "x": 1});
+        let moved = alias_arguments("install_incus_stack", args.as_object().unwrap());
+        assert_eq!(J::Object(moved), json!({"packageName": "incus", "x": 1}));
+        let kept = alias_arguments("shutdown_wsl", args.as_object().unwrap());
+        assert_eq!(J::Object(kept), args);
+        assert_eq!(
+            rename_text("shutdown_wsl, not xshutdown_wsl"),
+            "shutdown_host_vm_subsystem, not xshutdown_wsl"
         );
     }
 

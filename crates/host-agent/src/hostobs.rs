@@ -75,11 +75,64 @@ fn command_environment(env: &Env, argv: &[String]) -> Env {
 /// `RunCommandContext` without streaming: start failures and timeouts are
 /// results, not errors, exactly as in Go.
 pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResult {
+    let deadline = (!timeout.is_zero()).then(|| Instant::now() + timeout);
+    run_command_until(env, argv, deadline, timeout)
+}
+
+/// `RunCommandContext` under a deadline that may come from the caller's
+/// context rather than `timeout`; an expiry reports `timeout` as Go does.
+pub fn run_command_until(
+    env: &Env,
+    argv: &[String],
+    deadline: Option<Instant>,
+    timeout: Duration,
+) -> CommandResult {
+    run_command_with(env, argv, None, deadline, timeout, None)
+}
+
+/// `runCommandContext` in full: optional stdin (kept off argv), the
+/// effective deadline, the reported `timeout`, and the caller's context.
+/// An expired deadline (ours or the caller's) reports a timeout; a caller
+/// cancellation kills the process group, and a child that still exited 0
+/// is reported as cancelled.
+pub fn run_command_with(
+    env: &Env,
+    argv: &[String],
+    stdin: Option<&[u8]>,
+    deadline: Option<Instant>,
+    timeout: Duration,
+    ctx: Option<&crate::plan::runner::RunCtx>,
+) -> CommandResult {
+    let raw = run_command_raw(env, argv, stdin, deadline, timeout, ctx);
+    CommandResult {
+        exit_code: raw.exit_code,
+        stdout: String::from_utf8_lossy(&raw.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&raw.stderr).into_owned(),
+    }
+}
+
+/// A command's output as the bytes it wrote (Go keeps them in a string
+/// unchanged; decoders such as the Windows CLI one need them raw).
+pub struct RawResult {
+    pub exit_code: i32,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
+
+/// `runCommandContext` with the output kept as raw bytes.
+pub fn run_command_raw(
+    env: &Env,
+    argv: &[String],
+    stdin: Option<&[u8]>,
+    deadline: Option<Instant>,
+    timeout: Duration,
+    ctx: Option<&crate::plan::runner::RunCtx>,
+) -> RawResult {
     if argv.is_empty() {
-        return CommandResult {
+        return RawResult {
             exit_code: 1,
-            stdout: String::new(),
-            stderr: "empty command".into(),
+            stdout: Vec::new(),
+            stderr: b"empty command".to_vec(),
         };
     }
     let program = if argv[0].contains('/') {
@@ -88,13 +141,14 @@ pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResu
         look_path(env, &argv[0])
     };
     let Some(program) = program else {
-        return CommandResult {
+        return RawResult {
             exit_code: 1,
-            stdout: String::new(),
+            stdout: Vec::new(),
             stderr: format!(
                 "exec: {}: executable file not found in $PATH",
                 crate::goerr::quote(&argv[0])
-            ),
+            )
+            .into_bytes(),
         };
     };
     let command_env = command_environment(env, argv);
@@ -102,24 +156,37 @@ pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResu
     cmd.args(&argv[1..])
         .env_clear()
         .envs(command_env.pairs())
-        .stdin(Stdio::null())
+        .stdin(if stdin.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .process_group(0);
     let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => {
-            return CommandResult {
+            return RawResult {
                 exit_code: 1,
-                stdout: String::new(),
+                stdout: Vec::new(),
                 stderr: format!(
                     "fork/exec {}: {}",
                     program.display(),
                     crate::goerr::errno_text(&e)
-                ),
+                )
+                .into_bytes(),
             }
         }
     };
+    let writer = stdin.map(|input| {
+        let mut pipe = child.stdin.take().expect("piped stdin");
+        let input = input.to_vec();
+        std::thread::spawn(move || {
+            use std::io::Write;
+            let _ = pipe.write_all(&input);
+        })
+    });
     let mut out_pipe = child.stdout.take().expect("piped stdout");
     let mut err_pipe = child.stderr.take().expect("piped stderr");
     let out_reader = std::thread::spawn(move || {
@@ -132,56 +199,106 @@ pub fn run_command(env: &Env, argv: &[String], timeout: Duration) -> CommandResu
         let _ = err_pipe.read_to_end(&mut s);
         s
     });
-    let deadline = Instant::now() + timeout;
     let mut timed_out = false;
+    let mut cancelled = false;
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Some(status),
-            Ok(None) if Instant::now() >= deadline => {
-                timed_out = true;
-                let pgid = nix::unistd::Pid::from_raw(child.id() as i32);
-                let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
-                break child.wait().ok();
+            Ok(None) => {
+                let expired = deadline.is_some_and(|d| Instant::now() >= d);
+                let caller = if expired {
+                    None
+                } else {
+                    ctx.and_then(|c| c.err())
+                };
+                if expired || caller.is_some() {
+                    timed_out = expired || caller.as_deref() == Some("context deadline exceeded");
+                    cancelled = !timed_out;
+                    let pgid = nix::unistd::Pid::from_raw(child.id() as i32);
+                    let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
+                    break child.wait().ok();
+                }
+                std::thread::sleep(Duration::from_millis(5));
             }
-            Ok(None) => std::thread::sleep(Duration::from_millis(5)),
             Err(_) => break None,
         }
     };
-    let stdout = String::from_utf8_lossy(&out_reader.join().unwrap_or_default()).into_owned();
-    let mut stderr = String::from_utf8_lossy(&err_reader.join().unwrap_or_default()).into_owned();
+    if let Some(writer) = writer {
+        let _ = writer.join();
+    }
+    let stdout = out_reader.join().unwrap_or_default();
+    let mut stderr = err_reader.join().unwrap_or_default();
     if timed_out {
         if !stderr.is_empty() {
-            stderr.push('\n');
+            stderr.push(b'\n');
         }
-        stderr.push_str(&format!(
-            "Error: Command timed out after {}",
-            go_duration(timeout)
-        ));
-        return CommandResult {
+        stderr.extend_from_slice(
+            format!("Error: Command timed out after {}", go_duration(timeout)).as_bytes(),
+        );
+        return RawResult {
             exit_code: 124,
             stdout,
             stderr,
         };
     }
-    let exit_code = status.and_then(|s| s.code()).unwrap_or(-1);
-    CommandResult {
+    let mut exit_code = status.and_then(|s| s.code()).unwrap_or(-1);
+    if cancelled && exit_code == 0 {
+        exit_code = 130;
+        if !stderr.is_empty() {
+            stderr.push(b'\n');
+        }
+        stderr.extend_from_slice(b"Error: Command cancelled");
+    }
+    RawResult {
         exit_code,
         stdout,
         stderr,
     }
 }
 
-/// `time.Duration.String` for whole seconds and minutes.
-fn go_duration(d: Duration) -> String {
-    let secs = d.as_secs();
-    if secs >= 60 {
-        let (m, s) = (secs / 60, secs % 60);
-        return format!("{m}m{s}s");
+/// `time.Duration.String`.
+pub fn go_duration(d: Duration) -> String {
+    let nanos = d.as_nanos();
+    if nanos == 0 {
+        return "0s".into();
     }
-    format!("{secs}s")
+    // Below one second Go switches to the largest unit that keeps an
+    // integer part, with trailing zeros trimmed from the fraction.
+    let frac = |value: u128, unit: u128| {
+        let whole = value / unit;
+        let rest = value % unit;
+        if rest == 0 {
+            return whole.to_string();
+        }
+        let digits = unit.to_string().len() - 1;
+        let fraction = format!("{rest:0digits$}");
+        format!("{whole}.{}", fraction.trim_end_matches('0'))
+    };
+    if nanos < 1_000 {
+        return format!("{nanos}ns");
+    }
+    if nanos < 1_000_000 {
+        return format!("{}µs", frac(nanos, 1_000));
+    }
+    if nanos < 1_000_000_000 {
+        return format!("{}ms", frac(nanos, 1_000_000));
+    }
+    let secs = d.as_secs();
+    let seconds = frac(
+        u128::from(secs % 60) * 1_000_000_000 + u128::from(d.subsec_nanos()),
+        1_000_000_000,
+    );
+    if secs >= 3600 {
+        format!("{}h{}m{seconds}s", secs / 3600, secs % 3600 / 60)
+    } else if secs >= 60 {
+        format!("{}m{seconds}s", secs / 60)
+    } else {
+        format!("{seconds}s")
+    }
 }
 
-fn is_wsl(env: &Env) -> bool {
+/// `fingerprint.isWSL`.
+pub(crate) fn is_wsl(env: &Env) -> bool {
     if !env.get("WSL_INTEROP").trim().is_empty() || !env.get("WSL_DISTRO_NAME").trim().is_empty() {
         return true;
     }
@@ -193,7 +310,9 @@ fn is_wsl(env: &Env) -> bool {
         .unwrap_or(false)
 }
 
-fn windows_interop_command(env: &Env, name: &str) -> bool {
+/// `fingerprint.WindowsInteropCommand`: the first candidate that resolves,
+/// returned as written (a bare name stays bare and runs through PATH).
+pub(crate) fn windows_interop_command(env: &Env, name: &str) -> Option<String> {
     let mut candidates: Vec<String> = Vec::new();
     match name {
         "powershell.exe" => {
@@ -206,16 +325,16 @@ fn windows_interop_command(env: &Env, name: &str) -> bool {
         _ => {}
     }
     candidates.push(name.into());
-    candidates.iter().any(|c| look_path(env, c).is_some())
+    candidates.into_iter().find(|c| look_path(env, c).is_some())
 }
 
 /// `fingerprint.DetectCapabilities` on Linux.
 pub fn detect_capabilities(env: &Env) -> J {
     let wsl = is_wsl(env);
     let interop = wsl
-        && (windows_interop_command(env, "powershell.exe")
-            || windows_interop_command(env, "reg.exe"));
-    let manage = wsl && windows_interop_command(env, "wsl.exe");
+        && (windows_interop_command(env, "powershell.exe").is_some()
+            || windows_interop_command(env, "reg.exe").is_some());
+    let manage = wsl && windows_interop_command(env, "wsl.exe").is_some();
     json!({
         "canInvokeWindowsInterop": interop,
         "canManageWsl": manage,
@@ -237,6 +356,8 @@ pub fn health_observer(
         ownership_mode,
         agent_id: String::new(),
         tenant_id: String::new(),
+        network_name: String::new(),
+        network_address: String::new(),
     };
     move || {
         let capacity = incus.inventory_capacity().map(|c| {
@@ -959,7 +1080,7 @@ const SYSTEMCTL: &str = "/usr/bin/systemctl";
 const SYSTEMD_RUN: &str = "/usr/bin/systemd-run";
 const WORKLOAD_SLICE: &str = "opute-workload.slice";
 
-fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, String> {
+pub(crate) fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, String> {
     output
         .split('\n')
         .filter_map(|line| line.split_once('='))
@@ -967,7 +1088,7 @@ fn parse_systemd_properties(output: &str) -> std::collections::BTreeMap<String, 
         .collect()
 }
 
-fn parse_systemd_limit(value: &str) -> Option<i64> {
+pub(crate) fn parse_systemd_limit(value: &str) -> Option<i64> {
     let mut value = value.trim().to_lowercase();
     if value.is_empty() || value == "max" || value == "infinity" || value == "inf" {
         return None;

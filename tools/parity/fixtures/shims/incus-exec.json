@@ -1,0 +1,14 @@
+{
+  "description": "One running container and one VM, with scripted guest exec answers.",
+  "commands": {
+    "incus": [
+      {"argv": ["list", "--format", "json"], "stdout": "[{\"name\":\"worker-01\",\"status\":\"Running\",\"type\":\"container\",\"state\":{\"network\":{}}},{\"name\":\"vm-01\",\"status\":\"Running\",\"type\":\"virtual-machine\",\"state\":{\"network\":{}}}]"},
+      {"argv": ["exec", "worker-01", "--", "echo", "hello"], "stdout": "hello"},
+      {"argv": ["exec", "worker-01", "--", "cat"], "stdout": "piped"},
+      {"argv": ["exec", "worker-01", "--", "false"], "exit": 1},
+      {"argv": ["exec", "worker-01", "--", "warn"], "exit": 3, "stderr": "warned\n"},
+      {"argv": ["exec", "vm-01", "--", "uname", "-a", "--x"], "stdout": "Linux vm-01"}
+    ]
+  },
+  "default": {"exit": 1, "stderr": "unsupported parity shim invocation\n"}
+}

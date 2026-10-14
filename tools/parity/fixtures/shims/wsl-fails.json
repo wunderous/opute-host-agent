@@ -1,0 +1,27 @@
+{
+ "description": "WSL2 interop whose wsl.exe fails every call, and with no reg.exe or powershell.exe. The host identity's MachineGuid query is answered.",
+ "commands": {
+  "wsl.exe": [
+   {
+    "argvPrefix": [],
+    "exit": 1,
+    "stderr": "WSL is not running.\r\n"
+   }
+  ],
+  "powershell.exe": [
+   {
+    "argv": [
+     "-NoProfile",
+     "-NonInteractive",
+     "-Command",
+     "(Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Cryptography' -Name MachineGuid).MachineGuid"
+    ],
+    "stdout": "5f0c2a8e-1b3d-4c6e-9a7f-0123456789ab"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

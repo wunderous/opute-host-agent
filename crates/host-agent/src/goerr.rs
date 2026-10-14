@@ -61,6 +61,43 @@ pub fn path_error(op: &str, path: &Path, err: &io::Error) -> Error {
     Error(format!("{op} {}: {}", path.display(), errno_text(err)))
 }
 
+/// `os.CreateTemp(dir, prefix + "*" + suffix)`: a new 0600 file whose name
+/// carries a random decimal `uint32`, returned with that name.
+///
+/// As in Go, any failure other than a name collision is the `OpenFile`
+/// error for the name tried ("open <dir>/<prefix><n><suffix>: <reason>");
+/// only 10000 consecutive collisions report the pattern ("createtemp ...*").
+pub fn create_temp(
+    dir: &str,
+    prefix: &str,
+    suffix: &str,
+) -> std::result::Result<(std::fs::File, String), String> {
+    use std::os::unix::fs::OpenOptionsExt;
+    // `joinPath`: no separator is added after a trailing one.
+    let joined = if dir.ends_with('/') {
+        format!("{dir}{prefix}")
+    } else {
+        format!("{dir}/{prefix}")
+    };
+    for _ in 0..10_000 {
+        let mut seed = [0u8; 4];
+        getrandom::getrandom(&mut seed).map_err(|e| e.to_string())?;
+        let name = format!("{joined}{}{suffix}", u32::from_ne_bytes(seed));
+        match std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&name)
+        {
+            Ok(file) => return Ok((file, name)),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(format!("open {name}: {}", errno_text(&e))),
+        }
+    }
+    Err(format!("createtemp {joined}*{suffix}: file already exists"))
+}
+
 /// `os.MkdirAll(path, perm)` with Go's error reporting.
 ///
 /// Go reports the component that failed, not always the requested path, and
@@ -138,6 +175,21 @@ pub fn quote(s: &str) -> String {
     out
 }
 
+/// Go `%q` for a byte string: valid UTF-8 runs as [`quote`], each invalid
+/// byte as `\xNN`.
+pub fn quote_bytes(b: &[u8]) -> String {
+    let mut out = String::from("\"");
+    for chunk in b.utf8_chunks() {
+        let valid = quote(chunk.valid());
+        out.push_str(&valid[1..valid.len() - 1]);
+        for byte in chunk.invalid() {
+            out.push_str(&format!("\\x{byte:02x}"));
+        }
+    }
+    out.push('"');
+    out
+}
+
 /// Go `strconv.ParseFloat(s, 64)` for decimal input (signs, exponents,
 /// `inf`, `infinity`, `nan`). Hexadecimal floats and digit separators are
 /// rejected here; no capacity argument uses them.
@@ -176,6 +228,11 @@ pub fn atoi(s: &str) -> (i64, bool) {
     }
 }
 
+/// `textutil.ShellQuote`: single-quoted, with embedded quotes escaped.
+pub fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', r"'\''"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,6 +244,34 @@ mod tests {
         assert_eq!(quote("x\ty\n"), "\"x\\ty\\n\"");
         assert_eq!(quote("\u{1}"), "\"\\x01\"");
         assert_eq!(quote("héllo"), "\"héllo\"");
+    }
+
+    #[test]
+    fn create_temp_reports_the_name_it_tried_like_go() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("goerr-create-temp-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let base = dir.display().to_string();
+        let (_, name) = create_temp(&format!("{base}/"), ".x-", ".tmp").unwrap();
+        let random = name
+            .strip_prefix(&format!("{base}/.x-"))
+            .and_then(|n| n.strip_suffix(".tmp"))
+            .unwrap();
+        assert!(random.parse::<u32>().is_ok(), "{name}");
+        assert_eq!(
+            std::fs::metadata(&name).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        // Go: os.CreateTemp returns OpenFile's PathError for the attempted
+        // name, never the "createtemp" pattern, unless names are exhausted.
+        let missing = format!("{base}/missing");
+        let err = create_temp(&missing, ".y-", "").unwrap_err();
+        let tried = err
+            .strip_prefix(&format!("open {missing}/.y-"))
+            .and_then(|e| e.strip_suffix(": no such file or directory"))
+            .unwrap_or_else(|| panic!("{err}"));
+        assert!(tried.parse::<u32>().is_ok(), "{err}");
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

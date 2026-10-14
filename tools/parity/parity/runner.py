@@ -9,6 +9,7 @@ re-checks.
 
 from __future__ import annotations
 
+import base64
 import concurrent.futures
 import contextlib
 import fcntl
@@ -299,9 +300,18 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 spec = step["write"]
                 path = Path(sandbox.expand(spec["path"]))
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(sandbox.expand(spec.get("content", "")))
+                if "base64" in spec:
+                    path.write_bytes(base64.b64decode(spec["base64"]))
+                else:
+                    path.write_text(sandbox.expand(spec.get("content", "")))
                 path.chmod(int(spec.get("mode", "0644"), 8))
                 steps[label] = {"wrote": spec["path"]}
+            elif "symlink" in step:
+                spec = step["symlink"]
+                link = Path(sandbox.expand(spec["path"]))
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.symlink_to(sandbox.expand(spec["target"]))
+                steps[label] = {"symlink": spec["path"]}
             elif "mkdir" in step:
                 Path(sandbox.expand(step["mkdir"]["path"])).mkdir(parents=True, exist_ok=True)
                 steps[label] = {"mkdir": step["mkdir"]["path"]}
@@ -318,10 +328,13 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 server = None
             elif "httpStub" in step:
                 spec = step["httpStub"]
-                stub = agent.HttpStub(spec.get("responses", []), spec.get("default", {"status": 200}))
+                tls = agent.make_test_tls(sandbox.root / "tls") if spec.get("tls") else None
+                stub = agent.HttpStub(spec.get("responses", []), spec.get("default", {"status": 200}), tls)
                 stubs[label] = stub
                 sandbox.captured[spec.get("portVar", "STUB_PORT")] = str(stub.port)
                 steps[label] = {"port": stub.port}
+            elif "httpRequests" in step:
+                steps[label] = {"paths": list(stubs[step["httpRequests"]["stub"]].paths)}
             elif "providerStub" in step:
                 spec = step["providerStub"]
                 stub = provider_stub.ProviderStub(json.loads(sandbox.expand(json.dumps(spec))))
@@ -396,6 +409,8 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
         observation["trace"] = sandbox.trace()
     if "files" in collect:
         observation["files"] = sandbox.files()
+    if "homeTree" in collect:
+        observation["homeTree"] = sandbox.tree("home")
     if "sqlite" in collect:
         observation["sqlite"] = sandbox.sqlite_schemas()
     if "sqliteRows" in collect:
@@ -586,7 +601,8 @@ def compare_once(left: agent.Impl, right: agent.Impl, scenario: dict, run_id: st
     divergences: list[dict] = []
     if cross_implementation(left, right):
         norm_l, norm_r, divergences = canon.apply_divergences(
-            norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE))
+            norm_l, norm_r, spec.get("divergences", []), canon.load_divergences(DIVERGENCE_FILE),
+            rust_side="b" if right.label.startswith("rust") else "a")
     norm_l, norm_r = _reconcile_optional_masks(norm_l, norm_r, spec.get("masks", []))
     differences = canon.diff(norm_l, norm_r)
     return {

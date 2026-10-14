@@ -1,0 +1,1880 @@
+{
+  "capabilities": {
+    "agent_shell": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-exec@builtin",
+      "status": "compliant"
+    },
+    "apply_manifest": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "build_and_push_oci_image": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "cancel_operation": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "check_local_llm_prerequisites": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "check_local_prerequisites": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "cleanup_container_storage": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "compact_host_vm_disk": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-vm-subsystem@builtin",
+      "status": "compliant"
+    },
+    "configure_agent_connection": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/agent-connection@builtin",
+      "status": "compliant"
+    },
+    "configure_host_network": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "configure_local_llm_model": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "configure_local_llm_runtime": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "configure_network": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "configure_oci_storage": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "configure_service_domain": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "create_vm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "delete_k8s_resource": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "delete_oci_registry": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "delete_postgresql": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "delete_vm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "detect_host_platform": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-info@builtin",
+      "status": "compliant"
+    },
+    "diagnose_bridge": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/bridge@builtin",
+      "status": "compliant"
+    },
+    "discover_service_ingress": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "ensure_container_engine": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/container-engine@builtin",
+      "status": "compliant"
+    },
+    "ensure_host_artifact": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-artifacts@builtin",
+      "status": "compliant"
+    },
+    "ensure_host_file": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-files@builtin",
+      "status": "compliant"
+    },
+    "ensure_host_firewall_rule": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-firewall@builtin",
+      "status": "compliant"
+    },
+    "ensure_host_service_supervisor": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-services@builtin",
+      "status": "compliant"
+    },
+    "ensure_host_tool": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-tools@builtin",
+      "status": "compliant"
+    },
+    "ensure_local_llm_k3s_proxy": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "ensure_local_llm_relay": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "ensure_local_llm_server_binary": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "ensure_oci_builder": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "ensure_public_mcp_quick_tunnel": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/public-mcp@builtin",
+      "status": "compliant"
+    },
+    "ensure_public_mcp_tunnel": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/public-mcp@builtin",
+      "status": "compliant"
+    },
+    "ensure_sql_connector": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "ensure_sqlite_database": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "exec_command": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-exec@builtin",
+      "status": "compliant"
+    },
+    "exec_kubernetes_command": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "extract_host_archive": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-archives@builtin",
+      "status": "compliant"
+    },
+    "garbage_collect_cluster_registry": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_capability_catalog": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/catalog@builtin",
+      "status": "compliant"
+    },
+    "get_host_capacity": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-resources@builtin",
+      "status": "compliant"
+    },
+    "get_host_info": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-info@builtin",
+      "status": "compliant"
+    },
+    "get_host_plan_run": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/plans@builtin",
+      "status": "compliant"
+    },
+    "get_k8s_resource": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_k8s_resource_status": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_local_status": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_oci_registry_status": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_operation": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_postgresql_service_status": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_postgresql_status": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_runtime_recipe_run": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/runtime-recipes@builtin",
+      "status": "compliant"
+    },
+    "get_sql_connector_status": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_sqlite_database_status": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "get_tunnel_run": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/tunnel-recipes@builtin",
+      "status": "compliant"
+    },
+    "get_vm_info": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/instance-inventory@builtin",
+      "status": "compliant"
+    },
+    "inspect_container_storage": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "inspect_guest_storage": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "inspect_host_file": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-observation@builtin",
+      "status": "compliant"
+    },
+    "inspect_host_service": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-observation@builtin",
+      "status": "compliant"
+    },
+    "inspect_host_service_supervisor": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-services@builtin",
+      "status": "compliant"
+    },
+    "inspect_workload": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_cluster_agent": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_helm_chart": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_local_llm_model": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_oci_registry": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_postgresql": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_provider_tools": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_sql_forward_sidecar": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "install_virtualization_stack": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/virtualization-stack@builtin",
+      "status": "compliant"
+    },
+    "list_agents": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_certificate_issuers": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_configmap_keys": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_deployments": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_host_services": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-observation@builtin",
+      "status": "compliant"
+    },
+    "list_ingress_classes": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_k8s_events": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_kubernetes_clusters": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_local_llm_models": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_namespaces": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_operations": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_pods": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_secret_keys": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_services": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_storage_classes": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "list_vms": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/instance-inventory@builtin",
+      "status": "compliant"
+    },
+    "open_assistant_session": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "status": "unported"
+    },
+    "opute.provider.install": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/providers@builtin",
+      "status": "compliant"
+    },
+    "opute.provider.reload": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/providers@builtin",
+      "status": "compliant"
+    },
+    "opute.provider.status": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/providers@builtin",
+      "status": "compliant"
+    },
+    "opute.provider.teardown": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/providers@builtin",
+      "status": "compliant"
+    },
+    "opute.provider.validate": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/providers@builtin",
+      "status": "compliant"
+    },
+    "prepare_host_agent_artifacts": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-artifacts@builtin",
+      "status": "compliant"
+    },
+    "probe_gpu_container": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "probe_http_endpoint": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-observation@builtin",
+      "status": "compliant"
+    },
+    "probe_local_llm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "probe_openai_compatible_server": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "probe_virtualization_gpu": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/instance-inventory@builtin",
+      "status": "compliant"
+    },
+    "provision_container": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "provision_vm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "prune_unused_cluster_images": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "put_k8s_secret": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "reconcile_host_resource_policy": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-resources@builtin",
+      "status": "compliant"
+    },
+    "reconcile_postgresql_service": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "reconcile_serving_assignment": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "recover_bridge": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/bridge@builtin",
+      "status": "compliant"
+    },
+    "register_kubernetes_cluster": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "release_postgresql_service_relay": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "release_sql_connector": {
+      "internal": true,
+      "published": {
+        "platform": false,
+        "standalone": false
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_host_file": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-files@builtin",
+      "status": "compliant"
+    },
+    "remove_local_llm_k3s_proxy": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_local_llm_model": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_local_llm_relay": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_postgresql_service": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_public_mcp_quick_tunnel": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/public-mcp@builtin",
+      "status": "compliant"
+    },
+    "remove_service_domain": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_sqlite_database": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "remove_vm_network_device": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "render_helm_template": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "request_task_input": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "task-input",
+      "service": "host-agent:incus/tasks@builtin",
+      "status": "compliant"
+    },
+    "reset_incus_stack": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "resize_console": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "restart_host_service": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-services@builtin",
+      "status": "compliant"
+    },
+    "restart_vm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "run_host_command": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-exec@builtin",
+      "status": "compliant"
+    },
+    "run_host_local_recipe": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/host-recipes@builtin",
+      "status": "compliant"
+    },
+    "run_host_plan": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/plans@builtin",
+      "status": "compliant"
+    },
+    "run_instance_command": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/instance-exec@builtin",
+      "status": "compliant"
+    },
+    "run_runtime_recipe": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/runtime-recipes@builtin",
+      "status": "compliant"
+    },
+    "run_sql": {
+      "internal": false,
+      "published": {
+        "platform": false,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "run_tunnel_recipe": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/tunnel-recipes@builtin",
+      "status": "compliant"
+    },
+    "send_console_input": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "set_host_service_state": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-services@builtin",
+      "status": "compliant"
+    },
+    "shutdown_host_vm_subsystem": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-vm-subsystem@builtin",
+      "status": "compliant"
+    },
+    "stage_build_context": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "start_local_llm_runtime": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "start_vm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "stop_local_llm_runtime": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "stop_vm": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "stream_vm_console": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "terminate_host_vm_distribution": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/host-vm-subsystem@builtin",
+      "status": "compliant"
+    },
+    "trim_guest_storage": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "uninstall_provider_tools": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "uninstall_virtualization_stack": {
+      "consumers": [
+        "tools/call",
+        "plan executor"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "service": "host-agent:incus/virtualization-stack@builtin",
+      "status": "compliant"
+    },
+    "update_vm_resources": {
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "dispatch",
+      "status": "unported"
+    },
+    "validate_host_local_recipe": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/host-recipes@builtin",
+      "status": "compliant"
+    },
+    "validate_host_plan": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/plans@builtin",
+      "status": "compliant"
+    },
+    "validate_runtime_recipe": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/runtime-recipes@builtin",
+      "status": "compliant"
+    },
+    "validate_tunnel_recipe": {
+      "consumers": [
+        "tools/call"
+      ],
+      "internal": false,
+      "published": {
+        "platform": true,
+        "standalone": true
+      },
+      "route": "lifecycle",
+      "service": "host-agent:incus/tunnel-recipes@builtin",
+      "status": "compliant"
+    }
+  },
+  "counts": {
+    "compliant": 56,
+    "unported": 94
+  },
+  "decision": "D14",
+  "gaps": [],
+  "generation": "builtin",
+  "problems": [],
+  "provider": "host-agent:incus",
+  "schemaVersion": "opute-seam-report.v1",
+  "services": [
+    {
+      "capability": "host-agent:incus.host-info",
+      "inject": [],
+      "key": "host-agent:incus/host-info@builtin",
+      "operations": [
+        "get_host_info",
+        "detect_host_platform"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.instance-inventory",
+      "inject": [],
+      "key": "host-agent:incus/instance-inventory@builtin",
+      "operations": [
+        "get_vm_info",
+        "probe_virtualization_gpu",
+        "list_vms"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-observation",
+      "inject": [],
+      "key": "host-agent:incus/host-observation@builtin",
+      "operations": [
+        "inspect_host_file",
+        "inspect_host_service",
+        "list_host_services",
+        "probe_http_endpoint"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-files",
+      "inject": [],
+      "key": "host-agent:incus/host-files@builtin",
+      "operations": [
+        "ensure_host_file",
+        "remove_host_file"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-archives",
+      "inject": [],
+      "key": "host-agent:incus/host-archives@builtin",
+      "operations": [
+        "extract_host_archive"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-tools",
+      "inject": [],
+      "key": "host-agent:incus/host-tools@builtin",
+      "operations": [
+        "ensure_host_tool"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-exec",
+      "inject": [],
+      "key": "host-agent:incus/host-exec@builtin",
+      "operations": [
+        "agent_shell",
+        "run_host_command",
+        "exec_command"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-services",
+      "inject": [],
+      "key": "host-agent:incus/host-services@builtin",
+      "operations": [
+        "restart_host_service",
+        "set_host_service_state",
+        "ensure_host_service_supervisor",
+        "inspect_host_service_supervisor"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.bridge",
+      "inject": [
+        "host-agent:incus/host-services@builtin"
+      ],
+      "key": "host-agent:incus/bridge@builtin",
+      "operations": [
+        "diagnose_bridge",
+        "recover_bridge"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.agent-connection",
+      "inject": [
+        "host-agent:incus/host-services@builtin"
+      ],
+      "key": "host-agent:incus/agent-connection@builtin",
+      "operations": [
+        "configure_agent_connection"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-firewall",
+      "inject": [],
+      "key": "host-agent:incus/host-firewall@builtin",
+      "operations": [
+        "ensure_host_firewall_rule"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.container-engine",
+      "inject": [],
+      "key": "host-agent:incus/container-engine@builtin",
+      "operations": [
+        "ensure_container_engine"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.virtualization-stack",
+      "inject": [],
+      "key": "host-agent:incus/virtualization-stack@builtin",
+      "operations": [
+        "install_virtualization_stack",
+        "uninstall_virtualization_stack"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.instance-exec",
+      "inject": [],
+      "key": "host-agent:incus/instance-exec@builtin",
+      "operations": [
+        "run_instance_command"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-artifacts",
+      "inject": [
+        "host-agent:incus/host-tools@builtin"
+      ],
+      "key": "host-agent:incus/host-artifacts@builtin",
+      "operations": [
+        "ensure_host_artifact",
+        "prepare_host_agent_artifacts"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.public-mcp",
+      "inject": [
+        "host-agent:incus/host-artifacts@builtin",
+        "host-agent:incus/host-files@builtin",
+        "host-agent:incus/host-services@builtin"
+      ],
+      "key": "host-agent:incus/public-mcp@builtin",
+      "operations": [
+        "ensure_public_mcp_tunnel",
+        "ensure_public_mcp_quick_tunnel",
+        "remove_public_mcp_quick_tunnel"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-vm-subsystem",
+      "inject": [],
+      "key": "host-agent:incus/host-vm-subsystem@builtin",
+      "operations": [
+        "terminate_host_vm_distribution",
+        "shutdown_host_vm_subsystem",
+        "compact_host_vm_disk"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.catalog",
+      "inject": [],
+      "key": "host-agent:incus/catalog@builtin",
+      "operations": [
+        "get_capability_catalog"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-resources",
+      "inject": [],
+      "key": "host-agent:incus/host-resources@builtin",
+      "operations": [
+        "get_host_capacity",
+        "reconcile_host_resource_policy"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.tasks",
+      "inject": [],
+      "key": "host-agent:incus/tasks@builtin",
+      "operations": [
+        "request_task_input"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.plans",
+      "inject": [],
+      "key": "host-agent:incus/plans@builtin",
+      "operations": [
+        "validate_host_plan",
+        "run_host_plan",
+        "get_host_plan_run"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.host-recipes",
+      "inject": [
+        "host-agent:incus/plans@builtin"
+      ],
+      "key": "host-agent:incus/host-recipes@builtin",
+      "operations": [
+        "validate_host_local_recipe",
+        "run_host_local_recipe"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.runtime-recipes",
+      "inject": [
+        "host-agent:incus/plans@builtin"
+      ],
+      "key": "host-agent:incus/runtime-recipes@builtin",
+      "operations": [
+        "validate_runtime_recipe",
+        "run_runtime_recipe",
+        "get_runtime_recipe_run"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.tunnel-recipes",
+      "inject": [
+        "host-agent:incus/plans@builtin"
+      ],
+      "key": "host-agent:incus/tunnel-recipes@builtin",
+      "operations": [
+        "validate_tunnel_recipe",
+        "run_tunnel_recipe",
+        "get_tunnel_run"
+      ]
+    },
+    {
+      "capability": "host-agent:incus.providers",
+      "inject": [
+        "host-agent:incus/host-observation@builtin",
+        "host-agent:incus/plans@builtin",
+        "host-agent:incus/runtime-recipes@builtin",
+        "host-agent:incus/tunnel-recipes@builtin"
+      ],
+      "key": "host-agent:incus/providers@builtin",
+      "operations": [
+        "opute.provider.install",
+        "opute.provider.validate",
+        "opute.provider.status",
+        "opute.provider.reload",
+        "opute.provider.teardown"
+      ]
+    }
+  ]
+}

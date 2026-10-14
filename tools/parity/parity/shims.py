@@ -18,8 +18,16 @@ Fixture format (tools/parity/fixtures/shims/<name>.json):
       "default": {"exit": 1, "stderr": "unsupported parity shim invocation\\n"}
     }
 
-A rule matches on exact argv or on an argv prefix. The first match wins. An
-unmatched invocation uses "default", and is still recorded.
+A rule matches on exact argv, on an argv prefix, or on a substring of one
+argument ("argvContains"). The first match wins. An unmatched invocation uses
+"default", and is still recorded. A rule's "creates" lists sandbox-relative
+paths written as executables after the call is recorded, standing in for an
+installer's effect; "writes" ({"after": flag, "content": text}) writes the
+content to the argument following the flag; "hashFiles" records the
+sha256 of each sandbox file named in the argv. "ifExists" / "unlessExists"
+(sandbox-relative paths) make a rule match only while that file does or does
+not exist, so a later call can see an earlier rule's "creates".
+"stdoutBase64" writes raw bytes (UTF-16 output, say) with nothing appended.
 
 A rule with "gate": "<name>" blocks after it is recorded: the shim marks
 gates/<name>.waiting.<pid> and waits on the FIFO gates/<name>.fifo until the
@@ -31,6 +39,7 @@ NO_ORPHANS invariant).
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import sys
@@ -71,6 +80,9 @@ def _match(rule: dict, argv: list[str]) -> bool:
     if "argvPrefix" in rule:
         prefix = rule["argvPrefix"]
         return argv[: len(prefix)] == prefix
+    if "argvContains" in rule:
+        # A substring of one argument: for scripts that embed sandbox paths.
+        return any(rule["argvContains"] in arg for arg in argv)
     return False
 
 
@@ -225,15 +237,37 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
     rules = fixture.get("commands", {}).get(name, [])
     chosen, index = fixture.get("default", {"exit": 1}), None
     for i, rule in enumerate(rules):
-        if _match(rule, argv):
+        if _match(rule, argv) and _holds(rule, root):
             chosen, index = rule, i
             break
     entry = {"cmd": name, "argv": argv, "rule": index}
+    if chosen.get("hashFiles"):
+        # Files passed by path (a generated temp file, say) are recorded by
+        # content, so their names may differ while their bytes are compared.
+        entry["argvFiles"] = {str(i): hashlib.sha256(Path(a).read_bytes()).hexdigest()
+                              for i, a in enumerate(argv) if a.startswith("/") and Path(a).is_file()
+                              and str(Path(a)).startswith(str(root))}
     if stdin_digest:
         entry["stdinSha256"] = stdin_digest
     _append(log_path, entry)
     if chosen.get("gate"):
         wait_gate(root, chosen["gate"])
+    writes = chosen.get("writes")
+    if writes and writes["after"] in argv[:-1]:
+        # The effect of e.g. `curl -o PATH`: content written to the argument
+        # that follows the flag.
+        Path(argv[argv.index(writes["after"]) + 1]).write_text(writes["content"])
+    for relative in chosen.get("creates", []):
+        # The effect an installer would have: an executable at a
+        # sandbox-relative path.
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("#!/bin/sh\nexit 0\n")
+        target.chmod(0o755)
+    if chosen.get("stdoutBase64"):
+        sys.stdout.flush()
+        sys.stdout.buffer.write(base64.b64decode(chosen["stdoutBase64"]))
+        sys.stdout.buffer.flush()
     if chosen.get("stdout"):
         sys.stdout.write(chosen["stdout"])
         if not chosen["stdout"].endswith("\n"):
@@ -241,6 +275,14 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
     if chosen.get("stderr"):
         sys.stderr.write(chosen["stderr"])
     return int(chosen.get("exit", 0))
+
+
+def _holds(rule: dict, root: Path) -> bool:
+    if "ifExists" in rule and not (root / rule["ifExists"]).exists():
+        return False
+    if "unlessExists" in rule and (root / rule["unlessExists"]).exists():
+        return False
+    return True
 
 
 def read_trace(log_path: Path) -> list[dict]:

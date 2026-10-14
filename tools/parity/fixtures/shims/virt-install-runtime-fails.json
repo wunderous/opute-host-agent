@@ -1,0 +1,135 @@
+{
+ "commands": {
+  "apt-cache": [
+   {
+    "argv": [
+     "show",
+     "virglrenderer2"
+    ],
+    "stdout": "Package: virglrenderer2"
+   },
+   {
+    "argv": [
+     "show",
+     "gpu-ok"
+    ],
+    "stdout": "Package: gpu-ok"
+   },
+   {
+    "argv": [
+     "show",
+     "gpu-missing"
+    ],
+    "exit": 100,
+    "stderr": "E: No packages found\n"
+   },
+   {
+    "argv": [
+     "policy",
+     "incus"
+    ],
+    "stdout": "incus:\n  Installed: (none)\n  Candidate: 1:7.3-ubuntu24.04\n"
+   }
+  ],
+  "apt-get": [],
+  "curl": [
+   {
+    "argvPrefix": [
+     "-fsSL",
+     "https://pkgs.zabbly.com/key.asc",
+     "-o"
+    ],
+    "writes": {
+     "after": "-o",
+     "content": "-----BEGIN PGP PUBLIC KEY BLOCK-----\nparity\n-----END PGP PUBLIC KEY BLOCK-----\n"
+    }
+   }
+  ],
+  "dpkg": [
+   {
+    "argv": [
+     "--print-architecture"
+    ],
+    "stdout": "amd64"
+   }
+  ],
+  "sudo": [
+   {
+    "argvPrefix": [
+     "-n",
+     "install"
+    ],
+    "hashFiles": true
+   },
+   {
+    "argvPrefix": [
+     "-n"
+    ]
+   }
+  ],
+  "incus": [
+   {
+    "argv": [
+     "version"
+    ],
+    "stdout": "7.3"
+   },
+   {
+    "argv": [
+     "storage",
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"default\"}]"
+   },
+   {
+    "argv": [
+     "network",
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"incusbr0\"}]"
+   },
+   {
+    "argv": [
+     "profile",
+     "device",
+     "show",
+     "default"
+    ],
+    "stdout": "devices:\n  eth0:\n    name: eth0\n  root:\n    path: /\n"
+   },
+   {
+    "argv": [
+     "profile",
+     "device",
+     "set",
+     "default",
+     "eth0",
+     "nictype",
+     "bridged"
+    ]
+   },
+   {
+    "argv": [
+     "profile",
+     "device",
+     "set",
+     "default",
+     "eth0",
+     "parent",
+     "incusbr0"
+    ],
+    "exit": 1,
+    "stderr": "Error: parent busy\n"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ },
+ "description": "Install paths through recorded shims. virtualizationVersions ranges over a Go map, so its probes run in random order; only `incus version` is shimmed, keeping the trace ordered (the version table itself is compared by probe_incus_gpu)."
+}

@@ -9,7 +9,8 @@
       {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone"}},
       {"as": "list", "mcp": {"method": "tools/list"}},
       {"as": "stop", "stop": {}}
-    ]
+    ],
+    "compare": {"divergences": ["D19.neutral-host-tool-names"]}
   },
   {
     "id": "catalog.standalone-mutations-enabled",
@@ -21,7 +22,8 @@
       {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"}}},
       {"as": "list", "mcp": {"method": "tools/list"}},
       {"as": "stop", "stop": {}}
-    ]
+    ],
+    "compare": {"divergences": ["D19.neutral-host-tool-names"]}
   },
   {
     "id": "catalog.platform",
@@ -33,7 +35,8 @@
       {"as": "start", "serve": {"argv": ["serve", "--mode=platform"], "profile": "platform"}},
       {"as": "list", "mcp": {"method": "tools/list"}},
       {"as": "stop", "stop": {}}
-    ]
+    ],
+    "compare": {"divergences": ["D19.neutral-host-tool-names"]}
   },
   {
     "id": "catalog.standalone-prefixed-names",
@@ -45,7 +48,8 @@
       {"as": "start", "serve": {"argv": ["serve", "--mode=standalone"], "profile": "standalone", "env": {"OPUTE_MCP_PREFIX_TOOL_NAMES": "true"}}},
       {"as": "list", "mcp": {"method": "tools/list"}},
       {"as": "stop", "stop": {}}
-    ]
+    ],
+    "compare": {"divergences": ["D19.neutral-host-tool-names"]}
   },
   {
     "id": "catalog.unpublished-dispatch",

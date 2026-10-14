@@ -630,6 +630,12 @@ D14 generalizes M7's generation-scoped service mounts into the one service
 context for built-in and external providers. M7's lifecycle tools are revised
 onto the seam with those of M1–M6, before M8 starts.
 
+**Status (2026-10-12): passed.** D15 removes ollama from the gate; hostos
+parity is Go's own install refusal. D16-D18 are applied. The closing cycle
+[`native-2026-10-12-r8`](../../../evidence/local-e2e/native-2026-10-12-r8/validation.json)
+passes Go/Go and Go/Rust 177/177, M5 shape 870/870 and gates m0-m6. No M1-M7
+inventory gap remains ([`evidence/m7/README.md`](../../../evidence/m7/README.md)).
+
 ---
 
 ### M8: Mutating domain operations, one domain at a time
@@ -654,6 +660,20 @@ three-role services, not as a name-switch dispatch table:
 | 8d | oci | build and push (podman/buildah), registry, registry storage, build-context staging | podman + local registry |
 | 8e | postgres / sqlite | platform and standalone Postgres, relay, storage, SQL connector, SQLite database provisioning | Postgres container |
 | 8f | llm / serving | Ollama, llama-server build and prerequisites, relay and gateway, serving assignment and ingress | CPU-only model stub |
+
+**8a status (2026-10-13): exit gate met.** Evidence:
+[`evidence/m8a/README.md`](../../../evidence/m8a/README.md). The m8a gate
+passes, and gates m0–m6 still pass:
+
+- T1 Go/Rust ×5 is 256/256 and Go/Go ×20 is 256/256.
+- T2 is 14/14 in both twin suites (Go/Go ×20, Go/Rust ×5). It covers effect,
+  cleanup and the M4 no-unauthorized-effect rerun.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+The three WSL tools remain `unverified` at T2: they need a WSL2 runner, and
+the gap is owned by M8a. `exec_command` and `run_instance_command` at T2 are
+owned by M8b. The cutover gate fails, as expected, on the remaining owned
+gaps.
 
 **E2E validations per sub-milestone**
 
@@ -857,6 +877,8 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D16 | Provider family publication on a failed candidate | **Decided (owner, 2026-10-12): Rust diverges.** Rust validates a candidate before displacing other providers' family operations, so a failed candidate leaves the prior registry, catalog, executable bindings and MCP tools intact ([`atomic-provider-family-publication`](../atomic-provider-family-publication/proposal.md)); Go is not changed | Go loses the displaced tools on the next publication after a failed candidate, while the displaced provider stays active. |
 | D17 | A null provider input-request entry | **Decided (owner, 2026-10-12): Rust diverges.** Rust refuses a null input-request entry with the decode error `nil InputRequest entry` and keeps serving ([`reject-null-provider-input-requests`](../reject-null-provider-input-requests/proposal.md)); Go's SDK panics and the process exits | A provider must not be able to crash the agent; a crash has no client contract worth preserving. |
 | D18 | Durable record of a delegated callback child that never starts | **Decided (owner, 2026-10-12): extend D12 (option A).** A delegated child that is never acknowledged, refused or expired leaves no durable row; after a restart its handle is unknown ([`unadmitted-callback-task-record`](../unadmitted-callback-task-record/proposal.md)). The owner asked for the long-term behaviour; durable operation records hold only admitted work | One rule for every task-aware call: persist only what was admitted. Go's row for a never-started child stays `working` forever. |
+| D19 | Provider-neutral host tool names | **Decided (owner, 2026-10-12): neutral names, with Go aliases.** Rust publishes `install_virtualization_stack`, `uninstall_virtualization_stack`, `probe_virtualization_gpu`, `terminate_host_vm_distribution`, `shutdown_host_vm_subsystem`, `compact_host_vm_disk`, `ensure_container_engine` and `ensure_local_cluster_runtime`, and the field `packageName` for `incusPackage`. Each Go name stays a hidden, deprecated `tools/call` alias that reaches the same Consumer, until cutover ([`neutral-host-tool-names`](../neutral-host-tool-names/proposal.md)). Catalog revisions change; each Rust revision is pinned with its Go pair, and the difference is declared as `D19.neutral-host-tool-names` | Under D14 only a Service Provider names its implementation; the aliases keep Platform and recipes working until cutover. |
+| D20 | Error text for a corrupt zstd block | **Decided (owner, 2026-10-12): declare it, do not port the decoder.** For a corrupt compressed block, `extract_host_archive` fails as Go does, with the same `extract host archive: ` prefix and the same tree, but the text after it is the Rust decoder's own ([`zstd-corrupt-block-error-text`](../zstd-corrupt-block-error-text/proposal.md)). Frame-level and tar faults keep Go's exact text. Declared as `D20.corrupt-zstd-block`, only in `host-domain.archives.corrupt-blocks` | Matching klauspost's internal messages would mean porting its decoder. Recipe archives are sha256-verified before extraction. |
 
 ## 7. Risks this plan specifically mitigates
 

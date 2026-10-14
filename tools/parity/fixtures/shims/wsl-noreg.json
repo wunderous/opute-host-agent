@@ -1,0 +1,48 @@
+{
+ "description": "WSL2 interop with wsl.exe only: the registry query cannot run. The host identity's MachineGuid query is answered.",
+ "commands": {
+  "wsl.exe": [
+   {
+    "argv": [
+     "--terminate",
+     "Ubuntu"
+    ]
+   },
+   {
+    "argv": [
+     "--terminate",
+     "Busy"
+    ],
+    "exit": 3,
+    "stderr": "The operation could not be completed.\r\n"
+   },
+   {
+    "argv": [
+     "--shutdown"
+    ]
+   },
+   {
+    "argv": [
+     "-l",
+     "-v"
+    ],
+    "stdoutBase64": "//4gACAATgBBAE0ARQAgACAAIAAgACAAIAAgAFMAVABBAFQARQAgACAAIAAgACAAIAAgACAAIAAgACAAVgBFAFIAUwBJAE8ATgANAAoAKgAgAFUAYgB1AG4AdAB1ACAAIAAgACAAIABSAHUAbgBuAGkAbgBnACAAIAAgACAAIAAgACAAIAAgADIADQAKACAAIABPAHQAaABlAHIAIAAgACAAIAAgACAAUwB0AG8AcABwAGUAZAAgACAAIAAgACAAIAAgACAAIAAyAA0ACgAgACAATABvAGMAawBlAGQAIAAgACAAIAAgAFMAdABvAHAAcABlAGQAIAAgACAAIAAgACAAIAAgACAAMgANAAoAIAAgAFEAdQBpAHIAawAgACAAIAAgACAAIABTAHQAbwBwAHAAZQBkACAAIAAgACAAIAAgACAAIAAgADIADQAKACAAIABEAGUAbgBpAGUAZAAgACAAIAAgACAAUwB0AG8AcABwAGUAZAAgACAAIAAgACAAIAAgACAAIAAyAA0ACgAgACAARgBhAGkAbABpAG4AZwAgACAAIAAgAFMAdABvAHAAcABlAGQAIAAgACAAIAAgACAAIAAgACAAMgANAAoAIAAgAEIAYQBkAFMAaQB6AGUAIAAgACAAIABTAHQAbwBwAHAAZQBkACAAIAAgACAAIAAgACAAIAAgADIADQAKACAAIABTAGkAegBlAEYAYQBpAGwAcwAgACAAUwB0AG8AcABwAGUAZAAgACAAIAAgACAAIAAgACAAIAAyAA0ACgAgACAATgBvAFYAaABkAHgAIAAgACAAIAAgAFMAdABvAHAAcABlAGQAIAAgACAAIAAgACAAIAAgACAAMgANAAoA"
+   }
+  ],
+  "powershell.exe": [
+   {
+    "argv": [
+     "-NoProfile",
+     "-NonInteractive",
+     "-Command",
+     "(Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Cryptography' -Name MachineGuid).MachineGuid"
+    ],
+    "stdout": "5f0c2a8e-1b3d-4c6e-9a7f-0123456789ab"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

@@ -6,12 +6,19 @@
     "internal/domain/host/tool.go:280"
    ],
    "command": "apt-cache",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "policy incus",
+    "policy incus-parity",
+    "show gpu-missing",
+    "show gpu-ok",
+    "show virglrenderer2"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
@@ -28,35 +35,50 @@
     "internal/domain/oci/builder.go:77"
    ],
    "command": "apt-get",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "sudo -n apt-get autoremove",
+    "sudo -n apt-get install",
+    "sudo -n apt-get purge",
+    "sudo -n apt-get update"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.artifacts.download-and-agent-build",
+    "t2.host-domain.tools.apt-ninja",
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "internal/domain/host/host_service.go:70"
    ],
    "command": "bash",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-g6f9wcb5/home/.bun/bin/bun'",
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-xhxsdcc8/home/.bun/bin/bun'",
+    "-lc mkdir -p '/tmp/parity-a-g6f9wcb5/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-g6f9wcb5/home/.local/bin' USE_SUDO=false bash",
+    "-lc mkdir -p '/tmp/parity-a-xhxsdcc8/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-xhxsdcc8/home/.local/bin' USE_SUDO=false bash"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.artifacts.download-and-agent-build"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "internal/domain/oci/build_and_push.go:109"
    ],
    "command": "buildah",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
+   "gapReason": "run only by internal/domain/oci (image build); OCI effects are M8d",
+   "milestone": "M8d",
    "observedInvocations": [],
-   "owner": "host",
+   "owner": "oci",
    "status": "gap",
+   "t2Scenarios": [],
    "tier": "unclassified"
   },
   {
@@ -64,12 +86,15 @@
     "internal/domain/host/tool.go:240"
    ],
    "command": "curl",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "-fsSL https://pkgs.zabbly.com/key.asc"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
@@ -77,24 +102,31 @@
     "internal/domain/host/tool.go:96"
    ],
    "command": "dpkg",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "--print-architecture",
+    "sudo -n dpkg --configure"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "internal/domain/host/incus_uninstall.go:151"
    ],
    "command": "dpkg-query",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "-W -f=${Package} ${Status}\n"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
@@ -102,11 +134,12 @@
     "internal/domain/host/tool.go:445"
    ],
    "command": "helm",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
+   "gapReason": "host-domain code only looks helm up (ensure_host_tool) and installs it through the remote installer script, observed as bash in T1; helm itself runs in internal/domain/kubernetes (install_helm_chart), M8c",
+   "milestone": "M8c",
    "observedInvocations": [],
-   "owner": "host",
+   "owner": "kubernetes",
    "status": "gap",
+   "t2Scenarios": [],
    "tier": "unclassified"
   },
   {
@@ -117,12 +150,17 @@
    "observedInvocations": [
     "config get",
     "exec ct-c",
+    "exec vm-01",
     "exec vm-a",
     "exec web1",
     "exec worker-01",
     "list --format",
+    "network create",
+    "network list",
+    "profile device",
     "query /1.0/instances/ct-c/state",
     "query /1.0/instances/ct-d/state",
+    "query /1.0/instances/vm-01/state",
     "query /1.0/instances/vm-a/state",
     "query /1.0/instances/vm-b/state",
     "query /1.0/instances/web1/state",
@@ -132,11 +170,16 @@
     "query /1.0/storage-pools",
     "query /1.0/storage-pools/fast",
     "query /1.0/storage-pools/pool1",
+    "storage create",
+    "storage list",
     "version"
    ],
    "owner": "host",
    "status": "covered",
-   "tier": "T1-shim-observed"
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
@@ -145,35 +188,65 @@
     "internal/domain/host/tool.go:276"
    ],
    "command": "install",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "sudo -n install -d",
+    "sudo -n install -m"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "internal/domain/serving/assignment.go:343"
    ],
    "command": "kill",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
+   "gapReason": "run only by internal/domain/serving (assignment liveness probe, kill -0); serving effects are M8f",
+   "milestone": "M8f",
    "observedInvocations": [],
-   "owner": "host",
+   "owner": "serving",
    "status": "gap",
+   "t2Scenarios": [],
    "tier": "unclassified"
+  },
+  {
+   "anchors": [],
+   "command": "loginctl",
+   "observedInvocations": [
+    "enable-linger denied-user",
+    "enable-linger parity-user",
+    "enable-linger sudo-user",
+    "enable-linger unseen-user",
+    "show-user denied-user",
+    "show-user parity-user",
+    "show-user sudo-user",
+    "show-user unseen-user",
+    "sudo -n loginctl enable-linger"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.connection.restart-user-service",
+    "t2.host-domain.exec.workloads",
+    "t2.host-domain.public.tunnel-and-quick",
+    "t2.host-domain.services.user-lifecycle"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "internal/domain/llm/ollama.go:100"
    ],
    "command": "ollama",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
+   "gapReason": "run only by internal/domain/llm (Ollama runtime); LLM effects are M8f",
+   "milestone": "M8f",
    "observedInvocations": [],
-   "owner": "host",
+   "owner": "llm",
    "status": "gap",
+   "t2Scenarios": [],
    "tier": "unclassified"
   },
   {
@@ -183,12 +256,36 @@
     "internal/domain/oci/container_runtime.go:520"
    ],
    "command": "podman",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
+   "gapReason": "run only by internal/domain/oci (builder and container runtime); OCI effects are M8d",
+   "milestone": "M8d",
    "observedInvocations": [],
-   "owner": "host",
+   "owner": "oci",
    "status": "gap",
+   "t2Scenarios": [],
    "tier": "unclassified"
+  },
+  {
+   "anchors": [],
+   "command": "powershell.exe",
+   "observedInvocations": [
+    "-NoProfile -NonInteractive"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [],
+   "tier": "T1-shim-observed"
+  },
+  {
+   "anchors": [],
+   "command": "reg.exe",
+   "observedInvocations": [
+    "query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss",
+    "query HKLM\\SOFTWARE\\Microsoft\\Cryptography"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [],
+   "tier": "T1-shim-observed"
   },
   {
    "anchors": [
@@ -196,24 +293,41 @@
     "internal/domain/host/incus_uninstall.go:115"
    ],
    "command": "rm",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "sudo -n rm -f",
+    "sudo -n rm -rf"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage.go:202"
    ],
    "command": "sudo",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "-n /usr/bin/systemctl",
+    "-n apt-get",
+    "-n dpkg",
+    "-n install",
+    "-n loginctl",
+    "-n rm",
+    "-n systemctl",
+    "-n usermod"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.artifacts.download-and-agent-build",
+    "t2.host-domain.services.system-lifecycle",
+    "t2.host-domain.tools.apt-ninja",
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
@@ -225,27 +339,60 @@
     "plugins/llm/ollama/cmd/opute-provider-ollama/context.go:315"
    ],
    "command": "systemctl",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "sudo -n /usr/bin/systemctl daemon-reload",
+    "sudo -n /usr/bin/systemctl enable",
+    "sudo -n /usr/bin/systemctl restart",
+    "sudo -n /usr/bin/systemctl start",
+    "sudo -n /usr/bin/systemctl stop",
+    "sudo -n systemctl disable",
+    "sudo -n systemctl enable"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.bridge.recover",
+    "t2.host-domain.connection.restart-user-service",
+    "t2.host-domain.policy.system-agent-unit",
+    "t2.host-domain.policy.user-agent-unit",
+    "t2.host-domain.public.tunnel-and-quick",
+    "t2.host-domain.services.system-lifecycle",
+    "t2.host-domain.services.user-lifecycle",
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
     "internal/domain/host/tool.go:120"
    ],
    "command": "usermod",
-   "gapReason": "host effect tiering of domain operations is M8",
-   "milestone": "M8",
-   "observedInvocations": [],
+   "observedInvocations": [
+    "sudo -n usermod -aG"
+   ],
    "owner": "host",
-   "status": "gap",
-   "tier": "unclassified"
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.virt.stack-install-uninstall"
+   ],
+   "tier": "T2-sandbox"
+  },
+  {
+   "anchors": [],
+   "command": "wsl.exe",
+   "observedInvocations": [
+    "--shutdown",
+    "--terminate Busy",
+    "--terminate Ubuntu",
+    "-l -v"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [],
+   "tier": "T1-shim-observed"
   }
  ],
- "note": "Static scan finds literal command names only. Commands built from variables (for example hostexec wrappers) are found through shim traces as scenarios grow; a command never observed stays a gap.",
+ "note": "Static scan finds literal command names only. Commands built from variables (for example hostexec wrappers) are found through shim traces as scenarios grow; a command run through `sudo -n` is recorded under its own name too. Tiers: T1-shim-observed (argv proved by shim trace parity), T2-sandbox (also executed for real in the twin T2 sandboxes, scenarios listed). A command never observed stays a gap.",
  "owner": "host",
  "surface": "effects"
 }
