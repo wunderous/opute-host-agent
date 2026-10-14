@@ -1675,6 +1675,40 @@ mod tests {
         );
     }
 
+    /// D21: Go's reset name reaches the neutral tool, Go's GPU field moves to
+    /// the published one, and the published catalog lists neither.
+    #[test]
+    fn d21_aliases_route_to_neutral_names() {
+        assert_eq!(
+            neutral_name("reset_incus_stack"),
+            Some("reset_virtualization_stack")
+        );
+        assert!(alias_names().iter().any(|n| n == "reset_incus_stack"));
+        let args = json!({"containerName": "box1", "wslGpuLibs": true});
+        let moved =
+            renamed_field_arguments("provision_container", args.as_object().unwrap()).unwrap();
+        assert_eq!(
+            J::Object(moved),
+            json!({"containerName": "box1", "hostGpuLibs": true})
+        );
+        let both = json!({"wslGpuLibs": false, "hostGpuLibs": true});
+        let kept =
+            renamed_field_arguments("provision_container", both.as_object().unwrap()).unwrap();
+        assert_eq!(J::Object(kept), json!({"hostGpuLibs": true}));
+        let cat = for_mode(false);
+        let listed = |name: &str| cat.tools.iter().any(|d| d.name == name);
+        assert!(!listed("reset_incus_stack") && listed("reset_virtualization_stack"));
+        // Still callable: find resolves the hidden alias.
+        assert!(cat.find("reset_incus_stack").is_some());
+        let provision = cat.find("provision_container").unwrap();
+        assert!(provision.input_schema["properties"]
+            .get("wslGpuLibs")
+            .is_none());
+        assert!(provision.input_schema["properties"]
+            .get("hostGpuLibs")
+            .is_some());
+    }
+
     #[test]
     fn wire_names_round_trip() {
         assert_eq!(

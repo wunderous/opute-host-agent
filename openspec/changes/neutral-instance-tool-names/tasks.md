@@ -10,5 +10,5 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 Extend the alias scenario: `reset_incus_stack` and `wslGpuLibs` reach the same Consumer as their neutral names, and neither is listed.
+- [x] 3.1 Extend the alias scenario: `reset_incus_stack` and `wslGpuLibs` reach the same Consumer as their neutral names, and neither is listed. T1 `incus-domain.d21.aliases` calls both Go names against Go and Rust and lists the catalog; `catalog::tests::d21_aliases_route_to_neutral_names` proves the routing to `reset_virtualization_stack` and `hostGpuLibs` and that neither Go name is listed.
 - [ ] 3.2 Include the rename in the M8b closing captures: Go/Go x20 and Go/Rust x5.
