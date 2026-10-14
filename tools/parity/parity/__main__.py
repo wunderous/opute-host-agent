@@ -174,9 +174,7 @@ def main(argv: list[str] | None = None) -> int:
         binaries = {i.label: i.binary for i in map(_impl, args.binary)}
         if args.twin:
             doc = t2_oracle.run(args.go_src.resolve(), binaries, args.out)
-            # The negative control must fail every expected test, not merely exit non-zero.
-            return 0 if all(r["status"] == "PASS" if r["binary"] != oracle.NEGATIVE_CONTROL[0]
-                            else not set(r["expectedTests"]) & set(r["passed"]) for r in doc["results"]) else 1
+            return 0 if all(r["status"] == "PASS" for r in doc["results"]) else 1
         doc = oracle.run(args.go_src.resolve(), binaries, args.out)
         ok = all((r["exit"] == 0 and set(r["expectedTests"]) <= set(r["passed"]))
                  if r["binary"] != oracle.NEGATIVE_CONTROL[0] else r["exit"] != 0

@@ -11,7 +11,7 @@
    "TestLiveVMCreateListDelete",
    "TestLiveResetIncusStackDeleteReconcileAndVerify"
   ],
-  "note": "M8b validation 7: the Go baseline's own live Incus tests, unchanged, run inside a disposable nested-Incus twin against each binary. The overlay only makes the helpers that would start the in-process Go server start OPUTE_STANDALONE_BINARY as a standalone agent (Incus provider, mutations allowed, its own state, relay dir and bearer token; the owned-reset helper adds the ownership identity, enforce mode and shared-host owner it passes in-process) and send the bearer token. A skipped test is not a pass. Compile repair: at the pinned commit test/live does not build (its TestMain calls hostruntime.RequireLinux, since unexported as requireLinux); the overlay calls the exported RequireSupportedPlatform(IDIncus), which returns exactly requireLinux() for Incus.",
+  "note": "M8b validation 7: the Go baseline's own live Incus tests, unchanged, run inside a disposable nested-Incus twin against each binary. The overlay only makes the helpers that would start the in-process Go server start OPUTE_STANDALONE_BINARY as a standalone agent (Incus provider, mutations allowed, its own state, relay dir and bearer token; the owned-reset helper adds the ownership identity, enforce mode and shared-host owner it passes in-process) and send the bearer token. Compile repair: at the pinned commit test/live does not build (its TestMain calls hostruntime.RequireLinux, since unexported as requireLinux); the overlay calls the exported RequireSupportedPlatform(IDIncus), which returns exactly requireLinux() for Incus. Two of the three tests do not pass against the pinned Go reference itself (goBaseline); the oracle therefore requires mustPass to pass on both binaries and every test's outcome on Rust (pass, fail or skip, and each failure message) to equal Go's. A skip is never a pass. The behaviour those two tests exercise (VM create/list/info/delete, owned reset with verify) is compared directly in the T2 incus-domain scenarios.",
   "overlay": [
    {
     "file": "test/live/parity_external_test.go",
@@ -37,6 +37,13 @@
     "old": "\tif err := hostruntime.RequireLinux(); err != nil {\n",
     "new": "\tif err := hostruntime.RequireSupportedPlatform(hostruntime.IDIncus); err != nil {\n"
    }
-  ]
+  ],
+  "mustPass": [
+   "TestLiveGetHostInfoIncus"
+  ],
+  "goBaseline": {
+   "TestLiveVMCreateListDelete": "fails against the pinned Go reference: its go-sdk v1.7.0 client declares no io.modelcontextprotocol/tasks extension, so the 2026-07-28 server refuses the task-aware create_vm with -32003 'Missing required client capability' (internal/transport/discover.go); go-sdk v1.7.0 has no client task support",
+   "TestLiveResetIncusStackDeleteReconcileAndVerify": "skips against the pinned Go reference: its provision_container fixture is refused the same way, and the test skips when its fixture cannot be provisioned"
+  }
  }
 ]

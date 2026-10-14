@@ -204,6 +204,33 @@ def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report,
     return out
 
 
+def _check_twin_oracles(doc: dict, manifest: dict, suites: list[dict], report: Report, key: str) -> str:
+    """Twin oracles: re-judge every suite from its recorded rows (t2_oracle.judge):
+    mustPass passes on Go and Rust, Rust's outcome equals Go's for every test,
+    and the negative control passes nothing."""
+    from . import oracle as oracle_mod, t2_oracle
+    want = {"go": manifest["goReference"]["binarySha256"],
+            "rust": (manifest.get("rustCandidate") or {}).get("binarySha256")}
+    ok = True
+    for suite in suites:
+        rows = {r["binary"]: r for r in doc.get("results", []) if r.get("suite") == suite["id"]}
+        for label, sha in want.items():
+            if label not in rows or not sha or rows[label].get("binarySha256") != sha:
+                report.problem(f"{key}/{suite['id']}: no result for the recorded {label} binary", key)
+                ok = False
+        if set(rows) != set(want) | {oracle_mod.NEGATIVE_CONTROL[0]}:
+            report.problem(f"{key}/{suite['id']}: result rows are not exactly go, rust and the negative control", key)
+            ok = False
+            continue
+        for label, status in t2_oracle.judge(suite, rows).items():
+            if status != "PASS" or rows[label].get("status") != "PASS":
+                what = "negative control passed a test (overlay may not run the binary)" \
+                    if label == oracle_mod.NEGATIVE_CONTROL[0] else f"{label} does not match the oracle"
+                report.problem(f"{key}/{suite['id']}: {what}", key)
+                ok = False
+    return PASS if ok else FAIL
+
+
 def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report, key: str = "oracles") -> str:
     """Go black-box tests: the Go reference and the recorded Rust candidate
     pass every expected test, and the negative control fails.
@@ -231,6 +258,8 @@ def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report, key: 
                 goldens.get("incus") != (pins.get("incusGolden") or {}).get("goldenSha256"):
             report.problem(f"{key}: twins were not booted from the pinned goldens", key)
             return UNVERIFIED
+    if twin:
+        return _check_twin_oracles(doc, manifest, json.loads(oracle_file.read_text()), report, key)
     expected_suites = {s["id"] for s in json.loads(oracle_file.read_text())}
     want = {"go": manifest["goReference"]["binarySha256"],
             "rust": (manifest.get("rustCandidate") or {}).get("binarySha256")}
@@ -246,8 +275,7 @@ def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report, key: 
                 report.problem(f"{key}/{suite}: {label} failed {row.get('failed')}", key)
                 ok = False
         control = rows.get(oracle_mod.NEGATIVE_CONTROL[0])
-        if control is None or control.get("exit") == 0 or \
-                (twin and set(control.get("expectedTests", [])) & set(control.get("passed", []))):
+        if control is None or control.get("exit") == 0:
             report.problem(f"{key}/{suite}: negative control did not fail (overlay may not run the binary)", key)
             ok = False
     return PASS if ok else FAIL
