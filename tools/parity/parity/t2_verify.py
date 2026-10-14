@@ -64,6 +64,11 @@ def check_suite(root: Path, manifest: dict, name: str, suite: dict, scenarios: d
     pinned = manifest.get("t2Evidence", {}).get("golden", {})
     if not pinned or any(summary.get("golden", {}).get(k) != v for k, v in pinned.items()):
         stale.append("golden image differs from the pinned golden")
+    # Scenarios booted from the nested-Incus golden pin it too, over the base.
+    if any(s.get("golden") == "incus" for s in scenarios.values()):
+        pinned = manifest.get("t2Evidence", {}).get("incusGolden", {})
+        if not pinned or any(summary.get("incusGolden", {}).get(k) != v for k, v in pinned.items()):
+            stale.append("nested-Incus golden image differs from the pinned one")
     for guest, digest in (summary.get("guestSha256") or {}).items():
         if _sha(t2.GUEST_DIR / guest) != digest:
             stale.append(f"guest script {guest} changed since the capture")
