@@ -457,6 +457,99 @@
     }
    },
    {
+    "as": "expose",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_service_domain",
+     "params": {
+      "name": "configure_service_domain",
+      "arguments": {
+       "vmName": "k1",
+       "namespace": "parity",
+       "ingressName": "parity-web",
+       "hostname": "parity.example",
+       "serviceName": "parity-web",
+       "servicePort": 80
+      }
+     },
+     "capture": {
+      "T_EXPOSE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "exposeDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_EXPOSE}",
+     "params": {
+      "taskId": "${T_EXPOSE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "unexpose",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_service_domain",
+     "params": {
+      "name": "remove_service_domain",
+      "arguments": {
+       "vmName": "k1",
+       "namespace": "parity",
+       "ingressName": "parity-web"
+      }
+     },
+     "capture": {
+      "T_UNEXPOSE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "unexposeDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNEXPOSE}",
+     "params": {
+      "taskId": "${T_UNEXPOSE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
     "as": "mutate",
     "mcp": {
      "method": "tools/call",
@@ -8972,7 +9065,7 @@
    "incus",
    "helm"
   ],
-  "residue": "k1's unused images (the disabled components' airgap images) are removed: the prune's effect.",
+  "residue": "The registry's two seeded tags (parity/app v1, v2) are deleted by the garbage collection, which scales the registry down and back; the prune removes the exited containers only (Go keeps every image it lists).",
   "steps": [
    {
     "as": "serve",

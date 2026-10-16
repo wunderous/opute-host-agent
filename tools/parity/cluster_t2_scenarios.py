@@ -211,6 +211,13 @@ cases = [
                                                           "-o", "jsonpath={.data.greeting}"]}),
         call("execFails", "exec_kubernetes_command", {"uri": K1, "command": "get",
                                                       "args": ["configmap", "absent", "-n", "parity"]}),
+        # Exposure: Go builds these no resource binding, so with every argument
+        # given they still refuse before reaching the provider (no Ingress).
+        task_call("expose", "configure_service_domain", {"vmName": "k1", "namespace": "parity",
+                                                         "ingressName": "parity-web", "hostname": "parity.example",
+                                                         "serviceName": "parity-web", "servicePort": 80}),
+        task_call("unexpose", "remove_service_domain", {"vmName": "k1", "namespace": "parity",
+                                                        "ingressName": "parity-web"}),
         task_call("mutate", "apply_manifest", {"uri": K1, "manifest": MUTATED}),
         task_call("rotate", "put_k8s_secret", {"uri": K1, "namespace": "parity", "name": "parity-secret",
                                                "data": {"password": "parity-t2-rotated-value"}}),
@@ -268,7 +275,8 @@ cases = [
         task_call("gc", "garbage_collect_cluster_registry", {"uri": K1, "includeRegistry": True}, timeout=900),
         call("trim", "trim_guest_storage", {"uri": K1}),
         STOP, SNAP("teardown", "baseline"),
-    ], STORAGE, "k1's unused images (the disabled components' airgap images) are removed: the prune's effect.",
+    ], STORAGE, "The registry's two seeded tags (parity/app v1, v2) are deleted by the garbage collection, which scales "
+       "the registry down and back; the prune removes the exited containers only (Go keeps every image it lists).",
         masks=[{"path": ["steps", "*", "body", "result"] + where + [key], "type": "non-negative-int",
                 "reason": "byte counts of k1's live filesystem", "optional": True}
                for where in (["structuredContent"], ["result", "structuredContent"],

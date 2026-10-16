@@ -284,6 +284,16 @@ T2_UNVERIFIED = {
 # Mutating host tools that cannot be called at all.
 T2_INERT = {
     "ensure_k3d": "omitted from every Go catalog (IncusOmittedToolNames) and unregistered in Rust; no call reaches it",
+    "configure_service_domain": "Go takes the cluster VM only from the call's resource binding "
+                                "(vmNameFromBinding), and its catalog entry declares no resource argument, so every "
+                                "call refuses with 'vmName, namespace, ingressName, hostname, serviceName, and "
+                                "positive servicePort are required' before reaching the provider; the refusal is "
+                                "compared in T1 (cluster-domain.exposure) and in T2 (t2.cluster-domain.resources.lifecycle, "
+                                "whose snapshot shows no Ingress)",
+    "remove_service_domain": "as configure_service_domain: no resource binding, so every call refuses with "
+                             "'vmName, namespace, and ingressName are required' before reaching the provider",
+    "uninstall_helm_chart": "registered but never published in any Go catalog (dispatch registry: unreachable); "
+                            "every call is an unknown tool on both sides (cluster-domain.unreachable)",
     "exec_command": "catalog-excluded (CatalogExcludedToolNames), so Go resolves it no resource binding and every "
                     "call refuses with 'name is required' before running anything; t2.incus-domain."
                     "container.lifecycle calls it by name and by URI against a live owned container and checks "
@@ -292,8 +302,8 @@ T2_INERT = {
 
 
 def capture_t2() -> dict:
-    """T2 coverage of every mutating host- and incus-domain tool (M8 validations 2-4)."""
-    domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text()) for d in ("host", "incus")]
+    """T2 coverage of every mutating host-, incus- and cluster-domain tool (M8 validations 2-4)."""
+    domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text()) for d in ("host", "incus", "cluster")]
     calls: dict[str, set[str]] = {}
     refused: dict[str, set[str]] = {}
     for path in sorted(T2_SCENARIO_DIR.glob("*.json")):
