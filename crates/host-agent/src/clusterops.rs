@@ -2279,7 +2279,7 @@ mod tests {
         assert_eq!(script, go["script"]);
         assert_eq!(privileged(&script), go["privileged"]);
         // 2026-10-17T12:00:00Z.
-        let now = i128::from(parse_rfc3339("2026-10-17T12:00:00Z").unwrap());
+        let now = parse_rfc3339("2026-10-17T12:00:00Z").unwrap();
         for (created, age) in go["ages"].as_object().unwrap() {
             assert_eq!(age_at(created, now), age.as_str().unwrap(), "{created}");
         }
