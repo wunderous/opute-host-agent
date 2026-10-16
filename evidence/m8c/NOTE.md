@@ -66,3 +66,13 @@ tools in `dispatch_unassigned.go` whose handlers call `svc.Kubernetes()`:
 `list_certificate_issuers`, `list_pods`, `list_services` and
 `list_deployments`. They are in M8c's scope as part of the kubernetes
 domain. None names a provider, so all keep their names; D22 does not change.
+
+## configure_agent_connection (checked 2026-10-16)
+
+Go registers it in `internal/tools/dispatch_cluster.go`, but its handler calls
+only `svc.Host().ConfigureAgentConnection`
+(`internal/domain/host/generic_agent_connection.go`): the product-neutral
+agent connection writer M8a ported and covers at T1 and T2
+(`baseline/inventory/host-domain.json`, family agent-connection). It has no
+cluster part, so M8c ports nothing for it and `cluster-domain.json` does not
+list it.
