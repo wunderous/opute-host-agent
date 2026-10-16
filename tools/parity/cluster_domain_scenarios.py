@@ -87,7 +87,19 @@ def k3s_install():
     recipe, the install call and the wait for its run and task."""
     steps = REAL_K3S["steps"]
     labels = ["provider", "recipe", "install", "installed", "installTask"]
-    return [copy.deepcopy(next(s for s in steps if s["as"] == label)) for label in labels]
+    out = [copy.deepcopy(next(s for s in steps if s["as"] == label)) for label in labels]
+    # The install task completes before its admission reservation is
+    # released, and a normal call admitted in between is refused
+    # host_capacity_saturated (Go/Go 1 in 20, M8c round 2). Wait until no
+    # reservation is held and no heavy operation is in flight (a normal call
+    # is refused while either holds); only those counts are observed.
+    for label, path in (("settled", ["reservations", "count"]), ("settledHeavy", ["queue", "heavyActive"])):
+        path = ["body", "result", "structuredContent", *path]
+        out.append({"as": label, "mcp": {
+            "method": "tools/call", "name": "get_host_capacity",
+            "params": {"name": "get_host_capacity", "arguments": {}},
+            "until": {"path": path, "in": [0]}, "observe": path, "timeout": 30}})
+    return out
 
 
 TS = "wall-clock timestamp of this side's run"
