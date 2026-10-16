@@ -365,6 +365,8 @@ pub(crate) fn compose(
                 .display()
                 .to_string()
         },
+        relays: Default::default(),
+        cluster_adopter: Default::default(),
     };
     // `reclaimTerminalTaskReservations`: a reservation whose task is now
     // terminal lost its owner with the previous process.

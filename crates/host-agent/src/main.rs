@@ -9,6 +9,7 @@ mod app;
 mod builtin;
 mod catalog;
 mod cli;
+mod clusterops;
 mod config;
 mod ddl;
 mod evidence;
@@ -55,6 +56,7 @@ mod store;
 #[cfg(test)]
 mod structural_test;
 mod tasks;
+mod tcprelay;
 mod tools;
 mod transport;
 

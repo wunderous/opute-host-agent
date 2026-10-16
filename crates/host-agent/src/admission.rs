@@ -243,9 +243,12 @@ fn adopt(host: &Host, parsed: &Uri) -> Result<Option<Map<String, J>>, String> {
             coordinates.insert("instanceType".into(), J::from(kind));
             Ok(Some(coordinates))
         }
-        "cluster" => Err(format!(
-            "adopt cluster {parsed}: cluster adoption is not implemented by this Host Agent build"
-        )),
+        // A cluster only becomes addressable through the Kubernetes
+        // provider's inventory, so adoption asks it.
+        "cluster" => match host.cluster_adopter.get() {
+            Some(adopt) => adopt(parsed),
+            None => Ok(None),
+        },
         "host-service" => {
             let valid = parsed
                 .resource_id
