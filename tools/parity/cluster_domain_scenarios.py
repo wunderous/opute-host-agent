@@ -266,6 +266,11 @@ FIXTURES = {
 # probe, x86_64, the install script succeeds and the unit comes up.
 AGENT_GUEST = [
     rule(["exec", "k1", "--", "true"]),
+    rule(["query", "/1.0/instances/c1"], {"name": "c1", "type": "container", "status": "Running"}),
+    rule(["query", "/1.0/instances/k1"], {"name": "k1", "type": "virtual-machine", "status": "Running"}),
+    rule(["config", "device", "show", "c1"], "root:\n  path: /\n  pool: default\n  type: disk\n"),
+    rule(["config", "device", "add", "c1", "..."], "Device platform-bridge-9093 added to c1\n"),
+    rule(["query", "/1.0/instances/absent"], exit_=1, stderr="Error: Instance not found\n"),
     rule(["exec", "k1", "--", "uname", "-m"], "x86_64\n"),
     rule(["exec", "k1", "--", "bash", "-lc", "curl -sf -o /dev/null 'wss://bridge.example/agent/health'"]),
     rule(["exec", "k1", "--", "bash", "-lc", "..."], "installed\n"),
@@ -287,6 +292,22 @@ RESOURCES = ["internal/domain/kubernetes/generic.go", "internal/domain/kubernete
 PACKAGES = ["internal/domain/kubernetes/helm_chart.go", "internal/domain/kubernetes/helm_template.go"]
 EXPOSURE = ["internal/domain/kubernetes/exposure.go"]
 FIXTURE = "cluster-domain-estate"
+
+AGENT = DOMAIN + ["internal/domain/cluster/cluster_agent.go",
+                  "internal/domain/cluster/cluster_agent_bridge_relay.go"]
+VM_INSTALL = {"vmName": "k1", "clusterId": "k1", "clusterName": "k1", "agentId": "agent-1",
+              "bridgeUrl": "http://127.0.0.1:9093", "bridgePort": 9093, "bridgeToken": "token-1"}
+
+
+def cpc(id_, key, name):
+    """The CPC container named by one of Go's three keys (the first set wins)
+    proxies the guest bridge. OPUTE_PLATFORM_GUEST_HOST stays a non-local
+    address, so no listener is ever bound on the host."""
+    return scenario("agent-cpc." + id_, [
+        serve(OPUTE_PLATFORM_GUEST_HOST="10.0.0.1", **{key: name}), *k3s_install(),
+        task_call("vm", "install_cluster_agent", VM_INSTALL, timeout=120),
+        STOP], AGENT, "cluster-domain-agent")
+
 
 cases = [
     # Discovery: the provider's inventory registers each cluster; a URI the
@@ -438,6 +459,9 @@ cases = [
                                                           "bridgeToken": "token-2"}),
         STOP], DOMAIN + ["internal/domain/cluster/cluster_agent.go",
                          "internal/domain/cluster/cluster_agent_bridge_relay.go"], "cluster-domain-agent"),
+    cpc("k3s-vm", "OPUTE_K3S_VM", "c1"),
+    cpc("gateway-vm", "OPUTE_DOGFOOD_GATEWAY_VM", "k1"),
+    cpc("k3s-container", "OPUTE_K3S_CONTAINER", "absent"),
     # Unpublished Go tools stay unreachable on both sides.
     scenario("unreachable", [
         serve(), *k3s_install(),

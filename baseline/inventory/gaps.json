@@ -1,13 +1,12 @@
 {
  "byMilestone": {
   "M10": 1,
-  "M8": 19,
+  "M8": 13,
   "M8a": 3,
-  "M8c": 1,
   "M8d": 2,
   "M8f": 2
  },
- "count": 28,
+ "count": 21,
  "items": [
   {
    "file": "distribution.json",
@@ -22,13 +21,6 @@
    "milestone": "M8d",
    "owner": "oci",
    "reason": "run only by internal/domain/oci (image build); OCI effects are M8d"
-  },
-  {
-   "file": "effects.json",
-   "item": "helm",
-   "milestone": "M8c",
-   "owner": "kubernetes",
-   "reason": "host-domain code only looks helm up (ensure_host_tool) and installs it through the remote installer script, observed as bash in T1; helm itself runs in internal/domain/kubernetes (install_helm_chart), M8c"
   },
   {
    "file": "effects.json",
@@ -53,13 +45,6 @@
   },
   {
    "file": "env.json",
-   "item": "OPUTE_DOGFOOD_GATEWAY_VM",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/cluster (cluster agent bridge relay); domain operations are M8"
-  },
-  {
-   "file": "env.json",
    "item": "OPUTE_HOST_AGENT_RELAY_DIR",
    "milestone": "M8",
    "owner": "config",
@@ -71,20 +56,6 @@
    "milestone": "M8",
    "owner": "config",
    "reason": "read only by internal/domain/postgres (local SQLite databases); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_K3S_CONTAINER",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/cluster (cluster agent bridge relay); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_K3S_VM",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/cluster (cluster agent bridge relay); domain operations are M8"
   },
   {
    "file": "env.json",
@@ -162,27 +133,6 @@
    "milestone": "M8",
    "owner": "config",
    "reason": "read only by internal/domain/llm (host ollama runtime); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_PLATFORM_GUEST_HOST",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/cluster (cluster agent); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_PLATFORM_PUBLIC_URL",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/cluster (cluster agent); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_PLATFORM_URL",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/cluster (cluster agent); domain operations are M8"
   },
   {
    "file": "t2.json",

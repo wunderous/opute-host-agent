@@ -56,10 +56,10 @@
    ],
    "command": "bash",
    "observedInvocations": [
-    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-3893qw04/home/.bun/bin/bun'",
-    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-8p_x7l4b/home/.bun/bin/bun'",
-    "-lc mkdir -p '/tmp/parity-a-3893qw04/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-3893qw04/home/.local/bin' USE_SUDO=false bash",
-    "-lc mkdir -p '/tmp/parity-a-8p_x7l4b/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-8p_x7l4b/home/.local/bin' USE_SUDO=false bash"
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-6t3ocyzc/home/.bun/bin/bun'",
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-mkxvu_b1/home/.bun/bin/bun'",
+    "-lc mkdir -p '/tmp/parity-a-6t3ocyzc/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-6t3ocyzc/home/.local/bin' USE_SUDO=false bash",
+    "-lc mkdir -p '/tmp/parity-a-mkxvu_b1/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-mkxvu_b1/home/.local/bin' USE_SUDO=false bash"
    ],
    "owner": "host",
    "status": "covered",
@@ -134,13 +134,15 @@
     "internal/domain/host/tool.go:445"
    ],
    "command": "helm",
-   "gapReason": "host-domain code only looks helm up (ensure_host_tool) and installs it through the remote installer script, observed as bash in T1; helm itself runs in internal/domain/kubernetes (install_helm_chart), M8c",
-   "milestone": "M8c",
-   "observedInvocations": [],
-   "owner": "kubernetes",
-   "status": "gap",
+   "observedInvocations": [
+    "template bad",
+    "template web"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Excluded": "ensure_host_tool only looks helm up and installs it through the remote installer script (see bash)",
    "t2Scenarios": [],
-   "tier": "unclassified"
+   "tier": "T1-shim-observed"
   },
   {
    "anchors": [
@@ -155,7 +157,9 @@
     "delete boxer2",
     "delete vm1",
     "exec box1",
+    "exec c1",
     "exec ct-c",
+    "exec k1",
     "exec vm-01",
     "exec vm-a",
     "exec web1",
@@ -170,10 +174,14 @@
     "network list",
     "profile device",
     "query -X",
+    "query /1.0/instances/absent",
     "query /1.0/instances/box1",
     "query /1.0/instances/box1/state",
+    "query /1.0/instances/c1",
     "query /1.0/instances/ct-c/state",
     "query /1.0/instances/ct-d/state",
+    "query /1.0/instances/k1",
+    "query /1.0/instances/k1/state",
     "query /1.0/instances/vm-01/state",
     "query /1.0/instances/vm-a/state",
     "query /1.0/instances/vm-b/state",
@@ -343,6 +351,7 @@
     "-n loginctl",
     "-n rm",
     "-n systemctl",
+    "-n true",
     "-n usermod"
    ],
    "owner": "host",
@@ -387,6 +396,17 @@
     "t2.host-domain.virt.stack-install-uninstall"
    ],
    "tier": "T2-sandbox"
+  },
+  {
+   "anchors": [],
+   "command": "true",
+   "observedInvocations": [
+    "sudo -n true"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [],
+   "tier": "T1-shim-observed"
   },
   {
    "anchors": [

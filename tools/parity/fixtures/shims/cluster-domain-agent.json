@@ -12,6 +12,46 @@
    },
    {
     "argv": [
+     "query",
+     "/1.0/instances/c1"
+    ],
+    "stdout": "{\"name\":\"c1\",\"type\":\"container\",\"status\":\"Running\"}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/k1"
+    ],
+    "stdout": "{\"name\":\"k1\",\"type\":\"virtual-machine\",\"status\":\"Running\"}"
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "show",
+     "c1"
+    ],
+    "stdout": "root:\n  path: /\n  pool: default\n  type: disk\n"
+   },
+   {
+    "argvPrefix": [
+     "config",
+     "device",
+     "add",
+     "c1"
+    ],
+    "stdout": "Device platform-bridge-9093 added to c1\n"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/absent"
+    ],
+    "exit": 1,
+    "stderr": "Error: Instance not found\n"
+   },
+   {
+    "argv": [
      "exec",
      "k1",
      "--",
