@@ -222,6 +222,90 @@ def incus() -> dict | None:
     return out
 
 
+# Kubernetes in the k3s golden's k1 container (M8c). Objects are keyed
+# kind/namespace/name with what an operation sets: labels, annotations,
+# spec, ConfigMap data and each Secret value by sha256 only. Server-assigned
+# metadata (uid, resourceVersion, timestamps, managedFields) and status are
+# dropped. kube-system is projected for HelmCharts only: k3s and its
+# controllers keep their own objects there. Pods, Jobs and Events are not
+# projected: they are what a controller does with an object, on its own
+# clock. The registry is listed through the API server's service proxy.
+K8S_NAMESPACED = ["configmaps", "secrets", "serviceaccounts", "services", "deployments.apps",
+                  "ingresses.networking.k8s.io", "helmcharts.helm.cattle.io"]
+K8S_CLUSTER = ["namespaces"]
+K8S_SYSTEM = {"kube-system": {"helmcharts.helm.cattle.io"}, "kube-public": set(), "kube-node-lease": set()}
+K8S_DROP_META = ("uid", "resourceVersion", "creationTimestamp", "managedFields", "generation", "selfLink")
+K1_ROOTS = ["/etc/opute", "/usr/local/lib/opute", "/etc/systemd/system"]
+K1_UNITS = ["opute-cluster-agent.service", "k3s.service"]
+
+
+def _kubectl_json(args: list[str]):
+    import json
+    code, text = _run(["incus", "exec", "k1", "--", "k3s", "kubectl"] + args)
+    return json.loads(text) if code == 0 and text.strip() else None
+
+
+def _k8s_object(obj: dict) -> dict:
+    meta = {k: v for k, v in (obj.get("metadata") or {}).items() if k not in K8S_DROP_META}
+    out = {"metadata": meta}
+    for key in ("spec", "data", "stringData", "type", "immutable", "binaryData"):
+        if key in obj:
+            out[key] = obj[key]
+    if obj.get("kind") == "Secret":
+        out["data"] = {k: hashlib.sha256(v.encode()).hexdigest() for k, v in (obj.get("data") or {}).items()}
+    if obj.get("kind") == "Service" and isinstance(out.get("spec"), dict):
+        # Assigned from the service CIDR by the API server.
+        out["spec"] = {k: v for k, v in out["spec"].items() if k not in ("clusterIP", "clusterIPs")}
+    return out
+
+
+def kubernetes() -> dict | None:
+    """k1's Kubernetes objects, registry and agent files, or None without k1."""
+    if not os.path.exists("/var/lib/incus/unix.socket") or _run(["incus", "info", "k1"])[0] != 0:
+        return None
+    objects, errors = {}, []
+    for resource in K8S_CLUSTER + K8S_NAMESPACED:
+        args = ["get", resource, "-o", "json"] + ([] if resource in K8S_CLUSTER else ["--all-namespaces"])
+        listed = _kubectl_json(args)
+        if listed is None:
+            errors.append(resource)
+            continue
+        for obj in listed.get("items", []):
+            namespace = (obj.get("metadata") or {}).get("namespace", "")
+            if namespace in K8S_SYSTEM and resource not in K8S_SYSTEM[namespace]:
+                continue
+            key = f"{resource}/{namespace}/{obj['metadata']['name']}"
+            objects[key] = _k8s_object(obj)
+    registry = {}
+    proxy = "/api/v1/namespaces/registry/services/opute-registry:5000/proxy/v2/"
+    catalog = _kubectl_json(["get", "--raw", proxy + "_catalog"])
+    for repo in (catalog or {}).get("repositories") or []:
+        tags = _kubectl_json(["get", "--raw", proxy + repo + "/tags/list"]) or {}
+        registry[repo] = sorted(tags.get("tags") or [])
+    code, text = _run(["incus", "exec", "k1", "--", "sh", "-c",
+                       "find " + " ".join(K1_ROOTS) + " -xdev \\( -type f -o -type l \\) 2>/dev/null | sort | "
+                       "while read -r p; do printf '%s %s\\n' \"$(stat -c '%a %U:%G' \"$p\")\" "
+                       "\"$(sha256sum \"$p\" | cut -d' ' -f1)  $p\"; done"])
+    files = {}
+    for line in text.splitlines():
+        mode, owner, digest, path = line.split(" ", 3)
+        files[path.strip()] = {"mode": mode, "owner": owner, "sha256": digest}
+    images = {}
+    listed = None
+    code, text = _run(["incus", "exec", "k1", "--", "k3s", "crictl", "images", "-o", "json"])
+    if code == 0 and text.strip():
+        import json
+        listed = json.loads(text)
+    for image in (listed or {}).get("images", []):
+        for tag in image.get("repoTags") or [image.get("id", "")]:
+            images[tag] = image.get("id", "")
+    units = {}
+    for unit in K1_UNITS:
+        units[unit] = _run(["incus", "exec", "k1", "--", "systemctl", "is-active", unit])[1].strip()
+    return {"objects": objects, "listErrors": errors, "registry": {"catalog": catalog is not None, "tags": registry},
+            "images": images, "k1Files": files, "k1Units": units}
+
+
 def snapshot() -> dict:
     return {
         "files": files(),
@@ -230,4 +314,5 @@ def snapshot() -> dict:
         "linger": sorted(os.listdir("/var/lib/systemd/linger")) if os.path.isdir("/var/lib/systemd/linger") else [],
         "firewall": firewall(),
         "incus": incus(),
+        "kubernetes": kubernetes(),
     }

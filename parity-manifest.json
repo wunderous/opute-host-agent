@@ -595,6 +595,47 @@
    ],
    "requireT2": true,
    "requireT2Oracles": true
+  },
+  "m8c": {
+   "description": "M8c exit (kubernetes and cluster domains): the M8b gate plus every cluster-domain item matching Go (x5) at T1 shim-trace parity against the pinned, unchanged Go k3s provider, and every T2 cluster-domain scenario in k3s twins (create, mutate, read and delete of real Kubernetes objects in a single-node k3s, HelmCharts, helm template, guest storage prune and registry garbage collection, the cluster agent's install through a harness platform stub and the agent's own bridge relay, cleanup and residue, and the M4 admission-rejected kubernetes and cluster calls leaving k1 unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "mcp-wire",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
   }
  },
  "goReference": {
@@ -909,6 +950,157 @@
    "owner": "cli",
    "scenario": "cli.dispatch",
    "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/provider.go:ListKubernetesClusters"
+   ],
+   "id": "cluster-domain.discovery",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.discovery",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/generic.go",
+    "internal/domain/kubernetes/secret.go",
+    "internal/domain/kubernetes/exec.go",
+    "internal/tools/dispatch_kubernetes.go"
+   ],
+   "id": "cluster-domain.resources",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.resources",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/lists.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "cluster-domain.listings",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.listings",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/helm_chart.go",
+    "internal/domain/kubernetes/helm_template.go"
+   ],
+   "id": "cluster-domain.packages",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.packages",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/exposure.go"
+   ],
+   "id": "cluster-domain.exposure",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.exposure",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/guest_storage.go",
+    "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage.go",
+    "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage_registry.go"
+   ],
+   "id": "cluster-domain.storage",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.storage",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent-cpc.k3s-vm",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent-cpc.k3s-vm",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent-cpc.gateway-vm",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent-cpc.gateway-vm",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent-cpc.k3s-container",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent-cpc.k3s-container",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/catalog.go",
+    "internal/tools/dispatch_cluster.go"
+   ],
+   "id": "cluster-domain.unreachable",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.unreachable",
+   "surface": "cluster-domain"
   },
   {
    "anchors": [
@@ -3494,7 +3686,7 @@
   "results": "evidence/m8a/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "e5468fbbcd01b0a29770865f469fbd5a602417488e0769ff8db1be5099507b4a",
+  "binarySha256": "500106511d271630cfaf268981a150601805bbe0753a9a0bd697ff45ba6a8302",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
@@ -3508,8 +3700,15 @@
    "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
   },
   "incusGolden": {
-   "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
-   "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399"
+   "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+   "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057"
+  },
+  "k3sGolden": {
+   "goldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+   "incusGoldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+   "providerSha256": {
+    "opute-provider-k3s": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915"
+   }
   },
   "suites": {
    "go-vs-go": {
