@@ -497,6 +497,14 @@ def _rename_to_go(doc: Any, tables: tuple[dict, dict, dict]) -> Any:
                 if all(isinstance(x, str) for x in value) and _sorted_by(value, None):
                     return sorted(renamed)
                 if all(isinstance(x, dict) for x in value):
+                    # Sorted by every name-bearing key present, in order: a
+                    # key that is constant across the list (each edge's
+                    # sourceTool, say) leaves the order to the next one.
+                    keys = [k for k in _SORT_KEYS if all(k in x for x in value)]
+                    if keys and all(isinstance(x[k], str) for x in value for k in keys):
+                        tuples = [tuple(x[k] for k in keys) for x in value]
+                        if tuples == sorted(tuples):
+                            return sorted(renamed, key=lambda x: tuple(x[k] for k in keys))
                     for key in _SORT_KEYS:
                         if all(key in x for x in value) and _sorted_by(value, key):
                             return sorted(renamed, key=lambda x: x[key])

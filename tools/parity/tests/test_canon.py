@@ -259,6 +259,16 @@ class NeutralNamesTest(unittest.TestCase):
         self.assertEqual(rec, [{"id": "D19.neutral-host-tool-names", "decision": "D19", "stale": False}])
         self.assertEqual(a, go)
 
+    def test_edges_sorted_under_a_constant_key_are_resorted(self):
+        # Each edge names the same sourceTool; Go sorts by targetTool after it.
+        def edges(*targets):
+            return {"steps": {"list": {"edges": [{"sourceTool": "apply_manifest", "targetTool": t}
+                                                 for t in targets]}}}
+        go = edges("list_configmap_keys", "list_deployments", "list_k8s_events")
+        rust = edges("list_cluster_events", "list_configmap_keys", "list_deployments")
+        a, b, _ = self.apply(go, rust)
+        self.assertEqual(canon.diff(a, b), [])
+
     def test_unrelated_field_and_partial_words_are_kept(self):
         rust = {"steps": {"s": {"name": "get_host_info", "inputSchema": {"properties": {"packageName": 1}},
                                 "text": "xshutdown_host_vm_subsystem"}}}

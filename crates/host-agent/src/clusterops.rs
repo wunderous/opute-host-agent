@@ -46,7 +46,7 @@ pub const GARBAGE_COLLECT_REGISTRY: &str = "opute.capability.kubernetes.garbage-
 pub const TRIM_GUEST_STORAGE: &str = "opute.capability.kubernetes.trim-guest-storage";
 
 /// The Kubernetes provider's capability id (`capabilitycontract.Kubernetes`).
-pub const CAPABILITY: &str = "kubernetes";
+pub const CAPABILITY: &str = "opute.capability.kubernetes.v1";
 
 /// The kubernetes domain over the seams it declares.
 #[derive(Clone)]
