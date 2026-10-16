@@ -1,6 +1,6 @@
 # M8c entry: blocked on M8b and one owner decision
 
-Checked 2026-10-17 on `claude/m8b-incus-domain` at `a80c433c`.
+Checked 2026-10-16 on `claude/m8b-incus-domain` at `a80c433c`.
 
 ## 1. M8b is not done yet
 
@@ -8,8 +8,17 @@ M8b round 1 was interrupted by a host reboot during `t2-go-vs-go` (log ends
 2026-10-14 02:48 with no exit line). Every step that finished exited 0, and
 T2 Go/Go had logged no failure. It is retired under
 `.parity/retired/m8b-round1/` and is not counted. Round 2 was started on the
-same head on 2026-10-17. M8c starts only once round 2 is clean,
+same head on 2026-10-16. M8c starts only once a round is clean,
 `evidence/m8b/verify.py` reproduces it, and M8b is merged.
+
+Round 2 completed with one failing step, `m5-shape` (1360/1365): all five
+failures were `incus-domain.provision.existing`, where Go's 16 GiB
+`provision_vm` was refused `host_capacity_saturated` and Rust's was not.
+The step ran while this session ran an M8c capture and a k3s golden build
+(a 6 GB VM) on the same machine. Rerun alone, the scenario is identical 5/5.
+Round 2 is retired under `.parity/retired/m8b-round2/` with that record and
+is not counted. Round 3 started 2026-10-16 08:16 on the same head, with
+nothing else heavy on the host.
 
 ## 2. The M8c rename map (owner decision)
 
@@ -52,13 +61,13 @@ As with D19 and D21:
 
 Please approve, amend or reject each **rename** row.
 
-## Resolved 2026-10-17
+## Resolved 2026-10-16
 
 The owner approved the rename map as proposed. This is recorded as D22
 (`openspec/changes/neutral-cluster-tool-names`). Entry item 2 is met; entry
 item 1 waits on M8b round 2.
 
-## Addendum 2026-10-17: seven more kubernetes-domain tools
+## Addendum 2026-10-16: seven more kubernetes-domain tools
 
 The inventory (`tools/parity/cluster_domain.py`) finds seven published
 tools in `dispatch_unassigned.go` whose handlers call `svc.Kubernetes()`:

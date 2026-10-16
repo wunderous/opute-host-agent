@@ -8,7 +8,7 @@ tool names that do the same (`k8s`, `kubernetes`, `helm`). Under D14 only a
 Service Provider names the technology behind a capability, so these names
 must become neutral before the domains are ported.
 
-**Decided (owner, 2026-10-17), recorded as D22.** This change extends D19's
+**Decided (owner, 2026-10-16), recorded as D22.** This change extends D19's
 name map, with the same rules: neutral published names, and Go names kept as
 hidden, deprecated aliases until cutover.
 
