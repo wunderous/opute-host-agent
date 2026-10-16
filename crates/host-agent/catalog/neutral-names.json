@@ -1,6 +1,6 @@
 {
- "decision": "D19 (extended by D21)",
- "change": "openspec/changes/neutral-host-tool-names; openspec/changes/neutral-instance-tool-names",
+ "decision": "D19 (extended by D21 and D22)",
+ "change": "openspec/changes/neutral-host-tool-names; openspec/changes/neutral-instance-tool-names; openspec/changes/neutral-cluster-tool-names",
  "note": "The one D19 name map. The Rust catalog publishes each value in place of its key, keeps the key as a hidden alias with Go's input schema, and renames the listed input fields; tools/parity reads the same file for the D19.neutral-host-tool-names divergence.",
  "tools": {
   "install_incus_stack": "install_virtualization_stack",
@@ -11,7 +11,16 @@
   "compact_wsl_disk": "compact_host_vm_disk",
   "ensure_docker": "ensure_container_engine",
   "ensure_k3d": "ensure_local_cluster_runtime",
-  "reset_incus_stack": "reset_virtualization_stack"
+  "reset_incus_stack": "reset_virtualization_stack",
+  "get_k8s_resource": "get_cluster_resource",
+  "delete_k8s_resource": "delete_cluster_resource",
+  "get_k8s_resource_status": "get_cluster_resource_status",
+  "list_k8s_events": "list_cluster_events",
+  "put_k8s_secret": "put_cluster_secret",
+  "exec_kubernetes_command": "exec_cluster_command",
+  "list_kubernetes_clusters": "list_compute_clusters",
+  "install_helm_chart": "install_cluster_package",
+  "render_helm_template": "render_cluster_package"
  },
  "fields": {
   "install_incus_stack": {"incusPackage": "packageName"},

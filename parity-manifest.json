@@ -7,7 +7,7 @@
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
   "platform": {
    "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-   "rust": "sha256:6b738ab682f1e5fed01c35644c75c51d62709f3947e36010237b9aa808de742e"
+   "rust": "sha256:d4879ec89d064c8a05e53d814d1cb6bac039cf93f983a0914e06ed7069cbd642"
   },
   "providerFixtures": [
    {
@@ -153,7 +153,7 @@
   ],
   "standalone": {
    "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
-   "rust": "sha256:63d590a5de9cf83c357f4919a09ec63ee67e77d2dc41da872764e6af69ab4ad3"
+   "rust": "sha256:fca0024be9425338ed2030e66c123298d1d9081efe5eb143b817aad90643e56a"
   }
  },
  "contracts": {
@@ -274,6 +274,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D21)",
    "status": "approved",
    "summary": "Extends D19's map for M8b: reset_incus_stack is published as reset_virtualization_stack and provision_container.wslGpuLibs as hostGpuLibs; Go names stay hidden, accepted aliases until cutover. Also confirms D19's use on durable rows (M5 shape) and the secret sweep's catalog"
+  },
+  "D22": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/neutral-cluster-tool-names",
+   "date": "2026-10-17",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D22)",
+   "status": "approved",
+   "summary": "Extends D19's map for M8c: get/delete_k8s_resource, get_k8s_resource_status, list_k8s_events, put_k8s_secret, exec_kubernetes_command, list_kubernetes_clusters, install_helm_chart and render_helm_template are published as get/delete_cluster_resource, get_cluster_resource_status, list_cluster_events, put_cluster_secret, exec_cluster_command, list_compute_clusters, install_cluster_package and render_cluster_package; Go names stay hidden, accepted aliases until cutover"
   },
   "D8": {
    "approvedBy": "owner",
