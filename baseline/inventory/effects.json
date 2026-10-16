@@ -56,10 +56,10 @@
    ],
    "command": "bash",
    "observedInvocations": [
-    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-6t3ocyzc/home/.bun/bin/bun'",
-    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-mkxvu_b1/home/.bun/bin/bun'",
-    "-lc mkdir -p '/tmp/parity-a-6t3ocyzc/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-6t3ocyzc/home/.local/bin' USE_SUDO=false bash",
-    "-lc mkdir -p '/tmp/parity-a-mkxvu_b1/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-mkxvu_b1/home/.local/bin' USE_SUDO=false bash"
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-3qsx10k5/home/.bun/bin/bun'",
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-c92bty7p/home/.bun/bin/bun'",
+    "-lc mkdir -p '/tmp/parity-a-3qsx10k5/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-3qsx10k5/home/.local/bin' USE_SUDO=false bash",
+    "-lc mkdir -p '/tmp/parity-a-c92bty7p/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-c92bty7p/home/.local/bin' USE_SUDO=false bash"
    ],
    "owner": "host",
    "status": "covered",
@@ -140,9 +140,14 @@
    ],
    "owner": "host",
    "status": "covered",
-   "t2Excluded": "ensure_host_tool only looks helm up and installs it through the remote installer script (see bash)",
-   "t2Scenarios": [],
-   "tier": "T1-shim-observed"
+   "t2Scenarios": [
+    "t2.cluster-domain.admission.rejected-no-effect",
+    "t2.cluster-domain.agent.vm-install",
+    "t2.cluster-domain.packages.chart-and-render",
+    "t2.cluster-domain.resources.lifecycle",
+    "t2.cluster-domain.storage.prune-and-collect"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [
@@ -206,6 +211,11 @@
    "owner": "host",
    "status": "covered",
    "t2Scenarios": [
+    "t2.cluster-domain.admission.rejected-no-effect",
+    "t2.cluster-domain.agent.vm-install",
+    "t2.cluster-domain.packages.chart-and-render",
+    "t2.cluster-domain.resources.lifecycle",
+    "t2.cluster-domain.storage.prune-and-collect",
     "t2.host-domain.virt.stack-install-uninstall",
     "t2.incus-domain.admission.rejected-no-effect",
     "t2.incus-domain.container.lifecycle",
