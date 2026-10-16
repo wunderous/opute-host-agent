@@ -1,0 +1,5 @@
+{
+ "file": "crates/host-agent/src/tools.rs",
+ "old": "    let Some(descriptor) = catalog_snapshot\n        .find(name)\n        .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name))\n    else {\n        return not_implemented(name);\n    };\n",
+ "new": "    let Some(descriptor) = catalog_snapshot\n        .find(name)\n        .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name))\n    else {\n        return not_implemented(name);\n    };\n    if name == \"list_operations\" {\n        return structured_result(json!({\"operations\": []}), None);\n    }\n"
+}
