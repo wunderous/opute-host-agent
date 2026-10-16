@@ -675,6 +675,23 @@ the gap is owned by M8a. `exec_command` and `run_instance_command` at T2 are
 owned by M8b. The cutover gate fails, as expected, on the remaining owned
 gaps.
 
+**8b status (2026-10-16): exit gate met.** Evidence:
+[`evidence/m8b/README.md`](../../../evidence/m8b/README.md). The m8b gate
+passes, and gates m0–m6 and m8a still pass:
+
+- T1 Go/Rust ×5 is 276/276 and Go/Go ×20 is 276/276.
+- T2 is 19/19 in both twin suites (Go/Go ×20, Go/Rust ×5). The five incus
+  scenarios run against a nested Incus inside each twin and include the M4
+  no-unauthorized-effect rerun. `exec_command` and `run_instance_command` are
+  covered there.
+- The Go `test/live` oracle holds Rust to Go's own outcome. At `ace7013d`,
+  Go itself fails `TestLiveVMCreateListDelete`, because its go-sdk client
+  declares no tasks extension, and it skips the reset test.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+D21 publishes `reset_virtualization_stack` and `hostGpuLibs`. The cutover gate
+fails, as expected, on the remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,
