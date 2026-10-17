@@ -692,6 +692,22 @@ passes, and gates m0–m6 and m8a still pass:
 D21 publishes `reset_virtualization_stack` and `hostGpuLibs`. The cutover gate
 fails, as expected, on the remaining owned gaps.
 
+**8c status (2026-10-17): exit gate met.** Evidence:
+[`evidence/m8c/README.md`](../../../evidence/m8c/README.md). The m8c gate
+passes, and gates m0–m6, m8a and m8b still pass:
+
+- T1 Go/Rust ×5 is 287/287 and Go/Go ×20 is 287/287. The 11 cluster-domain
+  scenarios run against the pinned Go k3s provider.
+- T2 is 24/24 in both twin suites (Go/Go ×20, Go/Rust ×5). The five cluster
+  scenarios run against a real single-node k3s, a registry and helm in each
+  twin. They cover the agent install against a harness-owned platform stub,
+  and the M4 no-unauthorized-effect rerun.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+D22 publishes nine neutral cluster tool names. No M8c inventory gap remains,
+and the six cluster environment reads are covered. The cutover gate fails, as
+expected, on the remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,

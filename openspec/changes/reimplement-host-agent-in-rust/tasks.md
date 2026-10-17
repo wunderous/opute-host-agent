@@ -167,8 +167,11 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   `unverified` at T2 pending a WSL2 runner. 8b (incus) done 2026-10-16:
   T1 and T2 parity green with a nested Incus, the Go `test/live` oracle
   matches Go's own outcome, the seam verifier reports no gap, and the m8b
-  gate passes ([`evidence/m8b`](../../../evidence/m8b/README.md)). 8c–8f
-  remain open.
+  gate passes ([`evidence/m8b`](../../../evidence/m8b/README.md)). 8c
+  (kubernetes/cluster) done 2026-10-17: T1 and T2 parity green against the
+  pinned k3s provider and a real k3s, registry and helm in the twins; the
+  seam verifier reports no gap, and the m8c gate passes
+  ([`evidence/m8c`](../../../evidence/m8c/README.md)). 8d–8f remain open.
 - [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,

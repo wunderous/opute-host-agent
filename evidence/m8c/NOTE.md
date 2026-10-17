@@ -85,3 +85,9 @@ agent connection writer M8a ported and covers at T1 and T2
 (`baseline/inventory/host-domain.json`, family agent-connection). It has no
 cluster part, so M8c ports nothing for it and `cluster-domain.json` does not
 list it.
+
+## Resolved 2026-10-17
+
+M8b round 3 passed, `evidence/m8b/verify.py` reproduced it, and it was
+committed (PR wunderous/opute-host-agent#16). D22 was approved on 2026-10-16.
+M8c round 4 passed; see [README.md](README.md).
