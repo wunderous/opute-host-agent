@@ -26,6 +26,7 @@ import subprocess
 ROOTS = ["/etc", "/home/ubuntu", "/opt", "/usr/local", "/usr/bin", "/usr/sbin", "/usr/lib/systemd",
          "/var/lib/systemd/linger", "/var/lib/incus", "/var/lib/dpkg/info"]
 AGENT_ROOT = "/opt/parity-t2"
+CONTAINERS_ROOT = "/home/ubuntu/.local/share/containers"
 # Paths that change on every boot or by the guest's own housekeeping,
 # identically meaningless in both twins.
 EXCLUDE_PREFIXES = [
@@ -33,6 +34,9 @@ EXCLUDE_PREFIXES = [
     "/etc/ld.so.cache",
     "/home/ubuntu/.cache",
     "/home/ubuntu/.local/state/opute-host-agent",
+    # The rootless image store (OCI golden): what an operation does to it is
+    # recorded through the containers() projection, not as layer churn.
+    CONTAINERS_ROOT,
     "/etc/.resolv.conf.systemd-resolved.bak",
     "/var/lib/incus/database",
     "/var/lib/incus/logs",
@@ -276,12 +280,9 @@ def kubernetes() -> dict | None:
                 continue
             key = f"{resource}/{namespace}/{obj['metadata']['name']}"
             objects[key] = _k8s_object(obj)
-    registry = {}
-    proxy = "/api/v1/namespaces/registry/services/opute-registry:5000/proxy/v2/"
-    catalog = _kubectl_json(["get", "--raw", proxy + "_catalog"])
-    for repo in (catalog or {}).get("repositories") or []:
-        tags = _kubectl_json(["get", "--raw", proxy + repo + "/tags/list"]) or {}
-        registry[repo] = sorted(tags.get("tags") or [])
+    catalog, registry = _registry("registry", "opute-registry")
+    # The registry install_oci_registry deploys (M8d), at Go's defaults.
+    oci_catalog, oci_registry = _registry("registry-system", "local-registry")
     code, text = _run(["incus", "exec", "k1", "--", "sh", "-c",
                        "find " + " ".join(K1_ROOTS) + " -xdev \\( -type f -o -type l \\) 2>/dev/null | sort | "
                        "while read -r p; do printf '%s %s\\n' \"$(stat -c '%a %U:%G' \"$p\")\" "
@@ -303,7 +304,43 @@ def kubernetes() -> dict | None:
     for unit in K1_UNITS:
         units[unit] = _run(["incus", "exec", "k1", "--", "systemctl", "is-active", unit])[1].strip()
     return {"objects": objects, "listErrors": errors, "registry": {"catalog": catalog is not None, "tags": registry},
+            "ociRegistry": {"catalog": oci_catalog is not None, "tags": oci_registry},
             "images": images, "k1Files": files, "k1Units": units}
+
+
+def _registry(namespace: str, name: str) -> tuple:
+    """A registry's catalog and each repository's tags, through the API
+    server's service proxy; the catalog is None when it does not answer."""
+    registry = {}
+    proxy = f"/api/v1/namespaces/{namespace}/services/{name}:5000/proxy/v2/"
+    catalog = _kubectl_json(["get", "--raw", proxy + "_catalog"])
+    for repo in (catalog or {}).get("repositories") or []:
+        tags = _kubectl_json(["get", "--raw", proxy + repo + "/tags/list"]) or {}
+        registry[repo] = sorted(tags.get("tags") or [])
+    return catalog, registry
+
+
+# The rootless image store of the agent's user (OCI golden, M8d), listed by
+# podman as that user. An image is recorded by its names only: an image
+# built in a twin carries that build's timestamps, so its id differs from
+# the other twin's. An unnamed image is counted. None without the store.
+def containers() -> dict | None:
+    import json
+    if not os.path.isdir(CONTAINERS_ROOT + "/storage"):
+        return None
+    # As the agent runs it: no session of root's leaks into the user's podman.
+    code, text = _run(["env", "-u", "XDG_RUNTIME_DIR", "-u", "DBUS_SESSION_BUS_ADDRESS", "runuser", "-u", "ubuntu",
+                       "--", "sh", "-c", "cd ~ && podman images --format json"])
+    if code != 0:
+        return {"listed": False}
+    names, unnamed = [], 0
+    for image in json.loads(text or "[]"):
+        tags = sorted(image.get("Names") or [])
+        if tags:
+            names.append(tags)
+        else:
+            unnamed += 1
+    return {"listed": True, "images": sorted(names), "unnamed": unnamed}
 
 
 def snapshot() -> dict:
@@ -315,4 +352,5 @@ def snapshot() -> dict:
         "firewall": firewall(),
         "incus": incus(),
         "kubernetes": kubernetes(),
+        "containers": containers(),
     }

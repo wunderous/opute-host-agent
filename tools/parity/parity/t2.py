@@ -546,10 +546,122 @@ def k3s_golden_record() -> dict:
     return record
 
 
-GOLDEN_IMAGES = {"base": "golden.qcow2", "incus": f"{INCUS_GOLDEN}.qcow2", "k3s": f"{K3S_GOLDEN}.qcow2"}
+# The OCI golden (M8d): an overlay of the k3s golden with the image tools
+# Go's oci domain runs. podman and buildah come from the Ubuntu archive
+# (apt verifies them against the signed index), exactly as Go's
+# ensure_oci_builder installs them; their versions and .deb sha256 are
+# recorded and pinned with the golden. The agent runs podman rootless as
+# ubuntu in a system unit with no user session, so containers.conf selects
+# the cgroupfs manager and the file event logger: without them podman
+# prints a warning on stderr, which Go reads combined with the JSON it
+# parses. Two old images (built with fixed timestamps) give the storage
+# cleanup an age-eligible image and one shared by two tags. k1's address is
+# reserved, so an image reference that names the in-twin registry's
+# NodePort is the same in every twin. Builds use FROM scratch: no image is
+# ever pulled from outside the twin, and pushes go only to that registry.
+OCI_GOLDEN = "golden-oci"
+OCI_K1_ADDRESS = "10.0.100.113"
+CONTAINERS_CONF = '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\n'
+AS_UBUNTU = "env -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS runuser -u ubuntu -- sh -c "
+OCI_SEED = ("install -d -o ubuntu -g ubuntu -m 0700 /tmp/parity-oci && cd /tmp/parity-oci && "
+            "for name in old shared; do install -d -o ubuntu -g ubuntu \"$name\" && "
+            "printf 'FROM scratch\\nCOPY %s.txt /%s.txt\\n' \"$name\" \"$name\" > \"$name/Containerfile\" && "
+            "echo \"parity $name\" > \"$name/$name.txt\" && chown ubuntu:ubuntu \"$name\"/*; done && "
+            + AS_UBUNTU + shlex.quote(
+                "cd ~ && podman build -q --timestamp 1000000000 -t localhost/parity/old:1 /tmp/parity-oci/old && "
+                "podman build -q --timestamp 1100000000 -t localhost/parity/shared:1 /tmp/parity-oci/shared && "
+                "podman tag localhost/parity/shared:1 localhost/parity/shared:rollback")
+            + " && rm -rf /tmp/parity-oci")
+OCI_RECIPE = [
+    "incus admin waitready --timeout=180",
+    K3S_READY,
+    "incus exec k1 -- k3s kubectl -n registry rollout status deploy/opute-registry --timeout=600s",
+    f"test \"$(incus list k1 -c 4 --format csv | grep -o '10\\.0\\.100\\.[0-9]*')\" = {OCI_K1_ADDRESS} && "
+    f"incus config device override k1 eth0 ipv4.address={OCI_K1_ADDRESS}",
+    "apt-get update -q",
+    "DEBIAN_FRONTEND=noninteractive apt-get install -y -q podman buildah",
+    f"install -d /etc/containers && printf '%s' {shlex.quote(CONTAINERS_CONF)} > /etc/containers/containers.conf",
+    OCI_SEED,
+    # podman's readiness probe as the agent runs it, once the store exists
+    # (its first run initializes it): stdout and stderr combined must be the
+    # JSON alone.
+    "out=$(" + AS_UBUNTU + shlex.quote("cd ~ && podman info --format json 2>&1") + ") && "
+    "printf '%s' \"$out\" | python3 -c 'import json,sys; json.load(sys.stdin)' || "
+    "{ printf '%s\\n' \"$out\" | tail -n 8 >&2; exit 1; }",
+    "sync",
+]
+
+
+def build_oci_golden() -> dict:
+    """Build the OCI golden once, as an overlay of the k3s golden."""
+    base = k3s_golden_record()
+    golden = WORK / f"{OCI_GOLDEN}.qcow2"
+    if golden.exists():
+        raise RuntimeError(f"{golden} exists; a golden image is never rebuilt in place")
+    with (WORK / "golden.lease").open("a+") as lease:
+        fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b",
+                        str(WORK / f"{K3S_GOLDEN}.qcow2"), str(golden)], check=True)
+        port = _free_port()
+        argv = _qemu(golden, WORK / "seed.img", port, WORK / f"{OCI_GOLDEN}-serial.log", INCUS_MEMORY_MB)
+        process = subprocess.Popen(argv, stdout=(WORK / f"{OCI_GOLDEN}-qemu.log").open("w"),
+                                   stderr=subprocess.STDOUT)
+        log = []
+        try:
+            _wait_ssh(port, process)
+            ssh = _ssh_base(port)
+            subprocess.run(ssh + ["systemctl is-system-running --wait >/dev/null 2>&1; true"], capture_output=True)
+            for command in OCI_RECIPE:
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=3600)
+                log.append({"command": command, "exit": done.returncode, "stderr": done.stderr[-2000:]})
+                if done.returncode != 0:
+                    raise RuntimeError(f"oci golden {command!r}: {done.stderr[-2000:]}")
+            facts = {}
+            for key, command in (("packages", "dpkg-query -W -f='${Package} ${Version}\\n' podman buildah "
+                                              "golang-github-containers-common uidmap crun conmon"),
+                                 ("debSha256", "cd /var/cache/apt/archives && sha256sum podman_*.deb buildah_*.deb"),
+                                 ("podmanVersion", "podman --version"), ("buildahVersion", "buildah --version"),
+                                 ("images", AS_UBUNTU + shlex.quote("cd ~ && podman images --format json")),
+                                 ("k1Address", "incus list k1 -c 4 --format csv"),
+                                 ("instance", "incus config show k1")):
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=120)
+                facts[key] = done.stdout
+            subprocess.run(ssh + ["sync; poweroff"], capture_output=True)
+            process.wait(timeout=300)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        record = {
+            "scope": "T2 OCI golden: an overlay of the k3s golden, dedicated and disposable; podman, buildah and "
+                     "every image build and push run only inside twins booted from it, against the twin's own "
+                     "registry; no shared Incus/Kubernetes/registry/tunnel/deploy state",
+            "k3sGoldenSha256": base["goldenSha256"], "recipe": OCI_RECIPE, "recipeLog": log, "facts": facts,
+            "memoryMb": INCUS_MEMORY_MB, "goldenSha256": sha256_file(golden),
+            "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "qemuArgv": argv,
+        }
+        golden.chmod(0o444)
+        (WORK / f"{OCI_GOLDEN}.json").write_text(json.dumps(record, indent=1) + "\n")
+        return record
+
+
+def oci_golden_record() -> dict:
+    record = json.loads((WORK / f"{OCI_GOLDEN}.json").read_text())
+    actual = sha256_file(WORK / f"{OCI_GOLDEN}.qcow2")
+    if actual != record["goldenSha256"]:
+        raise RuntimeError(f"oci golden image changed: {actual} != {record['goldenSha256']}")
+    if record["k3sGoldenSha256"] != k3s_golden_record()["goldenSha256"]:
+        raise RuntimeError("oci golden was built over a different k3s golden")
+    return record
+
+
+GOLDEN_IMAGES = {"base": "golden.qcow2", "incus": f"{INCUS_GOLDEN}.qcow2", "k3s": f"{K3S_GOLDEN}.qcow2",
+                 "oci": f"{OCI_GOLDEN}.qcow2"}
 # The k3s twins also carry the pinned Go k3s provider, which the scenario
 # starts in the guest (the agent never spawns providers).
-GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"]}
+GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"], "oci": [agent.PROVIDER_BIN / "opute-provider-k3s"]}
 
 
 # --- one twin -----------------------------------------------------------------------
@@ -657,10 +769,14 @@ def effects(base: dict, current: dict) -> dict:
         b, c = b or {}, c or {}
         k8s = {kind: d for kind in ("objects", "images", "k1Files", "k1Units")
                if (d := _delta(b.get(kind, {}), c.get(kind, {})))}
-        for key in ("listErrors", "registry"):
+        for key in ("listErrors", "registry", "ociRegistry"):
             if b.get(key) != c.get(key):
                 k8s[key] = {"before": b.get(key), "after": c.get(key)}
         out["kubernetes"] = k8s
+    b, c = base.get("containers"), current.get("containers")
+    if b != c:
+        # The rootless image store (OCI golden): image names before and after.
+        out["containers"] = {"before": b, "after": c}
     b, c = base.get("incus"), current.get("incus")
     if b is not None or c is not None:
         out["incus"] = {kind: d for kind in sorted(set(b or {}) | set(c or {}))
@@ -863,7 +979,8 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     golden = golden_record()
     scenarios_all = load_scenarios(ids)
     incus = incus_golden_record() if any(s.get("golden") == "incus" for s in scenarios_all) else None
-    k3s = k3s_golden_record() if any(s.get("golden") == "k3s" for s in scenarios_all) else None
+    k3s = k3s_golden_record() if any(s.get("golden") in ("k3s", "oci") for s in scenarios_all) else None
+    oci = oci_golden_record() if any(s.get("golden") == "oci" for s in scenarios_all) else None
     # Hashed before the first twin boots: these are the bytes every twin of
     # this run receives (the harness is never edited mid-capture).
     guest_hashes = {name: sha256_file(GUEST_DIR / name) for name in GUEST_FILES}
@@ -940,6 +1057,9 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
         **({"k3sGolden": {"goldenSha256": k3s["goldenSha256"], "incusGoldenSha256": k3s["incusGoldenSha256"],
                           "providerSha256": {p.name: sha256_file(p) for p in GOLDEN_EXTRA["k3s"]}}}
            if k3s else {}),
+        **({"ociGolden": {"goldenSha256": oci["goldenSha256"], "k3sGoldenSha256": oci["k3sGoldenSha256"],
+                          "packages": oci["facts"]["packages"], "debSha256": oci["facts"]["debSha256"]}}
+           if oci else {}),
         "guestSha256": guest_hashes, "harnessSha256": harness_hash, "scenarioSha256": scenario_hashes,
         "repeat": repeat, "scenarios": results,
     }
