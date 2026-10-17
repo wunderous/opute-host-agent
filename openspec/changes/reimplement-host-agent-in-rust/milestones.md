@@ -692,6 +692,22 @@ passes, and gates m0–m6 and m8a still pass:
 D21 publishes `reset_virtualization_stack` and `hostGpuLibs`. The cutover gate
 fails, as expected, on the remaining owned gaps.
 
+**8c status (2026-10-17): exit gate met.** Evidence:
+[`evidence/m8c/README.md`](../../../evidence/m8c/README.md). The m8c gate
+passes, and gates m0–m6, m8a and m8b still pass:
+
+- T1 Go/Rust ×5 is 287/287 and Go/Go ×20 is 287/287. The 11 cluster-domain
+  scenarios run against the pinned Go k3s provider.
+- T2 is 24/24 in both twin suites (Go/Go ×20, Go/Rust ×5). The five cluster
+  scenarios run against a real single-node k3s, a registry and helm in each
+  twin. They cover the agent install against a harness-owned platform stub,
+  and the M4 no-unauthorized-effect rerun.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+D22 publishes nine neutral cluster tool names. No M8c inventory gap remains,
+and the six cluster environment reads are covered. The cutover gate fails, as
+expected, on the remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,
@@ -897,6 +913,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D19 | Provider-neutral host tool names | **Decided (owner, 2026-10-12): neutral names, with Go aliases.** Rust publishes `install_virtualization_stack`, `uninstall_virtualization_stack`, `probe_virtualization_gpu`, `terminate_host_vm_distribution`, `shutdown_host_vm_subsystem`, `compact_host_vm_disk`, `ensure_container_engine` and `ensure_local_cluster_runtime`, and the field `packageName` for `incusPackage`. Each Go name stays a hidden, deprecated `tools/call` alias that reaches the same Consumer, until cutover ([`neutral-host-tool-names`](../neutral-host-tool-names/proposal.md)). Catalog revisions change; each Rust revision is pinned with its Go pair, and the difference is declared as `D19.neutral-host-tool-names` | Under D14 only a Service Provider names its implementation; the aliases keep Platform and recipes working until cutover. |
 | D20 | Error text for a corrupt zstd block | **Decided (owner, 2026-10-12): declare it, do not port the decoder.** For a corrupt compressed block, `extract_host_archive` fails as Go does, with the same `extract host archive: ` prefix and the same tree, but the text after it is the Rust decoder's own ([`zstd-corrupt-block-error-text`](../zstd-corrupt-block-error-text/proposal.md)). Frame-level and tar faults keep Go's exact text. Declared as `D20.corrupt-zstd-block`, only in `host-domain.archives.corrupt-blocks` | Matching klauspost's internal messages would mean porting its decoder. Recipe archives are sha256-verified before extraction. |
 | D21 | Provider-neutral instance tool names | **Decided (owner, 2026-10-14): extend D19.** Rust publishes `reset_virtualization_stack` for `reset_incus_stack` and the field `hostGpuLibs` for `provision_container.wslGpuLibs`; the Go names stay hidden, accepted aliases until cutover ([`neutral-instance-tool-names`](../neutral-instance-tool-names/proposal.md)). The owner also confirmed D19's use on durable rows (M5 shape) and on the secret sweep's catalog | Under D14 only a Service Provider names its implementation; one name map keeps the catalog and the parity divergence in step. |
+| D22 | Provider-neutral cluster tool names | **Decided (owner, 2026-10-16): extend D19.** Rust publishes `get_cluster_resource`, `delete_cluster_resource`, `get_cluster_resource_status`, `list_cluster_events`, `put_cluster_secret`, `exec_cluster_command`, `list_compute_clusters`, `install_cluster_package` and `render_cluster_package` for Go's `get_k8s_resource`, `delete_k8s_resource`, `get_k8s_resource_status`, `list_k8s_events`, `put_k8s_secret`, `exec_kubernetes_command`, `list_kubernetes_clusters`, `install_helm_chart` and `render_helm_template`; the Go names stay hidden, accepted aliases until cutover ([`neutral-cluster-tool-names`](../neutral-cluster-tool-names/proposal.md)). No field is renamed | Under D14 only a Service Provider names its implementation; one name map keeps the catalog and the parity divergence in step. |
 
 ## 7. Risks this plan specifically mitigates
 

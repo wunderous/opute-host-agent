@@ -36,7 +36,18 @@ pub struct Host {
     /// `resolveResetCheckpointPath`: where an interrupted stack reset
     /// resumes from.
     pub reset_checkpoint_path: String,
+    /// The in-process relays into guests (`tcprelay`): the cluster agent's
+    /// guest bridge forwarders, revoked before a stack reset deletes guests.
+    pub relays: Arc<crate::tcprelay::Manager>,
+    /// `adoptResource` for a cluster URI: the Kubernetes domain, bound when
+    /// the built-in services are composed.
+    pub cluster_adopter: Arc<std::sync::OnceLock<ClusterAdopter>>,
 }
+
+/// Asks the Kubernetes domain whether a cluster exists, and for its
+/// coordinates.
+pub type ClusterAdopter =
+    Arc<dyn Fn(&crate::resource::Uri) -> Result<Option<Map<String, J>>, String> + Send + Sync>;
 
 /// Resolves a wire name to the catalog name it was registered under, if any.
 fn registered(server: &Server, wire: &str) -> Option<String> {

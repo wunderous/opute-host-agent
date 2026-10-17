@@ -1,0 +1,602 @@
+=== RUN   TestK3sManifestDeclaresNeutralCapabilityAndOperations
+--- PASS: TestK3sManifestDeclaresNeutralCapabilityAndOperations (0.00s)
+=== RUN   TestK3sTeardownPlanUsesDeclaredServiceIdentity
+--- PASS: TestK3sTeardownPlanUsesDeclaredServiceIdentity (0.00s)
+=== RUN   TestK3sSystemTeardownKeepsProviderReachableForFinalize
+--- PASS: TestK3sSystemTeardownKeepsProviderReachableForFinalize (0.00s)
+=== RUN   TestK3sSystemTeardownRejectsUnownedServicePath
+--- PASS: TestK3sSystemTeardownRejectsUnownedServicePath (0.00s)
+=== RUN   TestK3sHTTPHandlerAdvertisesModernProviderProtocol
+--- PASS: TestK3sHTTPHandlerAdvertisesModernProviderProtocol (0.00s)
+=== RUN   TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge
+--- PASS: TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge (0.00s)
+=== RUN   TestProbeHAEndpointRejectsMissingPublicEndpoint
+--- PASS: TestProbeHAEndpointRejectsMissingPublicEndpoint (0.00s)
+=== RUN   TestK3sTargetOperationsDeclareCanonicalClusterBinding
+--- PASS: TestK3sTargetOperationsDeclareCanonicalClusterBinding (0.00s)
+=== RUN   TestK3sProvisionClusterInitIsExplicit
+--- PASS: TestK3sProvisionClusterInitIsExplicit (0.00s)
+=== RUN   TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay
+--- PASS: TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay (0.00s)
+=== RUN   TestParseK3sVersionReturnsInstallerReleaseToken
+--- PASS: TestParseK3sVersionReturnsInstallerReleaseToken (0.00s)
+=== RUN   TestJoinInvitationIsOneTimeAndRequiresRedemption
+--- PASS: TestJoinInvitationIsOneTimeAndRequiresRedemption (0.00s)
+=== RUN   TestSealedJoinMaterialRoundTripsOnlyToReceiverKey
+--- PASS: TestSealedJoinMaterialRoundTripsOnlyToReceiverKey (0.04s)
+=== RUN   TestK3sExecCommandValidationPreservesTypedArguments
+--- PASS: TestK3sExecCommandValidationPreservesTypedArguments (0.00s)
+=== RUN   TestK3sTargetValidationRejectsFallbackShapes
+--- PASS: TestK3sTargetValidationRejectsFallbackShapes (0.00s)
+=== RUN   TestK3sProvisionTargetValidationRequiresCanonicalInstance
+--- PASS: TestK3sProvisionTargetValidationRequiresCanonicalInstance (0.00s)
+=== RUN   TestK3sResourceValidationRequiresTypedFields
+--- PASS: TestK3sResourceValidationRequiresTypedFields (0.00s)
+=== RUN   TestNativeMembershipParsingUsesReadyAndRoleLabels
+--- PASS: TestNativeMembershipParsingUsesReadyAndRoleLabels (0.00s)
+=== RUN   TestParseClusterNodeSnapshotUsesReadyCondition
+--- PASS: TestParseClusterNodeSnapshotUsesReadyCondition (0.00s)
+=== RUN   TestClusterInfoProjectsActualNodeReadiness
+--- PASS: TestClusterInfoProjectsActualNodeReadiness (0.00s)
+=== RUN   TestHAEndpointValidationRejectsPathAndQuery
+--- PASS: TestHAEndpointValidationRejectsPathAndQuery (0.00s)
+=== RUN   TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge
+--- PASS: TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge (0.00s)
+=== RUN   TestRestartWaitsForKubernetesApiAfterRestart
+--- PASS: TestRestartWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestConfigureRegistryWaitsForKubernetesApiAfterRestart
+--- PASS: TestConfigureRegistryWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestJoinVerificationReadsTheGuestItPromoted
+--- PASS: TestJoinVerificationReadsTheGuestItPromoted (0.00s)
+=== RUN   TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum
+--- PASS: TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum (0.00s)
+=== RUN   TestFindMembershipNodeMatchesByName
+--- PASS: TestFindMembershipNodeMatchesByName (0.00s)
+=== RUN   TestJoinedMembershipSettledRequiresTheJoiningNodeItself
+--- PASS: TestJoinedMembershipSettledRequiresTheJoiningNodeItself (0.00s)
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused
+--- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible
+=== PAUSE TestQuorumRecoveryAdmissible
+=== RUN   TestTruncateProbeError
+=== PAUSE TestTruncateProbeError
+=== RUN   TestKeepSetFromPodJSONIncludesInitAndEphemeral
+--- PASS: TestKeepSetFromPodJSONIncludesInitAndEphemeral (0.00s)
+=== RUN   TestPlanUnusedImagesHonoursKeepSetAndAgeGate
+--- PASS: TestPlanUnusedImagesHonoursKeepSetAndAgeGate (0.00s)
+=== RUN   TestPruneUnusedImagesDryRunDoesNotMutate
+--- PASS: TestPruneUnusedImagesDryRunDoesNotMutate (0.00s)
+=== RUN   TestPruneUnusedImagesRemovesExitedThenUnused
+--- PASS: TestPruneUnusedImagesRemovesExitedThenUnused (0.00s)
+=== RUN   TestGarbageCollectRegistrySkippedWithoutFlag
+--- PASS: TestGarbageCollectRegistrySkippedWithoutFlag (0.00s)
+=== RUN   TestPlanRegistryDeletesUsesKeepSet
+--- PASS: TestPlanRegistryDeletesUsesKeepSet (0.00s)
+=== RUN   TestGarbageCollectRegistryDryRunDoesNotScale
+--- PASS: TestGarbageCollectRegistryDryRunDoesNotScale (0.00s)
+=== RUN   TestTrimGuestStorageRunsFstrim
+--- PASS: TestTrimGuestStorageRunsFstrim (0.00s)
+=== RUN   TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied
+--- PASS: TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied (0.00s)
+=== RUN   TestRefuseCRIAllDelete
+--- PASS: TestRefuseCRIAllDelete (0.00s)
+=== RUN   TestRegistryGCJobOmitsConfigMapWhenDeployHasNone
+--- PASS: TestRegistryGCJobOmitsConfigMapWhenDeployHasNone (0.00s)
+=== RUN   TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim
+--- PASS: TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim (0.00s)
+=== RUN   TestInspectGuestStorageReportsReclaimable
+--- PASS: TestInspectGuestStorageReportsReclaimable (0.00s)
+=== CONT  TestQuorumRecoveryAdmissible
+=== CONT  TestTruncateProbeError
+--- PASS: TestTruncateProbeError (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== PAUSE TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== RUN   TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== RUN   TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== PAUSE TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+--- PASS: TestQuorumRecoveryAdmissible (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node (0.00s)
+=== RUN   TestK3sManifestDeclaresNeutralCapabilityAndOperations
+--- PASS: TestK3sManifestDeclaresNeutralCapabilityAndOperations (0.00s)
+=== RUN   TestK3sTeardownPlanUsesDeclaredServiceIdentity
+--- PASS: TestK3sTeardownPlanUsesDeclaredServiceIdentity (0.00s)
+=== RUN   TestK3sSystemTeardownKeepsProviderReachableForFinalize
+--- PASS: TestK3sSystemTeardownKeepsProviderReachableForFinalize (0.00s)
+=== RUN   TestK3sSystemTeardownRejectsUnownedServicePath
+--- PASS: TestK3sSystemTeardownRejectsUnownedServicePath (0.00s)
+=== RUN   TestK3sHTTPHandlerAdvertisesModernProviderProtocol
+--- PASS: TestK3sHTTPHandlerAdvertisesModernProviderProtocol (0.00s)
+=== RUN   TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge
+--- PASS: TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge (0.00s)
+=== RUN   TestProbeHAEndpointRejectsMissingPublicEndpoint
+--- PASS: TestProbeHAEndpointRejectsMissingPublicEndpoint (0.00s)
+=== RUN   TestK3sTargetOperationsDeclareCanonicalClusterBinding
+--- PASS: TestK3sTargetOperationsDeclareCanonicalClusterBinding (0.00s)
+=== RUN   TestK3sProvisionClusterInitIsExplicit
+--- PASS: TestK3sProvisionClusterInitIsExplicit (0.00s)
+=== RUN   TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay
+--- PASS: TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay (0.00s)
+=== RUN   TestParseK3sVersionReturnsInstallerReleaseToken
+--- PASS: TestParseK3sVersionReturnsInstallerReleaseToken (0.00s)
+=== RUN   TestJoinInvitationIsOneTimeAndRequiresRedemption
+--- PASS: TestJoinInvitationIsOneTimeAndRequiresRedemption (0.00s)
+=== RUN   TestSealedJoinMaterialRoundTripsOnlyToReceiverKey
+--- PASS: TestSealedJoinMaterialRoundTripsOnlyToReceiverKey (0.00s)
+=== RUN   TestK3sExecCommandValidationPreservesTypedArguments
+--- PASS: TestK3sExecCommandValidationPreservesTypedArguments (0.00s)
+=== RUN   TestK3sTargetValidationRejectsFallbackShapes
+--- PASS: TestK3sTargetValidationRejectsFallbackShapes (0.00s)
+=== RUN   TestK3sProvisionTargetValidationRequiresCanonicalInstance
+--- PASS: TestK3sProvisionTargetValidationRequiresCanonicalInstance (0.00s)
+=== RUN   TestK3sResourceValidationRequiresTypedFields
+--- PASS: TestK3sResourceValidationRequiresTypedFields (0.00s)
+=== RUN   TestNativeMembershipParsingUsesReadyAndRoleLabels
+--- PASS: TestNativeMembershipParsingUsesReadyAndRoleLabels (0.00s)
+=== RUN   TestParseClusterNodeSnapshotUsesReadyCondition
+--- PASS: TestParseClusterNodeSnapshotUsesReadyCondition (0.00s)
+=== RUN   TestClusterInfoProjectsActualNodeReadiness
+--- PASS: TestClusterInfoProjectsActualNodeReadiness (0.00s)
+=== RUN   TestHAEndpointValidationRejectsPathAndQuery
+--- PASS: TestHAEndpointValidationRejectsPathAndQuery (0.00s)
+=== RUN   TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge
+--- PASS: TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge (0.00s)
+=== RUN   TestRestartWaitsForKubernetesApiAfterRestart
+--- PASS: TestRestartWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestConfigureRegistryWaitsForKubernetesApiAfterRestart
+--- PASS: TestConfigureRegistryWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestJoinVerificationReadsTheGuestItPromoted
+--- PASS: TestJoinVerificationReadsTheGuestItPromoted (0.00s)
+=== RUN   TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum
+--- PASS: TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum (0.00s)
+=== RUN   TestFindMembershipNodeMatchesByName
+--- PASS: TestFindMembershipNodeMatchesByName (0.00s)
+=== RUN   TestJoinedMembershipSettledRequiresTheJoiningNodeItself
+--- PASS: TestJoinedMembershipSettledRequiresTheJoiningNodeItself (0.00s)
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused
+--- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible
+=== PAUSE TestQuorumRecoveryAdmissible
+=== RUN   TestTruncateProbeError
+=== PAUSE TestTruncateProbeError
+=== RUN   TestKeepSetFromPodJSONIncludesInitAndEphemeral
+--- PASS: TestKeepSetFromPodJSONIncludesInitAndEphemeral (0.00s)
+=== RUN   TestPlanUnusedImagesHonoursKeepSetAndAgeGate
+--- PASS: TestPlanUnusedImagesHonoursKeepSetAndAgeGate (0.00s)
+=== RUN   TestPruneUnusedImagesDryRunDoesNotMutate
+--- PASS: TestPruneUnusedImagesDryRunDoesNotMutate (0.00s)
+=== RUN   TestPruneUnusedImagesRemovesExitedThenUnused
+--- PASS: TestPruneUnusedImagesRemovesExitedThenUnused (0.00s)
+=== RUN   TestGarbageCollectRegistrySkippedWithoutFlag
+--- PASS: TestGarbageCollectRegistrySkippedWithoutFlag (0.00s)
+=== RUN   TestPlanRegistryDeletesUsesKeepSet
+--- PASS: TestPlanRegistryDeletesUsesKeepSet (0.00s)
+=== RUN   TestGarbageCollectRegistryDryRunDoesNotScale
+--- PASS: TestGarbageCollectRegistryDryRunDoesNotScale (0.00s)
+=== RUN   TestTrimGuestStorageRunsFstrim
+--- PASS: TestTrimGuestStorageRunsFstrim (0.00s)
+=== RUN   TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied
+--- PASS: TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied (0.00s)
+=== RUN   TestRefuseCRIAllDelete
+--- PASS: TestRefuseCRIAllDelete (0.00s)
+=== RUN   TestRegistryGCJobOmitsConfigMapWhenDeployHasNone
+--- PASS: TestRegistryGCJobOmitsConfigMapWhenDeployHasNone (0.00s)
+=== RUN   TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim
+--- PASS: TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim (0.00s)
+=== RUN   TestInspectGuestStorageReportsReclaimable
+--- PASS: TestInspectGuestStorageReportsReclaimable (0.00s)
+=== CONT  TestQuorumRecoveryAdmissible
+=== RUN   TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== PAUSE TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== RUN   TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== CONT  TestTruncateProbeError
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+--- PASS: TestTruncateProbeError (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== RUN   TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== PAUSE TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== CONT  TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+--- PASS: TestQuorumRecoveryAdmissible (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused (0.00s)
+=== RUN   TestK3sManifestDeclaresNeutralCapabilityAndOperations
+--- PASS: TestK3sManifestDeclaresNeutralCapabilityAndOperations (0.00s)
+=== RUN   TestK3sTeardownPlanUsesDeclaredServiceIdentity
+--- PASS: TestK3sTeardownPlanUsesDeclaredServiceIdentity (0.00s)
+=== RUN   TestK3sSystemTeardownKeepsProviderReachableForFinalize
+--- PASS: TestK3sSystemTeardownKeepsProviderReachableForFinalize (0.00s)
+=== RUN   TestK3sSystemTeardownRejectsUnownedServicePath
+--- PASS: TestK3sSystemTeardownRejectsUnownedServicePath (0.00s)
+=== RUN   TestK3sHTTPHandlerAdvertisesModernProviderProtocol
+--- PASS: TestK3sHTTPHandlerAdvertisesModernProviderProtocol (0.00s)
+=== RUN   TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge
+--- PASS: TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge (0.00s)
+=== RUN   TestProbeHAEndpointRejectsMissingPublicEndpoint
+--- PASS: TestProbeHAEndpointRejectsMissingPublicEndpoint (0.00s)
+=== RUN   TestK3sTargetOperationsDeclareCanonicalClusterBinding
+--- PASS: TestK3sTargetOperationsDeclareCanonicalClusterBinding (0.00s)
+=== RUN   TestK3sProvisionClusterInitIsExplicit
+--- PASS: TestK3sProvisionClusterInitIsExplicit (0.00s)
+=== RUN   TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay
+--- PASS: TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay (0.00s)
+=== RUN   TestParseK3sVersionReturnsInstallerReleaseToken
+--- PASS: TestParseK3sVersionReturnsInstallerReleaseToken (0.00s)
+=== RUN   TestJoinInvitationIsOneTimeAndRequiresRedemption
+--- PASS: TestJoinInvitationIsOneTimeAndRequiresRedemption (0.00s)
+=== RUN   TestSealedJoinMaterialRoundTripsOnlyToReceiverKey
+--- PASS: TestSealedJoinMaterialRoundTripsOnlyToReceiverKey (0.00s)
+=== RUN   TestK3sExecCommandValidationPreservesTypedArguments
+--- PASS: TestK3sExecCommandValidationPreservesTypedArguments (0.00s)
+=== RUN   TestK3sTargetValidationRejectsFallbackShapes
+--- PASS: TestK3sTargetValidationRejectsFallbackShapes (0.00s)
+=== RUN   TestK3sProvisionTargetValidationRequiresCanonicalInstance
+--- PASS: TestK3sProvisionTargetValidationRequiresCanonicalInstance (0.00s)
+=== RUN   TestK3sResourceValidationRequiresTypedFields
+--- PASS: TestK3sResourceValidationRequiresTypedFields (0.00s)
+=== RUN   TestNativeMembershipParsingUsesReadyAndRoleLabels
+--- PASS: TestNativeMembershipParsingUsesReadyAndRoleLabels (0.00s)
+=== RUN   TestParseClusterNodeSnapshotUsesReadyCondition
+--- PASS: TestParseClusterNodeSnapshotUsesReadyCondition (0.00s)
+=== RUN   TestClusterInfoProjectsActualNodeReadiness
+--- PASS: TestClusterInfoProjectsActualNodeReadiness (0.00s)
+=== RUN   TestHAEndpointValidationRejectsPathAndQuery
+--- PASS: TestHAEndpointValidationRejectsPathAndQuery (0.00s)
+=== RUN   TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge
+--- PASS: TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge (0.00s)
+=== RUN   TestRestartWaitsForKubernetesApiAfterRestart
+--- PASS: TestRestartWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestConfigureRegistryWaitsForKubernetesApiAfterRestart
+--- PASS: TestConfigureRegistryWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestJoinVerificationReadsTheGuestItPromoted
+--- PASS: TestJoinVerificationReadsTheGuestItPromoted (0.00s)
+=== RUN   TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum
+--- PASS: TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum (0.00s)
+=== RUN   TestFindMembershipNodeMatchesByName
+--- PASS: TestFindMembershipNodeMatchesByName (0.00s)
+=== RUN   TestJoinedMembershipSettledRequiresTheJoiningNodeItself
+--- PASS: TestJoinedMembershipSettledRequiresTheJoiningNodeItself (0.00s)
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused
+--- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible
+=== PAUSE TestQuorumRecoveryAdmissible
+=== RUN   TestTruncateProbeError
+=== PAUSE TestTruncateProbeError
+=== RUN   TestKeepSetFromPodJSONIncludesInitAndEphemeral
+--- PASS: TestKeepSetFromPodJSONIncludesInitAndEphemeral (0.00s)
+=== RUN   TestPlanUnusedImagesHonoursKeepSetAndAgeGate
+--- PASS: TestPlanUnusedImagesHonoursKeepSetAndAgeGate (0.00s)
+=== RUN   TestPruneUnusedImagesDryRunDoesNotMutate
+--- PASS: TestPruneUnusedImagesDryRunDoesNotMutate (0.00s)
+=== RUN   TestPruneUnusedImagesRemovesExitedThenUnused
+--- PASS: TestPruneUnusedImagesRemovesExitedThenUnused (0.00s)
+=== RUN   TestGarbageCollectRegistrySkippedWithoutFlag
+--- PASS: TestGarbageCollectRegistrySkippedWithoutFlag (0.00s)
+=== RUN   TestPlanRegistryDeletesUsesKeepSet
+--- PASS: TestPlanRegistryDeletesUsesKeepSet (0.00s)
+=== RUN   TestGarbageCollectRegistryDryRunDoesNotScale
+--- PASS: TestGarbageCollectRegistryDryRunDoesNotScale (0.00s)
+=== RUN   TestTrimGuestStorageRunsFstrim
+--- PASS: TestTrimGuestStorageRunsFstrim (0.00s)
+=== RUN   TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied
+--- PASS: TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied (0.00s)
+=== RUN   TestRefuseCRIAllDelete
+--- PASS: TestRefuseCRIAllDelete (0.00s)
+=== RUN   TestRegistryGCJobOmitsConfigMapWhenDeployHasNone
+--- PASS: TestRegistryGCJobOmitsConfigMapWhenDeployHasNone (0.00s)
+=== RUN   TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim
+--- PASS: TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim (0.00s)
+=== RUN   TestInspectGuestStorageReportsReclaimable
+--- PASS: TestInspectGuestStorageReportsReclaimable (0.00s)
+=== CONT  TestQuorumRecoveryAdmissible
+=== RUN   TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestTruncateProbeError
+--- PASS: TestTruncateProbeError (0.00s)
+=== PAUSE TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== RUN   TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== RUN   TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== PAUSE TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== CONT  TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+--- PASS: TestQuorumRecoveryAdmissible (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails (0.00s)
+=== RUN   TestK3sManifestDeclaresNeutralCapabilityAndOperations
+--- PASS: TestK3sManifestDeclaresNeutralCapabilityAndOperations (0.00s)
+=== RUN   TestK3sTeardownPlanUsesDeclaredServiceIdentity
+--- PASS: TestK3sTeardownPlanUsesDeclaredServiceIdentity (0.00s)
+=== RUN   TestK3sSystemTeardownKeepsProviderReachableForFinalize
+--- PASS: TestK3sSystemTeardownKeepsProviderReachableForFinalize (0.00s)
+=== RUN   TestK3sSystemTeardownRejectsUnownedServicePath
+--- PASS: TestK3sSystemTeardownRejectsUnownedServicePath (0.00s)
+=== RUN   TestK3sHTTPHandlerAdvertisesModernProviderProtocol
+--- PASS: TestK3sHTTPHandlerAdvertisesModernProviderProtocol (0.00s)
+=== RUN   TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge
+--- PASS: TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge (0.00s)
+=== RUN   TestProbeHAEndpointRejectsMissingPublicEndpoint
+--- PASS: TestProbeHAEndpointRejectsMissingPublicEndpoint (0.00s)
+=== RUN   TestK3sTargetOperationsDeclareCanonicalClusterBinding
+--- PASS: TestK3sTargetOperationsDeclareCanonicalClusterBinding (0.00s)
+=== RUN   TestK3sProvisionClusterInitIsExplicit
+--- PASS: TestK3sProvisionClusterInitIsExplicit (0.00s)
+=== RUN   TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay
+--- PASS: TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay (0.00s)
+=== RUN   TestParseK3sVersionReturnsInstallerReleaseToken
+--- PASS: TestParseK3sVersionReturnsInstallerReleaseToken (0.00s)
+=== RUN   TestJoinInvitationIsOneTimeAndRequiresRedemption
+--- PASS: TestJoinInvitationIsOneTimeAndRequiresRedemption (0.00s)
+=== RUN   TestSealedJoinMaterialRoundTripsOnlyToReceiverKey
+--- PASS: TestSealedJoinMaterialRoundTripsOnlyToReceiverKey (0.00s)
+=== RUN   TestK3sExecCommandValidationPreservesTypedArguments
+--- PASS: TestK3sExecCommandValidationPreservesTypedArguments (0.00s)
+=== RUN   TestK3sTargetValidationRejectsFallbackShapes
+--- PASS: TestK3sTargetValidationRejectsFallbackShapes (0.00s)
+=== RUN   TestK3sProvisionTargetValidationRequiresCanonicalInstance
+--- PASS: TestK3sProvisionTargetValidationRequiresCanonicalInstance (0.00s)
+=== RUN   TestK3sResourceValidationRequiresTypedFields
+--- PASS: TestK3sResourceValidationRequiresTypedFields (0.00s)
+=== RUN   TestNativeMembershipParsingUsesReadyAndRoleLabels
+--- PASS: TestNativeMembershipParsingUsesReadyAndRoleLabels (0.00s)
+=== RUN   TestParseClusterNodeSnapshotUsesReadyCondition
+--- PASS: TestParseClusterNodeSnapshotUsesReadyCondition (0.00s)
+=== RUN   TestClusterInfoProjectsActualNodeReadiness
+--- PASS: TestClusterInfoProjectsActualNodeReadiness (0.00s)
+=== RUN   TestHAEndpointValidationRejectsPathAndQuery
+--- PASS: TestHAEndpointValidationRejectsPathAndQuery (0.00s)
+=== RUN   TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge
+--- PASS: TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge (0.00s)
+=== RUN   TestRestartWaitsForKubernetesApiAfterRestart
+--- PASS: TestRestartWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestConfigureRegistryWaitsForKubernetesApiAfterRestart
+--- PASS: TestConfigureRegistryWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestJoinVerificationReadsTheGuestItPromoted
+--- PASS: TestJoinVerificationReadsTheGuestItPromoted (0.00s)
+=== RUN   TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum
+--- PASS: TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum (0.00s)
+=== RUN   TestFindMembershipNodeMatchesByName
+--- PASS: TestFindMembershipNodeMatchesByName (0.00s)
+=== RUN   TestJoinedMembershipSettledRequiresTheJoiningNodeItself
+--- PASS: TestJoinedMembershipSettledRequiresTheJoiningNodeItself (0.00s)
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused
+--- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible
+=== PAUSE TestQuorumRecoveryAdmissible
+=== RUN   TestTruncateProbeError
+=== PAUSE TestTruncateProbeError
+=== RUN   TestKeepSetFromPodJSONIncludesInitAndEphemeral
+--- PASS: TestKeepSetFromPodJSONIncludesInitAndEphemeral (0.00s)
+=== RUN   TestPlanUnusedImagesHonoursKeepSetAndAgeGate
+--- PASS: TestPlanUnusedImagesHonoursKeepSetAndAgeGate (0.00s)
+=== RUN   TestPruneUnusedImagesDryRunDoesNotMutate
+--- PASS: TestPruneUnusedImagesDryRunDoesNotMutate (0.00s)
+=== RUN   TestPruneUnusedImagesRemovesExitedThenUnused
+--- PASS: TestPruneUnusedImagesRemovesExitedThenUnused (0.00s)
+=== RUN   TestGarbageCollectRegistrySkippedWithoutFlag
+--- PASS: TestGarbageCollectRegistrySkippedWithoutFlag (0.00s)
+=== RUN   TestPlanRegistryDeletesUsesKeepSet
+--- PASS: TestPlanRegistryDeletesUsesKeepSet (0.00s)
+=== RUN   TestGarbageCollectRegistryDryRunDoesNotScale
+--- PASS: TestGarbageCollectRegistryDryRunDoesNotScale (0.00s)
+=== RUN   TestTrimGuestStorageRunsFstrim
+--- PASS: TestTrimGuestStorageRunsFstrim (0.00s)
+=== RUN   TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied
+--- PASS: TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied (0.00s)
+=== RUN   TestRefuseCRIAllDelete
+--- PASS: TestRefuseCRIAllDelete (0.00s)
+=== RUN   TestRegistryGCJobOmitsConfigMapWhenDeployHasNone
+--- PASS: TestRegistryGCJobOmitsConfigMapWhenDeployHasNone (0.00s)
+=== RUN   TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim
+--- PASS: TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim (0.00s)
+=== RUN   TestInspectGuestStorageReportsReclaimable
+--- PASS: TestInspectGuestStorageReportsReclaimable (0.00s)
+=== CONT  TestQuorumRecoveryAdmissible
+=== RUN   TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestTruncateProbeError
+=== PAUSE TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+--- PASS: TestTruncateProbeError (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== RUN   TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== PAUSE TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+--- PASS: TestQuorumRecoveryAdmissible (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node (0.00s)
+=== RUN   TestK3sManifestDeclaresNeutralCapabilityAndOperations
+--- PASS: TestK3sManifestDeclaresNeutralCapabilityAndOperations (0.00s)
+=== RUN   TestK3sTeardownPlanUsesDeclaredServiceIdentity
+--- PASS: TestK3sTeardownPlanUsesDeclaredServiceIdentity (0.00s)
+=== RUN   TestK3sSystemTeardownKeepsProviderReachableForFinalize
+--- PASS: TestK3sSystemTeardownKeepsProviderReachableForFinalize (0.00s)
+=== RUN   TestK3sSystemTeardownRejectsUnownedServicePath
+--- PASS: TestK3sSystemTeardownRejectsUnownedServicePath (0.00s)
+=== RUN   TestK3sHTTPHandlerAdvertisesModernProviderProtocol
+--- PASS: TestK3sHTTPHandlerAdvertisesModernProviderProtocol (0.00s)
+=== RUN   TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge
+--- PASS: TestProbeHAEndpointUsesHostTLSAndAcceptsKubernetesAuthChallenge (0.00s)
+=== RUN   TestProbeHAEndpointRejectsMissingPublicEndpoint
+--- PASS: TestProbeHAEndpointRejectsMissingPublicEndpoint (0.00s)
+=== RUN   TestK3sTargetOperationsDeclareCanonicalClusterBinding
+--- PASS: TestK3sTargetOperationsDeclareCanonicalClusterBinding (0.00s)
+=== RUN   TestK3sProvisionClusterInitIsExplicit
+--- PASS: TestK3sProvisionClusterInitIsExplicit (0.00s)
+=== RUN   TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay
+--- PASS: TestK3sInstallExecBindsNativeTrafficToDeclaredOverlay (0.00s)
+=== RUN   TestParseK3sVersionReturnsInstallerReleaseToken
+--- PASS: TestParseK3sVersionReturnsInstallerReleaseToken (0.00s)
+=== RUN   TestJoinInvitationIsOneTimeAndRequiresRedemption
+--- PASS: TestJoinInvitationIsOneTimeAndRequiresRedemption (0.00s)
+=== RUN   TestSealedJoinMaterialRoundTripsOnlyToReceiverKey
+--- PASS: TestSealedJoinMaterialRoundTripsOnlyToReceiverKey (0.00s)
+=== RUN   TestK3sExecCommandValidationPreservesTypedArguments
+--- PASS: TestK3sExecCommandValidationPreservesTypedArguments (0.00s)
+=== RUN   TestK3sTargetValidationRejectsFallbackShapes
+--- PASS: TestK3sTargetValidationRejectsFallbackShapes (0.00s)
+=== RUN   TestK3sProvisionTargetValidationRequiresCanonicalInstance
+--- PASS: TestK3sProvisionTargetValidationRequiresCanonicalInstance (0.00s)
+=== RUN   TestK3sResourceValidationRequiresTypedFields
+--- PASS: TestK3sResourceValidationRequiresTypedFields (0.00s)
+=== RUN   TestNativeMembershipParsingUsesReadyAndRoleLabels
+--- PASS: TestNativeMembershipParsingUsesReadyAndRoleLabels (0.00s)
+=== RUN   TestParseClusterNodeSnapshotUsesReadyCondition
+--- PASS: TestParseClusterNodeSnapshotUsesReadyCondition (0.00s)
+=== RUN   TestClusterInfoProjectsActualNodeReadiness
+--- PASS: TestClusterInfoProjectsActualNodeReadiness (0.00s)
+=== RUN   TestHAEndpointValidationRejectsPathAndQuery
+--- PASS: TestHAEndpointValidationRejectsPathAndQuery (0.00s)
+=== RUN   TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge
+--- PASS: TestEndpointHTTPStatusAcceptableIncludesKubernetesAuthChallenge (0.00s)
+=== RUN   TestRestartWaitsForKubernetesApiAfterRestart
+--- PASS: TestRestartWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestConfigureRegistryWaitsForKubernetesApiAfterRestart
+--- PASS: TestConfigureRegistryWaitsForKubernetesApiAfterRestart (0.00s)
+=== RUN   TestJoinVerificationReadsTheGuestItPromoted
+--- PASS: TestJoinVerificationReadsTheGuestItPromoted (0.00s)
+=== RUN   TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum
+--- PASS: TestQuorumAfterRemovalAllowsRetiringADeadMemberButRefusesLosingQuorum (0.00s)
+=== RUN   TestFindMembershipNodeMatchesByName
+--- PASS: TestFindMembershipNodeMatchesByName (0.00s)
+=== RUN   TestJoinedMembershipSettledRequiresTheJoiningNodeItself
+--- PASS: TestJoinedMembershipSettledRequiresTheJoiningNodeItself (0.00s)
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable
+=== RUN   TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused
+--- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/three_ready_servers_can_lose_one (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/an_unready_server_can_be_retired_from_a_healthy_pair (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/the_last_server_is_never_removable (0.00s)
+    --- PASS: TestQuorumAfterRemovalRefusesToBreakTheCluster/removal_that_would_lose_the_majority_is_refused (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible
+=== PAUSE TestQuorumRecoveryAdmissible
+=== RUN   TestTruncateProbeError
+=== PAUSE TestTruncateProbeError
+=== RUN   TestKeepSetFromPodJSONIncludesInitAndEphemeral
+--- PASS: TestKeepSetFromPodJSONIncludesInitAndEphemeral (0.00s)
+=== RUN   TestPlanUnusedImagesHonoursKeepSetAndAgeGate
+--- PASS: TestPlanUnusedImagesHonoursKeepSetAndAgeGate (0.00s)
+=== RUN   TestPruneUnusedImagesDryRunDoesNotMutate
+--- PASS: TestPruneUnusedImagesDryRunDoesNotMutate (0.00s)
+=== RUN   TestPruneUnusedImagesRemovesExitedThenUnused
+--- PASS: TestPruneUnusedImagesRemovesExitedThenUnused (0.00s)
+=== RUN   TestGarbageCollectRegistrySkippedWithoutFlag
+--- PASS: TestGarbageCollectRegistrySkippedWithoutFlag (0.00s)
+=== RUN   TestPlanRegistryDeletesUsesKeepSet
+--- PASS: TestPlanRegistryDeletesUsesKeepSet (0.00s)
+=== RUN   TestGarbageCollectRegistryDryRunDoesNotScale
+--- PASS: TestGarbageCollectRegistryDryRunDoesNotScale (0.00s)
+=== RUN   TestTrimGuestStorageRunsFstrim
+--- PASS: TestTrimGuestStorageRunsFstrim (0.00s)
+=== RUN   TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied
+--- PASS: TestTrimGuestStorageFallsBackToHostWhenFITRIMDenied (0.00s)
+=== RUN   TestRefuseCRIAllDelete
+--- PASS: TestRefuseCRIAllDelete (0.00s)
+=== RUN   TestRegistryGCJobOmitsConfigMapWhenDeployHasNone
+--- PASS: TestRegistryGCJobOmitsConfigMapWhenDeployHasNone (0.00s)
+=== RUN   TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim
+--- PASS: TestStorageReclaimRecipeOrchestratesInspectPruneGCTrim (0.00s)
+=== RUN   TestInspectGuestStorageReportsReclaimable
+--- PASS: TestInspectGuestStorageReportsReclaimable (0.00s)
+=== CONT  TestQuorumRecoveryAdmissible
+=== CONT  TestTruncateProbeError
+--- PASS: TestTruncateProbeError (0.00s)
+=== RUN   TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== PAUSE TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== RUN   TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== RUN   TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== PAUSE TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== RUN   TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== PAUSE TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+=== CONT  TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node
+=== CONT  TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused
+=== CONT  TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails
+--- PASS: TestQuorumRecoveryAdmissible (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/wedged_embedded-etcd_cluster_with_an_acknowledged_reset_is_admitted (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_that_is_not_embedded-etcd_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/an_unacknowledged_reset_is_refused (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/acknowledgement_is_required_even_when_every_other_precondition_fails (0.00s)
+    --- PASS: TestQuorumRecoveryAdmissible/a_cluster_whose_API_server_answered_is_refused_and_pointed_at_remove-node (0.00s)
+PASS
+ok  	github.com/wunderous/host-agents/plugins/kubernetes/k3s/cmd/opute-provider-k3s	0.084s

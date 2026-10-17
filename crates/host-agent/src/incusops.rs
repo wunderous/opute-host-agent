@@ -61,6 +61,14 @@ impl Fail {
         }
     }
 
+    /// The error's text, as Go's `err.Error()`.
+    pub(crate) fn text(self) -> String {
+        match self {
+            Fail::Text(text) => text,
+            Fail::Admission(e) => e.to_string(),
+        }
+    }
+
     /// `tools.ErrorResult`.
     pub fn render(self) -> J {
         match self {
@@ -84,6 +92,8 @@ pub struct Instances {
     pub shared_host_owner_instance: String,
     /// `resolveResetCheckpointPath`: `<relay dir>/incus-reset-checkpoint.json`.
     pub reset_checkpoint_path: String,
+    /// `revokeRelays`: the in-process relays into guests.
+    pub relays: Arc<crate::tcprelay::Manager>,
 }
 
 /// `ErrString`-style failure of one provider command: the run error, or
@@ -1807,6 +1817,27 @@ impl Instances {
         Err(format!("timed out waiting for Incus VM agent on {}", quote(vm)).into())
     }
 
+    /// `WaitForVMExecReady`.
+    pub(crate) fn wait_for_exec_ready(&self, vm: &str, timeout: Duration) -> Result<(), String> {
+        self.wait_for_agent(vm, timeout).map_err(Fail::text)
+    }
+
+    /// `ReadInstanceType`, for the cluster agent.
+    pub(crate) fn instance_type(&self, name: &str) -> Result<String, String> {
+        self.read_instance_type(name).map_err(Fail::text)
+    }
+
+    /// `EnsureDevice`, for the cluster agent.
+    pub(crate) fn ensure_instance_device(
+        &self,
+        instance: &str,
+        device: &str,
+        add: &[&str],
+    ) -> Result<(), String> {
+        self.ensure_device(instance, device, add)
+            .map_err(Fail::text)
+    }
+
     /// `ProbeGPUContainer`: a disposable container, probed and deleted.
     pub fn probe_gpu_container(&self) -> R<J> {
         if !cfg!(target_os = "linux") {
@@ -2413,8 +2444,9 @@ impl Instances {
             result.insert("checkpoint".into(), checkpoint.to_json());
             return Ok(J::Object(result));
         }
-        // Relays into the guests are revoked before they are deleted. This
-        // build runs no in-process relays, so there is nothing to stop.
+        // `revokeRelays`: relays into the guests stop before they are
+        // deleted.
+        self.relays.stop_all();
         let interrupted = |checkpoint: &mut Checkpoint| {
             checkpoint.phase = "interrupted".into();
             let _ = self.write_checkpoint(checkpoint);

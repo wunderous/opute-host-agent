@@ -346,6 +346,212 @@ def incus_golden_record() -> dict:
     return record
 
 
+# The k3s golden (M8c): an overlay of the nested-Incus golden with one
+# privileged Incus container, k1, running a single-node k3s server whose
+# system images come from the release's airgap tarball, a local registry
+# Deployment (registry/opute-registry, what the k3s provider's registry
+# garbage collection looks for) and helm on the twin itself (render runs
+# helm template on the host). Every download is pinned by sha256. The k3s
+# provider reaches k1 through `incus exec`, exactly as on a real host; no
+# Kubernetes outside a twin is ever contacted.
+K3S_GOLDEN = "golden-k3s"
+K3S_VERSION = "v1.31.2+k3s1"
+K3S_URL = "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1"
+K3S_SHA256 = "256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712"
+K3S_IMAGES_SHA256 = "c1f62ca3b15699d3bc5b4c84d6e458d8f5b9ff8572299bebdf0a0295edeed135"
+HELM_VERSION = "v3.16.2"
+HELM_SHA256 = "9318379b847e333460d33d291d4c088156299a26cd93d570a7f5d0c36e50b5bb"
+REGISTRY_IMAGE = "docker.io/library/registry:2.8.3"
+K3S_UNIT = ("[Unit]\nDescription=k3s server (parity T2)\nAfter=network-online.target\nWants=network-online.target\n\n"
+            "[Service]\nType=notify\nExecStartPre=-/sbin/modprobe br_netfilter\nExecStartPre=-/sbin/modprobe overlay\n"
+            "ExecStart=/usr/local/bin/k3s server --node-name=k1 --write-kubeconfig-mode=0644 "
+            "--disable=traefik,servicelb,metrics-server --disable-helm-controller\n"
+            "KillMode=process\nDelegate=yes\nLimitNOFILE=1048576\nLimitNPROC=infinity\nLimitCORE=infinity\n"
+            "TasksMax=infinity\nTimeoutStartSec=0\nRestart=always\nRestartSec=5s\n\n"
+            "[Install]\nWantedBy=multi-user.target\n")
+REGISTRY_MANIFEST = """apiVersion: v1
+kind: Namespace
+metadata:
+  name: registry
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opute-registry
+  namespace: registry
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests: {storage: 1Gi}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opute-registry-config
+  namespace: registry
+data:
+  config.yml: |
+    version: 0.1
+    storage:
+      filesystem: {rootdirectory: /var/lib/registry}
+      delete: {enabled: true}
+    http: {addr: ":5000"}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opute-registry
+  namespace: registry
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: opute-registry}
+  template:
+    metadata:
+      labels: {app: opute-registry}
+    spec:
+      containers:
+        - name: registry
+          image: %s
+          imagePullPolicy: IfNotPresent
+          command: ["registry", "serve", "/etc/distribution/config.yml"]
+          ports: [{containerPort: 5000}]
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/registry}
+            - {name: config, mountPath: /etc/distribution}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: opute-registry}
+        - name: config
+          configMap: {name: opute-registry-config}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opute-registry
+  namespace: registry
+spec:
+  selector: {app: opute-registry}
+  ports: [{port: 5000, targetPort: 5000}]
+""" % REGISTRY_IMAGE
+# Two tags in the registry, so garbage collection has manifests to weigh.
+REGISTRY_SEED = ("REG=$(incus exec k1 -- k3s kubectl -n registry get svc opute-registry -o jsonpath='{.spec.clusterIP}') && "
+                 "for pair in mirrored-pause:3.6=parity/app:v1 mirrored-library-busybox:1.36.1=parity/app:v2; do "
+                 "src=docker.io/rancher/${pair%%=*}; dst=$REG:5000/${pair#*=}; "
+                 "incus exec k1 -- k3s ctr images tag \"$src\" \"$dst\" && "
+                 "incus exec k1 -- k3s ctr images push --plain-http \"$dst\" && "
+                 "incus exec k1 -- k3s ctr images rm \"$dst\" || exit 1; done")
+K1_RAW_LXC = ("lxc.apparmor.profile=unconfined\nlxc.cap.drop=\nlxc.cgroup2.devices.allow=a\n"
+              "lxc.mount.auto=proc:rw sys:rw cgroup:rw")
+K3S_READY = ("incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && "
+             "incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && "
+             "incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && "
+             "incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s")
+K3S_RECIPE = [
+    "incus admin waitready --timeout=180",
+    "incus launch parity-noble k1 -c security.privileged=true -c security.nesting=true -c boot.autostart=true "
+    "-c linux.kernel_modules=overlay,br_netfilter,ip_tables,ip6_tables,nf_nat,xt_conntrack,iptable_nat,iptable_filter "
+    f"-c raw.lxc={shlex.quote(K1_RAW_LXC)}",
+    "incus config device add k1 kmsg unix-char source=/dev/kmsg path=/dev/kmsg",
+    "incus restart k1",
+    "incus exec k1 -- timeout 300 sh -c 'until systemctl is-system-running 2>/dev/null | grep -qE \"running|degraded\"; "
+    "do sleep 1; done'",
+    # curl for the cluster agent's install script and its bridge probe.
+    "incus exec k1 -- sh -c 'apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -y -q curl'",
+    f"curl -fsSL -o /tmp/k3s {K3S_URL}/k3s && echo '{K3S_SHA256}  /tmp/k3s' | sha256sum -c - && "
+    "incus file push --mode 0755 /tmp/k3s k1/usr/local/bin/k3s && rm /tmp/k3s",
+    f"curl -fsSL -o /tmp/images.tar.zst {K3S_URL}/k3s-airgap-images-amd64.tar.zst && "
+    f"echo '{K3S_IMAGES_SHA256}  /tmp/images.tar.zst' | sha256sum -c - && "
+    "incus exec k1 -- mkdir -p /var/lib/rancher/k3s/agent/images && "
+    "incus file push /tmp/images.tar.zst k1/var/lib/rancher/k3s/agent/images/k3s-airgap-images-amd64.tar.zst && "
+    "rm /tmp/images.tar.zst",
+    f"printf '%s' {shlex.quote(K3S_UNIT)} > /tmp/k3s.service && "
+    "incus file push /tmp/k3s.service k1/etc/systemd/system/k3s.service && rm /tmp/k3s.service",
+    "incus exec k1 -- sh -c 'systemctl daemon-reload && systemctl enable --now k3s.service'",
+    K3S_READY,
+    f"incus exec k1 -- k3s ctr images pull {REGISTRY_IMAGE}",
+    f"printf '%s' {shlex.quote(REGISTRY_MANIFEST)} | incus exec k1 -- k3s kubectl apply -f -",
+    "incus exec k1 -- k3s kubectl -n registry rollout status deploy/opute-registry --timeout=600s",
+    REGISTRY_SEED,
+    f"curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-{HELM_VERSION}-linux-amd64.tar.gz && "
+    f"echo '{HELM_SHA256}  /tmp/helm.tgz' | sha256sum -c - && tar -xzf /tmp/helm.tgz -C /tmp linux-amd64/helm && "
+    "install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm.tgz /tmp/linux-amd64",
+    "sync",
+]
+
+
+def build_k3s_golden() -> dict:
+    """Build the k3s golden once, as an overlay of the nested-Incus golden."""
+    base = incus_golden_record()
+    golden = WORK / f"{K3S_GOLDEN}.qcow2"
+    if golden.exists():
+        raise RuntimeError(f"{golden} exists; a golden image is never rebuilt in place")
+    with (WORK / "golden.lease").open("a+") as lease:
+        fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b",
+                        str(WORK / f"{INCUS_GOLDEN}.qcow2"), str(golden)], check=True)
+        port = _free_port()
+        argv = _qemu(golden, WORK / "seed.img", port, WORK / f"{K3S_GOLDEN}-serial.log", INCUS_MEMORY_MB)
+        process = subprocess.Popen(argv, stdout=(WORK / f"{K3S_GOLDEN}-qemu.log").open("w"),
+                                   stderr=subprocess.STDOUT)
+        log = []
+        try:
+            _wait_ssh(port, process)
+            ssh = _ssh_base(port)
+            subprocess.run(ssh + ["systemctl is-system-running --wait >/dev/null 2>&1; true"], capture_output=True)
+            for command in K3S_RECIPE:
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=3600)
+                log.append({"command": command, "exit": done.returncode, "stderr": done.stderr[-2000:]})
+                if done.returncode != 0:
+                    raise RuntimeError(f"k3s golden {command!r}: {done.stderr[-2000:]}")
+            facts = {}
+            for key, command in (("k3sVersion", "incus exec k1 -- k3s --version"),
+                                 ("helmVersion", "helm version --short"),
+                                 ("nodes", "incus exec k1 -- k3s kubectl get nodes -o wide"),
+                                 ("pods", "incus exec k1 -- k3s kubectl get pods -A -o wide"),
+                                 ("images", "incus exec k1 -- k3s crictl images"),
+                                 ("instance", "incus config show k1")):
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=120)
+                facts[key] = done.stdout
+            subprocess.run(ssh + ["sync; poweroff"], capture_output=True)
+            process.wait(timeout=300)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        record = {
+            "scope": "T2 k3s golden: an overlay of the nested-Incus golden, dedicated and disposable; k3s, its "
+                     "registry and helm run only inside twins booted from it; no shared Incus/Kubernetes/tunnel/"
+                     "deploy state",
+            "incusGoldenSha256": base["goldenSha256"], "recipe": K3S_RECIPE, "recipeLog": log, "facts": facts,
+            "memoryMb": INCUS_MEMORY_MB, "goldenSha256": sha256_file(golden),
+            "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "qemuArgv": argv,
+        }
+        golden.chmod(0o444)
+        (WORK / f"{K3S_GOLDEN}.json").write_text(json.dumps(record, indent=1) + "\n")
+        return record
+
+
+def k3s_golden_record() -> dict:
+    record = json.loads((WORK / f"{K3S_GOLDEN}.json").read_text())
+    actual = sha256_file(WORK / f"{K3S_GOLDEN}.qcow2")
+    if actual != record["goldenSha256"]:
+        raise RuntimeError(f"k3s golden image changed: {actual} != {record['goldenSha256']}")
+    if record["incusGoldenSha256"] != incus_golden_record()["goldenSha256"]:
+        raise RuntimeError("k3s golden was built over a different nested-Incus golden")
+    return record
+
+
+GOLDEN_IMAGES = {"base": "golden.qcow2", "incus": f"{INCUS_GOLDEN}.qcow2", "k3s": f"{K3S_GOLDEN}.qcow2"}
+# The k3s twins also carry the pinned Go k3s provider, which the scenario
+# starts in the guest (the agent never spawns providers).
+GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"]}
+
+
 # --- one twin -----------------------------------------------------------------------
 
 
@@ -354,7 +560,7 @@ class Twin:
 
     def __init__(self, label: str, binary: Path, run_dir: Path, golden: str = "base"):
         self.label, self.binary, self.run_dir = label, binary, run_dir
-        self.image = WORK / ("golden.qcow2" if golden == "base" else f"{INCUS_GOLDEN}.qcow2")
+        self.image = WORK / GOLDEN_IMAGES[golden]
         self.memory_mb = MEMORY_MB if golden == "base" else INCUS_MEMORY_MB
         self.golden = golden
         self.disk = run_dir / f"{label}.qcow2"
@@ -381,11 +587,12 @@ class Twin:
                               "do sleep 1; done'; "
                               # incusd is socket-activated: started here, it has set up its
                               # bridge and firewall before the first baseline, not during it.
-                              + ("incus admin waitready --timeout=180 && " if self.golden == "incus" else "") +
+                              + ("incus admin waitready --timeout=180 && " if self.golden != "base" else "") +
                               "mkdir -p /opt/parity-t2/state /opt/parity-t2/instance && "
                               "chown -R ubuntu:ubuntu /opt/parity-t2"], check=True, capture_output=True)
         scp = ["scp", "-q"] + [a for a in _ssh_base(self.port)[1:-3] if a != "-p"] + ["-P", str(self.port)]
         subprocess.run(scp + [str(self.binary)] + [str(GUEST_DIR / f) for f in GUEST_FILES]
+                       + [str(f) for f in GOLDEN_EXTRA.get(self.golden, [])]
                        + ["root@127.0.0.1:/opt/parity-t2/"], check=True)
         subprocess.run(ssh + ["mv /opt/parity-t2/" + shlex.quote(self.binary.name) + " /opt/parity-t2/agent && "
                               "chmod 0755 /opt/parity-t2/agent && chown ubuntu:ubuntu /opt/parity-t2/agent"],
@@ -445,6 +652,15 @@ def effects(base: dict, current: dict) -> dict:
         if base["firewall"].get(name) != current["firewall"].get(name):
             fw[name] = {"before": base["firewall"].get(name), "after": current["firewall"].get(name)}
     out["firewall"] = fw
+    b, c = base.get("kubernetes"), current.get("kubernetes")
+    if b is not None or c is not None:
+        b, c = b or {}, c or {}
+        k8s = {kind: d for kind in ("objects", "images", "k1Files", "k1Units")
+               if (d := _delta(b.get(kind, {}), c.get(kind, {})))}
+        for key in ("listErrors", "registry"):
+            if b.get(key) != c.get(key):
+                k8s[key] = {"before": b.get(key), "after": c.get(key)}
+        out["kubernetes"] = k8s
     b, c = base.get("incus"), current.get("incus")
     if b is not None or c is not None:
         out["incus"] = {kind: d for kind in sorted(set(b or {}) | set(c or {}))
@@ -647,6 +863,7 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     golden = golden_record()
     scenarios_all = load_scenarios(ids)
     incus = incus_golden_record() if any(s.get("golden") == "incus" for s in scenarios_all) else None
+    k3s = k3s_golden_record() if any(s.get("golden") == "k3s" for s in scenarios_all) else None
     # Hashed before the first twin boots: these are the bytes every twin of
     # this run receives (the harness is never edited mid-capture).
     guest_hashes = {name: sha256_file(GUEST_DIR / name) for name in GUEST_FILES}
@@ -661,7 +878,7 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     budget_cv = threading.Condition()
 
     def pair_memory(scenario: dict) -> int:
-        return 2 * (INCUS_MEMORY_MB if scenario.get("golden") == "incus" else MEMORY_MB)
+        return 2 * (MEMORY_MB if scenario.get("golden", "base") == "base" else INCUS_MEMORY_MB)
 
     def run_iteration(scenario: dict, i: int) -> dict:
         need = min(pair_memory(scenario), MEMORY_BUDGET_MB)  # one pair always runs
@@ -720,6 +937,9 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
         "workers": workers,
         "golden": {k: golden[k] for k in ("goldenSha256", "baseImageSha256", "baseImageSource", "seedSha256")},
         **({"incusGolden": {k: incus[k] for k in ("goldenSha256", "baseGoldenSha256")}} if incus else {}),
+        **({"k3sGolden": {"goldenSha256": k3s["goldenSha256"], "incusGoldenSha256": k3s["incusGoldenSha256"],
+                          "providerSha256": {p.name: sha256_file(p) for p in GOLDEN_EXTRA["k3s"]}}}
+           if k3s else {}),
         "guestSha256": guest_hashes, "harnessSha256": harness_hash, "scenarioSha256": scenario_hashes,
         "repeat": repeat, "scenarios": results,
     }

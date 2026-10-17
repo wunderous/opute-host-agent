@@ -758,6 +758,79 @@ impl Runtime {
         }
         Ok(observation)
     }
+    /// `kubernetesProviderExecutor.Execute`: the one active provider that
+    /// declares the Kubernetes capability runs the operation synchronously.
+    /// Selection is by capability; the Host Agent never names a provider.
+    pub fn kubernetes_execute(
+        &self,
+        operation: &str,
+        arguments: Map<String, Value>,
+    ) -> Result<Map<String, Value>, String> {
+        let mut candidates = Vec::new();
+        for (id, manifest) in self.activation.publication.manifests() {
+            if !manifest
+                .provides
+                .iter()
+                .any(|r| r.id.trim() == crate::clusterops::CAPABILITY)
+            {
+                continue;
+            }
+            let Ok(session) = self.activation.lifecycle.open_session(&id) else {
+                continue;
+            };
+            if let Some(adapter) = self
+                .activation
+                .mounts
+                .generation_adapter(&id, session.generation_id())
+            {
+                candidates.push((id, session, adapter));
+            }
+        }
+        if candidates.is_empty() {
+            return Err("no active Kubernetes provider is installed".into());
+        }
+        if candidates.len() > 1 {
+            return Err("multiple active Kubernetes providers are available; typed provider provenance is required".into());
+        }
+        let (id, session, adapter) = candidates.pop().expect("one candidate");
+        let result = self
+            .block(adapter.call_synchronous_only(
+                &RunCtx::background(),
+                operation,
+                Some(arguments),
+                "",
+            ))?
+            .map_err(|e| {
+                format!(
+                    "Kubernetes provider {} operation {}: {e}",
+                    crate::goerr::quote(&id),
+                    crate::goerr::quote(operation)
+                )
+            })?;
+        drop(session);
+        let content = result.get("structuredContent").unwrap_or(&Value::Null);
+        if result.get("isError") == Some(&Value::Bool(true)) {
+            return Err(format!(
+                "Kubernetes provider {} operation {} failed: {}",
+                crate::goerr::quote(&id),
+                crate::goerr::quote(operation),
+                crate::schema::go_v(content)
+            ));
+        }
+        match content {
+            Value::Null => Ok(Map::new()),
+            Value::Object(map) => Ok(map.clone()),
+            other => Err(format!(
+                "decode Kubernetes provider result: json: cannot unmarshal {} into Go value of type map[string]interface {{}}",
+                match other {
+                    Value::Array(_) => "array",
+                    Value::String(_) => "string",
+                    Value::Number(_) => "number",
+                    _ => "bool",
+                }
+            )),
+        }
+    }
     fn networking_activation(
         &self,
         contract: &str,

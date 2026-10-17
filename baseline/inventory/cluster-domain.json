@@ -1,0 +1,1167 @@
+{
+ "families": [
+  "cluster-agent",
+  "cluster-discovery",
+  "cluster-listings",
+  "cluster-packages",
+  "cluster-resources",
+  "guest-storage",
+  "service-exposure"
+ ],
+ "milestone": "M8c",
+ "note": "Static inventory of the Go kubernetes and cluster domains. providerOperations are the Kubernetes provider operations a tool reaches (kubectl runs inside the provider); commandsStatic is a lower bound of host commands; guestArgv names the commands the cluster domain runs in a guest through incus exec; effects.json records what each tool is observed running. reachability is the dispatch registry's status: an unreachable tool is registered but never published, and Rust refuses it as Go does.",
+ "owner": "kubernetes",
+ "source": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+ "surface": "cluster-domain",
+ "tools": [
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_cluster.go:17",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "bash",
+    "incus"
+   ],
+   "domain": "cluster",
+   "domainFunctions": [
+    "internal/domain/cluster/cluster_agent.go:287:InstallClusterAgent",
+    "internal/domain/cluster/cluster_agent.go:93:renderClusterAgentInstallScript",
+    "internal/domain/cluster/cluster_agent.go:74:renderClusterAgentServiceUnit",
+    "internal/domain/cluster/cluster_agent.go:70:resolveClusterAgentArtifactURL",
+    "internal/domain/cluster/cluster_agent.go:276:readVMMachineArch",
+    "internal/domain/cluster/cluster_agent.go:62:normalizeClusterAgentArch",
+    "internal/domain/cluster/cluster_agent.go:203:resolveBridgeEndpointForVM",
+    "internal/domain/cluster/cluster_agent.go:184:probeBridgeHealthFromGuest",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:32:resolveHyperVDefaultSwitchIPv4",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:72:resolveCpcContainerBridgeIPv4",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:98:discoverCpcContainerName",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:88:resolveGuestBridgeListenHost",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:59:readGuestBridgeListenHost",
+    "internal/domain/cluster/cluster_agent.go:191:readVMDefaultGateway",
+    "internal/domain/cluster/cluster_agent.go:160:buildBridgeEndpointURL",
+    "internal/domain/cluster/cluster_agent.go:151:defaultBridgePort",
+    "internal/domain/cluster/cluster_agent.go:164:isLoopbackBridgeURL",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:130:ensureGuestBridgeReachability",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:173:ensureGuestBridgeRelay",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:13:bridgeURLHost",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go:107:ensureCpcContainerGuestBridgeProxy",
+    "internal/domain/cluster/cluster_agent.go:141:resolveBridgeURLFromEnv",
+    "internal/domain/cluster/cluster_agent.go:122:renderHostNativeClusterAgentInstallScript",
+    "internal/domain/cluster/cluster_agent.go:126:wrapHostPrivilegedShellBody"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [
+    "OPUTE_DOGFOOD_GATEWAY_VM",
+    "OPUTE_K3S_CONTAINER",
+    "OPUTE_K3S_VM",
+    "OPUTE_PLATFORM_GUEST_HOST",
+    "OPUTE_PLATFORM_PUBLIC_URL",
+    "OPUTE_PLATFORM_URL",
+    "PLATFORM_MCP_PORT"
+   ],
+   "family": "cluster-agent",
+   "goTests": [],
+   "guestArgv": [
+    "bash",
+    "getent",
+    "uname"
+   ],
+   "neutralName": "install_cluster_agent",
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "install_cluster_agent"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_cluster.go:49",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "cluster",
+   "domainFunctions": [
+    "internal/domain/cluster/cluster_discovery.go:42:GetClusterDetails",
+    "internal/domain/cluster/cluster_discovery.go:58:buildClusterDetailFromVM",
+    "internal/domain/cluster/cluster_discovery.go:127:enrichClusterDetailRuntimeByURI",
+    "internal/domain/cluster/cluster_discovery.go:208:boolPtr",
+    "internal/domain/cluster/cluster_discovery.go:85:buildBaseClusterDetail",
+    "internal/domain/cluster/cluster_discovery.go:200:buildClusterAPIEndpoint"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-discovery",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "get_cluster_details",
+   "providerOperations": [
+    "opute.capability.kubernetes.get-cluster-info"
+   ],
+   "publishedIn": [],
+   "reachability": "unreachable",
+   "rustServes": false,
+   "taskMode": "TaskInline",
+   "tool": "get_cluster_details"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_cluster.go:64",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "cluster",
+   "domainFunctions": [
+    "internal/domain/cluster/cluster_discovery.go:50:GetClusterRuntimeDetails",
+    "internal/domain/cluster/cluster_discovery.go:58:buildClusterDetailFromVM",
+    "internal/domain/cluster/cluster_discovery.go:127:enrichClusterDetailRuntimeByURI",
+    "internal/domain/cluster/cluster_discovery.go:208:boolPtr",
+    "internal/domain/cluster/cluster_discovery.go:85:buildBaseClusterDetail",
+    "internal/domain/cluster/cluster_discovery.go:200:buildClusterAPIEndpoint"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-discovery",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "get_cluster_runtime_details",
+   "providerOperations": [
+    "opute.capability.kubernetes.get-cluster-info"
+   ],
+   "publishedIn": [],
+   "reachability": "unreachable",
+   "rustServes": false,
+   "taskMode": "TaskInline",
+   "tool": "get_cluster_runtime_details"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_cluster.go:39",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "cluster",
+   "domainFunctions": [
+    "internal/domain/cluster/cluster_discovery.go:25:ListClusters",
+    "internal/domain/cluster/cluster_discovery.go:127:enrichClusterDetailRuntimeByURI",
+    "internal/domain/cluster/cluster_discovery.go:208:boolPtr",
+    "internal/domain/kubernetes/provider.go:150:ListKubernetesClusters",
+    "internal/domain/kubernetes/provider.go:135:executeUnboundProvider",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-discovery",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "list_clusters",
+   "providerOperations": [
+    "opute.capability.kubernetes.get-cluster-info",
+    "opute.capability.kubernetes.list-clusters"
+   ],
+   "publishedIn": [],
+   "reachability": "unreachable",
+   "rustServes": false,
+   "taskMode": "TaskInline",
+   "tool": "list_clusters"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_kubernetes.go:16",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/provider.go:150:ListKubernetesClusters",
+    "internal/domain/kubernetes/provider.go:135:executeUnboundProvider",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-discovery",
+   "goTests": [
+    "internal/domain/kubernetes/provider_test.go:TestListKubernetesClustersPreservesMultipleNodeRoles",
+    "internal/hostmcp/produced_resources_test.go:TestValidateProducedResourcesAcceptsEmptyInventoryWithoutASelector"
+   ],
+   "guestArgv": [],
+   "neutralName": "list_compute_clusters",
+   "providerOperations": [
+    "opute.capability.kubernetes.list-clusters"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_kubernetes_clusters"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:409",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:106:ListCertificateIssuers",
+    "internal/domain/kubernetes/lists.go:130:listIssuerKind",
+    "internal/domain/kubernetes/lists.go:182:issuerType",
+    "internal/domain/kubernetes/lists.go:203:stringOrEmpty",
+    "internal/domain/kubernetes/lists.go:357:k8sAge",
+    "internal/domain/kubernetes/lists.go:165:issuerReady",
+    "internal/domain/kubernetes/lists.go:196:isMissingResourceType",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [
+    "internal/domain/kubernetes/certificate_issuers_test.go:TestListCertificateIssuersPropagatesRealFailures",
+    "internal/domain/kubernetes/certificate_issuers_test.go:TestListCertificateIssuersReadsBothKinds",
+    "internal/domain/kubernetes/certificate_issuers_test.go:TestListCertificateIssuersTreatsAbsentCertManagerAsEmpty",
+    "internal/domain/kubernetes/certificate_issuers_test.go:TestListCertificateIssuersWithNamespaceSkipsClusterScopedKind"
+   ],
+   "guestArgv": [],
+   "neutralName": "list_certificate_issuers",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_certificate_issuers"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:447",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:292:ListDeployments",
+    "internal/domain/kubernetes/lists.go:357:k8sAge",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "list_deployments",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_deployments"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:398",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:80:ListIngressClasses",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "list_ingress_classes",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_ingress_classes"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:372",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:52:ListNamespaces",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [
+    "internal/tools/catalog_test.go:TestCanonicalBuiltInTargetsDeclareExecutionBindings"
+   ],
+   "guestArgv": [],
+   "neutralName": "list_namespaces",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_namespaces"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:423",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:236:ListPods",
+    "internal/domain/kubernetes/lists.go:357:k8sAge",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [
+    "internal/tools/catalog_test.go:TestCanonicalBuiltInTargetsDeclareExecutionBindings"
+   ],
+   "guestArgv": [],
+   "neutralName": "list_pods",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_pods"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:435",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:208:ListServices",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "list_services",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_services"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_unassigned.go:386",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/lists.go:66:ListStorageClasses",
+    "internal/domain/kubernetes/lists.go:322:getKubernetesList",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-listings",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "list_storage_classes",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_storage_classes"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:26",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/helm_chart.go:57:InstallHelmChart",
+    "internal/domain/kubernetes/generic.go:66:ApplyManifest",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/provider.go:80:TargetURI",
+    "internal/domain/kubernetes/helm_chart.go:32:renderHelmChartManifest",
+    "internal/domain/kubernetes/helm_chart.go:24:indentYAMLBlock",
+    "internal/domain/kubernetes/exec.go:64:EnsureHelmNamespace",
+    "internal/domain/kubernetes/exec.go:13:RunKubectl",
+    "internal/domain/kubernetes/exec.go:17:RunKubectlTimed",
+    "internal/domain/kubernetes/exec.go:27:RunKubectlContext",
+    "internal/domain/kubernetes/exec.go:41:runProviderCommand",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "cluster-packages",
+   "goTests": [
+    "internal/tools/catalog_test.go:TestIncusCatalogAdvertisesHelmPrerequisiteOperation"
+   ],
+   "guestArgv": [],
+   "neutralName": "install_cluster_package",
+   "providerOperations": [
+    "opute.capability.kubernetes.apply-manifest",
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "install_helm_chart"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:144",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "helm"
+   ],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/helm_template.go:25:RenderHelmTemplate",
+    "internal/domain/kubernetes/helm_template.go:98:lookupHostTool",
+    "internal/domain/kubernetes/service.go:45:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-packages",
+   "goTests": [
+    "internal/domain/kubernetes/helm_template_test.go:TestRenderHelmTemplateRequiresArgs"
+   ],
+   "guestArgv": [],
+   "neutralName": "render_cluster_package",
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "render_helm_template"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:37",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/helm_chart.go:99:UninstallHelmChart",
+    "internal/domain/kubernetes/generic.go:36:DeleteK8sResource",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/provider.go:80:TargetURI"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "cluster-packages",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "uninstall_helm_chart",
+   "providerOperations": [
+    "opute.capability.kubernetes.delete-resource"
+   ],
+   "publishedIn": [],
+   "reachability": "unreachable",
+   "rustServes": false,
+   "taskMode": "TaskInline",
+   "tool": "uninstall_helm_chart"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:48",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/generic.go:66:ApplyManifest",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/domain/kubernetes/provider_test.go:TestGenericKubernetesOperationDelegatesAfterCanonicalResolution",
+    "internal/hostmcp/resource_delegation_test.go:TestProviderCallbackTaskBridgePreservesParentAdmissionOwner",
+    "internal/hostmcp/server_test.go:TestServerCloseCancelsUnacknowledgedCallbackTask",
+    "internal/hostmcp/server_test.go:TestUnacknowledgedCallbackTaskExpiresWithoutStarting",
+    "internal/mcphttp/client_test.go:TestCallToolCancelsChildTaskAfterPollingError",
+    "internal/mcphttp/client_test.go:TestCallToolCancelsChildTaskWhenCallerContextEnds",
+    "internal/mcphttp/client_test.go:TestCallToolCancelsChildTaskWhenItRequiresUnsupportedInput",
+    "internal/resource/admission_test.go:TestClassifyTool",
+    "internal/resource/service_test.go:TestBindReservationTaskPersistsOperationAndTaskOwner",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "apply_manifest",
+   "providerOperations": [
+    "opute.capability.kubernetes.apply-manifest"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "apply_manifest"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:87",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/generic.go:36:DeleteK8sResource",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "delete_cluster_resource",
+   "providerOperations": [
+    "opute.capability.kubernetes.delete-resource"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "delete_k8s_resource"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:164",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/exec.go:102:ExecKubernetesCommand",
+    "internal/domain/kubernetes/exec.go:146:clusterIDFromURI",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/domain/kubernetes/exec_test.go:TestExecKubernetesCommandDelegatesKubectlArgumentVector"
+   ],
+   "guestArgv": [],
+   "neutralName": "exec_cluster_command",
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "exec_kubernetes_command"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_kubernetes.go:76",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/generic.go:89:GetK8sResource",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/hostmcp/produced_resources_test.go:TestMaterializeBoundResourceOutputsAttachesCanonicalIdentity",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "get_cluster_resource",
+   "providerOperations": [
+    "opute.capability.kubernetes.get-resource"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "get_k8s_resource"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_kubernetes.go:98",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/generic.go:122:GetK8sResourceStatus",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "get_cluster_resource_status",
+   "providerOperations": [
+    "opute.capability.kubernetes.get-resource-status"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "get_k8s_resource_status"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_kubernetes.go:112",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/generic.go:150:ListK8sEvents",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "list_cluster_events",
+   "providerOperations": [
+    "opute.capability.kubernetes.list-events"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "list_k8s_events"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:58",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/secret.go:23:PutK8sSecret",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor"
+   ],
+   "effect": "EffectCredential",
+   "envReads": [],
+   "family": "cluster-resources",
+   "goTests": [
+    "internal/capability/capability_test.go:TestLegacyAdapterDoesNotAliasVmNameWhenNameIsASiblingRequiredField",
+    "internal/hostmcp/evidence_redaction_test.go:TestPlanEvidenceUsesCapabilitySchemas",
+    "internal/hostmcp/server_test.go:TestTaskProjectionUsesDeclaredWriteOnlySchema",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "put_cluster_secret",
+   "providerOperations": [
+    "opute.capability.kubernetes.put-secret"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "put_k8s_secret"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_kubernetes.go:212",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/guest_storage.go:26:GarbageCollectClusterRegistry",
+    "internal/domain/kubernetes/guest_storage.go:34:delegateGuestStorage",
+    "internal/domain/kubernetes/exec.go:146:clusterIDFromURI",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "guest-storage",
+   "goTests": [
+    "internal/domain/kubernetes/guest_storage_test.go:TestGuestStorageDelegatesToProviderOperations",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "garbage_collect_cluster_registry",
+   "providerOperations": [
+    "opute.capability.kubernetes.garbage-collect-registry"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "garbage_collect_cluster_registry"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_kubernetes.go:179",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/guest_storage.go:18:InspectGuestStorage",
+    "internal/domain/kubernetes/guest_storage.go:34:delegateGuestStorage",
+    "internal/domain/kubernetes/exec.go:146:clusterIDFromURI",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "guest-storage",
+   "goTests": [
+    "internal/domain/kubernetes/guest_storage_test.go:TestGuestStorageDelegatesToProviderOperations",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "inspect_guest_storage",
+   "providerOperations": [
+    "opute.capability.kubernetes.inspect-guest-storage"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "inspect_guest_storage"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_kubernetes.go:196",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/guest_storage.go:22:PruneUnusedClusterImages",
+    "internal/domain/kubernetes/guest_storage.go:34:delegateGuestStorage",
+    "internal/domain/kubernetes/exec.go:146:clusterIDFromURI",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "guest-storage",
+   "goTests": [
+    "internal/domain/kubernetes/guest_storage_test.go:TestGuestStorageDelegatesToProviderOperations",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "prune_unused_cluster_images",
+   "providerOperations": [
+    "opute.capability.kubernetes.prune-unused-images"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "prune_unused_cluster_images"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:230",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/guest_storage.go:30:TrimGuestStorage",
+    "internal/domain/kubernetes/guest_storage.go:34:delegateGuestStorage",
+    "internal/domain/kubernetes/exec.go:146:clusterIDFromURI",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/exec.go:75:stringsToAny"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "guest-storage",
+   "goTests": [
+    "internal/domain/kubernetes/guest_storage_test.go:TestGuestStorageDelegatesToProviderOperations",
+    "internal/tools/catalog_test.go:TestCanonicalKubernetesOperationsRequireClusterURIs"
+   ],
+   "guestArgv": [],
+   "neutralName": "trim_guest_storage",
+   "providerOperations": [
+    "opute.capability.kubernetes.trim-guest-storage"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "trim_guest_storage"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:124",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/exposure.go:21:ConfigureServiceDomain",
+    "internal/domain/kubernetes/generic.go:66:ApplyManifest",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/provider.go:80:TargetURI"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "service-exposure",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "configure_service_domain",
+   "providerOperations": [
+    "opute.capability.kubernetes.apply-manifest"
+   ],
+   "publishedIn": [
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "configure_service_domain"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_kubernetes.go:134",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "kubernetes",
+   "domainFunctions": [
+    "internal/domain/kubernetes/exposure.go:67:RemoveServiceDomain",
+    "internal/domain/kubernetes/generic.go:36:DeleteK8sResource",
+    "internal/domain/kubernetes/service.go:45:New",
+    "internal/domain/kubernetes/provider.go:119:ExecuteProvider",
+    "internal/domain/kubernetes/provider.go:96:kubernetesProviderRequest",
+    "internal/domain/kubernetes/provider.go:73:KubernetesProviderExecutor",
+    "internal/domain/kubernetes/provider.go:80:TargetURI"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "service-exposure",
+   "goTests": [],
+   "guestArgv": [],
+   "neutralName": "remove_service_domain",
+   "providerOperations": [
+    "opute.capability.kubernetes.delete-resource"
+   ],
+   "publishedIn": [
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "remove_service_domain"
+  }
+ ]
+}

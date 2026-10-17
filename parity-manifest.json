@@ -1,25 +1,25 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m8b/canaries.json"
+  "results": "evidence/m8c/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
   "platform": {
    "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-   "rust": "sha256:6b738ab682f1e5fed01c35644c75c51d62709f3947e36010237b9aa808de742e"
+   "rust": "sha256:d4879ec89d064c8a05e53d814d1cb6bac039cf93f983a0914e06ed7069cbd642"
   },
   "providerFixtures": [
    {
     "go": "sha256:1a276524cb4b16825e7b3bf57c6eac46bc06eb18006c0498dfd3546c335bbf76",
-    "rust": "sha256:bdd1784206fc05a8b59f085984820a78b9e13c688bf0de93cca576c3407677ee",
+    "rust": "sha256:ba4cbde322abf9d82ac9f96131f6afafa5c065377090f19be894082e60d0516b",
     "scenarios": [
      "provider-lifecycle.bad-manifest.service-capability-not-provided"
     ]
    },
    {
     "go": "sha256:5232386ef9e128383d080cfac767b78b2e87421ae5c894b2163b3920e1d3fcad",
-    "rust": "sha256:aa1a6e43033a28d4d28277800a8f1a4f16d523e50f33f1e43e4378eb72aab569",
+    "rust": "sha256:4ef860e5c69563b2874ab4594eacfd383217c6802e741f449feb8aeff494b822",
     "scenarios": [
      "provider-lifecycle.bad-manifest.validation-operation-undeclared",
      "provider-lifecycle.builtin-family.require",
@@ -51,7 +51,7 @@
    },
    {
     "go": "sha256:5d13b1a6d3393d07ecaf48cf57f51db506d374a74a2286cf368dea9a658e7a6f",
-    "rust": "sha256:388d7c57cf7b1317ebed6fe03743478ed1deacf3d0af283d6d2ec0497b3908fb",
+    "rust": "sha256:edb003bb9f4b61596fa64caaf345bafb739a547ce63ce1f1a4cb59fdd763d956",
     "scenarios": [
      "provider-lifecycle.callback.bridged-without-task-extension",
      "provider-lifecycle.callback.cancel-bridged-task-refused",
@@ -71,14 +71,14 @@
    },
    {
     "go": "sha256:34b809740a5f3a396d5e86a5a3c73d06988ad8156cbbda3b406935d11d99748e",
-    "rust": "sha256:b086a7fc54513db8d80d0e8f573072ff243a00b587107c1b8b39bc0ccb13a969",
+    "rust": "sha256:a227f0146157ecaeb71edf89fa2f775d12684a4fa2df5880ff19207461492e1d",
     "scenarios": [
      "provider-lifecycle.family.rejected-candidate-keeps-owner"
     ]
    },
    {
     "go": "sha256:0b13468ed1005c919c2e0309dd67a406ac824c9791648a25fbe1248845ef6385",
-    "rust": "sha256:024b8325b7db5c01dd40a2e5f4d2eb1af37be2a5f43e248992b369d601b41c8c",
+    "rust": "sha256:bdc5b6ad45e69f0add2e09e7e2c3d91f6f7f01facca8cc263ebed8d6d7cab0b3",
     "scenarios": [
      "provider-lifecycle.family.replacement-keeps-accepted-call",
      "provider-lifecycle.family.rollback-restores-owner"
@@ -86,7 +86,7 @@
    },
    {
     "go": "sha256:850550e436d511df91f0266999c2f7eb2e0530873e1c4b5e57207d90b623b210",
-    "rust": "sha256:6147f01e5b0ac7165c618e9d107c3a7b66336121ba939e346ae21ae73213378f",
+    "rust": "sha256:cd097e6338d51f8ae8236c87f93b63a7993ab0511374b34f6e1a4ac7e4f67674",
     "scenarios": [
      "provider-lifecycle.readiness.flapping",
      "provider-lifecycle.replacement.in-flight",
@@ -95,57 +95,65 @@
    },
    {
     "go": "sha256:01ef1a6fc58380741eaaaeed6efa90f16149096e99e1dbf93335dbaadf4da3e3",
-    "rust": "sha256:be7cb3962ea6dfdb89da0b4428c7276c2a87ccadf8b182e9524f28be5c0b3787",
+    "rust": "sha256:3f7639e62570ced4304a6ce7232abdd08bf5568ccb3db704cb493ffff637eab9",
     "scenarios": [
      "provider-lifecycle.schema-drift.invalid-input-schema"
     ]
    },
    {
     "go": "sha256:458ee103973df0ada45cdb01281c1076f9435186ca59372201ba2d7ac3451b9d",
-    "rust": "sha256:17d2f314ba1b2894513aeef14eb6e91af3c49111698f45b95e81fff7b2b76c80",
+    "rust": "sha256:c3ed3d246ec3aab64d77f6c22508f2f0ef0be9cb7417aee8508a276f4c743e11",
     "scenarios": [
      "provider-lifecycle.schema-drift.result-violates-output-schema"
     ]
    },
    {
     "go": "sha256:6465833d5b1e77645d22a87d2af32fce63aef95657698ebdc0f2d2fcee0f299a",
-    "rust": "sha256:80a683f1ad1d9bbcc8be41d34a2d7c0146a8ed9293052b51193413a1e856e70a",
+    "rust": "sha256:6773d915ee93c5636e1325b83cea19eeab0dbfd15d65128f64008a8d96e9122e",
     "scenarios": [
      "provider-real.cloudflare"
     ]
    },
    {
     "go": "sha256:bc838403419c1a260fa45ad9e8def0604fe52622909f676bea2b353b8cc44fec",
-    "rust": "sha256:868a2bbe564c7ce67d2c5a5f3bd34f7620f7519ed4a78ff2b8d9021130dcfe01",
+    "rust": "sha256:539f5754ec27f73a9c913f9e0e3679754a3923134def6e5212c5d8ce2cdfaf9f",
     "scenarios": [
      "provider-real.cloudflare"
     ]
    },
    {
     "go": "sha256:6eeefc25fdaa7b1fbe9d0257c561a08a2d271f5fbcfdf5072e62399fa116c34b",
-    "rust": "sha256:8a6917227aad6748ae90534c86c548f9c14f3d95926999dfee79ba5210fb68e7",
+    "rust": "sha256:d0b555c756bfae04e3dcfa969dc2b1ab9ae76eb4b957c3c2960108f3648c028e",
     "scenarios": [
+     "cluster-domain.agent",
+     "cluster-domain.discovery",
+     "cluster-domain.exposure",
+     "cluster-domain.listings",
+     "cluster-domain.packages",
+     "cluster-domain.resources",
+     "cluster-domain.storage",
+     "cluster-domain.unreachable",
      "provider-real.k3s",
      "provider-real.k3s.restart"
     ]
    },
    {
     "go": "sha256:688008d9922fd3314c34ad11d1d7584690edcdf194fcacf56151f9f4368be3f6",
-    "rust": "sha256:b7fc36a4baebb721cbde6b0dec50560278a46378188c7daee701fe5fd616505d",
+    "rust": "sha256:452dfbca50e5d207095b66b48a83ad91925852c6da3dafe6671649b88fdfae32",
     "scenarios": [
      "provider-real.ollama"
     ]
    },
    {
     "go": "sha256:7a643de2aecceb1f3a82cb085974a359d385af08e33c671d7b92fec052081dcf",
-    "rust": "sha256:ac6dd0a630b01ad8dd936514e2c1804927a72823e3539ed46c8f6c918b892942",
+    "rust": "sha256:26509d871d16894ac34c25288dc591951c31d2bceb259d82794d614d1df3d3c7",
     "scenarios": [
      "provider-real.tailscale"
     ]
    },
    {
     "go": "sha256:c1d912d9693412f3b0e6151fd7ee1da354a488935d83fe2d039e4fa161a2b648",
-    "rust": "sha256:504950f2357a35749b4be8d23e1b64d0f6a2a139f62d500b7eb3975949fa5f2b",
+    "rust": "sha256:21ba5a4286343ef2beff27d3b7e3f7b2192d644400a1a8b6365c34b4cd473105",
     "scenarios": [
      "provider-lifecycle.family.replacement-keeps-accepted-call"
     ]
@@ -153,29 +161,29 @@
   ],
   "standalone": {
    "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
-   "rust": "sha256:63d590a5de9cf83c357f4919a09ec63ee67e77d2dc41da872764e6af69ab4ad3"
+   "rust": "sha256:fca0024be9425338ed2030e66c123298d1d9081efe5eb143b817aad90643e56a"
   }
  },
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/m8b/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m8c/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/m8b/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m8c/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/m8b/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m8c/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/m8b/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m8c/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/m8b/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m8c/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -275,6 +283,14 @@
    "status": "approved",
    "summary": "Extends D19's map for M8b: reset_incus_stack is published as reset_virtualization_stack and provision_container.wslGpuLibs as hostGpuLibs; Go names stay hidden, accepted aliases until cutover. Also confirms D19's use on durable rows (M5 shape) and the secret sweep's catalog"
   },
+  "D22": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/neutral-cluster-tool-names",
+   "date": "2026-10-16",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D22)",
+   "status": "approved",
+   "summary": "Extends D19's map for M8c: get/delete_k8s_resource, get_k8s_resource_status, list_k8s_events, put_k8s_secret, exec_kubernetes_command, list_kubernetes_clusters, install_helm_chart and render_helm_template are published as get/delete_cluster_resource, get_cluster_resource_status, list_cluster_events, put_cluster_secret, exec_cluster_command, list_compute_clusters, install_cluster_package and render_cluster_package; Go names stay hidden, accepted aliases until cutover"
+  },
   "D8": {
    "approvedBy": "owner",
    "change": "openspec/changes/secure-oauth-issuance",
@@ -289,13 +305,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m8b/go-vs-go/summary.json"
+   "summary": "evidence/m8c/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m8b/go-vs-rust/summary.json"
+   "summary": "evidence/m8c/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -561,6 +577,47 @@
       "auth",
       "catalog",
       "cli",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "mcp-wire",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
+  },
+  "m8c": {
+   "description": "M8c exit (kubernetes and cluster domains): the M8b gate plus every cluster-domain item matching Go (x5) at T1 shim-trace parity against the pinned, unchanged Go k3s provider, and every T2 cluster-domain scenario in k3s twins (create, mutate, read and delete of real Kubernetes objects in a single-node k3s, HelmCharts, helm template, guest storage prune and registry garbage collection, the cluster agent's install through a harness platform stub and the agent's own bridge relay, cleanup and residue, and the M4 admission-rejected kubernetes and cluster calls leaving k1 unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
       "config",
       "durable-state",
       "host-domain",
@@ -893,6 +950,157 @@
    "owner": "cli",
    "scenario": "cli.dispatch",
    "surface": "cli"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/provider.go:ListKubernetesClusters"
+   ],
+   "id": "cluster-domain.discovery",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.discovery",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/generic.go",
+    "internal/domain/kubernetes/secret.go",
+    "internal/domain/kubernetes/exec.go",
+    "internal/tools/dispatch_kubernetes.go"
+   ],
+   "id": "cluster-domain.resources",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.resources",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/lists.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "cluster-domain.listings",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.listings",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/helm_chart.go",
+    "internal/domain/kubernetes/helm_template.go"
+   ],
+   "id": "cluster-domain.packages",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.packages",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/exposure.go"
+   ],
+   "id": "cluster-domain.exposure",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.exposure",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/kubernetes/guest_storage.go",
+    "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage.go",
+    "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage_registry.go"
+   ],
+   "id": "cluster-domain.storage",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.storage",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent-cpc.k3s-vm",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent-cpc.k3s-vm",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent-cpc.gateway-vm",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent-cpc.gateway-vm",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/cluster/cluster_agent.go",
+    "internal/domain/cluster/cluster_agent_bridge_relay.go"
+   ],
+   "id": "cluster-domain.agent-cpc.k3s-container",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.agent-cpc.k3s-container",
+   "surface": "cluster-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/catalog.go",
+    "internal/tools/dispatch_cluster.go"
+   ],
+   "id": "cluster-domain.unreachable",
+   "owner": "kubernetes",
+   "scenario": "cluster-domain.unreachable",
+   "surface": "cluster-domain"
   },
   {
    "anchors": [
@@ -3451,34 +3659,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m8b/m5/crash/summary.json"
+   "summary": "evidence/m8c/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m8b/m5/cross-read/summary.json"
+   "summary": "evidence/m8c/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m8b/m5/migration/summary.json"
+   "summary": "evidence/m8c/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m8b/m5/secrets/summary.json"
+   "summary": "evidence/m8c/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m8b/m5/shape/summary.json"
+   "summary": "evidence/m8c/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m8b/m5/unknown-projection/summary.json"
+   "summary": "evidence/m8c/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/m8b/oracles.json",
+  "results": "evidence/m8c/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/m8b/rust-canaries.json"
+  "results": "evidence/m8c/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "e5468fbbcd01b0a29770865f469fbd5a602417488e0769ff8db1be5099507b4a",
+  "binarySha256": "9c3c23ac705259dc95f5958f236ef2af6049e403415989505c7cac4554378a1f",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
@@ -3492,26 +3700,33 @@
    "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
   },
   "incusGolden": {
-   "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
-   "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399"
+   "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+   "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057"
+  },
+  "k3sGolden": {
+   "goldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+   "incusGoldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+   "providerSha256": {
+    "opute-provider-k3s": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915"
+   }
   },
   "suites": {
    "go-vs-go": {
     "minRepeat": 20,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "summary": "evidence/m8b/t2-go-vs-go/summary.json"
+    "summary": "evidence/m8c/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
     "minRepeat": 5,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "summary": "evidence/m8b/t2-go-vs-rust/summary.json"
+    "summary": "evidence/m8c/t2-go-vs-rust/summary.json"
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/m8b/oracles-t2.json",
+  "results": "evidence/m8c/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
  }
 }

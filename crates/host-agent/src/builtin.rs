@@ -239,6 +239,18 @@ fn text<'a>(args: &'a Map<String, J>, key: &str) -> &'a str {
 /// The host's built-in services, in dependency order, each built from the
 /// seams it declares.
 pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service> {
+    let k8s = kubernetes(host, server);
+    let adopter = k8s.inventory();
+    let _ = host
+        .cluster_adopter
+        .set(Arc::new(move |uri: &crate::resource::Uri| {
+            adopter.adopt_cluster(uri)
+        }));
+    let agent = crate::clusterops::ClusterAgent {
+        instances: instances(host),
+        env: host.env.clone(),
+        relays: host.relays.clone(),
+    };
     vec![
         host_info(host),
         incus_inventory(host),
@@ -257,6 +269,13 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         instance_lifecycle(host),
         local_status(host),
         instance_exec(host),
+        cluster_discovery(&k8s),
+        cluster_resources(&k8s),
+        cluster_listings(&k8s),
+        cluster_packages(&k8s),
+        service_exposure(&k8s),
+        guest_storage(&k8s),
+        cluster_agent(&agent),
         host_artifacts(host),
         public_mcp(host),
         host_vm_subsystem(host),
@@ -1286,6 +1305,7 @@ fn instances(host: &crate::tools::Host) -> crate::incusops::Instances {
         coordinator: host.coordinator.clone(),
         shared_host_owner_instance: host.shared_host_owner_instance.clone(),
         reset_checkpoint_path: host.reset_checkpoint_path.clone(),
+        relays: host.relays.clone(),
     }
 }
 
@@ -1687,6 +1707,493 @@ pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Re
             claimed: invocation.claimed,
         },
     )
+}
+
+// --- M8c: the kubernetes and cluster domains ----------------------------------------
+
+/// The kubernetes domain over its seams: the active Kubernetes provider
+/// (through the late-bound server), resource resolution, the registry, and
+/// the host tool and command runner `helm template` uses.
+fn kubernetes(host: &crate::tools::Host, server: &ServerHandle) -> crate::clusterops::Kubernetes {
+    let server = server.clone();
+    let register = {
+        let (state, tenant) = (host.state.clone(), host.tenant_id.clone());
+        Arc::new(move |uri: &str, coordinates: Map<String, J>| {
+            crate::resource::register(&state, &tenant, uri, &coordinates)
+        })
+    };
+    let (env, tool_env) = (host.env.clone(), host.env.clone());
+    let (instance, owner) = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    crate::clusterops::Kubernetes {
+        execute: Arc::new(move |operation: &str, arguments: Map<String, J>| {
+            server
+                .get()?
+                .providers
+                .kubernetes_execute(operation, arguments)
+        }),
+        resolve: crate::admission::resolver(host),
+        tenant_id: host.tenant_id.clone(),
+        register,
+        ensure_tool: Arc::new(move |tool: &str| {
+            let owner = crate::hostfiles::Owner {
+                instance_id: &instance,
+                owner_instance: &owner,
+            };
+            crate::hosttool::ensure_host_tool(&tool_env, &owner, tool)
+        }),
+        run_host: Arc::new(move |argv: &[String], timeout| {
+            crate::hostobs::run_command(&env, argv, timeout)
+        }),
+        env: host.env.clone(),
+    }
+}
+
+/// `resourceURIFromBinding`: the bound cluster's URI.
+fn cluster_uri(binding: &Binding) -> String {
+    binding
+        .resources
+        .iter()
+        .find(|r| {
+            crate::resource::Uri::parse(&r.uri).is_ok_and(|u| u.resource_type == "cluster")
+                && !r.uri.trim().is_empty()
+        })
+        .map(|r| r.uri.clone())
+        .unwrap_or_default()
+}
+
+/// `withBindingURI(out, binding, "cluster")`.
+fn with_cluster_uri(mut out: Map<String, J>, binding: &Binding) -> Map<String, J> {
+    if !out.contains_key("uri") {
+        let uri = cluster_uri(binding);
+        if !uri.is_empty() {
+            out.insert("uri".into(), J::from(uri));
+        }
+    }
+    out
+}
+
+/// `structuredResult(out, "")` for a `map[string]any`.
+fn map_result(out: Map<String, J>) -> J {
+    crate::tools::structured_with_text(&J::Object(out), &crate::gojson::Shape::Any)
+}
+
+fn resource_args(call: &Invocation) -> crate::clusterops::ResourceArgs {
+    crate::clusterops::ResourceArgs {
+        uri: cluster_uri(call.binding),
+        kind: text(call.args, "kind").into(),
+        resource_kind: text(call.args, "resourceKind").into(),
+        name: text(call.args, "resourceName").into(),
+        namespace: text(call.args, "namespace").into(),
+    }
+}
+
+/// M8c: provider-backed cluster inventory (`list_kubernetes_clusters`).
+fn cluster_discovery(k8s: &crate::clusterops::Kubernetes) -> Service {
+    let k8s = k8s.clone();
+    Service {
+        id: "cluster-discovery",
+        dependencies: &[],
+        operations: vec![(
+            "list_compute_clusters",
+            op(move |call| {
+                k8s.list_clusters(text(call.args, "source")).map(|out| {
+                    crate::tools::structured_with_text(&out, &crate::clusterops::CLUSTER_LIST)
+                })
+            }),
+        )],
+    }
+}
+
+/// M8c: manifests, resources, events, secrets and kubectl, each one call to
+/// the active Kubernetes provider against the bound cluster.
+fn cluster_resources(k8s: &crate::clusterops::Kubernetes) -> Service {
+    use crate::tools::structured_result;
+    let (apply, get, delete, status) = (k8s.clone(), k8s.clone(), k8s.clone(), k8s.clone());
+    let (events, secret, exec) = (k8s.clone(), k8s.clone(), k8s.clone());
+    Service {
+        id: "cluster-resources",
+        dependencies: &["cluster-discovery"],
+        operations: vec![
+            (
+                "apply_manifest",
+                op(move |call| {
+                    apply
+                        .apply_manifest(&cluster_uri(call.binding), text(call.args, "manifest"))
+                        .map(|out| {
+                            structured_result(J::Object(out), Some("Kubernetes manifest applied."))
+                        })
+                }),
+            ),
+            (
+                "get_cluster_resource",
+                op(move |call| {
+                    get.get_resource(&resource_args(call))
+                        .map(|out| map_result(with_cluster_uri(out, call.binding)))
+                }),
+            ),
+            (
+                "delete_cluster_resource",
+                op(move |call| {
+                    delete.delete_resource(&resource_args(call)).map(|out| {
+                        structured_result(
+                            J::Object(with_cluster_uri(out, call.binding)),
+                            Some("Kubernetes resource deleted."),
+                        )
+                    })
+                }),
+            ),
+            (
+                "get_cluster_resource_status",
+                op(move |call| {
+                    status.get_resource_status(&resource_args(call)).map(|out| {
+                        let mut out = with_cluster_uri(out, call.binding);
+                        out.entry("message")
+                            .or_insert_with(|| J::from("Kubernetes resource status returned."));
+                        structured_result(
+                            J::Object(out),
+                            Some("Kubernetes resource status returned."),
+                        )
+                    })
+                }),
+            ),
+            (
+                "list_cluster_events",
+                op(move |call| {
+                    // `args["limit"].(float64)`, truncated.
+                    let limit = call.args.get("limit").and_then(J::as_f64).unwrap_or(0.0) as i64;
+                    events
+                        .list_events(
+                            &cluster_uri(call.binding),
+                            text(call.args, "namespace"),
+                            limit,
+                        )
+                        .map(|out| map_result(with_cluster_uri(out, call.binding)))
+                }),
+            ),
+            (
+                "put_cluster_secret",
+                op(move |call| {
+                    // Only string values are kept.
+                    let data: Map<String, J> = call
+                        .args
+                        .get("data")
+                        .and_then(J::as_object)
+                        .map(|raw| {
+                            raw.iter()
+                                .filter(|(_, v)| v.is_string())
+                                .map(|(k, v)| (k.clone(), v.clone()))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    secret
+                        .put_secret(
+                            &cluster_uri(call.binding),
+                            text(call.args, "namespace"),
+                            text(call.args, "name"),
+                            &data,
+                        )
+                        .map(|out| {
+                            structured_result(J::Object(out), Some("Kubernetes Secret configured."))
+                        })
+                }),
+            ),
+            (
+                "exec_cluster_command",
+                op(move |call| {
+                    exec.exec_command(
+                        &cluster_uri(call.binding),
+                        text(call.args, "command"),
+                        &string_slice(call.args, "args"),
+                        text(call.args, "stdin"),
+                    )
+                    .map(|out| match out {
+                        J::Object(out) => map_result(out),
+                        other => structured_result(other, None),
+                    })
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8c: cluster listings, each a provider kubectl `get` on the bound
+/// cluster, answered with the binding's canonical URI.
+fn cluster_listings(k8s: &crate::clusterops::Kubernetes) -> Service {
+    let names = |k8s: &crate::clusterops::Kubernetes,
+                 resource: &'static str,
+                 keys: &'static [&'static str]| {
+        let k8s = k8s.clone();
+        op(move |call| {
+            let names = k8s.list_names(&call.binding.provider_instance_name(), resource)?;
+            let names = J::Array(names.into_iter().map(J::from).collect());
+            let mut out = Map::new();
+            for key in keys {
+                out.insert((*key).into(), names.clone());
+            }
+            Ok(map_result(with_cluster_uri(out, call.binding)))
+        })
+    };
+    type List = fn(&crate::clusterops::Kubernetes, &str, &str) -> Result<Vec<J>, String>;
+    let rows = |k8s: &crate::clusterops::Kubernetes, key: &'static str, list: List| {
+        let k8s = k8s.clone();
+        op(move |call| {
+            let rows = list(
+                &k8s,
+                &call.binding.provider_instance_name(),
+                text(call.args, "namespace"),
+            )?;
+            let mut out = Map::new();
+            out.insert(key.into(), J::Array(rows));
+            Ok(map_result(with_cluster_uri(out, call.binding)))
+        })
+    };
+    use crate::clusterops::Kubernetes as K;
+    Service {
+        id: "cluster-listings",
+        dependencies: &["cluster-discovery"],
+        operations: vec![
+            ("list_namespaces", names(k8s, "namespaces", &["namespaces"])),
+            (
+                "list_storage_classes",
+                names(k8s, "storageclasses", &["storageClasses"]),
+            ),
+            (
+                "list_ingress_classes",
+                names(k8s, "ingressclasses", &["classes", "ingressClasses"]),
+            ),
+            (
+                "list_certificate_issuers",
+                rows(k8s, "issuers", K::list_issuers),
+            ),
+            ("list_pods", rows(k8s, "pods", K::list_pods)),
+            ("list_services", rows(k8s, "services", K::list_services)),
+            (
+                "list_deployments",
+                rows(k8s, "deployments", K::list_deployments),
+            ),
+        ],
+    }
+}
+
+/// M8c: charts as k3s HelmChart manifests through the provider, and
+/// `helm template` on this host.
+fn cluster_packages(k8s: &crate::clusterops::Kubernetes) -> Service {
+    use crate::tools::structured_result;
+    let (install, render) = (k8s.clone(), k8s.clone());
+    Service {
+        id: "cluster-packages",
+        dependencies: &["cluster-resources", "host-tools"],
+        operations: vec![
+            (
+                "install_cluster_package",
+                op(move |call| {
+                    let first = |keys: &[&str]| {
+                        keys.iter()
+                            .map(|k| text(call.args, k))
+                            .find(|v| !v.is_empty())
+                            .unwrap_or("")
+                            .to_string()
+                    };
+                    let namespace = match text(call.args, "namespace") {
+                        "" => "kube-system",
+                        namespace => namespace,
+                    };
+                    let args = crate::clusterops::ChartArgs {
+                        vm_name: call.binding.provider_instance_name(),
+                        release_name: first(&["releaseName", "chartName", "name"]),
+                        chart_source: first(&["chartSource", "chart"]),
+                        namespace: namespace.into(),
+                        repo: text(call.args, "repo").into(),
+                        values: crate::clusterops::helm_values(call.args.get("values")),
+                    };
+                    install.install_chart(&args).map(|out| {
+                        let message =
+                            format!("HelmChart '{}' deployment initiated.", args.release_name);
+                        structured_result(out, Some(&message))
+                    })
+                }),
+            ),
+            (
+                "render_cluster_package",
+                op(move |call| {
+                    render
+                        .render_template(&crate::clusterops::TemplateArgs {
+                            chart_path: text(call.args, "chartPath").into(),
+                            release_name: text(call.args, "releaseName").into(),
+                            values_files: string_slice(call.args, "valuesFiles"),
+                            set: string_slice(call.args, "set"),
+                            namespace: text(call.args, "namespace").into(),
+                        })
+                        .map(|out| structured_result(out, Some("Helm chart rendered.")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8c: service domains as Ingress objects through the provider.
+fn service_exposure(k8s: &crate::clusterops::Kubernetes) -> Service {
+    use crate::tools::structured_result;
+    let (configure, remove) = (k8s.clone(), k8s.clone());
+    let domain = |call: &Invocation| crate::clusterops::DomainArgs {
+        vm_name: call.binding.provider_instance_name(),
+        namespace: text(call.args, "namespace").into(),
+        ingress_name: text(call.args, "ingressName").into(),
+        hostname: text(call.args, "hostname").into(),
+        service_name: text(call.args, "serviceName").into(),
+        service_port: int_field(call.args, "servicePort"),
+        ingress_class: text(call.args, "ingressClass").into(),
+    };
+    Service {
+        id: "service-exposure",
+        dependencies: &["cluster-resources"],
+        operations: vec![
+            (
+                "configure_service_domain",
+                op(move |call| {
+                    configure.configure_domain(&domain(call)).map(|out| {
+                        structured_result(out, Some("Service domain mapping configured."))
+                    })
+                }),
+            ),
+            (
+                "remove_service_domain",
+                op(move |call| {
+                    remove
+                        .remove_domain(&domain(call))
+                        .map(|out| structured_result(out, Some("Service domain mapping removed.")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8c: guest storage inspection and reclamation, through the provider.
+fn guest_storage(k8s: &crate::clusterops::Kubernetes) -> Service {
+    use crate::clusterops::{
+        GuestStorageArgs, GARBAGE_COLLECT_REGISTRY, INSPECT_GUEST_STORAGE, PRUNE_UNUSED_IMAGES,
+        TRIM_GUEST_STORAGE,
+    };
+    let storage = |k8s: &crate::clusterops::Kubernetes,
+                   operation: &'static str,
+                   dry_run: bool,
+                   message: Option<&'static str>,
+                   parse: fn(&Invocation) -> GuestStorageArgs| {
+        let k8s = k8s.clone();
+        op(move |call| {
+            let out = k8s.guest_storage(operation, &parse(call), dry_run)?;
+            let out = with_cluster_uri(out, call.binding);
+            Ok(match message {
+                None => map_result(out),
+                Some(text) => crate::tools::structured_result(J::Object(out), Some(text)),
+            })
+        })
+    };
+    Service {
+        id: "guest-storage",
+        dependencies: &["cluster-resources"],
+        operations: vec![
+            (
+                "inspect_guest_storage",
+                storage(k8s, INSPECT_GUEST_STORAGE, false, None, |call| {
+                    GuestStorageArgs {
+                        uri: cluster_uri(call.binding),
+                        include_registry: flag(call.args, "includeRegistry"),
+                        extra_keep_tags: string_slice(call.args, "extraKeepTags"),
+                        registry_namespace: text(call.args, "registryNamespace").into(),
+                        registry_name: text(call.args, "registryName").into(),
+                        ..GuestStorageArgs::default()
+                    }
+                }),
+            ),
+            (
+                "prune_unused_cluster_images",
+                storage(
+                    k8s,
+                    PRUNE_UNUSED_IMAGES,
+                    true,
+                    Some("Unused cluster images pruned."),
+                    |call| GuestStorageArgs {
+                        uri: cluster_uri(call.binding),
+                        dry_run: flag(call.args, "dryRun"),
+                        min_age_seconds: call
+                            .args
+                            .contains_key("minAgeSeconds")
+                            .then(|| int_field(call.args, "minAgeSeconds")),
+                        extra_keep_tags: string_slice(call.args, "extraKeepTags"),
+                        ..GuestStorageArgs::default()
+                    },
+                ),
+            ),
+            (
+                "garbage_collect_cluster_registry",
+                storage(
+                    k8s,
+                    GARBAGE_COLLECT_REGISTRY,
+                    true,
+                    Some("Cluster registry garbage collection completed."),
+                    |call| GuestStorageArgs {
+                        uri: cluster_uri(call.binding),
+                        dry_run: flag(call.args, "dryRun"),
+                        include_registry: flag(call.args, "includeRegistry"),
+                        extra_keep_tags: string_slice(call.args, "extraKeepTags"),
+                        registry_namespace: text(call.args, "registryNamespace").into(),
+                        registry_name: text(call.args, "registryName").into(),
+                        ..GuestStorageArgs::default()
+                    },
+                ),
+            ),
+            (
+                "trim_guest_storage",
+                storage(
+                    k8s,
+                    TRIM_GUEST_STORAGE,
+                    false,
+                    Some("Guest filesystem trimmed."),
+                    |call| GuestStorageArgs {
+                        uri: cluster_uri(call.binding),
+                        ..GuestStorageArgs::default()
+                    },
+                ),
+            ),
+        ],
+    }
+}
+
+/// M8c: the cluster agent, installed in a guest or on this host.
+fn cluster_agent(agent: &crate::clusterops::ClusterAgent) -> Service {
+    let agent = agent.clone();
+    Service {
+        id: "cluster-agent",
+        dependencies: &["instance-lifecycle"],
+        operations: vec![(
+            "install_cluster_agent",
+            op(move |call| {
+                let args = crate::clusterops::AgentArgs {
+                    vm_name: text(call.args, "vmName").into(),
+                    cluster_id: text(call.args, "clusterId").into(),
+                    cluster_name: text(call.args, "clusterName").into(),
+                    agent_id: text(call.args, "agentId").into(),
+                    bridge_token: text(call.args, "bridgeToken").into(),
+                    bridge_url: text(call.args, "bridgeUrl").into(),
+                    bridge_port: int_field(call.args, "bridgePort"),
+                    api_endpoint: text(call.args, "apiEndpoint").into(),
+                    provider_id: text(call.args, "providerId").into(),
+                    resource_id: text(call.args, "resourceId").into(),
+                    source: text(call.args, "source").into(),
+                };
+                agent.install(&args).map(|out| {
+                    crate::tools::structured_result(
+                        out,
+                        Some("Kubernetes cluster agent installed."),
+                    )
+                })
+            }),
+        )],
+    }
 }
 
 #[cfg(test)]

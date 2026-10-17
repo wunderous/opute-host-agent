@@ -45,7 +45,10 @@ def main():
         sys.exit("seam verifier failed on the working tree; see verifier.log")
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
-        for item in ("Cargo.toml", "Cargo.lock", "crates", "baseline", "parity-manifest.json"):
+        # Everything the crate's tests read from outside crates/, including
+        # the Go formatting oracle the cluster-domain tests embed (M8c).
+        for item in ("Cargo.toml", "Cargo.lock", "crates", "baseline", "parity-manifest.json",
+                     "tools/parity/cluster-format-oracle/expected.json"):
             source, dest = ROOT / item, work / item
             dest.parent.mkdir(parents=True, exist_ok=True)
             (shutil.copytree if source.is_dir() else shutil.copy2)(source, dest)

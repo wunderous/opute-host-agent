@@ -162,6 +162,14 @@ saw less free memory on one side.
 Rerun alone, the scenario was 5/5 identical. Round 3 ran with nothing else
 heavy on the host.
 
+**Correction (M8c, 2026-10-17):** the load did not cause this failure by
+itself. Admission subtracts the larger of meminfo usage and the agent
+cgroup's `memory.current`, page cache included, from the host's total. The
+16 GiB request sits at that edge whenever the cache is near 13 GiB, so
+either side can be refused. M8c round 3 failed the same way with nothing
+else running. The scenario now asks for 4 CPUs and 4 GiB. See
+[M8c](../m8c/README.md#rounds).
+
 ## Open, owned gaps
 
 These come from [gaps.json](../../baseline/inventory/gaps.json): 28 gaps, 0
