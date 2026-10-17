@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 .PHONY: parity-verify-m5 parity-verify-m6
@@ -34,6 +34,11 @@ parity-test:
 
 go-reference:
 	PARITY_GO_WORKDIR=$(GO_SRC) PARITY_GO_OUT=$(GO_REF) tools/parity/build-go-reference.sh
+
+# The five pinned Go provider executables the provider-real scenarios launch
+# (agent.ProviderProcess), built unchanged from the go-reference checkout.
+go-providers: go-reference
+	PARITY_GO_WORKDIR=$(GO_SRC) PARITY_PROVIDERS_OUT=$(CURDIR)/.parity/bin/providers tools/parity/build-go-providers.sh
 
 parity-capture:
 	$(PARITY) capture --go $(GO_REF) --go-src $(GO_SRC)
@@ -117,7 +122,7 @@ parity-m6: rust-check rust-build parity-m4 parity-go-vs-rust parity-verify-m6
 
 # CI: verify the committed evidence, then re-prove parity on every surface
 # with a freshly built Rust binary (fails on any diff).
-parity-ci: parity-test go-reference rust-build
+parity-ci: parity-test go-reference go-providers rust-build
 	$(PARITY) catalog-source --go-src $(GO_SRC) --check
 	$(PARITY) verify --gate m4
 	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --out $(CURDIR)/.parity/ci-go-vs-rust
