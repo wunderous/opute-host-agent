@@ -302,8 +302,9 @@ T2_INERT = {
 
 
 def capture_t2() -> dict:
-    """T2 coverage of every mutating host-, incus- and cluster-domain tool (M8 validations 2-4)."""
-    domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text()) for d in ("host", "incus", "cluster")]
+    """T2 coverage of every mutating host-, incus-, cluster- and oci-domain tool (M8 validations 2-4)."""
+    domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text())
+               for d in ("host", "incus", "cluster", "oci")]
     calls: dict[str, set[str]] = {}
     refused: dict[str, set[str]] = {}
     for path in sorted(T2_SCENARIO_DIR.glob("*.json")):

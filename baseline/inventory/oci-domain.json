@@ -1,0 +1,513 @@
+{
+ "families": [
+  "build-context",
+  "container-storage",
+  "image-build",
+  "oci-builder",
+  "oci-registry"
+ ],
+ "milestone": "M8d",
+ "note": "Static inventory of the Go oci domain. commandsStatic names the image tools the domain resolves by name and runs by the resolved path, and sudo and apt-get for a builder's package install; providerOperations are the Kubernetes provider operations the registry tools reach through the kubernetes domain; neutralValues is the D23 selector value map; effects.json records what each tool is observed running.",
+ "owner": "oci",
+ "source": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+ "surface": "oci-domain",
+ "tools": [
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_oci.go:116",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/stage_build_context.go:24:StageBuildContext",
+    "internal/domain/oci/service.go:40:New",
+    "internal/domain/oci/stage_build_context.go:98:pathUnderAny"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "build-context",
+   "goTests": [
+    "internal/domain/oci/stage_build_context_test.go:TestStageBuildContextRejectsEscape",
+    "internal/domain/oci/stage_build_context_test.go:TestStageBuildContextWritesAllowlistedDir"
+   ],
+   "kubernetesDependencies": [],
+   "neutralName": "stage_build_context",
+   "neutralValues": {},
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "stage_build_context"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_oci.go:83",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "podman"
+   ],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/storage.go:173:CleanupContainerStorage",
+    "internal/domain/oci/storage.go:220:cleanupContainerStorageLocked",
+    "internal/domain/oci/container_runtime.go:174:toMap",
+    "internal/domain/oci/container_runtime.go:53:Inspect",
+    "internal/domain/oci/container_runtime.go:205:normalizeContainerStorageReport",
+    "internal/domain/oci/container_runtime.go:328:parseBuildCacheUsage",
+    "internal/domain/oci/container_runtime.go:400:firstInt64",
+    "internal/domain/oci/container_runtime.go:411:parseByteMetric",
+    "internal/domain/oci/container_runtime.go:460:boolValue",
+    "internal/domain/oci/container_runtime.go:272:parseStorageEntries",
+    "internal/domain/oci/service.go:40:New",
+    "internal/domain/oci/container_runtime.go:389:firstString",
+    "internal/domain/oci/container_runtime.go:346:normalizeStorageCategory",
+    "internal/domain/oci/container_runtime.go:361:nestedRuntimeMap",
+    "internal/domain/oci/container_runtime.go:264:parseJSONMap",
+    "internal/domain/oci/container_runtime.go:538:runContainerCommand",
+    "internal/domain/oci/container_runtime.go:80:PruneBuildCache",
+    "internal/domain/oci/storage.go:429:maxInt64",
+    "internal/domain/oci/storage.go:404:describeSkippedImage",
+    "internal/domain/oci/container_runtime.go:73:RemoveImage",
+    "internal/domain/oci/storage.go:415:selectOciPruneCandidates",
+    "internal/domain/oci/container_runtime.go:65:ListImages",
+    "internal/domain/oci/container_runtime.go:476:parseContainerImages",
+    "internal/domain/oci/container_runtime.go:370:firstStringSlice",
+    "internal/domain/oci/container_runtime.go:499:parseImageTime",
+    "internal/domain/oci/container_runtime.go:42:Name",
+    "internal/domain/oci/container_runtime.go:512:resolveContainerRuntime",
+    "internal/domain/oci/container_runtime.go:45:Ready",
+    "internal/domain/oci/storage.go:205:validateCleanupPolicy",
+    "internal/domain/oci/storage.go:94:loadOciStoragePolicy",
+    "internal/domain/oci/storage.go:69:loadOciStoragePolicyAt",
+    "internal/domain/oci/storage.go:53:validateOciStoragePolicy",
+    "internal/domain/oci/storage.go:49:defaultOciStoragePolicy"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "container-storage",
+   "goTests": [],
+   "kubernetesDependencies": [],
+   "neutralName": "cleanup_container_storage",
+   "neutralValues": {
+    "runtime": {
+     "buildah": "image-builder",
+     "buildkit": "build-daemon",
+     "podman": "container-engine"
+    }
+   },
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "cleanup_container_storage"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_oci.go:56",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "podman"
+   ],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/storage.go:328:ConfigureOciStorage",
+    "internal/domain/oci/storage.go:220:cleanupContainerStorageLocked",
+    "internal/domain/oci/container_runtime.go:174:toMap",
+    "internal/domain/oci/container_runtime.go:53:Inspect",
+    "internal/domain/oci/container_runtime.go:205:normalizeContainerStorageReport",
+    "internal/domain/oci/container_runtime.go:328:parseBuildCacheUsage",
+    "internal/domain/oci/container_runtime.go:400:firstInt64",
+    "internal/domain/oci/container_runtime.go:411:parseByteMetric",
+    "internal/domain/oci/container_runtime.go:460:boolValue",
+    "internal/domain/oci/container_runtime.go:272:parseStorageEntries",
+    "internal/domain/oci/service.go:40:New",
+    "internal/domain/oci/container_runtime.go:389:firstString",
+    "internal/domain/oci/container_runtime.go:346:normalizeStorageCategory",
+    "internal/domain/oci/container_runtime.go:361:nestedRuntimeMap",
+    "internal/domain/oci/container_runtime.go:264:parseJSONMap",
+    "internal/domain/oci/container_runtime.go:538:runContainerCommand",
+    "internal/domain/oci/container_runtime.go:80:PruneBuildCache",
+    "internal/domain/oci/storage.go:429:maxInt64",
+    "internal/domain/oci/storage.go:404:describeSkippedImage",
+    "internal/domain/oci/container_runtime.go:73:RemoveImage",
+    "internal/domain/oci/storage.go:415:selectOciPruneCandidates",
+    "internal/domain/oci/container_runtime.go:65:ListImages",
+    "internal/domain/oci/container_runtime.go:476:parseContainerImages",
+    "internal/domain/oci/container_runtime.go:370:firstStringSlice",
+    "internal/domain/oci/container_runtime.go:499:parseImageTime",
+    "internal/domain/oci/container_runtime.go:42:Name",
+    "internal/domain/oci/container_runtime.go:512:resolveContainerRuntime",
+    "internal/domain/oci/container_runtime.go:45:Ready",
+    "internal/domain/oci/storage.go:136:saveOciStoragePolicy",
+    "internal/domain/oci/storage.go:98:saveOciStoragePolicyAt",
+    "internal/domain/oci/storage.go:53:validateOciStoragePolicy",
+    "internal/domain/oci/storage.go:94:loadOciStoragePolicy",
+    "internal/domain/oci/storage.go:69:loadOciStoragePolicyAt",
+    "internal/domain/oci/storage.go:49:defaultOciStoragePolicy"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "container-storage",
+   "goTests": [],
+   "kubernetesDependencies": [],
+   "neutralName": "configure_oci_storage",
+   "neutralValues": {
+    "runtime": {
+     "buildah": "image-builder",
+     "buildkit": "build-daemon",
+     "podman": "container-engine"
+    }
+   },
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "configure_oci_storage"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_oci.go:71",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "podman"
+   ],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/storage.go:142:InspectContainerStorage",
+    "internal/domain/oci/container_runtime.go:174:toMap",
+    "internal/domain/oci/container_runtime.go:53:Inspect",
+    "internal/domain/oci/container_runtime.go:205:normalizeContainerStorageReport",
+    "internal/domain/oci/container_runtime.go:328:parseBuildCacheUsage",
+    "internal/domain/oci/container_runtime.go:400:firstInt64",
+    "internal/domain/oci/container_runtime.go:411:parseByteMetric",
+    "internal/domain/oci/container_runtime.go:460:boolValue",
+    "internal/domain/oci/container_runtime.go:272:parseStorageEntries",
+    "internal/domain/oci/service.go:40:New",
+    "internal/domain/oci/container_runtime.go:389:firstString",
+    "internal/domain/oci/container_runtime.go:346:normalizeStorageCategory",
+    "internal/domain/oci/container_runtime.go:361:nestedRuntimeMap",
+    "internal/domain/oci/container_runtime.go:264:parseJSONMap",
+    "internal/domain/oci/container_runtime.go:538:runContainerCommand",
+    "internal/domain/oci/container_runtime.go:512:resolveContainerRuntime",
+    "internal/domain/oci/container_runtime.go:45:Ready",
+    "internal/domain/oci/storage.go:94:loadOciStoragePolicy",
+    "internal/domain/oci/storage.go:69:loadOciStoragePolicyAt",
+    "internal/domain/oci/storage.go:53:validateOciStoragePolicy",
+    "internal/domain/oci/storage.go:49:defaultOciStoragePolicy"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "container-storage",
+   "goTests": [],
+   "kubernetesDependencies": [],
+   "neutralName": "inspect_container_storage",
+   "neutralValues": {
+    "runtime": {
+     "buildah": "image-builder",
+     "buildkit": "build-daemon",
+     "podman": "container-engine"
+    }
+   },
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "inspect_container_storage"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_oci.go:98",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "apt-get",
+    "buildah",
+    "buildkitd",
+    "podman",
+    "sudo"
+   ],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/build_and_push.go:39:BuildAndPushOciImage",
+    "internal/domain/oci/storage.go:378:enforceOciStoragePolicy",
+    "internal/domain/oci/storage.go:220:cleanupContainerStorageLocked",
+    "internal/domain/oci/container_runtime.go:174:toMap",
+    "internal/domain/oci/container_runtime.go:53:Inspect",
+    "internal/domain/oci/container_runtime.go:205:normalizeContainerStorageReport",
+    "internal/domain/oci/container_runtime.go:328:parseBuildCacheUsage",
+    "internal/domain/oci/container_runtime.go:400:firstInt64",
+    "internal/domain/oci/container_runtime.go:411:parseByteMetric",
+    "internal/domain/oci/container_runtime.go:460:boolValue",
+    "internal/domain/oci/container_runtime.go:272:parseStorageEntries",
+    "internal/domain/oci/service.go:40:New",
+    "internal/domain/oci/container_runtime.go:389:firstString",
+    "internal/domain/oci/container_runtime.go:346:normalizeStorageCategory",
+    "internal/domain/oci/container_runtime.go:361:nestedRuntimeMap",
+    "internal/domain/oci/container_runtime.go:264:parseJSONMap",
+    "internal/domain/oci/container_runtime.go:538:runContainerCommand",
+    "internal/domain/oci/container_runtime.go:80:PruneBuildCache",
+    "internal/domain/oci/storage.go:429:maxInt64",
+    "internal/domain/oci/storage.go:404:describeSkippedImage",
+    "internal/domain/oci/container_runtime.go:73:RemoveImage",
+    "internal/domain/oci/storage.go:415:selectOciPruneCandidates",
+    "internal/domain/oci/container_runtime.go:65:ListImages",
+    "internal/domain/oci/container_runtime.go:476:parseContainerImages",
+    "internal/domain/oci/container_runtime.go:370:firstStringSlice",
+    "internal/domain/oci/container_runtime.go:499:parseImageTime",
+    "internal/domain/oci/container_runtime.go:42:Name",
+    "internal/domain/oci/container_runtime.go:512:resolveContainerRuntime",
+    "internal/domain/oci/container_runtime.go:45:Ready",
+    "internal/domain/oci/storage.go:94:loadOciStoragePolicy",
+    "internal/domain/oci/storage.go:69:loadOciStoragePolicyAt",
+    "internal/domain/oci/storage.go:53:validateOciStoragePolicy",
+    "internal/domain/oci/storage.go:49:defaultOciStoragePolicy",
+    "internal/domain/oci/container_runtime.go:123:Untag",
+    "internal/domain/oci/container_runtime.go:545:runContainerStreamingCommand",
+    "internal/domain/oci/build_and_push.go:233:runStreamingCommand",
+    "internal/domain/oci/container_runtime.go:136:splitOciImageRef",
+    "internal/domain/oci/container_runtime.go:109:Push",
+    "internal/domain/oci/container_runtime.go:94:appendOciBuildArgs",
+    "internal/domain/oci/container_runtime.go:84:Build",
+    "internal/domain/oci/builder.go:21:EnsureOciBuilder",
+    "internal/domain/oci/builder.go:89:ociBuilderResult",
+    "internal/domain/oci/build_and_push.go:221:validateOciBuildArgs"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "image-build",
+   "goTests": [
+    "internal/domain/oci/build_and_push_test.go:TestBuildAndPushOciImageValidatesArgs",
+    "internal/domain/oci/container_runtime_test.go:TestBuildAndPushPodmanAdapterArguments",
+    "internal/domain/oci/container_runtime_test.go:TestBuildAndPushPodmanAdapterBuildArgs",
+    "internal/domain/oci/container_runtime_test.go:TestBuildAndPushPodmanAdapterUntagFailureIsWarning",
+    "internal/domain/oci/container_runtime_test.go:TestBuildAndPushPodmanAdapterUntagOptOutAndDigestRef",
+    "internal/resource/admission_test.go:TestCoResidentCoordinatorsShareHeavyLock",
+    "internal/resource/admission_test.go:TestCriticalPressureRejectsHeavyWork",
+    "internal/resource/admission_test.go:TestHeavyAdmissionIsSerialized"
+   ],
+   "kubernetesDependencies": [],
+   "neutralName": "build_and_push_oci_image",
+   "neutralValues": {
+    "builder": {
+     "buildah": "image-builder",
+     "buildkit": "build-daemon",
+     "podman": "container-engine"
+    }
+   },
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "build_and_push_oci_image"
+  },
+  {
+   "admissionClass": "ClassHeavy",
+   "anchor": "internal/tools/dispatch_oci.go:46",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "apt-get",
+    "buildah",
+    "buildkitd",
+    "podman",
+    "sudo"
+   ],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/builder.go:21:EnsureOciBuilder",
+    "internal/domain/oci/builder.go:89:ociBuilderResult",
+    "internal/domain/oci/container_runtime.go:45:Ready",
+    "internal/domain/oci/container_runtime.go:538:runContainerCommand",
+    "internal/domain/oci/service.go:40:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "oci-builder",
+   "goTests": [],
+   "kubernetesDependencies": [],
+   "neutralName": "ensure_oci_builder",
+   "neutralValues": {
+    "builder": {
+     "buildah": "image-builder",
+     "buildkit": "build-daemon",
+     "podman": "container-engine"
+    }
+   },
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "ensure_oci_builder"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_oci.go:36",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/registry.go:22:DeleteOCIRegistry",
+    "internal/domain/oci/service.go:40:New"
+   ],
+   "effect": "EffectDestructive",
+   "envReads": [],
+   "family": "oci-registry",
+   "goTests": [],
+   "kubernetesDependencies": [
+    "DeleteK8sResource",
+    "KubernetesTargetURI"
+   ],
+   "neutralName": "delete_oci_registry",
+   "neutralValues": {},
+   "providerOperations": [
+    "opute.capability.kubernetes.delete-resource"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "delete_oci_registry"
+  },
+  {
+   "admissionClass": "ClassControl",
+   "anchor": "internal/tools/dispatch_oci.go:26",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/registry.go:157:GetOCIRegistryStatus"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "oci-registry",
+   "goTests": [],
+   "kubernetesDependencies": [
+    "GetK8sResource",
+    "KubernetesTargetURI"
+   ],
+   "neutralName": "get_oci_registry_status",
+   "neutralValues": {},
+   "providerOperations": [
+    "opute.capability.kubernetes.get-resource"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "get_oci_registry_status"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_oci.go:16",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "domain": "oci",
+   "domainFunctions": [
+    "internal/domain/oci/registry.go:40:InstallOCIRegistry",
+    "internal/domain/oci/registry_storage.go:10:admitRegistryStorage",
+    "internal/domain/oci/registry_storage.go:29:assertStorageClassExpands",
+    "internal/domain/oci/registry_storage.go:68:k8sResourceObject",
+    "internal/domain/oci/registry_storage.go:75:nestedMapString",
+    "internal/domain/oci/registry_storage.go:45:admitPVCSizeChange",
+    "internal/domain/oci/registry_storage.go:94:isKubernetesNotFound",
+    "internal/domain/oci/service.go:40:New"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "oci-registry",
+   "goTests": [],
+   "kubernetesDependencies": [
+    "ApplyManifest",
+    "GetK8sResource",
+    "KubernetesTargetURI"
+   ],
+   "neutralName": "install_oci_registry",
+   "neutralValues": {},
+   "providerOperations": [
+    "opute.capability.kubernetes.apply-manifest",
+    "opute.capability.kubernetes.get-resource"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskAware",
+   "tool": "install_oci_registry"
+  }
+ ]
+}
