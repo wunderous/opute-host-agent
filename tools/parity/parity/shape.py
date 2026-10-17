@@ -109,11 +109,12 @@ def compare_spec(scenario: dict | None = None) -> dict:
                 continue
             suffix = path[path.index("structuredContent") + 1:]
             # A task's result persists its structuredContent in its operations
-            # row and task snapshot.
-            if key == "masks":
+            # row and task snapshot; a set declared on it (a list in Go map
+            # order) is a set there too.
+            if key in ("masks", "sets"):
                 for prefix in (["result_json", "$json"], ["task_snapshot_json", "$json", "result"]):
                     add(root + ["operations", "*"] + prefix + ["structuredContent"] + suffix,
-                        {**rule, "optional": True})
+                        {**rule, "optional": True} if key == "masks" else rule)
             for column in ["result_json", "observation_json"]:
                 target = root + ["capability_invocations", "*", column, "$json", "structured"] + suffix
                 add(target, {**rule, "optional": True} if key == "masks" else rule)
