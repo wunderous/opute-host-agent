@@ -2258,9 +2258,7 @@ fn oci_registry(oci: &crate::ociops::Oci) -> Service {
                         name: text(call.args, "name").into(),
                         ..RegistryArgs::default()
                     };
-                    status
-                        .registry_status(&args)
-                        .map(|out| structured_result(J::Object(out), None))
+                    status.registry_status(&args).map(map_result)
                 }),
             ),
             (
