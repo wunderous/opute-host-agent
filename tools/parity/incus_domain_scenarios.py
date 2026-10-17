@@ -267,7 +267,12 @@ cases = [
     # a drifted owner refuses before anything changes.
     scenario("provision.existing", [
         owned(),
-        task_call("existingVm", "provision_vm", {"vmName": "vm1", "cpus": 8, "memory": "16GiB"}),
+        # Larger than vm1 (2 CPUs, 2GiB), so a resize would show, yet small
+        # enough that the heavy reservation always fits: effective memory is
+        # the host's own total less the agent cgroup's memory.current, page
+        # cache included, and 16GiB was refused on either side when that
+        # cache passed about 14GiB (M8b round 2, M8c round 3).
+        task_call("existingVm", "provision_vm", {"vmName": "vm1", "cpus": 4, "memory": "4GiB"}),
         task_call("createExisting", "create_vm", {"name": " vm1 ", "image": "ubuntu:24.04"}),
         task_call("kindMismatch", "provision_vm", {"vmName": "vm1", "instanceType": "container"}),
         task_call("kindInvalid", "provision_vm", {"vmName": "vm1", "instanceType": " LXC "}),
