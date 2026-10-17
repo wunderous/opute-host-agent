@@ -36,6 +36,9 @@ pub struct Host {
     /// `resolveResetCheckpointPath`: where an interrupted stack reset
     /// resumes from.
     pub reset_checkpoint_path: String,
+    /// `filepath.Join(HostResourceLockDir, "oci-storage-policy.json")`: the
+    /// local container storage budget (M8d).
+    pub oci_storage_policy_path: String,
     /// The in-process relays into guests (`tcprelay`): the cluster agent's
     /// guest bridge forwarders, revoked before a stack reset deletes guests.
     pub relays: Arc<crate::tcprelay::Manager>,
@@ -1284,7 +1287,10 @@ pub(crate) fn invoke(
         .as_object()
         .cloned()
         .unwrap_or_default();
-    let checked = crate::schema::arguments_for_validation(&input, args);
+    // D23: a mapped Go value is validated as its published value.
+    let published = catalog::published_value_arguments(name, args);
+    let checked =
+        crate::schema::arguments_for_validation(&input, published.as_ref().unwrap_or(args));
     if let Err(e) = crate::schema::validate(&input, &J::Object(checked)) {
         let message = format!("invalid capability arguments: {e}");
         return capability_error("capability", "invalid_arguments", &message);

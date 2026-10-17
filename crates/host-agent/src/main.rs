@@ -38,6 +38,7 @@ mod incusops;
 mod mcpprobe;
 mod mcpsdk;
 mod oauth;
+mod ociops;
 mod plan;
 mod plan_evidence;
 mod plan_mcp;

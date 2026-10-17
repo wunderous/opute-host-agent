@@ -1,7 +1,7 @@
 {
- "decision": "D19 (extended by D21 and D22)",
- "change": "openspec/changes/neutral-host-tool-names; openspec/changes/neutral-instance-tool-names; openspec/changes/neutral-cluster-tool-names",
- "note": "The one D19 name map. The Rust catalog publishes each value in place of its key, keeps the key as a hidden alias with Go's input schema, and renames the listed input fields; tools/parity reads the same file for the D19.neutral-host-tool-names divergence.",
+ "decision": "D19 (extended by D21, D22 and D23)",
+ "change": "openspec/changes/neutral-host-tool-names; openspec/changes/neutral-instance-tool-names; openspec/changes/neutral-cluster-tool-names; openspec/changes/neutral-oci-selector-values",
+ "note": "The one D19 name map. The Rust catalog publishes each value in place of its key, keeps the key as a hidden alias with Go's input schema, and renames the listed input fields; tools/parity reads the same file for the D19.neutral-host-tool-names divergence. The values section (D23) publishes the listed values of the listed fields of the listed tools in inputs and results; Go's values stay accepted.",
  "tools": {
   "install_incus_stack": "install_virtualization_stack",
   "uninstall_incus_stack": "uninstall_virtualization_stack",
@@ -25,5 +25,20 @@
  "fields": {
   "install_incus_stack": {"incusPackage": "packageName"},
   "provision_container": {"wslGpuLibs": "hostGpuLibs"}
+ },
+ "values": {
+  "tools": {
+   "ensure_oci_builder": ["builder"],
+   "build_and_push_oci_image": ["builder"],
+   "configure_oci_storage": ["runtime"],
+   "inspect_container_storage": ["runtime"],
+   "cleanup_container_storage": ["runtime"]
+  },
+  "resultFields": ["builder", "runtime"],
+  "map": {
+   "podman": "container-engine",
+   "buildah": "image-builder",
+   "buildkit": "build-daemon"
+  }
  }
 }

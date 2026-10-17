@@ -450,6 +450,14 @@ fn schemas_compatible(producer: &Map<String, Value>, consumer: &Map<String, Valu
     consumer_type.split('|').any(|c| c == producer_type)
 }
 
+/// A node's arguments as its capability schema validates them: a D23-mapped
+/// Go value is checked as its published value, as a call's is.
+pub fn validation_arguments(tool: &str, args: &Map<String, Value>) -> Value {
+    Value::Object(
+        crate::catalog::published_value_arguments(tool, args).unwrap_or_else(|| args.clone()),
+    )
+}
+
 /// `plan.ValidateJSON`, shared with the ordinary capability boundary.
 pub fn validate_json(schema: &Map<String, Value>, value: &Value) -> Result<(), String> {
     crate::schema::validate(schema, value)
@@ -675,7 +683,7 @@ pub fn validate(
                 .map_err(|e| format!("node \"{}\" action references: {e}", node.id))?;
             validate_json(
                 &capability.input_schema,
-                &Value::Object(action.args.clone()),
+                &validation_arguments(&action.tool, &action.args),
             )
             .map_err(|e| format!("node \"{}\" action {} arguments: {e}", node.id, action.tool))?;
             if capability.effect != "read" && node.validate.is_none() {
@@ -722,7 +730,7 @@ pub fn validate(
             .map_err(|e| format!("node \"{}\" validation references: {e}", node.id))?;
             validate_json(
                 &capability.input_schema,
-                &Value::Object(validation.args.clone()),
+                &validation_arguments(&validation.tool, &validation.args),
             )
             .map_err(|e| {
                 format!(
@@ -753,7 +761,7 @@ pub fn validate(
                 ));
             }
             validate_interpolations(
-                &Value::Object(recover.action.args.clone()),
+                &validation_arguments(&recover.action.tool, &recover.action.args),
                 doc,
                 node,
                 &ancestors,
@@ -761,7 +769,7 @@ pub fn validate(
             .map_err(|e| format!("node \"{}\" recovery references: {e}", node.id))?;
             validate_json(
                 &capability.input_schema,
-                &Value::Object(recover.action.args.clone()),
+                &validation_arguments(&recover.action.tool, &recover.action.args),
             )
             .map_err(|e| {
                 format!(
@@ -770,7 +778,7 @@ pub fn validate(
                 )
             })?;
             walk_reference_types(
-                &Value::Object(recover.action.args.clone()),
+                &validation_arguments(&recover.action.tool, &recover.action.args),
                 capabilities
                     .get(&recover.action.tool)
                     .map(|c| &c.input_schema),
@@ -796,7 +804,7 @@ pub fn validate(
             .map_err(|e| format!("node \"{}\" compensation references: {e}", node.id))?;
             validate_json(
                 &capability.input_schema,
-                &Value::Object(compensate.args.clone()),
+                &validation_arguments(&compensate.tool, &compensate.args),
             )
             .map_err(|e| {
                 format!(

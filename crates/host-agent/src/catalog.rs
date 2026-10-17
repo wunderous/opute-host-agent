@@ -170,6 +170,18 @@ const NEUTRAL_NAMES: &str = include_str!("../catalog/neutral-names.json");
 struct NameMap {
     tools: Vec<(String, String)>,
     fields: BTreeMap<String, Vec<(String, String)>>,
+    values: ValueMap,
+}
+
+/// D23: the selector values a published tool renames, in inputs and results.
+#[derive(Default)]
+struct ValueMap {
+    /// Tool to the input fields whose values are mapped.
+    tools: BTreeMap<String, Vec<String>>,
+    /// Result keys whose mapped values are published, at any depth.
+    result_fields: Vec<String>,
+    /// Go value to published value.
+    map: Vec<(String, String)>,
 }
 
 fn name_map() -> &'static NameMap {
@@ -186,12 +198,32 @@ fn name_map() -> &'static NameMap {
                 })
                 .unwrap_or_default()
         };
+        let names = |v: &J| -> Vec<String> {
+            v.as_array()
+                .map(|items| {
+                    items
+                        .iter()
+                        .filter_map(J::as_str)
+                        .map(str::to_string)
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        let values = &doc["values"];
         NameMap {
             tools: pairs(&doc["tools"]),
             fields: doc["fields"]
                 .as_object()
                 .map(|m| m.iter().map(|(k, v)| (k.clone(), pairs(v))).collect())
                 .unwrap_or_default(),
+            values: ValueMap {
+                tools: values["tools"]
+                    .as_object()
+                    .map(|m| m.iter().map(|(k, v)| (k.clone(), names(v))).collect())
+                    .unwrap_or_default(),
+                result_fields: names(&values["resultFields"]),
+                map: pairs(&values["map"]),
+            },
         }
     })
 }
@@ -236,6 +268,73 @@ pub fn renamed_field_arguments(name: &str, args: &Map<String, J>) -> Option<Map<
         }
     }
     Some(out)
+}
+
+/// D23: `args` with each mapped field's Go value replaced, by `to_published`
+/// (Go to published) or back. `None` when `name` maps no value.
+fn mapped_values(name: &str, args: &Map<String, J>, to_published: bool) -> Option<Map<String, J>> {
+    let map = &name_map().values;
+    let fields = map.tools.get(name)?;
+    let mut out = args.clone();
+    for field in fields {
+        let Some(J::String(value)) = out.get(field) else {
+            continue;
+        };
+        let replacement = map.map.iter().find_map(|(go, published)| {
+            let (from, to) = if to_published {
+                (go, published)
+            } else {
+                (published, go)
+            };
+            (value == from).then(|| to.clone())
+        });
+        if let Some(replacement) = replacement {
+            out.insert(field.clone(), J::String(replacement));
+        }
+    }
+    Some(out)
+}
+
+/// D23: arguments as the published schema validates them: a mapped Go value
+/// is checked as its published value.
+pub fn published_value_arguments(name: &str, args: &Map<String, J>) -> Option<Map<String, J>> {
+    mapped_values(name, args, true)
+}
+
+/// D23: arguments as the Consumer reads them: a published value reaches the
+/// domain as Go's value, so it behaves exactly as Go.
+pub fn go_value_arguments(name: &str, args: &Map<String, J>) -> Option<Map<String, J>> {
+    mapped_values(name, args, false)
+}
+
+/// D23: a mapped tool's structured result with each result key's mapped Go
+/// value published, at any depth. Unmapped values stay as Go returns them.
+pub fn publish_result_values(name: &str, value: &mut J) {
+    let map = &name_map().values;
+    if !map.tools.contains_key(name) {
+        return;
+    }
+    fn walk(value: &mut J, map: &ValueMap) {
+        match value {
+            J::Object(object) => {
+                for (key, item) in object.iter_mut() {
+                    if let J::String(text) = item {
+                        if map.result_fields.iter().any(|f| f == key) {
+                            if let Some((_, published)) = map.map.iter().find(|(go, _)| go == text)
+                            {
+                                *text = published.clone();
+                            }
+                        }
+                    } else {
+                        walk(item, map);
+                    }
+                }
+            }
+            J::Array(items) => items.iter_mut().for_each(|item| walk(item, map)),
+            _ => {}
+        }
+    }
+    walk(value, map);
 }
 
 /// Replaces every mapped Go tool name that stands as a whole word.
@@ -305,6 +404,23 @@ fn rename_definition(def: &Definition) -> Definition {
             for item in required.iter_mut() {
                 if item.as_str() == Some(from) {
                     *item = J::from(to.clone());
+                }
+            }
+        }
+    }
+    for field in name_map().values.tools.get(&def.name).into_iter().flatten() {
+        if let Some(J::Array(values)) = out
+            .input_schema
+            .pointer_mut(&format!("/properties/{field}/enum"))
+        {
+            for value in values.iter_mut() {
+                if let Some((_, published)) = name_map()
+                    .values
+                    .map
+                    .iter()
+                    .find(|(go, _)| value.as_str() == Some(go))
+                {
+                    *value = J::from(published.clone());
                 }
             }
         }
@@ -1660,6 +1776,53 @@ mod tests {
         assert!(compact.description.contains("shutdown_host_vm_subsystem"));
         assert!(!compact.description.contains("shutdown_wsl"));
         assert!(cat.find("install_virtualization_stack_x").is_none());
+    }
+
+    #[test]
+    fn d23_publishes_neutral_selector_values() {
+        let snapshot = for_mode(true);
+        let enum_of = |tool: &str, field: &str| {
+            snapshot.find(tool).unwrap().input_schema["properties"][field]["enum"].clone()
+        };
+        assert_eq!(
+            enum_of("ensure_oci_builder", "builder"),
+            json!(["auto", "container-engine", "image-builder", "build-daemon"])
+        );
+        assert_eq!(
+            enum_of("inspect_container_storage", "runtime"),
+            json!(["auto", "container-engine"])
+        );
+        // The Go value validates as the published one and reaches the
+        // Consumer as Go's.
+        let go = json!({"builder": "podman", "image": "x"});
+        let published =
+            published_value_arguments("build_and_push_oci_image", go.as_object().unwrap()).unwrap();
+        assert_eq!(published["builder"], "container-engine");
+        assert_eq!(
+            go_value_arguments("build_and_push_oci_image", &published).unwrap()["builder"],
+            "podman"
+        );
+        assert_eq!(
+            go_value_arguments(
+                "ensure_oci_builder",
+                json!({"builder": "auto"}).as_object().unwrap()
+            )
+            .unwrap()["builder"],
+            "auto"
+        );
+        assert!(published_value_arguments("get_host_info", &Map::new()).is_none());
+        // Results publish mapped values at any depth; others stay.
+        let mut result = json!({"builder": "buildkit", "runtime": "podman",
+            "before": {"runtime": "podman", "storageDriver": "overlay"}, "other": "podman"});
+        publish_result_values("cleanup_container_storage", &mut result);
+        assert_eq!(
+            result,
+            json!({"builder": "build-daemon", "runtime": "container-engine",
+            "before": {"runtime": "container-engine", "storageDriver": "overlay"}, "other": "podman"})
+        );
+        let mut docker = json!({"builder": "docker"});
+        publish_result_values("build_and_push_oci_image", &mut docker);
+        assert_eq!(docker["builder"], "docker");
     }
 
     #[test]

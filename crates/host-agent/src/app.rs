@@ -365,6 +365,14 @@ pub(crate) fn compose(
                 .display()
                 .to_string()
         },
+        oci_storage_policy_path: if cfg.host_resource_lock_dir.as_os_str().is_empty() {
+            "oci-storage-policy.json".into()
+        } else {
+            cfg.host_resource_lock_dir
+                .join("oci-storage-policy.json")
+                .display()
+                .to_string()
+        },
         relays: Default::default(),
         cluster_adopter: Default::default(),
     };

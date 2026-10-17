@@ -248,6 +248,26 @@ class NeutralNamesTest(unittest.TestCase):
         self.assertEqual(b, other)
         self.assertTrue(records[0]["stale"])
 
+    def test_selector_values_map_back_to_go(self):
+        # D23: ensure_oci_builder publishes neutral builder values, in its
+        # schema's enum and in results; other keys and tools are untouched.
+        def obs(values, builder, runtime, other):
+            return {"steps": {"list": {"tools": [{"name": "ensure_oci_builder", "inputSchema": {
+                "properties": {"builder": {"type": "string", "enum": values}}}}]},
+                "call": {"structuredContent": {"builder": builder, "runtime": runtime,
+                                               "before": {"runtime": runtime}, "path": other}}}}
+        go = obs(["auto", "podman", "buildah", "buildkit"], "podman", "buildah", "container-engine")
+        rust = obs(["auto", "container-engine", "image-builder", "build-daemon"], "container-engine",
+                   "image-builder", "container-engine")
+        a, b, records = self.apply(go, rust)
+        self.assertEqual(b, go)
+        self.assertFalse(records[0]["stale"])
+        # An enum of a tool outside the map stays a diff.
+        other = {"steps": {"list": {"tools": [{"name": "get_host_info", "inputSchema": {
+            "properties": {"builder": {"enum": ["container-engine"]}}}}]}}}
+        _, b, _ = self.apply(other, other)
+        self.assertEqual(b, other)
+
     def test_renamed_catalog_matches_go(self):
         go = self.catalog(self.pair["go"], "install_incus_stack", "incusPackage", "shutdown_wsl")
         rust = self.catalog(self.pair["rust"], "install_virtualization_stack", "packageName",
