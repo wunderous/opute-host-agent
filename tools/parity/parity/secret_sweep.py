@@ -211,7 +211,15 @@ def failures(data: dict) -> list[str]:
                 key = f"{side}.{mode}"
                 observation = outcomes[key]
                 projected = observation["projected"]
-                derived = field_cases(projected["_catalog"], mode)
+                catalog = projected["_catalog"]
+                if side == "rust":
+                    # D19/D21/D22: coverage is derived from Rust's catalog in
+                    # Go's spelling, so a renamed secret-bearing tool
+                    # (put_cluster_secret, Go put_k8s_secret) is the same case.
+                    catalog = canon.apply_divergences(
+                        {"_catalog": catalog}, None, ["D19.neutral-host-tool-names"],
+                        canon.load_divergences(runner.DIVERGENCE_FILE), rust_side="a")[0]["_catalog"]
+                derived = field_cases(catalog, mode)
                 expected = {(c["id"], c["tool"], tuple(c["path"])) for c in derived}
                 actual = {(c["id"], c["tool"], tuple(c["path"])) for c in cases[mode]}
                 if actual != expected or len(actual) != len(cases[mode]):
