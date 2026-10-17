@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m8c/canaries.json"
+  "results": "evidence/m8d/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
@@ -167,23 +167,23 @@
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/m8c/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m8d/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/m8c/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m8d/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/m8c/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m8d/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/m8c/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m8d/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/m8c/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m8d/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -313,13 +313,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m8c/go-vs-go/summary.json"
+   "summary": "evidence/m8d/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m8c/go-vs-rust/summary.json"
+   "summary": "evidence/m8d/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -634,6 +634,48 @@
       "incus-domain",
       "lifecycle",
       "mcp-wire",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
+  },
+  "m8d": {
+   "description": "M8d exit (oci domain): the M8c gate plus every oci-domain item matching Go (x5) at T1 shim-trace parity (podman, buildah, sudo and apt-get shimmed; the registry tools and configure_oci_storage through the pinned, unchanged Go k3s provider), and every T2 oci-domain scenario in OCI twins (the k3s golden plus podman and buildah: the builder, a staged context, the registry deployed in k1, images built FROM scratch and pushed to it by podman and buildah, the storage policy file, cleanup of an age-eligible image beside one shared by two tags, and the M4 admission-rejected oci calls leaving the twin unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "mcp-wire",
+      "oci-domain",
       "provider-lifecycle",
       "provider-real",
       "read-only-tools",
@@ -2942,6 +2984,229 @@
   },
   {
    "anchors": [
+    "internal/domain/oci/builder.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/exec/process.go"
+   ],
+   "id": "oci-domain.builder.podman",
+   "owner": "oci",
+   "scenario": "oci-domain.builder.podman",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/builder.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/exec/process.go"
+   ],
+   "id": "oci-domain.builder.podman-down",
+   "owner": "oci",
+   "scenario": "oci-domain.builder.podman-down",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/builder.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/exec/process.go",
+    "internal/domain/oci/build_and_push.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/domain/oci/storage.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.builder.buildkit-only",
+   "owner": "oci",
+   "scenario": "oci-domain.builder.buildkit-only",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/builder.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/exec/process.go"
+   ],
+   "id": "oci-domain.builder.install",
+   "owner": "oci",
+   "scenario": "oci-domain.builder.install",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/builder.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/exec/process.go"
+   ],
+   "id": "oci-domain.builder.apt-broken",
+   "owner": "oci",
+   "scenario": "oci-domain.builder.apt-broken",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/builder.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/exec/process.go"
+   ],
+   "id": "oci-domain.builder.no-apt",
+   "owner": "oci",
+   "scenario": "oci-domain.builder.no-apt",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/stage_build_context.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.stage",
+   "owner": "oci",
+   "scenario": "oci-domain.stage",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/build_and_push.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/domain/oci/storage.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/domain/oci/stage_build_context.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.build.podman",
+   "owner": "oci",
+   "scenario": "oci-domain.build.podman",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/build_and_push.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/domain/oci/storage.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/domain/oci/stage_build_context.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.build.buildah",
+   "owner": "oci",
+   "scenario": "oci-domain.build.buildah",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/build_and_push.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/domain/oci/storage.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/domain/oci/stage_build_context.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.build.policy",
+   "owner": "oci",
+   "scenario": "oci-domain.build.policy",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.inspect-configure",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.inspect-configure",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.policy-file",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.policy-file",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.cleanup",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.cleanup",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.budget",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.budget",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.no-runtime",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.no-runtime",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.not-installed",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.not-installed",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/storage.go",
+    "internal/domain/oci/container_runtime.go",
+    "internal/tools/dispatch_oci.go"
+   ],
+   "id": "oci-domain.storage.shared-owner",
+   "owner": "oci",
+   "scenario": "oci-domain.storage.shared-owner",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/oci/registry.go",
+    "internal/domain/oci/registry_storage.go",
+    "internal/tools/dispatch_oci.go",
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "oci-domain.registry",
+   "owner": "oci",
+   "scenario": "oci-domain.registry",
+   "surface": "oci-domain"
+  },
+  {
+   "anchors": [
     "internal/hostmcp/provider_install.go:handleProviderInstallContext"
    ],
    "id": "provider-lifecycle.install-call-teardown",
@@ -3667,34 +3932,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m8c/m5/crash/summary.json"
+   "summary": "evidence/m8d/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m8c/m5/cross-read/summary.json"
+   "summary": "evidence/m8d/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m8c/m5/migration/summary.json"
+   "summary": "evidence/m8d/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m8c/m5/secrets/summary.json"
+   "summary": "evidence/m8d/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m8c/m5/shape/summary.json"
+   "summary": "evidence/m8d/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m8c/m5/unknown-projection/summary.json"
+   "summary": "evidence/m8d/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/m8c/oracles.json",
+  "results": "evidence/m8d/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/m8c/rust-canaries.json"
+  "results": "evidence/m8d/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "9c3c23ac705259dc95f5958f236ef2af6049e403415989505c7cac4554378a1f",
+  "binarySha256": "bc2d545774b20ea7b1d1c2b045c67fb57156b3842a9ae6af4eab586ed650196a",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
@@ -3718,23 +3983,29 @@
     "opute-provider-k3s": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915"
    }
   },
+  "ociGolden": {
+   "debSha256": "e5c1c37e387ed14c352a744a75fbb79fb2f82573ca7bf36886e3b7333fc9ef1a  podman_4.9.3+ds1-1ubuntu0.2_amd64.deb\na94382e24be71739da40350fddc896464692cd736d2fc2f5507d6d6961d34727  buildah_1.33.7+ds1-1ubuntu0.24.04.3_amd64.deb\n",
+   "goldenSha256": "9cc57aca0886e28aafdeaa029032a5ee3383e63d8c34e834b6badf518366dd3a",
+   "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+   "packages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n"
+  },
   "suites": {
    "go-vs-go": {
     "minRepeat": 20,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "summary": "evidence/m8c/t2-go-vs-go/summary.json"
+    "summary": "evidence/m8d/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
     "minRepeat": 5,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "summary": "evidence/m8c/t2-go-vs-rust/summary.json"
+    "summary": "evidence/m8d/t2-go-vs-rust/summary.json"
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/m8c/oracles-t2.json",
+  "results": "evidence/m8d/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
  }
 }

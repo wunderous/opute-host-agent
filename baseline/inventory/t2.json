@@ -25,6 +25,33 @@
    "tool": "apply_manifest"
   },
   {
+   "effect": "EffectMutation",
+   "neutralName": "build_and_push_oci_image",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.build.push-to-twin-registry",
+    "t2.oci-domain.storage.policy-and-cleanup"
+   ],
+   "tool": "build_and_push_oci_image"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "cleanup_container_storage",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.storage.policy-and-cleanup"
+   ],
+   "tool": "cleanup_container_storage"
+  },
+  {
    "effect": "EffectDestructive",
    "gapReason": "T2 unverified: needs a WSL2 runner: the effect is a VHDX compact on the Windows host through wsl.exe and PowerShell; the Linux T2 sandbox has no WSL",
    "milestone": "M8a",
@@ -49,6 +76,19 @@
     "t2.host-domain.connection.restart-user-service"
    ],
    "tool": "configure_agent_connection"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "configure_oci_storage",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.storage.policy-and-cleanup"
+   ],
+   "tool": "configure_oci_storage"
   },
   {
    "effect": "EffectMutation",
@@ -90,6 +130,19 @@
     "t2.cluster-domain.resources.lifecycle"
    ],
    "tool": "delete_k8s_resource"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "delete_oci_registry",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.build.push-to-twin-registry"
+   ],
+   "tool": "delete_oci_registry"
   },
   {
    "effect": "EffectDestructive",
@@ -195,6 +248,19 @@
    "t2RejectedScenarios": [],
    "t2Scenarios": [],
    "tool": "ensure_k3d"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_oci_builder",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.build.push-to-twin-registry"
+   ],
+   "tool": "ensure_oci_builder"
   },
   {
    "effect": "EffectMutation",
@@ -311,6 +377,19 @@
     "t2.host-domain.virt.stack-install-uninstall"
    ],
    "tool": "install_incus_stack"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "install_oci_registry",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.build.push-to-twin-registry"
+   ],
+   "tool": "install_oci_registry"
   },
   {
    "effect": "EffectMutation",
@@ -555,6 +634,20 @@
    ],
    "t2Scenarios": [],
    "tool": "shutdown_wsl"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "stage_build_context",
+   "owner": "oci",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.oci-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.oci-domain.build.push-to-twin-registry",
+    "t2.oci-domain.storage.policy-and-cleanup"
+   ],
+   "tool": "stage_build_context"
   },
   {
    "effect": "EffectMutation",
