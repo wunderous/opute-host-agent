@@ -33,9 +33,17 @@ use std::sync::Arc;
 
 /// `planCapabilitiesFromSnapshot`.
 pub fn capabilities_from_snapshot(snapshot: &Snapshot) -> BTreeMap<String, Capability> {
+    // A D19 alias is a Go tool name: a plan that names it is validated and
+    // its evidence redacted through Go's own descriptor, as a call is.
+    let aliases = crate::catalog::alias_names();
     snapshot
         .tools
         .iter()
+        .chain(aliases.iter().filter_map(|name| {
+            snapshot
+                .find(name)
+                .filter(|descriptor| descriptor.name == *name)
+        }))
         .map(|descriptor| {
             (
                 descriptor.name.clone(),
@@ -979,6 +987,33 @@ mod tests {
         assert_eq!(
             result["catalogRevision"],
             J::String(snapshot.revision.clone())
+        );
+    }
+
+    #[test]
+    fn capabilities_carry_d19_aliases_with_go_descriptors() {
+        let snapshot = crate::catalog::for_mode(true);
+        let capabilities = capabilities_from_snapshot(snapshot);
+        let alias = &capabilities["put_k8s_secret"];
+        assert_eq!(alias.name, "put_k8s_secret");
+        assert_eq!(
+            alias.input_schema["properties"]["data"]["writeOnly"],
+            J::Bool(true)
+        );
+        assert!(capabilities.contains_key("put_cluster_secret"));
+        // A renamed field keeps Go's spelling under the Go name.
+        assert!(
+            capabilities["install_incus_stack"].input_schema["properties"]
+                .get("incusPackage")
+                .is_some()
+        );
+        let mut doc = sample_plan();
+        doc.nodes[0].action.as_mut().unwrap().tool = "get_k8s_resource".to_string();
+        // The alias is a known tool: validation reaches its own (Go) schema.
+        let err = validate_host_plan_with_snapshot(&doc, snapshot).unwrap_err();
+        assert!(
+            err.contains("get_k8s_resource arguments: missing required property"),
+            "{err}"
         );
     }
 

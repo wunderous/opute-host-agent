@@ -158,11 +158,9 @@ pub fn redact_plan_document(
                 if tool.trim().is_empty() {
                     continue;
                 }
-                let projected = match catalog
-                    .tools
-                    .iter()
-                    .find(|descriptor| descriptor.name == tool)
-                {
+                // A D19 alias resolves to Go's descriptor, as the run state's
+                // node schemas do.
+                let projected = match catalog.find(tool) {
                     Some(descriptor) => {
                         redact_for_storage(args, descriptor.input_schema.as_object())
                     }
