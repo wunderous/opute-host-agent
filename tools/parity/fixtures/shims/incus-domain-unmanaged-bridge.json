@@ -1,0 +1,177 @@
+{
+ "description": "M8b: box1 on a bridge another host owns, so its address is pinned inside the guest; a second address takes the existing-override path.",
+ "commands": {
+  "incus": [
+   {
+    "argv": [
+     "list",
+     "box1",
+     "--format",
+     "csv"
+    ],
+    "stdout": "box1,STOPPED,container"
+   },
+   {
+    "argv": [
+     "config",
+     "get",
+     "box1",
+     "user.opute.host_agent_instance"
+    ],
+    "stdout": "parity-owner"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/box1"
+    ],
+    "stdout": "{\"type\":\"container\"}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/box1/state"
+    ],
+    "stdout": "{\"network\":{\"eth0\":{\"addresses\":[{\"family\":\"inet6\",\"address\":\"fd42::5\",\"scope\":\"global\"},{\"family\":\"inet\",\"address\":\"10.0.0.5\",\"scope\":\"global\"}]}}}"
+   },
+   {
+    "argv": [
+     "start",
+     "box1"
+    ]
+   },
+   {
+    "argvPrefix": [
+     "config",
+     "set"
+    ]
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "show",
+     "box1"
+    ],
+    "stdout": "eth0:\n  type: nic\nkmsg:\n  type: unix-char\n"
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "get",
+     "box1",
+     "eth0",
+     "ipv4.address"
+    ],
+    "stdout": ""
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "override",
+     "box1",
+     "eth0",
+     "ipv4.address=10.0.0.9"
+    ],
+    "exit": 1,
+    "stderr": "Error: Invalid devices: Device validation failed for \"eth0\": Cannot specify \"ipv4.address\" when using an unmanaged parent bridge\n"
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "override",
+     "box1",
+     "eth0",
+     "ipv4.address=10.0.0.8"
+    ],
+    "exit": 1,
+    "stderr": "Error: The device already exists\n"
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "set",
+     "box1",
+     "eth0",
+     "ipv4.address",
+     "10.0.0.8"
+    ]
+   },
+   {
+    "argv": [
+     "exec",
+     "box1",
+     "--",
+     "ip",
+     "-4",
+     "-o",
+     "addr",
+     "show",
+     "dev",
+     "eth0"
+    ],
+    "stdout": "2: eth0    inet 10.0.0.9/22 brd 10.0.3.255 scope global eth0",
+    "ifExists": "markers/box1-pinned"
+   },
+   {
+    "argv": [
+     "exec",
+     "box1",
+     "--",
+     "ip",
+     "-4",
+     "-o",
+     "addr",
+     "show",
+     "dev",
+     "eth0"
+    ],
+    "stdout": "2: eth0    inet 10.0.0.5/22 brd 10.0.3.255 scope global dynamic eth0"
+   },
+   {
+    "argv": [
+     "exec",
+     "box1",
+     "--",
+     "ip",
+     "-4",
+     "route",
+     "show",
+     "default"
+    ],
+    "stdout": "default via 10.0.0.1 dev eth0 proto dhcp src 10.0.0.5 metric 100"
+   },
+   {
+    "argv": [
+     "exec",
+     "box1",
+     "--",
+     "cat",
+     "/etc/netplan/99-opute-static.yaml"
+    ],
+    "exit": 1,
+    "stderr": "cat: /etc/netplan/99-opute-static.yaml: No such file or directory\n"
+   },
+   {
+    "argvPrefix": [
+     "exec",
+     "box1",
+     "--",
+     "sh",
+     "-c"
+    ],
+    "creates": [
+     "markers/box1-pinned"
+    ]
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

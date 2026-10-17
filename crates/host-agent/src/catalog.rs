@@ -224,6 +224,20 @@ pub fn alias_arguments(alias: &str, args: &Map<String, J>) -> Map<String, J> {
     out
 }
 
+/// A call to a tool that keeps its Go name but renames a field (D21):
+/// Go's field is still accepted and moves to the published name, unless the
+/// caller already sent the published one.
+pub fn renamed_field_arguments(name: &str, args: &Map<String, J>) -> Option<Map<String, J>> {
+    let fields = name_map().fields.get(name)?;
+    let mut out = args.clone();
+    for (from, to) in fields {
+        if let Some(v) = out.remove(from) {
+            out.entry(to.clone()).or_insert(v);
+        }
+    }
+    Some(out)
+}
+
 /// Replaces every mapped Go tool name that stands as a whole word.
 fn rename_text(text: &str) -> String {
     let word = |c: char| c.is_ascii_alphanumeric() || c == '_';
@@ -1659,6 +1673,40 @@ mod tests {
             rename_text("shutdown_wsl, not xshutdown_wsl"),
             "shutdown_host_vm_subsystem, not xshutdown_wsl"
         );
+    }
+
+    /// D21: Go's reset name reaches the neutral tool, Go's GPU field moves to
+    /// the published one, and the published catalog lists neither.
+    #[test]
+    fn d21_aliases_route_to_neutral_names() {
+        assert_eq!(
+            neutral_name("reset_incus_stack"),
+            Some("reset_virtualization_stack")
+        );
+        assert!(alias_names().iter().any(|n| n == "reset_incus_stack"));
+        let args = json!({"containerName": "box1", "wslGpuLibs": true});
+        let moved =
+            renamed_field_arguments("provision_container", args.as_object().unwrap()).unwrap();
+        assert_eq!(
+            J::Object(moved),
+            json!({"containerName": "box1", "hostGpuLibs": true})
+        );
+        let both = json!({"wslGpuLibs": false, "hostGpuLibs": true});
+        let kept =
+            renamed_field_arguments("provision_container", both.as_object().unwrap()).unwrap();
+        assert_eq!(J::Object(kept), json!({"hostGpuLibs": true}));
+        let cat = for_mode(false);
+        let listed = |name: &str| cat.tools.iter().any(|d| d.name == name);
+        assert!(!listed("reset_incus_stack") && listed("reset_virtualization_stack"));
+        // Still callable: find resolves the hidden alias.
+        assert!(cat.find("reset_incus_stack").is_some());
+        let provision = cat.find("provision_container").unwrap();
+        assert!(provision.input_schema["properties"]
+            .get("wslGpuLibs")
+            .is_none());
+        assert!(provision.input_schema["properties"]
+            .get("hostGpuLibs")
+            .is_some());
     }
 
     #[test]

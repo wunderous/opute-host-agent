@@ -675,6 +675,23 @@ the gap is owned by M8a. `exec_command` and `run_instance_command` at T2 are
 owned by M8b. The cutover gate fails, as expected, on the remaining owned
 gaps.
 
+**8b status (2026-10-16): exit gate met.** Evidence:
+[`evidence/m8b/README.md`](../../../evidence/m8b/README.md). The m8b gate
+passes, and gates m0–m6 and m8a still pass:
+
+- T1 Go/Rust ×5 is 276/276 and Go/Go ×20 is 276/276.
+- T2 is 19/19 in both twin suites (Go/Go ×20, Go/Rust ×5). The five incus
+  scenarios run against a nested Incus inside each twin and include the M4
+  no-unauthorized-effect rerun. `exec_command` and `run_instance_command` are
+  covered there.
+- The Go `test/live` oracle holds Rust to Go's own outcome. At `ace7013d`,
+  Go itself fails `TestLiveVMCreateListDelete`, because its go-sdk client
+  declares no tasks extension, and it skips the reset test.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+D21 publishes `reset_virtualization_stack` and `hostGpuLibs`. The cutover gate
+fails, as expected, on the remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,
@@ -879,6 +896,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D18 | Durable record of a delegated callback child that never starts | **Decided (owner, 2026-10-12): extend D12 (option A).** A delegated child that is never acknowledged, refused or expired leaves no durable row; after a restart its handle is unknown ([`unadmitted-callback-task-record`](../unadmitted-callback-task-record/proposal.md)). The owner asked for the long-term behaviour; durable operation records hold only admitted work | One rule for every task-aware call: persist only what was admitted. Go's row for a never-started child stays `working` forever. |
 | D19 | Provider-neutral host tool names | **Decided (owner, 2026-10-12): neutral names, with Go aliases.** Rust publishes `install_virtualization_stack`, `uninstall_virtualization_stack`, `probe_virtualization_gpu`, `terminate_host_vm_distribution`, `shutdown_host_vm_subsystem`, `compact_host_vm_disk`, `ensure_container_engine` and `ensure_local_cluster_runtime`, and the field `packageName` for `incusPackage`. Each Go name stays a hidden, deprecated `tools/call` alias that reaches the same Consumer, until cutover ([`neutral-host-tool-names`](../neutral-host-tool-names/proposal.md)). Catalog revisions change; each Rust revision is pinned with its Go pair, and the difference is declared as `D19.neutral-host-tool-names` | Under D14 only a Service Provider names its implementation; the aliases keep Platform and recipes working until cutover. |
 | D20 | Error text for a corrupt zstd block | **Decided (owner, 2026-10-12): declare it, do not port the decoder.** For a corrupt compressed block, `extract_host_archive` fails as Go does, with the same `extract host archive: ` prefix and the same tree, but the text after it is the Rust decoder's own ([`zstd-corrupt-block-error-text`](../zstd-corrupt-block-error-text/proposal.md)). Frame-level and tar faults keep Go's exact text. Declared as `D20.corrupt-zstd-block`, only in `host-domain.archives.corrupt-blocks` | Matching klauspost's internal messages would mean porting its decoder. Recipe archives are sha256-verified before extraction. |
+| D21 | Provider-neutral instance tool names | **Decided (owner, 2026-10-14): extend D19.** Rust publishes `reset_virtualization_stack` for `reset_incus_stack` and the field `hostGpuLibs` for `provision_container.wslGpuLibs`; the Go names stay hidden, accepted aliases until cutover ([`neutral-instance-tool-names`](../neutral-instance-tool-names/proposal.md)). The owner also confirmed D19's use on durable rows (M5 shape) and on the secret sweep's catalog | Under D14 only a Service Provider names its implementation; one name map keeps the catalog and the parity divergence in step. |
 
 ## 7. Risks this plan specifically mitigates
 

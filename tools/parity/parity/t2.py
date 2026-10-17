@@ -34,6 +34,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import shlex
 import socket
 import subprocess
@@ -145,8 +146,8 @@ def _wait_ssh(port: int, process: subprocess.Popen, timeout: float = 300) -> Non
     raise RuntimeError("guest ssh did not come up")
 
 
-def _qemu(disk: Path, seed: Path, port: int, serial: Path) -> list[str]:
-    return ["qemu-system-x86_64", "-enable-kvm", "-cpu", "host", "-smp", str(VCPUS), "-m", str(MEMORY_MB),
+def _qemu(disk: Path, seed: Path, port: int, serial: Path, memory_mb: int = MEMORY_MB) -> list[str]:
+    return ["qemu-system-x86_64", "-enable-kvm", "-cpu", "host", "-smp", str(VCPUS), "-m", str(memory_mb),
             "-drive", f"file={disk},if=virtio,format=qcow2",
             "-drive", f"file={seed},if=virtio,format=raw,readonly=on",
             "-netdev", f"user,id=net0,hostfwd=tcp:127.0.0.1:{port}-:22",
@@ -230,14 +231,132 @@ def golden_record() -> dict:
     return record
 
 
+# --- the nested-Incus golden (M8b) ---------------------------------------------------
+#
+# Incus inside a twin: an overlay of the base golden, built once, never
+# rebuilt in place. The stack is installed exactly as Go's install_incus_stack
+# installs it (the same key and sources files, the incus package, incus-admin
+# membership, the incusbr0 bridge and the default profile's devices), so a
+# reinstall inside a twin changes no file. Two choices are deliberate and
+# recorded: the default pool is btrfs (a loop file), so a root disk size is a
+# real quota, and the instance images are imported once under local aliases,
+# so a launch never depends on the image server. The workload slice Go's
+# host resource policy installs is present and pulled into multi-user.target,
+# so host admission is verified in every twin from boot.
+
+INCUS_GOLDEN = "golden-incus"
+INCUS_MEMORY_MB = 6144
+# Guest memory all concurrently running twins may hold together.
+MEMORY_BUDGET_MB = int(os.environ.get("PARITY_T2_MEMORY_BUDGET_MB", "20480"))
+WORKLOAD_SLICE = ("[Unit]\nDescription=Opute killable workload slice (opute-host-resource-policy.v2)\n\n"
+                  "[Slice]\nMemoryHigh=10G\nMemoryMax=11G\nMemorySwapMax=1G\nCPUQuota=600%\nCPUWeight=100\n"
+                  "TasksMax=4096\n")
+INCUS_RECIPE = [
+    # The optional package Go adds (internal/domain/host/tool.go): the first
+    # of these the archive has, probed before the Incus repository is added.
+    "for c in virglrenderer2 libvirglrenderer1; do apt-cache show \"$c\" 2>/dev/null | grep -q '^Package:' "
+    "&& echo \"$c\" > /run/parity-incus-optional && break; done; true",
+    "install -d /etc/apt/keyrings",
+    "curl -fsSL https://pkgs.zabbly.com/key.asc -o /tmp/zabbly.asc && grep -q 'BEGIN PGP PUBLIC KEY BLOCK' "
+    "/tmp/zabbly.asc && install -m 0644 /tmp/zabbly.asc /etc/apt/keyrings/zabbly.asc && rm /tmp/zabbly.asc",
+    "printf 'Enabled: yes\\nTypes: deb\\nURIs: https://pkgs.zabbly.com/incus/stable\\nSuites: %s\\n"
+    "Components: main\\nArchitectures: %s\\nSigned-By: /etc/apt/keyrings/zabbly.asc\\n' "
+    "\"$(. /etc/os-release && echo $VERSION_CODENAME)\" \"$(dpkg --print-architecture)\" > /tmp/zabbly.sources && "
+    "install -m 0644 /tmp/zabbly.sources /etc/apt/sources.list.d/zabbly-incus.sources && rm /tmp/zabbly.sources",
+    "apt-get update -q",
+    "DEBIAN_FRONTEND=noninteractive apt-get install -y -q incus $(cat /run/parity-incus-optional 2>/dev/null)",
+    "usermod -aG incus-admin ubuntu",
+    "systemctl enable --now incus.service",
+    "incus storage create default btrfs size=24GiB",
+    "incus network create incusbr0 ipv4.address=10.0.100.1/24 ipv4.nat=true ipv6.address=none",
+    "incus profile device add default root disk path=/ pool=default",
+    "incus profile device add default eth0 nic nictype=bridged parent=incusbr0 name=eth0",
+    "incus config set images.auto_update_interval 0",
+    "incus image copy images:ubuntu/24.04 local: --alias parity-noble",
+    "incus image copy images:ubuntu/24.04 local: --vm --alias parity-noble-vm",
+    f"printf '%s' {shlex.quote(WORKLOAD_SLICE)} > /etc/systemd/system/opute-workload.slice && systemctl daemon-reload && "
+    "systemctl add-wants multi-user.target opute-workload.slice && systemctl start opute-workload.slice",
+    "sync",
+]
+
+
+def build_incus_golden() -> dict:
+    """Build the nested-Incus golden once, as an overlay of the base golden."""
+    base = golden_record()
+    golden = WORK / f"{INCUS_GOLDEN}.qcow2"
+    if golden.exists():
+        raise RuntimeError(f"{golden} exists; a golden image is never rebuilt in place")
+    with (WORK / "golden.lease").open("a+") as lease:
+        fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b",
+                        str(WORK / "golden.qcow2"), str(golden)], check=True)
+        port = _free_port()
+        argv = _qemu(golden, WORK / "seed.img", port, WORK / f"{INCUS_GOLDEN}-serial.log", INCUS_MEMORY_MB)
+        process = subprocess.Popen(argv, stdout=(WORK / f"{INCUS_GOLDEN}-qemu.log").open("w"),
+                                   stderr=subprocess.STDOUT)
+        log = []
+        try:
+            _wait_ssh(port, process)
+            ssh = _ssh_base(port)
+            subprocess.run(ssh + ["systemctl is-system-running --wait >/dev/null 2>&1; true"], capture_output=True)
+            for command in INCUS_RECIPE:
+                # No stdin: some incus commands read YAML from a non-terminal stdin.
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=3600)
+                log.append({"command": command, "exit": done.returncode, "stderr": done.stderr[-2000:]})
+                if done.returncode != 0:
+                    raise RuntimeError(f"incus golden {command!r}: {done.stderr[-2000:]}")
+            facts = {}
+            for key, command in (("incusVersion", "incus version"),
+                                 ("incusPackage", "dpkg-query -W -f='${Version}' incus"),
+                                 ("optionalPackage", "cat /run/parity-incus-optional"),
+                                 ("images", "incus image list --format json"),
+                                 ("storage", "incus storage list --format json"),
+                                 ("network", "incus network show incusbr0"),
+                                 ("profile", "incus profile show default"),
+                                 ("slice", "systemctl show opute-workload.slice -p ActiveState,MemoryMax,TasksMax")):
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=120)
+                facts[key] = done.stdout
+            subprocess.run(ssh + ["poweroff"], capture_output=True)
+            process.wait(timeout=300)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        record = {
+            "scope": "T2 nested-Incus golden: an overlay of the base golden, dedicated and disposable; Incus runs "
+                     "only inside twins booted from it; no shared Incus/Kubernetes/tunnel/deploy state",
+            "baseGoldenSha256": base["goldenSha256"], "recipe": INCUS_RECIPE, "recipeLog": log, "facts": facts,
+            "memoryMb": INCUS_MEMORY_MB, "goldenSha256": sha256_file(golden),
+            "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "qemuArgv": argv,
+        }
+        golden.chmod(0o444)
+        (WORK / f"{INCUS_GOLDEN}.json").write_text(json.dumps(record, indent=1) + "\n")
+        return record
+
+
+def incus_golden_record() -> dict:
+    record = json.loads((WORK / f"{INCUS_GOLDEN}.json").read_text())
+    actual = sha256_file(WORK / f"{INCUS_GOLDEN}.qcow2")
+    if actual != record["goldenSha256"]:
+        raise RuntimeError(f"incus golden image changed: {actual} != {record['goldenSha256']}")
+    if record["baseGoldenSha256"] != golden_record()["goldenSha256"]:
+        raise RuntimeError("incus golden was built over a different base golden")
+    return record
+
+
 # --- one twin -----------------------------------------------------------------------
 
 
 class Twin:
     """One disposable VM: an overlay of the golden image, deleted on exit."""
 
-    def __init__(self, label: str, binary: Path, run_dir: Path):
+    def __init__(self, label: str, binary: Path, run_dir: Path, golden: str = "base"):
         self.label, self.binary, self.run_dir = label, binary, run_dir
+        self.image = WORK / ("golden.qcow2" if golden == "base" else f"{INCUS_GOLDEN}.qcow2")
+        self.memory_mb = MEMORY_MB if golden == "base" else INCUS_MEMORY_MB
+        self.golden = golden
         self.disk = run_dir / f"{label}.qcow2"
         self.port = _free_port()
         self.process: subprocess.Popen | None = None
@@ -246,8 +365,9 @@ class Twin:
     def __enter__(self) -> "Twin":
         self.run_dir.mkdir(parents=True, exist_ok=True)
         subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b",
-                        str(WORK / "golden.qcow2"), str(self.disk)], check=True)
-        argv = _qemu(self.disk, WORK / "seed.img", self.port, self.run_dir / f"{self.label}-serial.log")
+                        str(self.image), str(self.disk)], check=True)
+        argv = _qemu(self.disk, WORK / "seed.img", self.port, self.run_dir / f"{self.label}-serial.log",
+                     self.memory_mb)
         self.process = subprocess.Popen(argv, stdout=(self.run_dir / f"{self.label}-qemu.log").open("w"),
                                         stderr=subprocess.STDOUT)
         self.record = {"qemuArgv": argv, "booted": time.time()}
@@ -259,6 +379,9 @@ class Twin:
         subprocess.run(ssh + ["systemctl is-system-running --wait >/dev/null 2>&1; "
                               "timeout 180 sh -c 'while systemctl is-active --quiet systemd-fsckd.service; "
                               "do sleep 1; done'; "
+                              # incusd is socket-activated: started here, it has set up its
+                              # bridge and firewall before the first baseline, not during it.
+                              + ("incus admin waitready --timeout=180 && " if self.golden == "incus" else "") +
                               "mkdir -p /opt/parity-t2/state /opt/parity-t2/instance && "
                               "chown -R ubuntu:ubuntu /opt/parity-t2"], check=True, capture_output=True)
         scp = ["scp", "-q"] + [a for a in _ssh_base(self.port)[1:-3] if a != "-p"] + ["-P", str(self.port)]
@@ -322,6 +445,10 @@ def effects(base: dict, current: dict) -> dict:
         if base["firewall"].get(name) != current["firewall"].get(name):
             fw[name] = {"before": base["firewall"].get(name), "after": current["firewall"].get(name)}
     out["firewall"] = fw
+    b, c = base.get("incus"), current.get("incus")
+    if b is not None or c is not None:
+        out["incus"] = {kind: d for kind in sorted(set(b or {}) | set(c or {}))
+                        if (d := _delta((b or {}).get(kind, {}), (c or {}).get(kind, {})))}
     return out
 
 
@@ -375,6 +502,28 @@ def unexpected_effects(obs: dict, scenario: dict) -> dict:
     return out
 
 
+# Incus names each container's host-side veth and each VM's tap device
+# randomly, and systemd lists a device unit per name (in unit names and
+# descriptions). The names are replaced by their order within the snapshot;
+# every such unit is otherwise alike.
+VETH_UNIT = re.compile(r"^sys-(?:devices-virtual-net|subsystem-net-devices)-((?:veth|tap)[0-9a-f]{8})\.device$")
+
+
+def _stable_device_names(snapshot: dict) -> dict:
+    out = dict(snapshot)
+    for scope in ("system", "user"):
+        manager = snapshot.get(scope)
+        if not isinstance(manager, dict):
+            continue
+        veths = sorted({m.group(1) for kind in ("unitFiles", "units", "show") for u in manager.get(kind, {})
+                        if (m := VETH_UNIT.match(u))})
+        if veths:
+            ids = {v: f"{v[:-8]}#{i}" for i, v in enumerate(veths)}
+            text = re.sub(r"\b(" + "|".join(veths) + r")\b", lambda m: ids[m.group(1)], json.dumps(manager))
+            out[scope] = json.loads(text)
+    return out
+
+
 def observation(raw: dict, scenario: dict) -> dict:
     """The compared observation: answers as given, snapshots as deltas."""
     steps = {}
@@ -383,9 +532,9 @@ def observation(raw: dict, scenario: dict) -> dict:
         label = step["as"]
         result = raw["steps"].get(label)
         if "snapshot" in step and isinstance(result, dict) and "snapshot" in result:
-            snapshots[label] = result["snapshot"]
+            snapshots[label] = _stable_device_names(result["snapshot"])
             base = step["snapshot"].get("baseline")
-            steps[label] = effects(snapshots[base], result["snapshot"]) if base in snapshots else {"baseline": True}
+            steps[label] = effects(snapshots[base], snapshots[label]) if base in snapshots else {"baseline": True}
         else:
             steps[label] = result
     return {"steps": steps}
@@ -412,7 +561,7 @@ def load_scenarios(ids: list[str] | None = None) -> list[dict]:
 def _execute(impl: agent.Impl, scenario: dict, side: str, run_dir: Path) -> dict:
     program = {"agent": {"env": AGENT_ENV}, "steps": scenario["steps"]}
     try:
-        with Twin(side, impl.binary, run_dir) as twin:
+        with Twin(side, impl.binary, run_dir, scenario.get("golden", "base")) as twin:
             raw = twin.run(program)
             twin_record = dict(twin.record)
         return {"raw": raw, "twin": twin_record, "error": None}
@@ -496,16 +645,37 @@ def _gz(data: Any) -> bytes:
 def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str] | None = None,
               repeat: int = 1, workers: int = 1) -> dict:
     golden = golden_record()
+    scenarios_all = load_scenarios(ids)
+    incus = incus_golden_record() if any(s.get("golden") == "incus" for s in scenarios_all) else None
     # Hashed before the first twin boots: these are the bytes every twin of
     # this run receives (the harness is never edited mid-capture).
     guest_hashes = {name: sha256_file(GUEST_DIR / name) for name in GUEST_FILES}
     harness_hash = sha256_file(Path(__file__))
     scenario_hashes = {str(p.relative_to(REPO_ROOT)): sha256_file(p) for p in sorted(SCENARIO_DIR.glob("*.json"))}
     binaries = {"left": left.sha256(), "right": right.sha256()}
-    scenarios = load_scenarios(ids)
+    scenarios = scenarios_all
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Workers bound how many twin pairs run at once; the memory budget also
+    # does, since a nested-Incus pair needs three times a base pair.
+    budget = {"free": MEMORY_BUDGET_MB}
+    budget_cv = threading.Condition()
+
+    def pair_memory(scenario: dict) -> int:
+        return 2 * (INCUS_MEMORY_MB if scenario.get("golden") == "incus" else MEMORY_MB)
 
     def run_iteration(scenario: dict, i: int) -> dict:
+        need = min(pair_memory(scenario), MEMORY_BUDGET_MB)  # one pair always runs
+        with budget_cv:
+            budget_cv.wait_for(lambda: budget["free"] >= need)
+            budget["free"] -= need
+        try:
+            return run_iteration_admitted(scenario, i)
+        finally:
+            with budget_cv:
+                budget["free"] += need
+                budget_cv.notify_all()
+
+    def run_iteration_admitted(scenario: dict, i: int) -> dict:
         # Every (scenario, iteration) is independent: each runs in its own
         # pair of disposable VMs booted from the golden image, so they may
         # run concurrently. Receipts are written per iteration.
@@ -549,6 +719,7 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
         "right": {"label": right.label, "sha256": binaries["right"]}, "changedDuringRun": changed,
         "workers": workers,
         "golden": {k: golden[k] for k in ("goldenSha256", "baseImageSha256", "baseImageSource", "seedSha256")},
+        **({"incusGolden": {k: incus[k] for k in ("goldenSha256", "baseGoldenSha256")}} if incus else {}),
         "guestSha256": guest_hashes, "harnessSha256": harness_hash, "scenarioSha256": scenario_hashes,
         "repeat": repeat, "scenarios": results,
     }

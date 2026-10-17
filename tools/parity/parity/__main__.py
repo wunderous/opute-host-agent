@@ -52,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
     orc.add_argument("--go-src", required=True, type=Path)
     orc.add_argument("--binary", action="append", required=True, help="LABEL=PATH (repeatable)")
     orc.add_argument("--out", required=True, type=Path)
+    orc.add_argument("--twin", action="store_true",
+                     help="run oracles-t2.json inside T2 twins (provider-backed live tests) instead of oracles.json")
 
     con = sub.add_parser("contract", help="run a single-implementation contract suite")
     con.add_argument("--impl", required=True, help="LABEL=PATH")
@@ -115,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     t2 = sub.add_parser("t2", help="M8a T2: external-effect parity in disposable twin VMs")
     t2sub = t2.add_subparsers(dest="t2_command", required=True)
     t2sub.add_parser("golden", help="build the golden twin image once")
+    t2sub.add_parser("golden-incus", help="build the nested-Incus golden (an overlay of the golden) once")
     t2run = t2sub.add_parser("run", help="run T2 scenarios Go vs Rust (or Go vs Go)")
     t2run.add_argument("--left", required=True)
     t2run.add_argument("--right", required=True)
@@ -157,6 +160,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.t2_command == "golden":
             print(json.dumps(t2.build_golden(), indent=1))
             return 0
+        if args.t2_command == "golden-incus":
+            print(json.dumps(t2.build_incus_golden(), indent=1))
+            return 0
         summary = t2.run_suite(_impl(args.left), _impl(args.right), args.out, args.scenarios or None, args.repeat, args.workers)
         return 0 if all(r["status"] == "pass" for r in summary["scenarios"].values()) else 1
     if args.command == "corpus":
@@ -164,8 +170,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wire corpus v{corpus.VERSION}: {corpus.write()} steps -> {corpus.OUT_FILE.name}")
         return 0
     if args.command == "oracle":
-        from . import oracle
+        from . import oracle, t2_oracle
         binaries = {i.label: i.binary for i in map(_impl, args.binary)}
+        if args.twin:
+            doc = t2_oracle.run(args.go_src.resolve(), binaries, args.out)
+            return 0 if all(r["status"] == "PASS" for r in doc["results"]) else 1
         doc = oracle.run(args.go_src.resolve(), binaries, args.out)
         ok = all((r["exit"] == 0 and set(r["expectedTests"]) <= set(r["passed"]))
                  if r["binary"] != oracle.NEGATIVE_CONTROL[0] else r["exit"] != 0

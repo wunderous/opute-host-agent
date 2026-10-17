@@ -36,6 +36,20 @@ EXCLUDE_PREFIXES = [
     "/etc/.resolv.conf.systemd-resolved.bak",
     "/var/lib/incus/database",
     "/var/lib/incus/logs",
+    # Incus's own runtime and storage trees: what an operation does to them is
+    # recorded through the incus() projection, not as file churn.
+    "/var/lib/incus/storage-pools",
+    "/var/lib/incus/disks",
+    "/var/lib/incus/devices",
+    "/var/lib/incus/shmounts",
+    "/var/lib/incus/guestapi",
+    "/var/lib/incus/security",
+    "/var/lib/incus/networks",
+    "/var/lib/incus/images",
+    "/var/lib/incus/backups",
+    "/var/lib/incus/unix.socket",
+    "/var/lib/incus/containers",
+    "/var/lib/incus/virtual-machines",
 ]
 EXCLUDE_NAMES = {"__pycache__"}
 SHOW_PROPERTIES = ["LoadState", "ActiveState", "SubState", "UnitFileState", "FragmentPath", "Slice",
@@ -158,6 +172,56 @@ def firewall() -> dict:
     return out
 
 
+# Fields of each Incus object that are stable across twins; timestamps,
+# volatile.* keys (MACs, UUIDs, last state), runtime state and the image
+# server's update times are left out.
+INCUS_FIELDS = {
+    "instances": ("name", "type", "status", "architecture", "profiles", "config", "devices", "ephemeral",
+                  "stateful", "description"),
+    "profiles": ("name", "config", "devices", "used_by", "description"),
+    "networks": ("name", "type", "managed", "config", "used_by", "status", "description"),
+    "storage": ("name", "driver", "config", "used_by", "status", "description"),
+    "images": ("fingerprint", "aliases", "properties", "type", "public", "cached", "auto_update", "architecture"),
+}
+
+
+def _stable(obj: dict, fields: tuple) -> dict:
+    out = {k: obj.get(k) for k in fields if k in obj}
+    if isinstance(out.get("config"), dict):
+        out["config"] = {k: v for k, v in sorted(out["config"].items()) if not k.startswith("volatile.")}
+    if isinstance(out.get("used_by"), list):
+        out["used_by"] = sorted(out["used_by"])
+    if isinstance(out.get("aliases"), list):
+        out["aliases"] = sorted(a.get("name", "") for a in out["aliases"])
+    return out
+
+
+def _incus_json(argv: list[str]):
+    import json
+    code, text = _run(["incus"] + argv + ["--format", "json"])
+    return json.loads(text) if code == 0 and text.strip() else None
+
+
+def incus() -> dict | None:
+    """Incus objects by kind and name, or None when Incus is not installed."""
+    if not os.path.exists("/var/lib/incus/unix.socket"):
+        return None
+    out = {}
+    for kind, argv in (("instances", ["list"]), ("profiles", ["profile", "list"]),
+                       ("networks", ["network", "list"]), ("storage", ["storage", "list"]),
+                       ("images", ["image", "list"])):
+        items = _incus_json(argv) or []
+        key = "fingerprint" if kind == "images" else "name"
+        out[kind] = {item[key]: _stable(item, INCUS_FIELDS[kind]) for item in items}
+    volumes = {}
+    for pool in out["storage"]:
+        for vol in _incus_json(["storage", "volume", "list", pool]) or []:
+            name = f"{pool}/{vol.get('type')}/{vol.get('name')}"
+            volumes[name] = _stable(vol, ("name", "type", "content_type", "config", "used_by"))
+    out["volumes"] = volumes
+    return out
+
+
 def snapshot() -> dict:
     return {
         "files": files(),
@@ -165,4 +229,5 @@ def snapshot() -> dict:
         "user": _manager(True),
         "linger": sorted(os.listdir("/var/lib/systemd/linger")) if os.path.isdir("/var/lib/systemd/linger") else [],
         "firewall": firewall(),
+        "incus": incus(),
     }

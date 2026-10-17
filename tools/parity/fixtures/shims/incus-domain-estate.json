@@ -1,0 +1,247 @@
+{
+ "description": "M8b: an owned running VM (vm1), an owned stopped container (box1) and a VM whose ownership label drifted after listing (drift1), on a zfs pool that enforces root disk quotas. Deleting vm1 drops it from later listings.",
+ "commands": {
+  "incus": [
+   {
+    "argv": [
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"box1\",\"status\":\"Stopped\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}},{\"name\":\"drift1\",\"status\":\"Running\",\"type\":\"virtual-machine\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}}]",
+    "ifExists": "markers/vm1-deleted"
+   },
+   {
+    "argv": [
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"vm1\",\"status\":\"Running\",\"type\":\"virtual-machine\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}},{\"name\":\"box1\",\"status\":\"Stopped\",\"type\":\"container\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}},{\"name\":\"drift1\",\"status\":\"Running\",\"type\":\"virtual-machine\",\"config\":{\"user.opute.host_agent_instance\":\"parity-owner\",\"limits.cpu\":\"2\",\"limits.memory\":\"2GiB\"},\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}},\"state\":{\"network\":{}}}]"
+   },
+   {
+    "argv": [
+     "list",
+     "vm1",
+     "--format",
+     "csv"
+    ],
+    "stdout": "vm1,RUNNING,virtual-machine",
+    "unlessExists": "markers/vm1-deleted"
+   },
+   {
+    "argv": [
+     "list",
+     "vm1",
+     "--format",
+     "csv"
+    ],
+    "stdout": ""
+   },
+   {
+    "argv": [
+     "list",
+     "box1",
+     "--format",
+     "csv"
+    ],
+    "stdout": "box1,STOPPED,container"
+   },
+   {
+    "argv": [
+     "list",
+     "drift1",
+     "--format",
+     "csv"
+    ],
+    "stdout": "drift1,RUNNING,virtual-machine"
+   },
+   {
+    "argv": [
+     "list",
+     "new1",
+     "--format",
+     "csv"
+    ],
+    "stdout": ""
+   },
+   {
+    "argv": [
+     "config",
+     "get",
+     "vm1",
+     "user.opute.host_agent_instance"
+    ],
+    "stdout": "parity-owner"
+   },
+   {
+    "argv": [
+     "config",
+     "get",
+     "box1",
+     "user.opute.host_agent_instance"
+    ],
+    "stdout": "parity-owner"
+   },
+   {
+    "argv": [
+     "config",
+     "get",
+     "drift1",
+     "user.opute.host_agent_instance"
+    ],
+    "stdout": "someone-else"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/vm1"
+    ],
+    "stdout": "{\"type\":\"virtual-machine\",\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\",\"size\":\"10GiB\"}}}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/box1"
+    ],
+    "stdout": "{\"type\":\"container\",\"devices\":{},\"expanded_devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\"}}}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/instances/box1/state"
+    ],
+    "stdout": "{\"network\":{\"eth0\":{\"addresses\":[{\"family\":\"inet6\",\"address\":\"fd42::5\",\"scope\":\"global\"},{\"family\":\"inet\",\"address\":\"10.0.0.5\",\"scope\":\"global\"}]}}}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/profiles/default"
+    ],
+    "stdout": "{\"devices\":{\"root\":{\"type\":\"disk\",\"path\":\"/\",\"pool\":\"default\"},\"eth0\":{\"type\":\"nic\",\"name\":\"eth0\",\"network\":\"incusbr0\"}}}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/storage-pools/default"
+    ],
+    "stdout": "{\"name\":\"default\",\"driver\":\"zfs\",\"config\":{\"source\":\"tank/incus\"}}"
+   },
+   {
+    "argv": [
+     "query",
+     "/1.0/storage-pools"
+    ],
+    "stdout": "[\"/1.0/storage-pools/default\"]"
+   },
+   {
+    "argvPrefix": [
+     "query",
+     "-X",
+     "PATCH",
+     "--wait"
+    ]
+   },
+   {
+    "argv": [
+     "start",
+     "vm1"
+    ],
+    "exit": 1,
+    "stderr": "Error: The instance is already running\n"
+   },
+   {
+    "argv": [
+     "start",
+     "box1"
+    ]
+   },
+   {
+    "argv": [
+     "stop",
+     "vm1",
+     "--force"
+    ]
+   },
+   {
+    "argv": [
+     "stop",
+     "box1",
+     "--force"
+    ]
+   },
+   {
+    "argv": [
+     "delete",
+     "vm1",
+     "--force"
+    ],
+    "creates": [
+     "markers/vm1-deleted"
+    ]
+   },
+   {
+    "argvPrefix": [
+     "config",
+     "set"
+    ]
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "show",
+     "box1"
+    ],
+    "stdout": "eth0:\n  type: nic\n"
+   },
+   {
+    "argvPrefix": [
+     "config",
+     "device",
+     "add"
+    ]
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "get",
+     "box1",
+     "eth0",
+     "ipv4.address"
+    ],
+    "stdout": ""
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "override",
+     "box1",
+     "eth0",
+     "ipv4.address=10.0.0.9"
+    ]
+   },
+   {
+    "argv": [
+     "info",
+     "box1",
+     "--format",
+     "json"
+    ],
+    "stdout": "{\"name\":\"box1\",\"status\":\"Running\"}"
+   },
+   {
+    "argv": [
+     "version"
+    ],
+    "stdout": "Client version: 6.0.4\nServer version: 6.0.4"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

@@ -162,6 +162,23 @@ class T2VerifyTest(unittest.TestCase):
         self.assertEqual(statuses, {})
         self.assertTrue(any("golden" in p for p in problems))
 
+    def test_incus_golden_mismatch_is_stale(self) -> None:
+        # A scenario booted from the nested-Incus golden also pins that image.
+        scenario = dict(SCENARIO, golden="incus")
+        self.manifest["t2Evidence"]["incusGolden"] = {"goldenSha256": "f" * 64}
+        for recorded, stale in (({"goldenSha256": "f" * 64}, False), ({"goldenSha256": "e" * 64}, True),
+                                (None, True)):
+            if recorded is None:
+                self.summary.pop("incusGolden", None)
+            else:
+                self.summary["incusGolden"] = recorded
+            self.summary_path.write_text(json.dumps(self.summary))
+            problems: list[str] = []
+            t2_verify.check_suite(self.root, self.manifest, "go-vs-rust",
+                                  {"summary": "evidence/t2/summary.json", "minRepeat": 1, "right": "rust"},
+                                  {scenario["id"]: scenario}, problems.append)
+            self.assertEqual(any("nested-Incus golden" in p for p in problems), stale, recorded)
+
     def test_too_few_iterations_fail(self) -> None:
         self.summary["repeat"] = 2
         problems: list[str] = []

@@ -1,0 +1,49 @@
+[
+ {
+  "id": "live-incus",
+  "package": "./test/live",
+  "tags": "integration",
+  "milestone": "M8b",
+  "golden": "incus",
+  "run": "^(TestLiveGetHostInfoIncus|TestLiveVMCreateListDelete|TestLiveResetIncusStackDeleteReconcileAndVerify)$",
+  "tests": [
+   "TestLiveGetHostInfoIncus",
+   "TestLiveVMCreateListDelete",
+   "TestLiveResetIncusStackDeleteReconcileAndVerify"
+  ],
+  "note": "M8b validation 7: the Go baseline's own live Incus tests, unchanged, run inside a disposable nested-Incus twin against each binary. The overlay only makes the helpers that would start the in-process Go server start OPUTE_STANDALONE_BINARY as a standalone agent (Incus provider, mutations allowed, its own state, relay dir and bearer token; the owned-reset helper adds the ownership identity, enforce mode and shared-host owner it passes in-process) and send the bearer token. Compile repair: at the pinned commit test/live does not build (its TestMain calls hostruntime.RequireLinux, since unexported as requireLinux); the overlay calls the exported RequireSupportedPlatform(IDIncus), which returns exactly requireLinux() for Incus. Two of the three tests do not pass against the pinned Go reference itself (goBaseline); the oracle therefore requires mustPass to pass on both binaries and every test's outcome on Rust (pass, fail or skip, and each failure message) to equal Go's. A skip is never a pass. The behaviour those two tests exercise (VM create/list/info/delete, owned reset with verify) is compared directly in the T2 incus-domain scenarios.",
+  "overlay": [
+   {
+    "file": "test/live/parity_external_test.go",
+    "create": "//go:build integration\n\npackage live_test\n\n// Parity oracle (added by tools/parity overlay, never committed upstream):\n// when OPUTE_STANDALONE_BINARY is set, the live helpers start that binary as\n// a standalone agent on the local Incus (inside a disposable nested-Incus\n// twin) instead of the in-process Go server, and the go-sdk client reaches\n// it over HTTP with a per-process bearer token. The tests themselves are\n// unchanged.\n\nimport (\n\t\"context\"\n\t\"crypto/rand\"\n\t\"encoding/hex\"\n\t\"fmt\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"os\"\n\t\"os/exec\"\n\t\"path/filepath\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n)\n\nvar parityToken string\n\ntype parityBearer struct{ token string }\n\nfunc (b parityBearer) RoundTrip(r *http.Request) (*http.Response, error) {\n\tr = r.Clone(r.Context())\n\tr.Header.Set(\"Authorization\", \"Bearer \"+b.token)\n\treturn http.DefaultTransport.RoundTrip(r)\n}\n\nfunc parityExternal() bool { return os.Getenv(\"OPUTE_STANDALONE_BINARY\") != \"\" }\n\nfunc parityHTTPClient() *http.Client {\n\tif parityToken == \"\" {\n\t\treturn nil\n\t}\n\treturn &http.Client{Transport: parityBearer{token: parityToken}}\n}\n\nfunc parityExternalServer(t *testing.T, extra ...string) *httptest.Server {\n\tt.Helper()\n\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tport := listener.Addr().(*net.TCPAddr).Port\n\t_ = listener.Close()\n\traw := make([]byte, 24)\n\tif _, err := rand.Read(raw); err != nil {\n\t\tt.Fatal(err)\n\t}\n\tparityToken = hex.EncodeToString(raw)\n\troot := t.TempDir()\n\tenv := []string{}\n\tfor _, assignment := range os.Environ() {\n\t\tkey, _, _ := strings.Cut(assignment, \"=\")\n\t\tif strings.HasPrefix(key, \"OPUTE_\") || key == \"MCP_AUTH_TOKEN\" || key == \"HOST_MCP_PORT\" {\n\t\t\tcontinue\n\t\t}\n\t\tenv = append(env, assignment)\n\t}\n\tenv = append(env,\n\t\t\"OPUTE_REMOTE_AGENT_ID=go-live-parity-agent\",\n\t\t\"OPUTE_AGENT_MODE=standalone\",\n\t\t\"OPUTE_INFRA_PROVIDER_ID=incus\",\n\t\t\"OPUTE_STANDALONE_ALLOW_MUTATIONS=true\",\n\t\t\"OPUTE_STANDALONE_STATE_DIR=\"+filepath.Join(root, \"state\"),\n\t\t\"OPUTE_HOST_AGENT_INSTANCE_ROOT=\"+filepath.Join(root, \"instance\"),\n\t\t\"OPUTE_HOST_AGENT_RELAY_DIR=\"+filepath.Join(root, \"relay\"),\n\t\t\"HOST_MCP_BIND_HOST=127.0.0.1\",\n\t\tfmt.Sprintf(\"HOST_MCP_PORT=%d\", port),\n\t\t\"MCP_AUTH_TOKEN=\"+parityToken,\n\t)\n\tenv = append(env, extra...)\n\tctx, cancel := context.WithCancel(context.Background())\n\tcmd := exec.CommandContext(ctx, os.Getenv(\"OPUTE_STANDALONE_BINARY\"), \"serve\", \"--mode=standalone\")\n\tcmd.Env = env\n\tcmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr\n\tif err := cmd.Start(); err != nil {\n\t\tcancel()\n\t\tt.Fatal(err)\n\t}\n\tt.Cleanup(func() {\n\t\t_ = cmd.Process.Signal(os.Interrupt)\n\t\tdone := make(chan struct{})\n\t\tgo func() { _, _ = cmd.Process.Wait(); close(done) }()\n\t\tselect {\n\t\tcase <-done:\n\t\tcase <-time.After(30 * time.Second):\n\t\t\tcancel()\n\t\t\t<-done\n\t\t}\n\t\tcancel()\n\t})\n\tbase := fmt.Sprintf(\"http://127.0.0.1:%d\", port)\n\tdeadline := time.Now().Add(30 * time.Second)\n\tfor {\n\t\tres, err := http.Get(base + \"/health\")\n\t\tif err == nil {\n\t\t\tres.Body.Close()\n\t\t\tif res.StatusCode == http.StatusOK {\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\t\tif time.Now().After(deadline) {\n\t\t\tt.Fatalf(\"agent not ready: %v\", err)\n\t\t}\n\t\ttime.Sleep(100 * time.Millisecond)\n\t}\n\treturn &httptest.Server{URL: base}\n}\n"
+   },
+   {
+    "file": "test/live/vm_lifecycle_test.go",
+    "old": "func newLiveServer(t *testing.T) (*hostmcp.Server, *httptest.Server) {\n\tt.Helper()\n",
+    "new": "func newLiveServer(t *testing.T) (*hostmcp.Server, *httptest.Server) {\n\tt.Helper()\n\tif parityExternal() {\n\t\treturn nil, parityExternalServer(t)\n\t}\n"
+   },
+   {
+    "file": "test/live/vm_lifecycle_test.go",
+    "old": "\t\tEndpoint: baseURL + \"/mcp\",\n",
+    "new": "\t\tEndpoint: baseURL + \"/mcp\",\n\t\tHTTPClient: parityHTTPClient(),\n"
+   },
+   {
+    "file": "test/live/reset_stack_test.go",
+    "old": "func newLiveServerWithOwnership(t *testing.T, instanceID, checkpointPath string) (*hostmcp.Server, *httptest.Server) {\n\tt.Helper()\n",
+    "new": "func newLiveServerWithOwnership(t *testing.T, instanceID, checkpointPath string) (*hostmcp.Server, *httptest.Server) {\n\tt.Helper()\n\tif parityExternal() {\n\t\treturn nil, parityExternalServer(t, \"OPUTE_HOST_AGENT_INSTANCE=\"+instanceID,\n\t\t\t\"OPUTE_INCUS_OWNERSHIP_MODE=enforce\", \"OPUTE_SHARED_HOST_OWNER_INSTANCE=\"+instanceID)\n\t}\n"
+   },
+   {
+    "file": "test/live/vm_lifecycle_test.go",
+    "old": "\tif err := hostruntime.RequireLinux(); err != nil {\n",
+    "new": "\tif err := hostruntime.RequireSupportedPlatform(hostruntime.IDIncus); err != nil {\n"
+   }
+  ],
+  "mustPass": [
+   "TestLiveGetHostInfoIncus"
+  ],
+  "goBaseline": {
+   "TestLiveVMCreateListDelete": "fails against the pinned Go reference: its go-sdk v1.7.0 client declares no io.modelcontextprotocol/tasks extension, so the 2026-07-28 server refuses the task-aware create_vm with -32003 'Missing required client capability' (internal/transport/discover.go); go-sdk v1.7.0 has no client task support",
+   "TestLiveResetIncusStackDeleteReconcileAndVerify": "skips against the pinned Go reference: its provision_container fixture is refused the same way, and the test skips when its fixture cannot be provisioned"
+  }
+ }
+]

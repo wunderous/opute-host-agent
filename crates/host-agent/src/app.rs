@@ -357,6 +357,14 @@ pub(crate) fn compose(
         shared_host_owner_instance: cfg.shared_host_owner_instance.clone(),
         instance_root: cfg.instance_root.to_string_lossy().into_owned(),
         mcp_port: cfg.host_mcp_port,
+        reset_checkpoint_path: if cfg.relay_config_dir.as_os_str().is_empty() {
+            String::new()
+        } else {
+            cfg.relay_config_dir
+                .join("incus-reset-checkpoint.json")
+                .display()
+                .to_string()
+        },
     };
     // `reclaimTerminalTaskReservations`: a reservation whose task is now
     // terminal lost its owner with the previous process.

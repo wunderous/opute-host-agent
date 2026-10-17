@@ -253,6 +253,9 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_firewall(),
         container_engine(),
         virtualization_stack(host),
+        system_containers(host),
+        instance_lifecycle(host),
+        local_status(host),
         instance_exec(host),
         host_artifacts(host),
         public_mcp(host),
@@ -1174,6 +1177,12 @@ fn virtualization_stack(host: &crate::tools::Host) -> Service {
     let uninstall_owner = owner.clone();
     let (env, uninstall_env) = (host.env.clone(), host.env.clone());
     let (incus, uninstall_incus) = (host.incus.clone(), host.incus.clone());
+    let reset = instances(host);
+    let reset_owner = (
+        host.instance_id.clone(),
+        host.shared_host_owner_instance.clone(),
+    );
+    let (reset_env, reset_incus) = (host.env.clone(), host.incus.clone());
     Service {
         id: "virtualization-stack",
         dependencies: &[],
@@ -1219,6 +1228,295 @@ fn virtualization_stack(host: &crate::tools::Host) -> Service {
                             Some("Incus virtualization stack removed from this host"),
                         )
                     })
+                }),
+            ),
+            (
+                "reset_virtualization_stack",
+                op(move |call| {
+                    let a = call.args;
+                    let args = crate::incusops::ResetArgs {
+                        instance_names: string_slice(a, "instanceNames"),
+                        instance_prefix: text(a, "instancePrefix").into(),
+                        confirm: flag(a, "confirm"),
+                        reinstall: flag(a, "reinstall"),
+                        dry_run: flag(a, "dryRun"),
+                        disposable_host_fingerprint: text(a, "disposableHostFingerprint").into(),
+                        expected_host_fingerprint: text(a, "expectedHostFingerprint").into(),
+                        disposable_host_authorization: text(a, "disposableHostAuthorization")
+                            .into(),
+                    };
+                    // The reconcile is the host's stack install with default
+                    // settings.
+                    let reinstall = || {
+                        let owner = crate::hostfiles::Owner {
+                            instance_id: &reset_owner.0,
+                            owner_instance: &reset_owner.1,
+                        };
+                        crate::hostvirt::install_incus_stack(
+                            &reset_env,
+                            &owner,
+                            &reset_incus,
+                            &crate::hostvirt::InstallArgs {
+                                package_name: String::new(),
+                                qemu_package: String::new(),
+                                gpu_packages: Vec::new(),
+                                channel: String::new(),
+                                version: String::new(),
+                                install_qemu: false,
+                            },
+                        )
+                    };
+                    settled(reset.reset_stack(&args, call.ctx, &reinstall).map(|out| {
+                        structured_result(out, Some("Incus stack reset phase completed"))
+                    }))
+                }),
+            ),
+        ],
+    }
+}
+
+/// The instance provider's operations over this host's identity, registry,
+/// admission snapshot and reset checkpoint.
+fn instances(host: &crate::tools::Host) -> crate::incusops::Instances {
+    crate::incusops::Instances {
+        incus: host.incus.clone(),
+        env: host.env.clone(),
+        state: host.state.clone(),
+        tenant_id: host.tenant_id.clone(),
+        coordinator: host.coordinator.clone(),
+        shared_host_owner_instance: host.shared_host_owner_instance.clone(),
+        reset_checkpoint_path: host.reset_checkpoint_path.clone(),
+    }
+}
+
+/// An instance operation's outcome: a typed admission refusal is a
+/// structured error result, any other failure a plain one.
+fn settled(outcome: Result<J, crate::incusops::Fail>) -> Result<J, String> {
+    match outcome {
+        Ok(result) => Ok(result),
+        Err(crate::incusops::Fail::Text(text)) => Err(text),
+        Err(refusal) => Ok(refusal.render()),
+    }
+}
+
+/// `provisionArgs`: `vmName`, else `name`.
+fn provision_args(args: &Map<String, J>) -> crate::incusops::ProvisionArgs {
+    let vm_name = match text(args, "vmName") {
+        "" => text(args, "name"),
+        name => name,
+    };
+    crate::incusops::ProvisionArgs {
+        vm_name: vm_name.into(),
+        image: text(args, "image").into(),
+        cpus: int_field(args, "cpus"),
+        memory: text(args, "memory").into(),
+        disk: text(args, "disk").into(),
+        instance_type: text(args, "instanceType").into(),
+    }
+}
+
+/// M8b: the standalone agent's local prerequisites and status.
+fn local_status(host: &crate::tools::Host) -> Service {
+    use crate::tools::{structured_with_text, LOCAL_PREREQUISITES, LOCAL_STATUS};
+    let (prerequisites, status) = (instances(host), instances(host));
+    let register = registrar(host);
+    Service {
+        id: "local-status",
+        dependencies: &["instance-inventory"],
+        operations: vec![
+            (
+                "check_local_prerequisites",
+                op(move |_| {
+                    Ok(structured_with_text(
+                        &prerequisites.local_prerequisites(),
+                        &LOCAL_PREREQUISITES,
+                    ))
+                }),
+            ),
+            (
+                "get_local_status",
+                op(move |_| {
+                    settled(
+                        status
+                            .local_status(&register)
+                            .map(|v| structured_with_text(&v, &LOCAL_STATUS)),
+                    )
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8b: persistent system containers and the disposable GPU probe.
+fn system_containers(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let (provision, probe) = (instances(host), instances(host));
+    Service {
+        id: "system-containers",
+        dependencies: &["instance-inventory"],
+        operations: vec![
+            (
+                "provision_container",
+                op(move |call| {
+                    let a = call.args;
+                    let args = crate::incusops::ContainerArgs {
+                        container_name: text(a, "containerName").into(),
+                        image: text(a, "image").into(),
+                        cpus: int_field(a, "cpus"),
+                        memory: text(a, "memory").into(),
+                        disk: text(a, "disk").into(),
+                        gpu: flag(a, "gpu"),
+                        host_gpu_libs: flag(a, "hostGpuLibs"),
+                        nesting: a.contains_key("nesting").then(|| flag(a, "nesting")),
+                        port: int_field(a, "port"),
+                        model_volume: text(a, "modelVolume").into(),
+                        ipv4_address: text(a, "ipv4Address").into(),
+                    };
+                    settled(provision.provision_container(&args).map(|out| {
+                        let text = format!("Provisioned Incus container '{}'.", out.container_name);
+                        structured_result(
+                            serde_json::json!({
+                                "uri": out.uri, "containerName": out.container_name,
+                                "vmName": out.container_name, "image": out.image,
+                                "status": out.status, "instanceType": out.instance_type,
+                            }),
+                            Some(&text),
+                        )
+                    }))
+                }),
+            ),
+            (
+                "probe_gpu_container",
+                op(move |_| {
+                    settled(probe.probe_gpu_container().map(|out| {
+                        structured_result(
+                            out,
+                            Some("System container GPU capability report generated"),
+                        )
+                    }))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8b: VM and container lifecycle. The instance a scoped operation acts on
+/// comes from the canonical binding, never from a raw argument.
+fn instance_lifecycle(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let (create, provision, start, stop) = (
+        instances(host),
+        instances(host),
+        instances(host),
+        instances(host),
+    );
+    let (restart, update, delete) = (instances(host), instances(host), instances(host));
+    let named = |out: &J, verb: &str| format!("{verb} '{}'.", out["vmName"].as_str().unwrap_or(""));
+    Service {
+        id: "instance-lifecycle",
+        dependencies: &["system-containers"],
+        operations: vec![
+            (
+                "create_vm",
+                op(move |call| {
+                    let mut args = provision_args(call.args);
+                    if args.instance_type.trim().is_empty() {
+                        args.instance_type = "virtual-machine".into();
+                    }
+                    settled(create.provision_vm(&args).map(|out| {
+                        let text =
+                            format!("Created VM '{}' from image '{}'.", out.vm_name, out.image);
+                        structured_result(out.to_json(), Some(&text))
+                    }))
+                }),
+            ),
+            (
+                "provision_vm",
+                op(move |call| {
+                    settled(
+                        provision
+                            .provision_vm(&provision_args(call.args))
+                            .map(|out| {
+                                let kind = match out.instance_type.trim() {
+                                    "" => "container",
+                                    kind => kind,
+                                };
+                                let text = format!(
+                                    "Provisioned {kind} '{}' from image '{}'.",
+                                    out.vm_name, out.image
+                                );
+                                structured_result(out.to_json(), Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "start_vm",
+                op(move |call| {
+                    settled(
+                        start
+                            .start_vm(&call.binding.provider_instance_name())
+                            .map(|out| {
+                                let text = named(&out, "Started VM");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "stop_vm",
+                op(move |call| {
+                    settled(
+                        stop.stop_vm(&call.binding.provider_instance_name())
+                            .map(|out| {
+                                let text = named(&out, "Stopped VM");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "restart_vm",
+                op(move |call| {
+                    settled(
+                        restart
+                            .restart_vm(&call.binding.provider_instance_name())
+                            .map(|out| {
+                                let text = named(&out, "Restarted VM");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "update_vm_resources",
+                op(move |call| {
+                    settled(
+                        update
+                            .update_vm_resources(
+                                &call.binding.provider_instance_name(),
+                                int_field(call.args, "cpus"),
+                                text(call.args, "memory"),
+                                text(call.args, "disk"),
+                            )
+                            .map(|out| {
+                                let text = named(&out, "Updated resources for");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "delete_vm",
+                op(move |call| {
+                    settled(
+                        delete
+                            .delete_vm(&call.binding.provider_instance_name())
+                            .map(|out| {
+                                let text = named(&out, "Deleted VM");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
                 }),
             ),
         ],
@@ -1362,7 +1660,19 @@ pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Re
         return None;
     };
     let Some(operation) = catalog::neutral_name(name) else {
-        return provider.call(name, invocation);
+        let Some(args) = catalog::renamed_field_arguments(name, invocation.args) else {
+            return provider.call(name, invocation);
+        };
+        return provider.call(
+            name,
+            &Invocation {
+                ctx: invocation.ctx,
+                args: &args,
+                binding: invocation.binding,
+                snapshot: invocation.snapshot,
+                claimed: invocation.claimed,
+            },
+        );
     };
     // An alias call validated against Go's schema; its renamed fields move
     // to the published names before the Consumer reads them.

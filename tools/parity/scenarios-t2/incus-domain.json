@@ -1,0 +1,3136 @@
+[
+ {
+  "id": "t2.incus-domain.container.lifecycle",
+  "tier": "T2",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/domain/incus/incus_inventory.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go",
+   "internal/domain/host/exec_command.go",
+   "internal/tools/dispatch_host.go"
+  ],
+  "commands": [
+   "incus"
+  ],
+  "residue": "The container and its volume are deleted. Incus keeps the image volume it unpacked into the default pool on the first launch from local:parity-noble (its image cache, used by the image); the incus CLI's client configuration and the coordinator ledger stay. The agent's own state lives under its excluded root.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "provision",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "image": "local:parity-noble",
+       "disk": "4GiB",
+       "nesting": false
+      }
+     },
+     "capture": {
+      "T_PROVISION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "provisionDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PROVISION}",
+     "params": {
+      "taskId": "${T_PROVISION}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "provisioned",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "createdList",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "createdInfo",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_vm_info",
+     "params": {
+      "name": "get_vm_info",
+      "arguments": {
+       "uri": "container:local:box1",
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "exec",
+    "mcp": {
+     "method": "tools/call",
+     "name": "exec_command",
+     "params": {
+      "name": "exec_command",
+      "arguments": {
+       "name": "box1",
+       "command": "sh",
+       "args": [
+        "-c",
+        "touch /root/exec-ran"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "execUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "exec_command",
+     "params": {
+      "name": "exec_command",
+      "arguments": {
+       "uri": "container:local:box1",
+       "command": "sh",
+       "args": [
+        "-c",
+        "touch /root/exec-ran"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "execRan",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:box1",
+       "command": "test",
+       "args": [
+        "-e",
+        "/root/exec-ran"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "run",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:box1",
+       "command": "sh",
+       "args": [
+        "-c",
+        "echo parity-run; uname -s"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "runStdin",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:box1",
+       "command": "sh",
+       "stdin": "parity-stdin-secret\n",
+       "args": [
+        "-c",
+        "cat > /root/parity-stdin && sha256sum /root/parity-stdin && stat -c %a /root/parity-stdin"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "runFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:box1",
+       "command": "sh",
+       "args": [
+        "-c",
+        "exit 7"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "runTimeout",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "container:local:box1",
+       "command": "sleep",
+       "args": [
+        "30"
+       ],
+       "timeoutMs": 1500
+      }
+     }
+    }
+   },
+   {
+    "as": "runVmUri",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "command": "true"
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "capture": {
+      "T_STOP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stopDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STOP}",
+     "params": {
+      "taskId": "${T_STOP}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "stopped",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "capture": {
+      "T_START": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_START}",
+     "params": {
+      "taskId": "${T_START}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "capture": {
+      "T_RESTART": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "restartDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RESTART}",
+     "params": {
+      "taskId": "${T_RESTART}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "resize",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "container:local:box1",
+       "cpus": 1,
+       "memory": "768MiB"
+      }
+     }
+    }
+   },
+   {
+    "as": "grow",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "container:local:box1",
+       "disk": "5GiB"
+      }
+     }
+    }
+   },
+   {
+    "as": "shrink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "container:local:box1",
+       "disk": "3GiB"
+      }
+     }
+    }
+   },
+   {
+    "as": "reprovision",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1"
+      }
+     },
+     "capture": {
+      "T_REPROVISION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "reprovisionDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REPROVISION}",
+     "params": {
+      "taskId": "${T_REPROVISION}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "mutated",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "mutatedList",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "mutatedInfo",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_vm_info",
+     "params": {
+      "name": "get_vm_info",
+      "arguments": {
+       "uri": "container:local:box1",
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "delete",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "capture": {
+      "T_DELETE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "deleteDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DELETE}",
+     "params": {
+      "taskId": "${T_DELETE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "deleteAgain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "capture": {
+      "T_DELETEAGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "deleteAgainDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DELETEAGAIN}",
+     "params": {
+      "taskId": "${T_DELETEAGAIN}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "deleted",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "createdInfo",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "createdList",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "mutatedInfo",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "mutatedList",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ]
+   ]
+  },
+  "golden": "incus"
+ },
+ {
+  "id": "t2.incus-domain.vm.lifecycle",
+  "tier": "T2",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/domain/incus/incus_inventory.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go"
+  ],
+  "commands": [
+   "incus"
+  ],
+  "residue": "The VM and its volume are deleted. Incus keeps the image volume it unpacked from local:parity-noble-vm (its image cache); the incus CLI's client configuration and the coordinator ledger stay.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "create",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "image": "local:parity-noble-vm",
+       "cpus": 1,
+       "memory": "1GiB",
+       "disk": "10GiB"
+      }
+     },
+     "capture": {
+      "T_CREATE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "createDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREATE}",
+     "params": {
+      "taskId": "${T_CREATE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 900
+    }
+   },
+   {
+    "as": "createdReady",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 150); do incus exec vm1 -- true 2>/dev/null && incus list vm1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' && exit 0; sleep 2; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "created",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "createdList",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "createdInfo",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_vm_info",
+     "params": {
+      "name": "get_vm_info",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "createAgain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "image": "local:parity-noble-vm"
+      }
+     },
+     "capture": {
+      "T_CREATEAGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "createAgainDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREATEAGAIN}",
+     "params": {
+      "taskId": "${T_CREATEAGAIN}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "kindMismatch",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "instanceType": "container"
+      }
+     },
+     "capture": {
+      "T_KINDMISMATCH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "kindMismatchDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_KINDMISMATCH}",
+     "params": {
+      "taskId": "${T_KINDMISMATCH}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "run",
+    "mcp": {
+     "method": "tools/call",
+     "name": "run_instance_command",
+     "params": {
+      "name": "run_instance_command",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "command": "sh",
+       "args": [
+        "-c",
+        "echo parity-vm; nproc"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "capture": {
+      "T_STOP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stopDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STOP}",
+     "params": {
+      "taskId": "${T_STOP}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 900
+    }
+   },
+   {
+    "as": "resize",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "cpus": 2,
+       "memory": "1536MiB",
+       "disk": "12GiB"
+      }
+     }
+    }
+   },
+   {
+    "as": "resized",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "capture": {
+      "T_START": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_START}",
+     "params": {
+      "taskId": "${T_START}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 900
+    }
+   },
+   {
+    "as": "restart",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "capture": {
+      "T_RESTART": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "restartDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RESTART}",
+     "params": {
+      "taskId": "${T_RESTART}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 900
+    }
+   },
+   {
+    "as": "restartedReady",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 150); do incus exec vm1 -- true 2>/dev/null && incus list vm1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' && exit 0; sleep 2; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "runningList",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_vms",
+     "params": {
+      "name": "list_vms",
+      "arguments": {
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "runningInfo",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_vm_info",
+     "params": {
+      "name": "get_vm_info",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "fast": true
+      }
+     }
+    }
+   },
+   {
+    "as": "delete",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "capture": {
+      "T_DELETE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "deleteDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DELETE}",
+     "params": {
+      "taskId": "${T_DELETE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 900
+    }
+   },
+   {
+    "as": "deleted",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "createdInfo",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "createdList",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "runningInfo",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "runningList",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ]
+   ]
+  },
+  "golden": "incus"
+ },
+ {
+  "id": "t2.incus-domain.standalone.reads",
+  "tier": "T2",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/standalone.go",
+   "internal/domain/incus/incus_container.go"
+  ],
+  "commands": [
+   "incus"
+  ],
+  "residue": "None: reads, and a GPU probe that finds no GPU device to attach. The incus CLI writes its own client configuration the first time it runs as the agent's user; that is the CLI's, not an operation's.",
+  "steps": [
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "prerequisites",
+    "mcp": {
+     "method": "tools/call",
+     "name": "check_local_prerequisites",
+     "params": {
+      "name": "check_local_prerequisites",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "status",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_local_status",
+     "params": {
+      "name": "get_local_status",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "probe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_gpu_container",
+     "params": {
+      "name": "probe_gpu_container",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "after",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": {
+      "except": [
+       "/home/ubuntu/.config/opute/host-resource-coordinator",
+       "/home/ubuntu/.config/incus"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system"
+     ],
+     "type": "object",
+     "reason": "live host load and memory figures; their shape is compared in T1"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system"
+     ],
+     "type": "object",
+     "reason": "live host load and memory figures; their shape is compared in T1"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "prerequisites",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ],
+    [
+     "steps",
+     "status",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ]
+   ]
+  },
+  "golden": "incus"
+ },
+ {
+  "id": "t2.incus-domain.reset.owned-container",
+  "tier": "T2",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/incus_stack.go"
+  ],
+  "commands": [
+   "incus"
+  ],
+  "residue": "Go's reset purges and reinstalls Incus: the local images and anything else Incus held are gone, the checkpoint file stays, and the reinstalled stack's pool, bridge and profile are what Go's reconcile creates. Reproduced, not cleaned up.",
+  "steps": [
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-t2-incus"
+     }
+    }
+   },
+   {
+    "as": "provision",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "image": "local:parity-noble",
+       "disk": "4GiB",
+       "nesting": false
+      }
+     },
+     "capture": {
+      "T_PROVISION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "provisionDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PROVISION}",
+     "params": {
+      "taskId": "${T_PROVISION}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "reset",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "instanceNames": [
+        "box1"
+       ],
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "parity-t2-fp",
+       "expectedHostFingerprint": "parity-t2-fp",
+       "disposableHostAuthorization": "dispose:parity-t2-fp"
+      }
+     },
+     "capture": {
+      "T_RESET": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "resetDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RESET}",
+     "params": {
+      "taskId": "${T_RESET}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 1800
+    }
+   },
+   {
+    "as": "reset",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "status",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_local_status",
+     "params": {
+      "name": "get_local_status",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system"
+     ],
+     "type": "object",
+     "reason": "live host load and memory figures; their shape is compared in T1"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system"
+     ],
+     "type": "object",
+     "reason": "live host load and memory figures; their shape is compared in T1"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "structuredContent",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "vms",
+      "*",
+      "ipv4",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "10\\.0\\.100\\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])",
+     "reason": "DHCP lease on incusbr0, chosen by dnsmasq"
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "status",
+     "body",
+     "result",
+     "content",
+     0,
+     "text"
+    ]
+   ]
+  },
+  "golden": "incus"
+ },
+ {
+  "id": "t2.incus-domain.admission.rejected-no-effect",
+  "tier": "T2",
+  "owner": "incus",
+  "anchors": [
+   "internal/admission/admission.go",
+   "internal/tools/dispatch.go",
+   "internal/runtime/standalone.go:MutationsAllowed",
+   "internal/domain/host",
+   "internal/domain/incus"
+  ],
+  "commands": [
+   "incus"
+  ],
+  "residue": "The fixture container box1 stays (it is created before the baseline); every rejected call is refused before it reaches Incus.",
+  "steps": [
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "fixture",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "image": "local:parity-noble",
+       "disk": "4GiB",
+       "nesting": false
+      }
+     },
+     "capture": {
+      "T_FIXTURE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "fixtureDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FIXTURE}",
+     "params": {
+      "taskId": "${T_FIXTURE}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "stopFixture",
+    "stop": {}
+   },
+   {
+    "as": "serveClosed",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     },
+     "unset": [
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS"
+     ]
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "gateClosed.provision_container",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "rejected1",
+       "image": "local:parity-noble"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.probe_gpu_container",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_gpu_container",
+     "params": {
+      "name": "probe_gpu_container",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.reset_incus_stack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "parity-t2-fp",
+       "expectedHostFingerprint": "parity-t2-fp",
+       "disposableHostAuthorization": "dispose:parity-t2-fp"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.create_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "rejected2",
+       "image": "local:parity-noble-vm"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.provision_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "rejected3",
+       "image": "local:parity-noble",
+       "instanceType": "container"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.start_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.stop_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.restart_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.update_vm_resources",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "container:local:box1",
+       "cpus": 1
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.delete_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     }
+    }
+   },
+   {
+    "as": "afterGateClosed",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   },
+   {
+    "as": "stopClosed",
+    "stop": {}
+   },
+   {
+    "as": "serveOpen",
+    "serve": {
+     "env": {
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-t2-incus",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.provision_container",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "rejected1",
+       "image": "local:parity-noble"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.probe_gpu_container",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_gpu_container",
+     "params": {
+      "name": "probe_gpu_container",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.reset_incus_stack",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "parity-t2-fp",
+       "expectedHostFingerprint": "parity-t2-fp",
+       "disposableHostAuthorization": "dispose:parity-t2-fp"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.create_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "rejected2",
+       "image": "local:parity-noble-vm"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.provision_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "rejected3",
+       "image": "local:parity-noble",
+       "instanceType": "container"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.start_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.stop_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.restart_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.update_vm_resources",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "container:local:box1",
+       "cpus": 1
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.delete_vm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.0",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {}
+     },
+     "capture": {
+      "T_WRONGBINDING_DELETE_VM_0": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.0Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_DELETE_VM_0}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_DELETE_VM_0}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.1",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_DELETE_VM_1": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.1Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_DELETE_VM_1}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_DELETE_VM_1}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.2",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "container:other-tenant:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_DELETE_VM_2": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.2Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_DELETE_VM_2}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_DELETE_VM_2}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.3",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "host:local:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_DELETE_VM_3": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.delete_vm.3Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_DELETE_VM_3}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_DELETE_VM_3}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.4",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {}
+     },
+     "capture": {
+      "T_WRONGBINDING_RESTART_VM_4": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.4Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_RESTART_VM_4}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_RESTART_VM_4}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.5",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_RESTART_VM_5": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.5Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_RESTART_VM_5}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_RESTART_VM_5}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.6",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "container:other-tenant:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_RESTART_VM_6": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.6Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_RESTART_VM_6}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_RESTART_VM_6}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.7",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "host:local:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_RESTART_VM_7": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.restart_vm.7Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_RESTART_VM_7}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_RESTART_VM_7}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.8",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {}
+     },
+     "capture": {
+      "T_WRONGBINDING_START_VM_8": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.8Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_START_VM_8}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_START_VM_8}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.9",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_START_VM_9": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.9Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_START_VM_9}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_START_VM_9}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.10",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "container:other-tenant:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_START_VM_10": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.10Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_START_VM_10}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_START_VM_10}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.11",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "host:local:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_START_VM_11": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.start_vm.11Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_START_VM_11}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_START_VM_11}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.12",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {}
+     },
+     "capture": {
+      "T_WRONGBINDING_STOP_VM_12": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.12Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_STOP_VM_12}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_STOP_VM_12}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.13",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_STOP_VM_13": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.13Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_STOP_VM_13}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_STOP_VM_13}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.14",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "container:other-tenant:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_STOP_VM_14": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.14Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_STOP_VM_14}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_STOP_VM_14}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.15",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "host:local:web1"
+      }
+     },
+     "capture": {
+      "T_WRONGBINDING_STOP_VM_15": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.stop_vm.15Done",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGBINDING_STOP_VM_15}",
+     "params": {
+      "taskId": "${T_WRONGBINDING_STOP_VM_15}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "wrongBinding.update_vm_resources.16",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "cpus": 1
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.update_vm_resources.17",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "cpus": 1,
+       "uri": "web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.update_vm_resources.18",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "cpus": 1,
+       "uri": "container:other-tenant:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "wrongBinding.update_vm_resources.19",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "cpus": 1,
+       "uri": "host:local:web1"
+      }
+     }
+    }
+   },
+   {
+    "as": "afterOpen",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ]
+  },
+  "rejectedOnly": true,
+  "golden": "incus"
+ }
+]

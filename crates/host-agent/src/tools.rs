@@ -33,6 +33,9 @@ pub struct Host {
     pub shared_host_owner_instance: String,
     pub instance_root: String,
     pub mcp_port: i64,
+    /// `resolveResetCheckpointPath`: where an interrupted stack reset
+    /// resumes from.
+    pub reset_checkpoint_path: String,
 }
 
 /// Resolves a wire name to the catalog name it was registered under, if any.
@@ -1389,6 +1392,46 @@ const ADMISSION: Shape = Shape::Keys(&[
     ),
     ("psi", Shape::Map(&STALL)),
 ]);
+const CAPACITY: Shape = Shape::Struct(&[
+    ("runningVmCount", Shape::Any),
+    ("totalVmCount", Shape::Any),
+    ("runningVmCpuLimitCores", Shape::Any),
+    ("totalVmCpuLimitCores", Shape::Any),
+    ("runningVmMemoryLimitBytes", Shape::Any),
+    ("totalVmMemoryLimitBytes", Shape::Any),
+    ("runningVmDiskLimitBytes", Shape::Any),
+    ("totalVmDiskLimitBytes", Shape::Any),
+    ("runningQemuCount", Shape::Any),
+    ("totalQemuCount", Shape::Any),
+    ("runningContainerCount", Shape::Any),
+    ("totalContainerCount", Shape::Any),
+]);
+const ROOT_DISK_QUOTA: Shape = Shape::Struct(&[
+    ("pool", Shape::Any),
+    ("driver", Shape::Any),
+    ("enforced", Shape::Any),
+    ("reason", Shape::Any),
+]);
+const SYSTEM: Shape = Shape::Keys(&[
+    ("psi", Shape::Map(&STALL)),
+    ("resourceAdmission", ADMISSION),
+]);
+/// `incus.LocalPrerequisitesResult`.
+pub(crate) const LOCAL_PREREQUISITES: Shape = Shape::Struct(&[
+    ("provider", Shape::Any),
+    ("providerBinary", Shape::Any),
+    ("providerReady", Shape::Any),
+    ("commands", Shape::Any),
+    ("checks", Shape::Any),
+    ("rootDiskQuota", ROOT_DISK_QUOTA),
+]);
+/// `GetLocalStatus`: a map holding the inventory, its capacity and the
+/// system metadata.
+pub(crate) const LOCAL_STATUS: Shape = Shape::Keys(&[
+    ("vms", Shape::List(&VM_INFO)),
+    ("capacity", CAPACITY),
+    ("system", SYSTEM),
+]);
 pub(crate) const HOST_INFO: Shape = Shape::Struct(&[
     ("uri", Shape::Any),
     ("hostName", Shape::Any),
@@ -1396,39 +1439,9 @@ pub(crate) const HOST_INFO: Shape = Shape::Struct(&[
     ("lxcBinaryPath", Shape::Any),
     ("systemctlPath", Shape::Any),
     ("supportedTools", Shape::Any),
-    (
-        "capacity",
-        Shape::Struct(&[
-            ("runningVmCount", Shape::Any),
-            ("totalVmCount", Shape::Any),
-            ("runningVmCpuLimitCores", Shape::Any),
-            ("totalVmCpuLimitCores", Shape::Any),
-            ("runningVmMemoryLimitBytes", Shape::Any),
-            ("totalVmMemoryLimitBytes", Shape::Any),
-            ("runningVmDiskLimitBytes", Shape::Any),
-            ("totalVmDiskLimitBytes", Shape::Any),
-            ("runningQemuCount", Shape::Any),
-            ("totalQemuCount", Shape::Any),
-            ("runningContainerCount", Shape::Any),
-            ("totalContainerCount", Shape::Any),
-        ]),
-    ),
-    (
-        "rootDiskQuota",
-        Shape::Struct(&[
-            ("pool", Shape::Any),
-            ("driver", Shape::Any),
-            ("enforced", Shape::Any),
-            ("reason", Shape::Any),
-        ]),
-    ),
-    (
-        "system",
-        Shape::Keys(&[
-            ("psi", Shape::Map(&STALL)),
-            ("resourceAdmission", ADMISSION),
-        ]),
-    ),
+    ("capacity", CAPACITY),
+    ("rootDiskQuota", ROOT_DISK_QUOTA),
+    ("system", SYSTEM),
     (
         "agent",
         Shape::Struct(&[

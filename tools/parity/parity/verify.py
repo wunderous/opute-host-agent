@@ -204,20 +204,63 @@ def _check_canaries(root: Path, manifest: dict, lock: dict, report: Report,
     return out
 
 
-def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report) -> str:
+def _check_twin_oracles(doc: dict, manifest: dict, suites: list[dict], report: Report, key: str) -> str:
+    """Twin oracles: re-judge every suite from its recorded rows (t2_oracle.judge):
+    mustPass passes on Go and Rust, Rust's outcome equals Go's for every test,
+    and the negative control passes nothing."""
+    from . import oracle as oracle_mod, t2_oracle
+    want = {"go": manifest["goReference"]["binarySha256"],
+            "rust": (manifest.get("rustCandidate") or {}).get("binarySha256")}
+    ok = True
+    for suite in suites:
+        rows = {r["binary"]: r for r in doc.get("results", []) if r.get("suite") == suite["id"]}
+        for label, sha in want.items():
+            if label not in rows or not sha or rows[label].get("binarySha256") != sha:
+                report.problem(f"{key}/{suite['id']}: no result for the recorded {label} binary", key)
+                ok = False
+        if set(rows) != set(want) | {oracle_mod.NEGATIVE_CONTROL[0]}:
+            report.problem(f"{key}/{suite['id']}: result rows are not exactly go, rust and the negative control", key)
+            ok = False
+            continue
+        for label, status in t2_oracle.judge(suite, rows).items():
+            if status != "PASS" or rows[label].get("status") != "PASS":
+                what = "negative control passed a test (overlay may not run the binary)" \
+                    if label == oracle_mod.NEGATIVE_CONTROL[0] else f"{label} does not match the oracle"
+                report.problem(f"{key}/{suite['id']}: {what}", key)
+                ok = False
+    return PASS if ok else FAIL
+
+
+def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report, key: str = "oracles") -> str:
     """Go black-box tests: the Go reference and the recorded Rust candidate
-    pass every expected test, and the negative control fails."""
-    from . import oracle as oracle_mod
-    spec = manifest.get("oracles") or {}
+    pass every expected test, and the negative control fails.
+
+    key "t2Oracles" checks the provider-backed live tests run inside T2
+    twins (oracles-t2.json): the twins' goldens must be the pinned ones, and
+    the negative control must pass none of the expected tests.
+    """
+    from . import oracle as oracle_mod, t2_oracle
+    twin = key == "t2Oracles"
+    oracle_file = t2_oracle.ORACLE_FILE if twin else oracle_mod.ORACLE_FILE
+    spec = manifest.get(key) or {}
     doc, err = _load(root / spec["results"]) if spec.get("results") else (None, "no oracle results")
     if err:
-        report.problem(f"oracles: {err}", "oracles")
+        report.problem(f"{key}: {err}", key)
         return UNVERIFIED
     if (doc.get("sourceCommit") != lock["sourceCommit"]
-            or doc.get("oracleFileSha256") != runner.sha256_file(oracle_mod.ORACLE_FILE)):
-        report.problem("oracles: stale results (source or oracle list changed)", "oracles")
+            or doc.get("oracleFileSha256") != runner.sha256_file(oracle_file)):
+        report.problem(f"{key}: stale results (source or oracle list changed)", key)
         return UNVERIFIED
-    expected_suites = {s["id"] for s in json.loads(oracle_mod.ORACLE_FILE.read_text())}
+    if twin:
+        pins = manifest.get("t2Evidence") or {}
+        goldens = doc.get("goldens") or {}
+        if goldens.get("base") != (pins.get("golden") or {}).get("goldenSha256") or \
+                goldens.get("incus") != (pins.get("incusGolden") or {}).get("goldenSha256"):
+            report.problem(f"{key}: twins were not booted from the pinned goldens", key)
+            return UNVERIFIED
+    if twin:
+        return _check_twin_oracles(doc, manifest, json.loads(oracle_file.read_text()), report, key)
+    expected_suites = {s["id"] for s in json.loads(oracle_file.read_text())}
     want = {"go": manifest["goReference"]["binarySha256"],
             "rust": (manifest.get("rustCandidate") or {}).get("binarySha256")}
     ok = True
@@ -226,14 +269,14 @@ def _check_oracles(root: Path, manifest: dict, lock: dict, report: Report) -> st
         for label, sha in want.items():
             row = rows.get(label)
             if row is None or not sha or row.get("binarySha256") != sha:
-                report.problem(f"oracles/{suite}: no result for the recorded {label} binary", "oracles")
+                report.problem(f"{key}/{suite}: no result for the recorded {label} binary", key)
                 ok = False
             elif row.get("exit") != 0 or not set(row.get("expectedTests", [])) <= set(row.get("passed", [])):
-                report.problem(f"oracles/{suite}: {label} failed {row.get('failed')}", "oracles")
+                report.problem(f"{key}/{suite}: {label} failed {row.get('failed')}", key)
                 ok = False
         control = rows.get(oracle_mod.NEGATIVE_CONTROL[0])
         if control is None or control.get("exit") == 0:
-            report.problem(f"oracles/{suite}: negative control did not fail (overlay may not run the binary)", "oracles")
+            report.problem(f"{key}/{suite}: negative control did not fail (overlay may not run the binary)", key)
             ok = False
     return PASS if ok else FAIL
 
@@ -439,6 +482,9 @@ def verify(manifest_path: Path, gate: str) -> dict:
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
+    t2_oracles = _check_oracles(root, manifest, lock, report, "t2Oracles") if rules.get("requireT2Oracles") else None
+    if rules.get("requireT2Oracles") and t2_oracles != PASS:
+        failures.append(f"t2 oracles {t2_oracles}")
     contracts = None
     if rules.get("requireContracts"):
         contracts = _check_contracts(root, manifest, rules["requireContracts"], report)
@@ -450,6 +496,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.update(f"m5:{requirement}" for requirement in m5)
     if rules.get("requireOracles"):
         scopes.add("oracles")
+    if rules.get("requireT2Oracles"):
+        scopes.add("t2Oracles")
     if rules.get("requireCanaries"):
         scopes.add("canaries")
     if rules.get("requireInventory"):
@@ -468,6 +516,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "canaries": canaries,
         "inventory": inventory,
         "oracles": oracles,
+        **({"t2Oracles": t2_oracles} if rules.get("requireT2Oracles") else {}),
         "contracts": contracts,
         "m5": m5,
         "t2": t2,
@@ -491,6 +540,8 @@ def render(report: dict) -> str:
         lines.append(f"  inventory    {report['inventory']}")
     if report.get("oracles"):
         lines.append(f"  go oracles   {report['oracles']}")
+    if report.get("t2Oracles"):
+        lines.append(f"  t2 oracles   {report['t2Oracles']}")
     if report.get("contracts"):
         lines.append(f"  contracts    {report['contracts']}")
     for requirement, status in (report.get("m5") or {}).items():

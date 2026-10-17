@@ -39,6 +39,33 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "create_vm",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "create_vm"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "delete_vm",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "delete_vm"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "ensure_container_engine",
    "owner": "host",
    "status": "covered",
@@ -156,13 +183,14 @@
   },
   {
    "effect": "EffectMutation",
-   "gapReason": "T2 unverified: executes inside an Incus instance; needs the M8b nested-Incus sandbox",
-   "milestone": "M8b",
+   "inertReason": "catalog-excluded (CatalogExcludedToolNames), so Go resolves it no resource binding and every call refuses with 'name is required' before running anything; t2.incus-domain.container.lifecycle calls it by name and by URI against a live owned container and checks inside the guest that nothing ran",
    "neutralName": "exec_command",
    "owner": "host",
-   "status": "gap",
+   "status": "inert",
    "t2RejectedScenarios": [],
-   "t2Scenarios": [],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle"
+   ],
    "tool": "exec_command"
   },
   {
@@ -203,6 +231,46 @@
     "t2.host-domain.artifacts.download-and-agent-build"
    ],
    "tool": "prepare_host_agent_artifacts"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "probe_gpu_container",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.standalone.reads"
+   ],
+   "tool": "probe_gpu_container"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "provision_container",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.reset.owned-container"
+   ],
+   "tool": "provision_container"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "provision_vm",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "provision_vm"
   },
   {
    "effect": "EffectMutation",
@@ -260,6 +328,19 @@
    "tool": "remove_public_mcp_quick_tunnel"
   },
   {
+   "effect": "EffectDestructive",
+   "neutralName": "reset_virtualization_stack",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.reset.owned-container"
+   ],
+   "tool": "reset_incus_stack"
+  },
+  {
    "effect": "EffectMutation",
    "neutralName": "restart_host_service",
    "owner": "host",
@@ -271,6 +352,20 @@
     "t2.host-domain.services.system-lifecycle"
    ],
    "tool": "restart_host_service"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "restart_vm",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "restart_vm"
   },
   {
    "effect": "EffectMutation",
@@ -288,15 +383,16 @@
   },
   {
    "effect": "EffectMutation",
-   "gapReason": "T2 unverified: executes inside an Incus instance; needs the M8b nested-Incus sandbox",
-   "milestone": "M8b",
    "neutralName": "run_instance_command",
    "owner": "host",
-   "status": "gap",
+   "status": "covered",
    "t2RejectedScenarios": [
     "t2.host-domain.admission.rejected-no-effect"
    ],
-   "t2Scenarios": [],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.vm.lifecycle"
+   ],
    "tool": "run_instance_command"
   },
   {
@@ -329,6 +425,34 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "start_vm",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "start_vm"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "stop_vm",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "stop_vm"
+  },
+  {
+   "effect": "EffectMutation",
    "gapReason": "T2 unverified: needs a WSL2 runner: wsl.exe --terminate acts on a Windows-hosted distribution",
    "milestone": "M8a",
    "neutralName": "terminate_host_vm_distribution",
@@ -352,9 +476,23 @@
     "t2.host-domain.virt.stack-install-uninstall"
    ],
    "tool": "uninstall_incus_stack"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "update_vm_resources",
+   "owner": "incus",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.incus-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.incus-domain.container.lifecycle",
+    "t2.incus-domain.vm.lifecycle"
+   ],
+   "tool": "update_vm_resources"
   }
  ],
- "note": "Each mutating host-domain tool and the T2 scenarios that execute it in the twin sandboxes. Coverage is proven by passing T2 evidence (verify gate requireT2), not by this listing.",
+ "note": "Each mutating host- and incus-domain tool and the T2 scenarios that execute it in the twin sandboxes (incus-domain scenarios boot the nested-Incus golden). Coverage is proven by passing T2 evidence (verify gate requireT2), not by this listing.",
  "owner": "host",
  "surface": "t2-effects"
 }

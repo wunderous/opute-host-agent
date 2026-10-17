@@ -17,7 +17,9 @@ import gzip
 import hashlib
 import json
 import os
+import shutil
 import signal
+import stat
 import socket
 import threading
 import time
@@ -306,6 +308,22 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                     path.write_text(sandbox.expand(spec.get("content", "")))
                 path.chmod(int(spec.get("mode", "0644"), 8))
                 steps[label] = {"wrote": spec["path"]}
+            elif "readFile" in step:
+                # A file the agent wrote: its mode and content (parsed when
+                # "json" is set), or that it is absent.
+                path = Path(sandbox.expand(step["readFile"]["path"]))
+                if not path.exists():
+                    steps[label] = {"exists": False}
+                else:
+                    text = path.read_text()
+                    content = text
+                    if step["readFile"].get("json"):
+                        try:
+                            content = json.loads(text)
+                        except ValueError:
+                            content = {"invalidJson": text}
+                    steps[label] = {"exists": True, "mode": oct(stat.S_IMODE(path.stat().st_mode)),
+                                    "content": content}
             elif "symlink" in step:
                 spec = step["symlink"]
                 link = Path(sandbox.expand(spec["path"]))
@@ -424,7 +442,12 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
     if "serverLog" in collect:
         log = sandbox.root / "server.log"
         observation["serverLog"] = agent._strip_log_prefix(log.read_text(errors="replace")) if log.exists() else None
-    return observation, sandbox.variables
+    variables = sandbox.variables
+    if os.environ.get("PARITY_KEEP_SANDBOXES") != "1":
+        # Everything compared is in the observation now. A round runs
+        # thousands of sandboxes; left behind they exhaust the tmpfs inodes.
+        shutil.rmtree(sandbox.root, ignore_errors=True)
+    return observation, variables
 
 
 _EXCLUSIVE = threading.Lock()

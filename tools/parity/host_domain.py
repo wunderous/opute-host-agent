@@ -96,7 +96,7 @@ def reach(functions: dict, roots: list[str]) -> list[str]:
     return seen
 
 
-def registrations() -> list[dict]:
+def registrations(domain: str = "Host") -> list[dict]:
     names = {}
     for path in (GO / "internal/contract/toolname").glob("*.go"):
         for m in re.finditer(r'(\w+)\s*=\s*"([a-z0-9_.]+)"', path.read_text()):
@@ -117,8 +117,9 @@ def registrations() -> list[dict]:
                 # the same init block.
                 start = text.rfind("\nfunc init()", 0, m.start())
                 body = text[start:end]
-            calls = sorted(set(re.findall(r'svc\.Host\(\)\.(\w+)', body)))
-            calls = calls or ROUTED.get(names[m.group(1)], [])
+            calls = sorted(set(re.findall(rf'svc\.{domain}\(\)\.(\w+)', body)))
+            if domain == "Host":
+                calls = calls or ROUTED.get(names[m.group(1)], [])
             if calls:
                 rows.append({"tool": names[m.group(1)], "effect": m.group(2), "admissionClass": m.group(3),
                              "taskMode": m.group(4), "anchor": f"{path.relative_to(GO)}:{text.count(chr(10), 0, m.start()) + 1}",

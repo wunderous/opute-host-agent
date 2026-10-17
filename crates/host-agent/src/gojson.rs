@@ -536,6 +536,64 @@ pub fn encode(v: &serde_json::Value, out: &mut String) {
     }
 }
 
+/// `json.Indent(dst, compact, "", indent)`: what `json.MarshalIndent` writes
+/// for compact `encoding/json` output. Empty arrays and objects stay closed.
+pub fn indent(compact: &str, indent: &str) -> String {
+    let mut out = String::with_capacity(compact.len() * 2);
+    let mut depth = 0usize;
+    let (mut in_string, mut escaped, mut need_indent) = (false, false, false);
+    let newline = |out: &mut String, depth: usize| {
+        out.push('\n');
+        for _ in 0..depth {
+            out.push_str(indent);
+        }
+    };
+    for c in compact.chars() {
+        if in_string {
+            out.push(c);
+            if escaped {
+                escaped = false;
+            } else if c == '\\' {
+                escaped = true;
+            } else if c == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+        if need_indent && c != ']' && c != '}' {
+            need_indent = false;
+            depth += 1;
+            newline(&mut out, depth);
+        }
+        match c {
+            '"' => {
+                in_string = true;
+                out.push(c);
+            }
+            '{' | '[' => {
+                out.push(c);
+                need_indent = true;
+            }
+            ',' => {
+                out.push(c);
+                newline(&mut out, depth);
+            }
+            ':' => out.push_str(": "),
+            '}' | ']' => {
+                if need_indent {
+                    need_indent = false;
+                } else {
+                    depth = depth.saturating_sub(1);
+                    newline(&mut out, depth);
+                }
+                out.push(c);
+            }
+            c => out.push(c),
+        }
+    }
+    out
+}
+
 /// Validate Go standard base64, retaining corruption offsets and CR/LF rules.
 pub(crate) fn validate_base64(bytes: &[u8]) -> Result<(), String> {
     let error = |i| format!("illegal base64 data at input byte {i}");

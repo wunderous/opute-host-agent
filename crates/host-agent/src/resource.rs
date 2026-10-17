@@ -143,6 +143,52 @@ pub fn register(
     store.upsert_resource(&parsed, &encoded)
 }
 
+/// `Shared.DeregisterResource`.
+pub fn deregister(
+    state: &std::sync::Mutex<crate::store::StateStore>,
+    active_tenant: &str,
+    uri: &str,
+) -> Result<(), String> {
+    let parsed = Uri::parse(uri)?;
+    let tenant = active_tenant.trim();
+    if !tenant.is_empty() && parsed.tenant_id != tenant {
+        return Err(format!(
+            "resource URI belongs to a different tenant: active tenant {}",
+            crate::goerr::quote(tenant)
+        ));
+    }
+    let store = state
+        .lock()
+        .map_err(|_| "state store unavailable".to_string())?;
+    store.delete_resource(&parsed)
+}
+
+/// `Shared.ResourceURIForProviderName`: the first registered URI (in URI
+/// order) whose `providerInstanceName` coordinate is `name`, or "".
+pub fn uri_for_provider_name(
+    state: &std::sync::Mutex<crate::store::StateStore>,
+    tenant: &str,
+    name: &str,
+) -> String {
+    let Ok(store) = state.lock() else {
+        return String::new();
+    };
+    let Ok(records) = store.list_resources(tenant) else {
+        return String::new();
+    };
+    records
+        .into_iter()
+        .find(|(_, coordinates)| {
+            coordinates
+                .as_ref()
+                .and_then(|c| c.get("providerInstanceName"))
+                .and_then(J::as_str)
+                == Some(name)
+        })
+        .map(|(uri, _)| uri)
+        .unwrap_or_default()
+}
+
 // --- admission snapshot ---------------------------------------------------------------
 
 /// The resource coordinator's configuration (`resource.Config`).
@@ -385,6 +431,11 @@ fn positive_capacity(value: &J) -> Result<f64, String> {
         return Err("capacity exceeds the supported byte range".into());
     }
     Ok(bytes)
+}
+
+/// `resource.ParseByteCapacity`.
+pub fn parse_byte_capacity(value: &str) -> Result<i64, String> {
+    positive_capacity(&J::String(value.to_string())).map(|bytes| bytes as i64)
 }
 
 fn capacity_string_bytes(value: &str) -> Result<f64, String> {

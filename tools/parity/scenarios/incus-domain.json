@@ -1,0 +1,5617 @@
+[
+ {
+  "id": "incus-domain.provision.existing",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_unassigned.go",
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "existingVm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "cpus": 8,
+       "memory": "16GiB"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_EXISTINGVM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "existingVmDone",
+    "requires": [
+     "T_EXISTINGVM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_EXISTINGVM}",
+     "params": {
+      "taskId": "${T_EXISTINGVM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "createExisting",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "name": " vm1 ",
+       "image": "ubuntu:24.04"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_CREATEEXISTING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "createExistingDone",
+    "requires": [
+     "T_CREATEEXISTING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CREATEEXISTING}",
+     "params": {
+      "taskId": "${T_CREATEEXISTING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "kindMismatch",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "instanceType": "container"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_KINDMISMATCH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "kindMismatchDone",
+    "requires": [
+     "T_KINDMISMATCH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_KINDMISMATCH}",
+     "params": {
+      "taskId": "${T_KINDMISMATCH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "kindInvalid",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "instanceType": " LXC "
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_KINDINVALID": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "kindInvalidDone",
+    "requires": [
+     "T_KINDINVALID"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_KINDINVALID}",
+     "params": {
+      "taskId": "${T_KINDINVALID}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "kindVmAlias",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "vm1",
+       "instanceType": "Virtual_Machine"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_KINDVMALIAS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "kindVmAliasDone",
+    "requires": [
+     "T_KINDVMALIAS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_KINDVMALIAS}",
+     "params": {
+      "taskId": "${T_KINDVMALIAS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "noName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "image": "ubuntu:24.04"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NONAME": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noNameDone",
+    "requires": [
+     "T_NONAME"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NONAME}",
+     "params": {
+      "taskId": "${T_NONAME}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "drift",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "drift1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DRIFT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "driftDone",
+    "requires": [
+     "T_DRIFT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DRIFT}",
+     "params": {
+      "taskId": "${T_DRIFT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "reuseContainer",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "box1",
+       "image": "local:noble"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REUSECONTAINER": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "reuseContainerDone",
+    "requires": [
+     "T_REUSECONTAINER"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REUSECONTAINER}",
+     "params": {
+      "taskId": "${T_REUSECONTAINER}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "registry",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "resources": "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status FROM resource_registry ORDER BY uri"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.provision.new-refused",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_unassigned.go",
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "newVm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "new1",
+       "cpus": 2,
+       "memory": "1GiB"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NEWVM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "newVmDone",
+    "requires": [
+     "T_NEWVM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NEWVM}",
+     "params": {
+      "taskId": "${T_NEWVM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "newContainer",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "new1",
+       "disk": "30GiB"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NEWCONTAINER": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "newContainerDone",
+    "requires": [
+     "T_NEWCONTAINER"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NEWCONTAINER}",
+     "params": {
+      "taskId": "${T_NEWCONTAINER}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "newSystemContainer",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "new1",
+       "gpu": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NEWSYSTEMCONTAINER": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "newSystemContainerDone",
+    "requires": [
+     "T_NEWSYSTEMCONTAINER"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NEWSYSTEMCONTAINER}",
+     "params": {
+      "taskId": "${T_NEWSYSTEMCONTAINER}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "registry",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "resources": "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status FROM resource_registry ORDER BY uri"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.provision.dir-pool",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "incus-domain-dir-pool",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "explicitDisk",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "new1",
+       "disk": "5GiB"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_EXPLICITDISK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "explicitDiskDone",
+    "requires": [
+     "T_EXPLICITDISK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_EXPLICITDISK}",
+     "params": {
+      "taskId": "${T_EXPLICITDISK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "defaultDisk",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "new1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DEFAULTDISK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "defaultDiskDone",
+    "requires": [
+     "T_DEFAULTDISK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DEFAULTDISK}",
+     "params": {
+      "taskId": "${T_DEFAULTDISK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "containerDisk",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "new1",
+       "disk": "8GiB"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_CONTAINERDISK": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "containerDiskDone",
+    "requires": [
+     "T_CONTAINERDISK"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CONTAINERDISK}",
+     "params": {
+      "taskId": "${T_CONTAINERDISK}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "grow",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "disk": "20GiB"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.provision.unowned",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "existingVm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_vm",
+     "params": {
+      "name": "provision_vm",
+      "arguments": {
+       "vmName": "vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_EXISTINGVM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "existingVmDone",
+    "requires": [
+     "T_EXISTINGVM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_EXISTINGVM}",
+     "params": {
+      "taskId": "${T_EXISTINGVM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "newVm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "create_vm",
+     "params": {
+      "name": "create_vm",
+      "arguments": {
+       "vmName": "new1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NEWVM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "newVmDone",
+    "requires": [
+     "T_NEWVM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NEWVM}",
+     "params": {
+      "taskId": "${T_NEWVM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "registry",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "resources": "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status FROM resource_registry ORDER BY uri"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.container.reuse",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "reuse",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "image": "ubuntu:24.04",
+       "cpus": 4,
+       "memory": "4GiB",
+       "gpu": true,
+       "wslGpuLibs": true,
+       "port": 8080,
+       "modelVolume": " models-vol ",
+       "ipv4Address": " 10.0.0.9 "
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_REUSE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "reuseDone",
+    "requires": [
+     "T_REUSE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_REUSE}",
+     "params": {
+      "taskId": "${T_REUSE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "noNesting",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "nesting": false
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NONESTING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noNestingDone",
+    "requires": [
+     "T_NONESTING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NONESTING}",
+     "params": {
+      "taskId": "${T_NONESTING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "onVm",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ONVM": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "onVmDone",
+    "requires": [
+     "T_ONVM"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ONVM}",
+     "params": {
+      "taskId": "${T_ONVM}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "whitespace",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box 1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_WHITESPACE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "whitespaceDone",
+    "requires": [
+     "T_WHITESPACE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WHITESPACE}",
+     "params": {
+      "taskId": "${T_WHITESPACE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "noName",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "  "
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NONAME": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noNameDone",
+    "requires": [
+     "T_NONAME"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NONAME}",
+     "params": {
+      "taskId": "${T_NONAME}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "badAddress",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "ipv4Address": "10.0.0"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BADADDRESS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "badAddressDone",
+    "requires": [
+     "T_BADADDRESS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BADADDRESS}",
+     "params": {
+      "taskId": "${T_BADADDRESS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "ipv6Address",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "ipv4Address": "fd42::9"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_IPV6ADDRESS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "ipv6AddressDone",
+    "requires": [
+     "T_IPV6ADDRESS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_IPV6ADDRESS}",
+     "params": {
+      "taskId": "${T_IPV6ADDRESS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "drift",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "drift1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DRIFT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "driftDone",
+    "requires": [
+     "T_DRIFT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DRIFT}",
+     "params": {
+      "taskId": "${T_DRIFT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "registry",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "resources": "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status FROM resource_registry ORDER BY uri"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.container.unmanaged-bridge",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-unmanaged-bridge",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "guestPin",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "ipv4Address": "10.0.0.9"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_GUESTPIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "guestPinDone",
+    "requires": [
+     "T_GUESTPIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_GUESTPIN}",
+     "params": {
+      "taskId": "${T_GUESTPIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "overrideExists",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "ipv4Address": "10.0.0.8"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_OVERRIDEEXISTS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "overrideExistsDone",
+    "requires": [
+     "T_OVERRIDEEXISTS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_OVERRIDEEXISTS}",
+     "params": {
+      "taskId": "${T_OVERRIDEEXISTS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.lifecycle.vm",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/vm_lifecycle.go",
+   "internal/domain/incus/incus_launch.go",
+   "internal/domain/incus/incus_root_disk.go",
+   "internal/domain/incus/incus_storage_quota.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "startRunning",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_STARTRUNNING": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startRunningDone",
+    "requires": [
+     "T_STARTRUNNING"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STARTRUNNING}",
+     "params": {
+      "taskId": "${T_STARTRUNNING}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "startBox",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_STARTBOX": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startBoxDone",
+    "requires": [
+     "T_STARTBOX"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STARTBOX}",
+     "params": {
+      "taskId": "${T_STARTBOX}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_STOP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stopDone",
+    "requires": [
+     "T_STOP"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STOP}",
+     "params": {
+      "taskId": "${T_STOP}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "restartFails",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_RESTARTFAILS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "restartFailsDone",
+    "requires": [
+     "T_RESTARTFAILS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RESTARTFAILS}",
+     "params": {
+      "taskId": "${T_RESTARTFAILS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "restartBox",
+    "mcp": {
+     "method": "tools/call",
+     "name": "restart_vm",
+     "params": {
+      "name": "restart_vm",
+      "arguments": {
+       "uri": "container:local:box1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_RESTARTBOX": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "restartBoxDone",
+    "requires": [
+     "T_RESTARTBOX"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RESTARTBOX}",
+     "params": {
+      "taskId": "${T_RESTARTBOX}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "updateNothing",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "update",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "cpus": 4,
+       "memory": " 4GiB ",
+       "disk": "20GiB"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "updateSame",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "disk": "10GiB"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "updateShrink",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "disk": "5GiB"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "updateBadSize",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "disk": "lots"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "updateFractionCpu",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:vm1",
+       "cpus": 2.9
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "updateContainer",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "container:local:box1",
+       "disk": "30GiB"
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "drift",
+    "mcp": {
+     "method": "tools/call",
+     "name": "update_vm_resources",
+     "params": {
+      "name": "update_vm_resources",
+      "arguments": {
+       "uri": "vm:local:drift1",
+       "cpus": 1
+      }
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stopDrift",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_vm",
+     "params": {
+      "name": "stop_vm",
+      "arguments": {
+       "uri": "vm:local:drift1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_STOPDRIFT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stopDriftDone",
+    "requires": [
+     "T_STOPDRIFT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STOPDRIFT}",
+     "params": {
+      "taskId": "${T_STOPDRIFT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "delete",
+    "mcp": {
+     "method": "tools/call",
+     "name": "delete_vm",
+     "params": {
+      "name": "delete_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DELETE": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "deleteDone",
+    "requires": [
+     "T_DELETE"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DELETE}",
+     "params": {
+      "taskId": "${T_DELETE}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "startDeleted",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_vm",
+     "params": {
+      "name": "start_vm",
+      "arguments": {
+       "uri": "vm:local:vm1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_STARTDELETED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startDeletedDone",
+    "requires": [
+     "T_STARTDELETED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STARTDELETED}",
+     "params": {
+      "taskId": "${T_STARTDELETED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "registry",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "resources": "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status FROM resource_registry ORDER BY uri"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.container.gpu-probe",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_incus.go",
+   "internal/domain/host/gpu.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "probe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_gpu_container",
+     "params": {
+      "name": "probe_gpu_container",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.standalone.status",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/standalone.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "prerequisites",
+    "mcp": {
+     "method": "tools/call",
+     "name": "check_local_prerequisites",
+     "params": {
+      "name": "check_local_prerequisites",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "status",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_local_status",
+     "params": {
+      "name": "get_local_status",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "registry",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "resources": "SELECT uri, resource_type, tenant_id, resource_id, coordinates_json, status FROM resource_registry ORDER BY uri"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "cgroupMemory",
+      "usageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "cpuLoad1m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "cpuLoad5m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "cpuLoad15m"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "diskFilesystems",
+      "*",
+      "availableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "memoryFreeBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "memoryUsageBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "memoryUsedBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "resourceAdmission",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "resourceAdmission",
+      "currentUsage",
+      "*"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "resourceAdmission",
+      "diskAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "resourceAdmission",
+      "memoryAvailableBytes"
+     ],
+     "type": "non-negative-int",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "resourceAdmission",
+      "psi",
+      "*",
+      "*"
+     ],
+     "type": "number",
+     "reason": "live host measurement sampled at call time; value varies between any two calls, type is contract",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "diskMount"
+     ],
+     "type": "one-of",
+     "values": [
+      "/",
+      "${SANDBOX}/home"
+     ],
+     "reason": "the default disk paths are / and $HOME; Go reports the one with the fewest available bytes, and in the sandbox both are the same filesystem, so the choice is a race between equal candidates (any declared candidate is contract)",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "system",
+      "tasks",
+      "current"
+     ],
+     "type": "non-negative-int",
+     "reason": "Live cgroup pids.current counts host tasks at call time; separately started Go and Rust sample at different times. Type, presence, limits and enforcement remain checked.",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "structuredContent",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run"
+    },
+    {
+     "path": [
+      "steps",
+      "status",
+      "body",
+      "result",
+      "content",
+      0,
+      "text",
+      "$json",
+      "checkedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run"
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "prerequisites",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text"
+    ],
+    [
+     "steps",
+     "status",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.standalone.dir-pool",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/standalone.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": "incus-domain-dir-pool",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce"
+     }
+    }
+   },
+   {
+    "as": "prerequisites",
+    "mcp": {
+     "method": "tools/call",
+     "name": "check_local_prerequisites",
+     "params": {
+      "name": "check_local_prerequisites",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "prerequisites",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text"
+    ],
+    [
+     "steps",
+     "status",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.standalone.no-provider",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/standalone.go",
+   "internal/tools/dispatch_unassigned.go"
+  ],
+  "fixture": null,
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736"
+     }
+    }
+   },
+   {
+    "as": "prerequisites",
+    "mcp": {
+     "method": "tools/call",
+     "name": "check_local_prerequisites",
+     "params": {
+      "name": "check_local_prerequisites",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "status",
+    "mcp": {
+     "method": "tools/call",
+     "name": "get_local_status",
+     "params": {
+      "name": "get_local_status",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ],
+   "parseJson": [
+    [
+     "steps",
+     "prerequisites",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text"
+    ],
+    [
+     "steps",
+     "status",
+     "body",
+     "result",
+     "content",
+     "*",
+     "text"
+    ]
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.refusals",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "unconfirmed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": false,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_UNCONFIRMED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "unconfirmedDone",
+    "requires": [
+     "T_UNCONFIRMED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_UNCONFIRMED}",
+     "params": {
+      "taskId": "${T_UNCONFIRMED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "noReinstall",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": false,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOREINSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noReinstallDone",
+    "requires": [
+     "T_NOREINSTALL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOREINSTALL}",
+     "params": {
+      "taskId": "${T_NOREINSTALL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "fingerprintMismatch",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": "fp-2",
+       "disposableHostAuthorization": "dispose:fp-1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FINGERPRINTMISMATCH": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "fingerprintMismatchDone",
+    "requires": [
+     "T_FINGERPRINTMISMATCH"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FINGERPRINTMISMATCH}",
+     "params": {
+      "taskId": "${T_FINGERPRINTMISMATCH}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "noFingerprint",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": " ",
+       "expectedHostFingerprint": "",
+       "disposableHostAuthorization": "dispose:fp-1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOFINGERPRINT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noFingerprintDone",
+    "requires": [
+     "T_NOFINGERPRINT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOFINGERPRINT}",
+     "params": {
+      "taskId": "${T_NOFINGERPRINT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "wrongAuthorization",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-2"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_WRONGAUTHORIZATION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "wrongAuthorizationDone",
+    "requires": [
+     "T_WRONGAUTHORIZATION"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_WRONGAUTHORIZATION}",
+     "params": {
+      "taskId": "${T_WRONGAUTHORIZATION}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "noSelection",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOSELECTION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noSelectionDone",
+    "requires": [
+     "T_NOSELECTION"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOSELECTION}",
+     "params": {
+      "taskId": "${T_NOSELECTION}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "emptyInventory",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instancePrefix": "zzz"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_EMPTYINVENTORY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "emptyInventoryDone",
+    "requires": [
+     "T_EMPTYINVENTORY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_EMPTYINVENTORY}",
+     "params": {
+      "taskId": "${T_EMPTYINVENTORY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "foreign",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "alien1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FOREIGN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "foreignDone",
+    "requires": [
+     "T_FOREIGN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FOREIGN}",
+     "params": {
+      "taskId": "${T_FOREIGN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "mixed",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1",
+        " alien1 "
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_MIXED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "mixedDone",
+    "requires": [
+     "T_MIXED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_MIXED}",
+     "params": {
+      "taskId": "${T_MIXED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "checkpoint",
+    "readFile": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "json": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "content",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "checkpoint",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "optional": true,
+     "match": ".+",
+     "reason": "wall-clock timestamp of this side's run; an unstamped (empty) one still compares literally"
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.ownership-required",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "PATH": "${SANDBOX}/shims",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "notEnforced",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOTENFORCED": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "notEnforcedDone",
+    "requires": [
+     "T_NOTENFORCED"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOTENFORCED}",
+     "params": {
+      "taskId": "${T_NOTENFORCED}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.shared-owner-required",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims"
+     }
+    }
+   },
+   {
+    "as": "noSharedOwner",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_NOSHAREDOWNER": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "noSharedOwnerDone",
+    "requires": [
+     "T_NOSHAREDOWNER"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_NOSHAREDOWNER}",
+     "params": {
+      "taskId": "${T_NOSHAREDOWNER}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.shared-owner-other",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-other-instance"
+     }
+    }
+   },
+   {
+    "as": "otherOwner",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_OTHEROWNER": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "otherOwnerDone",
+    "requires": [
+     "T_OTHEROWNER"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_OTHEROWNER}",
+     "params": {
+      "taskId": "${T_OTHEROWNER}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.lifecycle",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "dryRun",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instancePrefix": "box",
+       "dryRun": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_DRYRUN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "dryRunDone",
+    "requires": [
+     "T_DRYRUN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_DRYRUN}",
+     "params": {
+      "taskId": "${T_DRYRUN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "afterDryRun",
+    "readFile": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "json": true
+    }
+   },
+   {
+    "as": "full",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1",
+        "boxer2",
+        "ghost"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FULL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "fullDone",
+    "requires": [
+     "T_FULL"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FULL}",
+     "params": {
+      "taskId": "${T_FULL}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "afterFull",
+    "readFile": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "json": true
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_AGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "againDone",
+    "requires": [
+     "T_AGAIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_AGAIN}",
+     "params": {
+      "taskId": "${T_AGAIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "content",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "checkpoint",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "optional": true,
+     "match": ".+",
+     "reason": "wall-clock timestamp of this side's run; an unstamped (empty) one still compares literally"
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.interrupted",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset-busy",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "busy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BUSY": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "busyDone",
+    "requires": [
+     "T_BUSY"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BUSY}",
+     "params": {
+      "taskId": "${T_BUSY}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "afterBusy",
+    "readFile": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "json": true
+    }
+   },
+   {
+    "as": "busyAgain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instancePrefix": "box1"
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_BUSYAGAIN": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "busyAgainDone",
+    "requires": [
+     "T_BUSYAGAIN"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_BUSYAGAIN}",
+     "params": {
+      "taskId": "${T_BUSYAGAIN}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "afterRetry",
+    "readFile": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "json": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "content",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "checkpoint",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "optional": true,
+     "match": ".+",
+     "reason": "wall-clock timestamp of this side's run; an unstamped (empty) one still compares literally"
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.resumed",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset-resumed",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "seed",
+    "write": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "content": "{\n  \"version\": \"incus-reset.v1\",\n  \"instanceId\": \"parity-owner\",\n  \"targets\": [\n    {\n      \"name\": \"box1\",\n      \"status\": \"Stopped\",\n      \"type\": \"container\",\n      \"owner\": \"parity-owner\"\n    }\n  ],\n  \"deleted\": [\n    \"box1\"\n  ],\n  \"phase\": \"interrupted\",\n  \"updatedAt\": \"2026-10-01T00:00:00Z\"\n}",
+     "mode": "0600"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "resume",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_RESUME": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "resumeDone",
+    "requires": [
+     "T_RESUME"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_RESUME}",
+     "params": {
+      "taskId": "${T_RESUME}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "afterResume",
+    "readFile": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "json": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "trace",
+      "*",
+      "argv",
+      "*"
+     ],
+     "type": "string",
+     "optional": true,
+     "match": "(\\$\\{SANDBOX\\}|/tmp/parity-[^/]+)/home/tmp/opute-zabbly-(key|source)-[0-9]+",
+     "reason": "os.CreateTemp names its key and source files randomly; argvFiles compares their bytes"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "content",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "result",
+      "structuredContent",
+      "checkpoint",
+      "updatedAt"
+     ],
+     "type": "rfc3339",
+     "optional": true,
+     "match": ".+",
+     "reason": "wall-clock timestamp of this side's run; an unstamped (empty) one still compares literally"
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.reset.checkpoint-invalid",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-reset",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "tmp",
+    "mkdir": {
+     "path": "${SANDBOX}/home/tmp"
+    }
+   },
+   {
+    "as": "seed",
+    "write": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "content": "{not json",
+     "mode": "0600"
+    }
+   },
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "PATH": "${SANDBOX}/shims",
+      "TMPDIR": "${SANDBOX}/home/tmp",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "invalid",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_INVALID": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "invalidDone",
+    "requires": [
+     "T_INVALID"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INVALID}",
+     "params": {
+      "taskId": "${T_INVALID}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "foreign",
+    "write": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "content": "{\n  \"version\": \"incus-reset.v1\",\n  \"instanceId\": \"someone-else\",\n  \"targets\": [\n    {\n      \"name\": \"box1\",\n      \"status\": \"Stopped\",\n      \"type\": \"container\",\n      \"owner\": \"parity-owner\"\n    }\n  ],\n  \"deleted\": [],\n  \"phase\": \"interrupted\",\n  \"updatedAt\": \"2026-10-01T00:00:00Z\"\n}",
+     "mode": "0600"
+    }
+   },
+   {
+    "as": "foreignCheckpoint",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_FOREIGNCHECKPOINT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "foreignCheckpointDone",
+    "requires": [
+     "T_FOREIGNCHECKPOINT"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_FOREIGNCHECKPOINT}",
+     "params": {
+      "taskId": "${T_FOREIGNCHECKPOINT}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "oldVersion",
+    "write": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "content": "{\n  \"version\": \"incus-reset.v0\",\n  \"instanceId\": \"parity-owner\",\n  \"targets\": [\n    {\n      \"name\": \"box1\",\n      \"status\": \"Stopped\",\n      \"type\": \"container\",\n      \"owner\": \"parity-owner\"\n    }\n  ],\n  \"deleted\": [],\n  \"phase\": \"interrupted\",\n  \"updatedAt\": \"2026-10-01T00:00:00Z\"\n}",
+     "mode": "0600"
+    }
+   },
+   {
+    "as": "oldVersion",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_OLDVERSION": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "oldVersionDone",
+    "requires": [
+     "T_OLDVERSION"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_OLDVERSION}",
+     "params": {
+      "taskId": "${T_OLDVERSION}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "typed",
+    "write": {
+     "path": "${SANDBOX}/instance/local-llm-relays/incus-reset-checkpoint.json",
+     "content": "{\"version\": \"incus-reset.v1\", \"instanceId\": \"parity-owner\", \"deleted\": [1]}",
+     "mode": "0600"
+    }
+   },
+   {
+    "as": "typedInvalid",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instanceNames": [
+        "box1"
+       ]
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_TYPEDINVALID": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "typedInvalidDone",
+    "requires": [
+     "T_TYPEDINVALID"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_TYPEDINVALID}",
+     "params": {
+      "taskId": "${T_TYPEDINVALID}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ]
+  }
+ },
+ {
+  "id": "incus-domain.d21.aliases",
+  "surface": "incus-domain",
+  "owner": "incus",
+  "anchors": [
+   "openspec/changes/neutral-instance-tool-names",
+   "crates/host-agent/catalog/neutral-names.json",
+   "internal/tools/dispatch_incus.go",
+   "internal/domain/incus/incus_stack.go",
+   "internal/domain/host/tool.go:InstallIncusStack",
+   "internal/tools/dispatch_incus.go",
+   "internal/domain/incus/incus_container.go",
+   "internal/domain/incus/incus_ownership.go",
+   "internal/tools/dispatch_incus.go"
+  ],
+  "fixture": "incus-domain-estate",
+  "collect": [
+   "trace"
+  ],
+  "steps": [
+   {
+    "as": "start",
+    "serve": {
+     "argv": [
+      "serve",
+      "--mode=standalone"
+     ],
+     "profile": "standalone",
+     "env": {
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+      "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+      "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+      "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+      "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+      "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+      "OPUTE_HOST_AGENT_INSTANCE": "parity-owner",
+      "OPUTE_INCUS_OWNERSHIP_MODE": "enforce",
+      "OPUTE_SHARED_HOST_OWNER_INSTANCE": "parity-owner"
+     }
+    }
+   },
+   {
+    "as": "list",
+    "mcp": {
+     "method": "tools/list"
+    }
+   },
+   {
+    "as": "alias",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_incus_stack",
+     "params": {
+      "name": "reset_incus_stack",
+      "arguments": {
+       "confirm": true,
+       "reinstall": true,
+       "disposableHostFingerprint": "fp-1",
+       "expectedHostFingerprint": " fp-1 ",
+       "disposableHostAuthorization": "dispose:fp-1",
+       "instancePrefix": "box",
+       "dryRun": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_ALIAS": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "aliasDone",
+    "requires": [
+     "T_ALIAS"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_ALIAS}",
+     "params": {
+      "taskId": "${T_ALIAS}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "goField",
+    "mcp": {
+     "method": "tools/call",
+     "name": "provision_container",
+     "params": {
+      "name": "provision_container",
+      "arguments": {
+       "containerName": "box1",
+       "gpu": true,
+       "wslGpuLibs": true
+      }
+     },
+     "expand": true,
+     "capture": {
+      "T_GOFIELD": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "goFieldDone",
+    "requires": [
+     "T_GOFIELD"
+    ],
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_GOFIELD}",
+     "params": {
+      "taskId": "${T_GOFIELD}"
+     },
+     "expand": true,
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 60
+    }
+   },
+   {
+    "as": "unknown",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reset_instance_stack",
+     "params": {
+      "name": "reset_instance_stack",
+      "arguments": {}
+     },
+     "expand": true
+    }
+   },
+   {
+    "as": "rows",
+    "query": {
+     "db": "${SANDBOX}/state/state.db",
+     "sql": {
+      "operations": "SELECT tool_name, status FROM operations ORDER BY tool_name",
+      "invocations": "SELECT operation_id, catalog_revision, terminal_status FROM capability_invocations ORDER BY operation_id"
+     }
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this side's run",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ]
+  }
+ }
+]
