@@ -50,7 +50,10 @@ def kubectl(*argv):
 # incus client. The incus client configuration is created before any
 # baseline (the M8b note on INCUS_CLIENT), so it is not attributed to a call.
 PROVIDER = [
-    shell("incusClient", ["sudo", "-u", "ubuntu", "-H", "incus", "list", "--format", "csv"]),
+    # Names and states only: k1's address list grows by the cni0 and
+    # flannel.1 interfaces whenever k3s networking comes up, which is twin
+    # timing, not an effect (M8c round 3, Go/Go 1 in 20).
+    shell("incusClient", ["sudo", "-u", "ubuntu", "-H", "incus", "list", "--format", "csv", "-c", "ns"]),
     shell("provider", ["systemd-run", "--unit=parity-provider", "-p", "User=ubuntu", "-p", "Group=ubuntu",
                        "-p", f"WorkingDirectory={ROOT}", "-E", f"OPUTE_PROVIDER_PORT={PROVIDER_PORT}",
                        "-E", "HOME=/home/ubuntu", f"{ROOT}/opute-provider-k3s", "serve"]),
