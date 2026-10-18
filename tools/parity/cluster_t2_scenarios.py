@@ -59,12 +59,14 @@ PROVIDER = [
                        "-E", "HOME=/home/ubuntu", f"{ROOT}/opute-provider-k3s", "serve"]),
     shell("providerListening", ["sh", "-c", f"for i in $(seq 1 100); do ss -ltn | grep -q '127.0.0.1:{PROVIDER_PORT} ' "
                                             "&& exit 0; sleep 0.2; done; exit 1"]),
+    # Compared by its exit status only: whether kubectl prints a rollout's
+    # progress before it completes is twin timing (M8d round 2, Go/Go 1 in 20).
     shell("k3sReady", ["sh", "-c",
-                       "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; "
+                       "(incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; "
                        "do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 "
                        "--timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner "
                        "registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status "
-                       "deploy/${d#*/} --timeout=600s || exit 1; done"]),
+                       "deploy/${d#*/} --timeout=600s || exit 1; done) >/dev/null"]),
 ]
 
 

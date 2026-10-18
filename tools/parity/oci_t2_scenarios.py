@@ -48,10 +48,6 @@ NO_SESSION = ["XDG_RUNTIME_DIR"]
 def setup():
     steps = copy.deepcopy(ct.setup())
     steps[0]["serve"]["unset"] = NO_SESSION
-    # The readiness wait is compared by its exit status: whether kubectl
-    # printed a rollout's progress before it finished is twin timing.
-    ready = next(s for s in steps if s.get("as") == "k3sReady")
-    ready["shell"]["argv"] = ["sh", "-c", "(" + ready["shell"]["argv"][-1] + ") >/dev/null"]
     return steps
 
 
@@ -72,8 +68,10 @@ def scenario(id_, steps, anchors, residue, masks=(), rejected_only=False):
 APP = {"Dockerfile": "FROM scratch\nCOPY . /app\n", "src/main.txt": "hello from the parity twin\n"}
 REGISTRY_ARGS = {"uri": K1, "image": "registry:2.8.3", "storageSize": "1Gi"}
 # The registry's rollout: a pod on k1's own clock, waited for before a push.
-REGISTRY_READY = shell("registryReady", ct.kubectl("-n", "registry-system", "rollout", "status",
-                                                   "deploy/local-registry", "--timeout=600s"))
+# Compared by its exit status only, like the k3s readiness wait: kubectl
+# prints the rollout's progress on its own clock.
+REGISTRY_READY = shell("registryReady", ["sh", "-c", "incus exec k1 -- k3s kubectl -n registry-system rollout status "
+                                                     "deploy/local-registry --timeout=600s >/dev/null"])
 SERVER_ASSIGNED = "assigned by k1's API server and controllers; the Deployment is compared in the snapshot"
 STATUS_MASKS = [
     {"path": ["steps", "status", "body", "result", "content", 0, "text"], "type": "string",

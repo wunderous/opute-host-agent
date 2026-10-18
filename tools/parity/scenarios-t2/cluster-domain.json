@@ -81,7 +81,7 @@
      "argv": [
       "sh",
       "-c",
-      "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done"
+      "(incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done) >/dev/null"
      ],
      "user": "root"
     }
@@ -4797,7 +4797,7 @@
      "argv": [
       "sh",
       "-c",
-      "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done"
+      "(incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done) >/dev/null"
      ],
      "user": "root"
     }
@@ -9134,7 +9134,7 @@
      "argv": [
       "sh",
       "-c",
-      "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done"
+      "(incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done) >/dev/null"
      ],
      "user": "root"
     }
@@ -13947,7 +13947,7 @@
      "argv": [
       "sh",
       "-c",
-      "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done"
+      "(incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done) >/dev/null"
      ],
      "user": "root"
     }
@@ -18015,7 +18015,7 @@
      "argv": [
       "sh",
       "-c",
-      "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done"
+      "(incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && for d in kube-system/coredns kube-system/local-path-provisioner registry/opute-registry; do incus exec k1 -- k3s kubectl -n ${d%/*} rollout status deploy/${d#*/} --timeout=600s || exit 1; done) >/dev/null"
      ],
      "user": "root"
     }

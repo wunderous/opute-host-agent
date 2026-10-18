@@ -364,18 +364,9 @@
     "as": "registryReady",
     "shell": {
      "argv": [
-      "incus",
-      "exec",
-      "k1",
-      "--",
-      "k3s",
-      "kubectl",
-      "-n",
-      "registry-system",
-      "rollout",
-      "status",
-      "deploy/local-registry",
-      "--timeout=600s"
+      "sh",
+      "-c",
+      "incus exec k1 -- k3s kubectl -n registry-system rollout status deploy/local-registry --timeout=600s >/dev/null"
      ],
      "user": "root"
     }
