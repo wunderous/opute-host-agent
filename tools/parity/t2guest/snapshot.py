@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import os
 import pwd
+import re
 import grp
 import stat
 import subprocess
@@ -131,6 +132,11 @@ def _run(argv: list[str], user: bool = False) -> tuple[int, str]:
     return p.returncode, p.stdout
 
 
+# logind's login sessions are the driver's own ssh connections; one is
+# collected on logind's clock once its last process leaves (M8d round 1).
+_LOGIN_SESSION = re.compile(r"session-[0-9]+\.scope")
+
+
 def _manager(user: bool) -> dict:
     if user and not os.path.exists(f"/run/user/{USER_UID}/bus"):
         return {"running": False}
@@ -140,12 +146,12 @@ def _manager(user: bool) -> dict:
     files_ = {}
     for line in unit_files.splitlines():
         parts = line.split()
-        if len(parts) >= 2:
+        if len(parts) >= 2 and not _LOGIN_SESSION.fullmatch(parts[0]):
             files_[parts[0]] = parts[1]
     loaded = {}
     for line in units.splitlines():
         parts = line.split(None, 4)
-        if len(parts) >= 4:
+        if len(parts) >= 4 and not _LOGIN_SESSION.fullmatch(parts[0]):
             loaded[parts[0]] = {"load": parts[1], "active": parts[2], "sub": parts[3]}
     return {"running": True, "unitFiles": files_, "units": loaded}
 
