@@ -580,6 +580,10 @@ OCI_RECIPE = [
     f"incus config device override k1 eth0 ipv4.address={OCI_K1_ADDRESS}",
     "apt-get update -q",
     "DEBIAN_FRONTEND=noninteractive apt-get install -y -q podman buildah",
+    # The packages enable their own timers (podman-auto-update.timer): quiet
+    # them as the base golden's stabilize step quiets the image's (M8d
+    # round 1, a timer fired in one twin only).
+    STABILIZE[1],
     f"install -d /etc/containers && printf '%s' {shlex.quote(CONTAINERS_CONF)} > /etc/containers/containers.conf",
     OCI_SEED,
     # podman's readiness probe as the agent runs it, once the store exists
@@ -624,6 +628,7 @@ def build_oci_golden() -> dict:
                                  ("podmanVersion", "podman --version"), ("buildahVersion", "buildah --version"),
                                  ("images", AS_UBUNTU + shlex.quote("cd ~ && podman images --format json")),
                                  ("k1Address", "incus list k1 -c 4 --format csv"),
+                                 ("timers", "systemctl list-timers --all --no-legend --no-pager"),
                                  ("instance", "incus config show k1")):
                 done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                       timeout=120)
