@@ -288,3 +288,51 @@ class RedactedRowAlignment(unittest.TestCase):
         aligned = shape.align_redacted_rows(go, rust)
         self.assertEqual(runner._lookup(aligned, self.path), [{"args": {"state": "stop"}}])
         self.assertTrue(canon.diff(go, aligned))
+
+
+class LiveHostRows(unittest.TestCase):
+    DECLARED = {"liveHostRows": {"table": "resource_registry", "resourceType": "host-service",
+                                 "reason": "a live listing of the developer host's units"}}
+
+    def row(self, name, scope="system"):
+        uri = f"host-service:local:{scope}/{name}"
+        return uri, {"uri": uri, "resource_type": "host-service", "tenant_id": "local",
+                     "resource_id": f"{scope}/{name}", "status": "active",
+                     "coordinates_json": {"$json": {"scope": scope, "serviceName": name}}}
+
+    def doc(self, *rows, other=True):
+        table = dict(rows)
+        if other:
+            table["incus:local:c1"] = {"uri": "incus:local:c1", "resource_type": "incus"}
+        return {"sqlite": {"state/state.db": {"rowCounts": {"resource_registry": len(table)}}},
+                "sqliteRows": {"state/state.db": {"tables": {"resource_registry": table}}}}
+
+    def test_a_unit_listed_by_one_side_only_is_the_host(self):
+        violations = {"a": [], "b": []}
+        a, b = shape.drop_live_host_rows(self.DECLARED, self.doc(self.row("dbus")),
+                                         self.doc(self.row("dbus"), self.row("NetworkManager-dispatcher")),
+                                         violations)
+        self.assertEqual(canon.diff(a, b), [])
+        self.assertEqual(violations, {"a": [], "b": []})
+        self.assertEqual(a["sqlite"]["state/state.db"]["rowCounts"]["resource_registry"], 1)
+
+    def test_other_rows_are_still_compared(self):
+        violations = {"a": [], "b": []}
+        a, b = shape.drop_live_host_rows(self.DECLARED, self.doc(self.row("dbus")),
+                                         self.doc(self.row("dbus"), other=False), violations)
+        self.assertTrue(canon.diff(a, b))
+
+    def test_undeclared_scenarios_compare_every_row(self):
+        go, rust = self.doc(self.row("dbus")), self.doc(self.row("dbus"), self.row("extra"))
+        a, b = shape.drop_live_host_rows({}, go, rust, {"a": [], "b": []})
+        self.assertTrue(canon.diff(a, b))
+
+    def test_a_malformed_registration_or_a_missing_listing_is_a_violation(self):
+        uri, bad = self.row("dbus")
+        bad = dict(bad, resource_id="system/other")
+        violations = {"a": [], "b": []}
+        shape.drop_live_host_rows(self.DECLARED, self.doc((uri, bad)), self.doc(self.row("dbus")), violations)
+        self.assertTrue(violations["a"])
+        violations = {"a": [], "b": []}
+        shape.drop_live_host_rows(self.DECLARED, self.doc(), self.doc(self.row("dbus")), violations)
+        self.assertTrue(violations["a"] and violations["b"])
