@@ -42,6 +42,14 @@ pub struct Host {
     /// The in-process relays into guests (`tcprelay`): the cluster agent's
     /// guest bridge forwarders, revoked before a stack reset deletes guests.
     pub relays: Arc<crate::tcprelay::Manager>,
+    /// `filepath.Join(RelayConfigDir, "postgresql-service-relays")`: where a
+    /// persistent PostgreSQL service relay is kept (M8e).
+    pub postgres_relay_dir: String,
+    /// `OPUTE_HOST_AGENT_SQLITE_ROOT`: local SQLite databases (M8e).
+    pub sqlite_root: String,
+    /// The postgres domain, built on its first call; the stack reset
+    /// revokes its relays only once it exists.
+    pub postgres: Arc<std::sync::OnceLock<Arc<crate::postgresops::Live>>>,
     /// `adoptResource` for a cluster URI: the Kubernetes domain, bound when
     /// the built-in services are composed.
     pub cluster_adopter: Arc<std::sync::OnceLock<ClusterAdopter>>,

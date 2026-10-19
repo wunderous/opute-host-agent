@@ -374,6 +374,16 @@ pub(crate) fn compose(
                 .to_string()
         },
         relays: Default::default(),
+        postgres_relay_dir: if cfg.relay_config_dir.as_os_str().is_empty() {
+            String::new()
+        } else {
+            cfg.relay_config_dir
+                .join("postgresql-service-relays")
+                .display()
+                .to_string()
+        },
+        sqlite_root: cfg.sqlite_database_root.display().to_string(),
+        postgres: Default::default(),
         cluster_adopter: Default::default(),
     };
     // `reclaimTerminalTaskReservations`: a reservation whose task is now

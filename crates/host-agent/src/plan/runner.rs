@@ -174,7 +174,7 @@ impl RunCtx {
     /// Sleeps `duration` in short slices, checking cancellation between each
     /// so `sleepBackoff`/polling loops stay responsive to cancel-mid-wait
     /// the same way Go's `select { <-ctx.Done(): ... }` does.
-    fn sleep(&self, duration: Duration) -> Result<(), String> {
+    pub(crate) fn sleep(&self, duration: Duration) -> Result<(), String> {
         let deadline = Instant::now() + duration;
         loop {
             if let Some(e) = self.err() {
