@@ -70,7 +70,7 @@ def check_suite(root: Path, manifest: dict, name: str, suite: dict, scenarios: d
         if not pinned or any(summary.get("incusGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("nested-Incus golden image differs from the pinned one")
     # Scenarios booted from the k3s golden pin it and the provider they run.
-    if any(s.get("golden") in ("k3s", "oci") for s in scenarios.values()):
+    if any(s.get("golden") in t2.K3S_OVERLAYS for s in scenarios.values()):
         pinned = manifest.get("t2Evidence", {}).get("k3sGolden", {})
         if not pinned or any(summary.get("k3sGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("k3s golden image or its provider differs from the pinned one")
@@ -79,6 +79,11 @@ def check_suite(root: Path, manifest: dict, name: str, suite: dict, scenarios: d
         pinned = manifest.get("t2Evidence", {}).get("ociGolden", {})
         if not pinned or any(summary.get("ociGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("OCI golden image or its packages differ from the pinned ones")
+    # Scenarios booted from the PostgreSQL golden pin it, its chart and images.
+    if any(s.get("golden") == "postgres" for s in scenarios.values()):
+        pinned = manifest.get("t2Evidence", {}).get("postgresGolden", {})
+        if not pinned or any(summary.get("postgresGolden", {}).get(k) != v for k, v in pinned.items()):
+            stale.append("PostgreSQL golden image, its chart or its images differ from the pinned ones")
     for guest, digest in (summary.get("guestSha256") or {}).items():
         if _sha(t2.GUEST_DIR / guest) != digest:
             stale.append(f"guest script {guest} changed since the capture")

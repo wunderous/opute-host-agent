@@ -662,11 +662,167 @@ def oci_golden_record() -> dict:
     return record
 
 
+# The PostgreSQL golden (M8e): an overlay of the k3s golden with the
+# CloudNativePG operator Go's postgres domain installs. Go applies an
+# unpinned HelmChart (the latest chart of cloudnative-pg.github.io/charts);
+# the golden's helm controller is disabled, so the twin runs the chart
+# release current when it was pinned (0.29.1, operator 1.30.1), rendered by
+# helm with Go's own values under the release name Go's HelmChart gives
+# it. The operator image and Go's operand image are pulled once, by digest,
+# at build time and tagged as Go names them; both pull IfNotPresent, so no
+# twin pulls anything. A throwaway Cluster proves the operand starts from
+# the preloaded image before the golden is sealed. k1 keeps the reserved
+# address of the OCI golden, so a NodePort on it is the same in every twin.
+POSTGRES_GOLDEN = "golden-postgres"
+CNPG_CHART_VERSION = "0.29.1"
+CNPG_CHART_URL = ("https://github.com/cloudnative-pg/charts/releases/download/"
+                  f"cloudnative-pg-v{CNPG_CHART_VERSION}/cloudnative-pg-{CNPG_CHART_VERSION}.tgz")
+CNPG_CHART_SHA256 = "b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df"
+CNPG_IMAGES = {
+    "ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1":
+        "sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07",
+    "ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie":
+        "sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6",
+}
+# renderPostgreSQLServiceOperatorManifest's valuesContent, verbatim.
+CNPG_VALUES = """monitoring:
+  enabled: false
+config:
+  maxConcurrentReconciles: 1
+webhook:
+  livenessProbe:
+    initialDelaySeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 30
+  startupProbe:
+    failureThreshold: 24
+    periodSeconds: 5
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 500m
+    memory: 128Mi
+"""
+CNPG_WARM = """apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: warm
+  namespace: parity-warm
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie
+  storage:
+    size: 256Mi
+"""
+K1 = "incus exec k1 -- k3s "
+POSTGRES_RECIPE = [
+    "incus admin waitready --timeout=180",
+    K3S_READY,
+    f"test \"$(incus list k1 -c 4 --format csv | grep -o '10\\.0\\.100\\.[0-9]*')\" = {OCI_K1_ADDRESS} && "
+    f"incus config device override k1 eth0 ipv4.address={OCI_K1_ADDRESS}",
+    *[f"{K1}ctr images pull {image.rsplit(':', 1)[0]}@{digest} && "
+      f"{K1}ctr images tag {image.rsplit(':', 1)[0]}@{digest} {image}" for image, digest in CNPG_IMAGES.items()],
+    f"curl -fsSL -o /tmp/cnpg.tgz {CNPG_CHART_URL} && echo '{CNPG_CHART_SHA256}  /tmp/cnpg.tgz' | sha256sum -c - && "
+    f"printf '%s' {shlex.quote(CNPG_VALUES)} > /tmp/cnpg-values.yaml && "
+    "helm template cloudnativepg /tmp/cnpg.tgz --namespace cnpg-system --include-crds -f /tmp/cnpg-values.yaml "
+    f"> /tmp/cnpg.yaml && {K1}kubectl create namespace cnpg-system && "
+    f"{K1}kubectl apply --server-side -f - < /tmp/cnpg.yaml && rm -f /tmp/cnpg.tgz /tmp/cnpg-values.yaml /tmp/cnpg.yaml",
+    f"{K1}kubectl -n cnpg-system wait --for=condition=Available deployment --all --timeout=600s",
+    f"timeout 600 sh -c 'until {K1}kubectl -n cnpg-system get endpoints cnpg-webhook-service "
+    "-o jsonpath={.subsets[0].addresses[0].ip} | grep -q .; do sleep 2; done'",
+    # The operand starts from the preloaded image alone: the image list is
+    # unchanged by a throwaway Cluster's whole life.
+    f"{K1}crictl images -q | sort > /tmp/images-before && {K1}kubectl create namespace parity-warm && "
+    f"printf '%s' {shlex.quote(CNPG_WARM)} | {K1}kubectl apply -f - && "
+    f"timeout 900 sh -c 'until [ \"$({K1}kubectl -n parity-warm get cluster warm "
+    "-o jsonpath={.status.readyInstances})\" = 1 ]; do sleep 5; done' && "
+    f"{K1}kubectl delete namespace parity-warm --wait=true --timeout=600s && "
+    f"{K1}crictl images -q | sort | diff /tmp/images-before - && rm /tmp/images-before",
+    # Its volume is released too (the registry's own volume stays).
+    f"timeout 600 sh -c 'while {K1}kubectl get pv -o jsonpath={{.items[*].spec.claimRef.namespace}} "
+    "| grep -qw parity-warm; do sleep 2; done'",
+    "sync",
+]
+
+
+def build_postgres_golden() -> dict:
+    """Build the PostgreSQL golden once, as an overlay of the k3s golden."""
+    base = k3s_golden_record()
+    golden = WORK / f"{POSTGRES_GOLDEN}.qcow2"
+    if golden.exists():
+        raise RuntimeError(f"{golden} exists; a golden image is never rebuilt in place")
+    with (WORK / "golden.lease").open("a+") as lease:
+        fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b",
+                        str(WORK / f"{K3S_GOLDEN}.qcow2"), str(golden)], check=True)
+        port = _free_port()
+        argv = _qemu(golden, WORK / "seed.img", port, WORK / f"{POSTGRES_GOLDEN}-serial.log", INCUS_MEMORY_MB)
+        process = subprocess.Popen(argv, stdout=(WORK / f"{POSTGRES_GOLDEN}-qemu.log").open("w"),
+                                   stderr=subprocess.STDOUT)
+        log = []
+        try:
+            _wait_ssh(port, process)
+            ssh = _ssh_base(port)
+            subprocess.run(ssh + ["systemctl is-system-running --wait >/dev/null 2>&1; true"], capture_output=True)
+            for command in POSTGRES_RECIPE:
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=3600)
+                log.append({"command": command, "exit": done.returncode, "stderr": done.stderr[-2000:]})
+                if done.returncode != 0:
+                    raise RuntimeError(f"postgres golden {command!r}: {done.stderr[-2000:]}")
+            facts = {}
+            for key, command in (("images", K1 + "crictl images --digests"),
+                                 ("operator", K1 + "kubectl -n cnpg-system get deployments -o "
+                                                   "jsonpath='{range .items[*]}{.metadata.name} "
+                                                   "{.spec.template.spec.containers[0].image}{\"\\n\"}{end}'"),
+                                 ("crds", K1 + "kubectl get crd -o name"),
+                                 ("pods", K1 + "kubectl get pods -A -o wide"),
+                                 ("k1Address", "incus list k1 -c 4 --format csv"),
+                                 ("instance", "incus config show k1")):
+                done = subprocess.run(ssh + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                      timeout=120)
+                facts[key] = done.stdout
+            subprocess.run(ssh + ["sync; poweroff"], capture_output=True)
+            process.wait(timeout=300)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        record = {
+            "scope": "T2 PostgreSQL golden: an overlay of the k3s golden, dedicated and disposable; the "
+                     "CloudNativePG operator and every PostgreSQL Cluster run only inside twins booted from it; "
+                     "no shared Incus/Kubernetes/registry/tunnel/deploy state and no real database",
+            "k3sGoldenSha256": base["goldenSha256"], "chart": {"version": CNPG_CHART_VERSION, "url": CNPG_CHART_URL,
+                                                              "sha256": CNPG_CHART_SHA256},
+            "images": CNPG_IMAGES, "recipe": POSTGRES_RECIPE, "recipeLog": log, "facts": facts,
+            "memoryMb": INCUS_MEMORY_MB, "goldenSha256": sha256_file(golden),
+            "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "qemuArgv": argv,
+        }
+        golden.chmod(0o444)
+        (WORK / f"{POSTGRES_GOLDEN}.json").write_text(json.dumps(record, indent=1) + "\n")
+        return record
+
+
+def postgres_golden_record() -> dict:
+    record = json.loads((WORK / f"{POSTGRES_GOLDEN}.json").read_text())
+    actual = sha256_file(WORK / f"{POSTGRES_GOLDEN}.qcow2")
+    if actual != record["goldenSha256"]:
+        raise RuntimeError(f"postgres golden image changed: {actual} != {record['goldenSha256']}")
+    if record["k3sGoldenSha256"] != k3s_golden_record()["goldenSha256"]:
+        raise RuntimeError("postgres golden was built over a different k3s golden")
+    return record
+
+
+# Goldens built over the k3s golden: they pin it and run its provider.
+K3S_OVERLAYS = ("k3s", "oci", "postgres")
 GOLDEN_IMAGES = {"base": "golden.qcow2", "incus": f"{INCUS_GOLDEN}.qcow2", "k3s": f"{K3S_GOLDEN}.qcow2",
-                 "oci": f"{OCI_GOLDEN}.qcow2"}
+                 "oci": f"{OCI_GOLDEN}.qcow2", "postgres": f"{POSTGRES_GOLDEN}.qcow2"}
 # The k3s twins also carry the pinned Go k3s provider, which the scenario
 # starts in the guest (the agent never spawns providers).
-GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"], "oci": [agent.PROVIDER_BIN / "opute-provider-k3s"]}
+GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"], "oci": [agent.PROVIDER_BIN / "opute-provider-k3s"],
+                "postgres": [agent.PROVIDER_BIN / "opute-provider-k3s"]}
 
 
 # --- one twin -----------------------------------------------------------------------
@@ -984,8 +1140,9 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     golden = golden_record()
     scenarios_all = load_scenarios(ids)
     incus = incus_golden_record() if any(s.get("golden") == "incus" for s in scenarios_all) else None
-    k3s = k3s_golden_record() if any(s.get("golden") in ("k3s", "oci") for s in scenarios_all) else None
+    k3s = k3s_golden_record() if any(s.get("golden") in K3S_OVERLAYS for s in scenarios_all) else None
     oci = oci_golden_record() if any(s.get("golden") == "oci" for s in scenarios_all) else None
+    postgres = postgres_golden_record() if any(s.get("golden") == "postgres" for s in scenarios_all) else None
     # Hashed before the first twin boots: these are the bytes every twin of
     # this run receives (the harness is never edited mid-capture).
     guest_hashes = {name: sha256_file(GUEST_DIR / name) for name in GUEST_FILES}
@@ -1065,6 +1222,10 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
         **({"ociGolden": {"goldenSha256": oci["goldenSha256"], "k3sGoldenSha256": oci["k3sGoldenSha256"],
                           "packages": oci["facts"]["packages"], "debSha256": oci["facts"]["debSha256"]}}
            if oci else {}),
+        **({"postgresGolden": {"goldenSha256": postgres["goldenSha256"],
+                               "k3sGoldenSha256": postgres["k3sGoldenSha256"], "chart": postgres["chart"],
+                               "images": postgres["images"]}}
+           if postgres else {}),
         "guestSha256": guest_hashes, "harnessSha256": harness_hash, "scenarioSha256": scenario_hashes,
         "repeat": repeat, "scenarios": results,
     }

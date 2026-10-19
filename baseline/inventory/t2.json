@@ -146,6 +146,18 @@
   },
   {
    "effect": "EffectDestructive",
+   "inertReason": "as install_postgresql: no resource binding, so every call refuses with 'kubernetes provider instance name is required' before reaching the provider",
+   "neutralName": "delete_postgresql",
+   "owner": "postgres",
+   "status": "inert",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "delete_postgresql"
+  },
+  {
+   "effect": "EffectDestructive",
    "neutralName": "delete_vm",
    "owner": "incus",
    "status": "covered",
@@ -290,6 +302,30 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "ensure_sql_connector",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [],
+   "t2Scenarios": [
+    "t2.postgres-domain.service.lifecycle"
+   ],
+   "tool": "ensure_sql_connector"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_sqlite_database",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.postgres-domain.sqlite.lifecycle"
+   ],
+   "tool": "ensure_sqlite_database"
+  },
+  {
+   "effect": "EffectMutation",
    "inertReason": "catalog-excluded (CatalogExcludedToolNames), so Go resolves it no resource binding and every call refuses with 'name is required' before running anything; t2.incus-domain.container.lifecycle calls it by name and by URI against a live owned container and checks inside the guest that nothing ran",
    "neutralName": "exec_command",
    "owner": "host",
@@ -393,6 +429,18 @@
   },
   {
    "effect": "EffectMutation",
+   "inertReason": "Go takes the cluster VM only from the call's resource binding (vmNameFromBinding), and its catalog entry declares no resource argument, so every call refuses with 'vmName is required' before reaching the provider; compared in T1 (postgres-domain.standalone) and in T2 (t2.postgres-domain.admission.rejected-no-effect)",
+   "neutralName": "install_postgresql",
+   "owner": "postgres",
+   "status": "inert",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "install_postgresql"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "prepare_host_agent_artifacts",
    "owner": "host",
    "status": "covered",
@@ -486,6 +534,19 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "reconcile_postgresql_service",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.postgres-domain.service.lifecycle"
+   ],
+   "tool": "reconcile_postgresql_service"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "recover_bridge",
    "owner": "host",
    "status": "covered",
@@ -496,6 +557,30 @@
     "t2.host-domain.bridge.recover"
    ],
    "tool": "recover_bridge"
+  },
+  {
+   "effect": "EffectCredential",
+   "neutralName": "release_postgresql_service_relay",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.postgres-domain.service.lifecycle"
+   ],
+   "tool": "release_postgresql_service_relay"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "release_sql_connector",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [],
+   "t2Scenarios": [
+    "t2.postgres-domain.service.lifecycle"
+   ],
+   "tool": "release_sql_connector"
   },
   {
    "effect": "EffectDestructive",
@@ -511,6 +596,19 @@
     "t2.host-domain.services.user-lifecycle"
    ],
    "tool": "remove_host_file"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "remove_postgresql_service",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.postgres-domain.service.lifecycle"
+   ],
+   "tool": "remove_postgresql_service"
   },
   {
    "effect": "EffectDestructive",
@@ -538,6 +636,19 @@
     "t2.cluster-domain.resources.lifecycle"
    ],
    "tool": "remove_service_domain"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "remove_sqlite_database",
+   "owner": "postgres",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.postgres-domain.sqlite.lifecycle"
+   ],
+   "tool": "remove_sqlite_database"
   },
   {
    "effect": "EffectDestructive",
@@ -606,6 +717,18 @@
     "t2.incus-domain.vm.lifecycle"
    ],
    "tool": "run_instance_command"
+  },
+  {
+   "effect": "EffectMutation",
+   "inertReason": "as install_postgresql: no resource binding, so every call refuses with 'vmName and sql are required' before reaching the provider",
+   "neutralName": "run_sql",
+   "owner": "postgres",
+   "status": "inert",
+   "t2RejectedScenarios": [
+    "t2.postgres-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "run_sql"
   },
   {
    "effect": "EffectMutation",
