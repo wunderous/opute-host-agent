@@ -11,5 +11,5 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 Value scenario: each Go value reaches the same Consumer as its published value, and results publish the mapped value. The OCI T1 scenarios call with Go's values, and D19 compares `tools/list` and results.
-- [ ] 3.2 Include the value map in the M8d closing captures: Go/Go ×20 and Go/Rust ×5.
+- [x] 3.1 Value scenario: each Go value reaches the same Consumer as its published value, and results publish the mapped value. The OCI T1 scenarios call with Go's values, and D19 compares `tools/list` and results. Done 2026-10-18: the crate test `d23_publishes_neutral_selector_values` routes a Go value and its published value to the same Consumer value, and the 18 oci-domain T1 scenarios pass with D19 applied (never stale).
+- [x] 3.2 Include the value map in the M8d closing captures: Go/Go ×20 and Go/Rust ×5. Done 2026-10-18: M8d round 4, 305/305 in both suites (`evidence/m8d/README.md`).

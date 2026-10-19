@@ -708,6 +708,24 @@ D22 publishes nine neutral cluster tool names. No M8c inventory gap remains,
 and the six cluster environment reads are covered. The cutover gate fails, as
 expected, on the remaining owned gaps.
 
+**8d status (2026-10-18): exit gate met.** Evidence:
+[`evidence/m8d/README.md`](../../../evidence/m8d/README.md). The m8d gate
+passes, and gates m0–m6, m8a, m8b and m8c still pass:
+
+- T1 Go/Rust ×5 is 305/305 and Go/Go ×20 is 305/305. All 18 oci-domain
+  scenarios pass in both suites.
+- T2 is 27/27 in both twin suites (Go/Go ×20, Go/Rust ×5). The three OCI
+  scenarios run real rootless podman and buildah in each twin. They build
+  `FROM scratch` and push only to the registry `install_oci_registry`
+  deploys in the twin's k3s. They cover storage policy and cleanup, and the
+  M4 no-unauthorized-effect rerun.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+D23 publishes neutral values for the `builder` and `runtime` selectors; the
+tool names stay Go's. No M8d inventory gap remains: the `podman` and `buildah`
+effect tiers are `T2-sandbox`. The cutover gate fails, as expected, on the
+remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,
