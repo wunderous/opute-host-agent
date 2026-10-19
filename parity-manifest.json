@@ -7,19 +7,19 @@
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
   "platform": {
    "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
-   "rust": "sha256:dd7912a39de6ab1a712291178974ee6ec6e5bfd1f714d34032948fb960da8aa9"
+   "rust": "sha256:4dd2dc8182fa210656a16b9d35c91d448626a633ef6e5bbb5391e0c975385409"
   },
   "providerFixtures": [
    {
     "go": "sha256:1a276524cb4b16825e7b3bf57c6eac46bc06eb18006c0498dfd3546c335bbf76",
-    "rust": "sha256:6ebc903241e66cae5c5c46a0a7e334bd206453d0857ea32af819c8d673a0ba33",
+    "rust": "sha256:6405a7e8c59b49bd24faada6eb9017078218f4acddbfc21623db535083807f0c",
     "scenarios": [
      "provider-lifecycle.bad-manifest.service-capability-not-provided"
     ]
    },
    {
     "go": "sha256:5232386ef9e128383d080cfac767b78b2e87421ae5c894b2163b3920e1d3fcad",
-    "rust": "sha256:d56290533c3e183fdb6239cd25bba76a043c24976d2a34cf39232431183f05be",
+    "rust": "sha256:f560fe3f29abd1274854ba182822e77efbd71cd2009ace00b4a4ceea16a081ed",
     "scenarios": [
      "provider-lifecycle.bad-manifest.validation-operation-undeclared",
      "provider-lifecycle.builtin-family.require",
@@ -51,7 +51,7 @@
    },
    {
     "go": "sha256:5d13b1a6d3393d07ecaf48cf57f51db506d374a74a2286cf368dea9a658e7a6f",
-    "rust": "sha256:494a1912274a59bed008fa26661e08b5030ee27d9ec42a18a544592d511ce874",
+    "rust": "sha256:e415ee7e0260bedcbed1ff31f778958f0f071e77c147be4b5a136193b97ef145",
     "scenarios": [
      "provider-lifecycle.callback.bridged-without-task-extension",
      "provider-lifecycle.callback.cancel-bridged-task-refused",
@@ -71,14 +71,14 @@
    },
    {
     "go": "sha256:34b809740a5f3a396d5e86a5a3c73d06988ad8156cbbda3b406935d11d99748e",
-    "rust": "sha256:e29bf4db20028bdcafc8fd5dac33139918d4655d02b31f00f8cb7a48dae3a446",
+    "rust": "sha256:5d3d9358b1189ee069d0ba7675b541164fcfcbaea6631cb08654e8f9b3c486c8",
     "scenarios": [
      "provider-lifecycle.family.rejected-candidate-keeps-owner"
     ]
    },
    {
     "go": "sha256:0b13468ed1005c919c2e0309dd67a406ac824c9791648a25fbe1248845ef6385",
-    "rust": "sha256:5a056380e47c068f7c2bc5f65ca600a3a816e8ddbfbd2632db4d9face63d7f4a",
+    "rust": "sha256:781d9da6153b46759820da06584dd24757efdae71f361f35472d9d96269f5d3e",
     "scenarios": [
      "provider-lifecycle.family.replacement-keeps-accepted-call",
      "provider-lifecycle.family.rollback-restores-owner"
@@ -86,7 +86,7 @@
    },
    {
     "go": "sha256:850550e436d511df91f0266999c2f7eb2e0530873e1c4b5e57207d90b623b210",
-    "rust": "sha256:2fbde4662f6ddbf9f5826fd650ccc9b858e29b74887a6acd8e2529a326800b9b",
+    "rust": "sha256:9a6871c25eea2b12fd844770b662fd8ccec84e60f924a2b0e65a01c0fd2c1a45",
     "scenarios": [
      "provider-lifecycle.readiness.flapping",
      "provider-lifecycle.replacement.in-flight",
@@ -95,35 +95,35 @@
    },
    {
     "go": "sha256:01ef1a6fc58380741eaaaeed6efa90f16149096e99e1dbf93335dbaadf4da3e3",
-    "rust": "sha256:2cc6d9b346a624275ab074bb065a9e76f9f75d4acf749d1cb34ab8ce5efb99fc",
+    "rust": "sha256:adc228c4a0361bebff3670e925e21221573fb8b8a0f9aeb04ef4331a9ca61cef",
     "scenarios": [
      "provider-lifecycle.schema-drift.invalid-input-schema"
     ]
    },
    {
     "go": "sha256:458ee103973df0ada45cdb01281c1076f9435186ca59372201ba2d7ac3451b9d",
-    "rust": "sha256:f95b3c7bd2213d01580b0c5a22e48cf574f188a0763ca51b5ed9b9aad46c52c6",
+    "rust": "sha256:1a19af6ef60e8aae67d6602e0723c9b977596f7760dfb48240a6ca86ed553f65",
     "scenarios": [
      "provider-lifecycle.schema-drift.result-violates-output-schema"
     ]
    },
    {
     "go": "sha256:6465833d5b1e77645d22a87d2af32fce63aef95657698ebdc0f2d2fcee0f299a",
-    "rust": "sha256:29c1c42494cf84d02062849c1afc3ffe75947b0522baccb7a93ff3f984c6a55e",
+    "rust": "sha256:31b3caa69cd62078a36bd59973beb8649e06ab9c2f13aafd25fb113c5916f4b0",
     "scenarios": [
      "provider-real.cloudflare"
     ]
    },
    {
     "go": "sha256:bc838403419c1a260fa45ad9e8def0604fe52622909f676bea2b353b8cc44fec",
-    "rust": "sha256:a93f8f09b607582343267ad1a37775023a255612f80665063b2c7924ee9b4f9a",
+    "rust": "sha256:5f08b727f9f86143f01d7ff6b8031973807531cbf6607477d871a3d48de6e583",
     "scenarios": [
      "provider-real.cloudflare"
     ]
    },
    {
     "go": "sha256:6eeefc25fdaa7b1fbe9d0257c561a08a2d271f5fbcfdf5072e62399fa116c34b",
-    "rust": "sha256:6ceb79a1b22746aa33ade6e68e98c6dbd678d117088553c601e6d04772b65cec",
+    "rust": "sha256:127d78bef157a50d6dca31044ed139f1d1705151c72859b98a1341a8a205b5bf",
     "scenarios": [
      "cluster-domain.agent",
      "cluster-domain.discovery",
@@ -139,21 +139,21 @@
    },
    {
     "go": "sha256:688008d9922fd3314c34ad11d1d7584690edcdf194fcacf56151f9f4368be3f6",
-    "rust": "sha256:ad526f236a56bcc49b6f1dd9e98cd3d06743658c96232274c0a13e6d27905874",
+    "rust": "sha256:053f94a450ac20f31daeb9b5713c9759a5244bf4405047c60dd94cd35a7d6237",
     "scenarios": [
      "provider-real.ollama"
     ]
    },
    {
     "go": "sha256:7a643de2aecceb1f3a82cb085974a359d385af08e33c671d7b92fec052081dcf",
-    "rust": "sha256:e2f642233ec1d78568ae502decd8cd121edcf54593ec7c509096bcbbbab77ac0",
+    "rust": "sha256:adf78df850c7816df46571b6e84b7cfe22f5d0b7a190f9543417457823b458b8",
     "scenarios": [
      "provider-real.tailscale"
     ]
    },
    {
     "go": "sha256:c1d912d9693412f3b0e6151fd7ee1da354a488935d83fe2d039e4fa161a2b648",
-    "rust": "sha256:98482a029eeba85db2c20828e092a4217587ed4afbcb8a4a01a14dfa675c4211",
+    "rust": "sha256:5e8e5f0bd32b6e3ecb2e23708f2454f0845c817029efc6b7068beb497510befd",
     "scenarios": [
      "provider-lifecycle.family.replacement-keeps-accepted-call"
     ]
@@ -161,7 +161,7 @@
   ],
   "standalone": {
    "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
-   "rust": "sha256:f95cf7d4fc7ca7c3a93a9b3da1d138f619861a213f0e238ea32183bc15a034c6"
+   "rust": "sha256:9299c35dbadd8df4efd25aa8d1f520527f45d207ac56e5a18447acf015b6eb69"
   }
  },
  "contracts": {
@@ -298,6 +298,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D23)",
    "status": "approved",
    "summary": "Extends D19's map for M8d with a value section: the builder and runtime selector values podman, buildah and buildkit are published as container-engine, image-builder and build-daemon in ensure_oci_builder, build_and_push_oci_image, configure_oci_storage, inspect_container_storage and cleanup_container_storage inputs and results; Go values stay hidden, accepted aliases until cutover"
+  },
+  "D24": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/write-only-relay-token",
+   "date": "2026-10-19",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D24)",
+   "status": "approved",
+   "summary": "Rust publishes the PostgreSQL relay token writeOnly (release_postgresql_service_relay.relayToken and localRelay.relayToken of get_postgresql_service_status, reconcile_postgresql_service and remove_postgresql_service), so its storage projection redacts it in every durable row; Go's catalog leaves it unmarked and stores it verbatim in capability_invocations"
   },
   "D8": {
    "approvedBy": "owner",
@@ -4032,7 +4040,19 @@
    "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
    "packages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n"
   },
-  "postgresGolden": {},
+  "postgresGolden": {
+   "chart": {
+    "sha256": "b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df",
+    "url": "https://github.com/cloudnative-pg/charts/releases/download/cloudnative-pg-v0.29.1/cloudnative-pg-0.29.1.tgz",
+    "version": "0.29.1"
+   },
+   "goldenSha256": "7ae211bd651840bd3ee4b2b21e24b04a502dfb1c5300a1dffd1fd32a4798b46a",
+   "images": {
+    "ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1": "sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07",
+    "ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie": "sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6"
+   },
+   "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba"
+  },
   "suites": {
    "go-vs-go": {
     "minRepeat": 20,

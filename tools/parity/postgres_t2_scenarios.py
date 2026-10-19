@@ -109,8 +109,17 @@ MASKS = [
        "type": "string", "reason": SERVER_ASSIGNED, "optional": True}
       for side in ("before", "after") for key in ("connect", "listen")],
     # The relay's persisted state names that loopback port.
-    {"path": ["steps", "*", "files", "added", RELAY_STATE, "sha256"], "type": "hex",
-     "reason": "the relay state file names this twin's loopback forward port", "optional": True},
+    *[{"path": ["steps", "*", "files", change, RELAY_STATE, "sha256"], "type": "hex",
+       "reason": "the relay state file names this twin's loopback forward port", "optional": True}
+      for change in ("added", "removed")],
+    # The consumer Secret is applied with kubectl apply, whose annotation
+    # (projected by sha256) carries the generated URLs.
+    *[{"path": p, "type": "hex", "reason": GENERATED, "optional": True}
+      for p in objects("metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration",
+                       key="secrets/platform/pg-consumer")],
+    # A claim marked for deletion, at this twin's time.
+    *[{"path": p, "type": "rfc3339", "reason": "when k1's API server marked the claim for deletion",
+       "optional": True} for p in objects("metadata", "deletionTimestamp")],
     # Results that carry the forward's port or the Service's address.
     *[{"path": ["steps", label, "body", "result", "structuredContent", "localRelay", "targetPort"],
        "type": "int", "reason": SERVER_ASSIGNED, "optional": True} for label in ("relay", "relayAgain")],

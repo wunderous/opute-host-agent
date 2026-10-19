@@ -203,8 +203,12 @@ def unknown_projection_failures(summary: dict, outcomes: dict) -> list[str]:
 
 def secret_failures(summary: dict, outcomes: dict) -> list[str]:
     problems = secret_sweep.failures(outcomes)
-    if summary.get("modes") != list(secret_sweep.MODES) or summary.get("fieldCount") != sum(len(c) for c in outcomes.get("cases", {}).values()):
+    if (summary.get("modes") != list(secret_sweep.MODES)
+            or summary.get("fieldCount") != sum(len(c) for c in outcomes.get("cases", {}).values())
+            or summary.get("d24FieldCount", 0) != sum(len(c) for c in (outcomes.get("d24Cases") or {}).values())):
         problems.append("secret field count or mode coverage changed")
+    if "d24Cases" not in outcomes:
+        problems.append("secret sweep predates D24: no write-only-relay-token cases")
     if summary.get("failures"):
         problems.append("recorded secret sweep failed")
     return problems

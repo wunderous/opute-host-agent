@@ -21,9 +21,37 @@ from pathlib import Path
 from . import agent, canon, cross_read, evidence_process, runner
 
 MODES = ("standalone", "platform")
+# D24 (write-only-relay-token): fields Rust publishes writeOnly and Go's
+# catalog leaves unmarked. Rust is swept for them too; Go, which stores them
+# verbatim by design, is not.
+WRITE_ONLY = runner.REPO_ROOT / "crates/host-agent/catalog/write-only.json"
 
 
-def field_cases(catalog: dict, mode: str) -> list[dict]:
+def d24_fields() -> dict[str, list[list[str]]]:
+    return json.loads(WRITE_ONLY.read_text())["fields"]
+
+
+def _at(value: dict, path: list[str]):
+    for key in path:
+        value = value.get(key) if isinstance(value, dict) else None
+    return value
+
+
+def _nested(path: list[str], leaf) -> dict:
+    for key in reversed(path[1:]):
+        leaf = {key: leaf}
+    return {path[0]: leaf}
+
+
+def _marked(schema: dict, path: list[str]) -> bool:
+    for key in path:
+        schema = (schema.get("properties") or {}).get(key) if isinstance(schema, dict) else None
+    return isinstance(schema, dict) and schema.get("writeOnly") is True
+
+
+def field_cases(catalog: dict, mode: str, only: dict[str, list[list[str]]] | None = None) -> list[dict]:
+    """One case per write-only input field the catalog marks; with `only`,
+    the listed fields (D24), marked or not."""
     cases = []
 
     def walk(schema: dict, path: list[str]) -> list[tuple[list[str], dict]]:
@@ -47,20 +75,23 @@ def field_cases(catalog: dict, mode: str) -> list[dict]:
         for direction in ["inputSchema", "outputSchema"]:
             schema = descriptor.get(direction) or {}
             paths = walk(schema, [])
+            if only is not None:
+                paths = [(path, {"type": "string"}) for path in only.get(descriptor["name"], [])
+                         if direction == "inputSchema"]
             if paths and direction != "inputSchema":
                 # The pinned catalog currently has no write-only output field.
                 # A new output marking requires exercising that actual result
                 # boundary, never reusing an input-only fixture accidentally.
                 raise ValueError("write-only output schema requires a result-canary fixture")
             for path, child in paths:
-                if len(path) != 1:
-                    raise ValueError("nested catalog marking requires a nested field fixture")
+                if any(key.startswith("*") for key in path):
+                    raise ValueError("write-only field under items/additionalProperties/combinators "
+                                     "requires its own fixture")
                 name = descriptor["name"]
-                field = path[0]
-                identifier = f"{mode}:{name}:{field}"
+                identifier = f"{mode}:{name}:{'.'.join(path)}"
                 canary = "M5_SECRET_CANARY_" + uuid.uuid4().hex + uuid.uuid4().hex
                 value = {"probe": canary} if child.get("type") == "object" else canary
-                args = {field: value, "visible": "safe"}
+                args = {**_nested(path, value), "visible": "safe"}
                 action = {"tool": name, "args": args}
                 document = {"contractVersion": "host-plan.v1", "planId": identifier, "generation": 1,
                             "idempotencyKey": identifier, "variables": {"inputs": {"recipeSecret": canary, "visible": "safe"}},
@@ -178,16 +209,19 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path) -> dict:
         if "error" in capture:
             raise ValueError("catalog fixture failed: " + capture["error"])
     cases = {mode: field_cases(captures[mode]["projected"]["_catalog"], mode) for mode in MODES}
-    outcomes = {f"{impl.label}.{mode}": run_one(impl, fixtures[impl.label], mode, cases[mode])
+    d24 = {mode: field_cases(captures[mode]["projected"]["_catalog"], mode, only=d24_fields()) for mode in MODES}
+    outcomes = {f"{impl.label}.{mode}": run_one(impl, fixtures[impl.label], mode,
+                                                cases[mode] + (d24[mode] if impl is rust else []))
                 for mode in MODES for impl in [go, rust]}
-    data = {"cases": cases, "outcomes": outcomes}
+    data = {"cases": cases, "d24Cases": d24, "outcomes": outcomes}
     problems = failures(data)
     provenance["changedDuringRun"] = (provenance["goBinarySha256"] != go.sha256()
         or provenance["rustBinarySha256"] != rust.sha256()
         or provenance["harnessSha256"] != runner.harness_sha256()
         or provenance["driverSha256"] != runner.sha256_file(Path(__file__)))
     (out / "outcomes.json.gz").write_bytes(runner._gz(data))
-    summary = {"fieldCount": sum(map(len, cases.values())), "modes": list(MODES),
+    summary = {"fieldCount": sum(map(len, cases.values())), "d24FieldCount": sum(map(len, d24.values())),
+               "modes": list(MODES),
                "files": {"outcomes.json.gz": runner.sha256_file(out / "outcomes.json.gz")},
                "failures": problems, "provenance": provenance}
     (out / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True))
@@ -201,7 +235,13 @@ def failures(data: dict) -> list[str]:
         cases, outcomes = data["cases"], data["outcomes"]
         if set(cases) != set(MODES) or set(outcomes) != {f"{side}.{mode}" for side in ["go", "rust"] for mode in MODES}:
             raise ValueError("secret mode/implementation matrix incomplete")
-        all_cases = [case for mode in MODES for case in cases[mode]]
+        # Evidence captured before D24 carries no D24 cases; the M5 gate
+        # (m5_verify.secret_failures) requires them of every current capture.
+        legacy = "d24Cases" not in data
+        d24 = {mode: [] for mode in MODES} if legacy else data["d24Cases"]
+        if set(d24) != set(MODES):
+            raise ValueError("D24 mode coverage incomplete")
+        all_cases = [case for mode in MODES for case in cases[mode] + d24[mode]]
         canaries = [case["canary"] for case in all_cases]
         if not canaries or len(set(canaries)) != len(canaries) or any(len(c) < 64 for c in canaries):
             raise ValueError("secret canaries absent, reused, or too short")
@@ -224,7 +264,18 @@ def failures(data: dict) -> list[str]:
                 actual = {(c["id"], c["tool"], tuple(c["path"])) for c in cases[mode]}
                 if actual != expected or len(actual) != len(cases[mode]):
                     raise ValueError(f"{key}: catalog field coverage incomplete")
-                if set(projected) != {"_catalog"} | {c["id"] for c in cases[mode]}:
+                side_cases = cases[mode] + (d24[mode] if side == "rust" else [])
+                if side == "rust" and not legacy:
+                    # D24: Rust's own catalog marks every declared field the
+                    # mode publishes, and the sweep covers each one.
+                    raw = {d["name"]: d.get("inputSchema") or {} for d in projected["_catalog"]["tools"]}
+                    declared = {(tool, tuple(path)) for tool, paths in d24_fields().items() if tool in raw
+                                for path in paths}
+                    if declared != {(c["tool"], tuple(c["path"])) for c in d24[mode]}:
+                        raise ValueError(f"{key}: D24 field coverage incomplete")
+                    if not all(_marked(raw[tool], list(path)) for tool, path in declared):
+                        raise ValueError(f"{key}: D24 field not published writeOnly")
+                if set(projected) != {"_catalog"} | {c["id"] for c in side_cases}:
                     raise ValueError(f"{key}: projected case coverage incomplete")
                 for phase in ["live", "stopped", "recovered"]:
                     files = observation["scannedFiles"][phase]
@@ -244,16 +295,15 @@ def failures(data: dict) -> list[str]:
                 if observation["sinkHits"]:
                     raise ValueError(f"{key}: recorded canary leak")
                 tables = observation["liveRows"]["tables"]
-                for case in cases[mode]:
+                for case in side_cases:
                     value = projected[case["id"]]
-                    field = case["path"][0]
-                    if value["arguments"].get(field) != "[redacted]":
+                    if _at(value["arguments"], case["path"]) != "[redacted]":
                         raise ValueError(f"{key}: marked argument not redacted")
                     document, state = value["document"], value["state"]
                     if document["variables"]["inputs"]["recipeSecret"] != "[redacted]":
                         raise ValueError(f"{key}: secret recipe input not redacted")
                     for role in ["action", "validate", "compensate", "recover"]:
-                        if document["nodes"][0][role]["args"].get(field) != "[redacted]":
+                        if _at(document["nodes"][0][role]["args"], case["path"]) != "[redacted]":
                             raise ValueError(f"{key}: {role} argument not redacted")
                     if state["outputs"]["derived"] != {"redacted": True}:
                         raise ValueError(f"{key}: untyped derived output not redacted")
@@ -284,6 +334,8 @@ def failures(data: dict) -> list[str]:
                         raise ValueError(f"{key}: unsupported result method changed")
                 if observation["responses"]["list"]["body"]["error"]["code"] != -32601:
                     raise ValueError(f"{key}: unsupported list method changed")
+                # D24's cases are Rust's alone; the sides are compared on Go's.
+                projected = {k: v for k, v in projected.items() if k not in {c["id"] for c in d24[mode]}}
                 projected = canon.substitute(projected, observation["variables"])
                 if side == "rust":
                     # D19 (neutral-host-tool-names): the projected catalog

@@ -259,6 +259,7 @@ K8S_CLUSTER = ["namespaces"]
 # the volumes they claim. A claim's bound volume is named by the provisioner.
 K8S_CNPG = ["clusters.postgresql.cnpg.io", "persistentvolumeclaims"]
 K8S_SYSTEM = {"kube-system": {"helmcharts.helm.cattle.io"}, "kube-public": set(), "kube-node-lease": set()}
+LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration"
 K8S_DROP_META = ("uid", "resourceVersion", "creationTimestamp", "managedFields", "generation", "selfLink")
 K1_ROOTS = ["/etc/opute", "/usr/local/lib/opute", "/etc/systemd/system"]
 K1_UNITS = ["opute-cluster-agent.service", "k3s.service"]
@@ -278,6 +279,12 @@ def _k8s_object(obj: dict) -> dict:
             out[key] = obj[key]
     if obj.get("kind") == "Secret":
         out["data"] = {k: hashlib.sha256(v.encode()).hexdigest() for k, v in (obj.get("data") or {}).items()}
+        # kubectl apply keeps the applied manifest, values included, in an
+        # annotation: a Secret's is recorded by sha256 as its data is (M8e).
+        annotations = meta.get("annotations") or {}
+        if LAST_APPLIED in annotations:
+            meta["annotations"] = {**annotations,
+                                   LAST_APPLIED: hashlib.sha256(annotations[LAST_APPLIED].encode()).hexdigest()}
     if obj.get("kind") == "PersistentVolumeClaim" and isinstance(out.get("spec"), dict):
         out["spec"] = {k: v for k, v in out["spec"].items() if k != "volumeName"}
     if obj.get("kind") == "Service" and isinstance(out.get("spec"), dict):

@@ -331,13 +331,14 @@
  {
   "id": "D19.neutral-host-tool-names",
   "decision": "D19",
-  "reason": "Owner decision D19 (openspec/changes/neutral-host-tool-names): Rust publishes provider-neutral names for the eight mapped host tools, keeps each Go name as a hidden alias, renames install_incus_stack.incusPackage to packageName, and therefore publishes different catalog revisions. Applied to the Rust side only, the rule rewrites each neutral name (whole words) to its Go name, the field inside that tool's input schema, and each Rust catalog revision pinned in parity-manifest.json to its Go pair, then restores the sorted order of any list the rename reordered. Every other difference, and every unpinned revision, remains a diff.",
+  "reason": "Owner decision D19 (openspec/changes/neutral-host-tool-names): Rust publishes provider-neutral names for the eight mapped host tools, keeps each Go name as a hidden alias, renames install_incus_stack.incusPackage to packageName, and therefore publishes different catalog revisions. Applied to the Rust side only, the rule rewrites each neutral name (whole words) to its Go name, the field inside that tool's input schema, and each Rust catalog revision pinned in parity-manifest.json to its Go pair, then restores the sorted order of any list the rename reordered. Every other difference, and every unpinned revision, remains a diff. Extended by D24 (openspec/changes/write-only-relay-token): Rust publishes the postgres relay token writeOnly where Go leaves it unmarked; the rule removes exactly the writeOnly marks crates/host-agent/catalog/write-only.json lists from those tools' input schemas.",
   "path": [
    "*"
   ],
   "renameToGo": {
    "names": "crates/host-agent/catalog/neutral-names.json",
-   "revisions": "parity-manifest.json"
+   "revisions": "parity-manifest.json",
+   "writeOnly": "crates/host-agent/catalog/write-only.json"
   }
  }
 ]

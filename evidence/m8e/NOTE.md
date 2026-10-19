@@ -1,4 +1,4 @@
-# M8e entry: naming, reachability and credential fields
+# M8e entry: naming, reachability and credential fields (D24)
 
 ## Entry (2026-10-19)
 
@@ -42,10 +42,7 @@ its own client instead: psql in the primary, as the pod's postgres user.
 Its bytes also reach PostgreSQL through the SQL connector and the relay,
 checked by a loopback probe.
 
-## Credential fields: Go stores the relay token (owner question)
-
-The goal asks that credential fields be marked and covered by the M5 secret
-sweep, with none reaching a row unredacted. Go conflicts with that:
+## Credential fields: D24 marks the relay token
 
 - **Database password and URLs:** never stored. The password travels only
   as provider `stdin` (the pgpass file psql reads), and the consumer Secret
@@ -55,25 +52,23 @@ sweep, with none reaching a row unredacted. Go conflicts with that:
   token.
 - **`relayToken`:** Go's catalog does not mark it `writeOnly`, in
   `release_postgresql_service_relay` or under `localRelay` in the three
-  service tools. Go's schema-driven projection therefore keeps it verbatim
-  in `capability_invocations.arguments_json`. Rust does the same, so the
-  M5 shape comparison passes.
+  service tools. Go's schema-driven projection keeps it verbatim in
+  `capability_invocations.arguments_json`; the first Rust port did the
+  same.
 
-The catalog-driven secret sweep exercises only `writeOnly` fields. It
-finds none in this domain, so the field count stays at 16.
+### Owner decision (2026-10-19)
 
-Hiding the token in rows means marking it `writeOnly`. That changes
-`tools/list` from Go's, which is a contract change. AGENTS.md reserves such
-a change for an owner decision with its own OpenSpec change, as D8, D13 and
-D23 were. The proposed change, not implemented:
+Asked "keep Go's behaviour" or "mark writeOnly", the owner chose **mark
+writeOnly**. It is recorded as D24 (OpenSpec change
+`write-only-relay-token`):
 
-- **Change:** mark `relayToken` `writeOnly` in the four input schemas, as a
-  declared divergence. Rust's stored projection would then redact it, as
-  for every marked field.
-- **Harness:** the secret sweep gains the nested-field fixture it now
-  refuses (`nested catalog marking requires a nested field fixture`) for
-  `localRelay.relayToken`.
-- **Parity:** the D19 divergence maps the schema back for `tools/list`
-  comparison.
+- Rust publishes the four paths `writeOnly`
+  (`crates/host-agent/catalog/write-only.json`), so every durable row
+  carries the redaction marker in the token's place.
+- `D19.neutral-host-tool-names` removes exactly those marks on the Rust side
+  for the comparison with Go.
+- The secret sweep covers Go's 16 marked fields on both sides, and the 8
+  D24 fields (four tools in each mode, top-level and nested) on Rust.
 
-Until the owner decides, Rust keeps Go's behaviour.
+`ensure_local_llm_k3s_proxy` carries the same `localRelay.relayToken`. It is
+out of scope here and left to the LLM domain's milestone.

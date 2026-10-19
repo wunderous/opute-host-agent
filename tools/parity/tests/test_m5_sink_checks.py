@@ -127,3 +127,18 @@ class UnknownProjectionChecks(unittest.TestCase):
 
     def test_missing_projection_coverage_does_not_pass(self):
         self.assertTrue(unknown_projection.failures({}))
+
+
+class D24SweepChecks(unittest.TestCase):
+    def test_current_evidence_must_carry_d24_cases(self):
+        corpus = json.loads(gzip.decompress((runner.REPO_ROOT / "evidence/m5/secrets/outcomes.json.gz").read_bytes()))
+        summary = {"modes": list(secret_sweep.MODES), "fieldCount": sum(len(c) for c in corpus["cases"].values())}
+        self.assertIn("secret sweep predates D24: no write-only-relay-token cases",
+                      m5_verify.secret_failures(summary, corpus))
+
+    def test_nested_field_case_builds_nested_arguments(self):
+        catalog = {"tools": [{"name": "probe", "inputSchema": {"properties": {"localRelay": {
+            "type": "object", "properties": {"relayToken": {"type": "string"}}}}}}]}
+        [case] = secret_sweep.field_cases(catalog, "platform", only={"probe": [["localRelay", "relayToken"]]})
+        self.assertEqual(case["path"], ["localRelay", "relayToken"])
+        self.assertEqual(case["arguments"]["localRelay"], {"relayToken": case["canary"]})
