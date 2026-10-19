@@ -67,3 +67,19 @@ class SqliteRowsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TreeSqliteTest(unittest.TestCase):
+    def test_tree_records_a_database_by_type_and_mode_not_bytes(self):
+        sandbox = Sandbox("tree-sqlite-test", "test", None)
+        self.addCleanup(shutil.rmtree, sandbox.root)
+        (sandbox.root / "home" / "db").mkdir(parents=True)
+        conn = sqlite3.connect(sandbox.root / "home" / "db" / "main.sqlite")
+        conn.execute("CREATE TABLE t(x)")
+        conn.commit()
+        conn.close()
+        (sandbox.root / "home" / "db" / "note.txt").write_text("x")
+        tree = {e["path"]: e for e in sandbox.tree("home")}
+        self.assertEqual(tree["home/db/main.sqlite"]["type"], "sqlite")
+        self.assertNotIn("sha256", tree["home/db/main.sqlite"])
+        self.assertIn("sha256", tree["home/db/note.txt"])

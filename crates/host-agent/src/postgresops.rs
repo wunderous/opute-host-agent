@@ -290,15 +290,7 @@ fn unmarshal_struct(data: &str) -> Result<J, String> {
 
 /// `os.MkdirAll(path, perm)`.
 fn mkdir_all(path: &Path, mode: u32) -> Result<(), String> {
-    use std::os::unix::fs::DirBuilderExt;
-    if path.is_dir() {
-        return Ok(());
-    }
-    std::fs::DirBuilder::new()
-        .recursive(true)
-        .mode(mode)
-        .create(path)
-        .map_err(|e| crate::goerr::path_error("mkdir", path, &e).0)
+    crate::goerr::mkdir_all(path, mode).map_err(|e| e.0)
 }
 
 // --- SQL connector (sql_connector.go) ------------------------------------------------------

@@ -1,0 +1,1166 @@
+{
+ "description": "M8e: a ready CNPG estate: operator, webhook, a healthy tenant Cluster 'pg' with its read/write Service, application Secret and primary, both databases present, one consumer Deployment, and an Incus proxy device already aimed at the Service; a standalone PostgreSQL in opute-local-db. The cluster-domain estate (k1 with k3s) answers the provider.",
+ "commands": {
+  "incus": [
+   {
+    "argv": [
+     "config",
+     "device",
+     "show",
+     "k1"
+    ],
+    "stdout": "root:\n  path: /\n  pool: default\n  type: disk\nopute-pg-rw:\n  connect: tcp:10.43.12.34:5432\n  listen: tcp:127.0.0.1:25432\n  type: proxy\n",
+    "unlessExists": "markers/device-moved"
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "show",
+     "k1"
+    ],
+    "stdout": "root:\n  path: /\n  type: disk\n"
+   },
+   {
+    "argv": [
+     "config",
+     "device",
+     "remove",
+     "k1",
+     "opute-pg-rw"
+    ],
+    "stdout": "Device opute-pg-rw removed from k1\n"
+   },
+   {
+    "argvPrefix": [
+     "config",
+     "device",
+     "add",
+     "k1",
+     "opute-pg-rw",
+     "proxy"
+    ],
+    "stdout": "Device opute-pg-rw added to k1\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "crd",
+     "clusters.postgresql.cnpg.io",
+     "--ignore-not-found=true",
+     "-o",
+     "name"
+    ],
+    "stdout": "customresourcedefinition.apiextensions.k8s.io/clusters.postgresql.cnpg.io\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "crd",
+     "clusters.postgresql.cnpg.io"
+    ],
+    "stdout": "NAME   CREATED AT\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deployments",
+     "-n",
+     "cnpg-system",
+     "-l",
+     "app.kubernetes.io/name=cloudnative-pg",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"cloudnativepg\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"cnpg-system\",\"uid\":\"d-cnpg\"},\"spec\":{\"replicas\":1},\"status\":{\"availableReplicas\":1}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "endpoints",
+     "cnpg-webhook-service",
+     "-n",
+     "cnpg-system",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"subsets\":[{\"addresses\":[{\"ip\":\"10.42.0.5\"}]}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "helmchart.helm.cattle.io",
+     "cloudnativepg",
+     "-n",
+     "kube-system",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"cloudnativepg\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"kube-system\"},\"spec\":{\"valuesContent\":\"monitoring:\\n  enabled: false\\nconfig:\\n  maxConcurrentReconciles: 1\\nwebhook:\\n  livenessProbe:\\n    initialDelaySeconds: 30\\n  readinessProbe:\\n    initialDelaySeconds: 30\\n  startupProbe:\\n    failureThreshold: 24\\n    periodSeconds: 5\\nresources:\\n  requests:\\n    cpu: 25m\\n    memory: 32Mi\\n  limits:\\n    cpu: 500m\\n    memory: 128Mi\\n\"}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "cluster.postgresql.cnpg.io",
+     "pg",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"postgresql.cnpg.io/v1\",\"kind\":\"Cluster\",\"metadata\":{\"name\":\"pg\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"platform\",\"uid\":\"c-1\",\"annotations\":{\"host-agent.io/resource-profile\":\"constrained-2GiB-v3\"}},\"spec\":{\"instances\":1,\"storage\":{\"size\":\"10Gi\",\"storageClass\":\"local-path\"}},\"status\":{\"phase\":\"Cluster in healthy state\",\"readyInstances\":1}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "service",
+     "pg-rw",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"spec\":{\"clusterIP\":\"10.43.12.34\"}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "endpoints",
+     "pg-rw",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"subsets\":[{\"addresses\":[{\"ip\":\"10.42.0.9\"}]}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "secret",
+     "pg-app",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"pg-app\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"platform\"},\"data\":{\"username\":\"YXBw\",\"password\":\"czNjcjN0L1Bhc3M6d29yZCtAeA==\"}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "pods",
+     "-n",
+     "platform",
+     "-l",
+     "cnpg.io/cluster=pg,role=primary",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"pg-1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"platform\",\"uid\":\"p-1\"},\"status\":{\"phase\":\"Running\",\"conditions\":[{\"type\":\"Ready\",\"status\":\"True\"}],\"containerStatuses\":[{\"name\":\"postgres\",\"ready\":true}]}}]}"
+   },
+   {
+    "argvPrefix": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "exec",
+     "-i",
+     "pg-1",
+     "-n",
+     "platform",
+     "--",
+     "sh",
+     "-ceu"
+    ],
+    "stdout": "1\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "cluster.postgresql.cnpg.io",
+     "grow",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"postgresql.cnpg.io/v1\",\"kind\":\"Cluster\",\"metadata\":{\"name\":\"grow\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"platform\"},\"spec\":{\"instances\":1,\"storage\":{\"size\":\"10Gi\"}},\"status\":{\"phase\":\"Cluster in healthy state\",\"readyInstances\":1}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "cluster.postgresql.cnpg.io",
+     "broken",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "exit": 1,
+    "stderr": "The connection to the server 127.0.0.1:6443 was refused\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "storageclass",
+     "local-path",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"local-path\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"},\"provisioner\":\"rancher.io/local-path\"}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "storageclass",
+     "expandable",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"expandable\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"},\"allowVolumeExpansion\":true}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "namespace",
+     "platform"
+    ],
+    "stdout": "platform   Active   1d\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "namespace",
+     "cnpg-system"
+    ],
+    "stdout": "cnpg-system   Active   1d\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "secret",
+     "pg-consumer",
+     "-n",
+     "platform",
+     "--ignore-not-found=true"
+    ],
+    "stdout": "secret \"pg-consumer\" deleted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "secret",
+     "pg-consumer",
+     "-n",
+     "platform",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"pg-consumer\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"platform\"},\"data\":{\"DATABASE_URL\":\"eA==\",\"LEDGER_URL\":\"eQ==\"}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deployments",
+     "-n",
+     "platform",
+     "-l",
+     "opute.io/pg-consumer",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"ledger-api\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"platform\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "rollout",
+     "restart",
+     "deployment",
+     "ledger-api",
+     "-n",
+     "platform"
+    ],
+    "stdout": "deployment.apps/ledger-api restarted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "rollout",
+     "status",
+     "deployment",
+     "ledger-api",
+     "-n",
+     "platform",
+     "--timeout=2m"
+    ],
+    "stdout": "deployment \"ledger-api\" successfully rolled out\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "cluster.postgresql.cnpg.io",
+     "pg",
+     "-n",
+     "platform",
+     "--ignore-not-found=true",
+     "--wait=true"
+    ],
+    "stdout": "cluster.postgresql.cnpg.io \"pg\" deleted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "secret",
+     "pg-app",
+     "-n",
+     "platform",
+     "--ignore-not-found=true"
+    ],
+    "stdout": "secret \"pg-app\" deleted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "pvc",
+     "-l",
+     "cnpg.io/cluster=pg",
+     "-n",
+     "platform",
+     "--ignore-not-found=true"
+    ],
+    "stdout": "persistentvolumeclaim \"pg-1\" deleted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "cluster.postgresql.cnpg.io",
+     "postgres",
+     "-n",
+     "opute-local-db",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"postgres\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"opute-local-db\"},\"spec\":{\"instances\":1},\"status\":{\"phase\":\"Cluster in healthy state\",\"readyInstances\":1}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "cluster.postgresql.cnpg.io",
+     "postgres",
+     "-n",
+     "absent",
+     "-o",
+     "json"
+    ],
+    "exit": 1,
+    "stderr": "Error from server (NotFound): clusters.postgresql.cnpg.io \"postgres\" not found\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "pods",
+     "-n",
+     "opute-local-db",
+     "-l",
+     "cnpg.io/cluster=postgres,role=primary",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"postgres-1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"opute-local-db\"},\"status\":{\"phase\":\"Running\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "secret",
+     "postgres-app",
+     "-n",
+     "opute-local-db",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"data\":{\"username\":\"YXBw\",\"password\":\"c3RhbmRhbG9uZS1wYXNz\"}}"
+   },
+   {
+    "argvPrefix": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "exec",
+     "-i",
+     "postgres-1",
+     "-n",
+     "opute-local-db",
+     "--",
+     "sh",
+     "-ceu"
+    ],
+    "stdout": "42\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "namespace",
+     "opute-local-db",
+     "--ignore-not-found=true"
+    ],
+    "stdout": "namespace \"opute-local-db\" deleted\n"
+   },
+   {
+    "argv": [
+     "list",
+     "--format",
+     "json"
+    ],
+    "stdout": "[{\"name\":\"k1\",\"status\":\"Running\",\"type\":\"virtual-machine\",\"config\":{},\"devices\":{},\"state\":{\"network\":{}}},{\"name\":\"c1\",\"status\":\"Running\",\"type\":\"container\",\"config\":{},\"devices\":{},\"state\":{\"network\":{}}}]"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "--version"
+    ],
+    "stdout": "k3s version v1.31.2+k3s1 (6da20424)\ngo version go1.22.8\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "c1",
+     "--",
+     "k3s",
+     "--version"
+    ],
+    "exit": 127,
+    "stderr": "k3s: not found\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "nodes",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"k1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"},\"status\":{\"conditions\":[{\"type\":\"Ready\",\"status\":\"True\"}],\"nodeInfo\":{\"kubeletVersion\":\"v1.31.2+k3s1\"}}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "apply",
+     "-f",
+     "-"
+    ],
+    "stdout": "configured\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deployment",
+     "web",
+     "-o",
+     "json",
+     "-n",
+     "apps"
+    ],
+    "stdout": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"name\":\"web\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\",\"uid\":\"d-1\"},\"spec\":{\"replicas\":2},\"status\":{\"readyReplicas\":2,\"availableReplicas\":2}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deployment",
+     "missing",
+     "-o",
+     "json",
+     "-n",
+     "apps"
+    ],
+    "exit": 1,
+    "stderr": "Error from server (NotFound): deployments.apps \"missing\" not found\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "deployment",
+     "web",
+     "-n",
+     "apps",
+     "--ignore-not-found=true"
+    ],
+    "stdout": "deleted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "ingress",
+     "gone",
+     "-n",
+     "apps",
+     "--ignore-not-found=true"
+    ],
+    "exit": 1,
+    "stderr": "Error from server (NotFound): ingresses \"gone\" not found\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "delete",
+     "ingress",
+     "site",
+     "-n",
+     "apps",
+     "--ignore-not-found=true"
+    ],
+    "stdout": "deleted\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "events",
+     "-o",
+     "json",
+     "-n",
+     "apps"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"e1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"},\"type\":\"Normal\",\"reason\":\"Scheduled\",\"message\":\"ok\",\"count\":1,\"lastTimestamp\":\"2026-01-01T00:00:01Z\"},{\"metadata\":{\"name\":\"e2\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"},\"type\":\"Warning\",\"reason\":\"BackOff\",\"message\":\"<retry> & wait\",\"count\":3,\"lastTimestamp\":\"2026-01-01T00:00:09Z\"}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "namespaces",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"default\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"}},{\"metadata\":{\"name\":\"apps\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "storageclasses",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"local-path\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "ingressclasses",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"traefik\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "clusterissuers",
+     "-o",
+     "json"
+    ],
+    "exit": 1,
+    "stderr": "error: the server doesn't have a resource type \"clusterissuers\"\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "issuers",
+     "--all-namespaces",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"letsencrypt\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"},\"spec\":{\"acme\":{}},\"status\":{\"conditions\":[{\"type\":\"Ready\",\"status\":\"True\"}]}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "issuers",
+     "-n",
+     "apps",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"letsencrypt\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"},\"spec\":{\"acme\":{}},\"status\":{\"conditions\":[{\"type\":\"Ready\",\"status\":\"True\"}]}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "pods",
+     "--all-namespaces",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"web-1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\",\"uid\":\"p-1\"},\"spec\":{\"nodeName\":\"k1\"},\"status\":{\"phase\":\"Running\",\"podIP\":\"10.42.0.7\",\"containerStatuses\":[{\"ready\":true,\"restartCount\":1},{\"ready\":true,\"restartCount\":2}]}},{\"metadata\":{\"name\":\"job-1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\",\"uid\":\"p-2\"},\"status\":{\"containerStatuses\":[{\"ready\":false}]}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "pods",
+     "-n",
+     "broken",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"ghost\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"broken\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "services",
+     "-n",
+     "apps",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"web\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"}},{\"metadata\":{\"name\":\"db\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deployments",
+     "--all-namespaces",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"name\":\"web\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\",\"uid\":\"d-1\"},\"spec\":{\"replicas\":2},\"status\":{\"readyReplicas\":2,\"availableReplicas\":2}},{\"metadata\":{\"name\":\"idle\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\"},\"spec\":{\"replicas\":1},\"status\":{}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deployments",
+     "-n",
+     "down",
+     "-o",
+     "json"
+    ],
+    "exit": 1,
+    "stderr": "The connection to the server 127.0.0.1:6443 was refused\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "namespace",
+     "team"
+    ],
+    "exit": 1,
+    "stderr": "Error from server (NotFound): namespaces \"team\" not found\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "create",
+     "namespace",
+     "team"
+    ],
+    "stdout": "namespace/team created\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "namespace",
+     "apps"
+    ],
+    "stdout": "apps   Active   1d\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "version",
+     "--client",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"clientVersion\":{\"gitVersion\":\"v1.31.2+k3s1\"}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "df",
+     "-B1",
+     "/"
+    ],
+    "stdout": "Filesystem     1B-blocks        Used   Available Use% Mounted on\n/dev/sda2   64000000000 40000000000 24000000000  63% /\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "du",
+     "-sb",
+     "/var/lib/rancher/k3s/agent/containerd"
+    ],
+    "stdout": "30000000000\t/var/lib/rancher/k3s/agent/containerd\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "du",
+     "-sb",
+     "/var/lib/rancher/k3s/agent/containerd/io.containerd.content.v1.content"
+    ],
+    "stdout": "12000000000\t/var/lib/rancher/k3s/agent/containerd/io.containerd.content.v1.content\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "du",
+     "-sb",
+     "/var/lib/rancher/k3s/agent/containerd/io.containerd.snapshotter.v1.overlayfs"
+    ],
+    "exit": 1,
+    "stderr": "du: cannot access: No such file or directory\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "du",
+     "-sb",
+     "/var/lib/rancher/k3s/storage"
+    ],
+    "stdout": "5000000000\t/var/lib/rancher/k3s/storage\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "bash",
+     "-lc",
+     "du -sb /var/lib/rancher/k3s/storage/* 2>/dev/null || true"
+    ],
+    "stdout": "4000000000\t/var/lib/rancher/k3s/storage/pvc-1_apps_data\n1000000000\t/var/lib/rancher/k3s/storage/pvc-2_registry_zot\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "crictl",
+     "images",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"images\":[{\"id\":\"sha256:aaa\",\"repoTags\":[\"docker.io/library/nginx:1.27\"],\"repoDigests\":[],\"size\":\"70000000\"},{\"id\":\"sha256:bbb\",\"repoTags\":[\"registry.local/app:old\"],\"repoDigests\":[],\"size\":\"300000000\"},{\"id\":\"sha256:ccc\",\"repoTags\":[],\"repoDigests\":[\"keep@sha256:1\"],\"size\":\"1000\"}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "crictl",
+     "rmi",
+     "sha256:bbb"
+    ],
+    "stdout": "Deleted: registry.local/app:old\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "crictl",
+     "rmi",
+     "sha256:ccc"
+    ],
+    "exit": 1,
+    "stderr": "image is in use by a container\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "-n",
+     "registry",
+     "get",
+     "svc",
+     "opute-registry",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"metadata\":{\"name\":\"opute-registry\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"registry\"},\"spec\":{\"clusterIP\":\"10.43.0.50\",\"ports\":[{\"port\":5000}]}}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "bash",
+     "-lc",
+     "curl -sf --max-time 30 -X 'GET' 'http://10.43.0.50:5000/v2/_catalog'"
+    ],
+    "stdout": "{\"repositories\":[]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "fstrim",
+     "-v",
+     "/"
+    ],
+    "stdout": "/: 2 GiB (2147483648 bytes) trimmed\n"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "deploy",
+     "-A",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"name\":\"web\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\",\"uid\":\"d-1\"},\"spec\":{\"replicas\":2},\"status\":{\"readyReplicas\":2,\"availableReplicas\":2}},{\"metadata\":{\"name\":\"opute-registry\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"registry\"},\"spec\":{\"replicas\":1,\"template\":{\"spec\":{\"containers\":[{\"name\":\"registry\",\"image\":\"registry:2\"}]}}},\"status\":{\"readyReplicas\":1}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "pods",
+     "-A",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"apiVersion\":\"v1\",\"kind\":\"List\",\"items\":[{\"metadata\":{\"name\":\"web-1\",\"creationTimestamp\":\"2026-01-01T00:00:00Z\",\"namespace\":\"apps\",\"uid\":\"p-1\"},\"spec\":{\"containers\":[{\"image\":\"docker.io/library/nginx:1.27\"}]},\"status\":{\"phase\":\"Running\"}}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "crictl",
+     "ps",
+     "-a",
+     "-o",
+     "json"
+    ],
+    "stdout": "{\"containers\":[{\"id\":\"c-1\",\"imageRef\":\"sha256:aaa\",\"image\":{\"image\":\"sha256:aaa\"},\"state\":\"CONTAINER_RUNNING\"}]}"
+   },
+   {
+    "argv": [
+     "exec",
+     "k1",
+     "--",
+     "k3s",
+     "kubectl",
+     "get",
+     "pod",
+     "nope"
+    ],
+    "exit": 1,
+    "stderr": "Error from server (NotFound): pods \"nope\" not found\n"
+   }
+  ],
+  "helm": [
+   {
+    "argvPrefix": [
+     "template",
+     "web"
+    ],
+    "stdout": "kind: Service\n"
+   },
+   {
+    "argvPrefix": [
+     "template",
+     "bad"
+    ],
+    "exit": 1,
+    "stderr": "Error: chart is broken\n"
+   }
+  ],
+  "sudo": [
+   {
+    "argvPrefix": [],
+    "exit": 1,
+    "stderr": "sudo: a password is required\n"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}
