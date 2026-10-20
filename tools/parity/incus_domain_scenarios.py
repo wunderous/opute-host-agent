@@ -360,6 +360,17 @@ cases = [
         STOP], CONTAINER + ["internal/domain/host/gpu.go"], "incus-domain-estate"),
 ]
 
+def live_omitempty(label):
+    """host-read's omitempty rules for the same live metrics: a PSI sample
+    of zero is omitted by Go (internal/heartbeat/capacity.go), so absent and
+    0 are one value. Without them, the host's own I/O pressure decides
+    whether a key is present (M8e round 1, Go/Go 1 in 20)."""
+    source = next(sc for sc in json.loads((HERE / "scenarios" / "host-read.json").read_text())
+                  if sc["id"] == "host-read.host-info.inventory-mix")
+    return [{**rule, "path": ["steps", label] + rule["path"][2:]} for rule in source["compare"]["omitempty"]
+            if rule["path"][:2] == ["steps", "hostInfo"]]
+
+
 def live_masks(label):
     """The host-read get_host_info masks for live system metrics, at this
     scenario's step: the same metadata, sampled at call time."""
@@ -408,6 +419,7 @@ standalone_cases = [
         STOP], None),
 ]
 standalone_cases[-1]["compare"]["divergences"] = ["D19.neutral-host-tool-names"]
+standalone_cases[0]["compare"]["omitempty"] = live_omitempty("status")
 cases += standalone_cases
 
 RESET_OK = {"confirm": True, "reinstall": True, "disposableHostFingerprint": "fp-1",
