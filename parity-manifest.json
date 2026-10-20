@@ -3258,6 +3258,129 @@
   },
   {
    "anchors": [
+    "internal/domain/postgres/sqlite_database.go",
+    "internal/tools/dispatch_postgres.go",
+    "internal/config/config.go"
+   ],
+   "id": "postgres-domain.sqlite.lifecycle",
+   "owner": "postgres",
+   "scenario": "postgres-domain.sqlite.lifecycle",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/sqlite_database.go",
+    "internal/tools/dispatch_postgres.go",
+    "internal/config/config.go"
+   ],
+   "id": "postgres-domain.sqlite.roots",
+   "owner": "postgres",
+   "scenario": "postgres-domain.sqlite.roots",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/sql_connector.go",
+    "internal/tcprelay/tcprelay.go",
+    "internal/tools/dispatch_unassigned.go"
+   ],
+   "id": "postgres-domain.connector",
+   "owner": "postgres",
+   "scenario": "postgres-domain.connector",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/platform_postgres.go",
+    "internal/domain/postgres/platform_postgres_storage.go",
+    "internal/domain/postgres/generic_postgresql_service.go",
+    "internal/tools/dispatch_postgres.go",
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s",
+    "internal/domain/postgres/platform_postgres_relay.go",
+    "internal/tools/dispatch_postgres.go"
+   ],
+   "id": "postgres-domain.service.ready",
+   "owner": "postgres",
+   "scenario": "postgres-domain.service.ready",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/platform_postgres_relay.go",
+    "internal/tools/dispatch_postgres.go"
+   ],
+   "id": "postgres-domain.relay.restart",
+   "owner": "postgres",
+   "scenario": "postgres-domain.relay.restart",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/platform_postgres.go",
+    "internal/domain/postgres/platform_postgres_storage.go",
+    "internal/domain/postgres/generic_postgresql_service.go",
+    "internal/tools/dispatch_postgres.go",
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "postgres-domain.service.fresh",
+   "owner": "postgres",
+   "scenario": "postgres-domain.service.fresh",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/platform_postgres.go",
+    "internal/domain/postgres/platform_postgres_storage.go",
+    "internal/domain/postgres/generic_postgresql_service.go",
+    "internal/tools/dispatch_postgres.go",
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "postgres-domain.service.admission",
+   "owner": "postgres",
+   "scenario": "postgres-domain.service.admission",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/platform_postgres.go",
+    "internal/domain/postgres/platform_postgres_storage.go",
+    "internal/domain/postgres/generic_postgresql_service.go",
+    "internal/tools/dispatch_postgres.go",
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "postgres-domain.service.remove",
+   "owner": "postgres",
+   "scenario": "postgres-domain.service.remove",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
+    "internal/domain/postgres/standalone_postgres.go",
+    "internal/tools/dispatch_unassigned.go",
+    "internal/domain/kubernetes/provider.go",
+    "internal/hostmcp/kubernetes_provider.go",
+    "internal/hostagent/resource_resolver.go:adoptResource",
+    "plugins/kubernetes/k3s"
+   ],
+   "id": "postgres-domain.standalone",
+   "owner": "postgres",
+   "scenario": "postgres-domain.standalone",
+   "surface": "postgres-domain"
+  },
+  {
+   "anchors": [
     "internal/hostmcp/provider_install.go:handleProviderInstallContext"
    ],
    "id": "provider-lifecycle.install-call-teardown",
@@ -4010,7 +4133,7 @@
   "results": "evidence/m8e/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "bc2d545774b20ea7b1d1c2b045c67fb57156b3842a9ae6af4eab586ed650196a",
+  "binarySha256": "4c516f553bf6dcecdcedcf886d21b5ec591eabb565483a2a1fe8911a5e94632d",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
