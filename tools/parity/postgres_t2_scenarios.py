@@ -64,18 +64,24 @@ def psql(as_, sql):
 
 
 # Connect to a loopback port, send a token line (when given) and a
-# PostgreSQL SSLRequest, and print the server's one-byte answer as text: 'S'
-# or 'N' from PostgreSQL, b'' when the relay closed the connection, or the
-# error's name when nothing listens.
+# PostgreSQL SSLRequest, and print the server's one-byte answer: 'S' or 'N'
+# from PostgreSQL, "closed" when the connection ends without an answer, or
+# the error's name when nothing listens. A relay that refuses a token closes
+# with the SSLRequest possibly still unread, so the client sees a clean end
+# of stream or a reset by timing alone: both are "closed" (M8e round 2).
 PROBE = ("import socket,sys\n"
          "try:\n"
          "    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\n"
-         "    token=sys.argv[2] if len(sys.argv)>2 else ''\n"
+         "except OSError as e:\n"
+         "    print(type(e).__name__); sys.exit()\n"
+         "token=sys.argv[2] if len(sys.argv)>2 else ''\n"
+         "try:\n"
          "    s.sendall((token+'\\n').encode() if token else b'')\n"
          "    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n"
-         "    print(repr(s.recv(1)))\n"
-         "except OSError as e:\n"
-         "    print(type(e).__name__)\n")
+         "    answer=s.recv(1)\n"
+         "    print(answer.decode() if answer else 'closed')\n"
+         "except (ConnectionResetError, BrokenPipeError):\n"
+         "    print('closed')\n")
 
 
 def probe(as_, port, token=None):

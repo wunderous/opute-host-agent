@@ -316,7 +316,7 @@
      "argv": [
       "python3",
       "-c",
-      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\n    token=sys.argv[2] if len(sys.argv)>2 else ''\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    print(repr(s.recv(1)))\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\nexcept OSError as e:\n    print(type(e).__name__); sys.exit()\ntoken=sys.argv[2] if len(sys.argv)>2 else ''\ntry:\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    answer=s.recv(1)\n    print(answer.decode() if answer else 'closed')\nexcept (ConnectionResetError, BrokenPipeError):\n    print('closed')\n",
       "15433",
       "parity-relay-token-0123456789abcdef"
      ],
@@ -329,7 +329,7 @@
      "argv": [
       "python3",
       "-c",
-      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\n    token=sys.argv[2] if len(sys.argv)>2 else ''\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    print(repr(s.recv(1)))\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\nexcept OSError as e:\n    print(type(e).__name__); sys.exit()\ntoken=sys.argv[2] if len(sys.argv)>2 else ''\ntry:\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    answer=s.recv(1)\n    print(answer.decode() if answer else 'closed')\nexcept (ConnectionResetError, BrokenPipeError):\n    print('closed')\n",
       "15433",
       "not-the-relay-token-0123456789abcdef"
      ],
@@ -359,7 +359,7 @@
      "argv": [
       "python3",
       "-c",
-      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\n    token=sys.argv[2] if len(sys.argv)>2 else ''\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    print(repr(s.recv(1)))\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\nexcept OSError as e:\n    print(type(e).__name__); sys.exit()\ntoken=sys.argv[2] if len(sys.argv)>2 else ''\ntry:\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    answer=s.recv(1)\n    print(answer.decode() if answer else 'closed')\nexcept (ConnectionResetError, BrokenPipeError):\n    print('closed')\n",
       "15432",
       "parity-relay-token-0123456789abcdef"
      ],
@@ -543,7 +543,7 @@
      "argv": [
       "python3",
       "-c",
-      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\n    token=sys.argv[2] if len(sys.argv)>2 else ''\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    print(repr(s.recv(1)))\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "import socket,sys\ntry:\n    s=socket.create_connection(('127.0.0.1',int(sys.argv[1])),timeout=20)\nexcept OSError as e:\n    print(type(e).__name__); sys.exit()\ntoken=sys.argv[2] if len(sys.argv)>2 else ''\ntry:\n    s.sendall((token+'\\n').encode() if token else b'')\n    s.sendall(bytes([0,0,0,8,4,210,22,47]))\n    answer=s.recv(1)\n    print(answer.decode() if answer else 'closed')\nexcept (ConnectionResetError, BrokenPipeError):\n    print('closed')\n",
       "15432",
       "parity-relay-token-0123456789abcdef"
      ],
