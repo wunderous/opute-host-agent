@@ -110,8 +110,6 @@ def run(argv, user="root", stdin=None, timeout=3600):
 def serve(spec, agent):
     env = dict(agent["env"])
     env.update(spec.get("env", {}))
-    for key in spec.get("unset", []):
-        env.pop(key, None)
     user = spec.get("user", "ubuntu")
     manager = spec.get("manager", "system")
     unit = spec.get("unit", UNIT)
@@ -121,6 +119,10 @@ def serve(spec, agent):
     env.setdefault("USER", user)
     env.setdefault("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
     env.setdefault("XDG_RUNTIME_DIR", f"/run/user/{uid}")
+    # After the defaults, so a scenario can run the agent without one of
+    # them (a system service has no user runtime directory).
+    for key in spec.get("unset", []):
+        env.pop(key, None)
     argv = ["systemd-run", "--unit=" + unit, "--property=Type=simple", "--property=KillMode=control-group",
             "--collect"]
     if manager == "user":

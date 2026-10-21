@@ -1,0 +1,313 @@
+{
+  "binaries": {
+    "go": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+    "rust": "bc2d545774b20ea7b1d1c2b045c67fb57156b3842a9ae6af4eab586ed650196a"
+  },
+  "canaries": {
+    "go": 14,
+    "rust": 24
+  },
+  "clusterEnv": {
+    "OPUTE_DOGFOOD_GATEWAY_VM": "covered",
+    "OPUTE_K3S_CONTAINER": "covered",
+    "OPUTE_K3S_VM": "covered",
+    "OPUTE_PLATFORM_GUEST_HOST": "covered",
+    "OPUTE_PLATFORM_PUBLIC_URL": "covered",
+    "OPUTE_PLATFORM_URL": "covered"
+  },
+  "contracts": {
+    "evidence-redaction": {
+      "passed": 4,
+      "total": 4
+    },
+    "oauth-issuance": {
+      "passed": 24,
+      "total": 24
+    },
+    "refuse-before-operation-record": {
+      "passed": 3,
+      "total": 3
+    },
+    "reject-without-audit-writes": {
+      "passed": 3,
+      "total": 3
+    },
+    "standalone-read-only-gate": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "effectTiers": {
+    "apt-cache": "T2-sandbox",
+    "apt-get": "T2-sandbox",
+    "bash": "T2-sandbox",
+    "buildah": "T2-sandbox",
+    "curl": "T2-sandbox",
+    "dpkg": "T2-sandbox",
+    "dpkg-query": "T2-sandbox",
+    "helm": "T2-sandbox",
+    "incus": "T2-sandbox",
+    "install": "T2-sandbox",
+    "kill": "unclassified",
+    "loginctl": "T2-sandbox",
+    "ollama": "unclassified",
+    "podman": "T2-sandbox",
+    "powershell.exe": "T1-shim-observed",
+    "reg.exe": "T1-shim-observed",
+    "rm": "T2-sandbox",
+    "sudo": "T2-sandbox",
+    "systemctl": "T2-sandbox",
+    "true": "T1-shim-observed",
+    "usermod": "T2-sandbox",
+    "wsl.exe": "T1-shim-observed"
+  },
+  "gates": {
+    "cutover": {
+      "failures": [
+        "inventory gaps remain: 19",
+        "cutover evidence packageFirstSuccess: missing or not the reviewed file",
+        "cutover evidence externalEffects: missing or not the reviewed file",
+        "cutover evidence rollbackRehearsal: missing or not the reviewed file",
+        "cutover evidence ownerReview: missing or not the reviewed file"
+      ],
+      "pass": false,
+      "problems": 0
+    },
+    "m0": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m1": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m2": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m3": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m4": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m5": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m6": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8a": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8b": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8c": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8d": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    }
+  },
+  "goOracleT2": {
+    "go": {
+      "failed": [
+        "TestLiveVMCreateListDelete"
+      ],
+      "passed": [
+        "TestLiveGetHostInfoIncus"
+      ],
+      "skipped": [
+        "TestLiveResetIncusStackDeleteReconcileAndVerify"
+      ],
+      "status": "PASS"
+    },
+    "negative-control": {
+      "failed": [
+        "TestLiveGetHostInfoIncus",
+        "TestLiveResetIncusStackDeleteReconcileAndVerify",
+        "TestLiveVMCreateListDelete"
+      ],
+      "passed": [],
+      "skipped": [],
+      "status": "PASS"
+    },
+    "rust": {
+      "failed": [
+        "TestLiveVMCreateListDelete"
+      ],
+      "passed": [
+        "TestLiveGetHostInfoIncus"
+      ],
+      "skipped": [
+        "TestLiveResetIncusStackDeleteReconcileAndVerify"
+      ],
+      "status": "PASS"
+    }
+  },
+  "goOwnerPasses": 145,
+  "goVsGo": {
+    "pass": 305
+  },
+  "goVsRust": {
+    "pass": 305
+  },
+  "head": "199774b2ec12bf2ba3984d45ad1c303aa1dde381",
+  "inventory": {
+    "byMilestone": {
+      "M10": 1,
+      "M8": 13,
+      "M8a": 3,
+      "M8f": 2
+    },
+    "gaps": 19,
+    "owned": {
+      "cluster": [],
+      "host": [
+        "t2.json:compact_wsl_disk",
+        "t2.json:shutdown_wsl",
+        "t2.json:terminate_wsl_distribution"
+      ],
+      "incus": [],
+      "kubernetes": [],
+      "oci": []
+    }
+  },
+  "m5": {
+    "crash": {
+      "failed": 0,
+      "passed": 200,
+      "seeds": 200
+    },
+    "cross-read": {
+      "failed": 0,
+      "passed": 18
+    },
+    "migration": {
+      "failed": 0,
+      "passed": 6,
+      "repeats": 3,
+      "total": 6
+    },
+    "secrets": {
+      "fieldCount": 16
+    },
+    "shape": {
+      "failed": 0,
+      "passed": 1510,
+      "repeats": 5,
+      "total": 1510
+    },
+    "unknown-projection": {}
+  },
+  "milestone": "M8d",
+  "schemaVersion": "opute-native-validation.v1",
+  "seam": {
+    "canaryRed": true,
+    "gaps": []
+  },
+  "spec": {
+    "failed": 0,
+    "passed": 17
+  },
+  "t2": {
+    "golden": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+    "incusGolden": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+    "k3sGolden": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+    "ociGolden": "bf332e6b8ef945b0247dc60d398cbea72e878a9baa3648ac4173c5c0331409ec",
+    "ociPackages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n",
+    "suites": {
+      "go-vs-go": {
+        "t2.cluster-domain.admission.rejected-no-effect": "pass",
+        "t2.cluster-domain.agent.vm-install": "pass",
+        "t2.cluster-domain.packages.chart-and-render": "pass",
+        "t2.cluster-domain.resources.lifecycle": "pass",
+        "t2.cluster-domain.storage.prune-and-collect": "pass",
+        "t2.host-domain.admission.rejected-no-effect": "pass",
+        "t2.host-domain.archives.extract": "pass",
+        "t2.host-domain.artifacts.download-and-agent-build": "pass",
+        "t2.host-domain.bridge.recover": "pass",
+        "t2.host-domain.connection.restart-user-service": "pass",
+        "t2.host-domain.exec.workloads": "pass",
+        "t2.host-domain.linux.no-effect-tools": "pass",
+        "t2.host-domain.policy.system-agent-unit": "pass",
+        "t2.host-domain.policy.user-agent-unit": "pass",
+        "t2.host-domain.public.tunnel-and-quick": "pass",
+        "t2.host-domain.services.system-lifecycle": "pass",
+        "t2.host-domain.services.user-lifecycle": "pass",
+        "t2.host-domain.tools.apt-ninja": "pass",
+        "t2.host-domain.virt.stack-install-uninstall": "pass",
+        "t2.incus-domain.admission.rejected-no-effect": "pass",
+        "t2.incus-domain.container.lifecycle": "pass",
+        "t2.incus-domain.reset.owned-container": "pass",
+        "t2.incus-domain.standalone.reads": "pass",
+        "t2.incus-domain.vm.lifecycle": "pass",
+        "t2.oci-domain.admission.rejected-no-effect": "pass",
+        "t2.oci-domain.build.push-to-twin-registry": "pass",
+        "t2.oci-domain.storage.policy-and-cleanup": "pass"
+      },
+      "go-vs-rust": {
+        "t2.cluster-domain.admission.rejected-no-effect": "pass",
+        "t2.cluster-domain.agent.vm-install": "pass",
+        "t2.cluster-domain.packages.chart-and-render": "pass",
+        "t2.cluster-domain.resources.lifecycle": "pass",
+        "t2.cluster-domain.storage.prune-and-collect": "pass",
+        "t2.host-domain.admission.rejected-no-effect": "pass",
+        "t2.host-domain.archives.extract": "pass",
+        "t2.host-domain.artifacts.download-and-agent-build": "pass",
+        "t2.host-domain.bridge.recover": "pass",
+        "t2.host-domain.connection.restart-user-service": "pass",
+        "t2.host-domain.exec.workloads": "pass",
+        "t2.host-domain.linux.no-effect-tools": "pass",
+        "t2.host-domain.policy.system-agent-unit": "pass",
+        "t2.host-domain.policy.user-agent-unit": "pass",
+        "t2.host-domain.public.tunnel-and-quick": "pass",
+        "t2.host-domain.services.system-lifecycle": "pass",
+        "t2.host-domain.services.user-lifecycle": "pass",
+        "t2.host-domain.tools.apt-ninja": "pass",
+        "t2.host-domain.virt.stack-install-uninstall": "pass",
+        "t2.incus-domain.admission.rejected-no-effect": "pass",
+        "t2.incus-domain.container.lifecycle": "pass",
+        "t2.incus-domain.reset.owned-container": "pass",
+        "t2.incus-domain.standalone.reads": "pass",
+        "t2.incus-domain.vm.lifecycle": "pass",
+        "t2.oci-domain.admission.rejected-no-effect": "pass",
+        "t2.oci-domain.build.push-to-twin-registry": "pass",
+        "t2.oci-domain.storage.policy-and-cleanup": "pass"
+      }
+    }
+  },
+  "t2Inventory": {
+    "build_and_push_oci_image": "covered",
+    "cleanup_container_storage": "covered",
+    "configure_oci_storage": "covered",
+    "delete_oci_registry": "covered",
+    "ensure_oci_builder": "covered",
+    "install_oci_registry": "covered",
+    "stage_build_context": "covered"
+  },
+  "workspaceTests": {
+    "failed": 0,
+    "passed": 250
+  }
+}

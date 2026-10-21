@@ -246,6 +246,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         .set(Arc::new(move |uri: &crate::resource::Uri| {
             adopter.adopt_cluster(uri)
         }));
+    let oci = oci(host, &k8s);
     let agent = crate::clusterops::ClusterAgent {
         instances: instances(host),
         env: host.env.clone(),
@@ -276,6 +277,11 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         service_exposure(&k8s),
         guest_storage(&k8s),
         cluster_agent(&agent),
+        oci_registry(&oci),
+        oci_builder(&oci),
+        build_context(&oci),
+        container_storage(&oci),
+        image_build(&oci),
         host_artifacts(host),
         public_mcp(host),
         host_vm_subsystem(host),
@@ -1680,6 +1686,25 @@ pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Re
         return None;
     };
     let Some(operation) = catalog::neutral_name(name) else {
+        // D23: a mapped tool's Consumer reads Go's values and its result
+        // publishes the mapped values.
+        if let Some(args) = catalog::go_value_arguments(name, invocation.args) {
+            let call = Invocation {
+                ctx: invocation.ctx,
+                args: &args,
+                binding: invocation.binding,
+                snapshot: invocation.snapshot,
+                claimed: invocation.claimed,
+            };
+            return provider.call(name, &call).map(|outcome| {
+                outcome.map(|mut result| {
+                    if let Some(structured) = result.get_mut("structuredContent") {
+                        catalog::publish_result_values(name, structured);
+                    }
+                    result
+                })
+            });
+        }
         let Some(args) = catalog::renamed_field_arguments(name, invocation.args) else {
             return provider.call(name, invocation);
         };
@@ -2160,6 +2185,251 @@ fn guest_storage(k8s: &crate::clusterops::Kubernetes) -> Service {
                 ),
             ),
         ],
+    }
+}
+
+// --- M8d: the oci domain --------------------------------------------------------------
+
+/// The oci domain over its seams: the kubernetes domain for the registry,
+/// the host's container tools, and the storage policy file.
+fn oci(host: &crate::tools::Host, k8s: &crate::clusterops::Kubernetes) -> crate::ociops::Oci {
+    let env = host.env.clone();
+    crate::ociops::Oci {
+        k8s: k8s.clone(),
+        env: host.env.clone(),
+        command: Arc::new(move |argv: &[String], deadline| {
+            crate::hostexec::combined_output(&env, argv, deadline)
+        }),
+        storage_policy_path: host.oci_storage_policy_path.clone(),
+        storage_mu: Default::default(),
+        instance_id: host.instance_id.clone(),
+        shared_host_owner_instance: host.shared_host_owner_instance.clone(),
+        home: host.env.get("HOME").to_string(),
+    }
+}
+
+/// `optionalInt64Field`: present (even as null) means set, as `int64Field`
+/// reads it.
+fn optional_int64(args: &Map<String, J>, key: &str) -> Option<i64> {
+    args.contains_key(key).then(|| {
+        args.get(key)
+            .and_then(J::as_f64)
+            .map(|v| v as i64)
+            .unwrap_or(0)
+    })
+}
+
+/// M8d: the generic OCI registry, deployed through the kubernetes domain. As
+/// in Go, the VM is the binding's provider instance.
+fn oci_registry(oci: &crate::ociops::Oci) -> Service {
+    use crate::ociops::RegistryArgs;
+    use crate::tools::structured_result;
+    let (install, status, delete) = (oci.clone(), oci.clone(), oci.clone());
+    let registry = |call: &Invocation| RegistryArgs {
+        vm_name: call.binding.provider_instance_name(),
+        namespace: text(call.args, "namespace").into(),
+        name: text(call.args, "name").into(),
+        image: text(call.args, "image").into(),
+        storage_size: text(call.args, "storageSize").into(),
+        storage_class: text(call.args, "storageClass").into(),
+        node_port: int_field(call.args, "nodePort"),
+    };
+    Service {
+        id: "oci-registry",
+        dependencies: &["cluster-resources"],
+        operations: vec![
+            (
+                "install_oci_registry",
+                op(move |call| {
+                    install.install_registry(&registry(call)).map(|out| {
+                        structured_result(
+                            J::Object(out),
+                            Some("OCI registry deployment initiated."),
+                        )
+                    })
+                }),
+            ),
+            (
+                "get_oci_registry_status",
+                op(move |call| {
+                    let args = RegistryArgs {
+                        vm_name: call.binding.provider_instance_name(),
+                        namespace: text(call.args, "namespace").into(),
+                        name: text(call.args, "name").into(),
+                        ..RegistryArgs::default()
+                    };
+                    status.registry_status(&args).map(map_result)
+                }),
+            ),
+            (
+                "delete_oci_registry",
+                op(move |call| {
+                    let args = RegistryArgs {
+                        vm_name: call.binding.provider_instance_name(),
+                        namespace: text(call.args, "namespace").into(),
+                        ..RegistryArgs::default()
+                    };
+                    delete
+                        .delete_registry(&args)
+                        .map(|out| structured_result(J::Object(out), Some("OCI registry deleted.")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8d: the host-side image builder.
+fn oci_builder(oci: &crate::ociops::Oci) -> Service {
+    use crate::tools::structured_result;
+    let oci = oci.clone();
+    Service {
+        id: "oci-builder",
+        dependencies: &[],
+        operations: vec![(
+            "ensure_oci_builder",
+            op(move |call| {
+                oci.ensure_builder(text(call.args, "builder")).map(|out| {
+                    structured_result(J::Object(out), Some("Host OCI image builder is available."))
+                })
+            }),
+        )],
+    }
+}
+
+/// M8d: a caller-provided build context written under an allowlisted root.
+fn build_context(oci: &crate::ociops::Oci) -> Service {
+    use crate::tools::structured_result;
+    let oci = oci.clone();
+    Service {
+        id: "build-context",
+        dependencies: &[],
+        operations: vec![(
+            "stage_build_context",
+            op(move |call| {
+                let files = call
+                    .args
+                    .get("files")
+                    .and_then(J::as_object)
+                    .map(|raw| {
+                        raw.iter()
+                            .filter_map(|(k, v)| v.as_str().map(|t| (k.clone(), t.to_string())))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let args = crate::ociops::StageArgs {
+                    dest_dir: text(call.args, "destDir").into(),
+                    files,
+                    file_encoding: text(call.args, "fileEncoding").into(),
+                };
+                oci.stage_build_context(&args).map(|out| {
+                    let message = format!("Staged {} files into build context.", out["fileCount"]);
+                    structured_result(J::Object(out), Some(&message))
+                })
+            }),
+        )],
+    }
+}
+
+/// M8d: the local container storage budget, its inspection and cleanup.
+fn container_storage(oci: &crate::ociops::Oci) -> Service {
+    use crate::tools::structured_result;
+    let (configure, inspect, cleanup) = (oci.clone(), oci.clone(), oci.clone());
+    Service {
+        id: "container-storage",
+        dependencies: &[],
+        operations: vec![
+            (
+                "configure_oci_storage",
+                op(move |call| {
+                    configure
+                        .configure_storage(
+                            text(call.args, "runtime"),
+                            optional_int64(call.args, "maxBytes"),
+                            optional_int64(call.args, "minAgeSeconds"),
+                            flag(call.args, "pruneNow"),
+                        )
+                        .map(|out| {
+                            structured_result(
+                                J::Object(out),
+                                Some("OCI image storage retention policy applied."),
+                            )
+                        })
+                }),
+            ),
+            (
+                "inspect_container_storage",
+                op(move |call| {
+                    inspect
+                        .inspect_storage(text(call.args, "runtime"))
+                        .map(|out| {
+                            structured_result(
+                                J::Object(out),
+                                Some("Container runtime storage usage inspected."),
+                            )
+                        })
+                }),
+            ),
+            (
+                "cleanup_container_storage",
+                op(move |call| {
+                    cleanup
+                        .cleanup_storage(
+                            text(call.args, "runtime"),
+                            optional_int64(call.args, "maxBytes"),
+                            optional_int64(call.args, "minAgeSeconds"),
+                            flag(call.args, "dryRun"),
+                        )
+                        .map(|out| {
+                            structured_result(
+                                J::Object(out),
+                                Some("Container runtime storage cleanup completed."),
+                            )
+                        })
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8d: build an image from a staged context and push it.
+fn image_build(oci: &crate::ociops::Oci) -> Service {
+    use crate::tools::structured_result;
+    let oci = oci.clone();
+    Service {
+        id: "image-build",
+        dependencies: &["oci-builder", "container-storage"],
+        operations: vec![(
+            "build_and_push_oci_image",
+            op(move |call| {
+                let build_args = call
+                    .args
+                    .get("buildArgs")
+                    .and_then(J::as_object)
+                    .map(|raw| {
+                        raw.iter()
+                            .filter(|(_, v)| v.is_string())
+                            .map(|(k, v)| (k.clone(), v.clone()))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let args = crate::ociops::BuildArgs {
+                    context_dir: text(call.args, "contextDir").into(),
+                    dockerfile: text(call.args, "dockerfile").into(),
+                    image: text(call.args, "image").into(),
+                    builder: text(call.args, "builder").into(),
+                    insecure_registry: flag(call.args, "insecureRegistry"),
+                    platform: text(call.args, "platform").into(),
+                    build_args,
+                };
+                oci.build_and_push(&args).map(|out| {
+                    let message = format!(
+                        "Built and pushed {}.",
+                        out.get("image").and_then(J::as_str).unwrap_or("")
+                    );
+                    structured_result(J::Object(out), Some(&message))
+                })
+            }),
+        )],
     }
 }
 

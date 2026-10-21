@@ -1,0 +1,1563 @@
+{
+ "changedDuringRun": false,
+ "golden": {
+  "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+  "baseImageSource": "https://cloud-images.ubuntu.com/noble/20260926/noble-server-cloudimg-amd64.img",
+  "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
+ },
+ "guestSha256": {
+  "driver.py": "eaca544200f794f442b7b9bff28745bce1643e1c7343ecfda4339848c8f5bbd3",
+  "snapshot.py": "f042798c5b9615b65ba99e6564ac81e5745de56ac187afa8fc688947d7ccd045",
+  "tlsstub.py": "aa7a1f724fa77f293bb5080687c0a8747c76fb9406258487013fb43c36345b64"
+ },
+ "harnessSha256": "013c017aba6b31d9252af3c2c2d3cf510d27e1face6505e9955bed0771d68688",
+ "incusGolden": {
+  "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057"
+ },
+ "k3sGolden": {
+  "goldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+  "incusGoldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+  "providerSha256": {
+   "opute-provider-k3s": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915"
+  }
+ },
+ "left": {
+  "label": "go",
+  "sha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215"
+ },
+ "ociGolden": {
+  "debSha256": "e5c1c37e387ed14c352a744a75fbb79fb2f82573ca7bf36886e3b7333fc9ef1a  podman_4.9.3+ds1-1ubuntu0.2_amd64.deb\na94382e24be71739da40350fddc896464692cd736d2fc2f5507d6d6961d34727  buildah_1.33.7+ds1-1ubuntu0.24.04.3_amd64.deb\n",
+  "goldenSha256": "bf332e6b8ef945b0247dc60d398cbea72e878a9baa3648ac4173c5c0331409ec",
+  "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+  "packages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n"
+ },
+ "repeat": 5,
+ "right": {
+  "label": "rust",
+  "sha256": "bc2d545774b20ea7b1d1c2b045c67fb57156b3842a9ae6af4eab586ed650196a"
+ },
+ "scenarioSha256": {
+  "tools/parity/scenarios-t2/cluster-domain.json": "980ae1b57f7a641bfec5ae96789860bbbe26b17618a687ba50240ba98adac40d",
+  "tools/parity/scenarios-t2/host-domain.json": "7f366c9fd62508a5f3ee25d4d805dd1e71ef4114f288d16b8f283cc0123171fd",
+  "tools/parity/scenarios-t2/incus-domain.json": "feed0d1a22112643b83e5f051f620a5770dab15c5a11ee109fe885038bedef92",
+  "tools/parity/scenarios-t2/oci-domain.json": "6bdee717ff3104c93135f5800b17f083c4c4161e4bc6aa711ed687b3db7b08b1"
+ },
+ "scenarios": {
+  "t2.cluster-domain.admission.rejected-no-effect": {
+   "file": "tools/parity/scenarios-t2/cluster-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "b5fb17356b40b3dde51eca03fa374de3fdd10ea17acdd0baf94a05b0907ce0c8",
+      "b0.json.gz": "c41c829513ebcba9cb54257660a45c15b6c12f916c25792994d3c3c10dac236d",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "00fe495f94e14c5707c802ec68d51c8219260edec36e3badaeb2f5b04830162d",
+      "b1.json.gz": "7fecc9585271d347ef5ad02da2f4e15a8cfaaf14d0977a47434427d13086ae8f",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "d45cd702b93e9847c75723532a9b88155f320f422e68e858267f8a9b20e7b7a7",
+      "b2.json.gz": "5dafc931391efb0577f950563557bf0034acea7f3cd7b011aeab99ccf31fb4da",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "56762b32816cad40791dbc2e7c9c6f90716918880e1c12705d952d9fbacaf3f0",
+      "b3.json.gz": "b6f0cb6c30a743c7e2281e3df84f2f10161a85e4d684882308652804b50d1c0d",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "d0211b6d10db4bd1b825db04b145b28ab64788320b13fb205a133d56e2131aa9",
+      "b4.json.gz": "61a07a115e48d0f6abecfdb3a7121c86ef7235d1ae9e11703e7fbde91aeb5ee6",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.cluster-domain.agent.vm-install": {
+   "file": "tools/parity/scenarios-t2/cluster-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "7e6c778f90a8d48202a6933b7cf8e285b1aea672f1b8e117dfea061a8d56268e",
+      "b0.json.gz": "14268fdaaaa9cb693eb6f16e9180570a1b82b2f6631da9c71af52177146fbdfc",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "d0dd7dc7869972dc8f4db57d32550b46a51e914777c652d86c6bbafc325e877d",
+      "b1.json.gz": "3e041ae28481b7b299ed5c6ac5603b2b1c916a07430697595bc2363517622673",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "2f8362daf13703194649544cc5ff1bf39920e803bea85c0cc25002296510df7e",
+      "b2.json.gz": "7351a3874dc8dcadf5fd5c3ac1be0c4a7826962c0f7932e1a3352b8eb4964f2b",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "9b69adf23009a1e7624c071999faa8ab838f3e8d876e783075bc647c7f75150e",
+      "b3.json.gz": "b613ceda55a5c00335317c163b398be92384f539a8d301f065e028f96aad0d2f",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "33621c7c2c67892b9e111ee551ba849d5d8ec084e256eba7e9263d12a934a538",
+      "b4.json.gz": "492b89b9d73a054ceec38cd0f08b18f8cbb8bdfb43f55e70f5266e66bda4ade8",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.cluster-domain.packages.chart-and-render": {
+   "file": "tools/parity/scenarios-t2/cluster-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "3708a1ed59d431a32bc2f1013abcd93fbda545807fdb54c5ecda9c5f983cc6c8",
+      "b0.json.gz": "a6af822cb190169b66f8114ecdfd108ad51db51e3227a6f9978234b7ad6bd237",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "36e2c8c8d8156a0f8fb8ff6fe38cd917b23db149dae9ff1d9e9da9b39ec3a05d",
+      "b1.json.gz": "d23d1e51f35e279991767178c1a084d346b24a1bc4ec4d1eef7a29e987f6a4a9",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "80e7de2edef64ec722f9347b6a37e5abfbf79548e1ee50d0e464451ff9393101",
+      "b2.json.gz": "00a23a527c667337c6e33a012ccec9f241d089ab06e5a6b8504213103c78cdba",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "1ab79e9c7169692b6ba48ada867c82508704039c41f2889f1df1ecd6be8f43f6",
+      "b3.json.gz": "b8ad43f693df9154c9fb52b4e1aad2a87fbda330247a741086dc4e150d22e3f2",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "5ab5da1dd6295c5fd5df19c109ef149708e7eb559d5ba5c336f52714312431f5",
+      "b4.json.gz": "c2c8dcb5d5e0d9a15733c330a25c1ca513a3f1f6461d3f6e6583fe99ebc3d3d2",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.cluster-domain.resources.lifecycle": {
+   "file": "tools/parity/scenarios-t2/cluster-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "94c506a71d2d650abf62d8822ada7dafdace12b047edc7f214a20ff0b4c584fa",
+      "b0.json.gz": "5ecc065a51832e94533772b3bf7c3c8f9cd72cee67e13a8b7ad4a8178a9a7b28",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "02f1771c94f8534b4b61c242c1f54663e2debf3da1cd5e2ba031ebe377e9819a",
+      "b1.json.gz": "641236c0cf124942e6ec827870e9a2d21945fbc72ce8cfa29e217989b604ad75",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "46727534bcebb3f0f4778d29df0a2f40ff92308fe8023f7dc1d98ed0a2999e8e",
+      "b2.json.gz": "2f6d17f8f512243f30c025a8ea126244f6244c97284875615f3f46cd218b0d97",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "ed3d55543873575467edf0fafa32501d4e716a67d21fc7ca378b690dc9ac8b2f",
+      "b3.json.gz": "0d06b2d2883fece62f97d5b88d5a28e577aef5b69153c2120b10d129695bf75b",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "b9ce94b0affbaf9eaf355de08b8d9475aca70e6cc6d3d1fb5cc3306d5de0216f",
+      "b4.json.gz": "7992d3d201ec021954d7fc4b1cee6c184df1765d4e0e38e832ddfcddac7f8c7a",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.cluster-domain.storage.prune-and-collect": {
+   "file": "tools/parity/scenarios-t2/cluster-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "5f9d78f148d4b0170ee754833b95011b6a5190ccfdfb6909ec726f57e8ed92c6",
+      "b0.json.gz": "a828654969ba867b6f5c4cf07b6afb45a16e862d5f9508b172b27ad547d4c307",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "803468364c65c473cc9de189e45bb90ee8014e0658a288d03b8e3707fe5b66a0",
+      "b1.json.gz": "6e6613ce2e5806d63d77feafc57367d2713d3675cf450ac742162703d756382d",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "cdda4e30794aa3e5d8ba9e142344ab15a49b8b6a460d9ebe3775469246e89ff1",
+      "b2.json.gz": "abac7a47fc93c95b3676b5ff184a88ed98483954aaa925962d9ed24a05237ec7",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "2bc6cdbf58bcc6231e48a55856349b9ca862ed9c71204280ec075f09e5955799",
+      "b3.json.gz": "18cbb0ae7f36532dc366ade0f50862c4dc2bd6aaeb54da736354a00852fe369a",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "ca82b8ac0d8e05f62f71de739b1c392163470dcbff76db5f887e0954da13dca8",
+      "b4.json.gz": "fe8450ec820ca8981aa603ef715ac95a48c6296cc0ee3e8fbef606d1c78499fb",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.admission.rejected-no-effect": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "0a366da6975b910912777832ec99dea5f16d84c81cbafd9930a52868cb12b703",
+      "b0.json.gz": "c2246e0e4a99eac631b61cda0de1147bee68ca9be36a1f24da68f29b6ce386c9",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "611776cef1cb19b3e808c1288f03b6a6a89a963588e07399a0e940fac64e9faa",
+      "b1.json.gz": "16461f236eab67611d2f57c6db2f8df25922e0a76b479218651ef2a0d34f423e",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "19d7061507175f4001155f4e9ae4e652be91ab3a45df1ba3a619aef86a85ac68",
+      "b2.json.gz": "9332167e432a037c6efd62dc46c258f752772aa68c0c8558be5fb2e67d100731",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "ce336c38a2376c7372b01f82db00ba9c42d3522429441d273665af614cbefea7",
+      "b3.json.gz": "32adc2f15cff25dd9a826103b0e1e7b152228471a849d8b595d9975ced443310",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "592eb2e5af39893bfe8bc777c478f9ca15d786e99b9bae290b2ac141d220c9d9",
+      "b4.json.gz": "65183de409fa3558d204fe38fc133d578954d46c8913e26ed9460e3c16d5ef33",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.archives.extract": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "6610a2b8a825de5ad0f761d32b1a844f36c80f50bd282f9d352bb37468391485",
+      "b0.json.gz": "44c6c54895e3f889677114923fa6e07b7ac39b16dd153f6d809992e35997a32a",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "fed599e6a0fd89a72186bc838eae3edfdfb2bf514f13c9c6b5f58983391a8b61",
+      "b1.json.gz": "c9b6e2986823aaf70b65634504e5432315659446f6e00b0a081aa5c6e86924f5",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "e7aae48e4bf5eab0617bfd7ea08bdf9958bc8398579a0da68a38f8d50490885d",
+      "b2.json.gz": "18bdeee343b5e9a5021985efcbdf58e0ebfb566ecf4e7e62a7687968a235b498",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "300cb9a4370826da6ab9548e537886e2a235d08edd6c53aa2381c247168ec889",
+      "b3.json.gz": "789053d00398279a5e6871d5ff3dfebc1dbdca83f6406d774c85bfdcd6542ec2",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "b26c39391e56a5684f6ad2a71ce5ee9625373388df4399ed8b7799c39fee3a84",
+      "b4.json.gz": "cedba421652134abf68f6693a6e063fc760f28361fd007bcba4024f1e47a4a44",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.artifacts.download-and-agent-build": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "93ad470edc9576bdf23f76afbcf16eb201b99a4c4f7ce6cd3ea303333814bb3b",
+      "b0.json.gz": "178d3db9644c2133fffdf5c8ebb21369c1d75a204012614f02e9b6f5188e021f",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "92615cb4a36eae8d5bc2a75c6b17344b4cef6d304e5c36d6dfa52e983419e973",
+      "b1.json.gz": "98b3761bc109415696bf5fd4bf05022d5402afa3e36549e1d083ba5c12e387ed",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "95e1b836a25f4c5b17ba1614e57741b63d070fa7eac84437edc8091159a60560",
+      "b2.json.gz": "5620e8a375949207f10a04a7a26c384dfe2be847d147d5538ddb2cdb6c7c7b5e",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "def5f6cc44ba59036b46bdfa3403cbd94eb9175f28303aa573221c83f2438996",
+      "b3.json.gz": "34d6c590370d6fa0b47bdb7087cbb245f2b7347a365a6d03afb28f0ab7ba6f64",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "b9e45865b40cc2e123315317d075f0d25c362f85fb801e49355f584afba6a038",
+      "b4.json.gz": "ab295ab55d93499e8aba7fd150c2252ed19710e38c5854e5aa1e83c403e1b8ae",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.bridge.recover": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "5099db34d28c58d1527e98dfa727d6b4e06d468c315825dca434deb6e7e90943",
+      "b0.json.gz": "28ac98a5cde22473ec9f4e0dd0674f087968107875c60d85ada1326fbe4a8e09",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "e95b56f374582a3a8f7613912493b06f0d0436c4f37476e18fae4c67784c9e67",
+      "b1.json.gz": "e282834f78f90a42d11f4bf29298f525c977e90f40f4ece50255a2fea4a0fe56",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "4bbc613612688dd69286a9ccc27bc178e03cc8206b3d0741edc0ada6772a4b76",
+      "b2.json.gz": "2a1326b41076e8be27377c3c6519c4a408ffc8dc88b20c73963c031297bf3948",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "e390bf0027a9692fa9a58bb37755bc094162c8940980ff8f97a78925a579c81c",
+      "b3.json.gz": "b1fe73cee4350e9754d840f43ad9d6132581d838a9c3c42beccc717468020163",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "ef5c3d1724b3e68057640c88306b96df58f6f9842fd426587011e76d4b6f53db",
+      "b4.json.gz": "d03f282fd0585bde31b9e2e45d184908a6fc719aab93f11555ca79202f16114a",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.connection.restart-user-service": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "16070ba0125d995ce33094a8da5cd608cf3325e536ddca16a3a597889c43fb45",
+      "b0.json.gz": "2add15c4385379ca9b5b52d8d400224849f5475e888375af8ae2fbf848468634",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "6906f96c0ccc750587b1700e24c8e748adb2f832c635c635f5c2a1d4deac67f4",
+      "b1.json.gz": "00b4e17f3dba49a2047bc298282339b840fdd27bdfffc7d5ecdd45c361cc0707",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "86c2adebed091e69c8ae0ccc5bbc44f013619e2ad9859acc5dce5382df1a6686",
+      "b2.json.gz": "26a8fbd212530c71dbdf6d5b8354045932e2c39b2ae2277b4afb07a07e249da1",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "03ae4e458798715f8d8a94acc07e46abbc2d0e49f3f6da311df1981ef29dd33c",
+      "b3.json.gz": "1302ac7b79f68309be447147879ac28f7066960aeaa0d31d159862110bb560b4",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "9a1a15c8eab9083ae06b788fd0c661d5e2c7ff8a7cf6e00bdbc4b62c92aef1f0",
+      "b4.json.gz": "81622bce64b159cbdd89a687b86fd5364eee789061ffcefedced78181688d80b",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.exec.workloads": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "969637871005c4bbda95aacd27f48393afa1e4bb454046acd8d4ca6cc5221896",
+      "b0.json.gz": "6c7b42d45b304522fdddfaef0c4cf5f503ca53bcbb26a3b7db2be9dcf0299d0c",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "eb39f35e46004f9d0d6698d8fb6f60ddcfc9f733e9e2144553e2f7435eb65a40",
+      "b1.json.gz": "f76940856f0adc520d3882fdbe52912483c0ac2964969cc8baa24df828693d45",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "b7190c40b6e89959352f8263beb1412ab33d726ae77fb9f8dd1784d708d45149",
+      "b2.json.gz": "90d0e449957c2bfb39a4625eb0d3711e44009fa7ef639f2f6b1a4859dd53d75f",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "e60aa25d1053b457eef571252226838883bd594d516e8a2744d4892b35c50704",
+      "b3.json.gz": "7672417c1580ad3d9a6b4a3420a3096cb961c02a92f3c665a42065c73b7c2cac",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "c0f4eaf7c2f4f577e6e3ff5a85d278248555de7485280b3cfdade59efe2aba42",
+      "b4.json.gz": "9b7706c8099dbf754f7bd9b62ec9c971ffd9cdb48185bfa93e4b88977912105e",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.linux.no-effect-tools": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "8d3b9ed1045b74ce15122fdf495fddb0fff1040543707b40bb8f769c2cd1120f",
+      "b0.json.gz": "f3493dfba02696be7d1b89d2bcbf825153b7adb4fc7538d3b61b5196208fe76e",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "796f7bb7b5605e0f312d96c66b3cb3243422d161c51b45ad81097182900406c2",
+      "b1.json.gz": "9f85ed452cc335d774ba4bd3a116df7d2bf990052a35aa57f819d6127084935f",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "31ce2a3dbcd4e9bc03c2b7eec3c706f85d095bb738d380a3a64627c196adc94c",
+      "b2.json.gz": "e1a8d27702fcc8406681bdfac7925286514ed392a309e95400ff2749712d5440",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "14e2914fa9fbe79fe9f3213754558467705876766064109deca69e9ff415a7b5",
+      "b3.json.gz": "39b2f73924dec614cfb9792ccc9813ea3bc608afc73b5882070b30ff4d21c5d1",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "c928f54d1c7e2b8d707e7733260cc0dbabb8d7d998e930d2c74c7e39b012e063",
+      "b4.json.gz": "1e532996d3cdd00c52342e04107812a8861a28f2f873c82a0d546f9b4f00cba1",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.policy.system-agent-unit": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "f293161bda058d4ca111070d403e8fa8d977c5466374df2be62ecb5ed40b93ea",
+      "b0.json.gz": "6397de7740b8da99c06169bdbafd1be57ab670320f0852da79295ba9ea3e40ca",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "1d4650b10bdf12a924807e67a12d6f5c33bbdc96dffcd65d9832493b7212bae0",
+      "b1.json.gz": "da0dcddd46cd16b7b7c53800584c78a30b4b0d512522b4100ebf8a0af888406b",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "6240b36258f080388b710d659584c54f782b0ae89794bdc0545132e17ed1657a",
+      "b2.json.gz": "785c45e106a3719122091f9ffe76fae1b56ec3992a5ff8eba64427a9da87d623",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "9a74a15b47903e62e3e5a0038b6f51fd133dfb668dee077c5e4a8ec5ac6a03db",
+      "b3.json.gz": "851de0d71af9003d528d79df61316f3b5e48f82774cf2fb4425a1bba9ec60940",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "606ec438ba47d0edaf3a5fe7baa556138b64ccddca4ced31e8d6fbc76d586a00",
+      "b4.json.gz": "1f0df7838631e8f839bee3b3a6ce5fd795e8ceea46da09f08583860ca42e0f82",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.policy.user-agent-unit": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "7584478cbb910e434decf654500b8e8471dcece28968cff7375b6d786744cfc5",
+      "b0.json.gz": "a794cce18d67411236312bf80bc9ae81e3432c246cb7dded2fa2c6ca0aa6cb9a",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "7079780bfa35e1f3b30f416d0e3f92c41242808f91d4376d4265fa0032629dc7",
+      "b1.json.gz": "5db9e66b0cc3e76206c2d93bf56bf58ef7ab8cc3ee7542f939cad4c4944fe00c",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "b946fbf58fb366a05baf2e036aede814598ea6283ac357821f5cf51a31a79f8f",
+      "b2.json.gz": "f28c74227553e7cfeca1d0869db6348f11b7a3fe6dea0332de3202618c0ff7e8",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "680c19926340936822d0abbae1da4b7187ac0cd325655d59fe65f2d0dfd4ce6d",
+      "b3.json.gz": "a52de6272fb2ec4a9ffe51b6a286951bc58a3a6e3b7b6d7f8ce84c681698d686",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "12b3edb09a008df57703bfd22e0259154e532252d29e323b710f12b3fa28849d",
+      "b4.json.gz": "82e032c2897a35e5dfa5872698ea18137e65ed48f98c1b49ec3a7a65e9ce2d27",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.public.tunnel-and-quick": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "1ae5170d5573e282069c746a05ffd805b9348ceab6e82937ed97c40082f69981",
+      "b0.json.gz": "80ea837dab4158e0ff5d8df7390f0d94e0de9916e1e8354ac403a7e8ce390456",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "5cad0a9b7f07e554e99621c3148dbec88ec52d4e71cb1da8bfbf704f81151493",
+      "b1.json.gz": "f645ccdef90ddf8316e2911eba30a8d4624c2d6b73b352369d54a8128200d772",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "eaa12c6c6b86c5b54aa545390ba9e650a35344692ed70e08bd565150ffaf0cda",
+      "b2.json.gz": "f4306cb763026d24a68231873b0596afb5d2ec0f28891084e61e6c8f436140cb",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "7b910cfcd22a99e4e8868c0bd677ee6cd1cd651b84e2ef67da11a87164cbb120",
+      "b3.json.gz": "46666e83d367cc7582a3200a432201ab72f201dcd1e610005426cae3f44d73f0",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "73fc862726870f1a1e986c1d4e0cc90a6c02ba15c143bcf779f847d70768ce62",
+      "b4.json.gz": "dfe251ddf46505020df0077df1d4927a5b02ffeb27ef63ef5cd7ac049421a067",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.services.system-lifecycle": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "12d66ac83f9774d1ebcafb29b2a86a9ba02bc250a6b1a104d67925c52155f0f2",
+      "b0.json.gz": "36121b38a56cf2cde07d5fb7aea0a2b3ab9d4ef2ffbde2d56cf5b5cb29836e13",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "a1105ab3067bbae416ba0f34614bbe32ecd8694eef330a26658898f4c442d8c8",
+      "b1.json.gz": "9f0181c58ceb2961cc2434c4fa63ee988fc994531160d3baee215b140284864f",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "e087aaa291ea99727996e4e9ef6ae7a528ca18426d6f005aa9d4da572f33c1be",
+      "b2.json.gz": "814d4bcc56a89bf6680c1365cd3352ff5d7f84a227c9b24c773fb12ee8566b90",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "16486cfe68bf38aece397538512b99f6eeefb447c5da9a42ba2a71818298ceba",
+      "b3.json.gz": "45799e122e242b23de4a15d15eb9252cfeb54ba5e9a6fb4254c19c44438bc166",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "7778a53b3e2d2bc523e2134f7b8609021c9b035266a01903160d339992288b8f",
+      "b4.json.gz": "8b35c303cc3abb060050f95916ccc4349c476f38423af89f8b59652cdac4e2bb",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.services.user-lifecycle": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "8e1f98b08157ea104e2fe50bc8673cdbf100acc0df4c7a3d2d2b4d728bbe8948",
+      "b0.json.gz": "ccba40861ebe19c4c93769ae602c2c5eaf30696fd5aa49605fb3f6cefbbca351",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "cec79a69609485a9623c5a403c092b5efe4cab0ffb090ac033d737f35dafba99",
+      "b1.json.gz": "d5fc30f8b379a4a7fe30e70f2503c78abec0f695b3e5dabb8158682fbe091a56",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "ba44f07e0f93846232274d2dd09cf39539153080ae8bdedf68cf5104ae47eaad",
+      "b2.json.gz": "b6fb5a7bf4990b6a78ff0e4b645b1f5421b5dff497f54466bea11557227dfbcf",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "a149dc7aa7fc4e189be7d99bfcbb2e4a46f9fda07f1213703cda13aee31dcfa4",
+      "b3.json.gz": "cf14a63deb323e0dcc7a95d0b613718faa9850d431d2f0a1f1d293d7f25097b4",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "6a747631d2b969c76235e25316da35d9f539385922660bd9caee58bb22bc0ee8",
+      "b4.json.gz": "32d8a9387124fa9579801f8988100d97f1a05551b66e8a0b943c1437a660d2df",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.tools.apt-ninja": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "7338704819a017d5e1d65170c9b198813dddb88cb899fb4329b5f7c6ad8dfe96",
+      "b0.json.gz": "12f7e5c74cf571478f65dc719ecfe14bfd8652d31f9615d1250935c209901a88",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "698c973a41daf503c2ffbaba825c913dc0e29a9367f9de13d796f30233ff6553",
+      "b1.json.gz": "3061c626a05dc82743be7b2b6c01ae7777db329578ba7cfe1aff7f0206653651",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "9ae1019d7d0e4127969453c77a3d99a4ebbebe0b8d4accaeb4fdfd9ad98ea45d",
+      "b2.json.gz": "99a978a02958209375ccaf49100026b2bb2d3231d6d68f79e6137bbf57c52a80",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "66b081f9e09aa310374bbb56fd592d63026895440e849e25c4b52b99a2d542f2",
+      "b3.json.gz": "cad853786eb2374bb22733802ee95866190c1ef0aa27e7aba4e8996824f7d6dd",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "16d649226267cb99179fab05105321d1552225d883cced05b28cb982b5f04d00",
+      "b4.json.gz": "c417d529e12bf6f5b0fbc17eca135eee0748fc1a2a83de99eaa4eb3ccd1053c3",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.host-domain.virt.stack-install-uninstall": {
+   "file": "tools/parity/scenarios-t2/host-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "f7ed5597f316683fe641aece5b791555c5b00f14e34b16c9f8100078b459bc28",
+      "b0.json.gz": "6994913d165b1313d9503ded8214f0662e9cfb31b44358d58af300b082e71280",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "8ad01d86a8a9787054f3e48170877f9ed980cc00d71ab5f576b071f553750202",
+      "b1.json.gz": "ec1eb4b87b17bae8de17fb2e17685630c86a250fa54a6cf91b0695c5d36e9d88",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "77ff699c57bdf240fe06534e616abba3d6ccca5f1257e0ed6244695150148089",
+      "b2.json.gz": "2d419b46965ece653519325504ad10640fef32331c44792d5cf7895545bbf730",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "131675c82db8f664ae98990846dddfe4bcc2de7bb97c202747794dc209940d6d",
+      "b3.json.gz": "ba7a5fee745b5f51adbe4721e33a156a6aaf7f7485eb1ae56e1ad1d301d099cc",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "71abd6094bd0f44dd73536cd0a40ef63d81687f9a598055bee9b3acb8b8172bb",
+      "b4.json.gz": "ef25518a36357c378e73958d82bd9226a6550028cece6bc085fba9db853bbef2",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.admission.rejected-no-effect": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "07f5e2e0962f3b9218dcec85c80177e91bd38d3b437bd9f54cc9fe70b0d455ed",
+      "b0.json.gz": "81cf5df9bd53464186ebbe498c0f660f2b16060a9d890e0d7c33dba52482ac6e",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "3e0212df5ad68109fd80eb22a7df98797893ed4722fac6eaf7330a84c12b8b31",
+      "b1.json.gz": "ae616832111a197f34f9eb1435ded5d2b05216e60b12639b39225083ef04ec03",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "41f0088ed8d1d288ef75caf9ec6b49698ff47d6a61e894ed1287fc932f706723",
+      "b2.json.gz": "50775da462fd9b73528492bc1e0708ef447a01b03309bb4dd18c7d719818f9e9",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "5fc6ce392c8714dd7b5717d12d2f7c093f284aa0ce6c4924c5aa6d16feac1333",
+      "b3.json.gz": "549624cd7a1b83b34298d9702d3d7c9a5042da0919d72384ecf7c9342f45d3b6",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "f3ca311c3e7df67d26f6e8b4258c461b86c209513ae5fc923ae0bc9c42e58df1",
+      "b4.json.gz": "992bfe7356ce9127c7eb5ff83cfb9a76822ad2e5f0d404020ab66e1964d42ef9",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.container.lifecycle": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "9ffa2bbe29bf6394cd888ba9f052f40fb1a440cc4ce7da9d96a67b7ce3d32586",
+      "b0.json.gz": "572af25b76f82a0ab97a27a290507c744a3ee33a3553cf82607735039d9e16ec",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "761a4fff11df809851baca10cc428521c03a6f0871add92d87e95ab6dbb104ca",
+      "b1.json.gz": "d93eb9126714e66f69b7bcd7cc77b129974b121d06e1ab9a5d6ec7855cebeb0f",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "d589e7cd62cc0b5e5e88d598964e3534e2c53a3221b15880e4b45844cbaf8b84",
+      "b2.json.gz": "c4274a1d3fa26bc50a241057faf81714db5f3403515efadf044907b16ec2ff5e",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "b8887691e54c02c7195fbd27971e4e3fa9f28dcc93f1ffa7afdc1631ae4545e0",
+      "b3.json.gz": "977c1cda5f5efee1235a2734ec59f655ddf844729ff636c25d20756d6ad6b2d0",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "9665ed3609773b5041ef0a1c380f6755a692ed7720962d2094fe1b183d59c42b",
+      "b4.json.gz": "e7fa73fb7053c377b2bfb901d4fe45dc73ab480acfd2abe465bd6e083ea94663",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.reset.owned-container": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "1c34dd74e6b89c13dee8ea0b7a93d8a8cf404bff146428e078dda002565114b9",
+      "b0.json.gz": "c2f3300f189eca0d8ca36cbe88e5ec2c38e1af252fbd3a710f1f7c2dca77ea2f",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "934e1ca77142d3be873bfb7907a843cf92f5ce1014be04eb20824cea109288d0",
+      "b1.json.gz": "a10a047b136ad2b8d12f18620375965cfd9919e1adc15629b4ae0205d9feae5c",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "9abd2e5f03f454d5121720bbae85e7d2ead8783065358ddc42b2b90b478cc97b",
+      "b2.json.gz": "ab9dd98aa6319f08ceda560eded35553a6a4539bac9059820b48f4249558e60f",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "c0230c7685e2841a98778f3b76522b63717e66fa597f9028433b5a0c6cc9491e",
+      "b3.json.gz": "d6423d1d3b1f95c11e25e40f020c4fa985671914affd8a7283df743323d9205a",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "d7827b7725fa0034a4d1501cbc52cad602799c829fae835c150c31e1f6e72d78",
+      "b4.json.gz": "98b047d53ecbb00b271fa9103d4f226cddbe8eb7120e6f6427352fe19b97a904",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.standalone.reads": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "68925bd7081c9b549bedcbad78a7a48c75cfa4eef016394745a4b8a61c42c3a9",
+      "b0.json.gz": "6be523256250f9439030faa08c82fed23c778fd93a652d2b28f72f12c541fe2e",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "0a1d94a51b81b23424714cc808acca472f33a032b16ade4c88e6bba2f826e172",
+      "b1.json.gz": "514f3abba0f1d919211f9f9d104fad7bce4194a6f2ebe28689aa267f4f4b18aa",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "cea9361e20ff38d5ccc25ae9b15dc9b4ecfbb4d8a04ca7d396deef078646d63a",
+      "b2.json.gz": "9883236248e257397e39be80efd47cb2689111c7591ff5499a4798f632ae368b",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "2c8a4da0093747f01b55d2ec114925d7c29887eb4af809bbad4dd80b75751d23",
+      "b3.json.gz": "dc387782037f6aed24843d99cd43f7023f7bc186140b342e93575881672b1c6a",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "6a1a1ef7f510626b2133647726bc82b56f0b42a5e0f2b58969cf56b945c90e09",
+      "b4.json.gz": "4f979b56a4d74e8d349b85fbbf702b1ea35f2a911505da3660a4164687be8d15",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.vm.lifecycle": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "5ae3edce8695c3989dc399e460d186a86c1a688a5b379d3dda162fd18674c4c3",
+      "b0.json.gz": "4d5e3bba9028ac9cd2b273f93c468452ed9d6a639771fde12fcaaee8dc7516c5",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "f8467604dd578df4d52eb52db6a52ed4570b33151e4017b46d81c1307b5c9f17",
+      "b1.json.gz": "6e402c631ae76675c572b2505e7148956efcd3ccc670797fc6abe2d235acaaff",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "63d1fa67ad7df345bd195cdef4e1f0cf45586c2c0c3c296d4a95caaf3f69e8d9",
+      "b2.json.gz": "e75414e1881a8948a9cdf94cfdb5081e966b970b79abaed01096702631600734",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "a2db7cfb196ddbc0d59f7590d713940aab537d6fb85af9abaa608afdd7b96c3c",
+      "b3.json.gz": "73fa224d67422a7cfc69d5dd470cbe1b01714e223d28e8994c3bd873f72aec73",
+      "diff3.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "4709a5e5630a3a027a24b253ce30329b208daf264ca7a7f58670ceaafcd593b5",
+      "b4.json.gz": "02087886fb6536e1b71ae23e034ef5ebaae080c78ec4e7e22acd5226a181f73f",
+      "diff4.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.oci-domain.admission.rejected-no-effect": {
+   "file": "tools/parity/scenarios-t2/oci-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "3fab5faef940a87db087f073a1ac7ca36ed0c93e8a2adc9643da55ed9c594114",
+      "b0.json.gz": "00ff22d94aa7b1ed07a949caba3403693c1e1f03aea2e82e369d96b4edb5ac30",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "6c0e995633d7483746403536462ddb91f5082abda0fc66c8eb1e2b4726ff7b43",
+      "b1.json.gz": "24cc7377016484401b9afcecd811e5032a49de553918961514aae1713af59c9d",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "3082e75b12e3bdb8ab959f14c0ab9943fece940e252c0350460eae5c7302b340",
+      "b2.json.gz": "89af406e0884f8e0fd1fa64fde6375235c8a37203ff6b9124fa02e0610a690a4",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "41e05ee885f01116cf84c47d9fc23ad54bf96a103d0c09da6e39e68fa53c6939",
+      "b3.json.gz": "482eb0c4e10a81d225d78b55d73877b807f7fbc9957aac030454551ef7f3fef2",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "7898d334a69de85776a65efa5a7f748aecad07f3efd5d046cd3aa119d58da930",
+      "b4.json.gz": "2cc18bf31e5168b56b993c2b2ac51da86a5b9c4cbf66894f2c50f4819f6f6c6e",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.oci-domain.build.push-to-twin-registry": {
+   "file": "tools/parity/scenarios-t2/oci-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "61089ad6c7e09e07d519ebdc9145f585e6b6431488d7daf1daaae9e1bc4b7868",
+      "b0.json.gz": "93b98ede5216420887e7aab7aa592759a07ba0e27da2161d9da68f11ab022163",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "e5bb6b13c0b233890c0d81d2ffdbc635d616bbeb296e458fc50f3c8ae58b724a",
+      "b1.json.gz": "d89af80ddac4f0c53b856c1a261238c94fb5ed1f1d041a350081614459b01370",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "fe7495f9177cd37cc27ffce55873152d493556f3f211aa12a6553a1803d09546",
+      "b2.json.gz": "8dd60c9ed1647b0d277307d5a380e2241ede72c2f67b08f2f2e08632acbb2220",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "8963fc8d92b74fe4637241432d50a84625a3b3a6cfb17d7afef36c34d16448f5",
+      "b3.json.gz": "a7b419350448afabb23b39718e89fd2bee93c93eae0af8669a2f9c4f8e205d63",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "fdd325e9fde1c3450b7d219a87e18c3fc0e971628a83a958360c2e9c02bccf2a",
+      "b4.json.gz": "defc29a016fe73d4121047cbf1c1a807e4a6e75e01a59cbe8bda3b7c4d372a60",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.oci-domain.storage.policy-and-cleanup": {
+   "file": "tools/parity/scenarios-t2/oci-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "26361a433034bc1ceeb4dce5fa9aec9e59d9caa1d586d7aa565539b33e94e036",
+      "b0.json.gz": "29900703217753c274619e3d05f7782b4cec84d2bdbdebd500cb0a226e57c9e8",
+      "diff0.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "f914e27c23e1e542599c4260b3b26add1d622bdd2a1b0e22b19a886898defb24",
+      "b1.json.gz": "9984aab4a6e26f7e2d10cb2bfa3644f95c426e63138e5a1412ba11044dda05cd",
+      "diff1.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "758867961a2fb6d22b56fbdb7a73e95bcb3947858184ebf95ec870f04ec74a1c",
+      "b2.json.gz": "98ad40a1757d87a50d41cef936835ab78e7865353d3274eecb306850329ce1dc",
+      "diff2.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 3,
+     "pass": true,
+     "receipts": {
+      "a3.json.gz": "2844004cbbebd6150c7fdd653ea796104e719276e250b0e50fe6e042b803cd0a",
+      "b3.json.gz": "5aa294996a289e8b2d8e872c348f026e95f6f3e807c6d1ef7f74757814a90b73",
+      "diff3.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 4,
+     "pass": true,
+     "receipts": {
+      "a4.json.gz": "071ea2d18a81f17f3ba33b44c0858de119b3667e825c4441f84fc9e9b5bfcca4",
+      "b4.json.gz": "8b698294eafedaf281039707fc6a75076b6f3be2680b99af7d2b70131ede1170",
+      "diff4.json": "d692f43e54b101bc21f27eea9a4bdd84a7c9c5c59526ddbc00faa55427d5e12a"
+     }
+    }
+   ],
+   "status": "pass"
+  }
+ },
+ "tier": "T2",
+ "workers": 4
+}

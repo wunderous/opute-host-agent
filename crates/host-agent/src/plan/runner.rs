@@ -1533,8 +1533,11 @@ impl<'a> Runner<'a> {
             .capabilities
             .get(name)
             .ok_or_else(|| format!("unknown plan capability \"{name}\""))?;
-        schema::validate_json(&capability.input_schema, &Value::Object(args.clone()))
-            .map_err(|e| format!("capability {name} arguments: {e}"))
+        schema::validate_json(
+            &capability.input_schema,
+            &schema::validation_arguments(name, args),
+        )
+        .map_err(|e| format!("capability {name} arguments: {e}"))
     }
 
     fn validate_output(&self, name: &str, value: &Value) -> Result<(), String> {

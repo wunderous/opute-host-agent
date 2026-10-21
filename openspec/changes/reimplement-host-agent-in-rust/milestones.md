@@ -708,6 +708,24 @@ D22 publishes nine neutral cluster tool names. No M8c inventory gap remains,
 and the six cluster environment reads are covered. The cutover gate fails, as
 expected, on the remaining owned gaps.
 
+**8d status (2026-10-18): exit gate met.** Evidence:
+[`evidence/m8d/README.md`](../../../evidence/m8d/README.md). The m8d gate
+passes, and gates m0–m6, m8a, m8b and m8c still pass:
+
+- T1 Go/Rust ×5 is 305/305 and Go/Go ×20 is 305/305. All 18 oci-domain
+  scenarios pass in both suites.
+- T2 is 27/27 in both twin suites (Go/Go ×20, Go/Rust ×5). The three OCI
+  scenarios run real rootless podman and buildah in each twin. They build
+  `FROM scratch` and push only to the registry `install_oci_registry`
+  deploys in the twin's k3s. They cover storage policy and cleanup, and the
+  M4 no-unauthorized-effect rerun.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+D23 publishes neutral values for the `builder` and `runtime` selectors; the
+tool names stay Go's. No M8d inventory gap remains: the `podman` and `buildah`
+effect tiers are `T2-sandbox`. The cutover gate fails, as expected, on the
+remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,
@@ -914,6 +932,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D20 | Error text for a corrupt zstd block | **Decided (owner, 2026-10-12): declare it, do not port the decoder.** For a corrupt compressed block, `extract_host_archive` fails as Go does, with the same `extract host archive: ` prefix and the same tree, but the text after it is the Rust decoder's own ([`zstd-corrupt-block-error-text`](../zstd-corrupt-block-error-text/proposal.md)). Frame-level and tar faults keep Go's exact text. Declared as `D20.corrupt-zstd-block`, only in `host-domain.archives.corrupt-blocks` | Matching klauspost's internal messages would mean porting its decoder. Recipe archives are sha256-verified before extraction. |
 | D21 | Provider-neutral instance tool names | **Decided (owner, 2026-10-14): extend D19.** Rust publishes `reset_virtualization_stack` for `reset_incus_stack` and the field `hostGpuLibs` for `provision_container.wslGpuLibs`; the Go names stay hidden, accepted aliases until cutover ([`neutral-instance-tool-names`](../neutral-instance-tool-names/proposal.md)). The owner also confirmed D19's use on durable rows (M5 shape) and on the secret sweep's catalog | Under D14 only a Service Provider names its implementation; one name map keeps the catalog and the parity divergence in step. |
 | D22 | Provider-neutral cluster tool names | **Decided (owner, 2026-10-16): extend D19.** Rust publishes `get_cluster_resource`, `delete_cluster_resource`, `get_cluster_resource_status`, `list_cluster_events`, `put_cluster_secret`, `exec_cluster_command`, `list_compute_clusters`, `install_cluster_package` and `render_cluster_package` for Go's `get_k8s_resource`, `delete_k8s_resource`, `get_k8s_resource_status`, `list_k8s_events`, `put_k8s_secret`, `exec_kubernetes_command`, `list_kubernetes_clusters`, `install_helm_chart` and `render_helm_template`; the Go names stay hidden, accepted aliases until cutover ([`neutral-cluster-tool-names`](../neutral-cluster-tool-names/proposal.md)). No field is renamed | Under D14 only a Service Provider names its implementation; one name map keeps the catalog and the parity divergence in step. |
+| D23 | Provider-neutral OCI selector values | **Decided (owner, 2026-10-17): extend D19 with values.** Rust publishes `container-engine`, `image-builder` and `build-daemon` for Go's `podman`, `buildah` and `buildkit` in the `builder` field (`ensure_oci_builder`, `build_and_push_oci_image`) and the `runtime` field (`configure_oci_storage`, `inspect_container_storage`, `cleanup_container_storage`), in inputs and results. Go's values stay hidden, accepted aliases until cutover; host state keeps Go's values ([`neutral-oci-selector-values`](../neutral-oci-selector-values/proposal.md)). The owner chose this over keeping Go's values | Under D14 only a Service Provider names its implementation; the nine OCI tool names are already neutral. |
 
 ## 7. Risks this plan specifically mitigates
 

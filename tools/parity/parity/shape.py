@@ -109,11 +109,12 @@ def compare_spec(scenario: dict | None = None) -> dict:
                 continue
             suffix = path[path.index("structuredContent") + 1:]
             # A task's result persists its structuredContent in its operations
-            # row and task snapshot.
-            if key == "masks":
+            # row and task snapshot; a set declared on it (a list in Go map
+            # order) is a set there too.
+            if key in ("masks", "sets"):
                 for prefix in (["result_json", "$json"], ["task_snapshot_json", "$json", "result"]):
                     add(root + ["operations", "*"] + prefix + ["structuredContent"] + suffix,
-                        {**rule, "optional": True})
+                        {**rule, "optional": True} if key == "masks" else rule)
             for column in ["result_json", "observation_json"]:
                 target = root + ["capability_invocations", "*", column, "$json", "structured"] + suffix
                 add(target, {**rule, "optional": True} if key == "masks" else rule)
@@ -207,6 +208,60 @@ def align_redacted_rows(a: Any, b: Any) -> Any:
     b = copy.deepcopy(b)
     runner._lookup(b, path[:-1])[path[-1]] = aligned + remaining
     return b
+
+
+def drop_live_host_rows(scenario: dict, a: Any, b: Any, violations: dict) -> tuple[Any, Any]:
+    """Remove the registry rows a scenario's live host listing registers.
+
+    T1 runs on the developer host. A tool that lists the host's systemd units
+    runs /usr/bin/systemctl by its absolute path, which no PATH shim reaches,
+    and registers one resource row per unit it lists. The two sides list at
+    different instants, so a unit started on demand between them (a D-Bus
+    activated dispatcher, say) is a difference of the host, not of the
+    implementations. A scenario declares that listing in "liveHostRows" with
+    its reason. Each such row must still be a well-formed registration of the
+    unit it names, and both sides must have listed or neither; the rows and
+    their count are then left out. Every other row is compared.
+    """
+    declared = scenario.get("liveHostRows")
+    if not declared:
+        return a, b
+    if not (isinstance(declared, dict) and declared.get("reason") and declared.get("table") == "resource_registry"
+            and declared.get("resourceType") == "host-service"):
+        for side in ("a", "b"):
+            violations[side].append({"invariant": "LIVE_HOST_ROWS", "reason": "malformed liveHostRows declaration"})
+        return a, b
+    kind = declared["resourceType"]
+    listed = {}
+    out = {}
+    for side, value in (("a", a), ("b", b)):
+        value = copy.deepcopy(value)
+        rows = runner._lookup(value, ["sqliteRows", "state/state.db", "tables", "resource_registry"])
+        live = {}
+        if isinstance(rows, dict):
+            for key, row in rows.items():
+                if not (isinstance(row, dict) and row.get("resource_type") == kind):
+                    continue
+                coordinates = runner._lookup(row, ["coordinates_json", "$json"]) or {}
+                scope, name = coordinates.get("scope"), coordinates.get("serviceName")
+                if (key != row.get("uri") or key != f"{kind}:{row.get('tenant_id')}:{row.get('resource_id')}"
+                        or scope not in ("user", "system") or not name
+                        or row.get("resource_id") != f"{scope}/{name}"
+                        or not isinstance(row.get("status"), str) or not row["status"]):
+                    violations[side].append({"invariant": "LIVE_HOST_ROWS", "reason": f"malformed listed row {key}"})
+                    continue
+                live[key] = row
+            for key in live:
+                del rows[key]
+            counts = runner._lookup(value, ["sqlite", "state/state.db", "rowCounts"])
+            if isinstance(counts, dict) and isinstance(counts.get("resource_registry"), int):
+                counts["resource_registry"] -= len(live)
+        listed[side] = bool(live)
+        out[side] = value
+    if listed["a"] != listed["b"]:
+        for side in ("a", "b"):
+            violations[side].append({"invariant": "LIVE_HOST_ROWS", "reason": "only one side listed the host's units"})
+    return out["a"], out["b"]
 
 
 def evaluate(scenario: dict, raw: dict) -> dict:
@@ -355,6 +410,7 @@ def evaluate(scenario: dict, raw: dict) -> dict:
     if probe and not probe[0]["stale"]:
         a, b = probe_a, probe_b
         divergences += probe
+    a, b = drop_live_host_rows(scenario, a, b, violations)
     # A scenario's own sqlite/sqliteRows-rooted masks (as opposed to the
     # structuredContent-rooted ones compare_spec projects above) are
     # applied here, once row identity/order is settled, rather than inside

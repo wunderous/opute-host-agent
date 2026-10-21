@@ -452,7 +452,12 @@ def _rename_tables(rule: dict) -> tuple[dict, dict, dict]:
     pairs = [pair for pair in pinned.values() if isinstance(pair, dict)]
     pairs += pinned.get("providerFixtures", [])
     revisions = {pair["rust"]: pair["go"] for pair in pairs if pair.get("rust") and pair.get("go")}
-    return to_go, fields, revisions
+    # D23: selector values a tool publishes neutrally, in its input schema's
+    # enums and in result keys.
+    section = names.get("values", {})
+    values = {"tools": section.get("tools", {}), "resultFields": set(section.get("resultFields", [])),
+              "toGo": {published: go for go, published in section.get("map", {}).items()}}
+    return to_go, fields, revisions, values
 
 
 def _rename_text(text: str, to_go: dict, revisions: dict) -> str:
@@ -485,8 +490,8 @@ def _sorted_by(items: list, key: str | None) -> bool:
     return values == sorted(values)
 
 
-def _rename_to_go(doc: Any, tables: tuple[dict, dict, dict]) -> Any:
-    to_go, fields, revisions = tables
+def _rename_to_go(doc: Any, tables: tuple[dict, dict, dict, dict]) -> Any:
+    to_go, fields, revisions, values = tables
 
     def walk(value: Any) -> Any:
         if isinstance(value, str):
@@ -514,10 +519,15 @@ def _rename_to_go(doc: Any, tables: tuple[dict, dict, dict]) -> Any:
             if isinstance(name, str) and name.startswith(_WIRE_PREFIX):
                 name = name[len(_WIRE_PREFIX):]
             renamed_fields = fields.get(name) if isinstance(name, str) else None
+            valued = values["tools"].get(name) if isinstance(name, str) else None
             out = {}
             for key, item in value.items():
                 if renamed_fields and key == "inputSchema" and isinstance(item, dict):
                     item = _rename_schema_fields(item, renamed_fields)
+                if valued and key == "inputSchema" and isinstance(item, dict):
+                    item = _rename_schema_values(item, valued, values["toGo"])
+                if key in values["resultFields"] and isinstance(item, str) and item in values["toGo"]:
+                    item = values["toGo"][item]
                 out[_rename_text(key, to_go, revisions)] = walk(item)
             return out
         return value
@@ -532,6 +542,19 @@ def _rename_schema_fields(schema: dict, renamed: dict) -> dict:
     if isinstance(schema.get("required"), list):
         schema["required"] = [renamed.get(k, k) if isinstance(k, str) else k for k in schema["required"]]
     return schema
+
+
+def _rename_schema_values(schema: dict, fields: list, to_go: dict) -> dict:
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return schema
+    properties = dict(properties)
+    for field in fields:
+        prop = properties.get(field)
+        if isinstance(prop, dict) and isinstance(prop.get("enum"), list):
+            properties[field] = {**prop, "enum": [to_go.get(v, v) if isinstance(v, str) else v
+                                                  for v in prop["enum"]]}
+    return {**schema, "properties": properties}
 
 
 _KINDS = ("drop", "dropKeys", "dropLines", "dropValueDeep", "keepPrefix", "renameToGo")

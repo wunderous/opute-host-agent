@@ -229,6 +229,12 @@ cases.append(fault("teardown.idempotent",after=[
     LIST_WHOLE("catalogAfter",142),
     call("teardown2","opute.provider.teardown",{"provider":PID,"confirm":True,"inputs":{"hostService":"none"}}),
     {"as":"teardownRequests","providerRequests":{"stub":"provider","clear":True}}]))
+# teardownNoTarget resolves the provider's unit by listing the developer
+# host's systemd units through /usr/bin/systemctl, which no shim reaches;
+# each side registers the units live at its own instant.
+cases[-1]["liveHostRows"]={"table":"resource_registry","resourceType":"host-service",
+    "reason":"teardownNoTarget lists the developer host's live systemd units by systemctl's absolute path; "
+             "an on-demand unit can start or stop between the two sides' listings"}
 cases.append(fault("teardown.prepare-error",tools_=tools(**{"opute.provider.teardown":{"default":{"error":{"code":-32000,"message":"cannot prepare"}}}}),
     after=[call("teardownBlocked","opute.provider.teardown",{"provider":PID,"confirm":True,"inputs":{"hostService":"none"}}),STATUS("statusAfter")],whole=143))
 cases.append(fault("teardown.finalize-error",tools_=tools(**{"opute.provider.teardown":{"responses":[ok(TEARDOWN_PLAN)],"default":{"error":{"code":-32000,"message":"cannot finalize"}}}}),

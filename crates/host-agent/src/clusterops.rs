@@ -544,7 +544,7 @@ impl Kubernetes {
 }
 
 /// `filepath.Abs`.
-fn absolute(path: &str) -> Result<String, String> {
+pub(crate) fn absolute(path: &str) -> Result<String, String> {
     let path = std::path::Path::new(path);
     let joined = if path.is_absolute() {
         path.to_path_buf()
@@ -557,7 +557,7 @@ fn absolute(path: &str) -> Result<String, String> {
 }
 
 /// `filepath.Clean` for an absolute path.
-fn clean(path: &str) -> String {
+pub(crate) fn clean(path: &str) -> String {
     let mut parts: Vec<&str> = Vec::new();
     for part in path.split('/') {
         match part {
@@ -1087,7 +1087,7 @@ fn age_at(created: &str, now: i128) -> String {
 
 /// `time.Parse(time.RFC3339, s)` as Unix nanoseconds: a fractional second
 /// is accepted after the seconds, as Go accepts it.
-fn parse_rfc3339(s: &str) -> Option<i128> {
+pub(crate) fn parse_rfc3339(s: &str) -> Option<i128> {
     let b = s.as_bytes();
     let digits = |from: usize, n: usize| -> Option<i64> {
         let part = b.get(from..from + n)?;
