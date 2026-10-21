@@ -1,0 +1,383 @@
+=== RUN   TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine
+--- PASS: TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken
+--- PASS: TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken (0.00s)
+=== RUN   TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart
+--- PASS: TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart (0.00s)
+=== RUN   TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner
+--- PASS: TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff
+--- PASS: TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff (0.00s)
+=== RUN   TestPostgreSQLServiceRelayExpires
+--- PASS: TestPostgreSQLServiceRelayExpires (10.04s)
+=== RUN   TestPostgreSQLServiceRelayExpiryClosesActiveConnections
+--- PASS: TestPostgreSQLServiceRelayExpiryClosesActiveConnections (0.20s)
+=== RUN   TestEnsurePostgreSQLServiceRelayRestrictsTargets
+--- PASS: TestEnsurePostgreSQLServiceRelayRestrictsTargets (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted
+--- PASS: TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRefusesShrink
+--- PASS: TestAdmitPVCSizeChangeRefusesShrink (0.00s)
+=== RUN   TestAdmitPVCSizeChangeAllowsCreateAndEqual
+--- PASS: TestAdmitPVCSizeChangeAllowsCreateAndEqual (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRequiresExpansion
+--- PASS: TestAdmitPVCSizeChangeRequiresExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate
+--- PASS: TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedOnReadError
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedOnReadError (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent
+--- PASS: TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent (0.00s)
+=== RUN   TestPostgreSQLClusterConfigurationReadyIncludesStorageSize
+--- PASS: TestPostgreSQLClusterConfigurationReadyIncludesStorageSize (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster
+--- PASS: TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled
+--- PASS: TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled (0.00s)
+=== RUN   TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores
+--- PASS: TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores (0.00s)
+=== RUN   TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation
+--- PASS: TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD
+--- PASS: TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator
+--- PASS: TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator (3.00s)
+=== RUN   TestEnsurePostgreSQLServiceCompletesSQLGatedResult
+--- PASS: TestEnsurePostgreSQLServiceCompletesSQLGatedResult (4.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRequiresCallerIdentity
+--- PASS: TestValidatePostgreSQLServiceSpecRequiresCallerIdentity (0.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs
+--- PASS: TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs (0.00s)
+=== RUN   TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService
+--- PASS: TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService (0.00s)
+=== RUN   TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting
+--- PASS: TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting (0.00s)
+=== RUN   TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine
+--- PASS: TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine (0.00s)
+=== RUN   TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine
+--- PASS: TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceResultDoesNotContainCredentials
+--- PASS: TestPostgreSQLServiceResultDoesNotContainCredentials (0.00s)
+=== RUN   TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs
+--- PASS: TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs (0.00s)
+=== RUN   TestSQLiteDatabaseLifecycleIsolatesConsumers
+--- PASS: TestSQLiteDatabaseLifecycleIsolatesConsumers (0.00s)
+=== RUN   TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval
+--- PASS: TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval (0.00s)
+=== RUN   TestStandalonePostgresManifestUsesCloudNativePG
+--- PASS: TestStandalonePostgresManifestUsesCloudNativePG (0.00s)
+=== RUN   TestStandalonePostgresOperatorAndClusterAreAppliedSeparately
+--- PASS: TestStandalonePostgresOperatorAndClusterAreAppliedSeparately (0.00s)
+=== RUN   TestStandalonePostgresSQLScriptReadsCredentialsFromStdin
+--- PASS: TestStandalonePostgresSQLScriptReadsCredentialsFromStdin (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine
+--- PASS: TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken
+--- PASS: TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken (0.00s)
+=== RUN   TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart
+--- PASS: TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart (0.00s)
+=== RUN   TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner
+--- PASS: TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff
+--- PASS: TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff (0.00s)
+=== RUN   TestPostgreSQLServiceRelayExpires
+--- PASS: TestPostgreSQLServiceRelayExpires (10.04s)
+=== RUN   TestPostgreSQLServiceRelayExpiryClosesActiveConnections
+--- PASS: TestPostgreSQLServiceRelayExpiryClosesActiveConnections (0.20s)
+=== RUN   TestEnsurePostgreSQLServiceRelayRestrictsTargets
+--- PASS: TestEnsurePostgreSQLServiceRelayRestrictsTargets (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted
+--- PASS: TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRefusesShrink
+--- PASS: TestAdmitPVCSizeChangeRefusesShrink (0.00s)
+=== RUN   TestAdmitPVCSizeChangeAllowsCreateAndEqual
+--- PASS: TestAdmitPVCSizeChangeAllowsCreateAndEqual (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRequiresExpansion
+--- PASS: TestAdmitPVCSizeChangeRequiresExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate
+--- PASS: TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedOnReadError
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedOnReadError (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent
+--- PASS: TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent (0.00s)
+=== RUN   TestPostgreSQLClusterConfigurationReadyIncludesStorageSize
+--- PASS: TestPostgreSQLClusterConfigurationReadyIncludesStorageSize (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster
+--- PASS: TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled
+--- PASS: TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled (0.00s)
+=== RUN   TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores
+--- PASS: TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores (0.00s)
+=== RUN   TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation
+--- PASS: TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD
+--- PASS: TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator
+--- PASS: TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator (3.00s)
+=== RUN   TestEnsurePostgreSQLServiceCompletesSQLGatedResult
+--- PASS: TestEnsurePostgreSQLServiceCompletesSQLGatedResult (4.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRequiresCallerIdentity
+--- PASS: TestValidatePostgreSQLServiceSpecRequiresCallerIdentity (0.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs
+--- PASS: TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs (0.00s)
+=== RUN   TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService
+--- PASS: TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService (0.00s)
+=== RUN   TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting
+--- PASS: TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting (0.00s)
+=== RUN   TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine
+--- PASS: TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine (0.00s)
+=== RUN   TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine
+--- PASS: TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceResultDoesNotContainCredentials
+--- PASS: TestPostgreSQLServiceResultDoesNotContainCredentials (0.00s)
+=== RUN   TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs
+--- PASS: TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs (0.00s)
+=== RUN   TestSQLiteDatabaseLifecycleIsolatesConsumers
+--- PASS: TestSQLiteDatabaseLifecycleIsolatesConsumers (0.00s)
+=== RUN   TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval
+--- PASS: TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval (0.00s)
+=== RUN   TestStandalonePostgresManifestUsesCloudNativePG
+--- PASS: TestStandalonePostgresManifestUsesCloudNativePG (0.00s)
+=== RUN   TestStandalonePostgresOperatorAndClusterAreAppliedSeparately
+--- PASS: TestStandalonePostgresOperatorAndClusterAreAppliedSeparately (0.00s)
+=== RUN   TestStandalonePostgresSQLScriptReadsCredentialsFromStdin
+--- PASS: TestStandalonePostgresSQLScriptReadsCredentialsFromStdin (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine
+--- PASS: TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken
+--- PASS: TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken (0.00s)
+=== RUN   TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart
+--- PASS: TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart (0.00s)
+=== RUN   TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner
+--- PASS: TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff
+--- PASS: TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff (0.00s)
+=== RUN   TestPostgreSQLServiceRelayExpires
+--- PASS: TestPostgreSQLServiceRelayExpires (10.04s)
+=== RUN   TestPostgreSQLServiceRelayExpiryClosesActiveConnections
+--- PASS: TestPostgreSQLServiceRelayExpiryClosesActiveConnections (0.20s)
+=== RUN   TestEnsurePostgreSQLServiceRelayRestrictsTargets
+--- PASS: TestEnsurePostgreSQLServiceRelayRestrictsTargets (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted
+--- PASS: TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRefusesShrink
+--- PASS: TestAdmitPVCSizeChangeRefusesShrink (0.00s)
+=== RUN   TestAdmitPVCSizeChangeAllowsCreateAndEqual
+--- PASS: TestAdmitPVCSizeChangeAllowsCreateAndEqual (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRequiresExpansion
+--- PASS: TestAdmitPVCSizeChangeRequiresExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate
+--- PASS: TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedOnReadError
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedOnReadError (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent
+--- PASS: TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent (0.00s)
+=== RUN   TestPostgreSQLClusterConfigurationReadyIncludesStorageSize
+--- PASS: TestPostgreSQLClusterConfigurationReadyIncludesStorageSize (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster
+--- PASS: TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled
+--- PASS: TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled (0.00s)
+=== RUN   TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores
+--- PASS: TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores (0.00s)
+=== RUN   TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation
+--- PASS: TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD
+--- PASS: TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator
+--- PASS: TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator (3.00s)
+=== RUN   TestEnsurePostgreSQLServiceCompletesSQLGatedResult
+--- PASS: TestEnsurePostgreSQLServiceCompletesSQLGatedResult (4.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRequiresCallerIdentity
+--- PASS: TestValidatePostgreSQLServiceSpecRequiresCallerIdentity (0.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs
+--- PASS: TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs (0.00s)
+=== RUN   TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService
+--- PASS: TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService (0.00s)
+=== RUN   TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting
+--- PASS: TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting (0.00s)
+=== RUN   TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine
+--- PASS: TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine (0.00s)
+=== RUN   TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine
+--- PASS: TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceResultDoesNotContainCredentials
+--- PASS: TestPostgreSQLServiceResultDoesNotContainCredentials (0.00s)
+=== RUN   TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs
+--- PASS: TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs (0.00s)
+=== RUN   TestSQLiteDatabaseLifecycleIsolatesConsumers
+--- PASS: TestSQLiteDatabaseLifecycleIsolatesConsumers (0.00s)
+=== RUN   TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval
+--- PASS: TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval (0.00s)
+=== RUN   TestStandalonePostgresManifestUsesCloudNativePG
+--- PASS: TestStandalonePostgresManifestUsesCloudNativePG (0.00s)
+=== RUN   TestStandalonePostgresOperatorAndClusterAreAppliedSeparately
+--- PASS: TestStandalonePostgresOperatorAndClusterAreAppliedSeparately (0.00s)
+=== RUN   TestStandalonePostgresSQLScriptReadsCredentialsFromStdin
+--- PASS: TestStandalonePostgresSQLScriptReadsCredentialsFromStdin (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine
+--- PASS: TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken
+--- PASS: TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken (0.00s)
+=== RUN   TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart
+--- PASS: TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart (0.00s)
+=== RUN   TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner
+--- PASS: TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff
+--- PASS: TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff (0.00s)
+=== RUN   TestPostgreSQLServiceRelayExpires
+--- PASS: TestPostgreSQLServiceRelayExpires (10.04s)
+=== RUN   TestPostgreSQLServiceRelayExpiryClosesActiveConnections
+--- PASS: TestPostgreSQLServiceRelayExpiryClosesActiveConnections (0.20s)
+=== RUN   TestEnsurePostgreSQLServiceRelayRestrictsTargets
+--- PASS: TestEnsurePostgreSQLServiceRelayRestrictsTargets (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted
+--- PASS: TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRefusesShrink
+--- PASS: TestAdmitPVCSizeChangeRefusesShrink (0.00s)
+=== RUN   TestAdmitPVCSizeChangeAllowsCreateAndEqual
+--- PASS: TestAdmitPVCSizeChangeAllowsCreateAndEqual (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRequiresExpansion
+--- PASS: TestAdmitPVCSizeChangeRequiresExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate
+--- PASS: TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedOnReadError
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedOnReadError (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent
+--- PASS: TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent (0.00s)
+=== RUN   TestPostgreSQLClusterConfigurationReadyIncludesStorageSize
+--- PASS: TestPostgreSQLClusterConfigurationReadyIncludesStorageSize (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster
+--- PASS: TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled
+--- PASS: TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled (0.00s)
+=== RUN   TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores
+--- PASS: TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores (0.00s)
+=== RUN   TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation
+--- PASS: TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD
+--- PASS: TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator
+--- PASS: TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator (3.00s)
+=== RUN   TestEnsurePostgreSQLServiceCompletesSQLGatedResult
+--- PASS: TestEnsurePostgreSQLServiceCompletesSQLGatedResult (4.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRequiresCallerIdentity
+--- PASS: TestValidatePostgreSQLServiceSpecRequiresCallerIdentity (0.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs
+--- PASS: TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs (0.00s)
+=== RUN   TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService
+--- PASS: TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService (0.00s)
+=== RUN   TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting
+--- PASS: TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting (0.00s)
+=== RUN   TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine
+--- PASS: TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine (0.00s)
+=== RUN   TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine
+--- PASS: TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceResultDoesNotContainCredentials
+--- PASS: TestPostgreSQLServiceResultDoesNotContainCredentials (0.00s)
+=== RUN   TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs
+--- PASS: TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs (0.00s)
+=== RUN   TestSQLiteDatabaseLifecycleIsolatesConsumers
+--- PASS: TestSQLiteDatabaseLifecycleIsolatesConsumers (0.00s)
+=== RUN   TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval
+--- PASS: TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval (0.00s)
+=== RUN   TestStandalonePostgresManifestUsesCloudNativePG
+--- PASS: TestStandalonePostgresManifestUsesCloudNativePG (0.00s)
+=== RUN   TestStandalonePostgresOperatorAndClusterAreAppliedSeparately
+--- PASS: TestStandalonePostgresOperatorAndClusterAreAppliedSeparately (0.00s)
+=== RUN   TestStandalonePostgresSQLScriptReadsCredentialsFromStdin
+--- PASS: TestStandalonePostgresSQLScriptReadsCredentialsFromStdin (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine
+--- PASS: TestEnsurePostgreSQLServiceDatabaseKeepsExecArgsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken
+--- PASS: TestPostgreSQLServiceRelayAuthenticatesAndRedactsToken (0.00s)
+=== RUN   TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart
+--- PASS: TestPersistentPostgreSQLServiceRelayRestoresAfterAgentRestart (0.00s)
+=== RUN   TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner
+--- PASS: TestPostgreSQLServiceRelayConflictDoesNotRevokeOwner (0.00s)
+=== RUN   TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff
+--- PASS: TestPostgreSQLServiceRelayAllowsIdlePersistentRecoveryHandoff (0.00s)
+=== RUN   TestPostgreSQLServiceRelayExpires
+--- PASS: TestPostgreSQLServiceRelayExpires (10.04s)
+=== RUN   TestPostgreSQLServiceRelayExpiryClosesActiveConnections
+--- PASS: TestPostgreSQLServiceRelayExpiryClosesActiveConnections (0.20s)
+=== RUN   TestEnsurePostgreSQLServiceRelayRestrictsTargets
+--- PASS: TestEnsurePostgreSQLServiceRelayRestrictsTargets (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted
+--- PASS: TestEnsurePostgreSQLServiceRelayCreatesHostForwardWhenTargetOmitted (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRefusesShrink
+--- PASS: TestAdmitPVCSizeChangeRefusesShrink (0.00s)
+=== RUN   TestAdmitPVCSizeChangeAllowsCreateAndEqual
+--- PASS: TestAdmitPVCSizeChangeAllowsCreateAndEqual (0.00s)
+=== RUN   TestAdmitPVCSizeChangeRequiresExpansion
+--- PASS: TestAdmitPVCSizeChangeRequiresExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWithoutExpansion (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate
+--- PASS: TestAdmitPostgreSQLStorageTreatsMissingClusterAsCreate (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedOnReadError
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedOnReadError (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails
+--- PASS: TestAdmitPostgreSQLStorageFailsClosedWhenClusterReadFails (0.00s)
+=== RUN   TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent
+--- PASS: TestAdmitPostgreSQLStorageSkipsClusterReadWhenCRDIsAbsent (0.00s)
+=== RUN   TestPostgreSQLClusterConfigurationReadyIncludesStorageSize
+--- PASS: TestPostgreSQLClusterConfigurationReadyIncludesStorageSize (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster
+--- PASS: TestEnsurePostgreSQLServiceAppliesOperatorBeforeCluster (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled
+--- PASS: TestEnsurePostgreSQLServiceKeepsAReadyOperatorInstalled (0.00s)
+=== RUN   TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores
+--- PASS: TestPostgreSQLServiceProbeReadyRequiresSQLAndBothStores (0.00s)
+=== RUN   TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation
+--- PASS: TestPostgreSQLServiceInfrastructureReadyAllowsDatabaseCreation (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD
+--- PASS: TestEnsurePostgreSQLServiceNeverAppliesClusterWithoutCRD (0.00s)
+=== RUN   TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator
+--- PASS: TestEnsurePostgreSQLServiceRequiresK3sReadyBeforeOperator (3.00s)
+=== RUN   TestEnsurePostgreSQLServiceCompletesSQLGatedResult
+--- PASS: TestEnsurePostgreSQLServiceCompletesSQLGatedResult (4.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRequiresCallerIdentity
+--- PASS: TestValidatePostgreSQLServiceSpecRequiresCallerIdentity (0.00s)
+=== RUN   TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs
+--- PASS: TestValidatePostgreSQLServiceSpecRejectsUnsafeOrMismatchedInputs (0.00s)
+=== RUN   TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService
+--- PASS: TestPostgreSQLServiceManifestsUseCloudNativePGAndNoHostService (0.00s)
+=== RUN   TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting
+--- PASS: TestPostgreSQLServiceCreateDatabaseSQLUsesIdentifierQuoting (0.00s)
+=== RUN   TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine
+--- PASS: TestPostgreSQLServiceSQLScriptKeepsPasswordOffCommandLine (0.00s)
+=== RUN   TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine
+--- PASS: TestKubectlShellScriptArgumentKeepsProviderArgumentsSingleLine (0.00s)
+=== RUN   TestPostgreSQLServiceResultDoesNotContainCredentials
+--- PASS: TestPostgreSQLServiceResultDoesNotContainCredentials (0.00s)
+=== RUN   TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs
+--- PASS: TestPostgreSQLServiceConsumerSecretUsesCNPGNamespaceAndBothURLs (0.00s)
+=== RUN   TestSQLiteDatabaseLifecycleIsolatesConsumers
+--- PASS: TestSQLiteDatabaseLifecycleIsolatesConsumers (0.00s)
+=== RUN   TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval
+--- PASS: TestSQLiteDatabaseRejectsPathTraversalAndUnconfirmedRemoval (0.00s)
+=== RUN   TestStandalonePostgresManifestUsesCloudNativePG
+--- PASS: TestStandalonePostgresManifestUsesCloudNativePG (0.00s)
+=== RUN   TestStandalonePostgresOperatorAndClusterAreAppliedSeparately
+--- PASS: TestStandalonePostgresOperatorAndClusterAreAppliedSeparately (0.00s)
+=== RUN   TestStandalonePostgresSQLScriptReadsCredentialsFromStdin
+--- PASS: TestStandalonePostgresSQLScriptReadsCredentialsFromStdin (0.00s)
+PASS
+ok  	github.com/wunderous/host-agents/internal/domain/postgres	86.240s
+?   	github.com/wunderous/host-agents/internal/tcprelay	[no test files]

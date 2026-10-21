@@ -726,6 +726,30 @@ tool names stay Go's. No M8d inventory gap remains: the `podman` and `buildah`
 effect tiers are `T2-sandbox`. The cutover gate fails, as expected, on the
 remaining owned gaps.
 
+**8e status (2026-10-20): exit gate met.** Evidence:
+[`evidence/m8e/README.md`](../../../evidence/m8e/README.md). The m8e gate
+passes, and gates m0–m6 and m8a–m8d still pass:
+
+- T1 Go/Rust ×5 is 314/314 and Go/Go ×20 is 314/314. All 9 postgres-domain
+  scenarios pass in both suites.
+- T2 is 30/30 in both twin suites (Go/Go ×20, Go/Rust ×5). The PostgreSQL
+  golden runs the pinned CloudNativePG operator with Go's operand image
+  preloaded by digest. Its scenario reconciles the service from nothing,
+  keeps a harness-written row across a second reconcile, carries bytes
+  through the SQL connector and the token-line relay, releases the relay
+  only with its token, and removes the service retaining, then deleting.
+  SQLite runs on the base golden, and the M4 no-unauthorized-effect rerun
+  covers every postgres call M4 refuses.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+The tool names stay Go's. Go's standalone tools (`install_postgresql`,
+`run_sql`, `delete_postgresql`) declare no resource binding, so they only
+refuse; Rust refuses identically and the T2 inventory lists them inert.
+D24 publishes the relay token `writeOnly`; the secret sweep covers it on
+Rust. The `OPUTE_HOST_AGENT_RELAY_DIR` and `OPUTE_HOST_AGENT_SQLITE_ROOT`
+gaps are closed (17 gaps, none unowned). The cutover gate fails, as
+expected, on the remaining owned gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,

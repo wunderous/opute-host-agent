@@ -12,4 +12,4 @@
 ## 3. Evidence
 
 - [x] 3.1 Extend the M5 secret sweep: nested fields, and the D24 fields swept on Rust only, with Rust's catalog checked to mark each. Pre-round: 16 Go fields and 8 D24 fields, 0 failures.
-- [ ] 3.2 Include D24 in the M8e closing captures: Go/Go ×20, Go/Rust ×5, the secret sweep and M5 shape.
+- [x] 3.2 Include D24 in the M8e closing captures: Go/Go ×20, Go/Rust ×5, the secret sweep and M5 shape. Done 2026-10-20: M8e round 3, 314/314 in both T1 suites, 16 + 8 swept fields with 0 failures, M5 shape 1555/1555 (`evidence/m8e/README.md`).
