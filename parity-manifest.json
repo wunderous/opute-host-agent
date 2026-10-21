@@ -737,6 +737,51 @@
    ],
    "requireT2": true,
    "requireT2Oracles": true
+  },
+  "m8f": {
+   "description": "M8f exit (llm and serving domains): the M8e gate plus every llm- and serving-domain item matching Go (x5) at T1 shim-trace parity (the Ollama runtime and its generated unit, the per-model context, the llama-server manifest, start, probe and binary build refusals and adoption, the authenticated relay persisted and restored, the OpenAI-compatible probe, Go's unbound cluster proxy refusals, serving assignments under their transient supervisor and ingress discovery through the pinned Go k3s provider; the service manager, GPU, ss and kill shimmed and the runtimes' APIs a route stub), and every T2 llm- and serving-domain scenario on the base golden (the CPU-only model stub t2guest/llmstub.py as ollama, llama-server and nvidia-smi under ubuntu's real systemd user manager: the shared Ollama runtime installed from nothing, its context persisted, the relay carrying an authenticated client; the llama-server manifest installed, adopted, restarted and stopped; a serving assignment launched, observed and relaunched as a real transient user unit; and the M4 admission-rejected llm and serving calls leaving the twin unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
   }
  },
  "goReference": {
@@ -2945,6 +2990,120 @@
   },
   {
    "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.absent",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.absent",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.lifecycle",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.lifecycle",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.unit",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.unit",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.unit-fails",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.unit-fails",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/server.go",
+    "internal/domain/llm/server_build.go"
+   ],
+   "id": "llm-domain.llama.lifecycle",
+   "owner": "llm",
+   "scenario": "llm-domain.llama.lifecycle",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/server.go",
+    "internal/domain/llm/server_build.go"
+   ],
+   "id": "llm-domain.llama.refused",
+   "owner": "llm",
+   "scenario": "llm-domain.llama.refused",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/server.go",
+    "internal/domain/llm/server_build.go",
+    "internal/domain/llm/server.go:defaultLlamaServerConfig"
+   ],
+   "id": "llm-domain.llama.environment",
+   "owner": "llm",
+   "scenario": "llm-domain.llama.environment",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/relay.go",
+    "internal/domain/llm/gateway.go:ValidateLocalLLMRelayArgs"
+   ],
+   "id": "llm-domain.relay.lifecycle",
+   "owner": "llm",
+   "scenario": "llm-domain.relay.lifecycle",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/gateway.go"
+   ],
+   "id": "llm-domain.cluster-proxy",
+   "owner": "llm",
+   "scenario": "llm-domain.cluster-proxy",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_host.go",
+    "internal/domain/llm/runtime_probe.go"
+   ],
+   "id": "llm-domain.openai-probe",
+   "owner": "llm",
+   "scenario": "llm-domain.openai-probe",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
     "internal/transport/http.go:handleHealth",
     "test/compliance/mcp_test.go:TestMCPAuthProtectsMCPButNotHealth"
    ],
@@ -3952,6 +4111,37 @@
    "owner": "capability",
    "scenario": "rejection.schema-invalid-no-audit",
    "surface": "admission"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_serving.go",
+    "internal/domain/serving/assignment.go"
+   ],
+   "id": "serving-domain.assignment.lifecycle",
+   "owner": "serving",
+   "scenario": "serving-domain.assignment.lifecycle",
+   "surface": "serving-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_serving.go",
+    "internal/domain/serving/assignment.go"
+   ],
+   "id": "serving-domain.assignment.refused",
+   "owner": "serving",
+   "scenario": "serving-domain.assignment.refused",
+   "surface": "serving-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_serving.go",
+    "internal/domain/serving/ingress.go",
+    "internal/hostagent/serving_domain.go"
+   ],
+   "id": "serving-domain.ingress",
+   "owner": "serving",
+   "scenario": "serving-domain.ingress",
+   "surface": "serving-domain"
   },
   {
    "anchors": [

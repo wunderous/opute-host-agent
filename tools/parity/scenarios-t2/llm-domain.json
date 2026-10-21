@@ -1,0 +1,1411 @@
+[
+ {
+  "id": "t2.llm-domain.ollama.lifecycle",
+  "tier": "T2",
+  "owner": "llm",
+  "anchors": [
+   "internal/tools/dispatch_llm.go",
+   "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+   "internal/domain/llm/ollama.go",
+   "internal/domain/llm/relay.go",
+   "internal/domain/llm/runtime_probe.go"
+  ],
+  "commands": [
+   "systemctl"
+  ],
+  "residue": "The generated opute-ollama.service stays enabled and running (Go never stops the shared runtime), with its model store, the runtime config and lingering; the relay state directory stays empty.",
+  "steps": [
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "stub",
+    "shell": {
+     "argv": [
+      "install",
+      "-D",
+      "-m",
+      "0755",
+      "/opt/parity-t2/llmstub.py",
+      "/home/ubuntu/bin/ollama"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_OLLAMA_BINARY": "/home/ubuntu/bin/ollama",
+      "OPUTE_HOST_AGENT_RELAY_DIR": "/home/ubuntu/.opute/relays"
+     }
+    }
+   },
+   {
+    "as": "prerequisites",
+    "mcp": {
+     "method": "tools/call",
+     "name": "check_local_llm_prerequisites",
+     "params": {
+      "name": "check_local_llm_prerequisites",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_local_llm_model",
+     "params": {
+      "name": "install_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b"
+      }
+     },
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 300
+    }
+   },
+   {
+    "as": "installed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "list",
+    "mcp": {
+     "method": "tools/call",
+     "name": "list_local_llm_models",
+     "params": {
+      "name": "list_local_llm_models",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "persist",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_local_llm_model",
+     "params": {
+      "name": "configure_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b",
+       "contextSize": 8192
+      }
+     },
+     "capture": {
+      "T_PERSIST": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "persistDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_PERSIST}",
+     "params": {
+      "taskId": "${T_PERSIST}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "context",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_local_llm_model",
+     "params": {
+      "name": "configure_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b"
+      }
+     },
+     "capture": {
+      "T_CONTEXT": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "contextDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_CONTEXT}",
+     "params": {
+      "taskId": "${T_CONTEXT}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "probe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_local_llm",
+     "params": {
+      "name": "probe_local_llm",
+      "arguments": {
+       "modelRef": "parity/tiny:1b",
+       "includeChat": true
+      }
+     }
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_local_llm_runtime",
+     "params": {
+      "name": "start_local_llm_runtime",
+      "arguments": {}
+     },
+     "capture": {
+      "T_START": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_START}",
+     "params": {
+      "taskId": "${T_START}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_local_llm_runtime",
+     "params": {
+      "name": "stop_local_llm_runtime",
+      "arguments": {}
+     },
+     "capture": {
+      "T_STOP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stopDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STOP}",
+     "params": {
+      "taskId": "${T_STOP}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "configured",
+    "snapshot": {
+     "baseline": "installed"
+    }
+   },
+   {
+    "as": "relay",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_relay",
+     "params": {
+      "name": "ensure_local_llm_relay",
+      "arguments": {
+       "sessionId": "parity-t2-relay",
+       "listenHost": "127.0.0.1",
+       "listenPort": 18434,
+       "targetHost": "127.0.0.1",
+       "targetPort": 11434,
+       "incomingToken": "parity-incoming-token-0123456789abcdefghij",
+       "upstreamToken": "",
+       "allowedSourceCIDRs": [
+        "127.0.0.0/8"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "throughRelay",
+    "shell": {
+     "argv": [
+      "python3",
+      "-c",
+      "import sys,urllib.request,urllib.error\nr=urllib.request.Request(sys.argv[1],method=sys.argv[2],data=(sys.argv[4].encode() if sys.argv[4] else None))\nif sys.argv[3]: r.add_header('Authorization','Bearer '+sys.argv[3])\nr.add_header('Content-Type','application/json')\ntry:\n    resp=urllib.request.urlopen(r,timeout=30); print(resp.status); print(resp.read().decode())\nexcept urllib.error.HTTPError as e:\n    print(e.code); print(e.read().decode())\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "http://127.0.0.1:18434/v1/models",
+      "GET",
+      "parity-incoming-token-0123456789abcdefghij",
+      ""
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "chatThroughRelay",
+    "shell": {
+     "argv": [
+      "python3",
+      "-c",
+      "import sys,urllib.request,urllib.error\nr=urllib.request.Request(sys.argv[1],method=sys.argv[2],data=(sys.argv[4].encode() if sys.argv[4] else None))\nif sys.argv[3]: r.add_header('Authorization','Bearer '+sys.argv[3])\nr.add_header('Content-Type','application/json')\ntry:\n    resp=urllib.request.urlopen(r,timeout=30); print(resp.status); print(resp.read().decode())\nexcept urllib.error.HTTPError as e:\n    print(e.code); print(e.read().decode())\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "http://127.0.0.1:18434/v1/chat/completions",
+      "POST",
+      "parity-incoming-token-0123456789abcdefghij",
+      "{\"model\": \"parity/tiny:1b\", \"stream\": true, \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]}"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "relayNoToken",
+    "shell": {
+     "argv": [
+      "python3",
+      "-c",
+      "import sys,urllib.request,urllib.error\nr=urllib.request.Request(sys.argv[1],method=sys.argv[2],data=(sys.argv[4].encode() if sys.argv[4] else None))\nif sys.argv[3]: r.add_header('Authorization','Bearer '+sys.argv[3])\nr.add_header('Content-Type','application/json')\ntry:\n    resp=urllib.request.urlopen(r,timeout=30); print(resp.status); print(resp.read().decode())\nexcept urllib.error.HTTPError as e:\n    print(e.code); print(e.read().decode())\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "http://127.0.0.1:18434/v1/models",
+      "GET",
+      "",
+      ""
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "openai",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_openai_compatible_server",
+     "params": {
+      "name": "probe_openai_compatible_server",
+      "arguments": {
+       "endpoint": "http://127.0.0.1:18434",
+       "bearerToken": "parity-incoming-token-0123456789abcdefghij",
+       "includeChat": true
+      }
+     }
+    }
+   },
+   {
+    "as": "relayed",
+    "snapshot": {
+     "baseline": "configured"
+    }
+   },
+   {
+    "as": "removeRelay",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_local_llm_relay",
+     "params": {
+      "name": "remove_local_llm_relay",
+      "arguments": {
+       "sessionId": "parity-t2-relay"
+      }
+     }
+    }
+   },
+   {
+    "as": "relayGone",
+    "shell": {
+     "argv": [
+      "python3",
+      "-c",
+      "import sys,urllib.request,urllib.error\nr=urllib.request.Request(sys.argv[1],method=sys.argv[2],data=(sys.argv[4].encode() if sys.argv[4] else None))\nif sys.argv[3]: r.add_header('Authorization','Bearer '+sys.argv[3])\nr.add_header('Content-Type','application/json')\ntry:\n    resp=urllib.request.urlopen(r,timeout=30); print(resp.status); print(resp.read().decode())\nexcept urllib.error.HTTPError as e:\n    print(e.code); print(e.read().decode())\nexcept OSError as e:\n    print(type(e).__name__)\n",
+      "http://127.0.0.1:18434/v1/models",
+      "GET",
+      "parity-incoming-token-0123456789abcdefghij",
+      ""
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "removed",
+    "snapshot": {
+     "baseline": "relayed"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "added",
+      "/home/ubuntu/.config/opute/ollama-runtime.json",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "the runtime config stamps each persisted model context with its updatedAt time; its content is compared in T1 (llm-domain.ollama.lifecycle)"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "changed",
+      "/home/ubuntu/.config/opute/ollama-runtime.json",
+      "after",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "the runtime config stamps each persisted model context with its updatedAt time; its content is compared in T1 (llm-domain.ollama.lifecycle)"
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "files",
+      "changed",
+      "/home/ubuntu/.config/opute/ollama-runtime.json",
+      "before",
+      "sha256"
+     ],
+     "type": "hex",
+     "optional": true,
+     "reason": "the runtime config stamps each persisted model context with its updatedAt time; its content is compared in T1 (llm-domain.ollama.lifecycle)"
+    }
+   ]
+  },
+  "memoryMb": 6144
+ },
+ {
+  "id": "t2.llm-domain.llama.lifecycle",
+  "tier": "T2",
+  "owner": "llm",
+  "anchors": [
+   "internal/tools/dispatch_llm.go",
+   "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+   "internal/domain/llm/server.go",
+   "internal/domain/llm/server_build.go"
+  ],
+  "commands": [
+   "systemctl",
+   "bash"
+  ],
+  "residue": "The llama-server manifest and its disabled, stopped unit file stay, with lingering; the managed binary, artifact and stub nvidia-smi predate the baseline.",
+  "steps": [
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "binary",
+    "shell": {
+     "argv": [
+      "install",
+      "-D",
+      "-m",
+      "0755",
+      "/opt/parity-t2/llmstub.py",
+      "/home/ubuntu/.local/share/opute/llama-server/llama-server"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "gpu",
+    "shell": {
+     "argv": [
+      "install",
+      "-D",
+      "-m",
+      "0755",
+      "/opt/parity-t2/llmstub.py",
+      "/usr/local/bin/nvidia-smi"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "artifact",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "mkdir -p \"$(dirname \"$1\")\" && printf %s \"$2\" > \"$1\"",
+      "sh",
+      "/home/ubuntu/models/base-llama.gguf",
+      "GGUF parity CPU stub model\n"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {
+     "env": {
+      "OPUTE_LLAMA_SERVER_PORT": "18080"
+     }
+    }
+   },
+   {
+    "as": "install",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_local_llm_model",
+     "params": {
+      "name": "install_local_llm_model",
+      "arguments": {
+       "runtime": "llama-cpp",
+       "modelRef": "qwen3.5-0.8b/base-llama",
+       "artifactPath": "/home/ubuntu/models/base-llama.gguf",
+       "artifactSha256": "f16aa4acf9072840ca4d2dc06fba3d552c1ccabac245cd2ac498cb2374b498a0",
+       "baseModel": "Qwen/Qwen3.5-0.8B",
+       "revision": "r1",
+       "tokenizerRevision": "t1",
+       "chatTemplateHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+       "quantization": "Q4_K_M",
+       "binaryPath": "/home/ubuntu/.local/share/opute/llama-server/llama-server",
+       "binaryVersion": "6500",
+       "binarySha256": "a9bb392bbe3cec5a9da7f30582ce14805deb486c873a1dfa724afd95fa5549ad",
+       "binarySource": "host-build",
+       "sourceRevision": "b6500",
+       "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+       "binaryBuildSourceUri": "https://github.com/ggml-org/llama.cpp/archive/b6500.tar.gz",
+       "cudaArchitectures": "86",
+       "contextSize": 4096,
+       "cudaEnabled": true
+      }
+     },
+     "capture": {
+      "T_INSTALL": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "installDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_INSTALL}",
+     "params": {
+      "taskId": "${T_INSTALL}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 300
+    }
+   },
+   {
+    "as": "installed",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "probe",
+    "mcp": {
+     "method": "tools/call",
+     "name": "probe_local_llm",
+     "params": {
+      "name": "probe_local_llm",
+      "arguments": {
+       "runtime": "llama-cpp",
+       "includeChat": true
+      }
+     }
+    }
+   },
+   {
+    "as": "adopt",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_server_binary",
+     "params": {
+      "name": "ensure_local_llm_server_binary",
+      "arguments": {
+       "runtime": "llama-cpp",
+       "sourceUri": "https://github.com/ggml-org/llama.cpp/archive/b6500.tar.gz",
+       "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+       "sourceRevision": "b6500",
+       "cudaArchitectures": "86"
+      }
+     }
+    }
+   },
+   {
+    "as": "toolchain",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_server_binary",
+     "params": {
+      "name": "ensure_local_llm_server_binary",
+      "arguments": {
+       "runtime": "llama-cpp",
+       "sourceUri": "https://github.com/ggml-org/llama.cpp/archive/b6500.tar.gz",
+       "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+       "sourceRevision": "b6501",
+       "cudaArchitectures": "86"
+      }
+     }
+    }
+   },
+   {
+    "as": "start",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_local_llm_runtime",
+     "params": {
+      "name": "start_local_llm_runtime",
+      "arguments": {
+       "runtime": "llama-cpp"
+      }
+     },
+     "capture": {
+      "T_START": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "startDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_START}",
+     "params": {
+      "taskId": "${T_START}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 300
+    }
+   },
+   {
+    "as": "restarted",
+    "snapshot": {
+     "baseline": "installed"
+    }
+   },
+   {
+    "as": "stop",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_local_llm_runtime",
+     "params": {
+      "name": "stop_local_llm_runtime",
+      "arguments": {
+       "runtime": "llama-cpp"
+      }
+     },
+     "capture": {
+      "T_STOP": [
+       "body",
+       "result",
+       "taskId"
+      ]
+     }
+    }
+   },
+   {
+    "as": "stopDone",
+    "mcp": {
+     "method": "tasks/get",
+     "name": "${T_STOP}",
+     "params": {
+      "taskId": "${T_STOP}"
+     },
+     "until": {
+      "path": [
+       "body",
+       "result",
+       "status"
+      ],
+      "in": [
+       "completed",
+       "failed",
+       "cancelled"
+      ]
+     },
+     "timeout": 600
+    }
+   },
+   {
+    "as": "stopped",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ]
+  },
+  "memoryMb": 6144
+ },
+ {
+  "id": "t2.llm-domain.admission.rejected-no-effect",
+  "tier": "T2",
+  "owner": "llm",
+  "anchors": [
+   "internal/admission/admission.go",
+   "internal/tools/dispatch.go",
+   "internal/runtime/standalone.go:MutationsAllowed",
+   "internal/domain/host",
+   "internal/domain/llm",
+   "internal/domain/serving"
+  ],
+  "commands": [],
+  "residue": "None: every call is refused before it reaches the twin's user manager, loopback or files.",
+  "steps": [
+   {
+    "as": "stub",
+    "shell": {
+     "argv": [
+      "install",
+      "-D",
+      "-m",
+      "0755",
+      "/opt/parity-t2/llmstub.py",
+      "/home/ubuntu/bin/ollama"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "serveClosed",
+    "serve": {
+     "env": {
+      "OPUTE_OLLAMA_BINARY": "/home/ubuntu/bin/ollama",
+      "OPUTE_HOST_AGENT_RELAY_DIR": "/home/ubuntu/.opute/relays"
+     },
+     "unset": [
+      "OPUTE_STANDALONE_ALLOW_MUTATIONS"
+     ]
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "gateClosed.configure_local_llm_model",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_local_llm_model",
+     "params": {
+      "name": "configure_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b",
+       "contextSize": 8192
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_local_llm_k3s_proxy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_k3s_proxy",
+     "params": {
+      "name": "ensure_local_llm_k3s_proxy",
+      "arguments": {
+       "vmName": "k1",
+       "nodePort": 30080,
+       "relayHost": "10.0.100.1",
+       "relayPort": 18434,
+       "relayToken": "parity-incoming-token-0123456789abcdefghij",
+       "bearerKey": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_local_llm_relay",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_relay",
+     "params": {
+      "name": "ensure_local_llm_relay",
+      "arguments": {
+       "sessionId": "parity-t2-relay",
+       "listenHost": "127.0.0.1",
+       "listenPort": 18434,
+       "targetHost": "127.0.0.1",
+       "targetPort": 11434,
+       "incomingToken": "parity-incoming-token-0123456789abcdefghij",
+       "upstreamToken": "",
+       "allowedSourceCIDRs": [
+        "127.0.0.0/8"
+       ]
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.ensure_local_llm_server_binary",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_server_binary",
+     "params": {
+      "name": "ensure_local_llm_server_binary",
+      "arguments": {
+       "runtime": "llama-cpp",
+       "sourceUri": "https://github.com/ggml-org/llama.cpp/archive/b6500.tar.gz",
+       "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+       "sourceRevision": "b6500",
+       "cudaArchitectures": "86"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.install_local_llm_model",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_local_llm_model",
+     "params": {
+      "name": "install_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.reconcile_serving_assignment",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_serving_assignment",
+     "params": {
+      "name": "reconcile_serving_assignment",
+      "arguments": {
+       "contractVersion": "serving-assignment.v1",
+       "assignmentId": "parity-t2/web",
+       "generation": 1,
+       "idempotencyKey": "rev-1",
+       "service": "web",
+       "mode": "dev-process",
+       "runtime": "process",
+       "target": {
+        "hostId": "twin",
+        "resourceId": "web",
+        "kind": "host",
+        "instanceType": "host"
+       },
+       "artifact": {
+        "kind": "source",
+        "sourceDir": "/home/ubuntu/www",
+        "command": [
+         "python3",
+         "-m",
+         "http.server",
+         "18090",
+         "--bind",
+         "127.0.0.1"
+        ],
+        "environment": {
+         "PYTHONDONTWRITEBYTECODE": "1"
+        }
+       },
+       "endpoints": [
+        {
+         "name": "http",
+         "protocol": "http",
+         "port": 18090
+        }
+       ],
+       "readiness": [
+        {
+         "endpointName": "http",
+         "path": "/"
+        }
+       ],
+       "exposure": {
+        "kind": "none"
+       },
+       "restartPolicy": "on-failure",
+       "serviceUnit": "parity-svc.service",
+       "desiredState": "start"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.remove_local_llm_k3s_proxy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_local_llm_k3s_proxy",
+     "params": {
+      "name": "remove_local_llm_k3s_proxy",
+      "arguments": {
+       "vmName": "k1"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.remove_local_llm_relay",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_local_llm_relay",
+     "params": {
+      "name": "remove_local_llm_relay",
+      "arguments": {
+       "sessionId": "parity-t2-relay"
+      }
+     }
+    }
+   },
+   {
+    "as": "gateClosed.start_local_llm_runtime",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_local_llm_runtime",
+     "params": {
+      "name": "start_local_llm_runtime",
+      "arguments": {}
+     }
+    }
+   },
+   {
+    "as": "gateClosed.stop_local_llm_runtime",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_local_llm_runtime",
+     "params": {
+      "name": "stop_local_llm_runtime",
+      "arguments": {
+       "runtime": "llama-cpp"
+      }
+     }
+    }
+   },
+   {
+    "as": "afterGateClosed",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   },
+   {
+    "as": "stopClosed",
+    "stop": {}
+   },
+   {
+    "as": "serveOpen",
+    "serve": {
+     "env": {
+      "OPUTE_OLLAMA_BINARY": "/home/ubuntu/bin/ollama",
+      "OPUTE_HOST_AGENT_RELAY_DIR": "/home/ubuntu/.opute/relays"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.configure_local_llm_model",
+    "mcp": {
+     "method": "tools/call",
+     "name": "configure_local_llm_model",
+     "params": {
+      "name": "configure_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b",
+       "contextSize": 8192
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_local_llm_k3s_proxy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_k3s_proxy",
+     "params": {
+      "name": "ensure_local_llm_k3s_proxy",
+      "arguments": {
+       "vmName": "k1",
+       "nodePort": 30080,
+       "relayHost": "10.0.100.1",
+       "relayPort": 18434,
+       "relayToken": "parity-incoming-token-0123456789abcdefghij",
+       "bearerKey": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_local_llm_relay",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_relay",
+     "params": {
+      "name": "ensure_local_llm_relay",
+      "arguments": {
+       "sessionId": "parity-t2-relay",
+       "listenHost": "127.0.0.1",
+       "listenPort": 18434,
+       "targetHost": "127.0.0.1",
+       "targetPort": 11434,
+       "incomingToken": "parity-incoming-token-0123456789abcdefghij",
+       "upstreamToken": "",
+       "allowedSourceCIDRs": [
+        "127.0.0.0/8"
+       ]
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.ensure_local_llm_server_binary",
+    "mcp": {
+     "method": "tools/call",
+     "name": "ensure_local_llm_server_binary",
+     "params": {
+      "name": "ensure_local_llm_server_binary",
+      "arguments": {
+       "runtime": "llama-cpp",
+       "sourceUri": "https://github.com/ggml-org/llama.cpp/archive/b6500.tar.gz",
+       "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+       "sourceRevision": "b6500",
+       "cudaArchitectures": "86"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.install_local_llm_model",
+    "mcp": {
+     "method": "tools/call",
+     "name": "install_local_llm_model",
+     "params": {
+      "name": "install_local_llm_model",
+      "arguments": {
+       "modelRef": "parity/tiny:1b"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.reconcile_serving_assignment",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_serving_assignment",
+     "params": {
+      "name": "reconcile_serving_assignment",
+      "arguments": {
+       "contractVersion": "serving-assignment.v1",
+       "assignmentId": "parity-t2/web",
+       "generation": 1,
+       "idempotencyKey": "rev-1",
+       "service": "web",
+       "mode": "dev-process",
+       "runtime": "process",
+       "target": {
+        "hostId": "twin",
+        "resourceId": "web",
+        "kind": "host",
+        "instanceType": "host"
+       },
+       "artifact": {
+        "kind": "source",
+        "sourceDir": "/home/ubuntu/www",
+        "command": [
+         "python3",
+         "-m",
+         "http.server",
+         "18090",
+         "--bind",
+         "127.0.0.1"
+        ],
+        "environment": {
+         "PYTHONDONTWRITEBYTECODE": "1"
+        }
+       },
+       "endpoints": [
+        {
+         "name": "http",
+         "protocol": "http",
+         "port": 18090
+        }
+       ],
+       "readiness": [
+        {
+         "endpointName": "http",
+         "path": "/"
+        }
+       ],
+       "exposure": {
+        "kind": "none"
+       },
+       "restartPolicy": "on-failure",
+       "serviceUnit": "parity-svc.service",
+       "desiredState": "start"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.remove_local_llm_k3s_proxy",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_local_llm_k3s_proxy",
+     "params": {
+      "name": "remove_local_llm_k3s_proxy",
+      "arguments": {
+       "vmName": "k1"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.remove_local_llm_relay",
+    "mcp": {
+     "method": "tools/call",
+     "name": "remove_local_llm_relay",
+     "params": {
+      "name": "remove_local_llm_relay",
+      "arguments": {
+       "sessionId": "parity-t2-relay"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.start_local_llm_runtime",
+    "mcp": {
+     "method": "tools/call",
+     "name": "start_local_llm_runtime",
+     "params": {
+      "name": "start_local_llm_runtime",
+      "arguments": {}
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "staleRevision.stop_local_llm_runtime",
+    "mcp": {
+     "method": "tools/call",
+     "name": "stop_local_llm_runtime",
+     "params": {
+      "name": "stop_local_llm_runtime",
+      "arguments": {
+       "runtime": "llama-cpp"
+      }
+     },
+     "meta": {
+      "catalogRevision": "sha256:0000"
+     }
+    }
+   },
+   {
+    "as": "afterOpen",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline",
+     "expectEmpty": true
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    }
+   ],
+   "divergences": [
+    "D19.neutral-host-tool-names"
+   ]
+  },
+  "rejectedOnly": true,
+  "memoryMb": 6144
+ }
+]
