@@ -148,9 +148,27 @@ impl Kubernetes {
         kubectl_args: &[String],
         label: &str,
     ) -> Result<String, String> {
+        self.run_kubectl_input(name, kubectl_args, None, label)
+    }
+
+    /// `runProviderCommand` with stdin (`RunKubectlWithStdinContext`): the
+    /// input travels as the operation's `stdin` argument.
+    pub fn run_kubectl_input(
+        &self,
+        name: &str,
+        kubectl_args: &[String],
+        input: Option<&[u8]>,
+        label: &str,
+    ) -> Result<String, String> {
         let target = self.target_uri(name)?;
         let mut args = Map::new();
         args.insert("kubectlArgs".into(), strings(kubectl_args));
+        if let Some(input) = input {
+            args.insert(
+                "stdin".into(),
+                J::from(String::from_utf8_lossy(input).into_owned()),
+            );
+        }
         let out = self
             .execute_provider(EXEC_COMMAND, &target, args)
             .map_err(|e| format!("failed to {label} in {name}: {e}"))?;
@@ -1949,12 +1967,8 @@ impl ClusterAgent {
         target: &str,
         target_port: i64,
     ) -> Result<(), String> {
-        let as_port = |p: i64| u16::try_from(p).map_err(|_| format!("invalid port {p}"));
-        match self
-            .relays
-            .start(id, listen, as_port(port)?, target, as_port(target_port)?)
-        {
-            Ok(()) => Ok(()),
+        match self.relays.start(id, listen, port, target, target_port) {
+            Ok(_) => Ok(()),
             Err(e) if e.contains("already active") || e.contains("already in use") => Ok(()),
             Err(e) => Err(e),
         }

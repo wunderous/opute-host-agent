@@ -240,7 +240,14 @@ class Sandbox:
             elif stat.S_ISDIR(st.st_mode):
                 entry["type"] = "dir"
             elif stat.S_ISREG(st.st_mode):
-                entry.update(type="file", sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+                data = path.read_bytes()
+                if data[:16] == b"SQLite format 3\x00":
+                    # The header stamps the writing library's version, the
+                    # engine's and not the agent's; the database itself is
+                    # compared through a scenario's queries.
+                    entry["type"] = "sqlite"
+                else:
+                    entry.update(type="file", sha256=hashlib.sha256(data).hexdigest())
             else:
                 entry["type"] = "other"
             out.append(entry)

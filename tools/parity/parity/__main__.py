@@ -120,6 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     t2sub.add_parser("golden-incus", help="build the nested-Incus golden (an overlay of the golden) once")
     t2sub.add_parser("golden-k3s", help="build the k3s golden (an overlay of the nested-Incus golden) once")
     t2sub.add_parser("golden-oci", help="build the OCI golden (an overlay of the k3s golden) once")
+    t2sub.add_parser("golden-postgres", help="build the PostgreSQL golden (an overlay of the k3s golden) once")
     t2run = t2sub.add_parser("run", help="run T2 scenarios Go vs Rust (or Go vs Go)")
     t2run.add_argument("--left", required=True)
     t2run.add_argument("--right", required=True)
@@ -167,8 +168,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.t2_command == "golden-k3s":
             print(json.dumps(t2.build_k3s_golden(), indent=1))
+            return 0
         if args.t2_command == "golden-oci":
             print(json.dumps(t2.build_oci_golden(), indent=1))
+            return 0
+        if args.t2_command == "golden-postgres":
+            print(json.dumps(t2.build_postgres_golden(), indent=1))
             return 0
         summary = t2.run_suite(_impl(args.left), _impl(args.right), args.out, args.scenarios or None, args.repeat, args.workers)
         return 0 if all(r["status"] == "pass" for r in summary["scenarios"].values()) else 1

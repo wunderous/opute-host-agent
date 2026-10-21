@@ -5,13 +5,24 @@
 
 use std::collections::HashMap;
 use std::io;
-use std::net::{Shutdown, TcpListener, TcpStream};
+use std::net::{
+    IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, TcpListener, TcpStream, ToSocketAddrs,
+};
 use std::os::fd::AsRawFd;
 use std::sync::{Arc, Mutex};
 
+/// The address a started forwarder reports (Go's exported `Session` fields).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Bound {
+    pub listen_host: String,
+    pub listen_port: i64,
+    pub target_host: String,
+    pub target_port: i64,
+}
+
 /// One live forwarder.
 struct Session {
-    listen_port: u16,
+    listen_port: i64,
     listener: Arc<TcpListener>,
     active: Arc<Mutex<Vec<TcpStream>>>,
 }
@@ -19,7 +30,7 @@ struct Session {
 #[derive(Default)]
 struct Inner {
     sessions: HashMap<String, Session>,
-    port_to_session: HashMap<u16, String>,
+    port_to_session: HashMap<i64, String>,
 }
 
 #[derive(Default)]
@@ -29,15 +40,16 @@ pub struct Manager {
 
 impl Manager {
     /// `Manager.Start`: listen on `listen_host:listen_port` and forward each
-    /// connection to the target.
+    /// connection to the target. The session reports the address it is bound
+    /// to, as Go's does.
     pub fn start(
         &self,
         session_id: &str,
         listen_host: &str,
-        listen_port: u16,
+        listen_port: i64,
         target_host: &str,
-        target_port: u16,
-    ) -> Result<(), String> {
+        target_port: i64,
+    ) -> Result<Bound, String> {
         let session_id = session_id.trim();
         if session_id.is_empty() {
             return Err("sessionId is required".into());
@@ -64,24 +76,27 @@ impl Manager {
                 ));
             }
         }
-        let address = if listen_host.contains(':') {
-            format!("[{listen_host}]:{listen_port}")
-        } else {
-            format!("{listen_host}:{listen_port}")
-        };
-        let listener = TcpListener::bind(&address)
-            .map_err(|e| format!("listen tcp {address}: {}", crate::goerr::errno_text(&e)))?;
-        let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+        // `fmt.Sprintf("%s:%d")`, not `JoinHostPort`: an IPv6 host must come
+        // bracketed.
+        let (listener, host, port) = listen(&format!("{listen_host}:{listen_port}"))?;
         let session = Session {
-            listen_port: port,
+            listen_port: i64::from(port),
             listener: Arc::new(listener),
             active: Arc::new(Mutex::new(Vec::new())),
         };
         let (listener, active) = (session.listener.clone(), session.active.clone());
-        std::thread::spawn(move || accept_loop(&listener, &active, &target_host, target_port));
-        inner.port_to_session.insert(port, session_id.to_string());
+        let dial_host = target_host.clone();
+        std::thread::spawn(move || accept_loop(&listener, &active, &dial_host, target_port));
+        inner
+            .port_to_session
+            .insert(i64::from(port), session_id.to_string());
         inner.sessions.insert(session_id.to_string(), session);
-        Ok(())
+        Ok(Bound {
+            listen_host: host,
+            listen_port: i64::from(port),
+            target_host,
+            target_port,
+        })
     }
 
     /// `Manager.Stop`: close the listener and every live connection.
@@ -121,11 +136,84 @@ impl Manager {
     }
 }
 
+/// `net.Listen("tcp", address)`, with Go's address rules and error text: the
+/// listener, the IP it reports (`TCPAddr.IP.String()`), and its port. An
+/// unspecified or empty host listens dual-stack and reports `::`; a name
+/// resolves to its first IPv4 address when it has one.
+pub fn listen(address: &str) -> Result<(TcpListener, String, u16), String> {
+    let addr_error = |reason: &str| format!("listen tcp: address {address}: {reason}");
+    let (host, port) = split_host_port(address).map_err(|reason| addr_error(&reason))?;
+    let port: u16 = match port.parse::<i64>() {
+        Ok(p) if (0..=65535).contains(&p) => p as u16,
+        _ => return Err(format!("listen tcp: address {port}: invalid port")),
+    };
+    let ip: IpAddr = if host.is_empty() {
+        IpAddr::V4(Ipv4Addr::UNSPECIFIED)
+    } else if let Ok(ip) = host.parse::<IpAddr>() {
+        ip
+    } else {
+        let resolved: Vec<SocketAddr> = (host.as_str(), port)
+            .to_socket_addrs()
+            .map(Iterator::collect)
+            .unwrap_or_default();
+        match resolved
+            .iter()
+            .find(|a| a.is_ipv4())
+            .or_else(|| resolved.first())
+        {
+            Some(a) => a.ip(),
+            None => return Err(format!("listen tcp: lookup {host}: no such host")),
+        }
+    };
+    let shown = SocketAddr::new(ip, port);
+    let bind = if ip.is_unspecified() {
+        SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port)
+    } else {
+        shown
+    };
+    let listener = TcpListener::bind(bind)
+        .or_else(|e| {
+            // A host without IPv6 listens on the IPv4 wildcard, as Go does.
+            if ip.is_unspecified() && e.raw_os_error() == Some(nix::libc::EAFNOSUPPORT) {
+                TcpListener::bind(shown)
+            } else {
+                Err(e)
+            }
+        })
+        .map_err(|e| format!("listen tcp {shown}: bind: {}", crate::goerr::errno_text(&e)))?;
+    let local = listener.local_addr().map_err(|e| e.to_string())?;
+    Ok((listener, local.ip().to_string(), local.port()))
+}
+
+/// `net.SplitHostPort`.
+fn split_host_port(address: &str) -> Result<(String, String), String> {
+    let Some(colon) = address.rfind(':') else {
+        return Err("missing port in address".into());
+    };
+    let (host, port) = (&address[..colon], &address[colon + 1..]);
+    if let Some(rest) = host.strip_prefix('[') {
+        let Some(inner) = rest.strip_suffix(']') else {
+            return Err("missing ']' in address".into());
+        };
+        if inner.contains('[') || inner.contains(']') {
+            return Err("unexpected '[' in address".into());
+        }
+        return Ok((inner.to_string(), port.to_string()));
+    }
+    if host.contains(':') {
+        return Err("too many colons in address".into());
+    }
+    if host.contains('[') || host.contains(']') {
+        return Err("unexpected ']' in address".into());
+    }
+    Ok((host.to_string(), port.to_string()))
+}
+
 fn accept_loop(
     listener: &TcpListener,
     active: &Arc<Mutex<Vec<TcpStream>>>,
     target_host: &str,
-    target_port: u16,
+    target_port: i64,
 ) {
     for client in listener.incoming() {
         let Ok(client) = client else { return };
@@ -141,11 +229,15 @@ fn pipe(
     client: TcpStream,
     active: &Arc<Mutex<Vec<TcpStream>>>,
     target_host: &str,
-    target_port: u16,
+    target_port: i64,
 ) -> io::Result<()> {
-    let upstream = match TcpStream::connect((target_host, target_port)) {
-        Ok(upstream) => upstream,
-        Err(_) => return Ok(()),
+    // `net.Dial("tcp", JoinHostPort(host, port))`.
+    let upstream = match u16::try_from(target_port)
+        .ok()
+        .and_then(|port| TcpStream::connect((target_host, port)).ok())
+    {
+        Some(upstream) => upstream,
+        None => return Ok(()),
     };
     {
         let mut tracked = active.lock().unwrap();
@@ -190,35 +282,60 @@ mod tests {
             conn.write_all(&buf).unwrap();
         });
         let manager = Manager::default();
-        manager
-            .start("a", "127.0.0.1", 0, "127.0.0.1", target)
+        let bound = manager
+            .start("a", "127.0.0.1", 0, "127.0.0.1", i64::from(target))
             .unwrap();
-        let port = *manager
-            .inner
-            .lock()
-            .unwrap()
-            .port_to_session
-            .keys()
-            .next()
-            .unwrap();
+        assert_eq!(bound.listen_host, "127.0.0.1");
+        let port = bound.listen_port;
         assert_eq!(
             manager
-                .start("a", "127.0.0.1", 0, "127.0.0.1", target)
+                .start("a", "127.0.0.1", 0, "127.0.0.1", i64::from(target))
                 .unwrap_err(),
             "TCP relay session 'a' is already active"
         );
         assert_eq!(
             manager
-                .start("b", "127.0.0.1", port, "127.0.0.1", target)
+                .start("b", "127.0.0.1", port, "127.0.0.1", i64::from(target))
                 .unwrap_err(),
             format!("TCP relay listen port {port} is already in use by a")
         );
-        let mut client = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        let mut client = TcpStream::connect(("127.0.0.1", port as u16)).unwrap();
         client.write_all(b"ping").unwrap();
         let mut buf = [0u8; 4];
         client.read_exact(&mut buf).unwrap();
         assert_eq!(&buf, b"ping");
         assert!(manager.stop("a"));
         assert!(!manager.stop("a"));
+    }
+
+    #[test]
+    fn listens_as_go_does() {
+        // Go listens on an unspecified host dual-stack and reports `::`.
+        let (_l, host, _) = listen("0.0.0.0:0").unwrap();
+        assert_eq!(host, "::");
+        let (_l, host, _) = listen(":0").unwrap();
+        assert_eq!(host, "::");
+        let (_l, host, _) = listen("localhost:0").unwrap();
+        assert_eq!(host, "127.0.0.1");
+        let (_l, host, _) = listen("[::1]:0").unwrap();
+        assert_eq!(host, "::1");
+        assert_eq!(
+            listen("::1:0").unwrap_err(),
+            "listen tcp: address ::1:0: too many colons in address"
+        );
+        assert_eq!(
+            listen("[::1:0").unwrap_err(),
+            "listen tcp: address [::1:0: missing ']' in address"
+        );
+        assert_eq!(
+            listen("127.0.0.1:70000").unwrap_err(),
+            "listen tcp: address 70000: invalid port"
+        );
+        let (held, _, port) = listen("127.0.0.1:0").unwrap();
+        assert_eq!(
+            listen(&format!("127.0.0.1:{port}")).unwrap_err(),
+            format!("listen tcp 127.0.0.1:{port}: bind: address already in use")
+        );
+        drop(held);
     }
 }

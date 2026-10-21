@@ -1,0 +1,56 @@
+{
+ "approve": {
+  "exit": 0,
+  "report": {
+   "approvalPage": {
+    "cacheControl": "no-store",
+    "status": 200
+   },
+   "approve": {
+    "exit": 0
+   },
+   "redirect": {
+    "hasCode": true,
+    "iss": "http://127.0.0.1:${PORT}",
+    "stateSet": true,
+    "status": 302
+   },
+   "session": {
+    "connected": true,
+    "toolCount": 142
+   }
+  }
+ },
+ "clientSource": {
+  "go.mod": "7fc479b063e11ca8e8933192a146d2e6c22023ceca0fe01820a5c498d01592ad",
+  "go.sum": "348e4c85bea00c04089ad880afd4a3fe0b823c7f57854ffd41628cc53c55a0bc",
+  "main.go": "7ceeff0018c37321157840765568c040b9c7b88d77747de8b6178a951b964d81"
+ },
+ "deny": {
+  "exit": 1,
+  "report": {
+   "approvalPage": {
+    "cacheControl": "no-store",
+    "status": 200
+   },
+   "approve": {
+    "exit": 0
+   },
+   "redirect": {
+    "error": "access_denied",
+    "hasCode": false,
+    "iss": "http://127.0.0.1:${PORT}",
+    "stateSet": true,
+    "status": 302
+   },
+   "session": {
+    "connected": false,
+    "error": "calling \"initialize\": sending \"initialize\": rejected by transport: token exchange failed: oauth2: \"invalid_request\" \"code, client_id, redirect_uri and code_verifier are required\"",
+    "toolCount": 0
+   }
+  }
+ },
+ "goSdk": "github.com/modelcontextprotocol/go-sdk v1.7.0",
+ "pass": true,
+ "rustBinarySha256": "4c516f553bf6dcecdcedcf886d21b5ec591eabb565483a2a1fe8911a5e94632d"
+}

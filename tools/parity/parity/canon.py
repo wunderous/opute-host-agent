@@ -457,6 +457,9 @@ def _rename_tables(rule: dict) -> tuple[dict, dict, dict]:
     section = names.get("values", {})
     values = {"tools": section.get("tools", {}), "resultFields": set(section.get("resultFields", [])),
               "toGo": {published: go for go, published in section.get("map", {}).items()}}
+    # D24: input properties Rust publishes writeOnly and Go leaves unmarked.
+    if spec.get("writeOnly"):
+        values["writeOnly"] = json.loads((_REPO / spec["writeOnly"]).read_text())["fields"]
     return to_go, fields, revisions, values
 
 
@@ -526,6 +529,9 @@ def _rename_to_go(doc: Any, tables: tuple[dict, dict, dict, dict]) -> Any:
                     item = _rename_schema_fields(item, renamed_fields)
                 if valued and key == "inputSchema" and isinstance(item, dict):
                     item = _rename_schema_values(item, valued, values["toGo"])
+                marked = values.get("writeOnly", {}).get(name) if isinstance(name, str) else None
+                if marked and key == "inputSchema" and isinstance(item, dict):
+                    item = _unmark_write_only(item, marked)
                 if key in values["resultFields"] and isinstance(item, str) and item in values["toGo"]:
                     item = values["toGo"][item]
                 out[_rename_text(key, to_go, revisions)] = walk(item)
@@ -555,6 +561,23 @@ def _rename_schema_values(schema: dict, fields: list, to_go: dict) -> dict:
             properties[field] = {**prop, "enum": [to_go.get(v, v) if isinstance(v, str) else v
                                                   for v in prop["enum"]]}
     return {**schema, "properties": properties}
+
+
+def _unmark_write_only(schema: dict, paths: list) -> dict:
+    """D24: the schema as Go publishes it, without the listed writeOnly marks."""
+    def strip(node: dict, path: list) -> dict:
+        properties = node.get("properties")
+        if not path or not isinstance(properties, dict) or not isinstance(properties.get(path[0]), dict):
+            return node
+        child = properties[path[0]]
+        if len(path) == 1:
+            child = {k: v for k, v in child.items() if not (k == "writeOnly" and v is True)}
+        else:
+            child = strip(child, path[1:])
+        return {**node, "properties": {**properties, path[0]: child}}
+    for path in paths:
+        schema = strip(schema, path)
+    return schema
 
 
 _KINDS = ("drop", "dropKeys", "dropLines", "dropValueDeep", "keepPrefix", "renameToGo")

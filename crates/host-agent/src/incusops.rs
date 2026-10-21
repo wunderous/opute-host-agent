@@ -94,6 +94,8 @@ pub struct Instances {
     pub reset_checkpoint_path: String,
     /// `revokeRelays`: the in-process relays into guests.
     pub relays: Arc<crate::tcprelay::Manager>,
+    /// The postgres domain's relays, once that domain exists.
+    pub postgres: Arc<std::sync::OnceLock<Arc<crate::postgresops::Live>>>,
 }
 
 /// `ErrString`-style failure of one provider command: the run error, or
@@ -2445,8 +2447,11 @@ impl Instances {
             return Ok(J::Object(result));
         }
         // `revokeRelays`: relays into the guests stop before they are
-        // deleted.
+        // deleted, those of the postgres domain only if it was built.
         self.relays.stop_all();
+        if let Some(postgres) = self.postgres.get() {
+            postgres.relay.stop_all();
+        }
         let interrupted = |checkpoint: &mut Checkpoint| {
             checkpoint.phase = "interrupted".into();
             let _ = self.write_checkpoint(checkpoint);

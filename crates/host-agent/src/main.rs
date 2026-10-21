@@ -42,6 +42,7 @@ mod ociops;
 mod plan;
 mod plan_evidence;
 mod plan_mcp;
+mod postgresops;
 // M7 core; public provider dispatch stays closed until its adapter is wired.
 #[allow(dead_code)]
 mod provider;

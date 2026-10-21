@@ -294,6 +294,14 @@ T2_INERT = {
                              "'vmName, namespace, and ingressName are required' before reaching the provider",
     "uninstall_helm_chart": "registered but never published in any Go catalog (dispatch registry: unreachable); "
                             "every call is an unknown tool on both sides (cluster-domain.unreachable)",
+    "install_postgresql": "Go takes the cluster VM only from the call's resource binding (vmNameFromBinding), "
+                          "and its catalog entry declares no resource argument, so every call refuses with "
+                          "'vmName is required' before reaching the provider; compared in T1 "
+                          "(postgres-domain.standalone) and in T2 (t2.postgres-domain.admission.rejected-no-effect)",
+    "delete_postgresql": "as install_postgresql: no resource binding, so every call refuses with 'kubernetes "
+                         "provider instance name is required' before reaching the provider",
+    "run_sql": "as install_postgresql: no resource binding, so every call refuses with 'vmName and sql are "
+               "required' before reaching the provider",
     "exec_command": "catalog-excluded (CatalogExcludedToolNames), so Go resolves it no resource binding and every "
                     "call refuses with 'name is required' before running anything; t2.incus-domain."
                     "container.lifecycle calls it by name and by URI against a live owned container and checks "
@@ -302,9 +310,9 @@ T2_INERT = {
 
 
 def capture_t2() -> dict:
-    """T2 coverage of every mutating host-, incus-, cluster- and oci-domain tool (M8 validations 2-4)."""
+    """T2 coverage of every mutating host-, incus-, cluster-, oci- and postgres-domain tool (M8 validations 2-4)."""
     domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text())
-               for d in ("host", "incus", "cluster", "oci")]
+               for d in ("host", "incus", "cluster", "oci", "postgres")]
     calls: dict[str, set[str]] = {}
     refused: dict[str, set[str]] = {}
     for path in sorted(T2_SCENARIO_DIR.glob("*.json")):

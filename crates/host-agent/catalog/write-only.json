@@ -1,0 +1,11 @@
+{
+ "decision": "D24",
+ "change": "openspec/changes/write-only-relay-token",
+ "note": "Input fields Rust publishes writeOnly that Go's catalog leaves unmarked: credentials the schema-driven storage projection must then redact. Each entry is a property path from the input schema's root. tools/parity reads the same file for the D24.write-only-relay-token divergence.",
+ "fields": {
+  "get_postgresql_service_status": [["localRelay", "relayToken"]],
+  "reconcile_postgresql_service": [["localRelay", "relayToken"]],
+  "release_postgresql_service_relay": [["relayToken"]],
+  "remove_postgresql_service": [["localRelay", "relayToken"]]
+ }
+}

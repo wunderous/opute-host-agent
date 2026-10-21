@@ -247,6 +247,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
             adopter.adopt_cluster(uri)
         }));
     let oci = oci(host, &k8s);
+    let postgres = postgres(host, &k8s);
     let agent = crate::clusterops::ClusterAgent {
         instances: instances(host),
         env: host.env.clone(),
@@ -282,6 +283,11 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         build_context(&oci),
         container_storage(&oci),
         image_build(&oci),
+        sqlite_databases(&postgres),
+        postgresql_service(&postgres),
+        postgresql_relay(&postgres),
+        sql_connector(&postgres, host),
+        standalone_postgresql(&postgres),
         host_artifacts(host),
         public_mcp(host),
         host_vm_subsystem(host),
@@ -1312,6 +1318,7 @@ fn instances(host: &crate::tools::Host) -> crate::incusops::Instances {
         shared_host_owner_instance: host.shared_host_owner_instance.clone(),
         reset_checkpoint_path: host.reset_checkpoint_path.clone(),
         relays: host.relays.clone(),
+        postgres: host.postgres.clone(),
     }
 }
 
@@ -2272,6 +2279,337 @@ fn oci_registry(oci: &crate::ociops::Oci) -> Service {
                     delete
                         .delete_registry(&args)
                         .map(|out| structured_result(J::Object(out), Some("OCI registry deleted.")))
+                }),
+            ),
+        ],
+    }
+}
+
+// --- M8e: the postgres domain ---------------------------------------------------------
+
+/// The postgres domain over its seams: the kubernetes domain, the incus
+/// provider for the relay's loopback forward, and its two directories.
+fn postgres(
+    host: &crate::tools::Host,
+    k8s: &crate::clusterops::Kubernetes,
+) -> crate::postgresops::Postgres {
+    crate::postgresops::Postgres {
+        k8s: k8s.clone(),
+        incus: host.incus.clone(),
+        relay_config_dir: host.postgres_relay_dir.clone(),
+        sqlite_root: host.sqlite_root.clone(),
+        live: host.postgres.clone(),
+    }
+}
+
+fn sqlite_args(args: &Map<String, J>) -> crate::postgresops::SqliteArgs {
+    crate::postgresops::SqliteArgs {
+        consumer_id: text(args, "consumerId").into(),
+        database_name: text(args, "databaseName").into(),
+    }
+}
+
+/// M8e: caller-owned SQLite databases under the managed root.
+fn sqlite_databases(postgres: &crate::postgresops::Postgres) -> Service {
+    use crate::tools::structured_result;
+    let (ensure, status, remove) = (postgres.clone(), postgres.clone(), postgres.clone());
+    Service {
+        id: "sqlite-database",
+        dependencies: &[],
+        operations: vec![
+            (
+                "ensure_sqlite_database",
+                op(move |call| {
+                    ensure
+                        .ensure_sqlite(&sqlite_args(call.args))
+                        .map(|out| structured_result(out, Some("SQLite database provisioned.")))
+                }),
+            ),
+            (
+                "get_sqlite_database_status",
+                op(move |call| {
+                    status
+                        .sqlite_status(&sqlite_args(call.args))
+                        .map(|out| structured_result(out, Some("SQLite database status returned.")))
+                }),
+            ),
+            (
+                "remove_sqlite_database",
+                op(move |call| {
+                    remove
+                        .remove_sqlite(&sqlite_args(call.args), flag(call.args, "confirm"))
+                        .map(|out| structured_result(out, Some("SQLite database removed.")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// `postgresqlServiceRelayArgs`: present whenever `localRelay` is an object.
+fn postgresql_relay_args(args: &Map<String, J>) -> Option<crate::postgresops::RelayArgs> {
+    let raw = args.get("localRelay")?.as_object()?;
+    Some(crate::postgresops::RelayArgs {
+        session_id: text(raw, "sessionId").into(),
+        listen_host: text(raw, "listenHost").into(),
+        listen_port: int_field(raw, "listenPort"),
+        target_host: text(raw, "targetHost").into(),
+        target_port: int_field(raw, "targetPort"),
+        ttl_seconds: int_field(raw, "ttlSeconds"),
+        relay_token: text(raw, "relayToken").into(),
+        persistent: flag(raw, "persistent"),
+        replace_existing: flag(raw, "replaceExisting"),
+    })
+}
+
+/// `postgresqlServiceArgs`: the VM is the binding's provider instance.
+fn postgresql_service_args(call: &Invocation) -> crate::postgresops::ServiceArgs {
+    let args = call.args;
+    let mut databases = Vec::new();
+    for database in string_slice(args, "databases") {
+        if !databases.contains(&database) {
+            databases.push(database);
+        }
+    }
+    crate::postgresops::ServiceArgs {
+        vm_name: call.binding.provider_instance_name(),
+        cluster_name: text(args, "clusterName").into(),
+        namespace: text(args, "namespace").into(),
+        instances: int_field(args, "instances"),
+        storage_class: text(args, "storageClass").into(),
+        storage_size: text(args, "storageSize").into(),
+        retention_policy: text(args, "retentionPolicy").into(),
+        restart_consumers: args
+            .contains_key("restartConsumers")
+            .then(|| flag(args, "restartConsumers")),
+        relay: postgresql_relay_args(args),
+        databases,
+        consumer_secret_name: text(args, "consumerSecretName").into(),
+        consumer_secret_label: text(args, "consumerSecretLabel").into(),
+        service_owner: text(args, "serviceOwner").into(),
+        service_part_of: text(args, "servicePartOf").into(),
+        consumer_database_keys: args
+            .get("consumerDatabaseKeys")
+            .and_then(J::as_object)
+            .map(|keys| {
+                keys.iter()
+                    .filter_map(|(k, v)| v.as_str().map(|v| (k.clone(), v.to_string())))
+                    .collect()
+            })
+            .unwrap_or_default(),
+        relay_device_name: text(args, "relayDeviceName").into(),
+    }
+}
+
+/// M8e: the CloudNativePG-backed PostgreSQL service on a cluster.
+fn postgresql_service(postgres: &crate::postgresops::Postgres) -> Service {
+    use crate::tools::structured_result;
+    let (reconcile, status, remove) = (postgres.clone(), postgres.clone(), postgres.clone());
+    Service {
+        id: "postgresql-service",
+        dependencies: &["cluster-resources"],
+        operations: vec![
+            (
+                "reconcile_postgresql_service",
+                op(move |call| {
+                    reconcile
+                        .reconcile_service(call.ctx, &postgresql_service_args(call))
+                        .map(|out| {
+                            structured_result(J::Object(out), Some("PostgreSQL service is ready"))
+                        })
+                }),
+            ),
+            (
+                "get_postgresql_service_status",
+                op(move |call| {
+                    status
+                        .service_status(&postgresql_service_args(call))
+                        .map(|out| {
+                            structured_result(
+                                J::Object(out),
+                                Some("PostgreSQL service status returned"),
+                            )
+                        })
+                }),
+            ),
+            (
+                "remove_postgresql_service",
+                op(move |call| {
+                    remove
+                        .remove_service(&postgresql_service_args(call), flag(call.args, "confirm"))
+                        .map(|out| {
+                            structured_result(
+                                J::Object(out),
+                                Some("PostgreSQL service was removed"),
+                            )
+                        })
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8e: releasing an authenticated PostgreSQL service relay.
+fn postgresql_relay(postgres: &crate::postgresops::Postgres) -> Service {
+    use crate::tools::structured_result;
+    let postgres = postgres.clone();
+    Service {
+        id: "postgresql-relay",
+        dependencies: &[],
+        operations: vec![(
+            "release_postgresql_service_relay",
+            op(move |call| {
+                postgres
+                    .release_relay(text(call.args, "sessionId"), text(call.args, "relayToken"))
+                    .map(|out| {
+                        structured_result(
+                            J::Object(out),
+                            Some("PostgreSQL service relay was released"),
+                        )
+                    })
+            }),
+        )],
+    }
+}
+
+/// `resourceid.SQLConnectorURI`.
+fn sql_connector_uri(tenant: &str, database: &str) -> Result<String, String> {
+    crate::resource::Uri::new("sql-connector", tenant, database).map(|uri| uri.to_string())
+}
+
+/// M8e: the reference-counted host TCP connector to a database.
+fn sql_connector(postgres: &crate::postgresops::Postgres, host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let (ensure, status, release) = (postgres.clone(), postgres.clone(), postgres.clone());
+    let (tenant, status_tenant) = (host.tenant_id.clone(), host.tenant_id.clone());
+    Service {
+        id: "sql-connector",
+        dependencies: &[],
+        operations: vec![
+            (
+                "ensure_sql_connector",
+                op(move |call| {
+                    let args = crate::postgresops::ConnectorArgs {
+                        database_id: text(call.args, "databaseId").into(),
+                        target_host: text(call.args, "targetHost").into(),
+                        target_port: int_field(call.args, "targetPort"),
+                        listen_port: int_field(call.args, "listenPort"),
+                        listen_host: text(call.args, "listenHost").into(),
+                    };
+                    let mut out = ensure.ensure_connector(&args)?;
+                    // The connector is the resource this capability
+                    // produces; identity is tenant-scoped, so the boundary
+                    // names it.
+                    let uri = sql_connector_uri(&tenant, &args.database_id)?;
+                    out.insert("uri".into(), J::from(uri));
+                    let text = format!(
+                        "SQL connector {} listening on {}:{}",
+                        out["databaseId"].as_str().unwrap_or(""),
+                        out["listenHost"].as_str().unwrap_or(""),
+                        out["listenPort"]
+                    );
+                    Ok(structured_result(J::Object(out), Some(&text)))
+                }),
+            ),
+            (
+                "get_sql_connector_status",
+                op(move |call| {
+                    let database = text(call.args, "databaseId");
+                    let mut out = status.connector_status(database);
+                    if let Ok(uri) = sql_connector_uri(&status_tenant, database) {
+                        out.insert("uri".into(), J::from(uri));
+                    }
+                    let text = if out.get("active") == Some(&J::Bool(true)) {
+                        format!(
+                            "SQL connector active on {}:{}",
+                            out["listenHost"].as_str().unwrap_or(""),
+                            out["listenPort"]
+                        )
+                    } else {
+                        "SQL connector inactive".into()
+                    };
+                    Ok(structured_result(J::Object(out), Some(&text)))
+                }),
+            ),
+            (
+                "release_sql_connector",
+                op(move |call| {
+                    let database = text(call.args, "databaseId");
+                    let force = flag(call.args, "force");
+                    let released = release.release_connector(database, force)?;
+                    let text = if released {
+                        format!("Released SQL connector {database}")
+                    } else {
+                        format!("No SQL connector for {database}")
+                    };
+                    Ok(structured_result(
+                        serde_json::json!({"released": released, "databaseId": database}),
+                        Some(&text),
+                    ))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8e: a single-instance PostgreSQL in a cluster namespace, and SQL run in
+/// its primary.
+fn standalone_postgresql(postgres: &crate::postgresops::Postgres) -> Service {
+    use crate::tools::structured_result;
+    let (install, status, delete, sql) = (
+        postgres.clone(),
+        postgres.clone(),
+        postgres.clone(),
+        postgres.clone(),
+    );
+    Service {
+        id: "standalone-postgresql",
+        dependencies: &["cluster-resources"],
+        operations: vec![
+            (
+                "install_postgresql",
+                op(move |call| {
+                    let args = crate::postgresops::InstallArgs {
+                        vm_name: call.binding.provider_instance_name(),
+                        namespace: text(call.args, "namespace").into(),
+                        database: text(call.args, "database").into(),
+                    };
+                    install
+                        .install(call.ctx, &args)
+                        .map(|out| structured_result(J::Object(out), Some("PostgreSQL is ready.")))
+                }),
+            ),
+            (
+                "get_postgresql_status",
+                op(move |call| {
+                    status
+                        .standalone_status(
+                            &call.binding.provider_instance_name(),
+                            text(call.args, "namespace"),
+                        )
+                        .map(map_result)
+                }),
+            ),
+            (
+                "delete_postgresql",
+                op(move |call| {
+                    delete
+                        .delete_standalone(
+                            &call.binding.provider_instance_name(),
+                            text(call.args, "namespace"),
+                        )
+                        .map(|out| structured_result(J::Object(out), Some("PostgreSQL deleted.")))
+                }),
+            ),
+            (
+                "run_sql",
+                op(move |call| {
+                    sql.run_sql(
+                        &call.binding.provider_instance_name(),
+                        text(call.args, "namespace"),
+                        text(call.args, "database"),
+                        text(call.args, "sql"),
+                    )
+                    .map(|out| structured_result(J::Object(out), Some("SQL completed.")))
                 }),
             ),
         ],

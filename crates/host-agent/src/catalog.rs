@@ -425,10 +425,43 @@ fn rename_definition(def: &Definition) -> Definition {
             }
         }
     }
+    mark_write_only(&def.name, &mut out.input_schema);
     if let Some(name) = neutral_name(&def.name) {
         out.name = name.to_string();
     }
     out
+}
+
+// --- D24: write-only credential fields (write-only-relay-token) ---------------------
+
+const WRITE_ONLY: &str = include_str!("../catalog/write-only.json");
+
+/// D24: the input property paths, by Go tool name, that Rust publishes
+/// `writeOnly` where Go's catalog leaves them unmarked.
+fn write_only_fields() -> &'static BTreeMap<String, Vec<Vec<String>>> {
+    static FIELDS: OnceLock<BTreeMap<String, Vec<Vec<String>>>> = OnceLock::new();
+    FIELDS.get_or_init(|| {
+        let doc: J =
+            serde_json::from_str(WRITE_ONLY).expect("catalog/write-only.json is valid JSON");
+        serde_json::from_value(doc["fields"].clone())
+            .expect("catalog/write-only.json fields are tool -> [[property, ...]]")
+    })
+}
+
+/// D24: mark each listed property of `name`'s input schema `writeOnly`, so
+/// the schema-driven storage projection redacts it as any marked field.
+fn mark_write_only(name: &str, schema: &mut J) {
+    for path in write_only_fields().get(name).into_iter().flatten() {
+        let mut node = Some(&mut *schema);
+        for key in path {
+            node = node
+                .and_then(|n| n.get_mut("properties"))
+                .and_then(|p| p.get_mut(key));
+        }
+        if let Some(J::Object(property)) = node {
+            property.insert("writeOnly".into(), J::Bool(true));
+        }
+    }
 }
 
 /// Go's descriptors for the aliased tools, under Go's names, as Go's own
@@ -1776,6 +1809,56 @@ mod tests {
         assert!(compact.description.contains("shutdown_host_vm_subsystem"));
         assert!(!compact.description.contains("shutdown_wsl"));
         assert!(cat.find("install_virtualization_stack_x").is_none());
+    }
+
+    /// D24: the relay token is published writeOnly in every postgres
+    /// service tool, so the storage projection redacts it at the top level
+    /// and under localRelay; delivery still hides only marked fields.
+    #[test]
+    fn d24_marks_the_relay_token_write_only() {
+        let token = J::from("relay-token-0123456789abcdef0123456789");
+        for standalone in [false, true] {
+            let cat = for_mode(standalone);
+            for (tool, path) in write_only_fields()
+                .iter()
+                .flat_map(|(tool, paths)| paths.iter().map(move |p| (tool, p)))
+            {
+                let Some(d) = cat.find(tool) else {
+                    assert!(
+                        standalone && tool == "remove_postgresql_service",
+                        "{tool} missing"
+                    );
+                    continue;
+                };
+                let pointer: String = path.iter().map(|k| format!("/properties/{k}")).collect();
+                assert_eq!(
+                    d.input_schema.pointer(&format!("{pointer}/writeOnly")),
+                    Some(&J::Bool(true)),
+                    "{tool} {pointer}"
+                );
+                let mut args = J::from("[placeholder]");
+                for key in path.iter().rev() {
+                    args = json!({ key: args });
+                }
+                *args
+                    .pointer_mut(&path.iter().map(|k| format!("/{k}")).collect::<String>())
+                    .unwrap() = token.clone();
+                let stored = crate::evidence::redact_for_storage(&args, d.input_schema.as_object());
+                assert!(
+                    !stored.to_string().contains(token.as_str().unwrap()),
+                    "{tool}: {stored}"
+                );
+            }
+        }
+        // Go's own definitions stay unmarked: the Go revision pairing is Go's.
+        let go = source()
+            .go_definitions
+            .iter()
+            .find(|d| d.name == "release_postgresql_service_relay")
+            .unwrap();
+        assert!(go.input_schema["properties"]["relayToken"]
+            .get("writeOnly")
+            .is_none());
     }
 
     #[test]

@@ -323,3 +323,18 @@ class EmbeddedNumberTest(unittest.TestCase):
     def test_unknown_placeholder_stays_text(self):
         doc = {"row": '{"port":${OTHER}}'}
         self.assertEqual(canon.parse_embedded(doc, [["row"]], {"STUB_PORT": "1"}), doc)
+
+
+class D24UnmarkTest(unittest.TestCase):
+    def test_removes_only_the_listed_write_only_marks(self):
+        from parity.canon import _unmark_write_only
+        schema = {"type": "object", "properties": {
+            "relayToken": {"type": "string", "minLength": 32, "writeOnly": True},
+            "localRelay": {"type": "object", "properties": {
+                "relayToken": {"type": "string", "writeOnly": True},
+                "other": {"type": "string", "writeOnly": True}}}}}
+        out = _unmark_write_only(schema, [["relayToken"], ["localRelay", "relayToken"]])
+        self.assertEqual(out["properties"]["relayToken"], {"type": "string", "minLength": 32})
+        self.assertEqual(out["properties"]["localRelay"]["properties"]["relayToken"], {"type": "string"})
+        self.assertTrue(out["properties"]["localRelay"]["properties"]["other"]["writeOnly"])
+        self.assertTrue(schema["properties"]["relayToken"]["writeOnly"], "input unchanged")

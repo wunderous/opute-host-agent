@@ -90,6 +90,14 @@ def _sha256(path: str) -> str:
     return digest.hexdigest()
 
 
+def _is_sqlite(path: str) -> bool:
+    try:
+        with open(path, "rb") as f:
+            return f.read(16) == b"SQLite format 3\x00"
+    except OSError:
+        return False
+
+
 def files() -> dict:
     out = {}
     for root in ROOTS:
@@ -110,6 +118,10 @@ def files() -> dict:
                     entry.update(type="symlink", target=os.readlink(path))
                 elif stat.S_ISDIR(st.st_mode):
                     entry["type"] = "dir"
+                elif stat.S_ISREG(st.st_mode) and _is_sqlite(path):
+                    # The header stamps the writing library's version, the
+                    # engine's and not the agent's (M8e).
+                    entry["type"] = "sqlite"
                 elif stat.S_ISREG(st.st_mode):
                     entry["type"] = "file"
                     try:
@@ -243,7 +255,11 @@ def incus() -> dict | None:
 K8S_NAMESPACED = ["configmaps", "secrets", "serviceaccounts", "services", "deployments.apps",
                   "ingresses.networking.k8s.io", "helmcharts.helm.cattle.io"]
 K8S_CLUSTER = ["namespaces"]
+# With the CloudNativePG API (the PostgreSQL golden, M8e): its Clusters and
+# the volumes they claim. A claim's bound volume is named by the provisioner.
+K8S_CNPG = ["clusters.postgresql.cnpg.io", "persistentvolumeclaims"]
 K8S_SYSTEM = {"kube-system": {"helmcharts.helm.cattle.io"}, "kube-public": set(), "kube-node-lease": set()}
+LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration"
 K8S_DROP_META = ("uid", "resourceVersion", "creationTimestamp", "managedFields", "generation", "selfLink")
 K1_ROOTS = ["/etc/opute", "/usr/local/lib/opute", "/etc/systemd/system"]
 K1_UNITS = ["opute-cluster-agent.service", "k3s.service"]
@@ -263,6 +279,14 @@ def _k8s_object(obj: dict) -> dict:
             out[key] = obj[key]
     if obj.get("kind") == "Secret":
         out["data"] = {k: hashlib.sha256(v.encode()).hexdigest() for k, v in (obj.get("data") or {}).items()}
+        # kubectl apply keeps the applied manifest, values included, in an
+        # annotation: a Secret's is recorded by sha256 as its data is (M8e).
+        annotations = meta.get("annotations") or {}
+        if LAST_APPLIED in annotations:
+            meta["annotations"] = {**annotations,
+                                   LAST_APPLIED: hashlib.sha256(annotations[LAST_APPLIED].encode()).hexdigest()}
+    if obj.get("kind") == "PersistentVolumeClaim" and isinstance(out.get("spec"), dict):
+        out["spec"] = {k: v for k, v in out["spec"].items() if k != "volumeName"}
     if obj.get("kind") == "Service" and isinstance(out.get("spec"), dict):
         # Assigned from the service CIDR by the API server.
         out["spec"] = {k: v for k, v in out["spec"].items() if k not in ("clusterIP", "clusterIPs")}
@@ -274,7 +298,8 @@ def kubernetes() -> dict | None:
     if not os.path.exists("/var/lib/incus/unix.socket") or _run(["incus", "info", "k1"])[0] != 0:
         return None
     objects, errors = {}, []
-    for resource in K8S_CLUSTER + K8S_NAMESPACED:
+    cnpg = _run(["incus", "exec", "k1", "--", "k3s", "kubectl", "get", "crd", "clusters.postgresql.cnpg.io"])[0] == 0
+    for resource in K8S_CLUSTER + K8S_NAMESPACED + (K8S_CNPG if cnpg else []):
         args = ["get", resource, "-o", "json"] + ([] if resource in K8S_CLUSTER else ["--all-namespaces"])
         listed = _kubectl_json(args)
         if listed is None:

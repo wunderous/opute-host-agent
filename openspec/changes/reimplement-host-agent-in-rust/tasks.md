@@ -175,7 +175,12 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   2026-10-18: T1 and T2 parity green with real rootless podman and buildah
   pushing only to a registry in the twin's k3s; the seam verifier reports no
   gap, and the m8d gate passes
-  ([`evidence/m8d`](../../../evidence/m8d/README.md)). 8e–8f remain open.
+  ([`evidence/m8d`](../../../evidence/m8d/README.md)). 8e (postgres)
+  done 2026-10-20: T1 and T2 parity green against the pinned k3s provider
+  and a real CloudNativePG cluster in the twins, with D24 marking the relay
+  token write-only; the seam verifier reports no gap, and the m8e gate
+  passes ([`evidence/m8e`](../../../evidence/m8e/README.md)). 8f remains
+  open.
 - [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,
