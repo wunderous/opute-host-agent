@@ -384,6 +384,8 @@ pub(crate) fn compose(
         },
         sqlite_root: cfg.sqlite_database_root.display().to_string(),
         postgres: Default::default(),
+        llm: Default::default(),
+        relay_config_dir: cfg.relay_config_dir.display().to_string(),
         cluster_adopter: Default::default(),
     };
     // `reclaimTerminalTaskReservations`: a reservation whose task is now

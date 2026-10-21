@@ -1,0 +1,113 @@
+{
+ "families": [
+  "service-ingress",
+  "serving-assignment"
+ ],
+ "milestone": "M8f",
+ "note": "Static inventory of the Go serving domain. commandsStatic names the host commands the domain runs itself (exec.Command); dependencies are its Deps seams into the host, incus and kubernetes domains, and providerOperations the Kubernetes provider operations they reach; effects.json records what each tool is observed running.",
+ "owner": "serving",
+ "source": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+ "surface": "serving-domain",
+ "tools": [
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_serving.go:25",
+   "catalogExclusion": null,
+   "commandsStatic": [],
+   "dependencies": [
+    "BridgeIP",
+    "IngressLoadBalancer"
+   ],
+   "domain": "serving",
+   "domainFunctions": [
+    "internal/domain/serving/ingress.go:24:DiscoverServiceIngress",
+    "internal/domain/serving/ingress.go:62:orDefault",
+    "internal/domain/serving/service.go:39:New"
+   ],
+   "effect": "EffectRead",
+   "envReads": [],
+   "family": "service-ingress",
+   "goTests": [],
+   "neutralName": "discover_service_ingress",
+   "neutralValues": {},
+   "providerOperations": [
+    "opute.capability.kubernetes.exec-command"
+   ],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "discover_service_ingress"
+  },
+  {
+   "admissionClass": "ClassNormal",
+   "anchor": "internal/tools/dispatch_serving.go:15",
+   "catalogExclusion": null,
+   "commandsStatic": [
+    "kill",
+    "systemctl"
+   ],
+   "dependencies": [
+    "RunAgentShell",
+    "SetHostServiceState"
+   ],
+   "domain": "serving",
+   "domainFunctions": [
+    "internal/domain/serving/assignment.go:388:ReconcileServingAssignment",
+    "internal/domain/serving/assignment.go:227:probeServingEndpoint",
+    "internal/domain/serving/assignment.go:87:servingString",
+    "internal/domain/serving/assignment.go:96:servingPort",
+    "internal/domain/serving/service.go:39:New",
+    "internal/domain/serving/assignment.go:81:releaseServingLaunch",
+    "internal/domain/serving/assignment.go:53:servingLaunchKey",
+    "internal/domain/serving/assignment.go:288:recordServingAssignmentState",
+    "internal/domain/serving/assignment.go:262:servingAssignmentStateFile",
+    "internal/domain/serving/assignment.go:307:servingFileToken",
+    "internal/domain/serving/assignment.go:315:servingLaunchCommand",
+    "internal/domain/serving/assignment.go:254:shellQuoteServing",
+    "internal/domain/serving/assignment.go:301:servingTransientUnit",
+    "internal/domain/serving/assignment.go:61:claimServingLaunch",
+    "internal/domain/serving/assignment.go:258:servingPidFile",
+    "internal/domain/serving/assignment.go:334:servingProcessAlive",
+    "internal/domain/serving/assignment.go:273:servingAssignmentStateMatches",
+    "internal/domain/serving/assignment.go:311:servingSystemdUnitActive",
+    "internal/domain/serving/assignment.go:346:servingArtifactCommand",
+    "internal/domain/serving/assignment.go:220:normalizedServingRestartPolicy",
+    "internal/domain/serving/assignment.go:157:validateServingAssignment",
+    "internal/domain/serving/assignment.go:126:validateServingTarget"
+   ],
+   "effect": "EffectMutation",
+   "envReads": [],
+   "family": "serving-assignment",
+   "goTests": [
+    "internal/domain/serving/assignment_test.go:TestReconcileServingAssignmentAcceptsExplicitContainerTarget",
+    "internal/domain/serving/assignment_test.go:TestReconcileServingAssignmentDoesNotDuplicateLiveProcess",
+    "internal/domain/serving/assignment_test.go:TestReconcileServingAssignmentRejectsVMTarget"
+   ],
+   "neutralName": "reconcile_serving_assignment",
+   "neutralValues": {},
+   "providerOperations": [],
+   "publishedIn": [
+    "platform",
+    "provider-cloudflare",
+    "provider-hostos",
+    "provider-k3s",
+    "provider-tailscale",
+    "standalone",
+    "standalone-mutations"
+   ],
+   "reachability": "covered",
+   "rustServes": true,
+   "taskMode": "TaskInline",
+   "tool": "reconcile_serving_assignment"
+  }
+ ]
+}

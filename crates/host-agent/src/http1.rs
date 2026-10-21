@@ -73,6 +73,11 @@ impl Headers {
         self.0.retain(|(k, _)| *k != key);
     }
 
+    /// `Header.Add`.
+    pub fn add(&mut self, key: &str, value: impl Into<String>) {
+        self.add_raw(canonical_key(key), value.into());
+    }
+
     fn add_raw(&mut self, key: String, value: String) {
         match self.0.iter_mut().find(|(k, _)| *k == key) {
             Some((_, v)) => v.push(value),
@@ -130,6 +135,16 @@ impl Request {
     pub fn query_get(&self, key: &str) -> String {
         form_get(&self.raw_query, key)
     }
+
+    /// `Request.ContentLength`: the declared length, `None` for a chunked
+    /// body (Go's -1), zero when there is no body.
+    pub fn content_length(&self) -> Option<u64> {
+        match self.framing {
+            Framing::None => Some(0),
+            Framing::Length(n) => Some(n),
+            Framing::Chunked => None,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -143,6 +158,10 @@ pub struct Response {
     pub status: u16,
     pub headers: Headers,
     pub body: Vec<u8>,
+    /// A body the handler streams after the head (Go's `Flush` after every
+    /// write, as `ReverseProxy` with a negative flush interval does): the
+    /// head goes out first, then each read as one chunk.
+    pub stream: Option<Box<dyn tokio::io::AsyncRead + Send + Unpin>>,
 }
 
 impl Response {
@@ -151,6 +170,7 @@ impl Response {
             status,
             headers: Headers::default(),
             body: Vec::new(),
+            stream: None,
         }
     }
 
@@ -978,7 +998,11 @@ fn has_token(v: &str, token: &str) -> bool {
 
 /// Serialize a complete response the way `chunkWriter.writeHeader` and
 /// `finishRequest` do. Returns the bytes and whether to close afterwards.
-fn encode_response(req: &RequestSummary, mut res: Response, mut close: bool) -> (Vec<u8>, bool) {
+fn encode_response(
+    req: &RequestSummary,
+    mut res: Response,
+    mut close: bool,
+) -> (Vec<u8>, bool, Option<Streamed>) {
     let is_head = req.method == "HEAD";
     let is11 = req.proto_major > 1 || (req.proto_major == 1 && req.proto_minor >= 1);
     let allowed = body_allowed_for_status(res.status);
@@ -990,7 +1014,9 @@ fn encode_response(req: &RequestSummary, mut res: Response, mut close: bool) -> 
         None::<String>,
         None::<String>,
     );
-    let handler_done = res.body.len() <= BUFFER_BEFORE_CHUNKING;
+    // A streamed body is flushed before the handler returns: the head is
+    // committed without a computed length.
+    let handler_done = res.stream.is_none() && res.body.len() <= BUFFER_BEFORE_CHUNKING;
     let te = h.get("Transfer-Encoding").to_string();
     let has_te = !te.is_empty();
     if handler_done
@@ -1096,6 +1122,10 @@ fn encode_response(req: &RequestSummary, mut res: Response, mut close: bool) -> 
         }
     }
     out.extend_from_slice(b"\r\n");
+    if let Some(stream) = res.stream.take() {
+        let streamed = (!is_head && allowed).then_some(Streamed { stream, chunking });
+        return (out, close, streamed);
+    }
     if !is_head && allowed {
         if chunking {
             if !res.body.is_empty() {
@@ -1108,7 +1138,41 @@ fn encode_response(req: &RequestSummary, mut res: Response, mut close: bool) -> 
             out.extend_from_slice(&res.body);
         }
     }
-    (out, close)
+    (out, close, None)
+}
+
+/// A streamed body still to be written after the head.
+struct Streamed {
+    stream: Box<dyn tokio::io::AsyncRead + Send + Unpin>,
+    chunking: bool,
+}
+
+/// Copy a streamed body, flushing after every read. A read failure aborts
+/// the connection, as Go's `http.ErrAbortHandler` does.
+async fn write_streamed(writer: &mut OwnedWriteHalf, mut streamed: Streamed) -> bool {
+    let mut buf = vec![0u8; 32 * 1024];
+    loop {
+        let n = match streamed.stream.read(&mut buf).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(_) => return false,
+        };
+        let mut piece = Vec::with_capacity(n + 16);
+        if streamed.chunking {
+            piece.extend_from_slice(format!("{n:x}\r\n").as_bytes());
+            piece.extend_from_slice(&buf[..n]);
+            piece.extend_from_slice(b"\r\n");
+        } else {
+            piece.extend_from_slice(&buf[..n]);
+        }
+        if writer.write_all(&piece).await.is_err() || writer.flush().await.is_err() {
+            return false;
+        }
+    }
+    if streamed.chunking && writer.write_all(b"0\r\n\r\n").await.is_err() {
+        return false;
+    }
+    true
 }
 
 /// The subset of `http.DetectContentType` that handler bodies here can hit.
@@ -1231,10 +1295,20 @@ where
             response.headers.del("Connection");
             response.headers.set("Connection", "close");
         }
-        let (bytes, close) = encode_response(&summary, response, close);
+        let (bytes, close, streamed) = encode_response(&summary, response, close);
         reader = body.reader;
         writer = body.writer;
-        if writer.write_all(&bytes).await.is_err() || close {
+        if writer.write_all(&bytes).await.is_err() {
+            let _ = writer.shutdown().await;
+            return;
+        }
+        if let Some(streamed) = streamed {
+            if writer.flush().await.is_err() || !write_streamed(&mut writer, streamed).await {
+                let _ = writer.shutdown().await;
+                return;
+            }
+        }
+        if close {
             let _ = writer.shutdown().await;
             return;
         }

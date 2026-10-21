@@ -1781,7 +1781,7 @@ fn first_ipv4(accept: impl Fn(&str, nix::net::if_::InterfaceFlags) -> bool) -> S
 }
 
 /// `firstBridgeIPv4`.
-fn first_bridge_ipv4(ips: &[String]) -> String {
+pub(crate) fn first_bridge_ipv4(ips: &[String]) -> String {
     ips.iter()
         .find(|ip| ip.starts_with("10.123."))
         .or_else(|| {

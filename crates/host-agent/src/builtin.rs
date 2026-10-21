@@ -248,6 +248,8 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         }));
     let oci = oci(host, &k8s);
     let postgres = postgres(host, &k8s);
+    let llm = llm(host, &k8s);
+    let serving = serving(host, &k8s);
     let agent = crate::clusterops::ClusterAgent {
         instances: instances(host),
         env: host.env.clone(),
@@ -288,6 +290,13 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         postgresql_relay(&postgres),
         sql_connector(&postgres, host),
         standalone_postgresql(&postgres),
+        local_llm_runtime(&llm, host),
+        local_llm_server_binary(&llm),
+        local_llm_relay(&llm),
+        local_llm_cluster_proxy(&llm),
+        openai_compatible_probe(&llm),
+        serving_assignment(&serving),
+        service_ingress(&serving),
         host_artifacts(host),
         public_mcp(host),
         host_vm_subsystem(host),
@@ -1319,6 +1328,7 @@ fn instances(host: &crate::tools::Host) -> crate::incusops::Instances {
         reset_checkpoint_path: host.reset_checkpoint_path.clone(),
         relays: host.relays.clone(),
         postgres: host.postgres.clone(),
+        llm: host.llm.clone(),
     }
 }
 
@@ -2799,6 +2809,566 @@ fn cluster_agent(agent: &crate::clusterops::ClusterAgent) -> Service {
                         Some("Kubernetes cluster agent installed."),
                     )
                 })
+            }),
+        )],
+    }
+}
+
+// --- M8f: the llm and serving domains ---------------------------------------------------
+
+/// The llm domain over its seams: the kubernetes domain for the cluster
+/// proxy, the relay directory and the host-wide request lock.
+fn llm(host: &crate::tools::Host, k8s: &crate::clusterops::Kubernetes) -> crate::llmops::Llm {
+    crate::llmops::Llm {
+        env: host.env.clone(),
+        k8s: k8s.clone(),
+        relay_config_dir: host.relay_config_dir.clone(),
+        lock_dir: host.coordinator.lock_dir.display().to_string(),
+        live: host.llm.clone(),
+    }
+}
+
+/// `localLLMRuntime`: the shared Ollama runtime unless llama-cpp is named.
+fn llm_runtime(args: &Map<String, J>) -> String {
+    match text(args, "runtime") {
+        "" => "ollama".into(),
+        runtime => runtime.into(),
+    }
+}
+
+/// `explicitLocalLLMModelRef`: `model` and `modelRef` must agree.
+fn explicit_model_ref(args: &Map<String, J>) -> Result<String, String> {
+    let (model_ref, model) = (text(args, "modelRef"), text(args, "model"));
+    if !model_ref.is_empty() && !model.is_empty() && model_ref != model {
+        return Err(
+            "model and modelRef must identify the same model when both are supplied".into(),
+        );
+    }
+    Ok(if model.is_empty() { model_ref } else { model }.to_string())
+}
+
+/// `localLLMModelRef`: the explicit reference, empty when they disagree.
+fn llm_model_ref(args: &Map<String, J>) -> String {
+    explicit_model_ref(args).unwrap_or_default()
+}
+
+/// `localLLMModelRole`.
+fn llm_model_role(args: &Map<String, J>) -> Result<String, String> {
+    match text(args, "role") {
+        "" => Ok("language".into()),
+        role @ ("language" | "embedding") => Ok(role.into()),
+        role => Err(format!(
+            "unsupported model role {}; expected language or embedding",
+            crate::goerr::quote(role)
+        )),
+    }
+}
+
+/// `resolveLocalLLMModelArg`: the explicit model, else the preset's.
+fn resolve_llm_model(args: &Map<String, J>) -> Result<String, String> {
+    let explicit = explicit_model_ref(args)?;
+    if !explicit.is_empty() {
+        return Ok(explicit);
+    }
+    let llama = llm_runtime(args) == "llama-cpp";
+    let preset = text(args, "modelPreset");
+    let requires_ollama = || {
+        Err(format!(
+            "model preset {} requires the ollama runtime",
+            crate::goerr::quote(preset)
+        ))
+    };
+    match preset {
+        "" if llama => Ok("qwen3.5-0.8b/base-llama".into()),
+        "" => Ok(crate::llmops::DEFAULT_OLLAMA_MODEL.into()),
+        "lfm2-2.6b" if llama => requires_ollama(),
+        "lfm2-2.6b" => Ok(crate::llmops::DEFAULT_OLLAMA_MODEL.into()),
+        "lfm2.5-thinking" if llama => requires_ollama(),
+        "lfm2.5-thinking" => Ok("lfm2.5-thinking:1.2b".into()),
+        "qwen3.5" if llama => Ok("qwen3.5-0.8b/base-llama".into()),
+        "qwen3.5" => Ok("qwen3.5:2b".into()),
+        "qwen3.5-0.8b" if llama => Ok("qwen3.5-0.8b/base-llama".into()),
+        "qwen3.5-0.8b" => Ok("qwen3.5:0.8b".into()),
+        other => Err(format!(
+            "unsupported local LLM model preset {}",
+            crate::goerr::quote(other)
+        )),
+    }
+}
+
+fn unsupported_runtime(args: &Map<String, J>, expected: &str) -> String {
+    format!(
+        "unsupported local LLM runtime {}; {expected}",
+        crate::goerr::quote(&llm_runtime(args))
+    )
+}
+
+/// `structuredResult(out, "")` for a probe: the JSON is the text.
+fn probe_result(probe: &crate::llmops::ProbeResult) -> J {
+    crate::tools::structured_with_text(&probe.to_json(), &crate::llmops::PROBE_SHAPE)
+}
+
+/// M8f: the shared local-LLM runtime (Ollama by default, llama-server when
+/// named): readiness, models, their context, and the runtime itself.
+fn local_llm_runtime(llm: &crate::llmops::Llm, host: &crate::tools::Host) -> Service {
+    use crate::tools::{structured_result, structured_with_text};
+    let (check, probe, install, configure, start, stop) = (
+        llm.clone(),
+        llm.clone(),
+        llm.clone(),
+        llm.clone(),
+        llm.clone(),
+        llm.clone(),
+    );
+    let (state, tenant) = (host.state.clone(), host.tenant_id.clone());
+    // One handler, two names: the model list is a control-plane read, the
+    // probe talks to the runtime.
+    let probe_handler = Arc::new(move |call: &Invocation| -> Result<J, String> {
+        llm_model_role(call.args)?;
+        let args = crate::llmops::ProbeArgs {
+            include_chat: flag(call.args, "includeChat"),
+            model_ref: llm_model_ref(call.args),
+        };
+        let mut result = match llm_runtime(call.args).as_str() {
+            "llama-cpp" => probe.probe_llama(call.ctx, &args)?,
+            "ollama" => probe.probe_ollama(call.ctx, &args),
+            _ => {
+                return Err(unsupported_runtime(
+                    call.args,
+                    "expected ollama or llama-cpp",
+                ))
+            }
+        };
+        // `AttachLocalLLMModelURIs`: each model's tenant-scoped identity.
+        for model in &mut result.models {
+            let Ok(uri) = crate::resource::Uri::new("model", &tenant, &model.name) else {
+                continue;
+            };
+            model.uri = uri.to_string();
+            let mut coordinates = Map::new();
+            coordinates.insert("modelRef".into(), J::from(model.name.as_str()));
+            coordinates.insert("runtime".into(), J::from(result.runtime.as_str()));
+            let _ = crate::resource::register(&state, &tenant, &model.uri, &coordinates);
+        }
+        Ok(probe_result(&result))
+    });
+    let list_handler = probe_handler.clone();
+    Service {
+        id: "local-llm-runtime",
+        dependencies: &[],
+        operations: vec![
+            (
+                "check_local_llm_prerequisites",
+                op(move |call| {
+                    Ok(structured_with_text(
+                        &check.check_ollama_prerequisites(call.ctx),
+                        &crate::llmops::PREREQUISITES_SHAPE,
+                    ))
+                }),
+            ),
+            ("list_local_llm_models", list_handler),
+            ("probe_local_llm", probe_handler),
+            (
+                "install_local_llm_model",
+                op(move |call| {
+                    let role = llm_model_role(call.args)?;
+                    if llm_runtime(call.args) == "ollama" {
+                        let model_ref = resolve_llm_model(call.args)?;
+                        let set_default = if call.args.contains_key("setDefault") {
+                            flag(call.args, "setDefault")
+                        } else {
+                            role != "embedding"
+                        };
+                        let out = install.install_ollama_model(
+                            call.ctx,
+                            &crate::llmops::InstallOllamaArgs {
+                                model_ref,
+                                port: optional_int64(call.args, "port"),
+                                role,
+                                set_default,
+                            },
+                        )?;
+                        return Ok(structured_result(
+                            out.to_json(),
+                            Some("Ollama model is ready"),
+                        ));
+                    }
+                    if llm_runtime(call.args) != "llama-cpp" {
+                        return Err(unsupported_runtime(
+                            call.args,
+                            "expected ollama or llama-cpp",
+                        ));
+                    }
+                    let model_ref = resolve_llm_model(call.args)?;
+                    let a = call.args;
+                    let out = install.install_llama_model(
+                        call.ctx,
+                        &crate::llmops::InstallLlamaArgs {
+                            model_ref,
+                            artifact_path: text(a, "artifactPath").into(),
+                            artifact_sha256: text(a, "artifactSha256").into(),
+                            artifact_uri: text(a, "artifactUri").into(),
+                            base_model: text(a, "baseModel").into(),
+                            revision: text(a, "revision").into(),
+                            tokenizer_revision: text(a, "tokenizerRevision").into(),
+                            chat_template_hash: text(a, "chatTemplateHash").into(),
+                            quantization: text(a, "quantization").into(),
+                            chat_template: text(a, "chatTemplate").into(),
+                            chat_template_kwargs: text(a, "chatTemplateKwargs").into(),
+                            context_size: int_field(a, "contextSize"),
+                            gpu_layers: int_field(a, "gpuLayers"),
+                            binary_path: text(a, "binaryPath").into(),
+                            binary_version: text(a, "binaryVersion").into(),
+                            binary_sha256: text(a, "binarySha256").into(),
+                            binary_uri: text(a, "binaryUri").into(),
+                            binary_source: text(a, "binarySource").into(),
+                            source_revision: text(a, "sourceRevision").into(),
+                            source_sha256: text(a, "sourceSha256").into(),
+                            cuda_enabled: flag(a, "cudaEnabled"),
+                            cuda_architectures: text(a, "cudaArchitectures").into(),
+                            binary_build_source_uri: text(a, "binaryBuildSourceUri").into(),
+                            binary_build_source_sha256: text(a, "binaryBuildSourceSha256").into(),
+                            binary_build_revision: text(a, "binaryBuildRevision").into(),
+                            port: optional_int64(a, "port"),
+                        },
+                    )?;
+                    Ok(structured_result(
+                        out.to_json(),
+                        Some("llama-server model is ready"),
+                    ))
+                }),
+            ),
+            (
+                "configure_local_llm_model",
+                op(move |call| {
+                    match llm_runtime(call.args).as_str() {
+                    "ollama" => {
+                        let model_ref = llm_model_ref(call.args);
+                        let mut context = int_field(call.args, "contextSize");
+                        if context == 0 {
+                            context = int_field(call.args, "numCtx");
+                        }
+                        if context > 0 {
+                            if model_ref.is_empty() {
+                                return Err("modelRef is required when setting contextSize".into());
+                            }
+                            let out = configure.configure_ollama_model_context(&model_ref, context)?;
+                            return Ok(structured_result(
+                                out.to_json(),
+                                Some("Ollama model context is persisted in the shared host runtime"),
+                            ));
+                        }
+                        let out = configure.get_ollama_model_context(&model_ref)?;
+                        Ok(structured_result(
+                            out.to_json(),
+                            Some("Ollama model context returned from the shared host runtime"),
+                        ))
+                    }
+                    "llama-cpp" => Err(
+                        "configure_local_llm_model is retired; llama-server uses the pinned artifact manifest"
+                            .into(),
+                    ),
+                    _ => Err(unsupported_runtime(call.args, "only llama-cpp is supported")),
+                }
+                }),
+            ),
+            (
+                "start_local_llm_runtime",
+                op(move |call| match llm_runtime(call.args).as_str() {
+                    "ollama" => start.start_ollama_runtime(call.ctx).map(|out| {
+                        structured_result(out.to_json(), Some("shared Ollama runtime is ready"))
+                    }),
+                    "llama-cpp" => start.start_llama_runtime(call.ctx).map(|out| {
+                        structured_result(out.to_json(), Some("llama-server runtime is ready"))
+                    }),
+                    _ => Err(unsupported_runtime(
+                        call.args,
+                        "only llama-cpp is supported",
+                    )),
+                }),
+            ),
+            (
+                "stop_local_llm_runtime",
+                op(move |call| match llm_runtime(call.args).as_str() {
+                    // The shared runtime is left to the other instances
+                    // using it.
+                    "ollama" => Ok(structured_result(
+                        serde_json::json!({
+                            "stopped": false,
+                            "shared": true,
+                            "reason": "shared Ollama runtime remains available to other Platform instances"
+                        }),
+                        Some("shared Ollama runtime left running"),
+                    )),
+                    "llama-cpp" => {
+                        stop.stop_llama_runtime()?;
+                        Ok(structured_result(
+                            serde_json::json!({"stopped": true}),
+                            Some("llama-server runtime stopped"),
+                        ))
+                    }
+                    _ => Err(unsupported_runtime(
+                        call.args,
+                        "only llama-cpp is supported",
+                    )),
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8f: the CUDA llama-server binary, built from a pinned source archive.
+fn local_llm_server_binary(llm: &crate::llmops::Llm) -> Service {
+    use crate::tools::structured_result;
+    let llm = llm.clone();
+    Service {
+        id: "local-llm-server-binary",
+        dependencies: &[],
+        operations: vec![(
+            "ensure_local_llm_server_binary",
+            op(move |call| {
+                if llm_runtime(call.args) != "llama-cpp" {
+                    return Err(unsupported_runtime(
+                        call.args,
+                        "only llama-cpp is supported",
+                    ));
+                }
+                let out = llm.ensure_llama_binary(
+                    call.ctx,
+                    &crate::llmops::BuildArgs {
+                        source_uri: text(call.args, "sourceUri").into(),
+                        source_sha256: text(call.args, "sourceSha256").into(),
+                        source_revision: text(call.args, "sourceRevision").into(),
+                        output_path: text(call.args, "outputPath").into(),
+                        cuda_architectures: text(call.args, "cudaArchitectures").into(),
+                    },
+                )?;
+                Ok(structured_result(
+                    out.to_json(),
+                    Some("CUDA llama-server binary is built and verified"),
+                ))
+            }),
+        )],
+    }
+}
+
+/// `stringSliceField`: nil when the argument is not an array.
+fn optional_string_slice(args: &Map<String, J>, key: &str) -> Option<Vec<String>> {
+    args.get(key).and_then(J::as_array).map(|items| {
+        items
+            .iter()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect()
+    })
+}
+
+/// M8f: the authenticated relay that publishes a local model endpoint.
+fn local_llm_relay(llm: &crate::llmops::Llm) -> Service {
+    use crate::tools::structured_result;
+    let (ensure, remove) = (llm.clone(), llm.clone());
+    Service {
+        id: "local-llm-relay",
+        dependencies: &[],
+        operations: vec![
+            (
+                "ensure_local_llm_relay",
+                op(move |call| {
+                    let a = call.args;
+                    let out = ensure.ensure_relay(crate::llmops::RelayArgs {
+                        session_id: text(a, "sessionId").into(),
+                        listen_host: text(a, "listenHost").into(),
+                        listen_port: int_field(a, "listenPort"),
+                        target_host: text(a, "targetHost").into(),
+                        target_port: int_field(a, "targetPort"),
+                        incoming_token: text(a, "incomingToken").into(),
+                        upstream_token: text(a, "upstreamToken").into(),
+                        allowed_source_cidrs: optional_string_slice(a, "allowedSourceCIDRs"),
+                        relay_token: text(a, "relayToken").into(),
+                        allowed_source_ip: text(a, "allowedSourceIP").into(),
+                    })?;
+                    Ok(structured_result(
+                        J::Object(out),
+                        Some("Local LLM relay is ready"),
+                    ))
+                }),
+            ),
+            (
+                "remove_local_llm_relay",
+                op(move |call| {
+                    Ok(structured_result(
+                        remove.remove_relay(text(call.args, "sessionId")),
+                        Some("Local LLM relay removed"),
+                    ))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8f: the cluster proxy that publishes a relay into k3s. As in Go, the
+/// VM is the binding's provider instance.
+fn local_llm_cluster_proxy(llm: &crate::llmops::Llm) -> Service {
+    use crate::tools::structured_result;
+    let (ensure, remove) = (llm.clone(), llm.clone());
+    Service {
+        id: "local-llm-cluster-proxy",
+        dependencies: &["cluster-resources"],
+        operations: vec![
+            (
+                "ensure_local_llm_k3s_proxy",
+                op(move |call| {
+                    let a = call.args;
+                    ensure
+                        .ensure_k3s_proxy(&crate::llmops::K3sProxyArgs {
+                            vm_name: call.binding.provider_instance_name(),
+                            namespace: text(a, "namespace").into(),
+                            secret_name: text(a, "secretName").into(),
+                            config_map_name: text(a, "configMapName").into(),
+                            deployment_name: text(a, "deploymentName").into(),
+                            service_name: text(a, "serviceName").into(),
+                            container_image: text(a, "containerImage").into(),
+                            node_port: int_field(a, "nodePort"),
+                            relay_host: text(a, "relayHost").into(),
+                            relay_port: int_field(a, "relayPort"),
+                            relay_token: text(a, "relayToken").into(),
+                            bearer_key: text(a, "bearerKey").into(),
+                        })
+                        .map(|out| structured_result(out, Some("Local LLM K3s proxy is ready")))
+                }),
+            ),
+            (
+                "remove_local_llm_k3s_proxy",
+                op(move |call| {
+                    remove
+                        .remove_k3s_proxy(
+                            &call.binding.provider_instance_name(),
+                            text(call.args, "namespace"),
+                        )
+                        .map(|out| structured_result(out, Some("Local LLM K3s proxy removed")))
+                }),
+            ),
+        ],
+    }
+}
+
+/// M8f: the runtime-neutral OpenAI-compatible probe.
+fn openai_compatible_probe(_llm: &crate::llmops::Llm) -> Service {
+    Service {
+        id: "openai-compatible-probe",
+        dependencies: &[],
+        operations: vec![(
+            "probe_openai_compatible_server",
+            op(move |call| {
+                let out =
+                    crate::llmops::probe_openai_compatible(&crate::llmops::OpenAiProbeArgs {
+                        endpoint: text(call.args, "endpoint").into(),
+                        model_ref: text(call.args, "modelRef").into(),
+                        include_chat: flag(call.args, "includeChat"),
+                        bearer_token: text(call.args, "bearerToken").into(),
+                    })?;
+                Ok(crate::tools::structured_with_text(
+                    &out,
+                    &crate::llmops::OBSERVATION_SHAPE,
+                ))
+            }),
+        )],
+    }
+}
+
+/// The serving domain over its seams: the host's shell and service state,
+/// the incus inventory, and the kubernetes domain.
+fn serving(
+    host: &crate::tools::Host,
+    k8s: &crate::clusterops::Kubernetes,
+) -> crate::servingops::Serving {
+    crate::servingops::Serving {
+        env: host.env.clone(),
+        instance_id: host.instance_id.clone(),
+        owner_instance: host.shared_host_owner_instance.clone(),
+        incus: host.incus.clone(),
+        register: Arc::new(registrar(host)),
+        k8s: k8s.clone(),
+    }
+}
+
+/// `mapField`: an object argument, else nil.
+fn map_field(args: &Map<String, J>, key: &str) -> Option<Map<String, J>> {
+    args.get(key).and_then(J::as_object).cloned()
+}
+
+/// `anySliceField`.
+fn any_slice(args: &Map<String, J>, key: &str) -> Vec<J> {
+    args.get(key)
+        .and_then(J::as_array)
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// M8f: a product-neutral serving assignment on an explicit host target.
+fn serving_assignment(serving: &crate::servingops::Serving) -> Service {
+    use crate::tools::structured_result;
+    let serving = serving.clone();
+    Service {
+        id: "serving-assignment",
+        dependencies: &["host-services"],
+        operations: vec![(
+            "reconcile_serving_assignment",
+            op(move |call| {
+                let a = call.args;
+                let args = crate::servingops::AssignmentArgs {
+                    contract_version: text(a, "contractVersion").into(),
+                    assignment_id: text(a, "assignmentId").into(),
+                    generation: int_field(a, "generation"),
+                    idempotency_key: text(a, "idempotencyKey").into(),
+                    service: text(a, "service").into(),
+                    mode: text(a, "mode").into(),
+                    runtime: text(a, "runtime").into(),
+                    target: map_field(a, "target"),
+                    artifact: map_field(a, "artifact"),
+                    endpoints: any_slice(a, "endpoints"),
+                    readiness: any_slice(a, "readiness"),
+                    service_unit: text(a, "serviceUnit").into(),
+                    desired_state: text(a, "desiredState").into(),
+                    restart_policy: text(a, "restartPolicy").into(),
+                };
+                serving
+                    .reconcile_assignment(&args)
+                    .map(|out| structured_result(out, Some("Serving assignment reconciled.")))
+            }),
+        )],
+    }
+}
+
+/// M8f: where caller-declared endpoints can be reached on a cluster.
+fn service_ingress(serving: &crate::servingops::Serving) -> Service {
+    use crate::tools::structured_result;
+    let serving = serving.clone();
+    Service {
+        id: "service-ingress",
+        dependencies: &["instance-inventory", "cluster-resources"],
+        operations: vec![(
+            "discover_service_ingress",
+            op(move |call| {
+                let endpoints: Vec<(String, String)> = any_slice(call.args, "endpoints")
+                    .iter()
+                    .filter_map(J::as_object)
+                    .map(|row| {
+                        (
+                            text(row, "name").to_string(),
+                            text(row, "hostname").to_string(),
+                        )
+                    })
+                    .collect();
+                serving
+                    .discover_ingress(
+                        &call.binding.provider_instance_name(),
+                        &endpoints,
+                        text(call.args, "ingressNamespace"),
+                        text(call.args, "ingressService"),
+                    )
+                    .map(|out| {
+                        structured_result(out, Some("Discovered service ingress endpoints."))
+                    })
             }),
         )],
     }
