@@ -56,15 +56,17 @@
    ],
    "command": "bash",
    "observedInvocations": [
-    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-6i1c_5wz/home/.bun/bin/bun'",
-    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-_254nq87/home/.bun/bin/bun'",
-    "-lc mkdir -p '/tmp/parity-a-6i1c_5wz/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-6i1c_5wz/home/.local/bin' USE_SUDO=false bash",
-    "-lc mkdir -p '/tmp/parity-a-_254nq87/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-_254nq87/home/.local/bin' USE_SUDO=false bash"
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-9o55l0ue/home/.bun/bin/bun'",
+    "-lc curl -fsSL https://bun.sh/install | bash -s -- --no-modify-shell && test -x '/tmp/parity-a-jgw1k_vw/home/.bun/bin/bun'",
+    "-lc mkdir -p '/tmp/parity-a-9o55l0ue/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-9o55l0ue/home/.local/bin' USE_SUDO=false bash",
+    "-lc mkdir -p '/tmp/parity-a-jgw1k_vw/home/.local/bin' && curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR='/tmp/parity-a-jgw1k_vw/home/.local/bin' USE_SUDO=false bash"
    ],
    "owner": "host",
    "status": "covered",
    "t2Scenarios": [
-    "t2.host-domain.artifacts.download-and-agent-build"
+    "t2.host-domain.artifacts.download-and-agent-build",
+    "t2.llm-domain.llama.lifecycle",
+    "t2.serving-domain.assignment.lifecycle"
    ],
    "tier": "T2-sandbox"
   },
@@ -257,13 +259,15 @@
     "internal/domain/serving/assignment.go:343"
    ],
    "command": "kill",
-   "gapReason": "run only by internal/domain/serving (assignment liveness probe, kill -0); serving effects are M8f",
-   "milestone": "M8f",
-   "observedInvocations": [],
-   "owner": "serving",
-   "status": "gap",
-   "t2Scenarios": [],
-   "tier": "unclassified"
+   "observedInvocations": [
+    "-0 424242"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.serving-domain.assignment.lifecycle"
+   ],
+   "tier": "T2-sandbox"
   },
   {
    "anchors": [],
@@ -290,17 +294,31 @@
    "tier": "T2-sandbox"
   },
   {
+   "anchors": [],
+   "command": "nvidia-smi",
+   "observedInvocations": [
+    "",
+    "--query-gpu=memory.used --format=csv,noheader,nounits"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [],
+   "tier": "T1-shim-observed"
+  },
+  {
    "anchors": [
     "internal/domain/llm/ollama.go:100"
    ],
    "command": "ollama",
-   "gapReason": "run only by internal/domain/llm (Ollama runtime); LLM effects are M8f",
-   "milestone": "M8f",
-   "observedInvocations": [],
-   "owner": "llm",
-   "status": "gap",
+   "observedInvocations": [
+    "pull embed/mini",
+    "pull missing/none:1b",
+    "pull parity/tiny:1b"
+   ],
+   "owner": "host",
+   "status": "covered",
    "t2Scenarios": [],
-   "tier": "unclassified"
+   "tier": "T1-shim-observed"
   },
   {
    "anchors": [
@@ -374,6 +392,18 @@
    "tier": "T2-sandbox"
   },
   {
+   "anchors": [],
+   "command": "ss",
+   "observedInvocations": [
+    "-ltnp ( sport = :36573 )",
+    "-ltnp ( sport = :42533 )"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [],
+   "tier": "T1-shim-observed"
+  },
+  {
    "anchors": [
     "plugins/kubernetes/k3s/cmd/opute-provider-k3s/storage.go:202"
    ],
@@ -410,6 +440,16 @@
    ],
    "command": "systemctl",
    "observedInvocations": [
+    "--user daemon-reload",
+    "--user disable",
+    "--user enable",
+    "--user is-active",
+    "--user reset-failed",
+    "--user restart",
+    "--user show",
+    "--user show-environment",
+    "--user status",
+    "--user stop",
     "sudo -n /usr/bin/systemctl daemon-reload",
     "sudo -n /usr/bin/systemctl enable",
     "sudo -n /usr/bin/systemctl restart",
@@ -428,7 +468,27 @@
     "t2.host-domain.public.tunnel-and-quick",
     "t2.host-domain.services.system-lifecycle",
     "t2.host-domain.services.user-lifecycle",
-    "t2.host-domain.virt.stack-install-uninstall"
+    "t2.host-domain.virt.stack-install-uninstall",
+    "t2.llm-domain.llama.lifecycle",
+    "t2.llm-domain.ollama.lifecycle",
+    "t2.serving-domain.assignment.lifecycle"
+   ],
+   "tier": "T2-sandbox"
+  },
+  {
+   "anchors": [],
+   "command": "systemd-run",
+   "observedInvocations": [
+    "--user --unit=host-serving-parity-m8f-api",
+    "--user --unit=host-serving-parity-m8f-web"
+   ],
+   "owner": "host",
+   "status": "covered",
+   "t2Scenarios": [
+    "t2.host-domain.artifacts.download-and-agent-build",
+    "t2.host-domain.exec.workloads",
+    "t2.host-domain.policy.user-agent-unit",
+    "t2.serving-domain.assignment.lifecycle"
    ],
    "tier": "T2-sandbox"
   },
