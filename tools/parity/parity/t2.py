@@ -49,7 +49,7 @@ TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 SCENARIO_DIR = TOOLS_DIR / "scenarios-t2"
 GUEST_DIR = TOOLS_DIR / "t2guest"
-GUEST_FILES = ("driver.py", "snapshot.py", "tlsstub.py")
+GUEST_FILES = ("driver.py", "snapshot.py", "tlsstub.py", "llmstub.py")
 AGENT_UNIT = "parity-agent.service"
 WORK = REPO_ROOT / ".parity" / "t2"
 BASE_DIR = REPO_ROOT / ".parity" / "local-native" / "t2"
@@ -831,10 +831,12 @@ GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"], "oci": [agen
 class Twin:
     """One disposable VM: an overlay of the golden image, deleted on exit."""
 
-    def __init__(self, label: str, binary: Path, run_dir: Path, golden: str = "base"):
+    def __init__(self, label: str, binary: Path, run_dir: Path, golden: str = "base", memory_mb: int = 0):
         self.label, self.binary, self.run_dir = label, binary, run_dir
         self.image = WORK / GOLDEN_IMAGES[golden]
-        self.memory_mb = MEMORY_MB if golden == "base" else INCUS_MEMORY_MB
+        # A scenario may ask for more memory than its golden's default: the
+        # heavy admission class reserves 2 GiB, which a 2 GiB twin never fits.
+        self.memory_mb = memory_mb or (MEMORY_MB if golden == "base" else INCUS_MEMORY_MB)
         self.golden = golden
         self.disk = run_dir / f"{label}.qcow2"
         self.port = _free_port()
@@ -1054,7 +1056,7 @@ def load_scenarios(ids: list[str] | None = None) -> list[dict]:
 def _execute(impl: agent.Impl, scenario: dict, side: str, run_dir: Path) -> dict:
     program = {"agent": {"env": AGENT_ENV}, "steps": scenario["steps"]}
     try:
-        with Twin(side, impl.binary, run_dir, scenario.get("golden", "base")) as twin:
+        with Twin(side, impl.binary, run_dir, scenario.get("golden", "base"), scenario.get("memoryMb", 0)) as twin:
             raw = twin.run(program)
             twin_record = dict(twin.record)
         return {"raw": raw, "twin": twin_record, "error": None}
@@ -1157,7 +1159,8 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     budget_cv = threading.Condition()
 
     def pair_memory(scenario: dict) -> int:
-        return 2 * (MEMORY_MB if scenario.get("golden", "base") == "base" else INCUS_MEMORY_MB)
+        return 2 * (scenario.get("memoryMb") or (MEMORY_MB if scenario.get("golden", "base") == "base"
+                                                 else INCUS_MEMORY_MB))
 
     def run_iteration(scenario: dict, i: int) -> dict:
         need = min(pair_memory(scenario), MEMORY_BUDGET_MB)  # one pair always runs
