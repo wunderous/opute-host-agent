@@ -257,7 +257,13 @@ llm_cases = [
         task_call("start", "start_local_llm_runtime", {}),
         requests("requests"),
         read("config", CONFIG, json_=True),
-        STOP], OLLAMA_ANCHORS, "llm-domain-host", CONFIG_MASKS),
+        STOP], OLLAMA_ANCHORS, "llm-domain-host", CONFIG_MASKS + [
+            # The install's port argument is the stub's, a number the run
+            # variables cannot normalize where M5 reads it back from storage.
+            {"path": ["sqliteRows", "state/state.db", "tables", "capability_invocations", "*", "arguments_json",
+                      "$json", "port"], "type": "int", "reason": PORT, "optional": True},
+            {"path": ["sqliteRows", "state/state.db", "tables", "operations", "*", "task_snapshot_json", "$json",
+                      "toolArgs", "port"], "type": "int", "reason": PORT, "optional": True}]),
     # The generated unit fails to start.
     scenario("llm", "ollama.unit-fails", [
         write("fails", "${SANDBOX}/run/ollama-enable-fails"),
