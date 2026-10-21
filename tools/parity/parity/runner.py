@@ -13,6 +13,7 @@ import base64
 import concurrent.futures
 import contextlib
 import fcntl
+import glob
 import gzip
 import hashlib
 import json
@@ -26,7 +27,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import agent, canon, provider_stub, shims
+from . import agent, canon, provider_stub, route_stub, shims
 
 TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
@@ -107,6 +108,10 @@ def load_scenarios(ids: list[str] | None = None) -> list[dict]:
 
 
 def _expand_all(sandbox: agent.Sandbox, value: Any) -> Any:
+    if isinstance(value, dict) and set(value) == {"$int"}:
+        # A run variable passed where the schema wants a number (a stub's
+        # port as a tool argument): {"$int": "${STUB_PORT}"}.
+        return int(sandbox.expand(value["$int"]))
     if isinstance(value, str):
         return sandbox.expand(value)
     if isinstance(value, list):
@@ -168,6 +173,9 @@ def _mcp_step(sandbox: agent.Sandbox, spec: dict, optional_captures: set[str] | 
         value = _lookup(result, path)
         if isinstance(value, str) and value:
             sandbox.captured[name] = value
+        elif isinstance(value, int) and not isinstance(value, bool) and value > 0:
+            # A port a listener picked: a per-side literal like any other.
+            sandbox.captured[name] = str(value)
         elif name not in (optional_captures or set()):
             raise RuntimeError(f"MCP response did not provide required capture {name}")
     if "observe" in spec:
@@ -245,7 +253,11 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                     filler = spec["padTo"] - (len(raw) - len(b"${PAD}"))
                     raw = raw.replace(b"${PAD}", b"x" * filler, 1)
                 headers = {k: sandbox.expand(v) for k, v in spec.get("headers", {}).items()}
-                steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), spec["path"], headers, raw)
+                # "port" aims the request at another listener of the run (a
+                # relay the agent opened), named by a run variable.
+                port = int(sandbox.expand(str(spec["port"]))) if "port" in spec else None
+                steps[label] = agent.http_request(sandbox, spec.get("method", "GET"), sandbox.expand(spec["path"]),
+                                                  headers, raw, port=port)
             elif "mcp" in step:
                 spec = step["mcp"]
                 if "background" in spec:
@@ -351,6 +363,22 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 stubs[label] = stub
                 sandbox.captured[spec.get("portVar", "STUB_PORT")] = str(stub.port)
                 steps[label] = {"port": stub.port}
+            elif "routeStub" in step:
+                spec = step["routeStub"]
+                stub = route_stub.RouteStub(_expand_all(sandbox, spec.get("routes", [])), sandbox.root)
+                stubs[label] = stub
+                sandbox.captured[spec.get("portVar", "ROUTE_PORT")] = str(stub.port)
+                steps[label] = {"started": True}
+            elif "routeRequests" in step:
+                spec = step["routeRequests"]
+                steps[label] = {"requests": stubs[spec["stub"]].requests(spec.get("clear", False))}
+            elif "remove" in step:
+                # Files the agent leaves outside the sandbox (under /tmp, by
+                # a path the scenario's own run id makes unique).
+                for pattern in step["remove"]["paths"]:
+                    for match in glob.glob(sandbox.expand(pattern)):
+                        Path(match).unlink(missing_ok=True)
+                steps[label] = {"removed": step["remove"]["paths"]}
             elif "httpRequests" in step:
                 steps[label] = {"paths": list(stubs[step["httpRequests"]["stub"]].paths)}
             elif "providerStub" in step:
