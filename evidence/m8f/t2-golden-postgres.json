@@ -1,0 +1,118 @@
+{
+ "scope": "T2 PostgreSQL golden: an overlay of the k3s golden, dedicated and disposable; the CloudNativePG operator and every PostgreSQL Cluster run only inside twins booted from it; no shared Incus/Kubernetes/registry/tunnel/deploy state and no real database",
+ "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+ "chart": {
+  "version": "0.29.1",
+  "url": "https://github.com/cloudnative-pg/charts/releases/download/cloudnative-pg-v0.29.1/cloudnative-pg-0.29.1.tgz",
+  "sha256": "b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df"
+ },
+ "images": {
+  "ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1": "sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07",
+  "ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie": "sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6"
+ },
+ "recipe": [
+  "incus admin waitready --timeout=180",
+  "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s",
+  "test \"$(incus list k1 -c 4 --format csv | grep -o '10\\.0\\.100\\.[0-9]*')\" = 10.0.100.113 && incus config device override k1 eth0 ipv4.address=10.0.100.113",
+  "incus exec k1 -- k3s ctr images pull ghcr.io/cloudnative-pg/cloudnative-pg@sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07 && incus exec k1 -- k3s ctr images tag ghcr.io/cloudnative-pg/cloudnative-pg@sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07 ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1",
+  "incus exec k1 -- k3s ctr images pull ghcr.io/cloudnative-pg/postgresql@sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6 && incus exec k1 -- k3s ctr images tag ghcr.io/cloudnative-pg/postgresql@sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6 ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie",
+  "curl -fsSL -o /tmp/cnpg.tgz https://github.com/cloudnative-pg/charts/releases/download/cloudnative-pg-v0.29.1/cloudnative-pg-0.29.1.tgz && echo 'b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df  /tmp/cnpg.tgz' | sha256sum -c - && printf '%s' 'monitoring:\n  enabled: false\nconfig:\n  maxConcurrentReconciles: 1\nwebhook:\n  livenessProbe:\n    initialDelaySeconds: 30\n  readinessProbe:\n    initialDelaySeconds: 30\n  startupProbe:\n    failureThreshold: 24\n    periodSeconds: 5\nresources:\n  requests:\n    cpu: 25m\n    memory: 32Mi\n  limits:\n    cpu: 500m\n    memory: 128Mi\n' > /tmp/cnpg-values.yaml && helm template cloudnativepg /tmp/cnpg.tgz --namespace cnpg-system --include-crds -f /tmp/cnpg-values.yaml > /tmp/cnpg.yaml && incus exec k1 -- k3s kubectl create namespace cnpg-system && incus exec k1 -- k3s kubectl apply --server-side -f - < /tmp/cnpg.yaml && rm -f /tmp/cnpg.tgz /tmp/cnpg-values.yaml /tmp/cnpg.yaml",
+  "incus exec k1 -- k3s kubectl -n cnpg-system wait --for=condition=Available deployment --all --timeout=600s",
+  "timeout 600 sh -c 'until incus exec k1 -- k3s kubectl -n cnpg-system get endpoints cnpg-webhook-service -o jsonpath={.subsets[0].addresses[0].ip} | grep -q .; do sleep 2; done'",
+  "incus exec k1 -- k3s crictl images -q | sort > /tmp/images-before && incus exec k1 -- k3s kubectl create namespace parity-warm && printf '%s' 'apiVersion: postgresql.cnpg.io/v1\nkind: Cluster\nmetadata:\n  name: warm\n  namespace: parity-warm\nspec:\n  instances: 1\n  imageName: ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie\n  storage:\n    size: 256Mi\n' | incus exec k1 -- k3s kubectl apply -f - && timeout 900 sh -c 'until [ \"$(incus exec k1 -- k3s kubectl -n parity-warm get cluster warm -o jsonpath={.status.readyInstances})\" = 1 ]; do sleep 5; done' && incus exec k1 -- k3s kubectl delete namespace parity-warm --wait=true --timeout=600s && incus exec k1 -- k3s crictl images -q | sort | diff /tmp/images-before - && rm /tmp/images-before",
+  "timeout 600 sh -c 'while incus exec k1 -- k3s kubectl get pv -o jsonpath={.items[*].spec.claimRef.namespace} | grep -qw parity-warm; do sleep 2; done'",
+  "sync"
+ ],
+ "recipeLog": [
+  {
+   "command": "incus admin waitready --timeout=180",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "test \"$(incus list k1 -c 4 --format csv | grep -o '10\\.0\\.100\\.[0-9]*')\" = 10.0.100.113 && incus config device override k1 eth0 ipv4.address=10.0.100.113",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s ctr images pull ghcr.io/cloudnative-pg/cloudnative-pg@sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07 && incus exec k1 -- k3s ctr images tag ghcr.io/cloudnative-pg/cloudnative-pg@sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07 ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s ctr images pull ghcr.io/cloudnative-pg/postgresql@sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6 && incus exec k1 -- k3s ctr images tag ghcr.io/cloudnative-pg/postgresql@sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6 ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "curl -fsSL -o /tmp/cnpg.tgz https://github.com/cloudnative-pg/charts/releases/download/cloudnative-pg-v0.29.1/cloudnative-pg-0.29.1.tgz && echo 'b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df  /tmp/cnpg.tgz' | sha256sum -c - && printf '%s' 'monitoring:\n  enabled: false\nconfig:\n  maxConcurrentReconciles: 1\nwebhook:\n  livenessProbe:\n    initialDelaySeconds: 30\n  readinessProbe:\n    initialDelaySeconds: 30\n  startupProbe:\n    failureThreshold: 24\n    periodSeconds: 5\nresources:\n  requests:\n    cpu: 25m\n    memory: 32Mi\n  limits:\n    cpu: 500m\n    memory: 128Mi\n' > /tmp/cnpg-values.yaml && helm template cloudnativepg /tmp/cnpg.tgz --namespace cnpg-system --include-crds -f /tmp/cnpg-values.yaml > /tmp/cnpg.yaml && incus exec k1 -- k3s kubectl create namespace cnpg-system && incus exec k1 -- k3s kubectl apply --server-side -f - < /tmp/cnpg.yaml && rm -f /tmp/cnpg.tgz /tmp/cnpg-values.yaml /tmp/cnpg.yaml",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s kubectl -n cnpg-system wait --for=condition=Available deployment --all --timeout=600s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "timeout 600 sh -c 'until incus exec k1 -- k3s kubectl -n cnpg-system get endpoints cnpg-webhook-service -o jsonpath={.subsets[0].addresses[0].ip} | grep -q .; do sleep 2; done'",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s crictl images -q | sort > /tmp/images-before && incus exec k1 -- k3s kubectl create namespace parity-warm && printf '%s' 'apiVersion: postgresql.cnpg.io/v1\nkind: Cluster\nmetadata:\n  name: warm\n  namespace: parity-warm\nspec:\n  instances: 1\n  imageName: ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie\n  storage:\n    size: 256Mi\n' | incus exec k1 -- k3s kubectl apply -f - && timeout 900 sh -c 'until [ \"$(incus exec k1 -- k3s kubectl -n parity-warm get cluster warm -o jsonpath={.status.readyInstances})\" = 1 ]; do sleep 5; done' && incus exec k1 -- k3s kubectl delete namespace parity-warm --wait=true --timeout=600s && incus exec k1 -- k3s crictl images -q | sort | diff /tmp/images-before - && rm /tmp/images-before",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "timeout 600 sh -c 'while incus exec k1 -- k3s kubectl get pv -o jsonpath={.items[*].spec.claimRef.namespace} | grep -qw parity-warm; do sleep 2; done'",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "sync",
+   "exit": 0,
+   "stderr": ""
+  }
+ ],
+ "facts": {
+  "images": "IMAGE                                        TAG                    DIGEST              IMAGE ID            SIZE\ndocker.io/library/registry                   2.8.3                  <none>              26b2eb03618e7       10.1MB\ndocker.io/rancher/klipper-helm               v0.9.3-build20241008   <none>              4e0aed78b287d       191MB\ndocker.io/rancher/klipper-lb                 v0.4.9                 <none>              11a5d8a9f31aa       12.7MB\ndocker.io/rancher/local-path-provisioner     v0.0.30                <none>              b580d47bc23dd       52MB\ndocker.io/rancher/mirrored-coredns-coredns   1.11.3                 <none>              c69fa2e9cbf5f       63.3MB\ndocker.io/rancher/mirrored-library-busybox   1.36.1                 <none>              6fd955f66c231       4.5MB\ndocker.io/rancher/mirrored-library-traefik   2.11.10                <none>              1741c0b1ff49b       169MB\ndocker.io/rancher/mirrored-metrics-server    v0.7.2                 <none>              48d9cfaaf3904       68.1MB\ndocker.io/rancher/mirrored-pause             3.6                    <none>              6270bb605e12e       686kB\nghcr.io/cloudnative-pg/cloudnative-pg        1.30.1                 923c267ec2963       e876074c3d035       38.5MB\nghcr.io/cloudnative-pg/postgresql            16-minimal-trixie      f76ba02680a07       1c46db56e17fb       148MB\n",
+  "operator": "cloudnativepg-cloudnative-pg ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1\n",
+  "crds": "customresourcedefinition.apiextensions.k8s.io/addons.k3s.cattle.io\ncustomresourcedefinition.apiextensions.k8s.io/backups.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/clusterimagecatalogs.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/clusters.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/databaseroles.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/databases.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/etcdsnapshotfiles.k3s.cattle.io\ncustomresourcedefinition.apiextensions.k8s.io/failoverquorums.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/imagecatalogs.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/poolers.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/publications.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/scheduledbackups.postgresql.cnpg.io\ncustomresourcedefinition.apiextensions.k8s.io/subscriptions.postgresql.cnpg.io\n",
+  "pods": "NAMESPACE     NAME                                           READY   STATUS    RESTARTS        AGE     IP          NODE   NOMINATED NODE   READINESS GATES\ncnpg-system   cloudnativepg-cloudnative-pg-5d4574c4d-5w98q   1/1     Running   0               4m30s   10.42.0.9   k1     <none>           <none>\nkube-system   coredns-56f6fc8fd7-8jlsc                       1/1     Running   1 (5m11s ago)   3d12h   10.42.0.6   k1     <none>           <none>\nkube-system   local-path-provisioner-5cf85fd84d-l6ltr        1/1     Running   1 (5m11s ago)   3d12h   10.42.0.7   k1     <none>           <none>\nregistry      opute-registry-768d7d77c8-xsh8x                1/1     Running   1 (5m11s ago)   3d12h   10.42.0.8   k1     <none>           <none>\n",
+  "k1Address": "\"10.42.0.1 (cni0)\n10.42.0.0 (flannel.1)\n10.0.100.113 (eth0)\"\n",
+  "instance": "architecture: x86_64\nconfig:\n  boot.autostart: \"true\"\n  image.architecture: amd64\n  image.description: Ubuntu noble amd64 (20261013_07:42)\n  image.os: Ubuntu\n  image.release: noble\n  image.requirements.cgroup: v2\n  image.serial: '20261013_07:42'\n  image.type: squashfs\n  image.variant: default\n  linux.kernel_modules: overlay,br_netfilter,ip_tables,ip6_tables,nf_nat,xt_conntrack,iptable_nat,iptable_filter\n  raw.lxc: |-\n    lxc.apparmor.profile=unconfined\n    lxc.cap.drop=\n    lxc.cgroup2.devices.allow=a\n    lxc.mount.auto=proc:rw sys:rw cgroup:rw\n  security.nesting: \"true\"\n  security.privileged: \"true\"\n  volatile.base_image: 657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c\n  volatile.cloud-init.instance-id: e9dbff8a-2daa-4c76-89b3-dde43d307c55\n  volatile.eth0.host_name: veth8b7eec0c\n  volatile.eth0.hwaddr: 10:66:6a:0d:25:b2\n  volatile.idmap.base: \"0\"\n  volatile.idmap.current: '[]'\n  volatile.idmap.next: '[]'\n  volatile.last_state.idmap: '[]'\n  volatile.last_state.power: RUNNING\n  volatile.uuid: 2ebad031-1363-4087-813a-8b91fc7f19aa\n  volatile.uuid.generation: 2ebad031-1363-4087-813a-8b91fc7f19aa\ndevices:\n  eth0:\n    ipv4.address: 10.0.100.113\n    name: eth0\n    nictype: bridged\n    parent: incusbr0\n    type: nic\n  kmsg:\n    path: /dev/kmsg\n    source: /dev/kmsg\n    type: unix-char\nephemeral: false\nprofiles:\n  - default\nstateful: false\ndescription: \"\"\n"
+ },
+ "memoryMb": 6144,
+ "goldenSha256": "7ae211bd651840bd3ee4b2b21e24b04a502dfb1c5300a1dffd1fd32a4798b46a",
+ "created": "2026-10-19T23:02:56Z",
+ "qemuArgv": [
+  "qemu-system-x86_64",
+  "-enable-kvm",
+  "-cpu",
+  "host",
+  "-smp",
+  "2",
+  "-m",
+  "6144",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8e/.parity/t2/golden-postgres.qcow2,if=virtio,format=qcow2",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8e/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+  "-netdev",
+  "user,id=net0,hostfwd=tcp:127.0.0.1:53587-:22",
+  "-device",
+  "virtio-net-pci,netdev=net0",
+  "-display",
+  "none",
+  "-serial",
+  "file:/home/houman/github/wunderous/opute-host-agent-m8e/.parity/t2/golden-postgres-serial.log",
+  "-monitor",
+  "none"
+ ]
+}

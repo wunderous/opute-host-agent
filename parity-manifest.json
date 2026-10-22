@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m8e/canaries.json"
+  "results": "evidence/m8f/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
@@ -167,23 +167,23 @@
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/m8e/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m8f/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/m8e/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m8f/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/m8e/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m8f/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/m8e/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m8f/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/m8e/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m8f/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -321,13 +321,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m8e/go-vs-go/summary.json"
+   "summary": "evidence/m8f/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m8e/go-vs-rust/summary.json"
+   "summary": "evidence/m8f/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -4296,31 +4296,31 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m8e/m5/crash/summary.json"
+   "summary": "evidence/m8f/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m8e/m5/cross-read/summary.json"
+   "summary": "evidence/m8f/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m8e/m5/migration/summary.json"
+   "summary": "evidence/m8f/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m8e/m5/secrets/summary.json"
+   "summary": "evidence/m8f/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m8e/m5/shape/summary.json"
+   "summary": "evidence/m8f/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m8e/m5/unknown-projection/summary.json"
+   "summary": "evidence/m8f/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/m8e/oracles.json",
+  "results": "evidence/m8f/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/m8e/rust-canaries.json"
+  "results": "evidence/m8f/rust-canaries.json"
  },
  "rustCandidate": {
   "binarySha256": "60587cec0b746193fe03e329423acb992c63488535f29cb3ee7432b2410dccd6",
@@ -4371,18 +4371,18 @@
     "minRepeat": 20,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "summary": "evidence/m8e/t2-go-vs-go/summary.json"
+    "summary": "evidence/m8f/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
     "minRepeat": 5,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "summary": "evidence/m8e/t2-go-vs-rust/summary.json"
+    "summary": "evidence/m8f/t2-go-vs-rust/summary.json"
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/m8e/oracles-t2.json",
+  "results": "evidence/m8f/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
  }
 }
