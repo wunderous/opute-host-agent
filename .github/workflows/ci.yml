@@ -49,3 +49,5 @@ jobs:
           name: parity-ci-evidence
           path: .parity/ci-*
           if-no-files-found: ignore
+          # .parity is a hidden directory, which upload-artifact v4 skips by default.
+          include-hidden-files: true
