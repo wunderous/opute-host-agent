@@ -123,6 +123,11 @@ MASKS = [
     *[{"path": p, "type": "hex", "reason": GENERATED, "optional": True}
       for p in objects("metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration",
                        key="secrets/platform/pg-consumer")],
+    # The harness's own psql client runs through kubectl exec, whose
+    # websocket client may log "Unknown stream id" on stderr by timing (M8f
+    # round 2). Its exit status and stdout stay compared.
+    *[{"path": ["steps", as_, "stderr"], "type": "string", "optional": True,
+       "reason": "kubectl exec's websocket client logs stream warnings by timing"} for as_ in ("write", "read")],
     # A claim marked for deletion, at this twin's time.
     *[{"path": p, "type": "rfc3339", "reason": "when k1's API server marked the claim for deletion",
        "optional": True} for p in objects("metadata", "deletionTimestamp")],
