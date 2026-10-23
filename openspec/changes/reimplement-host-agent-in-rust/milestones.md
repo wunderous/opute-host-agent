@@ -750,6 +750,30 @@ Rust. The `OPUTE_HOST_AGENT_RELAY_DIR` and `OPUTE_HOST_AGENT_SQLITE_ROOT`
 gaps are closed (17 gaps, none unowned). The cutover gate fails, as
 expected, on the remaining owned gaps.
 
+**8f status (2026-10-22): exit gate met.** Evidence:
+[`evidence/m8f/README.md`](../../../evidence/m8f/README.md). The m8f gate
+passes, and gates m0–m6 and m8a–m8e still pass:
+
+- T1 Go/Rust ×5 is 327/327 and Go/Go ×20 is 327/327. All 13 llm- and
+  serving-domain scenarios pass in both suites; a route stub answers the
+  runtimes' HTTP APIs and records Go's requests.
+- T2 is 34/34 in both twin suites (Go/Go ×20, Go/Rust ×5). A CPU-only model
+  stub serves as `ollama`, `llama-server` and `nvidia-smi` under real
+  `systemd --user` units; the relay and an OpenAI probe through it run on
+  the twin's loopback, and a serving assignment runs a real transient unit.
+  The M4 no-unauthorized-effect rerun covers every llm and serving call M4
+  refuses.
+- The seam verifier reports no gap, and its dispatch canary is red.
+
+The tool names and runtime selector values stay Go's. Go's cluster proxy
+tools declare no resource binding, so they only refuse; Rust refuses
+identically and the T2 inventory lists them inert. Go does not mark the
+llm relay's and cluster proxy's tokens `writeOnly`; Rust matches, and the
+finding is recorded for the owner without a decision. No M8 gap remains (4
+gaps, none unowned: three WSL tools pending a WSL2 runner, and M10
+distribution). The cutover gate fails, as expected, on the remaining owned
+gaps.
+
 **E2E validations per sub-milestone**
 
 1. **Shim-trace parity (T1):** for every tool in the domain, run success,

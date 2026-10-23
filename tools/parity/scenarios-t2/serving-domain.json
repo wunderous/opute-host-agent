@@ -1,0 +1,444 @@
+[
+ {
+  "id": "t2.serving-domain.assignment.lifecycle",
+  "tier": "T2",
+  "owner": "serving",
+  "anchors": [
+   "internal/tools/dispatch_serving.go",
+   "internal/domain/serving/assignment.go",
+   "internal/hostagent/serving_domain.go"
+  ],
+  "commands": [
+   "systemctl",
+   "systemd-run",
+   "kill",
+   "bash"
+  ],
+  "residue": "The assignment's transient user unit keeps serving and parity-svc.service keeps running (Go has no inverse of a reconcile), with lingering; the pid and state files are under /tmp, outside the snapshot.",
+  "steps": [
+   {
+    "as": "linger",
+    "shell": {
+     "argv": [
+      "loginctl",
+      "enable-linger",
+      "ubuntu"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "userManager",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do [ -S /run/user/1000/bus ] && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "root"
+    }
+   },
+   {
+    "as": "www",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "mkdir -p \"$(dirname \"$1\")\" && printf %s \"$2\" > \"$1\"",
+      "sh",
+      "/home/ubuntu/www/index.html",
+      "parity\n"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "unit",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "mkdir -p \"$(dirname \"$1\")\" && printf %s \"$2\" > \"$1\"",
+      "sh",
+      "/home/ubuntu/.config/systemd/user/parity-svc.service",
+      "[Unit]\nDescription=Opute parity T2 serving unit\n\n[Service]\nExecStart=/bin/sleep infinity\n"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "baseline",
+    "snapshot": {}
+   },
+   {
+    "as": "serve",
+    "serve": {}
+   },
+   {
+    "as": "launch",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_serving_assignment",
+     "params": {
+      "name": "reconcile_serving_assignment",
+      "arguments": {
+       "contractVersion": "serving-assignment.v1",
+       "assignmentId": "parity-t2/web",
+       "generation": 1,
+       "idempotencyKey": "rev-1",
+       "service": "web",
+       "mode": "dev-process",
+       "runtime": "process",
+       "target": {
+        "hostId": "twin",
+        "resourceId": "web",
+        "kind": "host",
+        "instanceType": "host"
+       },
+       "artifact": {
+        "kind": "source",
+        "sourceDir": "/home/ubuntu/www",
+        "command": [
+         "python3",
+         "-m",
+         "http.server",
+         "18090",
+         "--bind",
+         "127.0.0.1"
+        ],
+        "environment": {
+         "PYTHONDONTWRITEBYTECODE": "1"
+        }
+       },
+       "endpoints": [
+        {
+         "name": "http",
+         "protocol": "http",
+         "port": 18090
+        }
+       ],
+       "readiness": [
+        {
+         "endpointName": "http",
+         "path": "/"
+        }
+       ],
+       "exposure": {
+        "kind": "none"
+       },
+       "restartPolicy": "on-failure",
+       "serviceUnit": "parity-svc.service",
+       "desiredState": "start"
+      }
+     }
+    }
+   },
+   {
+    "as": "launchReady",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:18090/\", timeout=1)' 2>/dev/null && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "again",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_serving_assignment",
+     "params": {
+      "name": "reconcile_serving_assignment",
+      "arguments": {
+       "contractVersion": "serving-assignment.v1",
+       "assignmentId": "parity-t2/web",
+       "generation": 1,
+       "idempotencyKey": "rev-1",
+       "service": "web",
+       "mode": "dev-process",
+       "runtime": "process",
+       "target": {
+        "hostId": "twin",
+        "resourceId": "web",
+        "kind": "host",
+        "instanceType": "host"
+       },
+       "artifact": {
+        "kind": "source",
+        "sourceDir": "/home/ubuntu/www",
+        "command": [
+         "python3",
+         "-m",
+         "http.server",
+         "18090",
+         "--bind",
+         "127.0.0.1"
+        ],
+        "environment": {
+         "PYTHONDONTWRITEBYTECODE": "1"
+        }
+       },
+       "endpoints": [
+        {
+         "name": "http",
+         "protocol": "http",
+         "port": 18090
+        }
+       ],
+       "readiness": [
+        {
+         "endpointName": "http",
+         "path": "/"
+        }
+       ],
+       "exposure": {
+        "kind": "none"
+       },
+       "restartPolicy": "on-failure",
+       "serviceUnit": "parity-svc.service",
+       "desiredState": "start"
+      }
+     }
+    }
+   },
+   {
+    "as": "running",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   },
+   {
+    "as": "generation",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_serving_assignment",
+     "params": {
+      "name": "reconcile_serving_assignment",
+      "arguments": {
+       "contractVersion": "serving-assignment.v1",
+       "assignmentId": "parity-t2/web",
+       "generation": 2,
+       "idempotencyKey": "rev-2",
+       "service": "web",
+       "mode": "dev-process",
+       "runtime": "process",
+       "target": {
+        "hostId": "twin",
+        "resourceId": "web",
+        "kind": "host",
+        "instanceType": "host"
+       },
+       "artifact": {
+        "kind": "source",
+        "sourceDir": "/home/ubuntu/www",
+        "command": [
+         "python3",
+         "-m",
+         "http.server",
+         "18090",
+         "--bind",
+         "127.0.0.1"
+        ],
+        "environment": {
+         "PYTHONDONTWRITEBYTECODE": "1"
+        }
+       },
+       "endpoints": [
+        {
+         "name": "http",
+         "protocol": "http",
+         "port": 18090
+        }
+       ],
+       "readiness": [
+        {
+         "endpointName": "http",
+         "path": "/"
+        }
+       ],
+       "exposure": {
+        "kind": "none"
+       },
+       "restartPolicy": "on-failure",
+       "serviceUnit": "parity-svc.service",
+       "desiredState": "restart"
+      }
+     }
+    }
+   },
+   {
+    "as": "generationReady",
+    "shell": {
+     "argv": [
+      "sh",
+      "-c",
+      "for i in $(seq 1 100); do python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:18090/\", timeout=1)' 2>/dev/null && exit 0; sleep 0.1; done; exit 1"
+     ],
+     "user": "ubuntu"
+    }
+   },
+   {
+    "as": "steady",
+    "mcp": {
+     "method": "tools/call",
+     "name": "reconcile_serving_assignment",
+     "params": {
+      "name": "reconcile_serving_assignment",
+      "arguments": {
+       "contractVersion": "serving-assignment.v1",
+       "assignmentId": "parity-t2/web",
+       "generation": 2,
+       "idempotencyKey": "rev-2",
+       "service": "web",
+       "mode": "dev-process",
+       "runtime": "process",
+       "target": {
+        "hostId": "twin",
+        "resourceId": "web",
+        "kind": "host",
+        "instanceType": "host"
+       },
+       "artifact": {
+        "kind": "source",
+        "sourceDir": "/home/ubuntu/www",
+        "command": [
+         "python3",
+         "-m",
+         "http.server",
+         "18090",
+         "--bind",
+         "127.0.0.1"
+        ],
+        "environment": {
+         "PYTHONDONTWRITEBYTECODE": "1"
+        }
+       },
+       "endpoints": [
+        {
+         "name": "http",
+         "protocol": "http",
+         "port": 18090
+        }
+       ],
+       "readiness": [
+        {
+         "endpointName": "http",
+         "path": "/"
+        }
+       ],
+       "exposure": {
+        "kind": "none"
+       },
+       "restartPolicy": "on-failure",
+       "serviceUnit": "parity-svc.service",
+       "desiredState": "start"
+      }
+     }
+    }
+   },
+   {
+    "as": "relaunched",
+    "snapshot": {
+     "baseline": "running"
+    }
+   },
+   {
+    "as": "stop",
+    "stop": {}
+   },
+   {
+    "as": "teardown",
+    "snapshot": {
+     "baseline": "baseline"
+    }
+   }
+  ],
+  "compare": {
+   "masks": [
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "createdAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "*",
+      "body",
+      "result",
+      "lastUpdatedAt"
+     ],
+     "type": "rfc3339",
+     "reason": "wall-clock timestamp of this twin's run",
+     "optional": true
+    },
+    {
+     "path": [
+      "steps",
+      "launch",
+      "body",
+      "result",
+      "structuredContent",
+      "readiness",
+      0,
+      "ready"
+     ],
+     "type": "bool",
+     "reason": "the probe right after a launch races the new process binding its port"
+    },
+    {
+     "path": [
+      "steps",
+      "launch",
+      "body",
+      "result",
+      "structuredContent",
+      "readiness",
+      0,
+      "message"
+     ],
+     "type": "string",
+     "reason": "the probe right after a launch races the new process binding its port"
+    },
+    {
+     "path": [
+      "steps",
+      "generation",
+      "body",
+      "result",
+      "structuredContent",
+      "readiness",
+      0,
+      "ready"
+     ],
+     "type": "bool",
+     "reason": "the probe right after a launch races the new process binding its port"
+    },
+    {
+     "path": [
+      "steps",
+      "generation",
+      "body",
+      "result",
+      "structuredContent",
+      "readiness",
+      0,
+      "message"
+     ],
+     "type": "string",
+     "reason": "the probe right after a launch races the new process binding its port"
+    }
+   ]
+  },
+  "memoryMb": 6144
+ }
+]

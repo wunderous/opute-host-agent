@@ -1,11 +1,9 @@
 {
  "byMilestone": {
   "M10": 1,
-  "M8": 11,
-  "M8a": 3,
-  "M8f": 2
+  "M8a": 3
  },
- "count": 17,
+ "count": 4,
  "items": [
   {
    "file": "distribution.json",
@@ -13,97 +11,6 @@
    "milestone": "M10",
    "owner": "release",
    "reason": "packaging parity is M10"
-  },
-  {
-   "file": "effects.json",
-   "item": "kill",
-   "milestone": "M8f",
-   "owner": "serving",
-   "reason": "run only by internal/domain/serving (assignment liveness probe, kill -0); serving effects are M8f"
-  },
-  {
-   "file": "effects.json",
-   "item": "ollama",
-   "milestone": "M8f",
-   "owner": "llm",
-   "reason": "run only by internal/domain/llm (Ollama runtime); LLM effects are M8f"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_ARTIFACT_PATH",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_BASE_MODEL",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_BINARY",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_BUILD",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_MODEL",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_PORT",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_LLAMA_SERVER_VERSION",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (llama server); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_OLLAMA_BINARY",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (host ollama runtime); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_OLLAMA_CONTEXT_SIZE",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (host ollama runtime); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_OLLAMA_MODEL",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (host ollama runtime); domain operations are M8"
-  },
-  {
-   "file": "env.json",
-   "item": "OPUTE_OLLAMA_PORT",
-   "milestone": "M8",
-   "owner": "config",
-   "reason": "read only by internal/domain/llm (host ollama runtime); domain operations are M8"
   },
   {
    "file": "t2.json",

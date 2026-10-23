@@ -696,8 +696,8 @@ def modern_meta(client_name: str = "opute-parity", client_version: str = "1") ->
 
 
 def http_request(sandbox: Sandbox, method: str, path: str, headers: dict[str, str] | None = None,
-                 body: bytes | None = None, timeout: float = 300.0) -> dict:
-    conn = http.client.HTTPConnection("127.0.0.1", sandbox.port, timeout=timeout)
+                 body: bytes | None = None, timeout: float = 300.0, port: int | None = None) -> dict:
+    conn = http.client.HTTPConnection("127.0.0.1", port or sandbox.port, timeout=timeout)
     try:
         conn.request(method, path, body=body, headers=headers or {})
         resp = conn.getresponse()

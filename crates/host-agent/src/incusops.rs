@@ -96,6 +96,8 @@ pub struct Instances {
     pub relays: Arc<crate::tcprelay::Manager>,
     /// The postgres domain's relays, once that domain exists.
     pub postgres: Arc<std::sync::OnceLock<Arc<crate::postgresops::Live>>>,
+    /// The llm domain's relays, once that domain exists.
+    pub llm: Arc<std::sync::OnceLock<Arc<crate::llmops::Live>>>,
 }
 
 /// `ErrString`-style failure of one provider command: the run error, or
@@ -2447,8 +2449,11 @@ impl Instances {
             return Ok(J::Object(result));
         }
         // `revokeRelays`: relays into the guests stop before they are
-        // deleted, those of the postgres domain only if it was built.
+        // deleted, those of the llm and postgres domains only if built.
         self.relays.stop_all();
+        if let Some(llm) = self.llm.get() {
+            llm.relay.stop_all();
+        }
         if let Some(postgres) = self.postgres.get() {
             postgres.relay.stop_all();
         }

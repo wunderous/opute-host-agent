@@ -179,8 +179,13 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   done 2026-10-20: T1 and T2 parity green against the pinned k3s provider
   and a real CloudNativePG cluster in the twins, with D24 marking the relay
   token write-only; the seam verifier reports no gap, and the m8e gate
-  passes ([`evidence/m8e`](../../../evidence/m8e/README.md)). 8f remains
-  open.
+  passes ([`evidence/m8e`](../../../evidence/m8e/README.md)). 8f
+  (llm/serving) done 2026-10-22: T1 and T2 parity green with a CPU-only
+  model stub, real `systemd --user` units, a real relay and a real serving
+  unit in the twins; the seam verifier reports no gap, and the m8f gate
+  passes ([`evidence/m8f`](../../../evidence/m8f/README.md)). 4.1 stays
+  open only for the three WSL tools, `unverified` at T2 pending a WSL2
+  runner.
 - [x] 4.2 Implement recipe validation, canonical hashing, typed plan
   extraction, one executor, readiness, bounded retry, compensation, and
   recovery. Gate: Go/Rust fixtures agree on plans, node state transitions,

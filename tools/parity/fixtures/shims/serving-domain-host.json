@@ -1,0 +1,91 @@
+{
+ "description": "M8f: the serving supervisor's user manager (systemctl, systemd-run) and kill are shims; the unit never reports a main PID, and kill -0 finds pid 424242 alive.",
+ "commands": {
+  "systemctl": [
+   {
+    "argv": [
+     "--user",
+     "is-active",
+     "--quiet",
+     "host-serving-parity-m8f-web"
+    ],
+    "ifExists": "run/serving-active"
+   },
+   {
+    "argvPrefix": [
+     "--user",
+     "is-active",
+     "--quiet"
+    ],
+    "exit": 3
+   },
+   {
+    "argvPrefix": [
+     "--user",
+     "stop"
+    ]
+   },
+   {
+    "argvPrefix": [
+     "--user",
+     "reset-failed"
+    ]
+   },
+   {
+    "argvPrefix": [
+     "--user",
+     "show"
+    ],
+    "stdout": "0\n"
+   }
+  ],
+  "systemd-run": [
+   {
+    "argvPrefix": [],
+    "stderr": "Running as unit: host-serving.service\n"
+   }
+  ],
+  "kill": [
+   {
+    "argv": [
+     "-0",
+     "424242"
+    ]
+   },
+   {
+    "argvPrefix": [],
+    "exit": 1,
+    "stderr": "kill: (1) - No such process\n"
+   }
+  ],
+  "ss": [
+   {
+    "argvPrefix": []
+   }
+  ],
+  "nvidia-smi": [
+   {
+    "argv": [],
+    "stdout": "GPU 0: Parity GPU (UUID: GPU-00000000-0000-0000-0000-000000000000)\n"
+   },
+   {
+    "argv": [
+     "--query-gpu=memory.used",
+     "--format=csv,noheader,nounits"
+    ],
+    "stdout": "1536\n"
+   },
+   {
+    "argv": [
+     "--query-gpu=name,memory.total",
+     "--format=csv,noheader,nounits"
+    ],
+    "stdout": "Parity GPU, 8192\n"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

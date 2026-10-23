@@ -160,8 +160,10 @@ def tests_for(tool: str, functions: list[str]) -> list[str]:
 def rust_serves(tool: str) -> bool:
     """A built-in service operation registered under the tool's name."""
     text = (ROOT / "crates/host-agent/src/builtin.rs").read_text()
-    # An operation tuple: `("name", op(...))`, or a service's own builder.
-    return any(re.search(rf'\(\s*"{re.escape(name)}",\s*\w+\(', text) for name in (tool, NEUTRAL.get(tool, tool)))
+    # An operation tuple: `("name", op(...))`, a service's own builder, or a
+    # handler two names share (`("name", handler)`).
+    return any(re.search(rf'\(\s*"{re.escape(name)}",\s*\w+\s*[(),]', text)
+               for name in (tool, NEUTRAL.get(tool, tool)))
 
 
 def main() -> None:

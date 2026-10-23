@@ -1,0 +1,177 @@
+{
+ "description": "M8f: no Ollama binary on PATH; the service manager and GPU are shims.",
+ "commands": {
+  "systemctl": [
+   {
+    "argv": [
+     "--user",
+     "show-environment"
+    ],
+    "stdout": "PATH=/usr/bin\n"
+   },
+   {
+    "argv": [
+     "--user",
+     "is-active",
+     "opute-ollama.service"
+    ],
+    "stdout": "inactive\n",
+    "exit": 3,
+    "unlessExists": "run/ollama-unit-active"
+   },
+   {
+    "argv": [
+     "--user",
+     "is-active",
+     "opute-ollama.service"
+    ],
+    "stdout": "active\n"
+   },
+   {
+    "argv": [
+     "--user",
+     "is-active",
+     "--quiet",
+     "opute-ollama.service"
+    ],
+    "exit": 3
+   },
+   {
+    "argv": [
+     "--user",
+     "daemon-reload"
+    ]
+   },
+   {
+    "argv": [
+     "--user",
+     "enable",
+     "--now",
+     "opute-ollama.service"
+    ],
+    "exit": 1,
+    "stderr": "Failed to enable unit: Unit opute-ollama.service has a bad unit file setting.\n",
+    "ifExists": "run/ollama-enable-fails"
+   },
+   {
+    "argv": [
+     "--user",
+     "enable",
+     "--now",
+     "opute-ollama.service"
+    ],
+    "stderr": "Created symlink default.target.wants/opute-ollama.service.\n",
+    "creates": [
+     "run/ollama-up"
+    ]
+   },
+   {
+    "argv": [
+     "--user",
+     "disable",
+     "--now",
+     "opute-ollama.service"
+    ],
+    "stderr": "Removed default.target.wants/opute-ollama.service.\n"
+   },
+   {
+    "argv": [
+     "--user",
+     "disable",
+     "--now",
+     "opute-llama-server.service"
+    ],
+    "ifExists": "run/llama-enabled",
+    "removes": [
+     "run/llama-enabled",
+     "run/llama-up"
+    ]
+   },
+   {
+    "argv": [
+     "--user",
+     "disable",
+     "--now",
+     "opute-llama-server.service"
+    ],
+    "exit": 1,
+    "stderr": "Failed to disable unit: Unit file opute-llama-server.service does not exist.\n"
+   },
+   {
+    "argv": [
+     "--user",
+     "enable",
+     "opute-llama-server.service"
+    ],
+    "creates": [
+     "run/llama-enabled"
+    ]
+   },
+   {
+    "argv": [
+     "--user",
+     "restart",
+     "opute-llama-server.service"
+    ],
+    "creates": [
+     "run/llama-up"
+    ]
+   },
+   {
+    "argv": [
+     "--user",
+     "enable",
+     "--now",
+     "opute-llama-server.service"
+    ],
+    "creates": [
+     "run/llama-enabled",
+     "run/llama-up"
+    ]
+   }
+  ],
+  "nvidia-smi": [
+   {
+    "argv": [],
+    "stdout": "GPU 0: Parity GPU (UUID: GPU-00000000-0000-0000-0000-000000000000)\n"
+   },
+   {
+    "argv": [
+     "--query-gpu=memory.used",
+     "--format=csv,noheader,nounits"
+    ],
+    "stdout": "1536\n"
+   },
+   {
+    "argv": [
+     "--query-gpu=name,memory.total",
+     "--format=csv,noheader,nounits"
+    ],
+    "stdout": "Parity GPU, 8192\n"
+   }
+  ],
+  "ss": [
+   {
+    "argvPrefix": []
+   }
+  ],
+  "kill": [
+   {
+    "argvPrefix": [],
+    "exit": 1,
+    "stderr": "kill: no such process\n"
+   }
+  ],
+  "systemd-run": [
+   {
+    "argvPrefix": [],
+    "exit": 1,
+    "stderr": "Failed to connect to bus: parity\n"
+   }
+  ]
+ },
+ "default": {
+  "exit": 1,
+  "stderr": "unsupported parity shim invocation\n"
+ }
+}

@@ -79,6 +79,19 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "configure_local_llm_model",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.ollama.lifecycle"
+   ],
+   "tool": "configure_local_llm_model"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "configure_oci_storage",
    "owner": "oci",
    "status": "covered",
@@ -262,6 +275,44 @@
    "tool": "ensure_k3d"
   },
   {
+   "effect": "EffectCredential",
+   "inertReason": "Go takes the cluster VM only from the call's resource binding (vmNameFromBinding), and its catalog entry declares no resource argument, so every call refuses with 'vmName is invalid' before rendering or applying anything; compared in T1 (llm-domain.cluster-proxy) and in T2 (t2.llm-domain.admission.rejected-no-effect)",
+   "neutralName": "ensure_local_llm_k3s_proxy",
+   "owner": "llm",
+   "status": "inert",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "ensure_local_llm_k3s_proxy"
+  },
+  {
+   "effect": "EffectCredential",
+   "neutralName": "ensure_local_llm_relay",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.ollama.lifecycle"
+   ],
+   "tool": "ensure_local_llm_relay"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "ensure_local_llm_server_binary",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.llama.lifecycle"
+   ],
+   "tool": "ensure_local_llm_server_binary"
+  },
+  {
    "effect": "EffectMutation",
    "neutralName": "ensure_oci_builder",
    "owner": "oci",
@@ -416,6 +467,20 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "install_local_llm_model",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.llama.lifecycle",
+    "t2.llm-domain.ollama.lifecycle"
+   ],
+   "tool": "install_local_llm_model"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "install_oci_registry",
    "owner": "oci",
    "status": "covered",
@@ -547,6 +612,19 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "reconcile_serving_assignment",
+   "owner": "serving",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.serving-domain.assignment.lifecycle"
+   ],
+   "tool": "reconcile_serving_assignment"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "recover_bridge",
    "owner": "host",
    "status": "covered",
@@ -596,6 +674,31 @@
     "t2.host-domain.services.user-lifecycle"
    ],
    "tool": "remove_host_file"
+  },
+  {
+   "effect": "EffectDestructive",
+   "inertReason": "as ensure_local_llm_k3s_proxy: no resource binding, so every call refuses with 'vmName is invalid' before deleting anything",
+   "neutralName": "remove_local_llm_k3s_proxy",
+   "owner": "llm",
+   "status": "inert",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [],
+   "tool": "remove_local_llm_k3s_proxy"
+  },
+  {
+   "effect": "EffectDestructive",
+   "neutralName": "remove_local_llm_relay",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.ollama.lifecycle"
+   ],
+   "tool": "remove_local_llm_relay"
   },
   {
    "effect": "EffectDestructive",
@@ -774,6 +877,20 @@
   },
   {
    "effect": "EffectMutation",
+   "neutralName": "start_local_llm_runtime",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.llama.lifecycle",
+    "t2.llm-domain.ollama.lifecycle"
+   ],
+   "tool": "start_local_llm_runtime"
+  },
+  {
+   "effect": "EffectMutation",
    "neutralName": "start_vm",
    "owner": "incus",
    "status": "covered",
@@ -785,6 +902,20 @@
     "t2.incus-domain.vm.lifecycle"
    ],
    "tool": "start_vm"
+  },
+  {
+   "effect": "EffectMutation",
+   "neutralName": "stop_local_llm_runtime",
+   "owner": "llm",
+   "status": "covered",
+   "t2RejectedScenarios": [
+    "t2.llm-domain.admission.rejected-no-effect"
+   ],
+   "t2Scenarios": [
+    "t2.llm-domain.llama.lifecycle",
+    "t2.llm-domain.ollama.lifecycle"
+   ],
+   "tool": "stop_local_llm_runtime"
   },
   {
    "effect": "EffectMutation",

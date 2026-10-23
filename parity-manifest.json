@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m8e/canaries.json"
+  "results": "evidence/m8f/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
@@ -167,23 +167,23 @@
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/m8e/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m8f/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/m8e/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m8f/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/m8e/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m8f/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/m8e/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m8f/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/m8e/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m8f/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -321,13 +321,13 @@
    "minRepeat": 20,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m8e/go-vs-go/summary.json"
+   "summary": "evidence/m8f/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 5,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m8e/go-vs-rust/summary.json"
+   "summary": "evidence/m8f/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -731,6 +731,51 @@
       "provider-real",
       "read-only-tools",
       "recipe-corpus",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
+  },
+  "m8f": {
+   "description": "M8f exit (llm and serving domains): the M8e gate plus every llm- and serving-domain item matching Go (x5) at T1 shim-trace parity (the Ollama runtime and its generated unit, the per-model context, the llama-server manifest, start, probe and binary build refusals and adoption, the authenticated relay persisted and restored, the OpenAI-compatible probe, Go's unbound cluster proxy refusals, serving assignments under their transient supervisor and ingress discovery through the pinned Go k3s provider; the service manager, GPU, ss and kill shimmed and the runtimes' APIs a route stub), and every T2 llm- and serving-domain scenario on the base golden (the CPU-only model stub t2guest/llmstub.py as ollama, llama-server and nvidia-smi under ubuntu's real systemd user manager: the shared Ollama runtime installed from nothing, its context persisted, the relay carrying an authenticated client; the llama-server manifest installed, adopted, restarted and stopped; a serving assignment launched, observed and relaunched as a real transient user unit; and the M4 admission-rejected llm and serving calls leaving the twin unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
       "tasks"
      ]
     }
@@ -2945,6 +2990,120 @@
   },
   {
    "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.absent",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.absent",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.lifecycle",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.lifecycle",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.unit",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.unit",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/ollama.go"
+   ],
+   "id": "llm-domain.ollama.unit-fails",
+   "owner": "llm",
+   "scenario": "llm-domain.ollama.unit-fails",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/server.go",
+    "internal/domain/llm/server_build.go"
+   ],
+   "id": "llm-domain.llama.lifecycle",
+   "owner": "llm",
+   "scenario": "llm-domain.llama.lifecycle",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/server.go",
+    "internal/domain/llm/server_build.go"
+   ],
+   "id": "llm-domain.llama.refused",
+   "owner": "llm",
+   "scenario": "llm-domain.llama.refused",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/server.go",
+    "internal/domain/llm/server_build.go",
+    "internal/domain/llm/server.go:defaultLlamaServerConfig"
+   ],
+   "id": "llm-domain.llama.environment",
+   "owner": "llm",
+   "scenario": "llm-domain.llama.environment",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/relay.go",
+    "internal/domain/llm/gateway.go:ValidateLocalLLMRelayArgs"
+   ],
+   "id": "llm-domain.relay.lifecycle",
+   "owner": "llm",
+   "scenario": "llm-domain.relay.lifecycle",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_llm.go",
+    "internal/tools/dispatch.go:resolveLocalLLMModelArg",
+    "internal/domain/llm/gateway.go"
+   ],
+   "id": "llm-domain.cluster-proxy",
+   "owner": "llm",
+   "scenario": "llm-domain.cluster-proxy",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_host.go",
+    "internal/domain/llm/runtime_probe.go"
+   ],
+   "id": "llm-domain.openai-probe",
+   "owner": "llm",
+   "scenario": "llm-domain.openai-probe",
+   "surface": "llm-domain"
+  },
+  {
+   "anchors": [
     "internal/transport/http.go:handleHealth",
     "test/compliance/mcp_test.go:TestMCPAuthProtectsMCPButNotHealth"
    ],
@@ -3955,6 +4114,37 @@
   },
   {
    "anchors": [
+    "internal/tools/dispatch_serving.go",
+    "internal/domain/serving/assignment.go"
+   ],
+   "id": "serving-domain.assignment.lifecycle",
+   "owner": "serving",
+   "scenario": "serving-domain.assignment.lifecycle",
+   "surface": "serving-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_serving.go",
+    "internal/domain/serving/assignment.go"
+   ],
+   "id": "serving-domain.assignment.refused",
+   "owner": "serving",
+   "scenario": "serving-domain.assignment.refused",
+   "surface": "serving-domain"
+  },
+  {
+   "anchors": [
+    "internal/tools/dispatch_serving.go",
+    "internal/domain/serving/ingress.go",
+    "internal/hostagent/serving_domain.go"
+   ],
+   "id": "serving-domain.ingress",
+   "owner": "serving",
+   "scenario": "serving-domain.ingress",
+   "surface": "serving-domain"
+  },
+  {
+   "anchors": [
     "internal/transport/http.go:NewHTTPServer mux",
     "net/http ServeMux"
    ],
@@ -4106,34 +4296,34 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m8e/m5/crash/summary.json"
+   "summary": "evidence/m8f/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m8e/m5/cross-read/summary.json"
+   "summary": "evidence/m8f/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m8e/m5/migration/summary.json"
+   "summary": "evidence/m8f/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m8e/m5/secrets/summary.json"
+   "summary": "evidence/m8f/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m8e/m5/shape/summary.json"
+   "summary": "evidence/m8f/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m8e/m5/unknown-projection/summary.json"
+   "summary": "evidence/m8f/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/m8e/oracles.json",
+  "results": "evidence/m8f/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/m8e/rust-canaries.json"
+  "results": "evidence/m8f/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "4c516f553bf6dcecdcedcf886d21b5ec591eabb565483a2a1fe8911a5e94632d",
+  "binarySha256": "60587cec0b746193fe03e329423acb992c63488535f29cb3ee7432b2410dccd6",
   "build": "cargo build --release --locked",
   "note": "Hash of the binary that produced evidence/current; rebuild and rerun make parity-m1 after any Rust change."
  },
@@ -4181,18 +4371,18 @@
     "minRepeat": 20,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "summary": "evidence/m8e/t2-go-vs-go/summary.json"
+    "summary": "evidence/m8f/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
     "minRepeat": 5,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "summary": "evidence/m8e/t2-go-vs-rust/summary.json"
+    "summary": "evidence/m8f/t2-go-vs-rust/summary.json"
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/m8e/oracles-t2.json",
+  "results": "evidence/m8f/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
  }
 }

@@ -132,7 +132,7 @@ pub(crate) fn tls_config() -> Arc<rustls::ClientConfig> {
 }
 
 /// The `*url.Error` cause Go reports for a failed request.
-fn transport_cause(url: &str, err: &ureq::Transport) -> String {
+pub(crate) fn transport_cause(url: &str, err: &ureq::Transport) -> String {
     use std::error::Error as _;
     let mut source = err.source();
     while let Some(e) = source {

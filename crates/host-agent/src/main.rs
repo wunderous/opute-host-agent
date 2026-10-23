@@ -35,6 +35,7 @@ mod http1;
 mod identity;
 mod incus;
 mod incusops;
+mod llmops;
 mod mcpprobe;
 mod mcpsdk;
 mod oauth;
@@ -43,6 +44,7 @@ mod plan;
 mod plan_evidence;
 mod plan_mcp;
 mod postgresops;
+mod servingops;
 // M7 core; public provider dispatch stays closed until its adapter is wired.
 #[allow(dead_code)]
 mod provider;

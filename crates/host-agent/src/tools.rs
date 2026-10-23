@@ -50,6 +50,12 @@ pub struct Host {
     /// The postgres domain, built on its first call; the stack reset
     /// revokes its relays only once it exists.
     pub postgres: Arc<std::sync::OnceLock<Arc<crate::postgresops::Live>>>,
+    /// The llm domain, built on its first call: it restores the persisted
+    /// local-LLM relays, and the stack reset revokes them only once it
+    /// exists (M8f).
+    pub llm: Arc<std::sync::OnceLock<Arc<crate::llmops::Live>>>,
+    /// `RelayConfigDir`, where the llm domain persists its relays (M8f).
+    pub relay_config_dir: String,
     /// `adoptResource` for a cluster URI: the Kubernetes domain, bound when
     /// the built-in services are composed.
     pub cluster_adopter: Arc<std::sync::OnceLock<ClusterAdopter>>,

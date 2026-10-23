@@ -1260,6 +1260,26 @@
     {
      "path": [
       "steps",
+      "write",
+      "stderr"
+     ],
+     "type": "string",
+     "optional": true,
+     "reason": "kubectl exec's websocket client logs stream warnings by timing"
+    },
+    {
+     "path": [
+      "steps",
+      "read",
+      "stderr"
+     ],
+     "type": "string",
+     "optional": true,
+     "reason": "kubectl exec's websocket client logs stream warnings by timing"
+    },
+    {
+     "path": [
+      "steps",
       "*",
       "kubernetes",
       "objects",

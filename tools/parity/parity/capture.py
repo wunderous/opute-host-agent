@@ -302,6 +302,13 @@ T2_INERT = {
                          "provider instance name is required' before reaching the provider",
     "run_sql": "as install_postgresql: no resource binding, so every call refuses with 'vmName and sql are "
                "required' before reaching the provider",
+    "ensure_local_llm_k3s_proxy": "Go takes the cluster VM only from the call's resource binding "
+                                  "(vmNameFromBinding), and its catalog entry declares no resource argument, so "
+                                  "every call refuses with 'vmName is invalid' before rendering or applying "
+                                  "anything; compared in T1 (llm-domain.cluster-proxy) and in T2 "
+                                  "(t2.llm-domain.admission.rejected-no-effect)",
+    "remove_local_llm_k3s_proxy": "as ensure_local_llm_k3s_proxy: no resource binding, so every call refuses "
+                                  "with 'vmName is invalid' before deleting anything",
     "exec_command": "catalog-excluded (CatalogExcludedToolNames), so Go resolves it no resource binding and every "
                     "call refuses with 'name is required' before running anything; t2.incus-domain."
                     "container.lifecycle calls it by name and by URI against a live owned container and checks "
@@ -309,10 +316,16 @@ T2_INERT = {
 }
 
 
+# The sub-milestone that owns a domain's T2 coverage (milestones.md, M8 table).
+T2_MILESTONE = {"host": "M8a", "incus": "M8b", "kubernetes": "M8c", "oci": "M8d", "postgres": "M8e",
+                "llm": "M8f", "serving": "M8f"}
+
+
 def capture_t2() -> dict:
-    """T2 coverage of every mutating host-, incus-, cluster-, oci- and postgres-domain tool (M8 validations 2-4)."""
+    """T2 coverage of every mutating host-, incus-, cluster-, oci-, postgres-, llm- and serving-domain tool
+    (M8 validations 2-4)."""
     domains = [json.loads((INVENTORY_DIR / f"{d}-domain.json").read_text())
-               for d in ("host", "incus", "cluster", "oci", "postgres")]
+               for d in ("host", "incus", "cluster", "oci", "postgres", "llm", "serving")]
     calls: dict[str, set[str]] = {}
     refused: dict[str, set[str]] = {}
     for path in sorted(T2_SCENARIO_DIR.glob("*.json")):
@@ -340,7 +353,7 @@ def capture_t2() -> dict:
         elif covered:
             item["status"] = "covered"
         else:
-            item.update(status="gap", milestone="M8a" if owner == "host" else "M8b",
+            item.update(status="gap", milestone=T2_MILESTONE.get(owner, "M8b"),
                         gapReason="no T2 scenario executes this tool")
         items.append(item)
     return {"surface": "t2-effects", "owner": "host",
