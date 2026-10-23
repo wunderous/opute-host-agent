@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 .PHONY: parity-verify-m5 parity-verify-m6
@@ -23,6 +23,15 @@ rust-check:
 
 rust-build:
 	cargo build --release --locked
+
+# --- Release set (M10): Go's names, gzip and SHA256SUMS; see tools/release.
+VERSION ?= 0.2.3
+
+release-toolchain:
+	tools/release/setup-toolchain.sh
+
+artifacts:
+	VERSION=$(VERSION) DIST=$(CURDIR)/dist tools/release/build-artifacts.sh
 
 # --- Parity harness (M0). Python 3.11 stdlib only; Go toolchain for the reference.
 PARITY := cd tools/parity && python3 -m parity
