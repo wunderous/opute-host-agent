@@ -23,6 +23,7 @@ ZIG_DIR=${ZIG_DIR:-$SETUP/zig-x86_64-linux-0.15.2}
 ZIGBUILD_DIR=${ZIGBUILD_DIR:-$SETUP/cargo-zigbuild/bin}
 GO_BIN=${GO_BIN:-$SETUP/go/bin}
 TARGET_DIR=${CARGO_TARGET_DIR:-$ROOT/target/dist}
+GO_EXPORT=${GO_EXPORT:-$ROOT/target/dist/go-export}
 
 export PATH=$ZIG_DIR:$ZIGBUILD_DIR:$GO_BIN:$PATH
 command -v zig >/dev/null || { echo "zig not found in $ZIG_DIR (tools/release/setup-toolchain.sh)" >&2; exit 1; }
@@ -40,9 +41,12 @@ build_agent x86_64-unknown-linux-gnu.2.34 host-agent-linux-x64
 build_agent aarch64-unknown-linux-musl host-agent-linux-arm64
 
 # Go's providers, from a clean export of the pinned tree (the checkout is
-# never written to), with Go's own targets and flags.
-providers=$(mktemp -d)
-trap 'rm -rf "$providers"' EXIT
+# never written to), with Go's own targets and flags. Go records the build
+# directory in the binary, so the export is always at the same path: the
+# same tree and toolchain then give the same bytes.
+providers=$GO_EXPORT
+rm -rf "$providers"
+mkdir -p "$providers"
 git -C "$GO_SRC" archive HEAD | tar -x -C "$providers"
 GOFLAGS=-mod=readonly GOPROXY=off GOTOOLCHAIN=local \
   make -s -C "$providers" build-provider-linux-x64 build-provider-cloudflare-linux-x64 \
