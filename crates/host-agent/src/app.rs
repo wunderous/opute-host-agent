@@ -97,6 +97,16 @@ pub(crate) fn log_info(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]
     let _ = stderr.flush();
 }
 
+/// A Go `log/slog` TextHandler line at ERROR level.
+pub(crate) fn log_error(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
+    let mut line = format!("time={} level=ERROR msg={}", slog_time(), slog_value(msg));
+    for (k, v) in attrs {
+        line.push_str(&format!(" {k}={}", slog_value(v)));
+    }
+    let _ = writeln!(stderr, "{line}");
+    let _ = stderr.flush();
+}
+
 /// A Go `log/slog` TextHandler line at WARN level.
 pub(crate) fn log_warn(stderr: &mut dyn Write, msg: &str, attrs: &[(&str, &str)]) {
     let mut line = format!("time={} level=WARN msg={}", slog_time(), slog_value(msg));
