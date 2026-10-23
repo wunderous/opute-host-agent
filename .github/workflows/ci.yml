@@ -40,6 +40,18 @@ jobs:
       - name: Install pinned toolchain (rust-toolchain.toml)
         run: rustup show active-toolchain || rustup toolchain install
       - uses: Swatinem/rust-cache@v2
+      - name: Build the harness, the Go reference and the Rust candidate
+        run: make parity-test go-reference rust-build
+      # Admission counts the agent cgroup's memory.current, which includes the
+      # page cache the checkout and the builds charged to this job. Release
+      # it so the agents see the runner's memory, and print what they read.
+      - name: Release the job's page cache before the parity run
+        run: |
+          cg=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
+          report() { free -m; df -h .; echo "memory.current=$(cat $cg/memory.current) memory.max=$(cat $cg/memory.max)"; grep -E '^(anon|file) ' $cg/memory.stat; }
+          report
+          sync && echo 1 | sudo tee /proc/sys/vm/drop_caches >/dev/null
+          report
       - name: Verify committed evidence and re-prove M1 parity
         run: make parity-ci
       - name: Upload parity diffs on failure
