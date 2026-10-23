@@ -129,6 +129,20 @@ def main(argv: list[str] | None = None) -> int:
     t2run.add_argument("--workers", type=int, default=1, help="scenarios run concurrently (each a twin pair)")
     t2run.add_argument("scenarios", nargs="*")
 
+    ds = sub.add_parser("dist", help="M10: release artifacts, clean machines, npm launcher and site")
+    dssub = ds.add_subparsers(dest="dist_command", required=True)
+    dssub.add_parser("golden-debian", help="build the clean Debian golden once")
+    dsgo = dssub.add_parser("release-go", help="build Go's release set from the pinned tree with Go's targets")
+    dsgo.add_argument("--go-src", type=Path, default=runner.REPO_ROOT / ".parity" / "go-src")
+    dsgo.add_argument("--out", type=Path, default=runner.REPO_ROOT / ".parity" / "releases" / "go")
+    dsrun = dssub.add_parser("run", help="one distribution round: every place, Go and Rust release sets")
+    dsrun.add_argument("--go-src", type=Path, default=runner.REPO_ROOT / ".parity" / "go-src")
+    dsrun.add_argument("--go-release", type=Path, default=runner.REPO_ROOT / ".parity" / "releases" / "go")
+    dsrun.add_argument("--rust-release", type=Path, default=runner.REPO_ROOT / "dist")
+    dsrun.add_argument("--manifest", type=Path, default=runner.REPO_ROOT / "parity-manifest.json")
+    dsrun.add_argument("--out", required=True, type=Path)
+    dsrun.add_argument("--work", required=True, type=Path)
+
     sub.add_parser("corpus", help="regenerate scenarios/wire.json from parity/corpus.py")
     man = sub.add_parser("manifest", help="sync derived manifest fields from scenarios and the source lock")
     man.add_argument("--go", type=Path, help="Go reference binary whose hash to record")
@@ -177,6 +191,22 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         summary = t2.run_suite(_impl(args.left), _impl(args.right), args.out, args.scenarios or None, args.repeat, args.workers)
         return 0 if all(r["status"] == "pass" for r in summary["scenarios"].values()) else 1
+    if args.command == "dist":
+        from . import dist
+        if args.dist_command == "golden-debian":
+            print(json.dumps(dist.build_debian_golden(), indent=1))
+            return 0
+        if args.dist_command == "release-go":
+            print(json.dumps(dist.build_go_release(args.go_src.resolve(), args.out.resolve()), indent=1))
+            return 0
+        spec = json.loads(args.manifest.read_text()).get("distEvidence") or {}
+        releases = {"go": args.go_release.resolve(), "rust": args.rust_release.resolve()}
+        done = dist.run_round(args.out.resolve(), args.go_src.resolve(), releases,
+                              args.go_src.resolve() / "deploy", args.work.resolve(),
+                              [entry["file"] for entry in spec.get("reviewedSiteDiff", [])],
+                              spec.get("distros") or dist.DISTROS)
+        print(json.dumps(done["pass"], indent=1))
+        return 0 if all(done["pass"].values()) else 1
     if args.command == "corpus":
         from . import corpus
         print(f"wire corpus v{corpus.VERSION}: {corpus.write()} steps -> {corpus.OUT_FILE.name}")
