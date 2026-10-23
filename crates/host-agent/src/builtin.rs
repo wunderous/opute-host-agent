@@ -156,7 +156,7 @@ pub fn manifest(services: &[Service]) -> Result<InstallManifest, String> {
     Ok(InstallManifest {
         provider: ProviderRef {
             id: provider_id(),
-            version: env!("CARGO_PKG_VERSION").into(),
+            version: crate::cli::VERSION.into(),
         },
         services: GoSlice(Some(definitions)),
         ..InstallManifest::default()

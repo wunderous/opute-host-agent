@@ -12,7 +12,13 @@ use crate::config::Env;
 use crate::goerr::{self, quote, Result};
 use crate::goflag::{FlagSet, Values};
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// The release version, stamped at build time as Go's release build stamps
+/// `internal/version.Version` (`make artifacts VERSION=...`); without it, the
+/// package version, which matches Go's Makefile default.
+pub const VERSION: &str = match option_env!("OPUTE_HOST_AGENT_VERSION") {
+    Some(version) => version,
+    None => env!("CARGO_PKG_VERSION"),
+};
 
 pub struct Io<'a> {
     pub stdout: &'a mut dyn Write,
@@ -645,7 +651,10 @@ mod tests {
         let lock: serde_json::Value =
             serde_json::from_str(include_str!("../../../baseline/source-lock.json")).unwrap();
         let package = lock["publishedPackage"].as_str().unwrap();
-        assert_eq!(package.rsplit('@').next().unwrap(), VERSION);
+        assert_eq!(
+            package.rsplit('@').next().unwrap(),
+            env!("CARGO_PKG_VERSION")
+        );
     }
 
     #[test]

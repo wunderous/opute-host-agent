@@ -415,7 +415,7 @@ pub(crate) fn compose(
         agent_id: cfg.remote_agent_id.clone(),
         tool_prefix: prefix,
         implementation_name,
-        version: env!("CARGO_PKG_VERSION").to_string(),
+        version: crate::cli::VERSION.to_string(),
         fingerprint: identity.map(|i| {
             (
                 i.fingerprint.clone(),
