@@ -1,0 +1,111 @@
+{
+ "scope": "T2 OCI golden: an overlay of the k3s golden, dedicated and disposable; podman, buildah and every image build and push run only inside twins booted from it, against the twin's own registry; no shared Incus/Kubernetes/registry/tunnel/deploy state",
+ "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+ "recipe": [
+  "incus admin waitready --timeout=180",
+  "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s",
+  "incus exec k1 -- k3s kubectl -n registry rollout status deploy/opute-registry --timeout=600s",
+  "test \"$(incus list k1 -c 4 --format csv | grep -o '10\\.0\\.100\\.[0-9]*')\" = 10.0.100.113 && incus config device override k1 eth0 ipv4.address=10.0.100.113",
+  "apt-get update -q",
+  "DEBIAN_FRONTEND=noninteractive apt-get install -y -q podman buildah",
+  "for u in $(systemctl list-unit-files --type=timer --state=enabled --no-legend | awk '{print $1}'); do systemctl disable --now \"$u\" >/dev/null 2>&1; done; systemctl mask fwupd-refresh.timer fwupd-refresh.service >/dev/null 2>&1; true",
+  "install -d /etc/containers && printf '%s' '[engine]\ncgroup_manager = \"cgroupfs\"\nevents_logger = \"file\"\n' > /etc/containers/containers.conf",
+  "install -d -o ubuntu -g ubuntu -m 0700 /tmp/parity-oci && cd /tmp/parity-oci && for name in old shared; do install -d -o ubuntu -g ubuntu \"$name\" && printf 'FROM scratch\\nCOPY %s.txt /%s.txt\\n' \"$name\" \"$name\" > \"$name/Containerfile\" && echo \"parity $name\" > \"$name/$name.txt\" && chown ubuntu:ubuntu \"$name\"/*; done && env -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS runuser -u ubuntu -- sh -c 'cd ~ && podman build -q --timestamp 1000000000 -t localhost/parity/old:1 /tmp/parity-oci/old && podman build -q --timestamp 1100000000 -t localhost/parity/shared:1 /tmp/parity-oci/shared && podman tag localhost/parity/shared:1 localhost/parity/shared:rollback' && rm -rf /tmp/parity-oci",
+  "out=$(env -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS runuser -u ubuntu -- sh -c 'cd ~ && podman info --format json 2>&1') && printf '%s' \"$out\" | python3 -c 'import json,sys; json.load(sys.stdin)' || { printf '%s\\n' \"$out\" | tail -n 8 >&2; exit 1; }",
+  "sync"
+ ],
+ "recipeLog": [
+  {
+   "command": "incus admin waitready --timeout=180",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s kubectl -n registry rollout status deploy/opute-registry --timeout=600s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "test \"$(incus list k1 -c 4 --format csv | grep -o '10\\.0\\.100\\.[0-9]*')\" = 10.0.100.113 && incus config device override k1 eth0 ipv4.address=10.0.100.113",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "apt-get update -q",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "DEBIAN_FRONTEND=noninteractive apt-get install -y -q podman buildah",
+   "exit": 0,
+   "stderr": "\nRunning kernel seems to be up-to-date.\n\nNo services need to be restarted.\n\nNo containers need to be restarted.\n\nNo user sessions are running outdated binaries.\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n"
+  },
+  {
+   "command": "for u in $(systemctl list-unit-files --type=timer --state=enabled --no-legend | awk '{print $1}'); do systemctl disable --now \"$u\" >/dev/null 2>&1; done; systemctl mask fwupd-refresh.timer fwupd-refresh.service >/dev/null 2>&1; true",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "install -d /etc/containers && printf '%s' '[engine]\ncgroup_manager = \"cgroupfs\"\nevents_logger = \"file\"\n' > /etc/containers/containers.conf",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "install -d -o ubuntu -g ubuntu -m 0700 /tmp/parity-oci && cd /tmp/parity-oci && for name in old shared; do install -d -o ubuntu -g ubuntu \"$name\" && printf 'FROM scratch\\nCOPY %s.txt /%s.txt\\n' \"$name\" \"$name\" > \"$name/Containerfile\" && echo \"parity $name\" > \"$name/$name.txt\" && chown ubuntu:ubuntu \"$name\"/*; done && env -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS runuser -u ubuntu -- sh -c 'cd ~ && podman build -q --timestamp 1000000000 -t localhost/parity/old:1 /tmp/parity-oci/old && podman build -q --timestamp 1100000000 -t localhost/parity/shared:1 /tmp/parity-oci/shared && podman tag localhost/parity/shared:1 localhost/parity/shared:rollback' && rm -rf /tmp/parity-oci",
+   "exit": 0,
+   "stderr": "time=\"2026-10-18T07:40:23Z\" level=warning msg=\"Failed to add pause process to systemd sandbox cgroup: dbus: couldn't determine address of session bus\"\n"
+  },
+  {
+   "command": "out=$(env -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS runuser -u ubuntu -- sh -c 'cd ~ && podman info --format json 2>&1') && printf '%s' \"$out\" | python3 -c 'import json,sys; json.load(sys.stdin)' || { printf '%s\\n' \"$out\" | tail -n 8 >&2; exit 1; }",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "sync",
+   "exit": 0,
+   "stderr": ""
+  }
+ ],
+ "facts": {
+  "packages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n",
+  "debSha256": "e5c1c37e387ed14c352a744a75fbb79fb2f82573ca7bf36886e3b7333fc9ef1a  podman_4.9.3+ds1-1ubuntu0.2_amd64.deb\na94382e24be71739da40350fddc896464692cd736d2fc2f5507d6d6961d34727  buildah_1.33.7+ds1-1ubuntu0.24.04.3_amd64.deb\n",
+  "podmanVersion": "podman version 4.9.3\n",
+  "buildahVersion": "buildah version 1.33.7 (image-spec 1.1.0-rc.5, runtime-spec 1.1.0)\n",
+  "images": "[\n    {\n        \"Id\": \"cc9e87c49e474a6677ef650e065e7ddf36842ad06b43b2165ce05108232ebd34\",\n        \"ParentId\": \"\",\n        \"RepoTags\": null,\n        \"RepoDigests\": [\n            \"localhost/parity/shared@sha256:bea7d2c4c5121fea52c0e66a2fa1da3f85b2952a1d06217f2e62ff654662a7d9\"\n        ],\n        \"Size\": 3521,\n        \"SharedSize\": 0,\n        \"VirtualSize\": 3521,\n        \"Labels\": {\n            \"io.buildah.version\": \"1.33.7\"\n        },\n        \"Containers\": 0,\n        \"Names\": [\n            \"localhost/parity/shared:rollback\",\n            \"localhost/parity/shared:1\"\n        ],\n        \"Digest\": \"sha256:bea7d2c4c5121fea52c0e66a2fa1da3f85b2952a1d06217f2e62ff654662a7d9\",\n        \"History\": [\n            \"localhost/parity/shared:1\",\n            \"localhost/parity/shared:rollback\"\n        ],\n        \"Created\": 1100000000,\n        \"CreatedAt\": \"2004-11-09T11:33:20Z\"\n    },\n    {\n        \"Id\": \"cc9e87c49e474a6677ef650e065e7ddf36842ad06b43b2165ce05108232ebd34\",\n        \"ParentId\": \"\",\n        \"RepoTags\": null,\n        \"RepoDigests\": [\n            \"localhost/parity/shared@sha256:bea7d2c4c5121fea52c0e66a2fa1da3f85b2952a1d06217f2e62ff654662a7d9\"\n        ],\n        \"Size\": 3521,\n        \"SharedSize\": 0,\n        \"VirtualSize\": 3521,\n        \"Labels\": {\n            \"io.buildah.version\": \"1.33.7\"\n        },\n        \"Containers\": 0,\n        \"Names\": [\n            \"localhost/parity/shared:rollback\",\n            \"localhost/parity/shared:1\"\n        ],\n        \"Digest\": \"sha256:bea7d2c4c5121fea52c0e66a2fa1da3f85b2952a1d06217f2e62ff654662a7d9\",\n        \"History\": [\n            \"localhost/parity/shared:1\",\n            \"localhost/parity/shared:rollback\"\n        ],\n        \"Created\": 1100000000,\n        \"CreatedAt\": \"2004-11-09T11:33:20Z\"\n    },\n    {\n        \"Id\": \"0445ec73d89138aad7d2c807297461066a5cf63b3ea986c57004375847917cf2\",\n        \"ParentId\": \"\",\n        \"RepoTags\": null,\n        \"RepoDigests\": [\n            \"localhost/parity/old@sha256:e5235cf6a94fea0a38b03efa4b2c5c64b14e7be986953b5d5fdf635a56c1f8da\"\n        ],\n        \"Size\": 3518,\n        \"SharedSize\": 0,\n        \"VirtualSize\": 3518,\n        \"Labels\": {\n            \"io.buildah.version\": \"1.33.7\"\n        },\n        \"Containers\": 0,\n        \"Names\": [\n            \"localhost/parity/old:1\"\n        ],\n        \"Digest\": \"sha256:e5235cf6a94fea0a38b03efa4b2c5c64b14e7be986953b5d5fdf635a56c1f8da\",\n        \"History\": [\n            \"localhost/parity/old:1\"\n        ],\n        \"Created\": 1000000000,\n        \"CreatedAt\": \"2001-09-09T01:46:40Z\"\n    }\n]\n",
+  "k1Address": "\"10.42.0.1 (cni0)\n10.42.0.0 (flannel.1)\n10.0.100.113 (eth0)\"\n",
+  "timers": "Sun 2026-10-18 07:54:47 UTC 14min - - systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service\n",
+  "instance": "architecture: x86_64\nconfig:\n  boot.autostart: \"true\"\n  image.architecture: amd64\n  image.description: Ubuntu noble amd64 (20261013_07:42)\n  image.os: Ubuntu\n  image.release: noble\n  image.requirements.cgroup: v2\n  image.serial: '20261013_07:42'\n  image.type: squashfs\n  image.variant: default\n  linux.kernel_modules: overlay,br_netfilter,ip_tables,ip6_tables,nf_nat,xt_conntrack,iptable_nat,iptable_filter\n  raw.lxc: |-\n    lxc.apparmor.profile=unconfined\n    lxc.cap.drop=\n    lxc.cgroup2.devices.allow=a\n    lxc.mount.auto=proc:rw sys:rw cgroup:rw\n  security.nesting: \"true\"\n  security.privileged: \"true\"\n  volatile.base_image: 657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c\n  volatile.cloud-init.instance-id: e9dbff8a-2daa-4c76-89b3-dde43d307c55\n  volatile.eth0.host_name: vethb75f40ed\n  volatile.eth0.hwaddr: 10:66:6a:0d:25:b2\n  volatile.idmap.base: \"0\"\n  volatile.idmap.current: '[]'\n  volatile.idmap.next: '[]'\n  volatile.last_state.idmap: '[]'\n  volatile.last_state.power: RUNNING\n  volatile.uuid: 2ebad031-1363-4087-813a-8b91fc7f19aa\n  volatile.uuid.generation: 2ebad031-1363-4087-813a-8b91fc7f19aa\ndevices:\n  eth0:\n    ipv4.address: 10.0.100.113\n    name: eth0\n    nictype: bridged\n    parent: incusbr0\n    type: nic\n  kmsg:\n    path: /dev/kmsg\n    source: /dev/kmsg\n    type: unix-char\nephemeral: false\nprofiles:\n  - default\nstateful: false\ndescription: \"\"\n"
+ },
+ "memoryMb": 6144,
+ "goldenSha256": "bf332e6b8ef945b0247dc60d398cbea72e878a9baa3648ac4173c5c0331409ec",
+ "created": "2026-10-18T07:40:29Z",
+ "qemuArgv": [
+  "qemu-system-x86_64",
+  "-enable-kvm",
+  "-cpu",
+  "host",
+  "-smp",
+  "2",
+  "-m",
+  "6144",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8d/.parity/t2/golden-oci.qcow2,if=virtio,format=qcow2",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8d/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+  "-netdev",
+  "user,id=net0,hostfwd=tcp:127.0.0.1:43641-:22",
+  "-device",
+  "virtio-net-pci,netdev=net0",
+  "-display",
+  "none",
+  "-serial",
+  "file:/home/houman/github/wunderous/opute-host-agent-m8d/.parity/t2/golden-oci-serial.log",
+  "-monitor",
+  "none"
+ ]
+}
