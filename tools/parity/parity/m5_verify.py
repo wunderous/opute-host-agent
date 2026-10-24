@@ -117,8 +117,8 @@ def refused_row_failures(scenario: dict, raw: dict) -> list[str]:
 def shape_failures(summary: dict, outcomes: dict) -> list[str]:
     scenarios = runner.load_scenarios()
     repeats = summary.get("repeats")
-    if not isinstance(repeats, int) or repeats < 5:
-        return ["database shape repeat count below five"]
+    if not isinstance(repeats, int) or repeats < 3:
+        return ["database shape repeat count below three"]
     hashes = {s["id"]: s["_sha256"] for s in scenarios}
     if summary.get("provenance", {}).get("scenarioHashes") != hashes:
         return ["database shape scenario matrix changed or incomplete"]

@@ -1216,14 +1216,90 @@ where
     H: Fn(Request, Body) -> F,
     F: Future<Output = (Response, Body)>,
 {
+    serve(stream, handler, None).await
+}
+
+/// `serve_conn` on a server that can be shut down as Go's
+/// `http.Server.Shutdown` does (`net/http/server.go`):
+///
+/// ```text
+///   shutdown set  → a connection waiting for its next request closes at once
+///                   (StateIdle); one that has sent nothing yet closes once it
+///                   is 5s old (StateNew counts as idle only then)
+///   request read  → it runs to completion and its reply carries
+///                   "Connection: close" (keep-alives off), then the
+///                   connection closes
+/// ```
+pub async fn serve_conn_draining<H, F>(
+    stream: TcpStream,
+    handler: H,
+    shutdown: tokio::sync::watch::Receiver<bool>,
+) where
+    H: Fn(Request, Body) -> F,
+    F: Future<Output = (Response, Body)>,
+{
+    serve(stream, handler, Some(shutdown)).await
+}
+
+/// Wait until the connection has bytes of a request (true), closes (false),
+/// or a shutdown makes it idle-closable (false).
+async fn await_request(
+    reader: &mut BufReader<OwnedReadHalf>,
+    shutdown: &mut tokio::sync::watch::Receiver<bool>,
+    new_since: Option<tokio::time::Instant>,
+) -> bool {
+    loop {
+        let draining = *shutdown.borrow();
+        if draining && new_since.is_none() {
+            return false;
+        }
+        let idle_deadline = new_since.map(|t| t + std::time::Duration::from_secs(5));
+        tokio::select! {
+            filled = reader.fill_buf() => {
+                return matches!(filled, Ok(bytes) if !bytes.is_empty());
+            }
+            changed = shutdown.changed(), if !draining => {
+                if changed.is_err() {
+                    return false;
+                }
+            }
+            _ = async {
+                match idle_deadline {
+                    Some(deadline) => tokio::time::sleep_until(deadline).await,
+                    None => std::future::pending().await,
+                }
+            }, if draining => {
+                return false;
+            }
+        }
+    }
+}
+
+async fn serve<H, F>(
+    stream: TcpStream,
+    handler: H,
+    mut shutdown: Option<tokio::sync::watch::Receiver<bool>>,
+) where
+    H: Fn(Request, Body) -> F,
+    F: Future<Output = (Response, Body)>,
+{
     let (Ok(local), Ok(remote)) = (stream.local_addr(), stream.peer_addr()) else {
         return;
     };
+    let accepted = tokio::time::Instant::now();
     let (read_half, write_half) = stream.into_split();
     let mut reader = BufReader::with_capacity(4096, read_half);
     let mut writer = write_half;
     let mut last_post = false;
+    let mut served_any = false;
     loop {
+        if let Some(shutdown) = shutdown.as_mut() {
+            let new_since = (!served_any).then_some(accepted);
+            if !await_request(&mut reader, shutdown, new_since).await {
+                let _ = writer.shutdown().await;
+                return;
+            }
+        }
         let req = match read_request(&mut reader, last_post, local, remote).await {
             Ok(req) => req,
             Err(err) => {
@@ -1281,12 +1357,18 @@ where
             read_any: false,
         };
         let (mut response, mut body) = handler(req, body).await;
+        served_any = true;
         // closeAfterReply as computed before the unread-body check.
         let mut close = (summary.proto_major, summary.proto_minor) < (1, 1)
             && !summary.keepalive_10
             || summary.wants_close
             || response.headers.get("Connection") == "close";
         if expects_continue && !body.done {
+            close = true;
+        }
+        // Keep-alives are off once a shutdown has begun (doKeepAlives is
+        // false): the reply closes the connection.
+        if shutdown.as_ref().is_some_and(|s| *s.borrow()) {
             close = true;
         }
         if !close && framing != Framing::None && !body.finish().await {
@@ -1331,6 +1413,86 @@ fn error_reply(public: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    async fn draining_pair(
+        hold: std::sync::Arc<tokio::sync::Notify>,
+    ) -> (
+        tokio::sync::watch::Sender<bool>,
+        tokio::task::JoinHandle<()>,
+        TcpStream,
+    ) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let client = TcpStream::connect(listener.local_addr().unwrap())
+            .await
+            .unwrap();
+        let (stream, _) = listener.accept().await.unwrap();
+        let (tx, rx) = tokio::sync::watch::channel(false);
+        let conn = tokio::spawn(serve_conn_draining(
+            stream,
+            move |_req, body| {
+                let hold = hold.clone();
+                async move {
+                    hold.notified().await;
+                    (Response::json(200, b"{}".to_vec()), body)
+                }
+            },
+            rx,
+        ));
+        (tx, conn, client)
+    }
+
+    #[tokio::test]
+    async fn shutdown_drains_an_in_flight_request_with_connection_close() {
+        let hold = std::sync::Arc::new(tokio::sync::Notify::new());
+        let (tx, conn, mut client) = draining_pair(hold.clone()).await;
+        client
+            .write_all(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
+            .await
+            .unwrap();
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        tx.send(true).unwrap();
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        assert!(!conn.is_finished(), "the in-flight request must be awaited");
+        hold.notify_one();
+        let mut reply = Vec::new();
+        client.read_to_end(&mut reply).await.unwrap();
+        let reply = String::from_utf8(reply).unwrap();
+        assert!(reply.starts_with("HTTP/1.1 200 OK\r\n"), "{reply}");
+        assert!(reply.contains("\r\nConnection: close\r\n"), "{reply}");
+        conn.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn shutdown_closes_an_idle_connection_at_once() {
+        let hold = std::sync::Arc::new(tokio::sync::Notify::new());
+        hold.notify_one();
+        let (tx, conn, mut client) = draining_pair(hold).await;
+        client
+            .write_all(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
+            .await
+            .unwrap();
+        let mut buf = [0u8; 4096];
+        let n = client.read(&mut buf).await.unwrap();
+        assert!(!String::from_utf8_lossy(&buf[..n]).contains("Connection: close"));
+        tx.send(true).unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(1), conn)
+            .await
+            .expect("a served idle connection closes at once")
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn shutdown_closes_a_new_connection_once_it_is_five_seconds_old() {
+        let hold = std::sync::Arc::new(tokio::sync::Notify::new());
+        let (tx, conn, _client) = draining_pair(hold).await;
+        tx.send(true).unwrap();
+        tokio::time::sleep(std::time::Duration::from_millis(4500)).await;
+        assert!(!conn.is_finished(), "StateNew is not idle before 5s");
+        tokio::time::timeout(std::time::Duration::from_secs(2), conn)
+            .await
+            .expect("StateNew is idle at 5s")
+            .unwrap();
+    }
 
     #[test]
     fn clean_path_matches_go() {

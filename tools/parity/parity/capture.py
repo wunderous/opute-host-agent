@@ -48,6 +48,7 @@ SURFACE_OWNERS = {
     "host-read": "host",
     "providers": "core",
     "distribution": "release",
+    "cutover": "release",
 }
 
 ENV_PATTERN = re.compile(r'"((?:OPUTE|HOST_MCP)_[A-Z0-9_]+|MCP_AUTH_TOKEN)"')
@@ -599,6 +600,7 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
     inventory["findings.json"]["items"] += _registry_findings(registry)
     inventory["distribution.json"] = capture_distribution(src)
     inventory["t2.json"] = capture_t2()
+    inventory["cutover.json"] = capture_cutover()
     inventory["gaps.json"] = collect_gaps(inventory, catalogs)
     inventory["index.json"] = {
         "sourceCommit": lock["sourceCommit"],
@@ -728,7 +730,8 @@ def capture_distribution(src: Path) -> dict:
     items.append({"name": "linux-arm64 clean-machine install", "kind": "install", "owner": "release",
                   "status": "gap", "milestone": "M10",
                   "gapReason": "needs an arm64 runner: the runner has no qemu-system-aarch64 or user-mode "
-                               "emulation, so the arm64 binary is checked as an artifact only"})
+                               "emulation, so the arm64 binary is checked as an artifact only; the owner kept "
+                               "this gap open at M12a (2026-10-24) rather than install an emulator"})
     items.append({"name": "WSL2 install", "kind": "install", "owner": "release", "status": "gap",
                   "milestone": "M10",
                   "gapReason": "needs a WSL2 runner: the Linux binary inside a Windows-hosted WSL2 distribution"})
@@ -739,6 +742,58 @@ def capture_distribution(src: Path) -> dict:
         "deployFiles": deploy,
         "items": items,
     }
+
+
+# M12 without Platform (evidence/m12a, parity rehearsal): what the rehearsal
+# round proves on isolated state copies, and what stays open. M12 formally
+# depends on M11, which needs staging Platform.
+_M11_GAP = ("M11 dependency: needs staging Platform and a dedicated Rust validation identity; M12 depends on M11, "
+            "so only the M12 items that need no Platform were run")
+
+
+def capture_cutover() -> dict:
+    covered = [
+        ("state conversion", "no conversion: Rust starts on Go's stopped state unchanged; its answers equal Go's "
+                             "own restart on a copy, and the snapshot's checksums are unchanged (M5 cross-read, "
+                             "M12a)"),
+        ("forward rehearsal", "stop Go with a task in flight, snapshot with checksums, start Rust on a copy, query "
+                              "over MCP, restart, query again: equal to Go's restart and to the Go control; exact "
+                              "agent ID kept"),
+        ("rollback rehearsal", "Go starts on the copy Rust wrote and reports every task, Rust-era work included, "
+                               "with the status and message Rust last reported; the Go control matches"),
+        ("in-flight drill: synchronous call", "SIGINT with a call mid-shim: both agents stop accepting, finish "
+                                              "the call (200, Connection: close) and exit 0"),
+        ("in-flight drill: admitted task", "SIGINT with an admitted task mid-shim: both persist it cancelled "
+                                           "(\"The Host Agent shut down before the task completed.\"), wait for "
+                                           "the shim and exit 0; a restart reports it cancelled"),
+        ("in-flight drill: task in binding", "SIGINT with a task still in resource binding: both drain the same "
+                                             "way; after a restart Go reports it cancelled and Rust does not know "
+                                             "it, the declared D12 difference"),
+        ("two agents on one state directory", "Go takes no state-directory lock: on both sides the second agent "
+                                              "starts and serves, neither sees the other's in-memory tasks, and a "
+                                              "restart sees both agents' tasks"),
+    ]
+    items = [{"name": name, "kind": "rehearsal", "owner": "release", "status": "covered", "coverage": text}
+             for name, text in covered]
+    gaps = [
+        ("state-directory writer lock", "core", "M12",
+         "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent "
+         "takes no lock and both implementations let it start (evidence/m12a); a refusal is new policy that "
+         "needs its own OpenSpec change and owner decision"),
+        ("72-hour soak", "release", "M12", "needs a 72-hour twin-sandbox run under a mixed workload; not run"),
+        ("M11 staging validation identity", "platform", "M11", _M11_GAP),
+        ("M11 Platform-driven journey", "platform", "M11", _M11_GAP),
+        ("M11 client first-success", "platform", "M11", _M11_GAP + "; codex over WSL2 also needs a WSL2 runner"),
+        ("M13 cutover evidence", "release", "M13",
+         "packageFirstSuccess, externalEffects, rollbackRehearsal and ownerReview are reviewed at the cutover "
+         "decision"),
+        ("stable 0.2.3 publish decision", "release", "M10",
+         "task 5.2: Go's release policy refuses the Rust catalog under the stable 0.2.3 package; a tested Rust "
+         "package needs a new version and catalog decision"),
+    ]
+    items += [{"name": name, "kind": "cutover", "owner": owner, "status": "gap", "milestone": milestone,
+               "gapReason": reason} for name, owner, milestone, reason in gaps]
+    return {"surface": "cutover", "owner": "release", "items": items}
 
 
 def collect_gaps(inventory: dict, catalogs: dict) -> dict:

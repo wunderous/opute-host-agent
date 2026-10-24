@@ -23,6 +23,7 @@ import concurrent.futures
 import copy
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import time
@@ -1035,11 +1036,48 @@ def canonical_machine(obs: dict, sums: dict[str, dict]) -> tuple[dict, list[str]
                 accounted = [line for line in dropped if ".service: Consumed " not in line]
                 if len(accounted) != len(dropped):
                     applied.add("systemd-accounting")
-                kept = accounted
+                causal = _causal_journal(accounted)
+                if causal != accounted:
+                    applied.add("journald-stream-order")
+                kept = causal
             return kept
         return value
 
     return walk(doc), sorted(applied)
+
+
+_SYSTEMD_LINE = re.compile(r"^\S+\.service[: ]|^(Started|Stopped|Stopping|Starting) ")
+_EXIT_LINE = re.compile(r"\.service: (Main process exited|Failed with result|Deactivated successfully)")
+
+
+def _causal_journal(lines: list) -> list:
+    """journald takes a service's stderr from its stream socket and PID 1's
+    own messages directly, so an agent line can be recorded after systemd's
+    report that the main process exited. The agent cannot log after it
+    exited: within each start block, move such lines back before the first
+    exit line, keeping each kind's own order."""
+    out: list = []
+    block: list = []
+
+    def flush() -> None:
+        first_exit = next((i for i, line in enumerate(block)
+                           if isinstance(line, str) and _EXIT_LINE.search(line)), None)
+        if first_exit is None:
+            out.extend(block)
+            return
+        late = [line for line in block[first_exit:]
+                if isinstance(line, str) and not _SYSTEMD_LINE.search(line)]
+        rest = [line for line in block[first_exit:]
+                if not (isinstance(line, str) and not _SYSTEMD_LINE.search(line))]
+        out.extend(block[:first_exit] + late + rest)
+
+    for line in lines:
+        if isinstance(line, str) and line.startswith("Started ") and block:
+            flush()
+            block = []
+        block.append(line)
+    flush()
+    return out
 
 
 def _diff(a: Any, b: Any, path: str = "") -> list[str]:

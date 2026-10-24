@@ -912,6 +912,39 @@ artifact hashes from M10.
 
 **Closes:** 4.4, 6.1, 6.2. **Depends on:** M11.
 
+**Status (2026-10-24): partial (M12a); M11 is the open dependency.** Only the
+items that need no staging Platform ran
+([`evidence/m12a/README.md`](../../../evidence/m12a/README.md)). The m12a
+gate is the m10 gate plus the rehearsals, with every suite rerun against the
+rebuilt release artifact.
+
+- **Store inventory (1):** the pinned Go tree is unchanged; the inventory is
+  recaptured with a cutover surface.
+- **Conversion (2):** none is needed. Rust starts on Go's stopped state as
+  is, and its answers equal Go's own restart on a copy (as M5 cross-read
+  found). The rehearsal state is representative, not copied from a real
+  host.
+- **Forward and rollback (3, 4):** on checksummed copies of Go state stopped
+  with a task in flight, Rust's answers before and after a restart equal Go's
+  restart and the Go control; Go rolled back onto Rust's copy reports every
+  task, Rust-era work included, with the status Rust last reported. The
+  snapshot is never written. The exact agent ID is kept.
+- **Writer lock (4):** not built. The pinned Go agent takes no lock on its
+  state directory, and both implementations let a second agent start on it.
+  Refusing it would be new policy, so it is an owned gap that needs its own
+  OpenSpec change and owner decision. The rehearsal keeps one writer by
+  procedure: an agent is stopped before the next starts.
+- **In-flight drill (6):** at SIGINT both implementations stop accepting,
+  finish an in-flight call, persist a running task as cancelled ("The Host
+  Agent shut down before the task completed."), wait for it and exit 0. The
+  drill found that Rust dropped the in-flight call; it now shuts down as Go's
+  `http.Server.Shutdown` does. A task still in resource binding differs only
+  as D12 declares: Go restores it cancelled, Rust keeps nothing durable for
+  it.
+- **Owned gaps:** M11; the writer lock; the 72-hour soak (5); the Windows,
+  WSL2 and arm64 runtime gaps of M10; the M13 cutover evidence; the stable
+  0.2.3 publish decision.
+
 **E2E validations (T4, on isolated copies only)**
 
 1. **Store inventory at the selected Go revision.** If Go moved on, rebase the

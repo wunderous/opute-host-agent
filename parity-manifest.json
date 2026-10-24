@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m10/canaries.json"
+  "results": "evidence/m12a/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
@@ -167,23 +167,23 @@
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/m10/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m12a/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/m10/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m12a/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/m10/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m12a/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/m10/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m12a/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/m10/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m12a/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -317,31 +317,29 @@
   }
  },
  "distEvidence": {
-  "summary": "evidence/m10/dist/summary.json",
-  "purpose": "M10: release artifacts, clean-machine install, upgrade and downgrade, npm launcher and site (parity dist run), re-derived by parity/dist_verify.py",
   "distros": [
    "ubuntu",
    "debian"
   ],
   "goldens": {
-   "ubuntu": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
-   "debian": "21e4080fa342c85315c199d777769549e486c2baef9be7e5c41cf11707a32b70"
+   "debian": "21e4080fa342c85315c199d777769549e486c2baef9be7e5c41cf11707a32b70",
+   "ubuntu": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399"
   },
+  "purpose": "M10: release artifacts, clean-machine install, upgrade and downgrade, npm launcher and site (parity dist run), re-derived by parity/dist_verify.py",
   "releases": {
    "go": {
-    "sha256sums": "7f8d3a89e6e633b90e94fe6bf763697f4f89d0fd274d4c415d991221d9ef2461",
+    "build": "parity dist release-go: Go's own Makefile targets (build-linux-x64, build-linux-arm64, build-provider-*-linux-x64) in an export of the pinned tree at a fixed path, VERSION=0.2.3, gzip -9 -kf; the binaries reproduce byte for byte, the archives differ only by gzip's recorded mtime",
     "path": ".parity/releases/go",
-    "build": "parity dist release-go: Go's own Makefile targets (build-linux-x64, build-linux-arm64, build-provider-*-linux-x64) in an export of the pinned tree at a fixed path, VERSION=0.2.3, gzip -9 -kf; the binaries reproduce byte for byte, the archives differ only by gzip's recorded mtime"
+    "sha256sums": "7f8d3a89e6e633b90e94fe6bf763697f4f89d0fd274d4c415d991221d9ef2461"
    },
    "rust": {
-    "sha256sums": "f565809ad0fb3d486823359b8280c6459fcc9ca6c52c2f347c6f087f8097ea36",
+    "build": "make artifacts (tools/release/build-artifacts.sh, cargo-zigbuild 0.23.4 and zig 0.15.2 from make release-toolchain): host-agent-linux-x64 for x86_64-unknown-linux-gnu.2.34, host-agent-linux-arm64 for aarch64-unknown-linux-musl, Go's providers from the pinned tree; the binaries reproduce byte for byte",
     "path": "dist",
-    "build": "make artifacts (tools/release/build-artifacts.sh, cargo-zigbuild 0.23.4 and zig 0.15.2 from make release-toolchain): host-agent-linux-x64 for x86_64-unknown-linux-gnu.2.34, host-agent-linux-arm64 for aarch64-unknown-linux-musl, Go's providers from the pinned tree; the binaries reproduce byte for byte"
+    "sha256sums": "3c7eb0af4e765f020936ca42cbd937cb16622772f01bc3c54f0a1625b673fe7d"
    }
   },
   "reviewedSiteDiff": [
    {
-    "file": "context/release-catalog.json",
     "decisions": [
      "D19",
      "D21",
@@ -349,10 +347,10 @@
      "D23",
      "D24"
     ],
+    "file": "context/release-catalog.json",
     "reason": "the captured catalog: Rust publishes the D19/D21/D22 neutral tool names (17 tools), the D23 neutral selector values, the D24 writeOnly relay tokens and so its own catalog revision (catalogRevisions.standalone)"
    },
    {
-    "file": "public/docs/previews/v0.2.3/capabilities/catalog.json",
     "decisions": [
      "D19",
      "D21",
@@ -360,10 +358,10 @@
      "D23",
      "D24"
     ],
+    "file": "public/docs/previews/v0.2.3/capabilities/catalog.json",
     "reason": "the same catalog as published under the preview docs"
    },
    {
-    "file": "public/docs/previews/v0.2.3/capabilities/index.html",
     "decisions": [
      "D19",
      "D21",
@@ -371,10 +369,10 @@
      "D23",
      "D24"
     ],
+    "file": "public/docs/previews/v0.2.3/capabilities/index.html",
     "reason": "the capability page renders the neutral tool names, values and revision"
    },
    {
-    "file": "public/search-index.json",
     "decisions": [
      "D19",
      "D21",
@@ -382,22 +380,24 @@
      "D23",
      "D24"
     ],
+    "file": "public/search-index.json",
     "reason": "the search index lists the neutral tool names"
    }
-  ]
+  ],
+  "summary": "evidence/m12a/dist/summary.json"
  },
  "evidence": {
   "go-vs-go": {
    "minRepeat": 3,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m10/go-vs-go/summary.json"
+   "summary": "evidence/m12a/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 3,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m10/go-vs-rust/summary.json"
+   "summary": "evidence/m12a/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -452,6 +452,99 @@
      ]
     }
    ]
+  },
+  "m10": {
+   "description": "M10 exit (packaging, installer, npm launcher, site): the M8f gate plus the distribution round re-derived from committed receipts: Go's and Rust's release sets with Go's file names, gzip -9, SHA256SUMS order and --version/-version output, checksums verifying; the agent's log lines per request class; each release set installed from a local release base on clean Ubuntu 24.04 and Debian 12 twins (the user unit with its env file, the published bootstrap unit refusing without an identity, the bootstrap unit with an identity drop-in and the sudoers file), started, called read-only, stopped and removed, Go-vs-Go and Go-vs-Rust; Go -> Rust -> Go on one identity against Go -> Go -> Go; the pinned npm launcher packed locally (index.test.js, the readonly canary, download and verify, checksum mismatch, the cache lock, unsupported platforms) per release set; and Go's check-site with the Rust preview site equal to Go's byte for byte once the declared D19-D24 renames are reversed, the remaining differences reviewed. Windows, WSL2 and arm64 runtime remain owned gaps.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireDistribution": true,
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
+      "tasks"
+     ]
+    }
+   ],
+   "requireT2": true,
+   "requireT2Oracles": true
+  },
+  "m12a": {
+   "description": "M12a (M12 without Platform): the M10 gate, every suite rerun against the rebuilt release artifact, plus the cutover rehearsals re-derived from committed receipts: forward (stop Go with a task in flight, snapshot, start Rust on a checksummed copy, query, restart, query) equal to Go's own restart and to the Go control; rollback (Go on Rust's copy) keeping every Rust-era task with its last status; the in-flight drills (a synchronous call, an admitted task and a task in binding at SIGINT) matching Go's drain behavior, the binding case under D12; and two agents on one state directory behaving as Go does. M11 (staging Platform), the writer lock, the 72-hour soak, Windows, WSL2, arm64 runtime, the M13 evidence and the 0.2.3 publish decision remain owned gaps.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireDistribution": true,
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
+      "tasks"
+     ]
+    }
+   ],
+   "requireRehearsal": true,
+   "requireT2": true,
+   "requireT2Oracles": true
   },
   "m2": {
    "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
@@ -818,52 +911,6 @@
     "reject-without-audit-writes",
     "refuse-before-operation-record"
    ],
-   "requireInventory": true,
-   "requireM5": true,
-   "requireOracles": true,
-   "requirePass": [
-    "go-vs-go",
-    {
-     "suite": "go-vs-rust",
-     "surfaces": [
-      "admission",
-      "auth",
-      "catalog",
-      "cli",
-      "cluster-domain",
-      "config",
-      "durable-state",
-      "host-domain",
-      "host-read",
-      "http",
-      "incus-domain",
-      "lifecycle",
-      "llm-domain",
-      "mcp-wire",
-      "oci-domain",
-      "postgres-domain",
-      "provider-lifecycle",
-      "provider-real",
-      "read-only-tools",
-      "recipe-corpus",
-      "serving-domain",
-      "tasks"
-     ]
-    }
-   ],
-   "requireT2": true,
-   "requireT2Oracles": true
-  },
-  "m10": {
-   "description": "M10 exit (packaging, installer, npm launcher, site): the M8f gate plus the distribution round re-derived from committed receipts: Go's and Rust's release sets with Go's file names, gzip -9, SHA256SUMS order and --version/-version output, checksums verifying; the agent's log lines per request class; each release set installed from a local release base on clean Ubuntu 24.04 and Debian 12 twins (the user unit with its env file, the published bootstrap unit refusing without an identity, the bootstrap unit with an identity drop-in and the sudoers file), started, called read-only, stopped and removed, Go-vs-Go and Go-vs-Rust; Go -> Rust -> Go on one identity against Go -> Go -> Go; the pinned npm launcher packed locally (index.test.js, the readonly canary, download and verify, checksum mismatch, the cache lock, unsupported platforms) per release set; and Go's check-site with the Rust preview site equal to Go's byte for byte once the declared D19-D24 renames are reversed, the remaining differences reviewed. Windows, WSL2 and arm64 runtime remain owned gaps.",
-   "requireCanaries": true,
-   "requireContracts": [
-    "oauth-issuance",
-    "standalone-read-only-gate",
-    "reject-without-audit-writes",
-    "refuse-before-operation-record"
-   ],
-   "requireDistribution": true,
    "requireInventory": true,
    "requireM5": true,
    "requireOracles": true,
@@ -4413,36 +4460,48 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m10/m5/crash/summary.json"
+   "summary": "evidence/m12a/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m10/m5/cross-read/summary.json"
+   "summary": "evidence/m12a/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m10/m5/migration/summary.json"
+   "summary": "evidence/m12a/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m10/m5/secrets/summary.json"
+   "summary": "evidence/m12a/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m10/m5/shape/summary.json"
+   "summary": "evidence/m12a/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m10/m5/unknown-projection/summary.json"
+   "summary": "evidence/m12a/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/m10/oracles.json",
+  "results": "evidence/m12a/oracles.json",
   "suites": "tools/parity/oracles.json"
+ },
+ "rehearsalEvidence": {
+  "declared": [
+   {
+    "decision": "D12",
+    "drill": "longTask.binding",
+    "reason": "A task still in resource binding at SIGINT has not passed admission. Go has its operation row from task creation and restores it cancelled; under D12 Rust persists an operation only after admission, so a restart does not know the handle. Per-side expectations pin exactly that; the rest of the drill is compared."
+   }
+  ],
+  "minRepeat": 3,
+  "purpose": "M12 without Platform (parity rehearsal), re-derived by parity/rehearsal_verify.py: representative Go state stopped with a task in flight and snapshotted with checksums; Go's restart on a copy as the oracle; the target (Go control, Rust) forward on a copy with a restart and work of its own; Go rolled back onto the target's copy; and the stop drills (a synchronous call and long tasks in flight at SIGINT, two agents on one state directory)",
+  "summary": "evidence/m12a/rehearsal/summary.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/m10/rust-canaries.json"
+  "results": "evidence/m12a/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "d1f091eddc446dfa1b58088db65f26c18c65dbffc818f5a54e1efa36ed81e1d0",
+  "binarySha256": "e29512002e372be87184caf58d1342a2d8cc1e52178df500b05a772b85bb3ddb",
   "build": "make artifacts (tools/release/build-artifacts.sh): cargo zigbuild --release --locked --target x86_64-unknown-linux-gnu.2.34, installed as dist/host-agent-linux-x64",
-  "note": "The x64 release artifact itself is the candidate from M10 on; every suite of evidence/m10 ran against it. Rebuild the release set and rerun the round after any Rust change."
+  "note": "The x64 release artifact itself is the candidate from M10 on; every suite of evidence/m12a ran against it. Rebuild the release set and rerun the round after any Rust change."
  },
  "schemaVersion": 1,
  "sourceLock": "baseline/source-lock.json",
@@ -4488,18 +4547,18 @@
     "minRepeat": 3,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "summary": "evidence/m10/t2-go-vs-go/summary.json"
+    "summary": "evidence/m12a/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
     "minRepeat": 3,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "summary": "evidence/m10/t2-go-vs-rust/summary.json"
+    "summary": "evidence/m12a/t2-go-vs-rust/summary.json"
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/m10/oracles-t2.json",
+  "results": "evidence/m12a/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
  }
 }

@@ -200,6 +200,14 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   and in-flight state, revisions, permissions, and redaction reconcile; an
   ambiguous record blocks conversion. Never allow two writers on one state
   directory or discard Rust-era accepted work on rollback.
+  *M12a note (2026-10-24), partial: the box stays unticked.*
+  - **Proven by the `m12a` gate (`evidence/m12a`):** no conversion is
+    needed (Rust starts on Go's stopped state as is); forward and rollback on
+    checksummed copies keep every task, Rust-era work included, and the
+    snapshot is never written.
+  - **Still open:** the writer lock. The pinned Go agent takes none, so a
+    refusal needs its own OpenSpec change and owner decision. Real-host state
+    copies were not used.
 
 Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native-2026-10-05/README.md), with provenance-bound M5/M6 gates and explicit owner acceptance of M6. Subsequent domain operations remain open under 4.1.
 
@@ -247,10 +255,23 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   the selected current Go revision. Gate: the provenance-bound verifier fails
   on any missing, stale, malformed, redacted-away, or failing item; blocked
   live checks remain unverified.
+  *M12a note (2026-10-24), partial: the box stays unticked.* Every
+  contract, CLI, wire, provider, plan, durable-state, package and isolated
+  T2 suite reran against the rebuilt release artifact (`evidence/m12a`).
+  The client suites need M11, and `parity-verify-cutover` still fails on
+  its owned gaps.
 - [ ] 6.2 Rehearse stop, snapshot, convert, start Rust, resume/reconcile,
   restart, and rollback on isolated state with a documented in-flight-work
   policy and bounded rollback window. Gate: both forward and permitted reverse
   paths preserve accepted operations and exact identity.
+  *M12a note (2026-10-24), partial: the box stays unticked.*
+  - **Proven by the `m12a` gate:** stop, snapshot, start Rust, restart and
+    roll back to Go on isolated copies, with the exact identity and every
+    accepted operation kept. The in-flight policy is Go's: drain in-flight
+    requests, cancel running tasks and wait for them (D12 for tasks still in
+    binding).
+  - **Still open:** the bounded rollback window is a cutover decision (M13),
+    and the rehearsal on staging needs M11.
 - [ ] 6.3 Review the complete manifest with Host Agent, Platform, release,
   and deployment owners before any production selection. Gate: Go remains the
   production owner until the whole-agent gate passes and the responsible owner
