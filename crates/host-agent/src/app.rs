@@ -502,20 +502,36 @@ async fn accept_loop(
     let local = tokio::task::LocalSet::new();
     local
         .run_until(async move {
+            // Go's app.Run: on SIGINT or SIGTERM, httpSrv.Shutdown(ctx) with
+            // no deadline (stop accepting, close idle connections, wait for
+            // in-flight requests), then the deferred closes run.
+            let (draining, shutdown) = tokio::sync::watch::channel(false);
+            let mut connections: Vec<tokio::task::JoinHandle<()>> = Vec::new();
             loop {
                 tokio::select! {
-                    _ = sigint.recv() => { crate::tools::close_task_starts(&server); server.providers.close().await; return Ok(()); },
-                    _ = sigterm.recv() => { crate::tools::close_task_starts(&server); server.providers.close().await; return Ok(()); },
+                    _ = sigint.recv() => break,
+                    _ = sigterm.recv() => break,
                     accepted = listener.accept() => {
                         if let Ok((stream, _)) = accepted {
                             let server = server.clone();
-                            tokio::task::spawn_local(crate::http1::serve_conn(stream, move |req, body| {
-                                crate::transport::route(server.clone(), req, body)
-                            }));
+                            connections.retain(|c| !c.is_finished());
+                            connections.push(tokio::task::spawn_local(crate::http1::serve_conn_draining(
+                                stream,
+                                move |req, body| crate::transport::route(server.clone(), req, body),
+                                shutdown.clone(),
+                            )));
                         }
                     }
                 }
             }
+            drop(listener);
+            let _ = draining.send(true);
+            for connection in connections {
+                let _ = connection.await;
+            }
+            crate::tools::close_task_starts(&server);
+            server.providers.close().await;
+            Ok(())
         })
         .await
 }
