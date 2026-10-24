@@ -210,11 +210,30 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   owning repositories. Gate: clean-machine install, launch, stop, and upgrade
   runs match the pinned Go operator contract and preserve explicit identity
   and authentication.
+  *M10 note (2026-10-24), Linux done, still open: the box stays unticked.*
+  - **Proven by the `m10` gate (`evidence/m10`):**
+    - Archive names and checksums.
+    - Install, launch, stop, uninstall and Go → Rust → Go on clean Ubuntu
+      24.04 and Debian 12 twins, against Go.
+    - The npm launch path from a locally packed tarball.
+  - **Still open, as owned gaps:**
+    - WSL2 packaging and install, and the Windows artifact.
+    - The arm64 clean-machine run.
+    - The published npm path at its owning repository: nothing is
+      published before cutover.
 - [ ] 5.2 Update public tutorial, release catalog, schemas, and website claims
   only when a tested Rust package and catalog revision are ready. Keep public
   image publishing and private site rollout in their current owners. Gate:
   published-package read-only canary, generated-site validation, and live
   first-success client run agree with the selected artifact.
+  *M10 note (2026-10-24), not started: no public claim changed.*
+  - **Proven by M10:**
+    - Generated-site validation: Go's `check-site` passes, and the Rust
+      preview site equals Go's after the declared renames.
+    - The local readonly canary against the Rust artifact.
+  - **Blocking:** Go's release policy refuses to publish the Rust catalog
+    under the stable `0.2.3` package, so a tested Rust package needs a new
+    version and catalog decision first.
 - [ ] 5.3 Exercise Platform registration, routing, authorization boundary,
   exact agent ID, task correlation, and semantic-outcome separation using a
   dedicated Rust validation identity. Gate: an actual client and Platform
