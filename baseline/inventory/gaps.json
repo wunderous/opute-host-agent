@@ -1,10 +1,62 @@
 {
  "byMilestone": {
-  "M10": 5,
+  "M10": 6,
+  "M11": 3,
+  "M12": 2,
+  "M13": 1,
   "M8a": 3
  },
- "count": 8,
+ "count": 15,
  "items": [
+  {
+   "file": "cutover.json",
+   "item": "state-directory writer lock",
+   "milestone": "M12",
+   "owner": "core",
+   "reason": "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent takes no lock and both implementations let it start (evidence/m12a); a refusal is new policy that needs its own OpenSpec change and owner decision"
+  },
+  {
+   "file": "cutover.json",
+   "item": "72-hour soak",
+   "milestone": "M12",
+   "owner": "release",
+   "reason": "needs a 72-hour twin-sandbox run under a mixed workload; not run"
+  },
+  {
+   "file": "cutover.json",
+   "item": "M11 staging validation identity",
+   "milestone": "M11",
+   "owner": "platform",
+   "reason": "M11 dependency: needs staging Platform and a dedicated Rust validation identity; M12 depends on M11, so only the M12 items that need no Platform were run"
+  },
+  {
+   "file": "cutover.json",
+   "item": "M11 Platform-driven journey",
+   "milestone": "M11",
+   "owner": "platform",
+   "reason": "M11 dependency: needs staging Platform and a dedicated Rust validation identity; M12 depends on M11, so only the M12 items that need no Platform were run"
+  },
+  {
+   "file": "cutover.json",
+   "item": "M11 client first-success",
+   "milestone": "M11",
+   "owner": "platform",
+   "reason": "M11 dependency: needs staging Platform and a dedicated Rust validation identity; M12 depends on M11, so only the M12 items that need no Platform were run; codex over WSL2 also needs a WSL2 runner"
+  },
+  {
+   "file": "cutover.json",
+   "item": "M13 cutover evidence",
+   "milestone": "M13",
+   "owner": "release",
+   "reason": "packageFirstSuccess, externalEffects, rollbackRehearsal and ownerReview are reviewed at the cutover decision"
+  },
+  {
+   "file": "cutover.json",
+   "item": "stable 0.2.3 publish decision",
+   "milestone": "M10",
+   "owner": "release",
+   "reason": "task 5.2: Go's release policy refuses the Rust catalog under the stable 0.2.3 package; a tested Rust package needs a new version and catalog decision"
+  },
   {
    "file": "distribution.json",
    "item": "host-agent-windows-x64.exe",
@@ -31,7 +83,7 @@
    "item": "linux-arm64 clean-machine install",
    "milestone": "M10",
    "owner": "release",
-   "reason": "needs an arm64 runner: the runner has no qemu-system-aarch64 or user-mode emulation, so the arm64 binary is checked as an artifact only"
+   "reason": "needs an arm64 runner: the runner has no qemu-system-aarch64 or user-mode emulation, so the arm64 binary is checked as an artifact only; the owner kept this gap open at M12a (2026-10-24) rather than install an emulator"
   },
   {
    "file": "distribution.json",
