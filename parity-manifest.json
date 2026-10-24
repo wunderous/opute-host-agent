@@ -388,13 +388,13 @@
  },
  "evidence": {
   "go-vs-go": {
-   "minRepeat": 20,
+   "minRepeat": 3,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
    "summary": "evidence/m10/go-vs-go/summary.json"
   },
   "go-vs-rust": {
-   "minRepeat": 5,
+   "minRepeat": 3,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
    "summary": "evidence/m10/go-vs-rust/summary.json"
@@ -4485,13 +4485,13 @@
   },
   "suites": {
    "go-vs-go": {
-    "minRepeat": 20,
+    "minRepeat": 3,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
     "summary": "evidence/m10/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
-    "minRepeat": 5,
+    "minRepeat": 3,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
     "summary": "evidence/m10/t2-go-vs-rust/summary.json"

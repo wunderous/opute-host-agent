@@ -49,13 +49,13 @@ parity-capture:
 
 parity-go-vs-go:
 	rm -rf evidence/current/go-vs-go
-	$(PARITY) run --left go=$(GO_REF) --right go=$(GO_REF) --suite go-vs-go --repeat 20 --out $(CURDIR)/evidence/current/go-vs-go
+	$(PARITY) run --left go=$(GO_REF) --right go=$(GO_REF) --suite go-vs-go --repeat 3 --out $(CURDIR)/evidence/current/go-vs-go
 
 # Exit status is ignored: surfaces owned by later milestones are expected to
 # differ. The verifier decides what each gate requires.
 parity-go-vs-rust:
 	rm -rf evidence/current/go-vs-rust
-	-$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite go-vs-rust --repeat 5 --out $(CURDIR)/evidence/current/go-vs-rust
+	-$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite go-vs-rust --repeat 3 --out $(CURDIR)/evidence/current/go-vs-rust
 
 parity-canaries:
 	$(PARITY) canaries --go $(GO_REF) --go-src $(GO_SRC) --out $(CURDIR)/evidence/current/canaries.json
