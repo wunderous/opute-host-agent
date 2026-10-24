@@ -109,6 +109,12 @@ def main(argv: list[str] | None = None) -> int:
     xr.add_argument("--rust", required=True, type=Path)
     xr.add_argument("--out", required=True, type=Path)
 
+    rh = sub.add_parser("rehearsal", help="M12a: forward and rollback rehearsals on state copies, and the stop drills")
+    rh.add_argument("--go", required=True, type=Path)
+    rh.add_argument("--rust", required=True, type=Path)
+    rh.add_argument("--repeat", type=int, default=3)
+    rh.add_argument("--out", required=True, type=Path)
+
     up = sub.add_parser("unknown-projection", help="M5: unmarked/open-schema fields must fail closed (D13)")
     up.add_argument("--go", required=True, type=Path)
     up.add_argument("--rust", required=True, type=Path)
@@ -276,6 +282,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"cross-read: {summary['passed']}/{len(summary['directions'])} directions identical "
               f"(failed: {summary['failedDirections']})")
         return 0 if summary["failed"] == 0 else 1
+    if args.command == "rehearsal":
+        from . import rehearsal, rehearsal_verify
+        summary = rehearsal.run(agent.Impl("go", args.go.resolve()), agent.Impl("rust", args.rust.resolve()),
+                                args.out, args.repeat)
+        results = json.loads((args.out / "results.json").read_text())
+        print(json.dumps(rehearsal_verify.items(results), indent=1))
+        return 0 if summary["pass"] else 1
     if args.command == "unknown-projection":
         from . import unknown_projection
         summary = unknown_projection.run(agent.Impl("go", args.go.resolve()),

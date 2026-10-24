@@ -489,6 +489,15 @@ def verify(manifest_path: Path, gate: str) -> dict:
         bad = sorted(name for name, status in distribution.items() if status != PASS)
         if not distribution or bad:
             failures.append(f"distribution: {', '.join(bad) if bad else 'no evidence'} not pass")
+    rehearsal = None
+    if rules.get("requireRehearsal"):
+        # M12a (no Platform): forward and rollback rehearsals on checksummed
+        # state copies and the stop drills, re-derived from committed receipts.
+        from . import rehearsal_verify
+        rehearsal = rehearsal_verify.check(root, manifest, lock, lambda text: report.problem(text, "rehearsal"))
+        bad = sorted(name for name, status in rehearsal.items() if status != PASS)
+        if not rehearsal or bad:
+            failures.append(f"rehearsal: {', '.join(bad) if bad else 'no evidence'} not pass")
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
@@ -518,6 +527,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.add("t2")
     if rules.get("requireDistribution"):
         scopes.add("distribution")
+    if rules.get("requireRehearsal"):
+        scopes.add("rehearsal")
     gating = [text for scope, text in report.problems if scope in scopes]
     if gating:
         failures.append(f"{len(gating)} provenance/evidence problem(s)")
@@ -533,6 +544,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "m5": m5,
         "t2": t2,
         **({"distribution": distribution} if rules.get("requireDistribution") else {}),
+        **({"rehearsal": rehearsal} if rules.get("requireRehearsal") else {}),
     }
 
 
