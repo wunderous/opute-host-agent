@@ -479,6 +479,16 @@ def verify(manifest_path: Path, gate: str) -> dict:
         if bad:
             failures.append(f"t2: {len(bad)} scenario(s) not pass: {', '.join(bad[:8])}"
                             + (" ..." if len(bad) > 8 else ""))
+    distribution = None
+    if rules.get("requireDistribution"):
+        # M10: release artifacts, clean-machine install, upgrade and
+        # downgrade, the npm launcher and the site, re-derived from the
+        # committed distribution round.
+        from . import dist_verify
+        distribution = dist_verify.check(root, manifest, lock, lambda text: report.problem(text, "distribution"))
+        bad = sorted(name for name, status in distribution.items() if status != PASS)
+        if not distribution or bad:
+            failures.append(f"distribution: {', '.join(bad) if bad else 'no evidence'} not pass")
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
@@ -506,6 +516,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.add("contracts")
     if rules.get("requireT2"):
         scopes.add("t2")
+    if rules.get("requireDistribution"):
+        scopes.add("distribution")
     gating = [text for scope, text in report.problems if scope in scopes]
     if gating:
         failures.append(f"{len(gating)} provenance/evidence problem(s)")
@@ -520,6 +532,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "contracts": contracts,
         "m5": m5,
         "t2": t2,
+        **({"distribution": distribution} if rules.get("requireDistribution") else {}),
     }
 
 

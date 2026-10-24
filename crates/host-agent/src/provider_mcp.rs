@@ -139,7 +139,7 @@ fn load_runtime(
     loaded.resolve_inputs(&input_values(args)?)?;
     validate_host_agent_version(
         &loaded.document.compatibility.min_host_agent_version,
-        env!("CARGO_PKG_VERSION"),
+        crate::cli::VERSION,
     )?;
     let snapshot = server
         .providers
@@ -158,7 +158,7 @@ fn load_tunnel(
     loaded.resolve_inputs(&input_values(args)?)?;
     validate_host_agent_version(
         &loaded.document.compatibility.min_host_agent_version,
-        env!("CARGO_PKG_VERSION"),
+        crate::cli::VERSION,
     )?;
     let snapshot = server
         .providers

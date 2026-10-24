@@ -25,7 +25,9 @@ from typing import Any
 from . import agent, canon, runner
 
 INVENTORY_DIR = runner.REPO_ROOT / "baseline" / "inventory"
-PLAN_RUNS = 16
+# Runs per recipe validation (finding F-4): 16 once saw a single variant of
+# a two-variant message (M10 recapture), so the sample is larger.
+PLAN_RUNS = 64
 
 # Owner of each surface; matches the ownership candidates in design.md.
 SURFACE_OWNERS = {
@@ -682,6 +684,21 @@ def capture_plans(impl: agent.Impl, src: Path, scenarios: list[dict] | None = No
     return {"surface": "plans", "owner": "core", "items": items}
 
 
+# M10 coverage of each distribution surface (evidence/m10/dist, parity dist
+# run): what the distribution round proves, or why it cannot here.
+_DIST_COVERED = {
+    "host-agent-linux-x64": "release name, gzip, SHA256SUMS, ELF linkage, glibc floor and version output; "
+                            "installed, started under systemd, called and removed on clean Ubuntu 24.04 and "
+                            "Debian 12 twins; Go -> Rust -> Go on one identity",
+    "host-agent-linux-arm64": "release name, gzip, SHA256SUMS, static ELF linkage for aarch64",
+    "opute-provider-cloudflare-linux-x64": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+    "opute-provider-k3s-linux-x64": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+    "opute-provider-tailscale-linux-x64": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+}
+_WINDOWS_GAP = ("needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent "
+                "from the pinned offline module cache, and the Rust Windows target is not built or run here")
+
+
 def capture_distribution(src: Path) -> dict:
     makefile = (src / "Makefile").read_text()
     artifacts = sorted(set(re.findall(r"\$\(DIST\)/((?:host-agent|opute-provider)-[a-z0-9_.-]+)", makefile)))
@@ -690,14 +707,37 @@ def capture_distribution(src: Path) -> dict:
         str(p.relative_to(src)): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted((src / "deploy").iterdir()) if p.is_file()
     }
+    items = []
+    for name in artifacts:
+        if name in _DIST_COVERED:
+            items.append({"name": name, "kind": "artifact", "owner": "release", "status": "covered",
+                          "coverage": _DIST_COVERED[name]})
+        else:
+            items.append({"name": name, "kind": "artifact", "owner": "release", "status": "gap",
+                          "milestone": "M10", "gapReason": _WINDOWS_GAP})
+    for path in deploy:
+        items.append({"name": path, "kind": "deploy", "owner": "release", "status": "covered",
+                      "coverage": "installed as published on clean Ubuntu 24.04 and Debian 12 twins; unit "
+                                  "status, paths, modes and journal lines match Go"})
+    items.append({"name": package["name"], "kind": "npm", "owner": "release", "status": "covered",
+                  "coverage": "packed locally; index.test.js, the readonly canary, download and verify from a "
+                              "local release base, checksum mismatch, the cache lock and unsupported platforms"})
+    items.append({"name": "site", "kind": "site", "owner": "release", "status": "covered",
+                  "coverage": "Go's check-site on the committed site; the Rust preview site equals Go's once the "
+                              "declared D19-D24 renames are reversed; the remaining files are reviewed"})
+    items.append({"name": "linux-arm64 clean-machine install", "kind": "install", "owner": "release",
+                  "status": "gap", "milestone": "M10",
+                  "gapReason": "needs an arm64 runner: the runner has no qemu-system-aarch64 or user-mode "
+                               "emulation, so the arm64 binary is checked as an artifact only"})
+    items.append({"name": "WSL2 install", "kind": "install", "owner": "release", "status": "gap",
+                  "milestone": "M10",
+                  "gapReason": "needs a WSL2 runner: the Linux binary inside a Windows-hosted WSL2 distribution"})
     return {
         "surface": "distribution", "owner": "release",
         "artifacts": artifacts,
         "npm": {k: package.get(k) for k in ("name", "version", "bin", "files", "engines")},
         "deployFiles": deploy,
-        "status": "gap",
-        "milestone": "M10",
-        "gapReason": "packaging parity is M10",
+        "items": items,
     }
 
 

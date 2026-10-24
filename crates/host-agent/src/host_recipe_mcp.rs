@@ -155,7 +155,7 @@ fn load_host_local_recipe(
     }
     validate_host_agent_version(
         &sourced.document.compatibility.min_host_agent_version,
-        env!("CARGO_PKG_VERSION"),
+        crate::cli::VERSION,
     )?;
     let values = input_values(args)?;
     let mut resolved = host_recipe::resolve_host_inputs(sourced.document, &values)?;

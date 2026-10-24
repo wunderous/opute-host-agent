@@ -40,6 +40,7 @@ pub const SUPPORTED_VERSIONS: [&str; 5] = [
 const META_VERSION: &str = "io.modelcontextprotocol/protocolVersion";
 const META_CLIENT_INFO: &str = "io.modelcontextprotocol/clientInfo";
 const META_CAPABILITIES: &str = "io.modelcontextprotocol/clientCapabilities";
+const META_LOG_LEVEL: &str = "io.modelcontextprotocol/logLevel";
 const META_SERVER_INFO: &str = "io.modelcontextprotocol/serverInfo";
 
 /// What the SDK server knows about itself.
@@ -752,6 +753,10 @@ pub fn serve(sdk: &Sdk, req: &Request, raw: &[u8], protected: bool) -> Response 
     if raw.len() as u64 > MAX_BODY {
         return Response::error(&format!("request body exceeds {MAX_BODY} bytes"), 413);
     }
+    // `serveStateless` connects an ephemeral session here, after the
+    // handler's own header and size checks; it disconnects when the request
+    // completes, whatever the transport answers.
+    let _session = EphemeralSession::connect();
     let effective_version = if header_version.is_empty() {
         "2025-03-26".to_string()
     } else {
@@ -847,6 +852,9 @@ pub fn serve(sdk: &Sdk, req: &Request, raw: &[u8], protected: bool) -> Response 
         return json_error(400, &msg.id, -32020, &text);
     }
     if !is_call {
+        // A notification is queued for the session and answered 202; the
+        // ephemeral session closes before handling it, so nothing more is
+        // logged (go-sdk v1.7.0, Go/Go x6).
         return Response::new(202);
     }
     let (status, body) = match handle(sdk, &msg) {
@@ -1014,10 +1022,15 @@ fn gob_uint(b: &[u8]) -> Option<(u64, &[u8])> {
 }
 
 /// `ServerSession.handle` and the registered method handlers.
-fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
+/// `ServerSession.handle` up to dispatch: the per-request `_meta`, the
+/// protocol version, the methods the new protocol removed, and the
+/// per-request log level the SDK logs as it sets it. Returns whether the
+/// request uses the new protocol.
+fn session_preamble(msg: &Message) -> Result<bool, RpcError> {
     let meta = request_meta(&msg.params);
     let mut uses_new = false;
     let mut meta_version = String::new();
+    let mut log_level = String::new();
     if let Some(meta) = &meta {
         if let Some(v) = meta.key(META_VERSION).and_then(|v| v.as_str()) {
             if v >= MODERN_VERSION {
@@ -1040,6 +1053,12 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
                         ),
                     ));
                 }
+                // `decodeMetaValue[LoggingLevel]`: a string, or nothing.
+                log_level = meta
+                    .key(META_LOG_LEVEL)
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
             }
         }
     }
@@ -1050,20 +1069,75 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
             data: Some(json!({"supported": SUPPORTED_VERSIONS, "requested": meta_version})),
         });
     }
-    // jsonrpc2 rewrites every method-not-found error to this text.
-    let not_found = || rpc_err(-32601, format!("method not found: {}", quote(&msg.method)));
     if uses_new
         && matches!(
             msg.method.as_str(),
             "initialize"
                 | "ping"
+                | "notifications/initialized"
+                | "notifications/roots/list_changed"
                 | "logging/setLevel"
                 | "resources/subscribe"
                 | "resources/unsubscribe"
         )
     {
-        return Err(not_found());
+        crate::app::log_error(
+            &mut std::io::stderr(),
+            "method removed in the new protocol",
+            &[("method", &msg.method)],
+        );
+        // jsonrpc2 rewrites every method-not-found error to this text.
+        return Err(rpc_err(
+            -32601,
+            format!("method not found: {}", quote(&msg.method)),
+        ));
     }
+    if uses_new {
+        log_level_set(&log_level);
+    }
+    Ok(uses_new)
+}
+
+/// `ServerSession.setLevel`.
+fn log_level_set(level: &str) {
+    crate::app::log_info(
+        &mut std::io::stderr(),
+        "client log level set",
+        &[("level", level)],
+    );
+}
+
+/// The ephemeral session `serveStateless` connects for one request, as the
+/// SDK's server Logger reports it (a stateless session has no id).
+struct EphemeralSession;
+
+impl EphemeralSession {
+    fn connect() -> Self {
+        let mut stderr = std::io::stderr();
+        crate::app::log_info(&mut stderr, "server connecting", &[]);
+        crate::app::log_info(
+            &mut stderr,
+            "server session connected",
+            &[("session_id", "")],
+        );
+        EphemeralSession
+    }
+}
+
+impl Drop for EphemeralSession {
+    fn drop(&mut self) {
+        crate::app::log_info(
+            &mut std::io::stderr(),
+            "server session disconnected",
+            &[("session_id", "")],
+        );
+    }
+}
+
+fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
+    let uses_new = session_preamble(msg)?;
+    // jsonrpc2 rewrites every method-not-found error to this text.
+    let not_found = || rpc_err(-32601, format!("method not found: {}", quote(&msg.method)));
     let raw = &msg.params;
     let mut result = match msg.method.as_str() {
         "initialize" => {
@@ -1183,7 +1257,14 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
             return Err(not_found());
         }
         "logging/setLevel" => {
-            unmarshal_params("logging/setLevel", raw, &SET_LEVEL_PARAMS, false)?;
+            let params = unmarshal_params("logging/setLevel", raw, &SET_LEVEL_PARAMS, false)?;
+            let level = params
+                .as_ref()
+                .and_then(|p| p.field("level"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            log_level_set(&level);
             return Ok(json!({}));
         }
         _ => return Err(not_found()),

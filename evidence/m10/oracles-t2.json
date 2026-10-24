@@ -1,0 +1,103 @@
+{
+ "goldens": {
+  "base": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "incus": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057"
+ },
+ "oracleFileSha256": "4e5772e56c6bcf1f025b400b1f9315155d5cf6ff7e521a6e58a246a09b3a7ae9",
+ "results": [
+  {
+   "binary": "go",
+   "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+   "exit": 1,
+   "expectedTests": [
+    "TestLiveGetHostInfoIncus",
+    "TestLiveVMCreateListDelete",
+    "TestLiveResetIncusStackDeleteReconcileAndVerify"
+   ],
+   "failed": [
+    "TestLiveVMCreateListDelete"
+   ],
+   "messages": [
+    "reset_stack_test.go:84: provision_container fixture unavailable: connection closed: calling \"tools/call\": Missing required client capability <nil>",
+    "vm_lifecycle_test.go:129: create_vm: connection closed: calling \"tools/call\": Missing required client capability"
+   ],
+   "mustPass": [
+    "TestLiveGetHostInfoIncus"
+   ],
+   "passed": [
+    "TestLiveGetHostInfoIncus"
+   ],
+   "skipped": [
+    "TestLiveResetIncusStackDeleteReconcileAndVerify"
+   ],
+   "status": "PASS",
+   "stderr": "time=2026-10-23T23:39:38.875Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:42337\ntime=2026-10-23T23:39:38.909Z level=INFO msg=\"server connecting\"\ntime=2026-10-23T23:39:38.909Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-10-23T23:39:38.909Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-10-23T23:39:38.909Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-10-23T23:39:39.617Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:40555\ntime=2026-10-23T23:39:39.650Z level=INFO msg=\"server connecting\"\ntime=2026-10-23T23:39:39.650Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-10-23T23:39:39.650Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-10-23T23:39:39.714Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-10-23T23:39:40.411Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:33657\ntime=2026-10-23T23:39:40.456Z level=INFO msg=\"server connecting\"\ntime=2026-10-23T23:39:40.457Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-10-23T23:39:40.458Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-10-23T23:39:40.458Z level=INFO msg=\"server session disconnected\" session_id=\"\"\n",
+   "stdout": "=== RUN   TestLiveResetIncusStackDeleteReconcileAndVerify\n    reset_stack_test.go:84: provision_container fixture unavailable: connection closed: calling \"tools/call\": Missing required client capability <nil>\n--- SKIP: TestLiveResetIncusStackDeleteReconcileAndVerify (0.75s)\n=== RUN   TestLiveGetHostInfoIncus\n--- PASS: TestLiveGetHostInfoIncus (0.81s)\n=== RUN   TestLiveVMCreateListDelete\n    vm_lifecycle_test.go:129: create_vm: connection closed: calling \"tools/call\": Missing required client capability\n--- FAIL: TestLiveVMCreateListDelete (0.74s)\nFAIL\n",
+   "suite": "live-incus",
+   "testBinarySha256": "6b89d4804107ba39fe5e80967bb49e7246af38b3afab9fa60747fd534332f9d6"
+  },
+  {
+   "binary": "rust",
+   "binarySha256": "d1f091eddc446dfa1b58088db65f26c18c65dbffc818f5a54e1efa36ed81e1d0",
+   "exit": 1,
+   "expectedTests": [
+    "TestLiveGetHostInfoIncus",
+    "TestLiveVMCreateListDelete",
+    "TestLiveResetIncusStackDeleteReconcileAndVerify"
+   ],
+   "failed": [
+    "TestLiveVMCreateListDelete"
+   ],
+   "messages": [
+    "reset_stack_test.go:84: provision_container fixture unavailable: connection closed: calling \"tools/call\": Missing required client capability <nil>",
+    "vm_lifecycle_test.go:129: create_vm: connection closed: calling \"tools/call\": Missing required client capability"
+   ],
+   "mustPass": [
+    "TestLiveGetHostInfoIncus"
+   ],
+   "passed": [
+    "TestLiveGetHostInfoIncus"
+   ],
+   "skipped": [
+    "TestLiveResetIncusStackDeleteReconcileAndVerify"
+   ],
+   "status": "PASS",
+   "stderr": "time=2026-10-23T23:40:19.904Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-10-23T23:40:19.906Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0\ntime=2026-10-23T23:40:19.907Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-10-23T23:40:19.937Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:42827\ntime=2026-10-23T23:40:20.024Z level=INFO msg=\"server connecting\"\ntime=2026-10-23T23:40:20.024Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-10-23T23:40:20.024Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-10-23T23:40:20.029Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-10-23T23:40:20.065Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-10-23T23:40:20.067Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0\ntime=2026-10-23T23:40:20.067Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-10-23T23:40:20.097Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:46049\ntime=2026-10-23T23:40:20.181Z level=INFO msg=\"server connecting\"\ntime=2026-10-23T23:40:20.181Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-10-23T23:40:20.181Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-10-23T23:40:20.246Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-10-23T23:40:20.285Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-10-23T23:40:20.286Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0\ntime=2026-10-23T23:40:20.287Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-10-23T23:40:20.316Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:39661\ntime=2026-10-23T23:40:20.399Z level=INFO msg=\"server connecting\"\ntime=2026-10-23T23:40:20.399Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-10-23T23:40:20.399Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-10-23T23:40:20.403Z level=INFO msg=\"server session disconnected\" session_id=\"\"\n",
+   "stdout": "=== RUN   TestLiveResetIncusStackDeleteReconcileAndVerify\n    reset_stack_test.go:84: provision_container fixture unavailable: connection closed: calling \"tools/call\": Missing required client capability <nil>\n--- SKIP: TestLiveResetIncusStackDeleteReconcileAndVerify (0.17s)\n=== RUN   TestLiveGetHostInfoIncus\n--- PASS: TestLiveGetHostInfoIncus (0.22s)\n=== RUN   TestLiveVMCreateListDelete\n    vm_lifecycle_test.go:129: create_vm: connection closed: calling \"tools/call\": Missing required client capability\n--- FAIL: TestLiveVMCreateListDelete (0.15s)\nFAIL\n",
+   "suite": "live-incus",
+   "testBinarySha256": "6b89d4804107ba39fe5e80967bb49e7246af38b3afab9fa60747fd534332f9d6"
+  },
+  {
+   "binary": "negative-control",
+   "binarySha256": "913a39cd38f353497086bcf317b12f91f93c23b51869cea763b8340b4f84cfd3",
+   "exit": 1,
+   "expectedTests": [
+    "TestLiveGetHostInfoIncus",
+    "TestLiveVMCreateListDelete",
+    "TestLiveResetIncusStackDeleteReconcileAndVerify"
+   ],
+   "failed": [
+    "TestLiveGetHostInfoIncus",
+    "TestLiveResetIncusStackDeleteReconcileAndVerify",
+    "TestLiveVMCreateListDelete"
+   ],
+   "messages": [
+    "reset_stack_test.go:65: agent not ready: Get \"http://127.0.0.1:33647/health\": dial tcp 127.0.0.1:33647: connect: connection refused",
+    "vm_lifecycle_test.go:81: agent not ready: Get \"http://127.0.0.1:37925/health\": dial tcp 127.0.0.1:37925: connect: connection refused",
+    "vm_lifecycle_test.go:112: agent not ready: Get \"http://127.0.0.1:37065/health\": dial tcp 127.0.0.1:37065: connect: connection refused"
+   ],
+   "mustPass": [
+    "TestLiveGetHostInfoIncus"
+   ],
+   "passed": [],
+   "skipped": [],
+   "status": "PASS",
+   "stderr": "",
+   "stdout": "=== RUN   TestLiveResetIncusStackDeleteReconcileAndVerify\n    reset_stack_test.go:65: agent not ready: Get \"http://127.0.0.1:33647/health\": dial tcp 127.0.0.1:33647: connect: connection refused\n--- FAIL: TestLiveResetIncusStackDeleteReconcileAndVerify (30.03s)\n=== RUN   TestLiveGetHostInfoIncus\n    vm_lifecycle_test.go:81: agent not ready: Get \"http://127.0.0.1:37925/health\": dial tcp 127.0.0.1:37925: connect: connection refused\n--- FAIL: TestLiveGetHostInfoIncus (30.09s)\n=== RUN   TestLiveVMCreateListDelete\n    vm_lifecycle_test.go:112: agent not ready: Get \"http://127.0.0.1:37065/health\": dial tcp 127.0.0.1:37065: connect: connection refused\n--- FAIL: TestLiveVMCreateListDelete (30.11s)\nFAIL\n",
+   "suite": "live-incus",
+   "testBinarySha256": "6b89d4804107ba39fe5e80967bb49e7246af38b3afab9fa60747fd534332f9d6"
+  }
+ ],
+ "schemaVersion": 1,
+ "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b"
+}

@@ -825,6 +825,31 @@ boxes.
 
 **Closes:** 5.1, 5.2. **Depends on:** M8 (M9 is optional).
 
+**Status (2026-10-24): Linux targets passed; Windows, WSL2 and the arm64
+runtime are owned gaps.** The m10 gate passes, and gates m0–m6 and m8a–m8f
+still pass
+([`evidence/m10/README.md`](../../../evidence/m10/README.md)).
+
+- **Release set:** the Rust release set (`make artifacts`) has Go's names,
+  `gzip -9`, `SHA256SUMS` order and version output. The x64 binary has a
+  glibc 2.34 floor. Every binary reproduces byte for byte.
+- **Clean machines:** on Ubuntu 24.04 and Debian 12 twins, both release
+  sets install from a local base, run under systemd, answer a read-only
+  first call, stop and uninstall with no diff against Go. Go → Rust → Go
+  keeps the explicit identity and token.
+- **npm launcher:** the pinned launcher, packed locally, passes its own
+  suite, the readonly canary and the download, checksum-mismatch, lock and
+  unsupported-platform journeys against both sets.
+- **Site:** Go's `check-site` passes on the committed site. The Rust
+  preview site equals Go's byte for byte once the declared D19–D24 renames
+  are reversed; the four remaining files are reviewed manifest items.
+- **Release policy finding:** Go's release policy refuses to publish the
+  Rust catalog under the stable `0.2.3` package. That is a release decision
+  for 5.2 and the cutover.
+- **Owned gaps:** the Windows artifacts, WSL2 install, the three WSL tools'
+  T2 effects and the arm64 clean-machine install need runners this
+  environment lacks.
+
 **Scope:** release artifact names, gzip, and `SHA256SUMS`; systemd units
 (`opute-host-agent.service`, `opute-bootstrap-mcp.service`) and sudoers;
 installer; the npm launcher's download → verify → marker → spawn path; schema

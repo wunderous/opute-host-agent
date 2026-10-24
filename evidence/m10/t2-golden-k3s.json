@@ -1,0 +1,145 @@
+{
+ "scope": "T2 k3s golden: an overlay of the nested-Incus golden, dedicated and disposable; k3s, its registry and helm run only inside twins booted from it; no shared Incus/Kubernetes/tunnel/deploy state",
+ "incusGoldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+ "recipe": [
+  "incus admin waitready --timeout=180",
+  "incus launch parity-noble k1 -c security.privileged=true -c security.nesting=true -c boot.autostart=true -c linux.kernel_modules=overlay,br_netfilter,ip_tables,ip6_tables,nf_nat,xt_conntrack,iptable_nat,iptable_filter -c raw.lxc='lxc.apparmor.profile=unconfined\nlxc.cap.drop=\nlxc.cgroup2.devices.allow=a\nlxc.mount.auto=proc:rw sys:rw cgroup:rw'",
+  "incus config device add k1 kmsg unix-char source=/dev/kmsg path=/dev/kmsg",
+  "incus restart k1",
+  "incus exec k1 -- timeout 300 sh -c 'until systemctl is-system-running 2>/dev/null | grep -qE \"running|degraded\"; do sleep 1; done'",
+  "incus exec k1 -- sh -c 'apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -y -q curl'",
+  "curl -fsSL -o /tmp/k3s https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s && echo '256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712  /tmp/k3s' | sha256sum -c - && incus file push --mode 0755 /tmp/k3s k1/usr/local/bin/k3s && rm /tmp/k3s",
+  "curl -fsSL -o /tmp/images.tar.zst https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s-airgap-images-amd64.tar.zst && echo 'c1f62ca3b15699d3bc5b4c84d6e458d8f5b9ff8572299bebdf0a0295edeed135  /tmp/images.tar.zst' | sha256sum -c - && incus exec k1 -- mkdir -p /var/lib/rancher/k3s/agent/images && incus file push /tmp/images.tar.zst k1/var/lib/rancher/k3s/agent/images/k3s-airgap-images-amd64.tar.zst && rm /tmp/images.tar.zst",
+  "printf '%s' '[Unit]\nDescription=k3s server (parity T2)\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=notify\nExecStartPre=-/sbin/modprobe br_netfilter\nExecStartPre=-/sbin/modprobe overlay\nExecStart=/usr/local/bin/k3s server --node-name=k1 --write-kubeconfig-mode=0644 --disable=traefik,servicelb,metrics-server --disable-helm-controller\nKillMode=process\nDelegate=yes\nLimitNOFILE=1048576\nLimitNPROC=infinity\nLimitCORE=infinity\nTasksMax=infinity\nTimeoutStartSec=0\nRestart=always\nRestartSec=5s\n\n[Install]\nWantedBy=multi-user.target\n' > /tmp/k3s.service && incus file push /tmp/k3s.service k1/etc/systemd/system/k3s.service && rm /tmp/k3s.service",
+  "incus exec k1 -- sh -c 'systemctl daemon-reload && systemctl enable --now k3s.service'",
+  "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s",
+  "incus exec k1 -- k3s ctr images pull docker.io/library/registry:2.8.3",
+  "printf '%s' 'apiVersion: v1\nkind: Namespace\nmetadata:\n  name: registry\n---\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: opute-registry\n  namespace: registry\nspec:\n  accessModes: [ReadWriteOnce]\n  storageClassName: local-path\n  resources:\n    requests: {storage: 1Gi}\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: opute-registry-config\n  namespace: registry\ndata:\n  config.yml: |\n    version: 0.1\n    storage:\n      filesystem: {rootdirectory: /var/lib/registry}\n      delete: {enabled: true}\n    http: {addr: \":5000\"}\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: opute-registry\n  namespace: registry\nspec:\n  replicas: 1\n  strategy: {type: Recreate}\n  selector:\n    matchLabels: {app: opute-registry}\n  template:\n    metadata:\n      labels: {app: opute-registry}\n    spec:\n      containers:\n        - name: registry\n          image: docker.io/library/registry:2.8.3\n          imagePullPolicy: IfNotPresent\n          command: [\"registry\", \"serve\", \"/etc/distribution/config.yml\"]\n          ports: [{containerPort: 5000}]\n          volumeMounts:\n            - {name: data, mountPath: /var/lib/registry}\n            - {name: config, mountPath: /etc/distribution}\n      volumes:\n        - name: data\n          persistentVolumeClaim: {claimName: opute-registry}\n        - name: config\n          configMap: {name: opute-registry-config}\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: opute-registry\n  namespace: registry\nspec:\n  selector: {app: opute-registry}\n  ports: [{port: 5000, targetPort: 5000}]\n' | incus exec k1 -- k3s kubectl apply -f -",
+  "incus exec k1 -- k3s kubectl -n registry rollout status deploy/opute-registry --timeout=600s",
+  "REG=$(incus exec k1 -- k3s kubectl -n registry get svc opute-registry -o jsonpath='{.spec.clusterIP}') && for pair in mirrored-pause:3.6=parity/app:v1 mirrored-library-busybox:1.36.1=parity/app:v2; do src=docker.io/rancher/${pair%%=*}; dst=$REG:5000/${pair#*=}; incus exec k1 -- k3s ctr images tag \"$src\" \"$dst\" && incus exec k1 -- k3s ctr images push --plain-http \"$dst\" && incus exec k1 -- k3s ctr images rm \"$dst\" || exit 1; done",
+  "curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz && echo '9318379b847e333460d33d291d4c088156299a26cd93d570a7f5d0c36e50b5bb  /tmp/helm.tgz' | sha256sum -c - && tar -xzf /tmp/helm.tgz -C /tmp linux-amd64/helm && install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm.tgz /tmp/linux-amd64",
+  "sync"
+ ],
+ "recipeLog": [
+  {
+   "command": "incus admin waitready --timeout=180",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus launch parity-noble k1 -c security.privileged=true -c security.nesting=true -c boot.autostart=true -c linux.kernel_modules=overlay,br_netfilter,ip_tables,ip6_tables,nf_nat,xt_conntrack,iptable_nat,iptable_filter -c raw.lxc='lxc.apparmor.profile=unconfined\nlxc.cap.drop=\nlxc.cgroup2.devices.allow=a\nlxc.mount.auto=proc:rw sys:rw cgroup:rw'",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus config device add k1 kmsg unix-char source=/dev/kmsg path=/dev/kmsg",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus restart k1",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- timeout 300 sh -c 'until systemctl is-system-running 2>/dev/null | grep -qE \"running|degraded\"; do sleep 1; done'",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- sh -c 'apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -y -q curl'",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "curl -fsSL -o /tmp/k3s https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s && echo '256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712  /tmp/k3s' | sha256sum -c - && incus file push --mode 0755 /tmp/k3s k1/usr/local/bin/k3s && rm /tmp/k3s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "curl -fsSL -o /tmp/images.tar.zst https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s-airgap-images-amd64.tar.zst && echo 'c1f62ca3b15699d3bc5b4c84d6e458d8f5b9ff8572299bebdf0a0295edeed135  /tmp/images.tar.zst' | sha256sum -c - && incus exec k1 -- mkdir -p /var/lib/rancher/k3s/agent/images && incus file push /tmp/images.tar.zst k1/var/lib/rancher/k3s/agent/images/k3s-airgap-images-amd64.tar.zst && rm /tmp/images.tar.zst",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "printf '%s' '[Unit]\nDescription=k3s server (parity T2)\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=notify\nExecStartPre=-/sbin/modprobe br_netfilter\nExecStartPre=-/sbin/modprobe overlay\nExecStart=/usr/local/bin/k3s server --node-name=k1 --write-kubeconfig-mode=0644 --disable=traefik,servicelb,metrics-server --disable-helm-controller\nKillMode=process\nDelegate=yes\nLimitNOFILE=1048576\nLimitNPROC=infinity\nLimitCORE=infinity\nTasksMax=infinity\nTimeoutStartSec=0\nRestart=always\nRestartSec=5s\n\n[Install]\nWantedBy=multi-user.target\n' > /tmp/k3s.service && incus file push /tmp/k3s.service k1/etc/systemd/system/k3s.service && rm /tmp/k3s.service",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- sh -c 'systemctl daemon-reload && systemctl enable --now k3s.service'",
+   "exit": 0,
+   "stderr": "Created symlink /etc/systemd/system/multi-user.target.wants/k3s.service \u2192 /etc/systemd/system/k3s.service.\n"
+  },
+  {
+   "command": "incus exec k1 -- timeout 600 sh -c 'until k3s kubectl get --raw=/readyz >/dev/null 2>&1 && k3s kubectl get node k1 >/dev/null 2>&1; do sleep 2; done' && incus exec k1 -- k3s kubectl wait --for=condition=Ready node/k1 --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/coredns --timeout=600s && incus exec k1 -- k3s kubectl -n kube-system rollout status deploy/local-path-provisioner --timeout=600s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s ctr images pull docker.io/library/registry:2.8.3",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "printf '%s' 'apiVersion: v1\nkind: Namespace\nmetadata:\n  name: registry\n---\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: opute-registry\n  namespace: registry\nspec:\n  accessModes: [ReadWriteOnce]\n  storageClassName: local-path\n  resources:\n    requests: {storage: 1Gi}\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: opute-registry-config\n  namespace: registry\ndata:\n  config.yml: |\n    version: 0.1\n    storage:\n      filesystem: {rootdirectory: /var/lib/registry}\n      delete: {enabled: true}\n    http: {addr: \":5000\"}\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: opute-registry\n  namespace: registry\nspec:\n  replicas: 1\n  strategy: {type: Recreate}\n  selector:\n    matchLabels: {app: opute-registry}\n  template:\n    metadata:\n      labels: {app: opute-registry}\n    spec:\n      containers:\n        - name: registry\n          image: docker.io/library/registry:2.8.3\n          imagePullPolicy: IfNotPresent\n          command: [\"registry\", \"serve\", \"/etc/distribution/config.yml\"]\n          ports: [{containerPort: 5000}]\n          volumeMounts:\n            - {name: data, mountPath: /var/lib/registry}\n            - {name: config, mountPath: /etc/distribution}\n      volumes:\n        - name: data\n          persistentVolumeClaim: {claimName: opute-registry}\n        - name: config\n          configMap: {name: opute-registry-config}\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: opute-registry\n  namespace: registry\nspec:\n  selector: {app: opute-registry}\n  ports: [{port: 5000, targetPort: 5000}]\n' | incus exec k1 -- k3s kubectl apply -f -",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "incus exec k1 -- k3s kubectl -n registry rollout status deploy/opute-registry --timeout=600s",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "REG=$(incus exec k1 -- k3s kubectl -n registry get svc opute-registry -o jsonpath='{.spec.clusterIP}') && for pair in mirrored-pause:3.6=parity/app:v1 mirrored-library-busybox:1.36.1=parity/app:v2; do src=docker.io/rancher/${pair%%=*}; dst=$REG:5000/${pair#*=}; incus exec k1 -- k3s ctr images tag \"$src\" \"$dst\" && incus exec k1 -- k3s ctr images push --plain-http \"$dst\" && incus exec k1 -- k3s ctr images rm \"$dst\" || exit 1; done",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz && echo '9318379b847e333460d33d291d4c088156299a26cd93d570a7f5d0c36e50b5bb  /tmp/helm.tgz' | sha256sum -c - && tar -xzf /tmp/helm.tgz -C /tmp linux-amd64/helm && install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm && rm -rf /tmp/helm.tgz /tmp/linux-amd64",
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "command": "sync",
+   "exit": 0,
+   "stderr": ""
+  }
+ ],
+ "facts": {
+  "k3sVersion": "k3s version v1.31.2+k3s1 (6da20424)\ngo version go1.22.8\n",
+  "helmVersion": "v3.16.2+g13654a5\n",
+  "nodes": "NAME   STATUS   ROLES                  AGE   VERSION        INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME\nk1     Ready    control-plane,master   19s   v1.31.2+k3s1   10.0.100.113   <none>        Ubuntu 24.04.5 LTS   6.8.0-142-generic   containerd://1.7.22-k3s1\n",
+  "pods": "NAMESPACE     NAME                                      READY   STATUS    RESTARTS   AGE   IP          NODE   NOMINATED NODE   READINESS GATES\nkube-system   coredns-56f6fc8fd7-8jlsc                  1/1     Running   0          25s   10.42.0.3   k1     <none>           <none>\nkube-system   local-path-provisioner-5cf85fd84d-l6ltr   1/1     Running   0          25s   10.42.0.2   k1     <none>           <none>\nregistry      opute-registry-768d7d77c8-xsh8x           1/1     Running   0          11s   10.42.0.5   k1     <none>           <none>\n",
+  "images": "IMAGE                                        TAG                    IMAGE ID            SIZE\ndocker.io/library/registry                   2.8.3                  26b2eb03618e7       10.1MB\ndocker.io/rancher/klipper-helm               v0.9.3-build20241008   4e0aed78b287d       191MB\ndocker.io/rancher/klipper-lb                 v0.4.9                 11a5d8a9f31aa       12.7MB\ndocker.io/rancher/local-path-provisioner     v0.0.30                b580d47bc23dd       52MB\ndocker.io/rancher/mirrored-coredns-coredns   1.11.3                 c69fa2e9cbf5f       63.3MB\ndocker.io/rancher/mirrored-library-busybox   1.36.1                 6fd955f66c231       4.5MB\ndocker.io/rancher/mirrored-library-traefik   2.11.10                1741c0b1ff49b       169MB\ndocker.io/rancher/mirrored-metrics-server    v0.7.2                 48d9cfaaf3904       68.1MB\ndocker.io/rancher/mirrored-pause             3.6                    6270bb605e12e       686kB\n",
+  "instance": "architecture: x86_64\nconfig:\n  boot.autostart: \"true\"\n  image.architecture: amd64\n  image.description: Ubuntu noble amd64 (20261013_07:42)\n  image.os: Ubuntu\n  image.release: noble\n  image.requirements.cgroup: v2\n  image.serial: '20261013_07:42'\n  image.type: squashfs\n  image.variant: default\n  linux.kernel_modules: overlay,br_netfilter,ip_tables,ip6_tables,nf_nat,xt_conntrack,iptable_nat,iptable_filter\n  raw.lxc: |-\n    lxc.apparmor.profile=unconfined\n    lxc.cap.drop=\n    lxc.cgroup2.devices.allow=a\n    lxc.mount.auto=proc:rw sys:rw cgroup:rw\n  security.nesting: \"true\"\n  security.privileged: \"true\"\n  volatile.base_image: 657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c\n  volatile.cloud-init.instance-id: e9dbff8a-2daa-4c76-89b3-dde43d307c55\n  volatile.eth0.host_name: vethc3259f9c\n  volatile.eth0.hwaddr: 10:66:6a:0d:25:b2\n  volatile.idmap.base: \"0\"\n  volatile.idmap.current: '[]'\n  volatile.idmap.next: '[]'\n  volatile.last_state.idmap: '[]'\n  volatile.last_state.power: RUNNING\n  volatile.last_state.ready: \"false\"\n  volatile.uuid: 2ebad031-1363-4087-813a-8b91fc7f19aa\n  volatile.uuid.generation: 2ebad031-1363-4087-813a-8b91fc7f19aa\ndevices:\n  kmsg:\n    path: /dev/kmsg\n    source: /dev/kmsg\n    type: unix-char\nephemeral: false\nprofiles:\n  - default\nstateful: false\ndescription: \"\"\n"
+ },
+ "memoryMb": 6144,
+ "goldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+ "created": "2026-10-16T10:49:48Z",
+ "qemuArgv": [
+  "qemu-system-x86_64",
+  "-enable-kvm",
+  "-cpu",
+  "host",
+  "-smp",
+  "2",
+  "-m",
+  "6144",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8c/.parity/t2/golden-k3s.qcow2,if=virtio,format=qcow2",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8c/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+  "-netdev",
+  "user,id=net0,hostfwd=tcp:127.0.0.1:45171-:22",
+  "-device",
+  "virtio-net-pci,netdev=net0",
+  "-display",
+  "none",
+  "-serial",
+  "file:/home/houman/github/wunderous/opute-host-agent-m8c/.parity/t2/golden-k3s-serial.log",
+  "-monitor",
+  "none"
+ ]
+}

@@ -14,8 +14,118 @@
   "deploy/opute-host-agent-sudoers": "38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad",
   "deploy/opute-host-agent.service": "53961c80896ee755f9dc0b8005edbde159a76b492b1bcf26c8dc7f0e0e30e533"
  },
- "gapReason": "packaging parity is M10",
- "milestone": "M10",
+ "items": [
+  {
+   "coverage": "release name, gzip, SHA256SUMS, static ELF linkage for aarch64",
+   "kind": "artifact",
+   "name": "host-agent-linux-arm64",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "release name, gzip, SHA256SUMS, ELF linkage, glibc floor and version output; installed, started under systemd, called and removed on clean Ubuntu 24.04 and Debian 12 twins; Go -> Rust -> Go on one identity",
+   "kind": "artifact",
+   "name": "host-agent-linux-x64",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "gapReason": "needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent from the pinned offline module cache, and the Rust Windows target is not built or run here",
+   "kind": "artifact",
+   "milestone": "M10",
+   "name": "host-agent-windows-x64.exe",
+   "owner": "release",
+   "status": "gap"
+  },
+  {
+   "gapReason": "needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent from the pinned offline module cache, and the Rust Windows target is not built or run here",
+   "kind": "artifact",
+   "milestone": "M10",
+   "name": "host-agent-windows-x64.exe.gz",
+   "owner": "release",
+   "status": "gap"
+  },
+  {
+   "gapReason": "needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent from the pinned offline module cache, and the Rust Windows target is not built or run here",
+   "kind": "artifact",
+   "milestone": "M10",
+   "name": "host-agent-windows-x64.gz",
+   "owner": "release",
+   "status": "gap"
+  },
+  {
+   "coverage": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+   "kind": "artifact",
+   "name": "opute-provider-cloudflare-linux-x64",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+   "kind": "artifact",
+   "name": "opute-provider-k3s-linux-x64",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+   "kind": "artifact",
+   "name": "opute-provider-tailscale-linux-x64",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "installed as published on clean Ubuntu 24.04 and Debian 12 twins; unit status, paths, modes and journal lines match Go",
+   "kind": "deploy",
+   "name": "deploy/opute-bootstrap-mcp.service",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "installed as published on clean Ubuntu 24.04 and Debian 12 twins; unit status, paths, modes and journal lines match Go",
+   "kind": "deploy",
+   "name": "deploy/opute-host-agent-sudoers",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "installed as published on clean Ubuntu 24.04 and Debian 12 twins; unit status, paths, modes and journal lines match Go",
+   "kind": "deploy",
+   "name": "deploy/opute-host-agent.service",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "packed locally; index.test.js, the readonly canary, download and verify from a local release base, checksum mismatch, the cache lock and unsupported platforms",
+   "kind": "npm",
+   "name": "@opute/host-agent",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "Go's check-site on the committed site; the Rust preview site equals Go's once the declared D19-D24 renames are reversed; the remaining files are reviewed",
+   "kind": "site",
+   "name": "site",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "gapReason": "needs an arm64 runner: the runner has no qemu-system-aarch64 or user-mode emulation, so the arm64 binary is checked as an artifact only",
+   "kind": "install",
+   "milestone": "M10",
+   "name": "linux-arm64 clean-machine install",
+   "owner": "release",
+   "status": "gap"
+  },
+  {
+   "gapReason": "needs a WSL2 runner: the Linux binary inside a Windows-hosted WSL2 distribution",
+   "kind": "install",
+   "milestone": "M10",
+   "name": "WSL2 install",
+   "owner": "release",
+   "status": "gap"
+  }
+ ],
  "npm": {
   "bin": {
    "opute-host-agent": "index.js"
@@ -32,6 +142,5 @@
   "version": "0.2.3"
  },
  "owner": "release",
- "status": "gap",
  "surface": "distribution"
 }

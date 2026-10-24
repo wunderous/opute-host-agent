@@ -1,0 +1,522 @@
+{
+  "binaries": {
+    "go": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+    "rust": "d1f091eddc446dfa1b58088db65f26c18c65dbffc818f5a54e1efa36ed81e1d0"
+  },
+  "canaries": {
+    "go": 14,
+    "rust": 24
+  },
+  "contracts": {
+    "evidence-redaction": {
+      "passed": 4,
+      "total": 4
+    },
+    "oauth-issuance": {
+      "passed": 24,
+      "total": 24
+    },
+    "refuse-before-operation-record": {
+      "passed": 3,
+      "total": 3
+    },
+    "reject-without-audit-writes": {
+      "passed": 3,
+      "total": 3
+    },
+    "standalone-read-only-gate": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "distribution": {
+    "artifacts": {
+      "checksumsVerify": true,
+      "elf": true,
+      "glibcFloor": true,
+      "gzip": true,
+      "names": true,
+      "version": true
+    },
+    "launcherTarballSha256": "a3b51d79ee02b026edd4fd72137513b5cc93574d39c8a7b9e3ec6e281025d061",
+    "logCases": 19,
+    "machines": {
+      "debian": {
+        "comparisons": {
+          "install go/go": 0,
+          "install go/rust": 0,
+          "upgrade go-go-go/go-rust-go": 0
+        },
+        "expectations": {
+          "bootstrapRefusesWithoutIdentity": true,
+          "bootstrapWithIdentityHealthy": true,
+          "firstCall": true,
+          "receiptVerified": true,
+          "sudoersValid": true,
+          "uninstalled": true,
+          "userUnitActive": true,
+          "userUnitStopped": true
+        },
+        "identity": {
+          "upgrade-go-go-go": {
+            "agentIdKept": true,
+            "envFileUnchanged": true,
+            "fingerprintKept": true,
+            "instanceIdKept": true,
+            "noError": true,
+            "tokenAccepted": true,
+            "wrongTokenRefused": true
+          },
+          "upgrade-go-rust-go": {
+            "agentIdKept": true,
+            "envFileUnchanged": true,
+            "fingerprintKept": true,
+            "instanceIdKept": true,
+            "noError": true,
+            "tokenAccepted": true,
+            "wrongTokenRefused": true
+          }
+        },
+        "masksApplied": {
+          "install-go-1": [
+            "D8.authz-row-counts",
+            "release-receipt"
+          ],
+          "install-go-2": [
+            "D8.authz-row-counts",
+            "release-receipt"
+          ],
+          "install-rust": [
+            "D8.audit-server-log",
+            "D8.authz-row-counts",
+            "D8.authz-tables",
+            "D8.credential-files",
+            "catalog-revision-pair",
+            "release-receipt"
+          ],
+          "upgrade-go-go-go": [
+            "D8.authz-row-counts",
+            "release-receipt"
+          ],
+          "upgrade-go-rust-go": [
+            "D8.audit-server-log",
+            "D8.authz-row-counts",
+            "D8.authz-tables",
+            "D8.credential-files",
+            "catalog-revision-pair",
+            "release-receipt"
+          ]
+        }
+      },
+      "ubuntu": {
+        "comparisons": {
+          "install go/go": 0,
+          "install go/rust": 0,
+          "upgrade go-go-go/go-rust-go": 0
+        },
+        "expectations": {
+          "bootstrapRefusesWithoutIdentity": true,
+          "bootstrapWithIdentityHealthy": true,
+          "firstCall": true,
+          "receiptVerified": true,
+          "sudoersValid": true,
+          "uninstalled": true,
+          "userUnitActive": true,
+          "userUnitStopped": true
+        },
+        "identity": {
+          "upgrade-go-go-go": {
+            "agentIdKept": true,
+            "envFileUnchanged": true,
+            "fingerprintKept": true,
+            "instanceIdKept": true,
+            "noError": true,
+            "tokenAccepted": true,
+            "wrongTokenRefused": true
+          },
+          "upgrade-go-rust-go": {
+            "agentIdKept": true,
+            "envFileUnchanged": true,
+            "fingerprintKept": true,
+            "instanceIdKept": true,
+            "noError": true,
+            "tokenAccepted": true,
+            "wrongTokenRefused": true
+          }
+        },
+        "masksApplied": {
+          "install-go-1": [
+            "D8.authz-row-counts",
+            "release-receipt",
+            "systemd-accounting"
+          ],
+          "install-go-2": [
+            "D8.authz-row-counts",
+            "release-receipt"
+          ],
+          "install-rust": [
+            "D8.audit-server-log",
+            "D8.authz-row-counts",
+            "D8.authz-tables",
+            "D8.credential-files",
+            "catalog-revision-pair",
+            "release-receipt"
+          ],
+          "upgrade-go-go-go": [
+            "D8.authz-row-counts",
+            "release-receipt"
+          ],
+          "upgrade-go-rust-go": [
+            "D8.audit-server-log",
+            "D8.authz-row-counts",
+            "D8.authz-tables",
+            "D8.credential-files",
+            "catalog-revision-pair",
+            "release-receipt"
+          ]
+        }
+      }
+    },
+    "npm": {
+      "checks": 21,
+      "diffs": {
+        "go/go": 0,
+        "go/rust": 0
+      },
+      "failed": []
+    },
+    "site": {
+      "goCheckSite": true,
+      "previewAsGoByteForByte": true,
+      "previewDiffReviewed": true,
+      "previewsGenerate": true,
+      "rustStableRefused": true
+    },
+    "status": {
+      "artifacts": "pass",
+      "logs": "pass",
+      "machines-debian": "pass",
+      "machines-ubuntu": "pass",
+      "npm": "pass",
+      "releases": "pass",
+      "site": "pass"
+    }
+  },
+  "distributionInventory": {
+    "@opute/host-agent": "covered",
+    "WSL2 install": "gap",
+    "deploy/opute-bootstrap-mcp.service": "covered",
+    "deploy/opute-host-agent-sudoers": "covered",
+    "deploy/opute-host-agent.service": "covered",
+    "host-agent-linux-arm64": "covered",
+    "host-agent-linux-x64": "covered",
+    "host-agent-windows-x64.exe": "gap",
+    "host-agent-windows-x64.exe.gz": "gap",
+    "host-agent-windows-x64.gz": "gap",
+    "linux-arm64 clean-machine install": "gap",
+    "opute-provider-cloudflare-linux-x64": "covered",
+    "opute-provider-k3s-linux-x64": "covered",
+    "opute-provider-tailscale-linux-x64": "covered",
+    "site": "covered"
+  },
+  "gates": {
+    "cutover": {
+      "failures": [
+        "inventory gaps remain: 8",
+        "cutover evidence packageFirstSuccess: missing or not the reviewed file",
+        "cutover evidence externalEffects: missing or not the reviewed file",
+        "cutover evidence rollbackRehearsal: missing or not the reviewed file",
+        "cutover evidence ownerReview: missing or not the reviewed file"
+      ],
+      "pass": false,
+      "problems": 0
+    },
+    "m0": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m1": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m10": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m2": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m3": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m4": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m5": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m6": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8a": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8b": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8c": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8d": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8e": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    },
+    "m8f": {
+      "failures": [],
+      "pass": true,
+      "problems": 0
+    }
+  },
+  "goOracleT2": {
+    "go": {
+      "failed": [
+        "TestLiveVMCreateListDelete"
+      ],
+      "passed": [
+        "TestLiveGetHostInfoIncus"
+      ],
+      "skipped": [
+        "TestLiveResetIncusStackDeleteReconcileAndVerify"
+      ],
+      "status": "PASS"
+    },
+    "negative-control": {
+      "failed": [
+        "TestLiveGetHostInfoIncus",
+        "TestLiveResetIncusStackDeleteReconcileAndVerify",
+        "TestLiveVMCreateListDelete"
+      ],
+      "passed": [],
+      "skipped": [],
+      "status": "PASS"
+    },
+    "rust": {
+      "failed": [
+        "TestLiveVMCreateListDelete"
+      ],
+      "passed": [
+        "TestLiveGetHostInfoIncus"
+      ],
+      "skipped": [
+        "TestLiveResetIncusStackDeleteReconcileAndVerify"
+      ],
+      "status": "PASS"
+    }
+  },
+  "goOwnerPackages": 6,
+  "goVsGo": {
+    "pass": 327
+  },
+  "goVsRust": {
+    "pass": 327
+  },
+  "head": "80606df885471a5c6f07c95e188ffe9383f954f0",
+  "inventory": {
+    "byMilestone": {
+      "M10": 5,
+      "M8a": 3
+    },
+    "gaps": 8,
+    "owned": {
+      "host": [
+        "t2.json:compact_wsl_disk",
+        "t2.json:shutdown_wsl",
+        "t2.json:terminate_wsl_distribution"
+      ],
+      "release": [
+        "distribution.json:WSL2 install",
+        "distribution.json:host-agent-windows-x64.exe",
+        "distribution.json:host-agent-windows-x64.exe.gz",
+        "distribution.json:host-agent-windows-x64.gz",
+        "distribution.json:linux-arm64 clean-machine install"
+      ]
+    }
+  },
+  "m5": {
+    "crash": {
+      "failed": 0,
+      "passed": 200,
+      "seeds": 200
+    },
+    "cross-read": {
+      "failed": 0,
+      "passed": 18
+    },
+    "migration": {
+      "failed": 0,
+      "passed": 6,
+      "repeats": 3,
+      "total": 6
+    },
+    "secrets": {
+      "d24FieldCount": 8,
+      "fieldCount": 16
+    },
+    "shape": {
+      "failed": 0,
+      "passed": 1620,
+      "repeats": 5,
+      "total": 1620
+    },
+    "unknown-projection": {}
+  },
+  "milestone": "M10",
+  "releases": {
+    "go": "7f8d3a89e6e633b90e94fe6bf763697f4f89d0fd274d4c415d991221d9ef2461",
+    "rebuilt": {
+      "go-rebuild": [
+        "host-agent-linux-x64",
+        "opute-provider-cloudflare-linux-x64",
+        "opute-provider-k3s-linux-x64",
+        "opute-provider-tailscale-linux-x64"
+      ],
+      "rust-rebuild": [
+        "host-agent-linux-x64",
+        "opute-provider-cloudflare-linux-x64",
+        "opute-provider-k3s-linux-x64",
+        "opute-provider-tailscale-linux-x64"
+      ]
+    },
+    "rust": "f565809ad0fb3d486823359b8280c6459fcc9ca6c52c2f347c6f087f8097ea36"
+  },
+  "schemaVersion": "opute-native-validation.v1",
+  "seam": {
+    "canaryRed": true,
+    "gaps": []
+  },
+  "spec": {
+    "failed": 0,
+    "passed": 18
+  },
+  "t2": {
+    "debianGolden": "21e4080fa342c85315c199d777769549e486c2baef9be7e5c41cf11707a32b70",
+    "golden": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+    "incusGolden": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+    "k3sGolden": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+    "ociGolden": "bf332e6b8ef945b0247dc60d398cbea72e878a9baa3648ac4173c5c0331409ec",
+    "ociPackages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n",
+    "postgresChart": {
+      "sha256": "b53d3991fe84bcf38767e7702cae78666265427a127a26fff168ab4207d2b1df",
+      "url": "https://github.com/cloudnative-pg/charts/releases/download/cloudnative-pg-v0.29.1/cloudnative-pg-0.29.1.tgz",
+      "version": "0.29.1"
+    },
+    "postgresGolden": "7ae211bd651840bd3ee4b2b21e24b04a502dfb1c5300a1dffd1fd32a4798b46a",
+    "postgresImages": {
+      "ghcr.io/cloudnative-pg/cloudnative-pg:1.30.1": "sha256:923c267ec29636db3bee20f993d0ec4973fa22998e1adad37da79e4d32b5bc07",
+      "ghcr.io/cloudnative-pg/postgresql:16-minimal-trixie": "sha256:f76ba02680a07bdafaa00c81827351b15e671ac11e0e6a0b72f8ee5835cc82c6"
+    },
+    "suites": {
+      "go-vs-go": {
+        "t2.cluster-domain.admission.rejected-no-effect": "pass",
+        "t2.cluster-domain.agent.vm-install": "pass",
+        "t2.cluster-domain.packages.chart-and-render": "pass",
+        "t2.cluster-domain.resources.lifecycle": "pass",
+        "t2.cluster-domain.storage.prune-and-collect": "pass",
+        "t2.host-domain.admission.rejected-no-effect": "pass",
+        "t2.host-domain.archives.extract": "pass",
+        "t2.host-domain.artifacts.download-and-agent-build": "pass",
+        "t2.host-domain.bridge.recover": "pass",
+        "t2.host-domain.connection.restart-user-service": "pass",
+        "t2.host-domain.exec.workloads": "pass",
+        "t2.host-domain.linux.no-effect-tools": "pass",
+        "t2.host-domain.policy.system-agent-unit": "pass",
+        "t2.host-domain.policy.user-agent-unit": "pass",
+        "t2.host-domain.public.tunnel-and-quick": "pass",
+        "t2.host-domain.services.system-lifecycle": "pass",
+        "t2.host-domain.services.user-lifecycle": "pass",
+        "t2.host-domain.tools.apt-ninja": "pass",
+        "t2.host-domain.virt.stack-install-uninstall": "pass",
+        "t2.incus-domain.admission.rejected-no-effect": "pass",
+        "t2.incus-domain.container.lifecycle": "pass",
+        "t2.incus-domain.reset.owned-container": "pass",
+        "t2.incus-domain.standalone.reads": "pass",
+        "t2.incus-domain.vm.lifecycle": "pass",
+        "t2.llm-domain.admission.rejected-no-effect": "pass",
+        "t2.llm-domain.llama.lifecycle": "pass",
+        "t2.llm-domain.ollama.lifecycle": "pass",
+        "t2.oci-domain.admission.rejected-no-effect": "pass",
+        "t2.oci-domain.build.push-to-twin-registry": "pass",
+        "t2.oci-domain.storage.policy-and-cleanup": "pass",
+        "t2.postgres-domain.admission.rejected-no-effect": "pass",
+        "t2.postgres-domain.service.lifecycle": "pass",
+        "t2.postgres-domain.sqlite.lifecycle": "pass",
+        "t2.serving-domain.assignment.lifecycle": "pass"
+      },
+      "go-vs-rust": {
+        "t2.cluster-domain.admission.rejected-no-effect": "pass",
+        "t2.cluster-domain.agent.vm-install": "pass",
+        "t2.cluster-domain.packages.chart-and-render": "pass",
+        "t2.cluster-domain.resources.lifecycle": "pass",
+        "t2.cluster-domain.storage.prune-and-collect": "pass",
+        "t2.host-domain.admission.rejected-no-effect": "pass",
+        "t2.host-domain.archives.extract": "pass",
+        "t2.host-domain.artifacts.download-and-agent-build": "pass",
+        "t2.host-domain.bridge.recover": "pass",
+        "t2.host-domain.connection.restart-user-service": "pass",
+        "t2.host-domain.exec.workloads": "pass",
+        "t2.host-domain.linux.no-effect-tools": "pass",
+        "t2.host-domain.policy.system-agent-unit": "pass",
+        "t2.host-domain.policy.user-agent-unit": "pass",
+        "t2.host-domain.public.tunnel-and-quick": "pass",
+        "t2.host-domain.services.system-lifecycle": "pass",
+        "t2.host-domain.services.user-lifecycle": "pass",
+        "t2.host-domain.tools.apt-ninja": "pass",
+        "t2.host-domain.virt.stack-install-uninstall": "pass",
+        "t2.incus-domain.admission.rejected-no-effect": "pass",
+        "t2.incus-domain.container.lifecycle": "pass",
+        "t2.incus-domain.reset.owned-container": "pass",
+        "t2.incus-domain.standalone.reads": "pass",
+        "t2.incus-domain.vm.lifecycle": "pass",
+        "t2.llm-domain.admission.rejected-no-effect": "pass",
+        "t2.llm-domain.llama.lifecycle": "pass",
+        "t2.llm-domain.ollama.lifecycle": "pass",
+        "t2.oci-domain.admission.rejected-no-effect": "pass",
+        "t2.oci-domain.build.push-to-twin-registry": "pass",
+        "t2.oci-domain.storage.policy-and-cleanup": "pass",
+        "t2.postgres-domain.admission.rejected-no-effect": "pass",
+        "t2.postgres-domain.service.lifecycle": "pass",
+        "t2.postgres-domain.sqlite.lifecycle": "pass",
+        "t2.serving-domain.assignment.lifecycle": "pass"
+      }
+    }
+  },
+  "workspaceTests": {
+    "failed": 0,
+    "passed": 253
+  }
+}

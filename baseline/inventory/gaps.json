@@ -1,16 +1,44 @@
 {
  "byMilestone": {
-  "M10": 1,
+  "M10": 5,
   "M8a": 3
  },
- "count": 4,
+ "count": 8,
  "items": [
   {
    "file": "distribution.json",
-   "item": "*",
+   "item": "host-agent-windows-x64.exe",
    "milestone": "M10",
    "owner": "release",
-   "reason": "packaging parity is M10"
+   "reason": "needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent from the pinned offline module cache, and the Rust Windows target is not built or run here"
+  },
+  {
+   "file": "distribution.json",
+   "item": "host-agent-windows-x64.exe.gz",
+   "milestone": "M10",
+   "owner": "release",
+   "reason": "needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent from the pinned offline module cache, and the Rust Windows target is not built or run here"
+  },
+  {
+   "file": "distribution.json",
+   "item": "host-agent-windows-x64.gz",
+   "milestone": "M10",
+   "owner": "release",
+   "reason": "needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent from the pinned offline module cache, and the Rust Windows target is not built or run here"
+  },
+  {
+   "file": "distribution.json",
+   "item": "linux-arm64 clean-machine install",
+   "milestone": "M10",
+   "owner": "release",
+   "reason": "needs an arm64 runner: the runner has no qemu-system-aarch64 or user-mode emulation, so the arm64 binary is checked as an artifact only"
+  },
+  {
+   "file": "distribution.json",
+   "item": "WSL2 install",
+   "milestone": "M10",
+   "owner": "release",
+   "reason": "needs a WSL2 runner: the Linux binary inside a Windows-hosted WSL2 distribution"
   },
   {
    "file": "t2.json",
