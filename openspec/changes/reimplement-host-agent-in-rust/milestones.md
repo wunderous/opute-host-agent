@@ -142,6 +142,11 @@ T2, and the inventory records that explicitly.
 | **T3** | Clean machines, real clients, Platform staging | at milestone exit (M10+) | Operator journey, published-artifact path, Platform boundary |
 | **T4** | Rehearsal on isolated copies of real state | M12 | Conversion, rollback, soak |
 
+**Time limit (owner rule, 2026-11-01):** no single validation step in any
+milestone takes more than 30 minutes of wall clock. A step that would run
+longer is split or shortened, never extended. Repeats stay at three or
+fewer.
+
 ### 2.4 Reuse Go's black-box suites as an oracle
 
 Some Go suites already drive a binary from outside, so they run **unmodified**
