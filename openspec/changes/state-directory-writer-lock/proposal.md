@@ -33,10 +33,15 @@ Refusing a second agent is new user-visible policy: a new start-up failure,
 a new message, and a new file. The language migration must not add it on
 its own (AGENTS.md). This change asks the owners to decide it.
 
+**Decided (owner, 2026-11-01): option A, recorded as D25.** Both
+implementations take the lock, Go first. The implementation plan and the
+values proposed for the open details are in [design.md](design.md). Until
+the Go release that carries the lock is pinned, both implementations keep
+the pinned behaviour (no lock), and the M12a evidence stays valid.
+
 ## What Changes
 
-The owners choose one of the following. Nothing is implemented until they
-decide.
+The owners chose option A from the following.
 
 - **A. Lock in Go and Rust (recommended).** Both agents take an exclusive,
   non-blocking `flock` on one lock file in the instance root, before
@@ -85,8 +90,8 @@ To decide under A or B:
 
 ## Impact
 
-- **Decision:** D25 in the decision table (`milestones.md`), open until
-  the owners choose.
+- **Decision:** D25 in the decision table (`milestones.md`), decided
+  2026-11-01 as option A.
 - **Under A:**
   - a Go release and a parity rebase of the pinned tree;
   - a Rust change;
