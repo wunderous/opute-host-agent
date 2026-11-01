@@ -1,12 +1,12 @@
 ## 1. Review
 
 - [x] 1.1 Obtain the owners' decision on D25: A (lock in Go and Rust), B (Rust only) or C (no lock, one writer by procedure). Decided 2026-11-01: option A.
-- [ ] 1.2 Confirm the details proposed in [design.md](design.md): the lock file name and place, the refusal stderr line and exit code, the systemd units, `check`, and the scope (modes, native Windows, filesystems).
+- [x] 1.2 Confirm the details proposed in [design.md](design.md): the lock file name and place, the refusal stderr line and exit code, the systemd units, `check`, and the scope (modes, native Windows, filesystems). Confirmed by the owners on 2026-11-01, as written.
 
 ## 2. Go first (`wunderous/host-agents`)
 
-- [ ] 2.1 Add the lock in a small package with Unix (`flock`) and Windows (`LockFileEx`) files, and take it in `app.Run` after `validateConfig` and before `buildHostRuntime`, as design.md places it.
-- [ ] 2.2 Add Go tests: a second `Run` on the same instance refuses with the decided line and exit 1 and writes nothing; a SIGKILLed holder leaves no stale lock; a state directory outside the instance root is covered; `check` follows the decided rule.
+- [x] 2.1 Add the lock in a small package with Unix (`flock`) and Windows (`LockFileEx`) files, and take it in `app.Run` after `validateConfig` and before `buildHostRuntime`, as design.md places it. Done in wunderous/host-agents#28, merged as `29103271`: `internal/instancelock`, taken in `app.NewRuntime` and `app.Check`, released in `Runtime.Close`.
+- [x] 2.2 Add Go tests: a second `Run` on the same instance refuses with the decided line and exit 1 and writes nothing; a SIGKILLed holder leaves no stale lock; a state directory outside the instance root is covered; `check` follows the decided rule. Done in host-agents#28 (`internal/instancelock/lock_test.go`, `internal/cli/instance_lock_test.go`). gofmt, `go vet ./...` (plus Windows vet), `go test ./...` and `make test-all-modules` pass with go1.25.4, run once, and host-agents CI is green.
 - [ ] 2.3 Review the change with the Go owners, merge it and cut a release through Go's normal release path.
 
 ## 3. Parity rebase, then Rust
