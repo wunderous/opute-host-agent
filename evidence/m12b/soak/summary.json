@@ -1,0 +1,160 @@
+{
+ "crashed": false,
+ "files": {
+  "a-events.jsonl.gz": "03433a18c5fc9ed9e40394eb4df9331266515969b5083e9b8feb329828b8aa67",
+  "a-final.json.gz": "068bb06e920c0a973a19eb7d4810a78b555818d409b9df365ede49977adba411",
+  "a-ops.jsonl.gz": "77b5daa95952484debbea9399f3dd28bbcbd11e1a6adaa8a0318dbdf4196eaa7",
+  "a-samples.jsonl.gz": "88f1dd97a7fc3b26776295f9c3e1fec0845169831aab9040587084cf470a9277",
+  "b-events.jsonl.gz": "9465695a791323a476157ce1def16b253eac667be1f3849dc7698e5f132daea2",
+  "b-final.json.gz": "54b7d7a1772d4e33e03be3256352585f1fa7766f6bb1186dd06e55902cbbcaf1",
+  "b-ops.jsonl.gz": "6e92db1e302aedfbda451b67b336f46f4815eb39eda7c4280d5219d3bb44da9d",
+  "b-samples.jsonl.gz": "09c3e656e4bdc8ea5d611fccff3f56432e8755377e8728ef42d8cb39febb3d8d"
+ },
+ "provenance": {
+  "changedDuringRun": false,
+  "config": {
+   "env": {
+    "HOST_MCP_BIND_HOST": "127.0.0.1",
+    "HOST_MCP_PORT": "3014",
+    "MCP_AUTH_TOKEN": "parity-t2-token-not-a-secret-0123456789",
+    "OPUTE_AGENT_MODE": "standalone",
+    "OPUTE_HOST_AGENT_INSTANCE_ROOT": "/opt/parity-t2/instance",
+    "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+    "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+    "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+    "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+    "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+    "OPUTE_REMOTE_AGENT_ID": "parity-t2-agent",
+    "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+    "OPUTE_STANDALONE_STATE_DIR": "/opt/parity-t2/state"
+   },
+   "intervalSec": 1.0,
+   "iterations": 900,
+   "provider": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:3015/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/opt/parity-t2/recipes/activate.yaml"
+   },
+   "reload": {
+    "activate": true,
+    "recipeSource": "/opt/parity-t2/recipes/activate.yaml",
+    "source": "/opt/parity-t2/recipes/descriptor.json"
+   },
+   "restartEvery": 60,
+   "sampleEverySec": 10,
+   "seed": 1203,
+   "serveEnv": {
+    "OPUTE_HOST_AGENT_RELAY_DIR": "/home/ubuntu/.opute/relays",
+    "OPUTE_HOST_AGENT_SQLITE_ROOT": "/home/ubuntu/.opute/databases"
+   }
+  },
+  "driverSha256": "c4e0c7029f2280affd5618c78dfe0c16cc9c954800aa5824e4e0caab14d45783",
+  "golden": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "harnessSha256": "0f68b173165472919323bf802954eb418c3cc327a6b6afd35124abce0352a1d6",
+  "left": {
+   "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+   "label": "go"
+  },
+  "minutes": 15.0,
+  "providerSha256": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915",
+  "right": {
+   "binarySha256": "e29512002e372be87184caf58d1342a2d8cc1e52178df500b05a772b85bb3ddb",
+   "label": "rust"
+  },
+  "sourceLock": {
+   "capturedOn": "2026-09-28",
+   "goModule": "github.com/wunderous/host-agents",
+   "goToolchain": "go1.25.4",
+   "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+   "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+   "publicCatalogToolCount": 142,
+   "publishedPackage": "@opute/host-agent@0.2.3",
+   "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers.",
+   "sourceCommit": "ace7013df17528fee1bed13a1d70a132d6c5eb9b",
+   "sourceRepository": "https://github.com/wunderous/host-agents",
+   "sourceTree": "ac17cfb298f789095e7a3af2219837e3490f798a",
+   "staticAllToolsSchemaCount": 115
+  },
+  "thresholdsSha256": "cfa6a23ca1c94fca96df970760a22266b4cd60983e6f10e2cdadaadbdd64ba21"
+ },
+ "sides": [
+  {
+   "binary": "go",
+   "finished": 1793565643.7712138,
+   "label": "a",
+   "qemuArgv": [
+    "qemu-system-x86_64",
+    "-enable-kvm",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "6144",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/soak/soak/a.qcow2,if=virtio,format=qcow2",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+    "-netdev",
+    "user,id=net0,hostfwd=tcp:127.0.0.1:50171-:22",
+    "-device",
+    "virtio-net-pci,netdev=net0",
+    "-display",
+    "none",
+    "-serial",
+    "file:/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/soak/soak/a-serial.log",
+    "-monitor",
+    "none"
+   ],
+   "setupExit": 0,
+   "soakStarted": true,
+   "started": 1793564741.814546
+  },
+  {
+   "binary": "rust",
+   "finished": 1793565643.575478,
+   "label": "b",
+   "qemuArgv": [
+    "qemu-system-x86_64",
+    "-enable-kvm",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "6144",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/soak/soak/b.qcow2,if=virtio,format=qcow2",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+    "-netdev",
+    "user,id=net0,hostfwd=tcp:127.0.0.1:59729-:22",
+    "-device",
+    "virtio-net-pci,netdev=net0",
+    "-display",
+    "none",
+    "-serial",
+    "file:/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/soak/soak/b-serial.log",
+    "-monitor",
+    "none"
+   ],
+   "setupExit": 0,
+   "soakStarted": true,
+   "started": 1793564741.6410792
+  }
+ ]
+}
