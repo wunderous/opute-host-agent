@@ -144,8 +144,15 @@ T2, and the inventory records that explicitly.
 
 **Time limit (owner rule, 2026-11-01):** no single validation step in any
 milestone takes more than 30 minutes of wall clock. A step that would run
-longer is split or shortened, never extended. Repeats stay at three or
-fewer.
+longer is split or shortened, never extended.
+
+**Repeats (owner rule, 2026-11-01):** one run is the default for every
+suite. Three runs are the maximum, used only where repetition is the
+evidence: the Go/Go self-validation suites (T1 and T2), which prove the
+harness is deterministic, and a scenario under flake investigation. Go/Rust
+suites, rehearsals, distribution rounds, M5 shape and migration, and owning
+Go tests run once. The earlier ×20 and ×5 counts are retired; evidence
+captured under them stays valid.
 
 ### 2.4 Reuse Go's black-box suites as an oracle
 
@@ -170,7 +177,7 @@ traceability anchor.
 A differential harness that always passes proves nothing. It must pass these
 checks before it gates anything:
 
-1. **Go-vs-Go is green and deterministic.** Run every scenario 20 times with
+1. **Go-vs-Go is green and deterministic.** Run every scenario 3 times with
    Go on both sides. Any flake is a harness bug or a missing volatile-field
    declaration, and it is fixed before M1.
 2. **Mutation canaries go red.** A set of deliberately broken Go builds (a
@@ -261,7 +268,7 @@ explicit gaps that remain, including the owner review for task 0.5.
 
 **E2E validations**
 
-1. Go-vs-Go: every captured scenario is green 20 times in a row (§2.5.1).
+1. Go-vs-Go: every captured scenario is green 3 times in a row (§2.5.1).
 2. Mutation canaries: each one fails its named scenario (§2.5.2).
 3. Verifier negative tests: missing, stale, and blocked evidence all fail (§2.5.3).
 4. Inventory cross-check: every tool name in the Go dispatch registry, every
