@@ -2,8 +2,7 @@
 
 The owners decided option A on 2026-11-01. Go changes first in
 `wunderous/host-agents`; Rust follows the Go release after the parity
-rebase. The values marked **proposed** need the owners' confirmation (task
-1.2) before the Go change is written.
+rebase. The owners confirmed the proposed values on 2026-11-01 (task 1.2).
 
 ## Where the lock goes in Go
 
@@ -45,6 +44,33 @@ known, and it comes before any store is opened or the port is bound:
 
 Not proposed: a blocking wait, a lock timeout, or a takeover flag. Each
 would be further policy, and the decided behaviour is to refuse.
+
+## As implemented in Go (wunderous/host-agents#28, `29103271`)
+
+The owners confirmed every proposed detail above on 2026-11-01, and the Go
+change implements them as written: `internal/instancelock`, taken in
+`app.NewRuntime` after `validateConfig` and before `buildHostRuntime`,
+released in `Runtime.Close`, and taken in `app.Check`. The Go work turned up
+two facts worth recording:
+
+- **Windows.** Go's `admission.lock` uses `flock` on Unix only; its Windows
+  build has a no-op lock. `LockFileEx` is therefore new code in Go, not a
+  reuse.
+- **In-process commands.** `public-mcp`, `recipe` and `provider` build a
+  `Runtime`, so they are refused the same way while an agent holds the
+  instance. This follows from the decided placement (they open the same
+  stores, so it is the same hazard). It is called out in the host-agents
+  README and in that repository's OpenSpec change
+  (`openspec/changes/2026-11-01-instance-state-writer-lock`).
+
+The Go tests that ran several agents on the shared default instance root now
+give each agent its own root. `TestPackagedSingleBinaryServerOnly`, which ran
+`--check` next to its running server on one instance, now requires the
+refusal there and success on an instance of its own.
+
+For the parity rebase (task 3.1): any parity scenario or drill that runs
+`check`, or a second agent, on an instance a live agent holds changes its
+expected outcome. The M12a `twoWriters` drill is the known case (task 4.1).
 
 ## Rust, after the Go release is pinned
 
