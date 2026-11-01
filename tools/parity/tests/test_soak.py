@@ -53,9 +53,12 @@ class StatisticsTest(unittest.TestCase):
         samples = [{"t": t, "rssKb": 100 + t, "fds": 10, "threads": 4, "stateBytes": 1000} for t in range(0, 10)]
         samples.append({"t": 10, "down": True, "stateBytes": 1000})
         samples += [{"t": t, "rssKb": 100 + t, "fds": 10, "threads": 4, "stateBytes": 1000} for t in range(11, 20)]
-        out = soak.growth(samples, [{"event": "restart", "t": 10}])
+        out = soak.growth(samples, [{"event": "restart", "t": 10.2, "readyMs": 300}])
         self.assertEqual(out["epochs"], 2)
-        self.assertEqual(out["downSamples"], 1)
+        # Inside the restart window: counted in the total only.
+        self.assertEqual((out["downSamplesTotal"], out["downSamples"]), (1, 0))
+        out = soak.growth(samples, [{"event": "restart", "t": 15, "readyMs": 300}])
+        self.assertEqual((out["downSamplesTotal"], out["downSamples"]), (1, 1))
         self.assertEqual(out["rssKb"]["max"], 119)
 
 

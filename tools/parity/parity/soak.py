@@ -232,6 +232,11 @@ def slope_per_hour(points: list[tuple[float, float]]) -> float | None:
     return None if den == 0 else round(sum((t - mx) * (v - my) for t, v in points) / den * 3600, 3)
 
 
+# Seconds either side of a restart window: a sample is stamped just after it
+# observed the agent.
+RESTART_JITTER = 0.5
+
+
 def growth(samples: list[dict], events: list[dict]) -> dict:
     """Leak indicators that survive restarts: the slope of each epoch's last
     sample (between restarts) across the run, for RSS, FDs and threads, and
@@ -255,7 +260,13 @@ def growth(samples: list[dict], events: list[dict]) -> dict:
                     "medianWithinEpochSlopePerHour": percentile(within, 0.5)}
     out["stateBytes"] = {"slopePerHour": slope_per_hour([(s["t"], s["stateBytes"]) for s in samples]),
                          "last": samples[-1]["stateBytes"] if samples else None}
-    out["downSamples"] = sum(1 for s in samples if s.get("down"))
+    # A restart event is written when the agent is ready again, so its window
+    # is [t - readyMs, t]; a sample taken inside it is the restart itself.
+    windows = [(e["t"] - e.get("readyMs", 0) / 1000 - RESTART_JITTER, e["t"] + RESTART_JITTER)
+               for e in events if e.get("event") == "restart"]
+    down = [s["t"] for s in samples if s.get("down")]
+    out["downSamplesTotal"] = len(down)
+    out["downSamples"] = sum(1 for t in down if not any(lo <= t <= hi for lo, hi in windows))
     return out
 
 
