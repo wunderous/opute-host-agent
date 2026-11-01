@@ -279,39 +279,33 @@ def reservation_masks(document: dict) -> list[dict]:
     return masks
 
 
-LIVE_LOADS = ("cpuLoad1m", "cpuLoad5m", "cpuLoad15m")
+LIVE = {"$masked": "live-host-readings"}
 
 
-def drop_live_loads(document: dict) -> int:
-    """get_host_info's load averages are readings of each twin's own VM, and
-    both Go and Rust leave one out when it reads 0.00, so whether the leaf is
-    present follows the VM, not the implementation. Rust stores their values
-    as "[redacted]" (D13), so the values are never compared either. Drop the
-    three leaves from get_host_info rows on both sides; return how many."""
+def mask_live_readings(document: dict) -> int:
+    """get_host_info's `system` object is a snapshot of each twin's own VM at
+    that instant: memory, disk, PSI, cgroup, load and admission readings
+    (load averages are even left out when they read 0.00). Two Go twins
+    differ there, so it is a reading of the VM, not of the implementation.
+    It is kept in the stored invocation (observation and result) and in a
+    plan's state (the node's output and the plan's outputs). Its presence is
+    compared, its values are not; return how many objects were masked."""
     tables = runner._lookup(document, ["sqliteRows", "state/state.db", "tables"]) or {}
-    systems = []
+    holders = []
     for row in _rows(tables.get("capability_invocations")):
         if row.get("operation_id") == "get_host_info":
-            systems += [runner._lookup(row, [column, "$json", "structured", "system"])
+            holders += [runner._lookup(row, [column, "$json", "structured"])
                         for column in ("observation_json", "result_json")]
-    # The plan's get_host_info node keeps the same output twice in its state.
     for row in _rows(tables.get("plan_runs")):
         state = runner._lookup(row, ["state_json", "$json"]) or {}
-        # Both implementations keep the node's whole system snapshot
-        # unredacted there, in the node and in the plan's outputs: memory,
-        # disk, PSI and cgroup readings of each twin's VM at that instant.
-        # Its presence is compared, its values are not.
-        outputs = list((state.get("outputs") or {}).values())
-        outputs += [node.get("output") for node in (state.get("nodes") or {}).values() if isinstance(node, dict)]
-        for output in outputs:
-            if isinstance(output, dict) and isinstance(output.get("system"), dict):
-                output["system"] = {"$masked": "live-host-readings"}
-    dropped = 0
-    for system in systems:
-        if isinstance(system, dict):
-            for key in LIVE_LOADS:
-                dropped += system.pop(key, None) is not None
-    return dropped
+        holders += list((state.get("outputs") or {}).values())
+        holders += [node.get("output") for node in (state.get("nodes") or {}).values() if isinstance(node, dict)]
+    masked = 0
+    for holder in holders:
+        if isinstance(holder, dict) and isinstance(holder.get("system"), dict):
+            holder["system"] = dict(LIVE)
+            masked += 1
+    return masked
 
 
 def _rows(rows: Any) -> list:
@@ -427,11 +421,11 @@ def final_state(sides: dict) -> dict:
     if [r for r in redacted if not r["stale"]]:
         normalized["a"], normalized["b"] = a, b
         divergences += [r for r in redacted if not r["stale"]]
-    live = sum(drop_live_loads(normalized[side]) for side in ("a", "b"))
+    live = sum(mask_live_readings(normalized[side]) for side in ("a", "b"))
     pairs, revision_problems = pair_reload_revisions(normalized["a"], normalized["b"])
     diff = canon.diff(normalized["a"], normalized["b"])
     return {"diffCount": len(diff), "diff": diff[:50], "divergences": sorted({r["id"] for r in divergences}),
-            "liveLoadLeavesDropped": live, "reloadRevisionPairs": pairs, "revisionProblems": revision_problems,
+            "liveReadingsMasked": live, "reloadRevisionPairs": pairs, "revisionProblems": revision_problems,
             "violations": {k: v[:20] for k, v in violations.items()}}
 
 

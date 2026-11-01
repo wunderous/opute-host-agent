@@ -73,7 +73,7 @@ class FinalStateTest(unittest.TestCase):
         self.assertNotIn("kubernetes", variables.values())
         self.assertNotIn("_rowid", tables["capability_invocations"][0])
 
-    def test_live_loads_and_plan_snapshots_are_set_aside(self):
+    def test_live_readings_are_masked_in_host_info_rows_and_plans(self):
         system = {"cpuLoad1m": 0.1, "cpuCount": 2}
         doc = {"sqliteRows": {"state/state.db": {"tables": {
             "capability_invocations": [{"operation_id": "get_host_info",
@@ -82,14 +82,14 @@ class FinalStateTest(unittest.TestCase):
                                         "observation_json": {"$json": {"structured": {"system": dict(system)}}}}],
             "plan_runs": {"r": {"state_json": {"$json": {"outputs": {"host": {"system": dict(system)}},
                                                          "nodes": {"host": {"output": {"system": dict(system)}}}}}}}}}}}
-        self.assertEqual(soak.drop_live_loads(doc), 1)
+        self.assertEqual(soak.mask_live_readings(doc), 3)
         rows = doc["sqliteRows"]["state/state.db"]["tables"]
         self.assertEqual(rows["capability_invocations"][0]["observation_json"]["$json"]["structured"]["system"],
-                         {"cpuCount": 2})
-        self.assertIn("cpuLoad1m", rows["capability_invocations"][1]["observation_json"]["$json"]["structured"]["system"])
+                         soak.LIVE)
+        self.assertEqual(rows["capability_invocations"][1]["observation_json"]["$json"]["structured"]["system"], system)
         state = rows["plan_runs"]["r"]["state_json"]["$json"]
-        self.assertEqual(state["outputs"]["host"]["system"], {"$masked": "live-host-readings"})
-        self.assertEqual(state["nodes"]["host"]["output"]["system"], {"$masked": "live-host-readings"})
+        self.assertEqual(state["outputs"]["host"]["system"], soak.LIVE)
+        self.assertEqual(state["nodes"]["host"]["output"]["system"], soak.LIVE)
 
     def test_reservation_masks_skip_control(self):
         rows = [{"binding_json": json.dumps({"reservationId": "control"})},
