@@ -498,6 +498,16 @@ def verify(manifest_path: Path, gate: str) -> dict:
         bad = sorted(name for name, status in rehearsal.items() if status != PASS)
         if not rehearsal or bad:
             failures.append(f"rehearsal: {', '.join(bad) if bad else 'no evidence'} not pass")
+    soak_items = None
+    if rules.get("requireSoak"):
+        # M12 validation 5: Go and Rust twins under one seeded mixed workload,
+        # re-derived from the committed raw samples against the declared
+        # thresholds.
+        from . import soak_verify
+        soak_items = soak_verify.check(root, manifest, lock, lambda text: report.problem(text, "soak"))
+        bad = sorted(name for name, status in soak_items.items() if status != PASS)
+        if not soak_items or bad:
+            failures.append(f"soak: {', '.join(bad) if bad else 'no evidence'} not pass")
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
@@ -529,6 +539,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.add("distribution")
     if rules.get("requireRehearsal"):
         scopes.add("rehearsal")
+    if rules.get("requireSoak"):
+        scopes.add("soak")
     gating = [text for scope, text in report.problems if scope in scopes]
     if gating:
         failures.append(f"{len(gating)} provenance/evidence problem(s)")
@@ -545,6 +557,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         "t2": t2,
         **({"distribution": distribution} if rules.get("requireDistribution") else {}),
         **({"rehearsal": rehearsal} if rules.get("requireRehearsal") else {}),
+        **({"soak": soak_items} if rules.get("requireSoak") else {}),
     }
 
 
