@@ -917,11 +917,12 @@ artifact hashes from M10.
 
 **Closes:** 4.4, 6.1, 6.2. **Depends on:** M11.
 
-**Status (2026-10-24): partial (M12a); M11 is the open dependency.** Only the
-items that need no staging Platform ran
-([`evidence/m12a/README.md`](../../../evidence/m12a/README.md)). The m12a
+**Status (2026-11-01): partial (M12a, M12b); M11 is the open dependency.**
+Only the items that need no staging Platform ran
+([`evidence/m12a/README.md`](../../../evidence/m12a/README.md),
+[`evidence/m12b/README.md`](../../../evidence/m12b/README.md)). The m12a
 gate is the m10 gate plus the rehearsals, with every suite rerun against the
-rebuilt release artifact.
+rebuilt release artifact. The m12b gate is the m12a gate plus the soak.
 
 - **Store inventory (1):** the pinned Go tree is unchanged; the inventory is
   recaptured with a cutover surface.
@@ -946,9 +947,18 @@ rebuilt release artifact.
   `http.Server.Shutdown` does. A task still in resource binding differs only
   as D12 declares: Go restores it cancelled, Rust keeps nothing durable for
   it.
-- **Owned gaps:** M11; the writer lock; the soak (5); the Windows,
-  WSL2 and arm64 runtime gaps of M10; the M13 cutover evidence; the stable
-  0.2.3 publish decision.
+- **Soak (5, M12b):** 15 minutes, a Go and a Rust twin from one golden under
+  one seeded mixed workload: read-only calls, file and SQLite mutations,
+  input-required tasks, plans, k3s provider reloads, and a restart every
+  minute, alternating SIGTERM and SIGKILL. Outcome classes match Go's on all
+  900 iterations. Latency and RSS, FD and thread growth stay within
+  thresholds declared from a Go/Go shakedown and committed before the soak.
+  Neither side logs a journal error, and the final durable state is equal
+  after the declared masks. One round was retired because the down-sample
+  check counted restart windows.
+- **Owned gaps:** M11; the writer lock (D25, waiting on the Go release); the
+  Windows, WSL2 and arm64 runtime gaps of M10; the M13 cutover evidence; the
+  stable 0.2.3 publish decision.
 
 **E2E validations (T4, on isolated copies only)**
 

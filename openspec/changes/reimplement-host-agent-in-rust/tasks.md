@@ -260,6 +260,10 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   T2 suite reran against the rebuilt release artifact (`evidence/m12a`).
   The client suites need M11, and `parity-verify-cutover` still fails on
   its owned gaps.
+  *M12b note (2026-11-01), partial: the box stays unticked.* The 15-minute
+  Go/Rust soak passed (`evidence/m12b`, the `m12b` gate): equal outcome
+  classes, latency and growth within the declared thresholds, no journal
+  errors, and equal final state. The client suites still need M11.
 - [ ] 6.2 Rehearse stop, snapshot, convert, start Rust, resume/reconcile,
   restart, and rollback on isolated state with a documented in-flight-work
   policy and bounded rollback window. Gate: both forward and permitted reverse
