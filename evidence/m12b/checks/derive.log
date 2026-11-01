@@ -1,0 +1,29 @@
+{
+ "schemaVersion": "opute-soak-thresholds.v1",
+ "derivedFrom": "evidence/m12b/shakedown-go-go",
+ "rule": "Thresholds from a Go/Go shakedown's raw evaluation: the spread two\nidentical Go twins show is the noise floor, and Rust may differ from Go\nby twice that spread, never by less than the stated floors.\n\n- latency: maxRatio[p] = max(floor, 2 x the largest b/a ratio seen at p\n  over every op and kind); slackMs = max(5, 2 x the largest |b - a| at\n  p50);\n- growth: slopeSlackPerHour = max(floor, 2 x |b - a| epoch-end slope);\n  stateBytes maxRatio = 2 and slopeSlackPerHour likewise;\n- downSampleSlack = max(1, 2 x |b - a| down samples).",
+ "latency": {
+  "maxRatio": {
+   "p50": 2.15,
+   "p95": 2.25,
+   "p99": 3.0
+  },
+  "slackMs": 8.1
+ },
+ "growth": {
+  "rssKb": {
+   "slopeSlackPerHour": 100389.82
+  },
+  "fds": {
+   "slopeSlackPerHour": 36.248
+  },
+  "threads": {
+   "slopeSlackPerHour": 4
+  },
+  "stateBytes": {
+   "maxRatio": 2.0,
+   "slopeSlackPerHour": 727775.8
+  }
+ },
+ "downSampleSlack": 1
+}
