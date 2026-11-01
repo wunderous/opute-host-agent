@@ -772,6 +772,10 @@ def capture_cutover() -> dict:
         ("two agents on one state directory", "Go takes no state-directory lock: on both sides the second agent "
                                               "starts and serves, neither sees the other's in-memory tasks, and a "
                                               "restart sees both agents' tasks"),
+        ("soak", "15 minutes, Go and Rust twins from one golden under one seeded mixed workload with SIGTERM and "
+                 "SIGKILL restarts: outcome classes equal per iteration, latency and growth within thresholds "
+                 "declared from a Go/Go shakedown, no more journal errors, final durable state equal after the "
+                 "declared masks (evidence/m12b)"),
     ]
     items = [{"name": name, "kind": "rehearsal", "owner": "release", "status": "covered", "coverage": text}
              for name, text in covered]
@@ -780,7 +784,6 @@ def capture_cutover() -> dict:
          "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent "
          "takes no lock and both implementations let it start (evidence/m12a); a refusal is new policy that "
          "needs its own OpenSpec change and owner decision"),
-        ("soak", "release", "M12", "needs a 15-minute twin-sandbox run under a mixed workload; not run"),
         ("M11 staging validation identity", "platform", "M11", _M11_GAP),
         ("M11 Platform-driven journey", "platform", "M11", _M11_GAP),
         ("M11 client first-success", "platform", "M11", _M11_GAP + "; codex over WSL2 also needs a WSL2 runner"),
