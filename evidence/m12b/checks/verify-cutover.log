@@ -1,0 +1,20 @@
+gate cutover: FAIL
+  go-vs-go     pass=327 fail=0 unverified=0
+  go-vs-rust   pass=327 fail=0 unverified=0
+  canaries     caught=14/14
+  inventory    pass
+  go oracles   pass
+  contracts    pass
+  M5 shape              pass
+  M5 cross-read         pass
+  M5 crash              pass
+  M5 secrets            pass
+  M5 unknown-projection pass
+  M5 migration          pass
+  T2 go-vs-go   pass=34 fail=0 unverified=0
+  T2 go-vs-rust pass=34 fail=0 unverified=0
+  gate failure: inventory gaps remain: 14
+  gate failure: cutover evidence packageFirstSuccess: missing or not the reviewed file
+  gate failure: cutover evidence externalEffects: missing or not the reviewed file
+  gate failure: cutover evidence rollbackRehearsal: missing or not the reviewed file
+  gate failure: cutover evidence ownerReview: missing or not the reviewed file
