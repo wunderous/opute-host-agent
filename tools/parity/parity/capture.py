@@ -780,7 +780,7 @@ def capture_cutover() -> dict:
          "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent "
          "takes no lock and both implementations let it start (evidence/m12a); a refusal is new policy that "
          "needs its own OpenSpec change and owner decision"),
-        ("72-hour soak", "release", "M12", "needs a 72-hour twin-sandbox run under a mixed workload; not run"),
+        ("soak", "release", "M12", "needs a 15-minute twin-sandbox run under a mixed workload; not run"),
         ("M11 staging validation identity", "platform", "M11", _M11_GAP),
         ("M11 Platform-driven journey", "platform", "M11", _M11_GAP),
         ("M11 client first-success", "platform", "M11", _M11_GAP + "; codex over WSL2 also needs a WSL2 runner"),

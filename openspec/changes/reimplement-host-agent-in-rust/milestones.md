@@ -941,7 +941,7 @@ rebuilt release artifact.
   `http.Server.Shutdown` does. A task still in resource binding differs only
   as D12 declares: Go restores it cancelled, Rust keeps nothing durable for
   it.
-- **Owned gaps:** M11; the writer lock; the 72-hour soak (5); the Windows,
+- **Owned gaps:** M11; the writer lock; the soak (5); the Windows,
   WSL2 and arm64 runtime gaps of M10; the M13 cutover evidence; the stable
   0.2.3 publish decision.
 
@@ -960,7 +960,8 @@ rebuilt release artifact.
    Rust-era accepted operations are preserved, or rollback refuses and halts.
    There is never a silent drop. Two writers on one state directory must be
    prevented, which means the lock is tested.
-5. **Soak:** 72 hours or more in twin sandboxes under a synthetic mixed
+5. **Soak:** 15 minutes in twin sandboxes (owner decision, 2026-11-01:
+   the earlier 72-hour figure is dropped) under a synthetic mixed
    workload (read-only, mutations, plans, provider replacement, periodic
    restarts). Compare error rates, latency percentiles, RSS and FD growth,
    and final state parity.
