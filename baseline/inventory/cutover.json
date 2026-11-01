@@ -50,19 +50,18 @@
    "status": "covered"
   },
   {
-   "gapReason": "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent takes no lock and both implementations let it start (evidence/m12a); a refusal is new policy that needs its own OpenSpec change and owner decision",
+   "coverage": "15 minutes, Go and Rust twins from one golden under one seeded mixed workload with SIGTERM and SIGKILL restarts: outcome classes equal per iteration, latency and growth within thresholds declared from a Go/Go shakedown, no more journal errors, final durable state equal after the declared masks (evidence/m12b)",
+   "kind": "rehearsal",
+   "name": "soak",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "gapReason": "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent takes no lock and both implementations let it start (evidence/m12a); D25 decided a lock in Go and Rust (option A), which waits on the Go release and the parity rebase",
    "kind": "cutover",
    "milestone": "M12",
    "name": "state-directory writer lock",
    "owner": "core",
-   "status": "gap"
-  },
-  {
-   "gapReason": "needs a 72-hour twin-sandbox run under a mixed workload; not run",
-   "kind": "cutover",
-   "milestone": "M12",
-   "name": "72-hour soak",
-   "owner": "release",
    "status": "gap"
   },
   {

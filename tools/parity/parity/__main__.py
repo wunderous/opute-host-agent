@@ -115,6 +115,26 @@ def main(argv: list[str] | None = None) -> int:
     rh.add_argument("--repeat", type=int, default=3)
     rh.add_argument("--out", required=True, type=Path)
 
+    sk = sub.add_parser("soak", help="M12 validation 5: Go and Rust twins under one seeded mixed workload")
+    sksub = sk.add_subparsers(dest="soak_command", required=True)
+    skrun = sksub.add_parser("run", help="one soak or shakedown round in two twin VMs from one golden")
+    skrun.add_argument("--left", required=True, type=Path, help="side a binary (the Go reference)")
+    skrun.add_argument("--right", required=True, type=Path, help="side b binary (Go for Go/Go, else Rust)")
+    skrun.add_argument("--right-label", choices=["go", "rust"], default="rust")
+    skrun.add_argument("--seed", required=True, type=int)
+    skrun.add_argument("--minutes", required=True, type=float)
+    skrun.add_argument("--interval", type=float, default=1.0, help="seconds between workload iterations")
+    skrun.add_argument("--restart-every", type=int, default=60, help="iterations between restarts")
+    skrun.add_argument("--sample-every", type=float, default=10)
+    skrun.add_argument("--out", required=True, type=Path)
+    skdv = sksub.add_parser("derive", help="declare thresholds from a Go/Go shakedown's raw receipts")
+    skdv.add_argument("--bundle", required=True, type=Path)
+    skdv.add_argument("--source", required=True, help="where the shakedown is committed, recorded in the file")
+    skdv.add_argument("--out", type=Path, help="default tools/parity/soak-thresholds.json")
+    skev = sksub.add_parser("evaluate", help="re-derive a round's results from its raw receipts")
+    skev.add_argument("--bundle", required=True, type=Path)
+    skev.add_argument("--thresholds", type=Path, help="declared thresholds (default tools/parity/soak-thresholds.json)")
+
     up = sub.add_parser("unknown-projection", help="M5: unmarked/open-schema fields must fail closed (D13)")
     up.add_argument("--go", required=True, type=Path)
     up.add_argument("--rust", required=True, type=Path)
@@ -289,6 +309,28 @@ def main(argv: list[str] | None = None) -> int:
         results = json.loads((args.out / "results.json").read_text())
         print(json.dumps(rehearsal_verify.items(results), indent=1))
         return 0 if summary["pass"] else 1
+    if args.command == "soak":
+        from . import soak
+        if args.soak_command == "run":
+            summary = soak.run(agent.Impl("go", args.left.resolve()), agent.Impl(args.right_label, args.right.resolve()),
+                               args.out, args.seed, args.minutes, args.interval, args.restart_every,
+                               args.sample_every)
+            print(f"soak round: crashed={summary['crashed']} changedDuringRun={summary['provenance']['changedDuringRun']}")
+            return 1 if summary["crashed"] or summary["provenance"]["changedDuringRun"] else 0
+        if args.soak_command == "derive":
+            summary = json.loads((args.bundle / "summary.json").read_text())
+            if summary["provenance"]["left"]["binarySha256"] != summary["provenance"]["right"]["binarySha256"]:
+                print("derive: the shakedown is not Go/Go")
+                return 1
+            derived = soak.derive_thresholds(soak.evaluate(args.bundle, None), args.source)
+            (args.out or soak.THRESHOLDS).write_text(json.dumps(derived, indent=1, sort_keys=True) + "\n")
+            print(json.dumps(derived, indent=1))
+            return 0
+        thresholds = json.loads((args.thresholds or soak.THRESHOLDS).read_text())
+        result = soak.evaluate(args.bundle, thresholds)
+        (args.bundle / "evaluation.json").write_text(json.dumps(result, indent=1, sort_keys=True) + "\n")
+        print(json.dumps(result["checks"], indent=1))
+        return 0 if result["pass"] else 1
     if args.command == "unknown-projection":
         from . import unknown_projection
         summary = unknown_projection.run(agent.Impl("go", args.go.resolve()),
