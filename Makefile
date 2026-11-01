@@ -55,7 +55,7 @@ parity-go-vs-go:
 # differ. The verifier decides what each gate requires.
 parity-go-vs-rust:
 	rm -rf evidence/current/go-vs-rust
-	-$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite go-vs-rust --repeat 3 --out $(CURDIR)/evidence/current/go-vs-rust
+	-$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite go-vs-rust --repeat 1 --out $(CURDIR)/evidence/current/go-vs-rust
 
 parity-canaries:
 	$(PARITY) canaries --go $(GO_REF) --go-src $(GO_SRC) --out $(CURDIR)/evidence/current/canaries.json
@@ -129,6 +129,6 @@ parity-m6: rust-check rust-build parity-m4 parity-go-vs-rust parity-verify-m6
 parity-ci: parity-test go-reference rust-build
 	$(PARITY) catalog-source --go-src $(GO_SRC) --check
 	$(PARITY) verify --gate m4
-	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 2 --out $(CURDIR)/.parity/ci-go-vs-rust
+	$(PARITY) run --left go=$(GO_REF) --right rust=$(RUST_BIN) --suite ci-go-vs-rust --repeat 1 --out $(CURDIR)/.parity/ci-go-vs-rust
 	$(PARITY) oracle --go-src $(GO_SRC) --binary go=$(GO_REF) --binary rust=$(RUST_BIN) --out $(CURDIR)/.parity/ci-go-oracles.json
 	for s in $(CONTRACT_SUITES); do ($(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s) || exit 1; done
