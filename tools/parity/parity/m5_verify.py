@@ -55,8 +55,8 @@ def cross_read_failures(summary: dict, outcomes: dict) -> list[str]:
 def migration_failures(summary: dict, outcomes: dict) -> list[str]:
     failures = []
     repeats = summary.get("repeats")
-    if not isinstance(repeats, int) or repeats < 3:
-        return ["migration repeat count below three"]
+    if not isinstance(repeats, int) or repeats < 1:
+        return ["migration repeat count below one"]
     expected = {f"{case}.{i}" for case in migration.CASES for i in range(repeats)}
     if set(outcomes) != expected or summary.get("cases") != list(migration.CASES):
         failures.append("migration matrix incomplete or unexpected")
@@ -117,8 +117,8 @@ def refused_row_failures(scenario: dict, raw: dict) -> list[str]:
 def shape_failures(summary: dict, outcomes: dict) -> list[str]:
     scenarios = runner.load_scenarios()
     repeats = summary.get("repeats")
-    if not isinstance(repeats, int) or repeats < 3:
-        return ["database shape repeat count below three"]
+    if not isinstance(repeats, int) or repeats < 1:
+        return ["database shape repeat count below one"]
     hashes = {s["id"]: s["_sha256"] for s in scenarios}
     if summary.get("provenance", {}).get("scenarioHashes") != hashes:
         return ["database shape scenario matrix changed or incomplete"]

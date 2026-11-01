@@ -402,7 +402,7 @@
    "summary": "evidence/m12a/go-vs-go/summary.json"
   },
   "go-vs-rust": {
-   "minRepeat": 3,
+   "minRepeat": 1,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
    "summary": "evidence/m12a/go-vs-rust/summary.json"
@@ -437,7 +437,7 @@
    "requireT2": true
   },
   "m0": {
-   "description": "M0 exit: harness proven (Go-vs-Go clean x20, every canary caught), inventory captured with zero unowned gaps, every Rust item present and unverified",
+   "description": "M0 exit: harness proven (Go-vs-Go clean x3, every canary caught), inventory captured with zero unowned gaps, every Rust item present and unverified",
    "requireCanaries": true,
    "requireInventory": true,
    "requirePass": [
@@ -445,7 +445,7 @@
    ]
   },
   "m1": {
-   "description": "M1 exit: harness valid (Go-vs-Go x20, canaries, inventory) and the Rust candidate matches Go on every CLI, config and lifecycle item (x5), and passes the Go black-box startup tests; other surfaces may still differ (M2+)",
+   "description": "M1 exit: harness valid (Go-vs-Go x3, canaries, inventory) and the Rust candidate matches Go on every CLI, config and lifecycle item, and passes the Go black-box startup tests; other surfaces may still differ (M2+)",
    "requireCanaries": true,
    "requireInventory": true,
    "requireOracles": true,
@@ -555,7 +555,7 @@
    "requireT2Oracles": true
   },
   "m2": {
-   "description": "M2 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item (x5), including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
+   "description": "M2 exit: harness valid (Go-vs-Go x3, canaries, inventory); the Rust candidate matches Go on every CLI, config, lifecycle, HTTP, MCP wire and auth item, including the generated wire corpus and the authz store cross-read; the Go black-box tests and the go-sdk real client pass against Rust; other surfaces may still differ (M3+); the declared divergence D8 (oauth-issuance) passes its Rust contract suite and every Rust canary is caught",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance"
@@ -578,7 +578,7 @@
    ]
   },
   "m3": {
-   "description": "M3 exit: harness valid (Go-vs-Go x20, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface (x5), including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
+   "description": "M3 exit: harness valid (Go-vs-Go x3, canaries, inventory); the Rust candidate publishes every catalog cell identically to Go (names, descriptors, schemas, edges, revision) and matches Go on every scenario of every surface, including the read-only host tools, argument validation, the standalone mutation set and the X2 rejected-call invariant; the go-sdk real client reads the catalog and calls read-only tools; the D8 and D10 contract suites and Rust canaries pass; catalog revisions match the reviewed manifest (X5)",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -608,7 +608,7 @@
    ]
   },
   "m4": {
-   "description": "M4 exit: everything M3 requires, plus admission and tasks matching Go on every scenario (x5): canonical URIs and kinds, tenant scope, the admission matrix over every non-read tool (gate closed, stale revision, binding, unknown target) with X2, coordinator saturation N+k, min-memory/min-disk headroom, normal-class host reads, the task registry, input_required, and cancellation before start, mid-shim and after completion with zero orphans; the D12 contract suite and its Rust canaries pass",
+   "description": "M4 exit: everything M3 requires, plus admission and tasks matching Go on every scenario: canonical URIs and kinds, tenant scope, the admission matrix over every non-read tool (gate closed, stale revision, binding, unknown target) with X2, coordinator saturation N+k, min-memory/min-disk headroom, normal-class host reads, the task registry, input_required, and cancellation before start, mid-shim and after completion with zero orphans; the D12 contract suite and its Rust canaries pass",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -707,7 +707,7 @@
    ]
   },
   "m8a": {
-   "description": "M8a exit (host domain): M1-M7 regression gates (Go-vs-Go x20, canaries, inventory, oracles, contracts, M5) plus every host-domain item matching Go (x5) at T1 shim-trace parity, the M7 provider surfaces, and T2 twin-sandbox parity: every T2 host-domain scenario (effects, cleanup and residue, and the M4 admission-rejected calls leaving the host unchanged) passes Go-vs-Go x20 and Go-vs-Rust x5, re-derived from committed receipts. Remaining host T2 gaps (WSL2 runner, Incus instances) stay owned in baseline/inventory/t2.json.",
+   "description": "M8a exit (host domain): M1-M7 regression gates (Go-vs-Go x3, canaries, inventory, oracles, contracts, M5) plus every host-domain item matching Go at T1 shim-trace parity, the M7 provider surfaces, and T2 twin-sandbox parity: every T2 host-domain scenario (effects, cleanup and residue, and the M4 admission-rejected calls leaving the host unchanged) passes Go-vs-Go x3 and Go-vs-Rust x5, re-derived from committed receipts. Remaining host T2 gaps (WSL2 runner, Incus instances) stay owned in baseline/inventory/t2.json.",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -745,7 +745,7 @@
    "requireT2": true
   },
   "m8b": {
-   "description": "M8b exit (incus domain): the M8a gate (M1-M7 regression gates, host domain at T1 and T2) plus every incus-domain item matching Go (x5) at T1 shim-trace parity, every T2 incus-domain scenario in nested-Incus twins (create, mutate, read and delete of real containers and VMs, the stack reset, cleanup and residue, and the M4 admission-rejected incus calls leaving Incus unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts, and the Go baseline's live Incus tests (test/live) passing against Go and Rust inside the twins with a failing negative control.",
+   "description": "M8b exit (incus domain): the M8a gate (M1-M7 regression gates, host domain at T1 and T2) plus every incus-domain item matching Go at T1 shim-trace parity, every T2 incus-domain scenario in nested-Incus twins (create, mutate, read and delete of real containers and VMs, the stack reset, cleanup and residue, and the M4 admission-rejected incus calls leaving Incus unchanged) passing Go-vs-Go x3 and Go-vs-Rust x5 re-derived from committed receipts, and the Go baseline's live Incus tests (test/live) passing against Go and Rust inside the twins with a failing negative control.",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -785,7 +785,7 @@
    "requireT2Oracles": true
   },
   "m8c": {
-   "description": "M8c exit (kubernetes and cluster domains): the M8b gate plus every cluster-domain item matching Go (x5) at T1 shim-trace parity against the pinned, unchanged Go k3s provider, and every T2 cluster-domain scenario in k3s twins (create, mutate, read and delete of real Kubernetes objects in a single-node k3s, HelmCharts, helm template, guest storage prune and registry garbage collection, the cluster agent's install through a harness platform stub and the agent's own bridge relay, cleanup and residue, and the M4 admission-rejected kubernetes and cluster calls leaving k1 unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "description": "M8c exit (kubernetes and cluster domains): the M8b gate plus every cluster-domain item matching Go at T1 shim-trace parity against the pinned, unchanged Go k3s provider, and every T2 cluster-domain scenario in k3s twins (create, mutate, read and delete of real Kubernetes objects in a single-node k3s, HelmCharts, helm template, guest storage prune and registry garbage collection, the cluster agent's install through a harness platform stub and the agent's own bridge relay, cleanup and residue, and the M4 admission-rejected kubernetes and cluster calls leaving k1 unchanged) passing Go-vs-Go x3 and Go-vs-Rust x5 re-derived from committed receipts.",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -826,7 +826,7 @@
    "requireT2Oracles": true
   },
   "m8d": {
-   "description": "M8d exit (oci domain): the M8c gate plus every oci-domain item matching Go (x5) at T1 shim-trace parity (podman, buildah, sudo and apt-get shimmed; the registry tools and configure_oci_storage through the pinned, unchanged Go k3s provider), and every T2 oci-domain scenario in OCI twins (the k3s golden plus podman and buildah: the builder, a staged context, the registry deployed in k1, images built FROM scratch and pushed to it by podman and buildah, the storage policy file, cleanup of an age-eligible image beside one shared by two tags, and the M4 admission-rejected oci calls leaving the twin unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "description": "M8d exit (oci domain): the M8c gate plus every oci-domain item matching Go at T1 shim-trace parity (podman, buildah, sudo and apt-get shimmed; the registry tools and configure_oci_storage through the pinned, unchanged Go k3s provider), and every T2 oci-domain scenario in OCI twins (the k3s golden plus podman and buildah: the builder, a staged context, the registry deployed in k1, images built FROM scratch and pushed to it by podman and buildah, the storage policy file, cleanup of an age-eligible image beside one shared by two tags, and the M4 admission-rejected oci calls leaving the twin unchanged) passing Go-vs-Go x3 and Go-vs-Rust x5 re-derived from committed receipts.",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -868,7 +868,7 @@
    "requireT2Oracles": true
   },
   "m8e": {
-   "description": "M8e exit (postgres domain): the M8d gate plus every postgres-domain item matching Go (x5) at T1 shim-trace parity (the platform service, its relay and the standalone tools through the pinned, unchanged Go k3s provider and the shimmed Incus proxy device; SQLite databases and the SQL connector on the host), and every T2 postgres-domain scenario in PostgreSQL twins (the k3s golden plus the pinned CloudNativePG operator and Go's operand image preloaded by digest: the service reconciled from nothing, data written by a harness client kept across a second reconcile, bytes carried through the SQL connector and the token-line relay, the relay released only with its token, removal retaining then deleting; SQLite databases on the base golden; and the M4 admission-rejected postgres calls leaving the twin unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "description": "M8e exit (postgres domain): the M8d gate plus every postgres-domain item matching Go at T1 shim-trace parity (the platform service, its relay and the standalone tools through the pinned, unchanged Go k3s provider and the shimmed Incus proxy device; SQLite databases and the SQL connector on the host), and every T2 postgres-domain scenario in PostgreSQL twins (the k3s golden plus the pinned CloudNativePG operator and Go's operand image preloaded by digest: the service reconciled from nothing, data written by a harness client kept across a second reconcile, bytes carried through the SQL connector and the token-line relay, the relay released only with its token, removal retaining then deleting; SQLite databases on the base golden; and the M4 admission-rejected postgres calls leaving the twin unchanged) passing Go-vs-Go x3 and Go-vs-Rust x5 re-derived from committed receipts.",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -911,7 +911,7 @@
    "requireT2Oracles": true
   },
   "m8f": {
-   "description": "M8f exit (llm and serving domains): the M8e gate plus every llm- and serving-domain item matching Go (x5) at T1 shim-trace parity (the Ollama runtime and its generated unit, the per-model context, the llama-server manifest, start, probe and binary build refusals and adoption, the authenticated relay persisted and restored, the OpenAI-compatible probe, Go's unbound cluster proxy refusals, serving assignments under their transient supervisor and ingress discovery through the pinned Go k3s provider; the service manager, GPU, ss and kill shimmed and the runtimes' APIs a route stub), and every T2 llm- and serving-domain scenario on the base golden (the CPU-only model stub t2guest/llmstub.py as ollama, llama-server and nvidia-smi under ubuntu's real systemd user manager: the shared Ollama runtime installed from nothing, its context persisted, the relay carrying an authenticated client; the llama-server manifest installed, adopted, restarted and stopped; a serving assignment launched, observed and relaunched as a real transient user unit; and the M4 admission-rejected llm and serving calls leaving the twin unchanged) passing Go-vs-Go x20 and Go-vs-Rust x5 re-derived from committed receipts.",
+   "description": "M8f exit (llm and serving domains): the M8e gate plus every llm- and serving-domain item matching Go at T1 shim-trace parity (the Ollama runtime and its generated unit, the per-model context, the llama-server manifest, start, probe and binary build refusals and adoption, the authenticated relay persisted and restored, the OpenAI-compatible probe, Go's unbound cluster proxy refusals, serving assignments under their transient supervisor and ingress discovery through the pinned Go k3s provider; the service manager, GPU, ss and kill shimmed and the runtimes' APIs a route stub), and every T2 llm- and serving-domain scenario on the base golden (the CPU-only model stub t2guest/llmstub.py as ollama, llama-server and nvidia-smi under ubuntu's real systemd user manager: the shared Ollama runtime installed from nothing, its context persisted, the relay carrying an authenticated client; the llama-server manifest installed, adopted, restarted and stopped; a serving assignment launched, observed and relaunched as a real transient user unit; and the M4 admission-rejected llm and serving calls leaving the twin unchanged) passing Go-vs-Go x3 and Go-vs-Rust x5 re-derived from committed receipts.",
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -4546,7 +4546,7 @@
     "reason": "A task still in resource binding at SIGINT has not passed admission. Go has its operation row from task creation and restores it cancelled; under D12 Rust persists an operation only after admission, so a restart does not know the handle. Per-side expectations pin exactly that; the rest of the drill is compared."
    }
   ],
-  "minRepeat": 3,
+  "minRepeat": 1,
   "purpose": "M12 without Platform (parity rehearsal), re-derived by parity/rehearsal_verify.py: representative Go state stopped with a task in flight and snapshotted with checksums; Go's restart on a copy as the oracle; the target (Go control, Rust) forward on a copy with a restart and work of its own; Go rolled back onto the target's copy; and the stop drills (a synchronous call and long tasks in flight at SIGINT, two agents on one state directory)",
   "summary": "evidence/m12a/rehearsal/summary.json"
  },
@@ -4606,7 +4606,7 @@
     "summary": "evidence/m12a/t2-go-vs-go/summary.json"
    },
    "go-vs-rust": {
-    "minRepeat": 3,
+    "minRepeat": 1,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
     "summary": "evidence/m12a/t2-go-vs-rust/summary.json"

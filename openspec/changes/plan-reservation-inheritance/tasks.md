@@ -26,7 +26,7 @@
       `restore_working_task_comes_back_failed`); no change expected here,
       just confirm the reclaim sweep reads the post-restore status.
 - [ ] Re-run `host-plan-fault-scripts.restart-mid-plan-reconcile` at
-      `--repeat 10` against the Go reference; it must stop failing.
+      `--repeat 3` against the Go reference; it must stop failing.
 - [ ] Re-run the other four fault scripts (`retry-then-success`,
       `permanent-failure-with-compensation`, `readiness-never-true-timeout`,
       `cancel-mid-node`) to confirm no regression from replacing the

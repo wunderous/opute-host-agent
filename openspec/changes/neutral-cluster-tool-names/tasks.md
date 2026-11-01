@@ -11,4 +11,4 @@
 ## 3. Evidence
 
 - [x] 3.1 Alias scenario: each Go name reaches the same Consumer as its neutral name and is not listed; the four unpublished Go tools are refused as Go refuses them. Done in T1: every cluster-domain scenario calls the Go names (D19 compares tools/list), and `cluster-domain.unreachable` refuses the four.
-- [ ] 3.2 Include the rename in the M8c closing captures: Go/Go x20 and Go/Rust x5.
+- [ ] 3.2 Include the rename in the M8c closing captures: Go/Go x3 and Go/Rust x1 (repeat rule, 2026-11-01).

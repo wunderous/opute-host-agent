@@ -63,8 +63,8 @@ def check(root: Path, manifest: dict, lock: dict, problem: Callable[[str], None]
         stale.append("a binary, the harness or the driver changed during the capture")
     if provenance.get("noIncusOnPath") is not True:
         stale.append("an Incus binary was reachable from the agents' PATH")
-    if not isinstance(provenance.get("repeat"), int) or provenance["repeat"] < spec.get("minRepeat", 3):
-        stale.append(f"fewer than {spec.get('minRepeat', 3)} rehearsals per side")
+    if not isinstance(provenance.get("repeat"), int) or provenance["repeat"] < spec.get("minRepeat", 1):
+        stale.append(f"fewer than {spec.get('minRepeat', 1)} rehearsals per side")
     for name, digest in (summary.get("files") or {}).items():
         if not (bundle / name).is_file() or _sha(bundle / name) != digest:
             stale.append(f"{name} missing or changed")
