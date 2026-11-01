@@ -954,6 +954,54 @@
    ],
    "requireT2": true,
    "requireT2Oracles": true
+  },
+  "m12b": {
+   "description": "M12b (M12 validation 5, soak): the m12a gate plus the soak re-derived from committed raw samples: Go and Rust twins from one pinned golden under one seeded mixed workload (read-only calls, task-aware mutations, plans, k3s provider reloads, input-required tasks, SIGTERM and SIGKILL restarts) for 15 minutes; per-iteration outcome classes equal to Go's, latency and growth within the thresholds declared from a Go/Go shakedown, no more journal errors than Go, and final durable state equal after the declared masks. M11 (staging Platform), the writer lock (D25), Windows, WSL2, arm64 runtime, the M13 evidence and the 0.2.3 publish decision remain owned gaps.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireDistribution": true,
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
+      "tasks"
+     ]
+    }
+   ],
+   "requireRehearsal": true,
+   "requireT2": true,
+   "requireT2Oracles": true,
+   "requireSoak": true
   }
  },
  "goReference": {
@@ -4568,5 +4616,12 @@
  "t2Oracles": {
   "results": "evidence/m12a/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
+ },
+ "soakEvidence": {
+  "minMinutes": 15,
+  "purpose": "M12 validation 5, re-derived by parity/soak_verify.py: a Go and a Rust twin booted from the pinned base golden under one seeded mixed workload with periodic SIGTERM and SIGKILL restarts, sampled for error classes, latency percentiles, RSS, FDs, threads, state size, journal errors and final durable state, judged against thresholds declared from a Go/Go shakedown before the soak (owner rule: 15 minutes, no step over 30)",
+  "summary": "evidence/m12b/soak/summary.json",
+  "thresholds": "tools/parity/soak-thresholds.json",
+  "thresholdsSha256": "cfa6a23ca1c94fca96df970760a22266b4cd60983e6f10e2cdadaadbdd64ba21"
  }
 }
