@@ -37,8 +37,24 @@ heads = {phase: (HERE / f'checks/{name}').read_text().strip()
          for phase, name in (('shakedown', 'head.shakedown'), ('soak', 'head'))}
 for head in heads.values():
     assert git('merge-base', '--is-ancestor', head, 'HEAD').returncode == 0, head
-for name in ('tree.shakedown.before', 'tree.shakedown.after', 'tree.before', 'tree.after'):
+for name in ('tree.shakedown.before', 'tree.shakedown.after', 'tree.before'):
     assert (HERE / f'checks/{name}.sha256').read_text().split()[0] == EMPTY_TREE, name
+# The shakedown commit tracked checks/exits.log, so the soak phase's own
+# appended exit lines are the one change its tree.after can show. Rebuild
+# that exact state at the soak head and require the recorded hash.
+SOAK_EXITS = 'soak exit=0\nsoak-evaluate exit=0\nseam exit=0\n'
+with tempfile.TemporaryDirectory() as tmp:
+    work = Path(tmp) / 'tree'
+    assert git('worktree', 'add', '-q', '--detach', str(work), heads['soak']).returncode == 0
+    try:
+        with open(work / 'evidence/m12b/checks/exits.log', 'a') as fh:
+            fh.write(SOAK_EXITS)
+        state = subprocess.run('{ git status --porcelain --untracked-files=no; git diff HEAD; } | sha256sum', shell=True,
+                               cwd=work, capture_output=True, text=True).stdout.split()[0]
+    finally:
+        git('worktree', 'remove', '--force', str(work))
+assert (HERE / 'checks/tree.after.sha256').read_text().split()[0] == state, 'tree.after'
+assert log('soak') and (HERE / 'checks/exits.log').read_text().count(SOAK_EXITS) == 1
 for name in ('binaries.shakedown', 'binaries', 'binaries.after'):
     pinned = dict(reversed(line.split()) for line in (HERE / f'checks/{name}.sha256').read_text().splitlines())
     assert pinned[str(rust)] == sha(rust) == manifest['rustCandidate']['binarySha256'], name
