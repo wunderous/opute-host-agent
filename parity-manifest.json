@@ -314,6 +314,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
    "status": "approved",
    "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
+  },
+  "D25": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/state-directory-writer-lock",
+   "date": "2026-11-01",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D25)",
+   "status": "approved",
+   "summary": "Option A: Go and Rust each take an exclusive, non-blocking lock on the instance state before opening any store or binding the listener, and a second agent on the same instance refuses identically; Go changes first in wunderous/host-agents and Rust follows its release through the parity rebase. Until that release is pinned, both keep the pinned Go behaviour (no lock)"
   }
  },
  "distEvidence": {
