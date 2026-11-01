@@ -2,25 +2,18 @@
  "byMilestone": {
   "M10": 6,
   "M11": 3,
-  "M12": 2,
+  "M12": 1,
   "M13": 1,
   "M8a": 3
  },
- "count": 15,
+ "count": 14,
  "items": [
   {
    "file": "cutover.json",
    "item": "state-directory writer lock",
    "milestone": "M12",
    "owner": "core",
-   "reason": "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent takes no lock and both implementations let it start (evidence/m12a); a refusal is new policy that needs its own OpenSpec change and owner decision"
-  },
-  {
-   "file": "cutover.json",
-   "item": "72-hour soak",
-   "milestone": "M12",
-   "owner": "release",
-   "reason": "needs a 72-hour twin-sandbox run under a mixed workload; not run"
+   "reason": "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent takes no lock and both implementations let it start (evidence/m12a); D25 decided a lock in Go and Rust (option A), which waits on the Go release and the parity rebase"
   },
   {
    "file": "cutover.json",
