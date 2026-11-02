@@ -579,9 +579,13 @@ pub fn is_loopback_host(addr: &str) -> bool {
     if host == "localhost" {
         return true;
     }
+    // Go's `IP.IsLoopback` treats an IPv4-mapped address as IPv4, and a
+    // dual-stack listener reports an IPv4 client's local address that way.
     host.parse::<std::net::IpAddr>().is_ok_and(|ip| match ip {
         std::net::IpAddr::V4(v4) => v4.is_loopback(),
-        std::net::IpAddr::V6(v6) => v6.is_loopback(),
+        std::net::IpAddr::V6(v6) => v6
+            .to_ipv4_mapped()
+            .map_or(v6.is_loopback(), |v4| v4.is_loopback()),
     })
 }
 
