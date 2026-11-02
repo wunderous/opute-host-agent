@@ -112,7 +112,7 @@ fn agent_version(output: &str) -> Option<String> {
     output
         .split('\n')
         .filter_map(|line| line.trim().strip_prefix("agent_version=").map(str::to_string))
-        .last()
+        .next_back()
 }
 
 fn command_content(result: &Map<String, J>) -> Option<&Map<String, J>> {
