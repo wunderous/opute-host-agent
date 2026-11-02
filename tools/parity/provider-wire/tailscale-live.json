@@ -1,0 +1,335 @@
+[
+[
+"opute.capability.mesh-runtime.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.mesh-runtime.ensure-control-plane",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.mesh-membership.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.mesh-membership.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"pathClass": "public-ingress"
+}
+],
+[
+"opute.capability.mesh-membership.enroll",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"name": "a"
+}
+],
+[
+"opute.capability.mesh-membership.enroll",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"name": "a",
+"credentialKind": "auth-key"
+}
+],
+[
+"opute.capability.mesh-membership.enroll",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"name": "a",
+"credentialKind": "auth-key",
+"authKey": "tskey-given"
+}
+],
+[
+"opute.capability.mesh-membership.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.mesh-membership.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerMeshIp": "100.70.0.2"
+}
+],
+[
+"opute.capability.private-mesh.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerTargetUri": "vm:t:peer-b",
+"peerMeshIp": "100.70.0.2"
+}
+],
+[
+"opute.capability.private-mesh.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerTargetUri": "vm:t:nobody",
+"peerMeshIp": "100.70.0.9"
+}
+],
+[
+"opute.capability.private-mesh.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerTargetUri": "container:t:other",
+"peerMeshIp": "100.70.0.3"
+}
+],
+[
+"opute.capability.private-mesh.ensure-service",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"localTarget": "8080"
+}
+],
+[
+"opute.capability.public-ingress.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"localTarget": "http://127.0.0.1:80"
+}
+],
+[
+"opute.capability.public-ingress.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:peer-b",
+"localTarget": "http://127.0.0.1:80",
+"operatorMode": true,
+"ingressClassName": "tailscale",
+"hostname": "stable.example.test."
+}
+],
+[
+"opute.capability.public-ingress.probe",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.public-ingress.promote",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"endpointRef": "ingress-unknown"
+}
+],
+[
+"opute.capability.mesh-membership.leave",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"membershipRef": "mesh-unknown"
+}
+],
+[
+"opute.capability.mesh-membership.leave",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:peer-b",
+"membershipRef": "mesh-unknown"
+}
+],
+[
+"opute.capability.mesh-runtime.validate",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.provider.teardown",
+{
+"inputs": {
+"phase": "finalize",
+"generation": "other@1"
+}
+}
+],
+[
+"opute.provider.teardown",
+{
+"inputs": {
+"phase": "finalize"
+}
+}
+],
+[
+"opute.capability.mesh-membership.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:peer-b"
+}
+],
+[
+"opute.capability.mesh-membership.enroll",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:d",
+"name": "d",
+"credentialKind": "auth-key",
+"apiKey": "ts-badtype",
+"credential": "c"
+}
+],
+[
+"opute.capability.mesh-runtime.ensure-agent",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+},
+{
+"io.opute/host-resource-delegation": " deleg-token-1 "
+}
+],
+[
+"opute.capability.mesh-runtime.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.mesh-runtime.ensure-control-plane",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"operatorMode": false,
+"ingressClassName": "nginx"
+}
+],
+[
+"opute.capability.mesh-membership.enroll",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"name": "Node A!",
+"credentialKind": "auth-key",
+"authKey": "tskey-given"
+},
+{
+"io.opute/host-resource-delegation": " deleg-token-1 "
+}
+],
+[
+"opute.capability.mesh-membership.enroll",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"name": "again",
+"credentialKind": "auth-key"
+}
+],
+[
+"opute.capability.private-mesh.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerTargetUri": "vm:t:peer-b",
+"peerMeshIp": "100.70.0.2"
+}
+],
+[
+"opute.capability.private-mesh.probe",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerMeshIp": "100.70.0.2"
+}
+],
+[
+"opute.capability.private-mesh.probe",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"peerMeshIp": "100.70.9.9"
+}
+],
+[
+"opute.capability.private-mesh.ensure-service",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"localTarget": "8080"
+}
+],
+[
+"opute.capability.private-mesh.ensure-service",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"localTarget": "http://10.0.0.1:80"
+}
+],
+[
+"opute.capability.public-ingress.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"localTarget": "http://127.0.0.1:81"
+}
+],
+[
+"opute.capability.public-ingress.ensure",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a",
+"localTarget": "http://127.0.0.1:80"
+}
+],
+[
+"opute.capability.public-ingress.probe",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+],
+[
+"opute.capability.mesh-membership.leave",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:peer-b",
+"membershipRef": "mesh-unknown"
+}
+],
+[
+"opute.provider.teardown",
+{
+"inputs": {
+"phase": "finalize"
+}
+}
+],
+[
+"opute.capability.mesh-membership.status",
+{
+"hostAgentId": "host-1",
+"targetUri": "vm:t:a"
+}
+]
+]

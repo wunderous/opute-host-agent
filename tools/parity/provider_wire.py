@@ -9,15 +9,16 @@ and the body (parsed JSON when it is JSON). Two recordings compare equal when
 the provider's wire contract is the same.
 
   python3 provider_wire.py record <executable> <out.json> [--env K=V ...] [--calls calls.json]
-                                 [--fake cloudflare]
+                                 [--fake cloudflare|tailscale]
 
-`--fake cloudflare` serves a stateful Cloudflare API stand-in
-(provider-wire/fake_cloudflare.py), points the provider at it, and records
-every request the provider sent it. Random references (`mesh-<hex>`) are
+`--fake <api>` serves a stateful stand-in for that API
+(provider-wire/fake_<api>.py), points the provider at it, and records every
+request the provider sent it. Random references (`mesh-`, `node-` and
+`ingress-<hex>`) are
 masked in the recording.
 
 `calls.json` lists provider-specific tool calls, `[[tool, arguments], ...]`,
-each sent in both eras.
+each sent in both eras; an optional third element is merged into `_meta`.
   python3 provider_wire.py compare <left.json> <right.json>
 """
 import http.client
@@ -150,9 +151,13 @@ def corpus(tools: list[str], calls: list) -> list[tuple[str, dict]]:
             add(f"{era} call {tool} null args", rpc("tools/call", {"name": tool, "arguments": None}, modern=modern, name=tool))
             add(f"{era} call {tool} array args", rpc("tools/call", {"name": tool, "arguments": []}, modern=modern, name=tool))
             add(f"{era} call {tool} string args", rpc("tools/call", {"name": tool, "arguments": "x"}, modern=modern, name=tool))
-    for name, args in calls:
-        add(f"call {name} {json.dumps(args)[:60]}", rpc("tools/call", {"name": name, "arguments": args}, name=name))
-        add(f"legacy call {name} {json.dumps(args)[:60]}", rpc("tools/call", {"name": name, "arguments": args}, modern=False))
+    for name, args, *extra in calls:
+        # A third element is merged into the call's _meta (a delegation).
+        extra_meta = extra[0] if extra else {}
+        add(f"call {name} {json.dumps(args)[:60]}",
+            rpc("tools/call", {"name": name, "arguments": args, "_meta": {**meta(), **extra_meta}}, name=name))
+        add(f"legacy call {name} {json.dumps(args)[:60]}",
+            rpc("tools/call", {"name": name, "arguments": args, **({"_meta": extra_meta} if extra_meta else {})}, modern=False))
     add("modern resources/read named", rpc("resources/read", {"uri": "file:///x"}, name="file:///x"))
     add("modern resources/read misnamed", rpc("resources/read", {"uri": "file:///x"}, name="file:///y"))
     # Modern header checks.
@@ -211,11 +216,11 @@ def process_lines(stderr: bytes, port: int) -> list[str]:
 def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: str | None = None) -> int:
     port = free_port()
     fake_state = None
-    if fake == "cloudflare":
+    if fake:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "provider-wire"))
-        import fake_cloudflare
-        base, fake_state, _ = fake_cloudflare.serve()
-        env_pairs = fake_cloudflare.env(base) + env_pairs
+        module = __import__(f"fake_{fake}")
+        base, fake_state, _ = module.serve()
+        env_pairs = module.env(base) + env_pairs
     env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.environ.get("HOME", "/tmp"),
            "OPUTE_PROVIDER_PORT": str(port)}
     env.update(pair.split("=", 1) for pair in env_pairs)
@@ -238,6 +243,7 @@ def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: s
         tools = [t["name"] for t in send(port, rpc("tools/list"))["json"]["result"]["tools"]]
         steps = []
         for name, req in corpus(tools, calls):
+            seen = len(fake_state.log) if fake_state is not None else 0
             step = {"as": name, "response": send(port, req)}
             if "error" in step["response"]:
                 try:
@@ -249,16 +255,18 @@ def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: s
                 stdout += out_bytes
                 step["exit"] = {"code": proc.returncode, "log": process_lines(err_bytes, port)}
                 proc = start()
+            if fake_state is not None:
+                # The requests this step caused, in the order they arrived.
+                step["fakeRequests"] = fake_state.log[seen:]
             steps.append(step)
     finally:
         proc.terminate()
         out_bytes, err_bytes = proc.communicate(timeout=10)
     stdout += out_bytes
     doc = {"tools": tools, "steps": steps, "stdout": stdout.decode(), "stderr": process_lines(err_bytes, port)}
-    if fake_state is not None:
-        doc["fakeRequests"] = fake_state.log
     text = json.dumps(doc, indent=1, sort_keys=True)
     text = re.sub(r"mesh-[0-9a-f]{36}", "mesh-${REF}", text)
+    text = re.sub(r"\b(mesh|node|ingress)-[0-9a-f]{24}\b", r"\1-${REF}", text)
     with open(out, "w") as f:
         f.write(text + "\n")
     return 0
@@ -271,18 +279,28 @@ def compare(left: str, right: str) -> int:
         print("tools differ"); diffs += 1
     if a["stderr"] != b["stderr"] or a["stdout"] != b["stdout"]:
         print("process output differs:", a["stderr"], b["stderr"]); diffs += 1
-    fa, fb = a.get("fakeRequests", []), b.get("fakeRequests", [])
-    for i, (x, y) in enumerate(zip(fa, fb)):
-        if x != y:
-            diffs += 1
-            print(f"== fake request {i}\n  L {json.dumps(x, sort_keys=True)[:600]}\n  R {json.dumps(y, sort_keys=True)[:600]}")
-    if len(fa) != len(fb):
-        print(f"fake request counts differ: {len(fa)} vs {len(fb)}"); diffs += 1
+    order_only = 0
     for x, y in zip(a["steps"], b["steps"], strict=True):
+        fx, fy = x.pop("fakeRequests", None), y.pop("fakeRequests", None)
+        if fx != fy:
+            canon = lambda reqs: sorted(json.dumps(r, sort_keys=True) for r in reqs or [])
+            if canon(fx) == canon(fy):
+                # Go ranges over maps in random order; within one step the
+                # same requests in another order are reported, not failed.
+                order_only += 1
+                print(f"~~ {x['as']}: the same {len(fx)} fake requests in another order")
+            else:
+                diffs += 1
+                for i, (rx, ry) in enumerate(zip(fx or [], fy or [])):
+                    if rx != ry:
+                        print(f"== {x['as']} fake request {i}\n  L {json.dumps(rx, sort_keys=True)[:600]}\n  R {json.dumps(ry, sort_keys=True)[:600]}")
+                        break
+                if len(fx or []) != len(fy or []):
+                    print(f"== {x['as']}: fake request counts differ: {len(fx or [])} vs {len(fy or [])}")
         if x != y:
             diffs += 1
             print(f"== {x['as']}\n  L {json.dumps(x['response'], sort_keys=True)[:600]}\n  R {json.dumps(y['response'], sort_keys=True)[:600]}")
-    print(f"{len(a['steps'])} steps, {diffs} differ")
+    print(f"{len(a['steps'])} steps, {diffs} differ" + (f", {order_only} in another order only" if order_only else ""))
     return 1 if diffs else 0
 
 
