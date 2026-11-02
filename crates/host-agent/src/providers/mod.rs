@@ -21,6 +21,7 @@ pub mod hostos;
 mod support;
 
 pub use support::{go_any, go_panic, Args, HostAgent};
+pub(crate) use support::proxy_for;
 
 use crate::gojson::Node;
 use crate::http1::{Body, Request, Response};

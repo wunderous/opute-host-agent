@@ -332,7 +332,9 @@ fn env(key: &str) -> String {
 
 /// `httpproxy.FromEnvironment` + `ProxyFunc`: the proxy URL Go uses for
 /// `url`, if any. Loopback and `localhost` are never proxied.
-fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
+/// Go's `http.ProxyFromEnvironment` (`httpproxy.Config.ProxyFunc`): the
+/// proxy for a request, never for localhost or a loopback address.
+pub(crate) fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
     let pick = |upper: &str, lower: &str| {
         let v = env(upper);
         if v.is_empty() {
