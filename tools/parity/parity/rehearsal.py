@@ -27,9 +27,12 @@ written.
 Go -> Go -> Go and Go -> Rust -> Go are compared after the declared masks.
 Three drills run on their own sandboxes: a synchronous call in flight when
 the agent is told to stop (drain or refuse), a long task in flight when it
-is told to stop (and what a restart makes of it), and two agents on one state
-directory (Go takes no state-directory lock; the observation is what each
-implementation does, compared).
+is told to stop (and what a restart makes of it), and the D25 writer lock:
+for each ordered pair (Go/Go, Rust/Rust, Go then Rust, Rust then Go) a
+second agent on the first's instance is refused, exit 1 with one stderr
+line and nothing on stdout, writes no store and binds no port while the
+first keeps serving; and after the first is SIGKILLed the second starts.
+Each pair is compared with Go/Go after masking the sandbox path.
 """
 from __future__ import annotations
 
@@ -38,6 +41,7 @@ import json
 import os
 import shutil
 import signal
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -391,36 +395,72 @@ def task_drill(impl: agent.Impl, run_id: str, case: dict) -> dict:
     return out
 
 
-def two_writers(impl: agent.Impl, run_id: str) -> dict:
-    """Two agents on one state directory (Go takes no lock on it): does the
-    second start, does each accept work, and what does a later restart see?"""
-    first = _sandbox(impl, f"{run_id}-1", None)
-    second = _sandbox(impl, f"{run_id}-2", None)
+WRITER_PAIRS = (("go", "go"), ("rust", "rust"), ("go", "rust"), ("rust", "go"))
+REFUSAL = ("host agent instance is already in use: ${SANDBOX}/instance/host-agent.lock "
+           "is locked by another process\n")
+
+
+def _tree(root: Path) -> list[str]:
+    """Every path under root, relative and sorted: what a refused agent may
+    have written."""
+    return sorted(str(p.relative_to(root)) for p in root.rglob("*"))
+
+
+def writer_lock(first_impl: agent.Impl, second_impl: agent.Impl, run_id: str) -> dict:
+    """D25: a second agent on the first's instance root and state directory
+    is refused at start-up while the first keeps serving; once the first is
+    SIGKILLed, the second starts on the same instance."""
+    first = _sandbox(first_impl, f"{run_id}-1", None)
+    second = _sandbox(second_impl, f"{run_id}-2", None)
     shared = {"OPUTE_STANDALONE_STATE_DIR": str(first.root / "state"),
               "OPUTE_HOST_AGENT_INSTANCE_ROOT": str(first.root / "instance")}
+    env = {**ENV, **shared}
     out: dict[str, Any] = {}
-    one = _start(impl, first)
-    two = agent.Server(impl, second, ["serve", "--mode=standalone"], {**ENV, **shared})
-    ready = two.wait_ready(30)
-    out["secondStarted"] = bool(ready.get("ready"))
+    one = _start(first_impl, first, env)
+    servers = [one]
     try:
-        ids = {"X": _new_input_task(first)}
-        if out["secondStarted"]:
-            ids["Y"] = _new_input_task(second)
-            out["crossVisible"] = {"XfromSecond": _status(_task(second, ids["X"])),
-                                   "YfromFirst": _status(_task(first, ids["Y"]))}
-        else:
-            out["secondRefusal"] = (second.root / "server.log").read_text(errors="replace")[-600:]
-        out["stops"] = [_stop(one), _stop(two)]
-        third = _start(impl, first)
-        out["afterRestart"] = {k: _status(_task(first, v)) for k, v in ids.items()}
-        out["stops"].append(_stop(third))
+        task_id = _new_input_task(first)
+        before = _tree(first.root)
+        argv = [str(second_impl.binary), "serve", "--mode=standalone"]
+        try:
+            refused = subprocess.run(argv, env=second.env_for(env), cwd=second.root, capture_output=True,
+                                     stdin=subprocess.DEVNULL, timeout=30)
+            mask = lambda b: b.decode(errors="replace").replace(str(first.root), "${SANDBOX}")
+            out["second"] = {"exit": refused.returncode, "stdout": mask(refused.stdout),
+                             "stderr": mask(refused.stderr)}
+        except subprocess.TimeoutExpired:
+            out["second"] = {"exit": None, "stillRunningAfter": 30}
+        out["second"]["portBound"] = agent.port_open(second.port)
+        out["firstTreeUnchanged"] = _tree(first.root) == before
+        out["firstServing"] = {"health": _health(first), "task": _status(_task(first, task_id))}
+        out["killFirst"] = one.stop(signal.SIGKILL)
+        two = _start(second_impl, second, env)
+        servers.append(two)
+        out["afterKill"] = {"secondStarted": True, "health": _health(second),
+                            "task": _status(_task(second, task_id))}
+        out["stopSecond"] = _stop(two)
+    except RuntimeError as error:
+        out["error"] = str(error).replace(str(first.root), "${SANDBOX}")
     finally:
-        one.stop()
-        two.stop()
+        for server in servers:
+            server.stop()
         shutil.rmtree(first.root, ignore_errors=True)
         shutil.rmtree(second.root, ignore_errors=True)
     return out
+
+
+def _writer_lock_checks(doc: dict) -> dict:
+    second = doc.get("second") or {}
+    return {
+        "secondRefused": second.get("exit") == 1 and second.get("stderr") == REFUSAL,
+        "nothingOnStdout": second.get("stdout") == "",
+        "noPortBound": second.get("portBound") is False,
+        "noStoreWritten": doc.get("firstTreeUnchanged") is True,
+        "firstKeptServing": (doc.get("firstServing") or {}).get("task") == "input_required"
+                            and ((doc.get("firstServing") or {}).get("health") or {}).get("ok") is True,
+        "nextStartsAfterSigkill": (doc.get("afterKill") or {}).get("secondStarted") is True
+                                  and (doc.get("afterKill") or {}).get("task") == "input_required",
+    }
 
 
 _RFC3339 = __import__("re").compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(Z|[+-]\d\d:\d\d)$")
@@ -498,9 +538,16 @@ def evaluate(outcome: dict) -> dict:
         comparisons.append(canon.diff(gn, rn))
     drills = {"drain": canon.diff(outcome["drain"]["go"], outcome["drain"]["rust"]),
               **{f"longTask.{case}": _long_task_diff(case, outcome["longTask"][case]) for case in LONG_TASKS},
-              "twoWriters": canon.diff(outcome["twoWriters"]["go"], outcome["twoWriters"]["rust"])}
+              }
+    writer = outcome["writerLock"]
+    control = _drop_timing(writer["go-go"])
+    for pair in writer:
+        failed = [name for name, ok in _writer_lock_checks(writer[pair]).items() if not ok]
+        drills[f"writerLock.{pair}"] = ([{"path": ["writerLock", pair, "checks"], "failed": failed}]
+                                        if failed else []) + canon.diff(control, _drop_timing(writer[pair]))
     passed = (all(all(v is True for v in c.values()) for t in ("go", "rust") for c in out[t])
-              and all(not c for c in comparisons) and not any(drills.values()))
+              and all(not c for c in comparisons) and not any(drills.values())
+              and sorted(writer) == sorted(f"{a}-{b}" for a, b in WRITER_PAIRS))
     return {"checks": out, "comparisons": comparisons, "drills": drills, "pass": passed}
 
 
@@ -560,7 +607,7 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path, repeat: int = 3) -> dict:
                   "noIncusOnPath": shutil.which("incus", path="/usr/bin:/bin") is None}
     if not provenance["noIncusOnPath"]:
         raise RuntimeError("an incus binary is on /usr/bin:/bin; the rehearsal copies would reach it")
-    outcome: dict[str, Any] = {"rehearsals": {"go": [], "rust": []}, "drain": {}, "longTask": {}, "twoWriters": {}}
+    outcome: dict[str, Any] = {"rehearsals": {"go": [], "rust": []}, "drain": {}, "longTask": {}, "writerLock": {}}
     for i in range(repeat):
         for label, target in (("go", go), ("rust", rust)):
             try:
@@ -571,7 +618,9 @@ def run(go: agent.Impl, rust: agent.Impl, out: Path, repeat: int = 3) -> dict:
         outcome["drain"][label] = drain_drill(impl, f"m12a-drain-{label}")
         for case, spec in LONG_TASKS.items():
             outcome["longTask"].setdefault(case, {})[label] = task_drill(impl, f"m12a-task-{case}-{label}", spec)
-        outcome["twoWriters"][label] = two_writers(impl, f"m12a-writers-{label}")
+    impls = {"go": go, "rust": rust}
+    for a, b in WRITER_PAIRS:
+        outcome["writerLock"][f"{a}-{b}"] = writer_lock(impls[a], impls[b], f"m12a-writer-lock-{a}-{b}")
     shutil.rmtree(work, ignore_errors=True)
     provenance["changedDuringRun"] = (go.sha256() != provenance["goBinarySha256"]
                                       or rust.sha256() != provenance["rustBinarySha256"]
