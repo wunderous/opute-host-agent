@@ -9,6 +9,12 @@ and the body (parsed JSON when it is JSON). Two recordings compare equal when
 the provider's wire contract is the same.
 
   python3 provider_wire.py record <executable> <out.json> [--env K=V ...] [--calls calls.json]
+                                 [--fake cloudflare]
+
+`--fake cloudflare` serves a stateful Cloudflare API stand-in
+(provider-wire/fake_cloudflare.py), points the provider at it, and records
+every request the provider sent it. Random references (`mesh-<hex>`) are
+masked in the recording.
 
 `calls.json` lists provider-specific tool calls, `[[tool, arguments], ...]`,
 each sent in both eras.
@@ -17,6 +23,7 @@ each sent in both eras.
 import http.client
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -186,29 +193,74 @@ def send(port: int, req: dict) -> dict:
     return out
 
 
-def record(executable: str, out: str, env_pairs: list[str], calls: list) -> int:
+def process_lines(stderr: bytes, port: int) -> list[str]:
+    """The process's log lines without the `log` timestamp; a panic keeps its
+    message and drops the goroutine dump, which is runtime detail."""
+    lines, dump = [], False
+    for line in stderr.decode().splitlines():
+        if line.startswith("goroutine ") and line.endswith(":"):
+            dump = True
+        if dump:
+            continue
+        lines.append((line.split(" ", 2)[2] if line[:4].isdigit() else line).replace(str(port), "${PORT}"))
+    while lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
+def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: str | None = None) -> int:
     port = free_port()
+    fake_state = None
+    if fake == "cloudflare":
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "provider-wire"))
+        import fake_cloudflare
+        base, fake_state, _ = fake_cloudflare.serve()
+        env_pairs = fake_cloudflare.env(base) + env_pairs
     env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.environ.get("HOME", "/tmp"),
            "OPUTE_PROVIDER_PORT": str(port)}
     env.update(pair.split("=", 1) for pair in env_pairs)
-    proc = subprocess.Popen([executable, "serve"], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    try:
+
+    def start():
+        proc = subprocess.Popen([executable, "serve"], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         for _ in range(100):
             try:
                 socket.create_connection(("127.0.0.1", port), 0.2).close()
                 break
             except OSError:
                 time.sleep(0.05)
+        return proc
+
+    # A step that ends the process (a Go panic) is recorded with its exit
+    # status and log, and the executable is started again for the next step.
+    proc = start()
+    stdout, stderr = b"", []
+    try:
         tools = [t["name"] for t in send(port, rpc("tools/list"))["json"]["result"]["tools"]]
-        steps = [{"as": name, "response": send(port, req)} for name, req in corpus(tools, calls)]
+        steps = []
+        for name, req in corpus(tools, calls):
+            step = {"as": name, "response": send(port, req)}
+            if "error" in step["response"]:
+                try:
+                    proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    pass
+            if proc.poll() is not None:
+                out_bytes, err_bytes = proc.communicate()
+                stdout += out_bytes
+                step["exit"] = {"code": proc.returncode, "log": process_lines(err_bytes, port)}
+                proc = start()
+            steps.append(step)
     finally:
         proc.terminate()
-        stdout, stderr = proc.communicate(timeout=10)
-    lines = [line.split(" ", 2)[2] if line[:4].isdigit() else line for line in stderr.decode().splitlines()]
-    doc = {"tools": tools, "steps": steps, "stdout": stdout.decode(), "stderr": [line.replace(str(port), "${PORT}") for line in lines]}
+        out_bytes, err_bytes = proc.communicate(timeout=10)
+    stdout += out_bytes
+    doc = {"tools": tools, "steps": steps, "stdout": stdout.decode(), "stderr": process_lines(err_bytes, port)}
+    if fake_state is not None:
+        doc["fakeRequests"] = fake_state.log
+    text = json.dumps(doc, indent=1, sort_keys=True)
+    text = re.sub(r"mesh-[0-9a-f]{36}", "mesh-${REF}", text)
     with open(out, "w") as f:
-        json.dump(doc, f, indent=1, sort_keys=True)
-        f.write("\n")
+        f.write(text + "\n")
     return 0
 
 
@@ -219,6 +271,13 @@ def compare(left: str, right: str) -> int:
         print("tools differ"); diffs += 1
     if a["stderr"] != b["stderr"] or a["stdout"] != b["stdout"]:
         print("process output differs:", a["stderr"], b["stderr"]); diffs += 1
+    fa, fb = a.get("fakeRequests", []), b.get("fakeRequests", [])
+    for i, (x, y) in enumerate(zip(fa, fb)):
+        if x != y:
+            diffs += 1
+            print(f"== fake request {i}\n  L {json.dumps(x, sort_keys=True)[:600]}\n  R {json.dumps(y, sort_keys=True)[:600]}")
+    if len(fa) != len(fb):
+        print(f"fake request counts differ: {len(fa)} vs {len(fb)}"); diffs += 1
     for x, y in zip(a["steps"], b["steps"], strict=True):
         if x != y:
             diffs += 1
@@ -232,5 +291,6 @@ if __name__ == "__main__":
         opts = list(zip(sys.argv[4::2], sys.argv[5::2]))
         envs = [v for k, v in opts if k == "--env"]
         calls = [c for k, v in opts if k == "--calls" for c in json.load(open(v))]
-        sys.exit(record(sys.argv[2], sys.argv[3], envs, calls))
+        fake = next((v for k, v in opts if k == "--fake"), None)
+        sys.exit(record(sys.argv[2], sys.argv[3], envs, calls, fake))
     sys.exit(compare(sys.argv[2], sys.argv[3]))
