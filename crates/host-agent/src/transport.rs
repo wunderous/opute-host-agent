@@ -1299,9 +1299,13 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         let call = |name: &str, params: Option<&Node>| crate::tools::call(server, name, params);
         let snapshot = server.catalog.wire_snapshot();
         let tools = crate::catalog::published_tools(&snapshot, &server.tool_prefix);
+        let capabilities =
+            json!({"resources": {"listChanged": true}, "tools": {"listChanged": true}});
         let sdk = crate::mcpsdk::Sdk {
             implementation_name: &server.implementation_name,
             version: &server.version,
+            capabilities: &capabilities,
+            log: true,
             tools: &tools,
             call_tool: &call,
         };

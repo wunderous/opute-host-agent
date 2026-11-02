@@ -47,6 +47,11 @@ const META_SERVER_INFO: &str = "io.modelcontextprotocol/serverInfo";
 pub struct Sdk<'a> {
     pub implementation_name: &'a str,
     pub version: &'a str,
+    /// `ServerOptions.Capabilities` as `initialize` reports them.
+    pub capabilities: &'a J,
+    /// Whether the server has a Logger; go-sdk discards its own log lines
+    /// when none is set.
+    pub log: bool,
     /// The published `tools/list` entries, sorted by wire name.
     pub tools: &'a [J],
     /// The registered tool handler (the Go server's `handleToolCall`).
@@ -505,6 +510,30 @@ static SUBSCRIPTIONS_LISTEN_PARAMS: StructDef = StructDef {
         ("notifications", Ty::Struct(&NOTIFICATION_SUBSCRIPTIONS)),
     ],
 };
+static LIST_RESOURCES_PARAMS: StructDef = StructDef {
+    name: "mcp.ListResourcesParams",
+    fields: &[("_meta", META), ("cursor", Ty::Str("string"))],
+};
+static LIST_RESOURCE_TEMPLATES_PARAMS: StructDef = StructDef {
+    name: "mcp.ListResourceTemplatesParams",
+    fields: &[("_meta", META), ("cursor", Ty::Str("string"))],
+};
+static READ_RESOURCE_PARAMS: StructDef = StructDef {
+    name: "mcp.ReadResourceParams",
+    fields: &[("_meta", META), ("uri", Ty::Str("string"))],
+};
+static SUBSCRIBE_PARAMS: StructDef = StructDef {
+    name: "mcp.SubscribeParams",
+    fields: &[("_meta", META), ("uri", Ty::Str("string"))],
+};
+static UNSUBSCRIBE_PARAMS: StructDef = StructDef {
+    name: "mcp.UnsubscribeParams",
+    fields: &[("_meta", META), ("uri", Ty::Str("string"))],
+};
+static DISCOVER_PARAMS: StructDef = StructDef {
+    name: "mcp.DiscoverParams",
+    fields: &[("_meta", META)],
+};
 static SET_LEVEL_PARAMS: StructDef = StructDef {
     name: "mcp.SetLoggingLevelParams",
     fields: &[("_meta", META), ("level", Ty::Str("mcp.LoggingLevel"))],
@@ -623,6 +652,51 @@ struct Message {
     params: Vec<u8>,
 }
 
+/// `internaljson.Unmarshal`'s framing: segmentio's `Decoder.Decode` reads
+/// the first JSON value and ignores what follows; a syntax error is
+/// segmentio's text.
+fn first_document(raw: &[u8]) -> Result<Node, String> {
+    let end = gojson::first_value(raw).map_err(|e| {
+        if e == "EOF" || e == "unexpected EOF" {
+            return e;
+        }
+        // The offending byte: the shortest prefix that fails the same way.
+        let (mut lo, mut hi) = (0, raw.len());
+        while lo < hi {
+            let mid = (lo + hi) / 2;
+            if gojson::first_value(&raw[..=mid]).err().as_deref() == Some(e.as_str()) {
+                hi = mid;
+            } else {
+                lo = mid + 1;
+            }
+        }
+        let rest = prefix(&raw[lo.min(raw.len())..]);
+        if e == "invalid character '}' looking for beginning of object key string" {
+            format!("json: unexpected trailing comma after object field: {rest}")
+        } else {
+            format!("json: {e}: {rest}")
+        }
+    })?;
+    gojson::parse(&raw[..end]).map_err(|_| "unexpected EOF".to_string())
+}
+
+/// `readBatch`: an array of messages, each decoded, else one message. The
+/// result is the array (checked) or the single document.
+fn read_batch(raw: &[u8]) -> Result<Node, String> {
+    let doc = first_document(raw).map_err(|e| format!("unmarshaling jsonrpc message: {e}"))?;
+    if let Value::Array(items) = &doc.value {
+        if items.is_empty() {
+            return Err("empty batch".into());
+        }
+        // Each element is decoded from its own bytes (a `json.RawMessage`).
+        for item in items {
+            let node = gojson::parse(&item.raw).map_err(|_| "unexpected EOF".to_string())?;
+            decode_message(&node, &item.raw)?;
+        }
+    }
+    Ok(doc)
+}
+
 /// jsonrpc2 `DecodeMessage`.
 fn decode_message(node: &Node, doc: &[u8]) -> Result<Message, String> {
     if node.as_object().is_none() {
@@ -661,9 +735,20 @@ fn decode_message(node: &Node, doc: &[u8]) -> Result<Message, String> {
             Value::Array(_) => return Err("parse error: invalid ID type []interface {}".into()),
         },
     };
-    let (method, has_method) = match node.field("method").map(|n| &n.value) {
-        Some(Value::String(s)) => (s.clone(), !s.is_empty()),
-        _ => (String::new(), false),
+    // A present "method" key makes a request, even an empty or null one;
+    // its value is decoded on its own bytes.
+    let (method, has_method) = match node.field("method") {
+        None => (String::new(), false),
+        Some(n) => match &n.value {
+            Value::String(s) => (s.clone(), true),
+            Value::Null => (String::new(), true),
+            _ => {
+                return Err(format!(
+                    "unmarshaling jsonrpc message: json: cannot unmarshal {} into Go value of type string",
+                    quote(&prefix(&n.raw))
+                ))
+            }
+        },
     };
     let params = node
         .field("params")
@@ -744,6 +829,14 @@ pub fn serve(sdk: &Sdk, req: &Request, raw: &[u8], protected: bool) -> Response 
             400,
         );
     }
+    // `serveStateless` answers only POST. The agent's own transport turns
+    // other methods away before the SDK sees them; a provider executable
+    // hands every request to the SDK.
+    if req.method != "POST" {
+        let mut r = Response::error("Method Not Allowed", 405);
+        r.headers.set("Allow", "POST");
+        return r;
+    }
     if parse_media_type(req.headers.get("Content-Type")).as_deref() != Some("application/json") {
         return Response::error("Content-Type must be 'application/json'", 415);
     }
@@ -760,19 +853,24 @@ pub fn serve(sdk: &Sdk, req: &Request, raw: &[u8], protected: bool) -> Response 
     // `serveStateless` connects an ephemeral session here, after the
     // handler's own header and size checks; it disconnects when the request
     // completes, whatever the transport answers.
-    let _session = EphemeralSession::connect();
+    let _session = EphemeralSession::connect(sdk.log);
     let effective_version = if header_version.is_empty() {
         "2025-03-26".to_string()
     } else {
         header_version.clone()
     };
     let new_protocol = header_version.as_str() >= MODERN_VERSION;
-    let doc = match gojson::parse(raw) {
+    // The agent's transport refuses an empty or unparsable body itself; a
+    // provider executable's requests reach the SDK's own checks.
+    if raw.is_empty() {
+        return Response::error("POST requires a non-empty body", 400);
+    }
+    let doc = match read_batch(raw) {
         Ok(d) => d,
-        Err(_) => return Response::error("malformed payload: invalid character", 400),
+        Err(e) => return Response::error(&format!("malformed payload: {e}"), 400),
     };
-    if let Value::Array(_) = doc.value {
-        if effective_version.as_str() >= "2025-06-18" {
+    if let Value::Array(items) = &doc.value {
+        if effective_version.as_str() >= "2025-06-18" || items.len() != 1 {
             return Response::error(
                 &format!(
                     "JSON-RPC batching is not supported in 2025-06-18 and later (request version: {effective_version})"
@@ -781,12 +879,24 @@ pub fn serve(sdk: &Sdk, req: &Request, raw: &[u8], protected: bool) -> Response 
             );
         }
     }
+    // An older-era batch of one is its message, decoded from its own bytes.
+    let (doc, raw) = match doc.value {
+        Value::Array(items) => {
+            let own = items[0].raw.clone();
+            match gojson::parse(&own) {
+                Ok(node) => (node, own),
+                Err(_) => return Response::error("malformed payload: unexpected EOF", 400),
+            }
+        }
+        _ => (doc, raw.to_vec()),
+    };
+    let raw = raw.as_slice();
     let msg = match decode_message(&doc, raw) {
         Ok(m) => m,
         Err(e) => return Response::error(&format!("malformed payload: {e}"), 400),
     };
     if !msg.has_method {
-        // A response or an empty method: nothing to dispatch.
+        // A response: nothing to dispatch.
         return Response::new(202);
     }
     let is_call = msg.id.is_some();
@@ -883,9 +993,61 @@ pub fn serve(sdk: &Sdk, req: &Request, raw: &[u8], protected: bool) -> Response 
     };
     let mut r = Response::new(status);
     r.headers.set("Cache-Control", "no-cache, no-transform");
+    if msg.method == "subscriptions/listen" && !new_protocol {
+        // A listen request is always answered on an event stream; only the
+        // new protocol's errors are written before the stream starts.
+        r.headers.set("Content-Type", "text/event-stream");
+        let mut framed = b"event: message\ndata: ".to_vec();
+        framed.extend_from_slice(&wire_order(&body));
+        framed.extend_from_slice(b"\n\n");
+        r.body = framed;
+        return r;
+    }
     r.headers.set("Content-Type", "application/json");
     r.body = body;
     r
+}
+
+/// A response envelope in jsonrpc2's wire field order (`jsonrpc`, `id`,
+/// then `result` or `error` with `code`, `message`, `data`), as an event
+/// stream carries it verbatim.
+fn wire_order(body: &[u8]) -> Vec<u8> {
+    let Ok(J::Object(envelope)) = serde_json::from_slice::<J>(body) else {
+        return body.to_vec();
+    };
+    let field = |key: &str| {
+        envelope
+            .get(key)
+            .map(|v| String::from_utf8(go_marshal(v)).unwrap_or_default())
+    };
+    let mut out = format!(
+        "{{\"jsonrpc\":\"2.0\",\"id\":{}",
+        field("id").unwrap_or_else(|| "null".into())
+    );
+    if let Some(result) = field("result") {
+        out.push_str(&format!(",\"result\":{result}"));
+    }
+    if let Some(J::Object(error)) = envelope.get("error") {
+        let part = |key: &str| {
+            error
+                .get(key)
+                .map(|v| String::from_utf8(go_marshal(v)).unwrap_or_default())
+        };
+        out.push_str(&format!(
+            ",\"error\":{{\"code\":{}",
+            part("code").unwrap_or_else(|| "0".into())
+        ));
+        out.push_str(&format!(
+            ",\"message\":{}",
+            part("message").unwrap_or_else(|| "\"\"".into())
+        ));
+        if let Some(data) = part("data") {
+            out.push_str(&format!(",\"data\":{data}"));
+        }
+        out.push('}');
+    }
+    out.push('}');
+    out.into_bytes()
 }
 
 /// `validateMcpHeaders` (raw header values; no RFC 2047 decoding).
@@ -906,7 +1068,7 @@ fn validate_mcp_headers(req: &Request, version: &str, msg: &Message) -> Result<(
     let (def, field): (&StructDef, &str) = match msg.method.as_str() {
         "tools/call" => (&CALL_TOOL_PARAMS, "name"),
         "prompts/get" => (&GET_PROMPT_PARAMS, "name"),
-        "resources/read" => return Ok(()),
+        "resources/read" => (&READ_RESOURCE_PARAMS, "uri"),
         _ => return Ok(()),
     };
     let name_header = req.headers.get("Mcp-Name");
@@ -1030,7 +1192,7 @@ fn gob_uint(b: &[u8]) -> Option<(u64, &[u8])> {
 /// protocol version, the methods the new protocol removed, and the
 /// per-request log level the SDK logs as it sets it. Returns whether the
 /// request uses the new protocol.
-fn session_preamble(msg: &Message) -> Result<bool, RpcError> {
+fn session_preamble(msg: &Message, log: bool) -> Result<bool, RpcError> {
     let meta = request_meta(&msg.params);
     let mut uses_new = false;
     let mut meta_version = String::new();
@@ -1085,11 +1247,13 @@ fn session_preamble(msg: &Message) -> Result<bool, RpcError> {
                 | "resources/unsubscribe"
         )
     {
-        crate::app::log_error(
-            &mut std::io::stderr(),
-            "method removed in the new protocol",
-            &[("method", &msg.method)],
-        );
+        if log {
+            crate::app::log_error(
+                &mut std::io::stderr(),
+                "method removed in the new protocol",
+                &[("method", &msg.method)],
+            );
+        }
         // jsonrpc2 rewrites every method-not-found error to this text.
         return Err(rpc_err(
             -32601,
@@ -1097,13 +1261,16 @@ fn session_preamble(msg: &Message) -> Result<bool, RpcError> {
         ));
     }
     if uses_new {
-        log_level_set(&log_level);
+        log_level_set(&log_level, log);
     }
     Ok(uses_new)
 }
 
 /// `ServerSession.setLevel`.
-fn log_level_set(level: &str) {
+fn log_level_set(level: &str, log: bool) {
+    if !log {
+        return;
+    }
     crate::app::log_info(
         &mut std::io::stderr(),
         "client log level set",
@@ -1113,33 +1280,37 @@ fn log_level_set(level: &str) {
 
 /// The ephemeral session `serveStateless` connects for one request, as the
 /// SDK's server Logger reports it (a stateless session has no id).
-struct EphemeralSession;
+struct EphemeralSession(bool);
 
 impl EphemeralSession {
-    fn connect() -> Self {
-        let mut stderr = std::io::stderr();
-        crate::app::log_info(&mut stderr, "server connecting", &[]);
-        crate::app::log_info(
-            &mut stderr,
-            "server session connected",
-            &[("session_id", "")],
-        );
-        EphemeralSession
+    fn connect(log: bool) -> Self {
+        if log {
+            let mut stderr = std::io::stderr();
+            crate::app::log_info(&mut stderr, "server connecting", &[]);
+            crate::app::log_info(
+                &mut stderr,
+                "server session connected",
+                &[("session_id", "")],
+            );
+        }
+        EphemeralSession(log)
     }
 }
 
 impl Drop for EphemeralSession {
     fn drop(&mut self) {
-        crate::app::log_info(
-            &mut std::io::stderr(),
-            "server session disconnected",
-            &[("session_id", "")],
-        );
+        if self.0 {
+            crate::app::log_info(
+                &mut std::io::stderr(),
+                "server session disconnected",
+                &[("session_id", "")],
+            );
+        }
     }
 }
 
 fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
-    let uses_new = session_preamble(msg)?;
+    let uses_new = session_preamble(msg, sdk.log)?;
     // jsonrpc2 rewrites every method-not-found error to this text.
     let not_found = || rpc_err(-32601, format!("method not found: {}", quote(&msg.method)));
     let raw = &msg.params;
@@ -1160,7 +1331,7 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
                 "2025-11-25".to_string()
             };
             return Ok(json!({
-                "capabilities": {"resources": {"listChanged": true}, "tools": {"listChanged": true}},
+                "capabilities": sdk.capabilities,
                 "protocolVersion": negotiated,
                 "serverInfo": {"name": sdk.implementation_name, "version": sdk.version},
             }));
@@ -1239,6 +1410,57 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
             }
             return Err(not_found());
         }
+        "resources/list" => {
+            let params = unmarshal_params("resources/list", raw, &LIST_RESOURCES_PARAMS, true)?;
+            check_cursor(params.as_ref())?;
+            json!({"resources": [], "ttlMs": 0, "cacheScope": "public"})
+        }
+        "resources/templates/list" => {
+            let params = unmarshal_params(
+                "resources/templates/list",
+                raw,
+                &LIST_RESOURCE_TEMPLATES_PARAMS,
+                true,
+            )?;
+            check_cursor(params.as_ref())?;
+            json!({"resourceTemplates": [], "ttlMs": 0, "cacheScope": "public"})
+        }
+        "resources/read" => {
+            let params = unmarshal_params("resources/read", raw, &READ_RESOURCE_PARAMS, false)?;
+            let uri = params
+                .as_ref()
+                .and_then(|p| p.field("uri"))
+                .and_then(|u| u.as_str())
+                .unwrap_or("")
+                .to_string();
+            return Err(RpcError {
+                code: -32602,
+                message: "Resource not found".into(),
+                data: Some(json!({"uri": uri})),
+            });
+        }
+        // No subscribe handler is registered: the params are decoded, then
+        // the method is not found.
+        "resources/subscribe" => {
+            unmarshal_params("resources/subscribe", raw, &SUBSCRIBE_PARAMS, false)?;
+            return Err(not_found());
+        }
+        "resources/unsubscribe" => {
+            unmarshal_params("resources/unsubscribe", raw, &UNSUBSCRIBE_PARAMS, false)?;
+            return Err(not_found());
+        }
+        "server/discover" => {
+            if !uses_new {
+                return Err(not_found());
+            }
+            unmarshal_params("server/discover", raw, &DISCOVER_PARAMS, true)?;
+            json!({
+                "supportedVersions": SUPPORTED_VERSIONS,
+                "capabilities": sdk.capabilities,
+                "ttlMs": 0,
+                "cacheScope": "public",
+            })
+        }
         "subscriptions/listen" => {
             let params = unmarshal_params(
                 "subscriptions/listen",
@@ -1268,7 +1490,7 @@ fn handle(sdk: &Sdk, msg: &Message) -> Result<J, RpcError> {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            log_level_set(&level);
+            log_level_set(&level, sdk.log);
             return Ok(json!({}));
         }
         _ => return Err(not_found()),
