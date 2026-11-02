@@ -1294,7 +1294,7 @@ STABLE_REFUSAL = "a stable package version cannot publish a different catalog re
 def evaluate_site(obs: dict, reviewed: list[str]) -> dict:
     """Go's own check-site passes on the committed site from Go's binary
     (the control); Go's release policy refuses the Rust catalog for the
-    stable 0.2.3 package (a finding, recorded as expected); the preview
+    stable package version (a finding, recorded as expected); the preview
     sites differ in exactly the reviewed files, and not at all once Rust's
     catalog is spelled the Go way by the declared D19-D24 rule."""
     go = obs["committed-go"]
