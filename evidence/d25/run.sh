@@ -98,6 +98,7 @@ round)
 
   # T2: effects in disposable twin VMs, one shard per group of domains.
   for shard in $T2_SHARDS; do
+    name=${shard%%:*}
     ids=$(t2ids $(echo "${shard#*:}" | tr ',' ' '))
     step t2-go-vs-go-$name bash -c "cd tools/parity && $P t2 run --left go=$G --right go=$G --repeat 3 --workers 4 --out $E/t2-go-vs-go-$name $ids"
     step t2-go-vs-rust-$name bash -c "cd tools/parity && $P t2 run --left go=$G --right rust=$R --repeat 1 --workers 4 --out $E/t2-go-vs-rust-$name $ids"
