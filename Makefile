@@ -25,7 +25,7 @@ rust-build:
 	cargo build --release --locked
 
 # --- Release set (M10): Go's names, gzip and SHA256SUMS; see tools/release.
-VERSION ?= 0.2.3
+VERSION ?= 0.2.4
 
 release-toolchain:
 	tools/release/setup-toolchain.sh

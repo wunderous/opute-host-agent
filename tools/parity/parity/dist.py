@@ -36,7 +36,7 @@ TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 GUEST_JOURNEY = TOOLS_DIR / "t2guest" / "distjourney.py"
 WORK = t2.WORK
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 # --- clean-machine goldens ----------------------------------------------------------
 #
