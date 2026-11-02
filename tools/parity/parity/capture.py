@@ -568,7 +568,7 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
         "runtime-gaps.json": {
             "surface": "runtime-observations",
             "items": [
-                {"name": sid, "owner": SURFACE_OWNERS[by_id[sid]["surface"]],
+                {"name": sid, "owner": SURFACE_OWNERS.get(by_id[sid]["surface"], by_id[sid]["owner"]),
                  "status": "gap", "gapReason": obs["_executionError"]}
                 for sid, (obs, _) in sorted(observed.items()) if "_executionError" in obs
             ],
