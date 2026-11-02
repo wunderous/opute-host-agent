@@ -39,13 +39,39 @@ def _restore(record: dict, store: Path) -> dict:
 
 def check_suite(root: Path, manifest: dict, name: str, suite: dict, scenarios: dict[str, dict],
                 problem: Callable[[str], None]) -> dict[str, str]:
-    """Scenario id -> pass/fail for one T2 suite; problems make it unverified."""
-    path = root / suite.get("summary", "")
-    if not suite.get("summary") or not path.is_file():
+    """Scenario id -> pass/fail for one T2 suite; problems make it unverified.
+
+    A suite is one capture (`summary`) or several (`shards`), each a capture
+    of some of the scenarios so that no single run is long; every scenario
+    must be in exactly one shard, and each shard is checked as a whole."""
+    shards = suite.get("shards")
+    if not shards:
+        return _check_capture(root, manifest, name, suite.get("summary", ""), suite, scenarios, problem, False)
+    statuses: dict[str, str] = {}
+    for path in shards:
+        for sid, status in _check_capture(root, manifest, f"{name}[{path}]", path, suite, scenarios,
+                                          problem, True).items():
+            if sid in statuses:
+                problem(f"{name}/{sid}: in more than one shard")
+                status = FAIL
+            statuses[sid] = status
+    for sid in scenarios:
+        if sid not in statuses:
+            problem(f"{name}/{sid}: no evidence")
+    return statuses
+
+
+def _check_capture(root: Path, manifest: dict, name: str, summary_path: str, suite: dict,
+                   scenarios: dict[str, dict], problem: Callable[[str], None], shard: bool) -> dict[str, str]:
+    path = root / summary_path
+    if not summary_path or not path.is_file():
         problem(f"{name}: summary missing")
         return {}
     summary = json.loads(path.read_text())
     bundle = path.parent
+    # A shard pins the goldens of the scenarios it captured.
+    scope = ({sid: s for sid, s in scenarios.items() if sid in (summary.get("scenarios") or {})}
+             if shard else scenarios)
     stale = []
     go_sha = manifest["goReference"]["binarySha256"]
     if summary.get("tier") != "T2":
@@ -65,22 +91,22 @@ def check_suite(root: Path, manifest: dict, name: str, suite: dict, scenarios: d
     if not pinned or any(summary.get("golden", {}).get(k) != v for k, v in pinned.items()):
         stale.append("golden image differs from the pinned golden")
     # Scenarios booted from the nested-Incus golden pin it too, over the base.
-    if any(s.get("golden") == "incus" for s in scenarios.values()):
+    if any(s.get("golden") == "incus" for s in scope.values()):
         pinned = manifest.get("t2Evidence", {}).get("incusGolden", {})
         if not pinned or any(summary.get("incusGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("nested-Incus golden image differs from the pinned one")
     # Scenarios booted from the k3s golden pin it and the provider they run.
-    if any(s.get("golden") in t2.K3S_OVERLAYS for s in scenarios.values()):
+    if any(s.get("golden") in t2.K3S_OVERLAYS for s in scope.values()):
         pinned = manifest.get("t2Evidence", {}).get("k3sGolden", {})
         if not pinned or any(summary.get("k3sGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("k3s golden image or its provider differs from the pinned one")
     # Scenarios booted from the OCI golden pin it, its packages and their .debs.
-    if any(s.get("golden") == "oci" for s in scenarios.values()):
+    if any(s.get("golden") == "oci" for s in scope.values()):
         pinned = manifest.get("t2Evidence", {}).get("ociGolden", {})
         if not pinned or any(summary.get("ociGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("OCI golden image or its packages differ from the pinned ones")
     # Scenarios booted from the PostgreSQL golden pin it, its chart and images.
-    if any(s.get("golden") == "postgres" for s in scenarios.values()):
+    if any(s.get("golden") == "postgres" for s in scope.values()):
         pinned = manifest.get("t2Evidence", {}).get("postgresGolden", {})
         if not pinned or any(summary.get("postgresGolden", {}).get(k) != v for k, v in pinned.items()):
             stale.append("PostgreSQL golden image, its chart or its images differ from the pinned ones")
@@ -108,7 +134,8 @@ def check_suite(root: Path, manifest: dict, name: str, suite: dict, scenarios: d
     for sid, scenario in scenarios.items():
         result = results.get(sid)
         if result is None:
-            problem(f"{name}/{sid}: no evidence")
+            if not shard:
+                problem(f"{name}/{sid}: no evidence")
             continue
         sdir = bundle / "scenarios" / sid
         ok = result.get("status") == "pass" and len(result.get("iterations", [])) == repeat
