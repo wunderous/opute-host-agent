@@ -668,7 +668,7 @@ async fn accept_loop(
 ///
 /// Binding `0.0.0.0` as plain `AF_INET` would drop IPv6 clients that Go
 /// accepts, and it shows up as a different listener (`tcp` vs `tcp6`).
-fn go_listen(addrs: &[SocketAddr], addr: &str) -> Result<std::net::TcpListener> {
+pub(crate) fn go_listen(addrs: &[SocketAddr], addr: &str) -> Result<std::net::TcpListener> {
     use socket2::{Domain, Protocol, Socket, Type};
     let chosen = if addr.contains('[') {
         addrs.iter().find(|a| a.is_ipv6())

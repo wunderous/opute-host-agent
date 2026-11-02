@@ -50,6 +50,7 @@ mod servingops;
 #[allow(dead_code)]
 mod provider;
 mod provider_mcp;
+pub mod providers;
 mod recipe;
 mod resource;
 mod schema;
@@ -64,4 +65,3 @@ mod tasks;
 mod tcprelay;
 mod tools;
 mod transport;
-
