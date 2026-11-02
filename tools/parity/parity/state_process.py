@@ -53,7 +53,7 @@ def build() -> dict:
     artifacts = [json.loads(line) for line in built.stdout.splitlines() if line.startswith("{")]
     executables = [Path(item["executable"]) for item in artifacts
                    if item.get("reason") == "compiler-artifact" and item.get("executable")
-                   and item.get("profile", {}).get("test") and item.get("target", {}).get("name") == "opute-host-agent"]
+                   and item.get("profile", {}).get("test") and item.get("target", {}).get("name") == "opute_host_agent"]
     if len(executables) != 1:
         raise ValueError("Rust storage test process not uniquely built")
     rust_binary = executables[0]
