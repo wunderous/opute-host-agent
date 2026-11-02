@@ -600,6 +600,10 @@ def _launcher_env(root: Path, base: str, port: int, name: str = "a", cache: str 
                       "OPUTE_HOST_AGENT_RELEASE_BASE_URL": base, "OPUTE_HOST_AGENT_CACHE_DIR": str(root / cache),
                       "OPUTE_LOCAL_HOST_AGENT_RUNTIME_DIR": str(root / f"runtime-{name}"),
                       "OPUTE_STANDALONE_STATE_DIR": str(root / f"state-{name}"),
+                      # Each launcher's agent is its own instance: under D25 two
+                      # agents on one instance refuse each other, and this
+                      # journey is about launchers sharing one download cache.
+                      "OPUTE_HOST_AGENT_INSTANCE_ROOT": str(root / f"instance-{name}"),
                       "OPUTE_REMOTE_AGENT_ID": NPM_AGENT_ID, "MCP_AUTH_TOKEN": NPM_TOKEN,
                       "HOST_MCP_BIND_HOST": "127.0.0.1", "HOST_MCP_PORT": str(port), "HOME": str(root / "home")})
 
