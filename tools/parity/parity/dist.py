@@ -1293,12 +1293,14 @@ def evaluate_npm(obs: dict) -> dict:
 
 
 STABLE_REFUSAL = "a stable package version cannot publish a different catalog revision"
+PREVIEW_REFUSAL = ("site release parity failed: decision anchor changed: site/context/release-catalog.json "
+                   "(review and re-anchor explicitly)")
 
 
 def evaluate_site(obs: dict, reviewed: list[str]) -> dict:
     """Go's own check-site passes on the committed site from Go's binary
-    (the control); Go's release policy refuses the Rust catalog for the
-    stable package version (a finding, recorded as expected); the preview
+    (the control); Go's site tooling refuses the Rust catalog (a finding,
+    recorded as expected); the preview
     sites differ in exactly the reviewed files, and not at all once Rust's
     catalog is spelled the Go way by the declared D19-D24 rule."""
     go = obs["committed-go"]
@@ -1306,8 +1308,17 @@ def evaluate_site(obs: dict, reviewed: list[str]) -> dict:
     checks = {
         "goCheckSite": all(step["exit"] == 0 for step in go["steps"].values())
         and set(go["steps"]) == {"captureTest", "capture", "generate", *SITE_CHECKS} and go["status"] == [],
-        "rustStableRefused": rust["captureTest"]["exit"] == 0 and rust["capture"]["exit"] == 1
-        and rust["capture"]["last"] == STABLE_REFUSAL and obs["committed-rust"]["status"] == [],
+        # Go's site tooling refuses the Rust catalog for the committed site.
+        # At v0.2.4 the site carries the release as a preview, so the capture
+        # is written and Go's release-parity check refuses its changed
+        # decision anchor; at a stable version the capture itself refuses.
+        "rustStableRefused": rust["captureTest"]["exit"] == 0 and (
+            (rust["capture"]["exit"] == 1 and rust["capture"]["last"] == STABLE_REFUSAL
+             and obs["committed-rust"]["status"] == [])
+            or (rust["capture"]["exit"] == 0 and rust["check_site_release_parity"]["exit"] == 1
+                and rust["check_site_release_parity"]["last"] == PREVIEW_REFUSAL
+                and sorted(line.split()[-1].removeprefix("site/") for line in obs["committed-rust"]["status"])
+                == sorted(reviewed))),
         "previewsGenerate": all(obs[k][step]["exit"] == 0 for k in ("preview-go", "preview-rust")
                                 for step in ("capture", "generate"))
         and obs["preview-rust-as-go"]["generate"]["exit"] == 0,
