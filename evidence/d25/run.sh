@@ -4,6 +4,8 @@
 # repository root on a clean tree, after `make release-toolchain` and
 # `make artifacts`, in three phases:
 #   bash evidence/d25/run.sh round   # every suite the gates re-derive
+#   bash evidence/d25/run.sh t2-resplit  # round 4's cut-off Go/Go T2 shards
+#   bash evidence/d25/run.sh dist    # round 4's dist capture, after its fixes
 #   bash evidence/d25/run.sh soak    # M12 validation 5, 15 minutes
 #   (close the writer-lock gap in capture.py only if 4.1-4.3 passed; commit)
 #   bash evidence/d25/run.sh gates   # inventory recapture, gate reports
@@ -32,7 +34,7 @@ GR=$ROOT/.parity/releases/go
 W=$ROOT/target/d25-work
 GO=$ROOT/.parity/setup/go/bin/go
 P="python3 -m parity"
-PHASE=${1:?usage: run.sh round|soak|gates}
+PHASE=${1:?usage: run.sh round|t2-resplit|dist|soak|gates}
 export PATH=$ROOT/.parity/setup/go/bin:$ROOT/.parity/setup/node-v22.14.0-linux-x64/bin:$PATH
 command -v go >/dev/null && go version | grep -q "go1.25.4" || { echo "pinned Go toolchain missing" >&2; exit 1; }
 mkdir -p "$C"
@@ -127,6 +129,33 @@ round)
   done
   echo "round complete" >&2
   ;;
+t2-resplit)
+  # Round 4's Go/Go incus and cluster shards (x3) ran into the 30-minute
+  # cutoff (exit 124); they are retired under .parity/retired/ and Go/Go is
+  # recaptured in smaller shards. The Go/Rust shards (x1) fit and stand.
+  : >> "$C/exits.log"
+  ids() { python3 -c "import json,sys; from pathlib import Path
+want=sys.argv[1].split(',')
+print(' '.join(s['id'] for f in sorted(Path('tools/parity/scenarios-t2').glob('*.json')) for s in json.loads(f.read_text())
+               if any(s['id'].startswith(w) for w in want)))" "$1"; }
+  for shard in incus:t2.incus-domain. serving-llm:t2.serving-domain.,t2.llm-domain. \
+      cluster-a:t2.cluster-domain.resources.,t2.cluster-domain.packages. \
+      cluster-b:t2.cluster-domain.storage.,t2.cluster-domain.agent.,t2.cluster-domain.admission. \
+      oci-a:t2.oci-domain.admission.,t2.oci-domain.build. oci-b:t2.oci-domain.storage. \
+      postgres:t2.postgres-domain.; do
+    name=${shard%%:*}
+    step t2-go-vs-go-$name bash -c "cd tools/parity && $P t2 run --left go=$G --right go=$G --repeat 3 --workers 4 --out $E/t2-go-vs-go-$name $(ids "${shard#*:}")"
+  done
+  echo "t2-resplit complete" >&2
+  ;;
+dist)
+  # Round 4's dist capture failed on three harness faults (fixed in
+  # tools/parity/parity/dist.py and t2guest/distjourney.py); it is retired
+  # under .parity/retired/ and captured again. Dist pins its own harness files.
+  : >> "$C/exits.log"
+  step dist bash -c "cd tools/parity && $P dist run --out $E/dist --work $W/dist"
+  echo "dist complete" >&2
+  ;;
 soak)
   T=tools/parity/soak-thresholds.json
   git ls-files --error-unmatch "$T" >/dev/null 2>&1 && git diff --quiet HEAD -- "$T" \
@@ -145,5 +174,5 @@ gates)
   done
   echo "gates complete" >&2
   ;;
-*) echo "usage: run.sh round|soak|gates" >&2; exit 1 ;;
+*) echo "usage: run.sh round|t2-resplit|dist|soak|gates" >&2; exit 1 ;;
 esac
