@@ -42,17 +42,18 @@ pub fn server() -> Server {
         name: "opute-provider-hostos",
         version: PROVIDER_VERSION,
         capabilities: json!({"tools": {"listChanged": true}}),
+        wrap: None,
         tools: vec![
             Tool {
-                name: "opute.provider.get_install_manifest",
-                description: "Read the host platform provider installation manifest",
+                name: "opute.provider.get_install_manifest".into(),
+                description: "Read the host platform provider installation manifest".into(),
                 input_schema: json!({"type": "object"}),
                 output_schema: Some(json!({"type": "object"})),
                 handler: Box::new(move |_| structured(manifest_text.clone(), manifest_value.clone())),
             },
             Tool {
-                name: DETECT,
-                description: "Detect the operating system and CPU identity of the host running the agent, distinguishing native Windows, macOS, WSL1/WSL2, and native Linux.",
+                name: DETECT.into(),
+                description: "Detect the operating system and CPU identity of the host running the agent, distinguishing native Windows, macOS, WSL1/WSL2, and native Linux.".into(),
                 input_schema: json!({"type": "object", "properties": {}}),
                 output_schema: Some(platform_schema()),
                 handler: Box::new(|_| {
@@ -61,11 +62,13 @@ pub fn server() -> Server {
                 }),
             },
             Tool {
-                name: VALIDATE,
-                description: "Validate a caller-declared expected host kind or CPU family against the observed host.",
+                name: VALIDATE.into(),
+                description:
+                    "Validate a caller-declared expected host kind or CPU family against the observed host."
+                        .into(),
                 input_schema: validate_input_schema(),
                 output_schema: Some(json!({"type": "object"})),
-                handler: Box::new(|arguments| match validate_args(arguments) {
+                handler: Box::new(|call| match validate_args(call.arguments) {
                     // A handler error: go-sdk answers with a JSON-RPC error
                     // whose code is 0.
                     Err(e) => ToolCallOutcome::Protocol(0, e, None),

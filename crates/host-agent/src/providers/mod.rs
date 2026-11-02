@@ -17,6 +17,9 @@
 //! signal handler: SIGTERM ends the process as it ends Go's.
 
 pub mod hostos;
+mod support;
+
+pub use support::{go_any, go_panic, Args, HostAgent};
 
 use crate::gojson::Node;
 use crate::http1::{Body, Request, Response};
@@ -26,14 +29,40 @@ use std::io::Write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-/// A tool handler: the call's `arguments` (absent when the call has none)
-/// to its outcome.
-pub type Handler = Box<dyn Fn(Option<&Node>) -> ToolCallOutcome + Send + Sync>;
+/// One `tools/call` as a handler sees it.
+pub struct Call<'a> {
+    /// `params.arguments`, absent when the call has none.
+    pub arguments: Option<&'a Node>,
+    /// `params._meta`, absent when the call has none.
+    pub meta: Option<&'a Node>,
+}
+
+impl Call<'_> {
+    /// `hostagentclient.ForwardResourceDelegation`: the caller's resource
+    /// delegation, forwarded on every callback the call makes.
+    pub fn delegation(&self) -> String {
+        self.meta
+            .and_then(|m| m.as_object())
+            .and_then(|entries| {
+                entries
+                    .iter()
+                    .rev()
+                    .find(|(k, _)| k == "io.opute/host-resource-delegation")
+            })
+            .and_then(|(_, v)| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    }
+}
+
+/// A tool handler.
+pub type Handler = Box<dyn Fn(&Call) -> ToolCallOutcome + Send + Sync>;
 
 /// One registered tool: its `tools/list` entry and its handler.
 pub struct Tool {
-    pub name: &'static str,
-    pub description: &'static str,
+    pub name: String,
+    pub description: String,
     pub input_schema: J,
     pub output_schema: Option<J>,
     pub handler: Handler,
@@ -43,8 +72,8 @@ impl Tool {
     /// The `mcp.Tool` as go-sdk publishes it.
     fn listing(&self) -> J {
         let mut tool = Map::new();
-        tool.insert("name".into(), J::from(self.name));
-        tool.insert("description".into(), J::from(self.description));
+        tool.insert("name".into(), J::from(self.name.as_str()));
+        tool.insert("description".into(), J::from(self.description.as_str()));
         tool.insert("inputSchema".into(), self.input_schema.clone());
         if let Some(output) = &self.output_schema {
             tool.insert("outputSchema".into(), output.clone());
@@ -59,19 +88,36 @@ pub struct Server {
     pub version: &'static str,
     pub capabilities: J,
     pub tools: Vec<Tool>,
+    /// `mcphttp.WrapProviderHandler`'s server info, for a provider whose
+    /// handler is wrapped.
+    pub wrap: Option<J>,
 }
 
 impl Server {
     fn serve(&self, req: &Request, raw: &[u8]) -> Response {
-        let mut listing: Vec<(&str, J)> =
-            self.tools.iter().map(|t| (t.name, t.listing())).collect();
+        if let Some(info) = &self.wrap {
+            if let Some(response) = support::wrap_provider_handler(info, req, raw) {
+                return response;
+            }
+        }
+        let mut listing: Vec<(&str, J)> = self
+            .tools
+            .iter()
+            .map(|t| (t.name.as_str(), t.listing()))
+            .collect();
         listing.sort_by(|a, b| a.0.cmp(b.0));
         let listing: Vec<J> = listing.into_iter().map(|(_, t)| t).collect();
-        let call =
-            |name: &str, params: Option<&Node>| match self.tools.iter().find(|t| t.name == name) {
-                None => ToolCallOutcome::Unknown,
-                Some(tool) => (tool.handler)(params.and_then(|p| p.field("arguments"))),
-            };
+        let call = |name: &str, params: Option<&Node>| match self
+            .tools
+            .iter()
+            .find(|t| t.name == name)
+        {
+            None => ToolCallOutcome::Unknown,
+            Some(tool) => (tool.handler)(&Call {
+                arguments: params.and_then(|p| p.field("arguments")),
+                meta: params.and_then(|p| p.field("_meta")),
+            }),
+        };
         let sdk = Sdk {
             implementation_name: self.name,
             version: self.version,
