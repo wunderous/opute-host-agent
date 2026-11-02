@@ -16,6 +16,7 @@
 //! The server has no Logger, so go-sdk's own log lines are discarded, and no
 //! signal handler: SIGTERM ends the process as it ends Go's.
 
+pub mod cloudflare;
 pub mod hostos;
 mod support;
 
