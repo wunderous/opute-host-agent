@@ -603,7 +603,10 @@ def _launcher_env(root: Path, base: str, port: int, name: str = "a", cache: str 
                       # Each launcher's agent is its own instance: under D25 two
                       # agents on one instance refuse each other, and this
                       # journey is about launchers sharing one download cache.
-                      "OPUTE_HOST_AGENT_INSTANCE_ROOT": str(root / f"instance-{name}"),
+                      # The launcher strips OPUTE_HOST_AGENT_INSTANCE_ROOT, so
+                      # the default instance root (the user config directory)
+                      # is set apart instead.
+                      "XDG_CONFIG_HOME": str(root / f"config-{name}"),
                       "OPUTE_REMOTE_AGENT_ID": NPM_AGENT_ID, "MCP_AUTH_TOKEN": NPM_TOKEN,
                       "HOST_MCP_BIND_HOST": "127.0.0.1", "HOST_MCP_PORT": str(port), "HOME": str(root / "home")})
 
