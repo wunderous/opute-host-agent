@@ -803,7 +803,7 @@ fn remove_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
 
 fn teardown(call: &Call) -> Outcome {
     // json.Unmarshal into struct{Phase string; Inputs map[string]any}.
-    let (phase, inputs) = teardown_input(call.arguments)?;
+    let (phase, inputs) = super::support::teardown_input(call.arguments)?;
     let ctx = Ctx {
         delegation: call.delegation(),
     };
@@ -833,58 +833,6 @@ fn teardown(call: &Call) -> Outcome {
         "idempotencyKey": format!("{plan_id}-{service_name}-{service_file}-{cleanup_key}"),
         "nodes": [{"id": "inspect-service", "action": {"tool": "inspect_host_service", "args": {"uri": service_uri, "scope": scope}}}],
     }}))
-}
-
-/// The teardown tool's own decode: `phase` and `inputs`, matched without
-/// case; a mistyped field is Go's `UnmarshalTypeError`.
-fn teardown_input(arguments: Option<&crate::gojson::Node>) -> Result<(String, Map<String, J>), String> {
-    use crate::gojson::Value;
-    let mut phase = String::new();
-    let mut inputs = Map::new();
-    // Absent arguments are an empty `json.RawMessage`, which Unmarshal refuses.
-    let Some(node) = arguments.filter(|n| !n.raw.is_empty()) else {
-        return Err("unexpected end of JSON input".into());
-    };
-    let entries = match &node.value {
-        Value::Null => return Ok((phase, inputs)),
-        Value::Object(entries) => entries,
-        other => {
-            return Err(format!(
-                "json: cannot unmarshal {} into Go value of type struct {{ Phase string \"json:\\\"phase\\\"\"; Inputs map[string]interface {{}} \"json:\\\"inputs\\\"\" }}",
-                crate::gojson::kind_name(other)
-            ))
-        }
-    };
-    let mut first_error = None;
-    for (key, item) in entries {
-        if crate::gojson::equal_fold(key, "phase") {
-            match &item.value {
-                Value::Null => {}
-                Value::String(s) => phase = s.clone(),
-                other => {
-                    first_error.get_or_insert_with(|| {
-                        format!("json: cannot unmarshal {} into Go struct field .phase of type string", crate::gojson::kind_name(other))
-                    });
-                }
-            }
-        } else if crate::gojson::equal_fold(key, "inputs") {
-            match &item.value {
-                Value::Null => inputs = Map::new(),
-                Value::Object(_) => {
-                    // Decoding into an existing map merges keys.
-                    for (k, v) in super::go_any(item).as_object().cloned().unwrap_or_default() {
-                        inputs.insert(k, v);
-                    }
-                }
-                other => {
-                    first_error.get_or_insert_with(|| {
-                        format!("json: cannot unmarshal {} into Go struct field .inputs of type map[string]interface {{}}", crate::gojson::kind_name(other))
-                    });
-                }
-            }
-        }
-    }
-    first_error.map_or(Ok((phase, inputs)), Err)
 }
 
 fn service_name_ok(name: &str) -> bool {

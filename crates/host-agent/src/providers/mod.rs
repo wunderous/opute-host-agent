@@ -19,6 +19,7 @@
 pub mod cloudflare;
 pub mod hostos;
 mod support;
+pub mod tailscale;
 
 pub use support::{go_any, go_panic, Args, HostAgent};
 pub(crate) use support::proxy_for;
@@ -232,6 +233,11 @@ fn listen_port(port: &str) -> Result<u16, String> {
         .find(|(name, _)| *name == lower)
         .map(|(_, p)| *p)
         .ok_or_else(|| format!("listen tcp: lookup tcp/{port}: unknown port"))
+}
+
+/// `net.LookupPort("tcp", service)`.
+pub(crate) fn lookup_port(service: &str) -> Result<u16, String> {
+    listen_port(service)
 }
 
 /// The provider `main`: read the port, log, listen on every interface and
