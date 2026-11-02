@@ -1215,7 +1215,7 @@ def machine_expectations(obs: dict) -> dict:
         "bootstrapWithIdentityHealthy": s["idHealth"].get("body", {}).get("agentId") == BOOTSTRAP_ID,
         "sudoersValid": s["idInstall"].get("visudo") == 0,
         "userUnitRefusedWhileBootstrapServes": s["pairRefused"] == {
-            "restarted": True, "ExecMainCode": "1", "ExecMainStatus": "1",
+            "restarted": True,
             "refusals": [f"host agent instance is already in use: {WRITER_LOCK} is locked by another process"]},
         "bootstrapKeptServing": s["pairFirstServing"]["toolsList"]["status"] == 200,
         "userUnitStartsOnceBootstrapStops": s["pairNextStarted"].get("body", {}).get("agentId")

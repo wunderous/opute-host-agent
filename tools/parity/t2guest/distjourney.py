@@ -356,7 +356,7 @@ def step_journal(spec, ctx):
 def step_wait_refused(spec, ctx):
     """The user unit, started on an instance another agent holds, exits and
     systemd restarts it. How many times depends on timing, so the record is
-    whether it was restarted, its last exit and the distinct refusal lines."""
+    whether it was restarted and the distinct refusal lines."""
     entry = pwd.getpwnam(spec.get("user", "opute"))
     deadline = time.monotonic() + spec.get("timeout", 40)
     values = unit_state({"scope": "user", "user": entry.pw_name})
@@ -366,8 +366,10 @@ def step_wait_refused(spec, ctx):
     sh(["journalctl", "--sync"], check=False)
     lines = sh(["journalctl", f"_UID={entry.pw_uid}", f"_SYSTEMD_USER_UNIT={USER_UNIT}", "-o", "cat",
                 "--no-pager"], check=False).stdout.splitlines()
+    # The main process's exit code and status are not recorded: a restarted
+    # unit's new process resets them while it runs, so they depend on when
+    # systemd is asked.
     return {"restarted": int(values.get("NRestarts") or 0) >= 1,
-            "ExecMainCode": values.get("ExecMainCode"), "ExecMainStatus": values.get("ExecMainStatus"),
             "refusals": sorted({normalize(line) for line in lines if "already in use" in line})}
 
 
