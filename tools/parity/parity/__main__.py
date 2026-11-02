@@ -10,11 +10,12 @@ from pathlib import Path
 from . import agent, runner
 
 
-def _impl(spec: str) -> agent.Impl:
+def _impl(spec: str, providers: Path | None = None) -> agent.Impl:
     label, _, path = spec.partition("=")
     if not path:
         raise SystemExit(f"expected LABEL=PATH, got {spec!r}")
-    return agent.Impl(label=label, binary=Path(path).resolve())
+    return agent.Impl(label=label, binary=Path(path).resolve(),
+                      providers=providers.resolve() if providers else None)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,6 +30,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--repeat", type=int, default=1)
     run.add_argument("--workers", type=int, default=6)
     run.add_argument("--surfaces", default="", help="comma-separated surfaces to run (default: all)")
+    run.add_argument("--left-providers", type=Path, help="the left side's provider executables (M9 swap)")
+    run.add_argument("--right-providers", type=Path, help="the right side's provider executables (M9 swap)")
     run.add_argument("scenarios", nargs="*")
 
     verify = sub.add_parser("verify", help="fail-closed parity manifest verifier")
@@ -351,7 +354,7 @@ def main(argv: list[str] | None = None) -> int:
             wanted = {s.strip() for s in args.surfaces.split(",") if s.strip()}
             scenarios = [s for s in scenarios if s["surface"] in wanted]
         summary = runner.run_suite(
-            _impl(args.left), _impl(args.right), args.suite, args.out,
+            _impl(args.left, args.left_providers), _impl(args.right, args.right_providers), args.suite, args.out,
             scenarios, args.repeat, args.workers, lock)
         failed = [k for k, v in summary["items"].items() if v["status"] != "pass"]
         for key, item in sorted(summary["items"].items()):
