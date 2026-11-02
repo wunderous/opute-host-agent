@@ -25,6 +25,8 @@ Steps:
   journal          the unit's journal lines, normalized
   state            the standalone state directory's SQLite tables and rows
   uninstall        remove what the install step installed
+  waitRefused      wait for the user unit to fail and be restarted, and
+                   record its exit status and its distinct refusal lines
 """
 import gzip
 import hashlib
@@ -351,6 +353,24 @@ def step_journal(spec, ctx):
     return [normalize(line) for line in fresh]
 
 
+def step_wait_refused(spec, ctx):
+    """The user unit, started on an instance another agent holds, exits and
+    systemd restarts it. How many times depends on timing, so the record is
+    whether it was restarted, its last exit and the distinct refusal lines."""
+    entry = pwd.getpwnam(spec.get("user", "opute"))
+    deadline = time.monotonic() + spec.get("timeout", 40)
+    values = unit_state({"scope": "user", "user": entry.pw_name})
+    while time.monotonic() < deadline and int(values.get("NRestarts") or 0) < 1:
+        time.sleep(0.5)
+        values = unit_state({"scope": "user", "user": entry.pw_name})
+    sh(["journalctl", "--sync"], check=False)
+    lines = sh(["journalctl", f"_UID={entry.pw_uid}", f"_SYSTEMD_USER_UNIT={USER_UNIT}", "-o", "cat",
+                "--no-pager"], check=False).stdout.splitlines()
+    return {"restarted": int(values.get("NRestarts") or 0) >= 1,
+            "ExecMainCode": values.get("ExecMainCode"), "ExecMainStatus": values.get("ExecMainStatus"),
+            "refusals": sorted({normalize(line) for line in lines if "already in use" in line})}
+
+
 def step_state(spec, ctx):
     out = {}
     for path in walk(spec["root"]):
@@ -413,7 +433,7 @@ STEPS = {
     "start": lambda spec, ctx: systemctl(spec, "start"), "stop": lambda spec, ctx: systemctl(spec, "stop"),
     "health": step_health, "firstCall": step_first_call, "unit": lambda spec, ctx: unit_state(spec),
     "tree": step_tree, "journal": step_journal, "state": step_state, "uninstall": step_uninstall,
-    "sleep": lambda spec, ctx: time.sleep(spec["seconds"]) or {},
+    "sleep": lambda spec, ctx: time.sleep(spec["seconds"]) or {}, "waitRefused": step_wait_refused,
 }
 
 

@@ -902,11 +902,16 @@ def observe_site(go_src: Path, go_binary: Path, rust_binary: Path, work: Path) -
 # journey installs one release set the way the published files are used (the
 # user unit with its env file; the bootstrap system unit as published, which
 # has no identity and must refuse to start; the bootstrap unit with an
-# identity drop-in) and removes it again. The upgrade journey keeps one
+# identity drop-in) and removes it again. While that bootstrap unit serves,
+# the user unit is installed on the same instance on another port: D25
+# refuses it (exit 1, one refusal line) and systemd retries it until the
+# bootstrap unit stops, and then it starts. The upgrade journey keeps one
 # identity, env file and state across Go -> <middle> -> Go.
 MACHINE_ENV = {"OPUTE_REMOTE_AGENT_ID": "parity-m10-agent", "MCP_AUTH_TOKEN": "parity-m10-token-not-a-secret-0123456789",
                "OPUTE_AGENT_MODE": "standalone", "HOST_MCP_BIND_HOST": "127.0.0.1", "HOST_MCP_PORT": "3014"}
 BOOTSTRAP_ID = "parity-m10-bootstrap"
+# Both units run as opute with the default standalone instance root.
+WRITER_LOCK = "/home/opute/.config/opute/instances/standalone/host-agent.lock"
 HOME_ROOTS = ["/home/opute"]
 # Binaries are compared through their release receipts, and SQLite files
 # through their tables and row counts (the state step), not their bytes.
@@ -944,7 +949,13 @@ def install_program(release: str) -> dict:
                                             "/etc/systemd/system/opute-bootstrap-mcp.service",
                                             "/etc/systemd/system/opute-bootstrap-mcp.service.d"],
                                   "noHashPatterns": NO_HASH}},
+        {"as": "pairInstall", "userInstall": {"release": release, "version": VERSION,
+                                              "env": {**MACHINE_ENV, "HOST_MCP_PORT": "3015"}}},
+        {"as": "pairRefused", "waitRefused": {}},
+        {"as": "pairFirstServing", "firstCall": {"token": token}},
         {"as": "idStop", "stop": {"scope": "system"}},
+        {"as": "pairNextStarted", "health": {"port": 3015}},
+        {"as": "pairUninstall", "uninstall": {}},
         {"as": "idUnitDown", "unit": {"scope": "system"}},
         {"as": "idJournal", "journal": {"scope": "system"}},
         {"as": "idUninstall", "uninstall": {"scope": "system"}},
@@ -1185,7 +1196,9 @@ def machine_expectations(obs: dict) -> dict:
     """What the Go journey itself must show for the comparison to mean
     anything: the user unit healthy and answering, then stopped; the
     published bootstrap unit refusing to start without an identity; the
-    bootstrap unit with an identity healthy; nothing left after uninstall."""
+    bootstrap unit with an identity healthy, and still serving while the
+    user unit on its instance is refused (D25) and retried until the
+    bootstrap unit stops; nothing left after uninstall."""
     s = obs["steps"]
     return {
         "userUnitActive": s["unitUp"].get("ActiveState") == "active",
@@ -1197,6 +1210,12 @@ def machine_expectations(obs: dict) -> dict:
         and any("OPUTE_REMOTE_AGENT_ID is required" in line for line in s["bootJournal"]),
         "bootstrapWithIdentityHealthy": s["idHealth"].get("body", {}).get("agentId") == BOOTSTRAP_ID,
         "sudoersValid": s["idInstall"].get("visudo") == 0,
+        "userUnitRefusedWhileBootstrapServes": s["pairRefused"] == {
+            "restarted": True, "ExecMainCode": "1", "ExecMainStatus": "1",
+            "refusals": [f"host agent instance is already in use: {WRITER_LOCK} is locked by another process"]},
+        "bootstrapKeptServing": s["pairFirstServing"]["toolsList"]["status"] == 200,
+        "userUnitStartsOnceBootstrapStops": s["pairNextStarted"].get("body", {}).get("agentId")
+        == MACHINE_ENV["OPUTE_REMOTE_AGENT_ID"],
         "uninstalled": not any(p.endswith(("opute-host-agent", "host-agent.env", "opute-host-agent.service"))
                                for p in s["treeAfter"]),
     }
