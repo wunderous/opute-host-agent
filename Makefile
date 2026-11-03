@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build release-toolchain go-providers artifacts parity-test go-reference parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 .PHONY: parity-verify-m5 parity-verify-m6
@@ -30,11 +30,6 @@ VERSION ?= 0.2.4
 release-toolchain:
 	tools/release/setup-toolchain.sh
 
-# The pinned Go release's provider executables (D26: shipped unchanged until
-# each is ported); run once before `make artifacts`.
-go-providers:
-	tools/release/fetch-go-providers.sh
-
 artifacts:
 	VERSION=$(VERSION) DIST=$(CURDIR)/dist tools/release/build-artifacts.sh
 
@@ -48,6 +43,11 @@ parity-test:
 
 go-reference:
 	PARITY_GO_WORKDIR=$(GO_SRC) PARITY_GO_OUT=$(GO_REF) tools/parity/build-go-reference.sh
+
+# The five pinned Go provider executables (.parity/bin/providers), built
+# reproducibly from the checkout go-reference pins.
+go-providers: go-reference
+	PARITY_GO_WORKDIR=$(GO_SRC) tools/parity/build-go-providers.sh
 
 parity-capture:
 	$(PARITY) capture --go $(GO_REF) --go-src $(GO_SRC)
