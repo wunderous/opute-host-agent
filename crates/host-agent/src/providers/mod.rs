@@ -18,6 +18,7 @@
 
 pub mod cloudflare;
 pub mod hostos;
+pub mod k3s;
 mod support;
 pub mod tailscale;
 
