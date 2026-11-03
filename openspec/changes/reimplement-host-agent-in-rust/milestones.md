@@ -814,6 +814,27 @@ no gap in the domain (D14); the domain's catalog tools move from
 
 ### M9: Provider executables in Rust (optional, per provider)
 
+**Status (2026-11-03): done for hostos, cloudflare, tailscale and k3s (D26);
+ollama stays the Go reference and leaves the release set (D15).** Each port
+is a Rust executable with Go's name, flags, env, wire and errors, on the D14
+seam, in the host-agent crate's library
+([`port-provider-executables`](../port-provider-executables/tasks.md)). The
+release set builds with cargo and zig only: no Go toolchain, no Go tree.
+Evidence in [`evidence/m9`](../../../evidence/m9/README.md):
+- every suite the gates re-derive, rerun on the final Rust core;
+- per provider: its wire corpus equal to Go's, the provider-real swap
+  under one Rust core, and for k3s the T2 swap;
+- the release rebuilt byte for byte, and the dist journeys pass.
+
+Gates m0–m6, m8a–m8f, m10, m12a, m12b, d25, m9 and m9-<provider> pass,
+the seam verifier reports no gap, and cutover fails only on its owned gaps
+and the M13 evidence. The soak's growth check now skips restart windows
+(owner decision, 2026-11-03). No Go
+test drives a provider executable, so the wire corpora and the ported unit
+tests stand in for black-box tests. Owned gaps: live Cloudflare and
+Tailscale accounts, T2 for the tunnel providers and hostos (no T2 scenario
+starts them), and cancellation propagation into provider callbacks.
+
 **Closes:** 3.3 where a port is chosen. **Depends on:** M7, and M8 for the
 domains a provider uses.
 
