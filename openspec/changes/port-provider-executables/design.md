@@ -54,6 +54,9 @@ release `SHA256SUMS` keeps Go's names and order. A rebuild still reproduces
 the Rust binaries byte for byte; the provider executables are compared by
 hash with the published ones.
 
+The interim pin ended when the release set switched to the Rust ports
+(task 4.1); its fetch script is removed.
+
 ## Validation (one m9 gate per provider)
 
 1. Provider contract: `tools/list`, `initialize` and the install manifest from
