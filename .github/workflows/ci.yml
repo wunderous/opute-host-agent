@@ -40,8 +40,8 @@ jobs:
       - name: Install pinned toolchain (rust-toolchain.toml)
         run: rustup show active-toolchain || rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - name: Build the harness, the Go reference and the Rust candidate
-        run: make parity-test go-reference rust-build
+      - name: Build the harness, the Go reference, its providers and the Rust candidate
+        run: make parity-test go-reference go-providers rust-build
       # Admission counts the agent cgroup's memory.current, which includes the
       # page cache the checkout and the builds charged to this job. Release
       # it so the agents see the runner's memory, and print what they read.
