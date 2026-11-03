@@ -1,0 +1,123 @@
+{
+ "changedDuringRun": false,
+ "golden": {
+  "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+  "baseImageSource": "https://cloud-images.ubuntu.com/noble/20260926/noble-server-cloudimg-amd64.img",
+  "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
+ },
+ "guestSha256": {
+  "driver.py": "eaca544200f794f442b7b9bff28745bce1643e1c7343ecfda4339848c8f5bbd3",
+  "llmstub.py": "a9bb392bbe3cec5a9da7f30582ce14805deb486c873a1dfa724afd95fa5549ad",
+  "snapshot.py": "ded27a17c4b0bd19288cfc8b95c426f43b42f18a394dc2b83a125dbef3c46d49",
+  "tlsstub.py": "aa7a1f724fa77f293bb5080687c0a8747c76fb9406258487013fb43c36345b64"
+ },
+ "harnessSha256": "38769638492614b1bc20dff7d38ad7feaaff60179cdb2dedcca7a53a8f252ff5",
+ "k3sGolden": {
+  "goldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+  "incusGoldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057",
+  "providerSha256": {
+   "opute-provider-k3s": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915"
+  }
+ },
+ "left": {
+  "label": "go",
+  "sha256": "2e2b5486ab116e9f28fe46e9f197884c97d3086bc0d0fedfb497401b7051becc"
+ },
+ "ociGolden": {
+  "debSha256": "e5c1c37e387ed14c352a744a75fbb79fb2f82573ca7bf36886e3b7333fc9ef1a  podman_4.9.3+ds1-1ubuntu0.2_amd64.deb\na94382e24be71739da40350fddc896464692cd736d2fc2f5507d6d6961d34727  buildah_1.33.7+ds1-1ubuntu0.24.04.3_amd64.deb\n",
+  "goldenSha256": "bf332e6b8ef945b0247dc60d398cbea72e878a9baa3648ac4173c5c0331409ec",
+  "k3sGoldenSha256": "481c54436448c36d10bd20a9aed5fd5e33596882a7c00949cdf1be4decd03fba",
+  "packages": "buildah 1.33.7+ds1-1ubuntu0.24.04.3\nconmon 2.1.10+ds1-1build2\ncrun 1.14.1-1\ngolang-github-containers-common 0.57.4+ds1-2ubuntu0.2\npodman 4.9.3+ds1-1ubuntu0.2\nuidmap 1:4.13+dfsg1-4ubuntu3.2\n"
+ },
+ "repeat": 3,
+ "right": {
+  "label": "go",
+  "sha256": "2e2b5486ab116e9f28fe46e9f197884c97d3086bc0d0fedfb497401b7051becc"
+ },
+ "scenarioSha256": {
+  "tools/parity/scenarios-t2/cluster-domain.json": "980ae1b57f7a641bfec5ae96789860bbbe26b17618a687ba50240ba98adac40d",
+  "tools/parity/scenarios-t2/host-domain.json": "7f366c9fd62508a5f3ee25d4d805dd1e71ef4114f288d16b8f283cc0123171fd",
+  "tools/parity/scenarios-t2/incus-domain.json": "feed0d1a22112643b83e5f051f620a5770dab15c5a11ee109fe885038bedef92",
+  "tools/parity/scenarios-t2/llm-domain.json": "d107c037ce8594df96a6ad7634dc505dc247852c71b1f0316a2b12668d2c76ee",
+  "tools/parity/scenarios-t2/oci-domain.json": "6bdee717ff3104c93135f5800b17f083c4c4161e4bc6aa711ed687b3db7b08b1",
+  "tools/parity/scenarios-t2/postgres-domain.json": "e4808f0734d41f522448b3b8850e21a32e183511b8fd88424620cddf42ac3bcc",
+  "tools/parity/scenarios-t2/serving-domain.json": "83d359a45f3f5d11df4bc6ca0a046736f5e6ce4cd19c124b4fad7fabd772e49b"
+ },
+ "scenarios": {
+  "t2.oci-domain.admission.rejected-no-effect": {
+   "file": "tools/parity/scenarios-t2/oci-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "468eaece948c9dc6b07df63841b18dda775fbc9ee972a1129d28006020793e79",
+      "b0.json.gz": "6bb1d0593553ec3702c4fb4bdc23c84fdd11453440e184676270137a74aa6efb",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "858759880d32af24fc28db9e4e03c906e2db605d43b5dcbb595adc422f815d87",
+      "b1.json.gz": "11779fbd58d13e356f147a4871ed8237b54be889173ce3d1f2afa5f5359ee082",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "3789b517372e0447d33c721bc2e56b1dcd084533517e2c438b525c01a878e4ec",
+      "b2.json.gz": "405978195f19a8318ca473702d86d915cca3b20e0d4fef715a2d76fc8054ed19",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.oci-domain.build.push-to-twin-registry": {
+   "file": "tools/parity/scenarios-t2/oci-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "88d3862b3751bffa5d5985350234636d77286914f2345f99d6dfbd5b84de3aa9",
+      "b0.json.gz": "d28dffc81733cedada183074d8233327d01cda330decaf8b6a329564b9a2e949",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "7572dbbfb588c99e2147ab262ef43848036203222b589bdcfc6bc13cf468e700",
+      "b1.json.gz": "c99a4ab2e7cc49eef9ff3560f8501ecd480ab69dcb3a52652e53d6bb6b3071f9",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "6fd94de7672bcf09e16cb7ac1282e9e5d32edc037cbcc5d4db737b4371c26cd3",
+      "b2.json.gz": "54ddd5c295d6205dfe3133bd2cb11df08e2a9f7ee1bfd3cc96ad93725dc7c0c4",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  }
+ },
+ "tier": "T2",
+ "workers": 4
+}

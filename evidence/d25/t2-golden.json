@@ -1,0 +1,40 @@
+{
+ "scope": "T2 golden image: dedicated, disposable; no shared Incus/Kubernetes/tunnel/deploy state",
+ "baseImage": "/home/houman/github/wunderous/opute-host-agent/.parity/local-native/t2/noble-server-cloudimg-amd64.img",
+ "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+ "baseImageSource": "https://cloud-images.ubuntu.com/noble/20260926/noble-server-cloudimg-amd64.img",
+ "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794",
+ "userData": "#cloud-config\nhostname: opute-parity-t2\nssh_pwauth: false\ndisable_root: false\nusers:\n  - default\n  - name: ubuntu\n    groups: [sudo]\n    sudo: ALL=(ALL) NOPASSWD:ALL\n    shell: /bin/bash\n    ssh_authorized_keys:\n      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmn4/1eY9zGI0liMc5pVoPF21dGoj0hIlvemjrhXu17 opute-parity-t2\nssh_authorized_keys:\n  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmn4/1eY9zGI0liMc5pVoPF21dGoj0hIlvemjrhXu17 opute-parity-t2\n",
+ "stabilize": [
+  "for u in apt-daily.timer apt-daily-upgrade.timer motd-news.timer unattended-upgrades.service man-db.timer dpkg-db-backup.timer e2scrub_all.timer fstrim.timer logrotate.timer sysstat-collect.timer sysstat-summary.timer update-notifier-download.timer update-notifier-motd.timer snapd.service snapd.socket snapd.seeded.service; do systemctl disable --now \"$u\" >/dev/null 2>&1; done; true",
+  "for u in $(systemctl list-unit-files --type=timer --state=enabled --no-legend | awk '{print $1}'); do systemctl disable --now \"$u\" >/dev/null 2>&1; done; systemctl mask fwupd-refresh.timer fwupd-refresh.service >/dev/null 2>&1; true",
+  "apt-get update -q",
+  "sync"
+ ],
+ "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+ "created": "2026-10-12T23:20:28Z",
+ "qemuArgv": [
+  "qemu-system-x86_64",
+  "-enable-kvm",
+  "-cpu",
+  "host",
+  "-smp",
+  "2",
+  "-m",
+  "3072",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent/.parity/t2/golden.qcow2,if=virtio,format=qcow2",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+  "-netdev",
+  "user,id=net0,hostfwd=tcp:127.0.0.1:45837-:22",
+  "-device",
+  "virtio-net-pci,netdev=net0",
+  "-display",
+  "none",
+  "-serial",
+  "file:/home/houman/github/wunderous/opute-host-agent/.parity/t2/golden-serial.log",
+  "-monitor",
+  "none"
+ ]
+}
