@@ -15,20 +15,39 @@ fn args(value: J) -> Args {
 #[test]
 fn manifest_declares_neutral_capability_and_operations() {
     let manifest = serde_json::to_value(manifest()).unwrap();
-    assert_eq!(manifest["provides"], json!([{"id": KUBERNETES, "version": 1}]));
+    assert_eq!(
+        manifest["provides"],
+        json!([{"id": KUBERNETES, "version": 1}])
+    );
     let ids: Vec<String> = operations().iter().map(|o| o.id.clone()).collect();
     assert_eq!(ids.len(), 28);
     for operation in operations() {
-        let want = if operation.effect == "read" { "sync_only" } else { "bridged" };
+        let want = if operation.effect == "read" {
+            "sync_only"
+        } else {
+            "bridged"
+        };
         assert_eq!(operation.task_support, want, "{}", operation.id);
     }
     assert_eq!(manifest["teardown"]["id"], "opute.provider.teardown");
     assert_eq!(manifest["teardown"]["taskSupport"], "sync_only");
-    let provision = operations().into_iter().find(|o| o.id == op::PROVISION).unwrap();
-    assert_eq!(provision.input_schema.unwrap()["properties"]["clusterInit"]["const"], true);
-    let prune = operations().into_iter().find(|o| o.id == op::PRUNE_UNUSED_IMAGES).unwrap();
+    let provision = operations()
+        .into_iter()
+        .find(|o| o.id == op::PROVISION)
+        .unwrap();
+    assert_eq!(
+        provision.input_schema.unwrap()["properties"]["clusterInit"]["const"],
+        true
+    );
+    let prune = operations()
+        .into_iter()
+        .find(|o| o.id == op::PRUNE_UNUSED_IMAGES)
+        .unwrap();
     let cost = serde_json::to_value(prune.resource_cost).unwrap();
-    assert_eq!(cost, json!({"class": "heavy", "cpuCores": 2.0, "memoryBytes": 2147483648i64, "tasks": 8}));
+    assert_eq!(
+        cost,
+        json!({"class": "heavy", "cpuCores": 2.0, "memoryBytes": 2147483648i64, "tasks": 8})
+    );
 }
 
 #[test]
@@ -54,13 +73,17 @@ fn install_exec_binds_native_traffic_to_the_declared_overlay() {
         server_install_exec(&args(json!({"nodeIp": "::ffff:10.0.0.1"})), false).unwrap(),
         "server --node-ip 10.0.0.1"
     );
-    let container = server_install_exec(&args(json!({"instanceType": "container"})), false).unwrap();
+    let container =
+        server_install_exec(&args(json!({"instanceType": "container"})), false).unwrap();
     assert!(container.contains("--kubelet-arg=feature-gates=KubeletInUserNamespace=true"));
 }
 
 #[test]
 fn parse_k3s_version_returns_the_installer_release_token() {
-    assert_eq!(parse_k3s_version("k3s version v1.31.8+k3s1 (33429f76) go version go1.25.5"), "v1.31.8+k3s1");
+    assert_eq!(
+        parse_k3s_version("k3s version v1.31.8+k3s1 (33429f76) go version go1.25.5"),
+        "v1.31.8+k3s1"
+    );
     assert_eq!(parse_k3s_version("\n"), "");
 }
 
@@ -80,9 +103,20 @@ fn join_invitation_is_one_time_and_requires_redemption() {
     );
     let a = args(json!({"redemptionRef": reference}));
     assert!(join_token_for_node(&a).is_err());
-    INVITATIONS.lock().unwrap().get_mut(&reference).unwrap().redeemed = true;
-    assert_eq!(join_token_for_node(&a).unwrap(), ("transient-token".into(), reference.clone(), String::new()));
-    assert_eq!(join_token_for_node(&a).unwrap_err(), "join redemption reference is expired or already consumed");
+    INVITATIONS
+        .lock()
+        .unwrap()
+        .get_mut(&reference)
+        .unwrap()
+        .redeemed = true;
+    assert_eq!(
+        join_token_for_node(&a).unwrap(),
+        ("transient-token".into(), reference.clone(), String::new())
+    );
+    assert_eq!(
+        join_token_for_node(&a).unwrap_err(),
+        "join redemption reference is expired or already consumed"
+    );
     INVITATIONS.lock().unwrap().remove(&reference);
 }
 
@@ -90,10 +124,17 @@ fn join_invitation_is_one_time_and_requires_redemption() {
 fn sealed_join_material_round_trips_only_to_the_receiver_key() {
     use rsa::traits::PublicKeyParts as _;
     let key = receiver_key();
-    let public = raw_url_encode(&pkcs1_public_der(&key.n().to_bytes_be(), &key.e().to_bytes_be()));
+    let public = raw_url_encode(&pkcs1_public_der(
+        &key.n().to_bytes_be(),
+        &key.e().to_bytes_be(),
+    ));
     let sealed = seal_join_material(
         &public,
-        &[("redemptionRef", "join-sealed-test"), ("joinToken", "transient-token"), ("expiresAt", "x")],
+        &[
+            ("redemptionRef", "join-sealed-test"),
+            ("joinToken", "transient-token"),
+            ("expiresAt", "x"),
+        ],
     )
     .unwrap();
     assert!(!sealed.contains("transient-token"));
@@ -105,16 +146,25 @@ fn sealed_join_material_round_trips_only_to_the_receiver_key() {
 
 #[test]
 fn pkcs1_parse_reports_go_asn1_errors() {
-    assert_eq!(parse_pkcs1_public_key(b"").unwrap_err(), "asn1: syntax error: sequence truncated");
+    assert_eq!(
+        parse_pkcs1_public_key(b"").unwrap_err(),
+        "asn1: syntax error: sequence truncated"
+    );
     assert_eq!(
         parse_pkcs1_public_key(&[0x02, 0x01, 0x01]).unwrap_err(),
         "asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false private:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} pkcs1PublicKey @2"
     );
-    assert_eq!(parse_pkcs1_public_key(&[0x30, 0x05, 0x02]).unwrap_err(), "asn1: syntax error: data truncated");
+    assert_eq!(
+        parse_pkcs1_public_key(&[0x30, 0x05, 0x02]).unwrap_err(),
+        "asn1: syntax error: data truncated"
+    );
     let der = pkcs1_public_der(&[0xc1; 128], &[0x01, 0x00, 0x01]);
     let mut trailing = der.clone();
     trailing.push(0);
-    assert_eq!(parse_pkcs1_public_key(&trailing).unwrap_err(), "asn1: syntax error: trailing data");
+    assert_eq!(
+        parse_pkcs1_public_key(&trailing).unwrap_err(),
+        "asn1: syntax error: trailing data"
+    );
     assert_eq!(parse_pkcs1_public_key(&der).unwrap().1, 65537);
 }
 
@@ -127,8 +177,14 @@ fn target_validation_rejects_fallback_shapes() {
     ] {
         assert!(require_target(&args(value)).is_err());
     }
-    assert!(require_provision_target(&args(json!({"targetUri": "vm:local:k3s", "providerInstanceName": "k3s"}))).is_ok());
-    assert!(require_provision_target(&args(json!({"targetUri": "container:local:k3s", "providerInstanceName": "k3s"}))).is_ok());
+    assert!(require_provision_target(&args(
+        json!({"targetUri": "vm:local:k3s", "providerInstanceName": "k3s"})
+    ))
+    .is_ok());
+    assert!(require_provision_target(&args(
+        json!({"targetUri": "container:local:k3s", "providerInstanceName": "k3s"})
+    ))
+    .is_ok());
     for value in [
         json!({"targetUri": "cluster:local:k3s", "providerInstanceName": "k3s"}),
         json!({"targetUri": "vm:local:k3s"}),
@@ -139,10 +195,18 @@ fn target_validation_rejects_fallback_shapes() {
     assert!(resource_arguments(&args(json!({"kind": "Deployment"}))).is_err());
     assert!(resource_arguments(&args(json!({"resourceName": "cloudflared"}))).is_err());
     assert_eq!(
-        string_slice_argument(&args(json!({"kubectlArgs": ["get", "nodes"]})), "kubectlArgs").unwrap(),
+        string_slice_argument(
+            &args(json!({"kubectlArgs": ["get", "nodes"]})),
+            "kubectlArgs"
+        )
+        .unwrap(),
         vec!["get", "nodes"]
     );
-    assert!(string_slice_argument(&args(json!({"kubectlArgs": ["get", "bad\narg"]})), "kubectlArgs").is_err());
+    assert!(string_slice_argument(
+        &args(json!({"kubectlArgs": ["get", "bad\narg"]})),
+        "kubectlArgs"
+    )
+    .is_err());
 }
 
 #[test]
@@ -156,7 +220,10 @@ fn native_membership_uses_ready_condition_and_role_labels() {
         nodes[0],
         json!({"name": "server-a", "roles": ["control-plane", "etcd"], "ready": true, "status": "Ready", "version": "v1.31.8+k3s1"})
     );
-    assert_eq!(nodes[1], json!({"name": "server-b", "roles": ["control-plane"], "ready": false, "status": "NotReady"}));
+    assert_eq!(
+        nodes[1],
+        json!({"name": "server-b", "roles": ["control-plane"], "ready": false, "status": "NotReady"})
+    );
     assert_eq!(
         parse_native_membership(br#"{"items":[{"metadata":{"name":7}}]}"#).unwrap_err(),
         "invalid native K3s membership response: json: cannot unmarshal number into Go struct field .items.metadata.name of type string"
@@ -176,15 +243,27 @@ fn endpoint_validation_rejects_path_query_and_fragment() {
 }
 
 fn observation(servers: i64, ready: i64, hostname: &str, nodes: Vec<J>) -> Observation {
-    Observation { server_count: servers, ready_servers: ready, hostname: hostname.into(), nodes, ..Default::default() }
+    Observation {
+        server_count: servers,
+        ready_servers: ready,
+        hostname: hostname.into(),
+        nodes,
+        ..Default::default()
+    }
 }
 
 #[test]
 fn quorum_after_removal_refuses_to_break_the_cluster() {
     let ready = json!({"name": "server-c", "ready": true});
     let not_ready = json!({"name": "server-c", "ready": false});
-    assert_eq!(quorum_after_removal(&observation(3, 3, "", vec![]), &ready).unwrap(), (2, 2));
-    assert_eq!(quorum_after_removal(&observation(3, 2, "", vec![]), &not_ready).unwrap(), (2, 2));
+    assert_eq!(
+        quorum_after_removal(&observation(3, 3, "", vec![]), &ready).unwrap(),
+        (2, 2)
+    );
+    assert_eq!(
+        quorum_after_removal(&observation(3, 2, "", vec![]), &not_ready).unwrap(),
+        (2, 2)
+    );
     assert!(quorum_after_removal(&observation(1, 1, "", vec![]), &ready).is_err());
     assert_eq!(
         quorum_after_removal(&observation(3, 2, "", vec![]), &ready).unwrap_err(),
@@ -195,10 +274,19 @@ fn quorum_after_removal_refuses_to_break_the_cluster() {
 #[test]
 fn quorum_recovery_is_admissible_only_when_wedged_and_acknowledged() {
     assert!(quorum_recovery_admissible(true, false, true).is_ok());
-    assert!(quorum_recovery_admissible(true, false, false).unwrap_err().contains("acknowledgeSingleMemberReset=true"));
-    assert!(quorum_recovery_admissible(false, false, true).unwrap_err().contains("requires embedded-etcd"));
-    assert!(quorum_recovery_admissible(true, true, true).unwrap_err().contains("within 1m30s"));
-    assert_eq!(truncate_probe_error(&format!("  {}  ", "x".repeat(600))).len(), 512);
+    assert!(quorum_recovery_admissible(true, false, false)
+        .unwrap_err()
+        .contains("acknowledgeSingleMemberReset=true"));
+    assert!(quorum_recovery_admissible(false, false, true)
+        .unwrap_err()
+        .contains("requires embedded-etcd"));
+    assert!(quorum_recovery_admissible(true, true, true)
+        .unwrap_err()
+        .contains("within 1m30s"));
+    assert_eq!(
+        truncate_probe_error(&format!("  {}  ", "x".repeat(600))).len(),
+        512
+    );
 }
 
 #[test]
@@ -209,19 +297,31 @@ fn joined_membership_settles_on_the_joining_node_itself() {
     joining.push(node("joiner", true));
     let mut not_ready = source.clone();
     not_ready.push(node("joiner", false));
-    assert!(joined_settled(&observation(3, 3, "joiner", joining.clone())));
+    assert!(joined_settled(&observation(
+        3,
+        3,
+        "joiner",
+        joining.clone()
+    )));
     assert!(!joined_settled(&observation(2, 2, "joiner", source)));
     assert!(!joined_settled(&observation(3, 2, "joiner", not_ready)));
-    assert!(!joined_settled(&observation(1, 1, "joiner", vec![node("joiner", true)])));
+    assert!(!joined_settled(&observation(
+        1,
+        1,
+        "joiner",
+        vec![node("joiner", true)]
+    )));
     assert!(!joined_settled(&observation(3, 3, "", joining)));
 }
 
 #[test]
 fn keep_set_includes_init_and_ephemeral_containers() {
-    let keep = keep_set_from_pod_json(br#"{"items":[{"spec":{
+    let keep = keep_set_from_pod_json(
+        br#"{"items":[{"spec":{
         "initContainers":[{"image":"docker.io/library/busybox:1.36"}],
         "containers":[{"image":"10.0.100.66:30500/opute/platform:abc"}],
-        "ephemeralContainers":[{"image":"registry:3"}]}}]}"#);
+        "ephemeralContainers":[{"image":"registry:3"}]}}]}"#,
+    );
     for want in ["busybox:1.36", "opute/platform:abc", "registry:3"] {
         assert!(keep.contains(want), "{want}: {keep:?}");
     }
@@ -248,7 +348,10 @@ fn plan_unused_images_honours_keep_set_and_age_gate() {
     ];
     let (candidates, skipped, missing) = plan_unused_images(&images, &keep, 3600, now);
     assert!(missing);
-    assert_eq!(candidates.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(), ["sha256:old", "sha256:undated"]);
+    assert_eq!(
+        candidates.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
+        ["sha256:old", "sha256:undated"]
+    );
     assert_eq!(skipped.len(), 2);
 }
 
@@ -256,20 +359,39 @@ fn plan_unused_images_honours_keep_set_and_age_gate() {
 fn image_aliases_strip_digest_registry_host_and_library() {
     assert_eq!(
         image_aliases("Docker.io/library/Busybox@sha256:AB"),
-        ["docker.io/library/busybox@sha256:ab", "docker.io/library/busybox", "sha256:ab", "ab", "library/busybox", "busybox"]
+        [
+            "docker.io/library/busybox@sha256:ab",
+            "docker.io/library/busybox",
+            "sha256:ab",
+            "ab",
+            "library/busybox",
+            "busybox"
+        ]
     );
 }
 
 #[test]
 fn cri_times_and_du_and_df_parse_as_go_does() {
-    assert_eq!(parse_cri_time(&json!("1700000000")), Some(1_700_000_000i128 * 1_000_000_000));
-    assert_eq!(parse_cri_time(&json!("1700000000000000000")), Some(1_700_000_000_000_000_000));
+    assert_eq!(
+        parse_cri_time(&json!("1700000000")),
+        Some(1_700_000_000i128 * 1_000_000_000)
+    );
+    assert_eq!(
+        parse_cri_time(&json!("1700000000000000000")),
+        Some(1_700_000_000_000_000_000)
+    );
     assert_eq!(parse_cri_time(&json!("0")), None);
     assert_eq!(parse_cri_time(&json!(-1.0)), None);
-    assert_eq!(parse_du_line("123\t/var/lib/a b"), Some((123, "/var/lib/a b".into())));
+    assert_eq!(
+        parse_du_line("123\t/var/lib/a b"),
+        Some((123, "/var/lib/a b".into()))
+    );
     assert_eq!(parse_du_line("x /a"), None);
     assert_eq!(
-        parse_df_bytes("Filesystem 1B-blocks Used Available Use% Mounted\n/dev/sda1 100 40 60 40% /").unwrap(),
+        parse_df_bytes(
+            "Filesystem 1B-blocks Used Available Use% Mounted\n/dev/sda1 100 40 60 40% /"
+        )
+        .unwrap(),
         json!({"filesystem": "/dev/sda1", "totalBytes": 100, "usedBytes": 40, "availBytes": 60, "mount": "/"})
     );
     assert_eq!(parse_df_bytes("only").unwrap_err(), "df output was empty");

@@ -17,7 +17,10 @@ pub(super) enum Shape {
     MapAny,
     Slice(Box<Shape>),
     /// `name` is the type's `Name()`: empty for an anonymous struct.
-    Struct { name: &'static str, fields: Vec<Field> },
+    Struct {
+        name: &'static str,
+        fields: Vec<Field>,
+    },
 }
 
 pub(super) struct Field {
@@ -54,7 +57,12 @@ impl Shape {
                     .iter()
                     .map(|f| {
                         let tag = format!("json:\"{}\"", f.json);
-                        format!("{} {} {}", f.go, f.shape.type_string(), crate::goerr::quote(&tag))
+                        format!(
+                            "{} {} {}",
+                            f.go,
+                            f.shape.type_string(),
+                            crate::goerr::quote(&tag)
+                        )
                     })
                     .collect();
                 format!("struct {{ {} }}", parts.join("; "))
@@ -68,9 +76,12 @@ impl Shape {
             Shape::Str => J::from(""),
             Shape::Bool => J::Bool(false),
             Shape::Any | Shape::MapStr | Shape::MapAny | Shape::Slice(_) => J::Null,
-            Shape::Struct { fields, .. } => {
-                J::Object(fields.iter().map(|f| (f.json.to_string(), f.shape.zero())).collect())
-            }
+            Shape::Struct { fields, .. } => J::Object(
+                fields
+                    .iter()
+                    .map(|f| (f.json.to_string(), f.shape.zero()))
+                    .collect(),
+            ),
         }
     }
 }
@@ -103,7 +114,10 @@ impl Decoder {
         if matches!(node.value, Value::Null) {
             // null leaves strings, bools and structs as they are and nils
             // maps, slices and interfaces.
-            if matches!(shape, Shape::Any | Shape::MapStr | Shape::MapAny | Shape::Slice(_)) {
+            if matches!(
+                shape,
+                Shape::Any | Shape::MapStr | Shape::MapAny | Shape::Slice(_)
+            ) {
                 *target = J::Null;
             }
             return;
@@ -143,17 +157,21 @@ impl Decoder {
                     *target = shape.zero();
                 }
                 for (key, value) in entries {
-                    let found = fields
-                        .iter()
-                        .find(|f| f.json == key)
-                        .or_else(|| fields.iter().find(|f| crate::gojson::equal_fold(f.json, key)));
+                    let found = fields.iter().find(|f| f.json == key).or_else(|| {
+                        fields
+                            .iter()
+                            .find(|f| crate::gojson::equal_fold(f.json, key))
+                    });
                     let Some(f) = found else {
                         continue;
                     };
                     let (saved_struct, depth) = (self.in_struct, self.stack.len());
                     self.in_struct = Some(name);
                     self.stack.push(f.json);
-                    let mut current = target.get(f.json).cloned().unwrap_or_else(|| f.shape.zero());
+                    let mut current = target
+                        .get(f.json)
+                        .cloned()
+                        .unwrap_or_else(|| f.shape.zero());
                     self.decode(&mut current, value, &f.shape);
                     if let J::Object(map) = target {
                         map.insert(f.json.to_string(), current);
@@ -173,7 +191,11 @@ pub(super) fn unmarshal(raw: &[u8], shape: &Shape) -> Result<J, String> {
         return Err(e);
     }
     let node = crate::gojson::parse(raw).map_err(|_| "unexpected end of JSON input".to_string())?;
-    let mut decoder = Decoder { in_struct: None, stack: Vec::new(), first: None };
+    let mut decoder = Decoder {
+        in_struct: None,
+        stack: Vec::new(),
+        first: None,
+    };
     let mut value = shape.zero();
     decoder.decode(&mut value, &node, shape);
     match decoder.first {
@@ -189,5 +211,8 @@ pub(super) fn text<'a>(value: &'a J, key: &str) -> &'a str {
 
 /// A decoded slice field's elements (none when nil).
 pub(super) fn items<'a>(value: &'a J, key: &str) -> &'a [J] {
-    value.get(key).and_then(J::as_array).map_or(&[], Vec::as_slice)
+    value
+        .get(key)
+        .and_then(J::as_array)
+        .map_or(&[], Vec::as_slice)
 }

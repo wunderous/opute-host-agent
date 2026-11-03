@@ -32,18 +32,27 @@ impl Client {
             "" => DEFAULT_BASE,
             b => b,
         };
-        Client { api_key: api_key.trim().into(), tailnet: tailnet.into(), base_url: base_url.into() }
+        Client {
+            api_key: api_key.trim().into(),
+            tailnet: tailnet.into(),
+            base_url: base_url.into(),
+        }
     }
 
     pub fn list_devices(&self) -> Result<Vec<Device>, String> {
         if self.api_key.is_empty() {
             return Err("tailscale API key is required".into());
         }
-        let endpoint = format!("{}/api/v2/tailnet/{}/devices", self.base_url, path_escape(&self.tailnet));
+        let endpoint = format!(
+            "{}/api/v2/tailnet/{}/devices",
+            self.base_url,
+            path_escape(&self.tailnet)
+        );
         let payload = self
             .do_json("GET", &endpoint, None, true)
             .map_err(|e| format!("list Tailscale devices: {e}"))?;
-        decode_devices(payload.as_ref()).map_err(|e| format!("list Tailscale devices: decode Tailscale API response: {e}"))
+        decode_devices(payload.as_ref())
+            .map_err(|e| format!("list Tailscale devices: decode Tailscale API response: {e}"))
     }
 
     /// A reusable, preauthorized auth key.
@@ -51,8 +60,16 @@ impl Client {
         if self.api_key.is_empty() {
             return Err("tailscale API key is required".into());
         }
-        let expiry_seconds = if expiry_seconds <= 0 { 24 * 60 * 60 } else { expiry_seconds };
-        let endpoint = format!("{}/api/v2/tailnet/{}/keys", self.base_url, path_escape(&self.tailnet));
+        let expiry_seconds = if expiry_seconds <= 0 {
+            24 * 60 * 60
+        } else {
+            expiry_seconds
+        };
+        let endpoint = format!(
+            "{}/api/v2/tailnet/{}/keys",
+            self.base_url,
+            path_escape(&self.tailnet)
+        );
         let body = crate::gojson::encode_to_string(&json!({
             "capabilities": {"devices": {"create": {"reusable": true, "ephemeral": false, "preauthorized": true}}},
             "expirySeconds": expiry_seconds,
@@ -61,7 +78,9 @@ impl Client {
             .do_json("POST", &endpoint, Some(body), true)
             .map_err(|e| format!("create Tailscale auth key: {e}"))?;
         let fields = string_fields(payload.as_ref(), "TailscaleAuthKey", "", &["id", "key"])
-            .map_err(|e| format!("create Tailscale auth key: decode Tailscale API response: {e}"))?;
+            .map_err(|e| {
+                format!("create Tailscale auth key: decode Tailscale API response: {e}")
+            })?;
         if fields[1].trim().is_empty() {
             return Err("Tailscale auth key response did not include a key".into());
         }
@@ -84,7 +103,13 @@ impl Client {
 
     /// `doJSON`: the decoded payload when the caller wants one and the
     /// response carried one (not empty, not `null`).
-    fn do_json(&self, method: &str, endpoint: &str, body: Option<String>, want: bool) -> Result<Option<J>, String> {
+    fn do_json(
+        &self,
+        method: &str,
+        endpoint: &str,
+        body: Option<String>,
+        want: bool,
+    ) -> Result<Option<J>, String> {
         let body = body.filter(|b| !b.is_empty());
         let mut headers = vec![("Authorization", format!("Bearer {}", self.api_key))];
         if body.is_some() {
@@ -103,7 +128,11 @@ impl Client {
             return Ok(None);
         }
         if !(200..300).contains(&response.status) {
-            return Err(format!("HTTP {}: {}", response.status, String::from_utf8_lossy(&response.body).trim()));
+            return Err(format!(
+                "HTTP {}: {}",
+                response.status,
+                String::from_utf8_lossy(&response.body).trim()
+            ));
         }
         if !want || response.body.is_empty() || response.body == b"null" {
             return Ok(None);
@@ -111,8 +140,9 @@ impl Client {
         if let Some(e) = crate::gojson::syntax_error(&response.body) {
             return Err(format!("decode Tailscale API response: {e}"));
         }
-        let node = crate::gojson::parse(&response.body)
-            .map_err(|_| "decode Tailscale API response: unexpected end of JSON input".to_string())?;
+        let node = crate::gojson::parse(&response.body).map_err(|_| {
+            "decode Tailscale API response: unexpected end of JSON input".to_string()
+        })?;
         Ok(Some(go_any(&node)))
     }
 }
@@ -121,7 +151,11 @@ impl Client {
 fn path_escape(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {
-        let keep = b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~' | b'$' | b'&' | b'+' | b':' | b'=' | b'@');
+        let keep = b.is_ascii_alphanumeric()
+            || matches!(
+                b,
+                b'-' | b'_' | b'.' | b'~' | b'$' | b'&' | b'+' | b':' | b'=' | b'@'
+            );
         if keep {
             out.push(b as char);
         } else {
@@ -145,7 +179,12 @@ fn kind(v: &J) -> &'static str {
 /// A Go struct of string fields: names matched without case, a mistyped
 /// field is the first `UnmarshalTypeError` (`path` is the field path of the
 /// struct within the payload, empty at the top).
-fn string_fields(value: Option<&J>, ty: &str, path: &str, fields: &[&str]) -> Result<Vec<String>, String> {
+fn string_fields(
+    value: Option<&J>,
+    ty: &str,
+    path: &str,
+    fields: &[&str],
+) -> Result<Vec<String>, String> {
     let mut out = vec![String::new(); fields.len()];
     let Some(value) = value else {
         return Ok(out);
@@ -155,20 +194,33 @@ fn string_fields(value: Option<&J>, ty: &str, path: &str, fields: &[&str]) -> Re
             return Ok(out);
         }
         return Err(if path.is_empty() {
-            format!("json: cannot unmarshal {} into Go value of type main.{ty}", kind(value))
+            format!(
+                "json: cannot unmarshal {} into Go value of type main.{ty}",
+                kind(value)
+            )
         } else {
-            format!("json: cannot unmarshal {} into Go struct field .{path} of type main.{ty}", kind(value))
+            format!(
+                "json: cannot unmarshal {} into Go struct field .{path} of type main.{ty}",
+                kind(value)
+            )
         });
     };
     for (key, item) in map {
-        let Some(i) = fields.iter().position(|f| crate::gojson::equal_fold(f, key)) else {
+        let Some(i) = fields
+            .iter()
+            .position(|f| crate::gojson::equal_fold(f, key))
+        else {
             continue;
         };
         match item {
             J::String(s) => out[i] = s.clone(),
             J::Null => {}
             other => {
-                let field = if path.is_empty() { fields[i].to_string() } else { format!("{path}.{}", fields[i]) };
+                let field = if path.is_empty() {
+                    fields[i].to_string()
+                } else {
+                    format!("{path}.{}", fields[i])
+                };
                 return Err(format!(
                     "json: cannot unmarshal {} into Go struct field {ty}.{field} of type string",
                     kind(other)
@@ -214,7 +266,11 @@ fn decode_device(value: &J) -> Result<Device, String> {
     let mut stripped = value.clone();
     let mut addresses = Vec::new();
     if let Some(map) = stripped.as_object_mut() {
-        let keys: Vec<String> = map.keys().filter(|k| crate::gojson::equal_fold(k, "addresses")).cloned().collect();
+        let keys: Vec<String> = map
+            .keys()
+            .filter(|k| crate::gojson::equal_fold(k, "addresses"))
+            .cloned()
+            .collect();
         for key in keys {
             match map.remove(&key) {
                 Some(J::Null) | None => addresses = Vec::new(),
@@ -243,7 +299,12 @@ fn decode_device(value: &J) -> Result<Device, String> {
         }
     }
     let f = string_fields(Some(&stripped), "TailscaleDevice", "devices", &fields)?;
-    Ok(Device { id: f[0].clone(), name: f[1].clone(), hostname: f[2].clone(), addresses })
+    Ok(Device {
+        id: f[0].clone(),
+        name: f[1].clone(),
+        hostname: f[2].clone(),
+        addresses,
+    })
 }
 
 /// `findDeviceByHostname`: the first device whose hostname or name is the

@@ -13,24 +13,42 @@ fn find_mesh_ip_accepts_ip_command_cidr() {
 
 #[test]
 fn find_mesh_ip_rejects_non_mesh_and_cgnat_addresses() {
-    assert_eq!(find_mesh_ip("2: enp5s0 inet 10.0.100.56/24 scope global enp5s0"), "");
-    assert_eq!(find_mesh_ip("2: enp5s0 inet 100.112.0.1/24 scope global enp5s0"), "");
+    assert_eq!(
+        find_mesh_ip("2: enp5s0 inet 10.0.100.56/24 scope global enp5s0"),
+        ""
+    );
+    assert_eq!(
+        find_mesh_ip("2: enp5s0 inet 100.112.0.1/24 scope global enp5s0"),
+        ""
+    );
     assert_eq!(find_mesh_ip("(100.111.255.255),"), "100.111.255.255");
 }
 
 #[test]
 fn diagnostics_keep_the_failure_tail_over_install_chatter() {
-    let mut lines: Vec<String> = (0..20).map(|i| format!("Setting up cloudflare-warp-dep-{i} ...")).collect();
+    let mut lines: Vec<String> = (0..20)
+        .map(|i| format!("Setting up cloudflare-warp-dep-{i} ..."))
+        .collect();
     lines.push("Status update: Registration missing".into());
-    lines.push("warp-cli error: unable to reach the Zero Trust registration endpoint secret-token".into());
+    lines.push(
+        "warp-cli error: unable to reach the Zero Trust registration endpoint secret-token".into(),
+    );
     lines.push("Status update: Disconnected".into());
     let diagnostics = command_diagnostics(&lines.join("\n"), "secret-token");
-    for want in ["Registration missing", "unable to reach", "Disconnected", "[redacted]"] {
+    for want in [
+        "Registration missing",
+        "unable to reach",
+        "Disconnected",
+        "[redacted]",
+    ] {
         assert!(diagnostics.contains(want), "{diagnostics}");
     }
     assert!(!diagnostics.contains("cloudflare-warp-dep-0 "));
     assert!(!diagnostics.contains("secret-token"));
-    assert_eq!(command_diagnostics("nothing here", ""), "guest command returned no diagnostic lines");
+    assert_eq!(
+        command_diagnostics("nothing here", ""),
+        "guest command returned no diagnostic lines"
+    );
 }
 
 #[test]
@@ -42,7 +60,12 @@ fn diagnostics_cut_lines_at_240_bytes_as_go_does() {
 
 #[test]
 fn install_script_requires_ipv6_and_bounds_warp_setup() {
-    for want in ["/proc/net/if_inet6", "exit 78", "timeout 45s warp-cli --accept-tos connector new", "seq 1 150"] {
+    for want in [
+        "/proc/net/if_inet6",
+        "exit 78",
+        "timeout 45s warp-cli --accept-tos connector new",
+        "seq 1 150",
+    ] {
         assert!(MESH_INSTALL_SCRIPT.contains(want), "{want}");
     }
 }
@@ -50,9 +73,15 @@ fn install_script_requires_ipv6_and_bounds_warp_setup() {
 #[test]
 fn hostnames_from_args_accepts_two_zones() {
     let args = Args::from_map(
-        json!({"hostnames": ["agent.example.test", "mcp.other.test"]}).as_object().cloned().unwrap(),
+        json!({"hostnames": ["agent.example.test", "mcp.other.test"]})
+            .as_object()
+            .cloned()
+            .unwrap(),
     );
-    assert_eq!(hostnames_from_args(&args), vec!["agent.example.test", "mcp.other.test"]);
+    assert_eq!(
+        hostnames_from_args(&args),
+        vec!["agent.example.test", "mcp.other.test"]
+    );
 }
 
 #[test]
@@ -60,7 +89,9 @@ fn validate_local_target_accepts_host_agent_mcp() {
     assert!(validate_local_target("host-agent-mcp", "host", "").is_ok());
     assert!(validate_local_target("http://127.0.0.1:3004/mcp", "host", "").is_ok());
     assert!(validate_local_target("https://agent.example.test/mcp", "host", "").is_err());
-    assert!(validate_local_target("http://10.0.200.1:3005", "host", "host-opute-ha-b-b9234af4").is_ok());
+    assert!(
+        validate_local_target("http://10.0.200.1:3005", "host", "host-opute-ha-b-b9234af4").is_ok()
+    );
 }
 
 #[test]

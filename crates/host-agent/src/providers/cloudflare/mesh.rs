@@ -25,7 +25,8 @@ const CLOUDFLARED_CHUNK_CHARS: usize = 2 << 20;
 
 const MESH_RUNTIME_VALIDATE: &str = "opute.capability.mesh-runtime.validate";
 const MESH_RUNTIME_ENSURE_AGENT: &str = "opute.capability.mesh-runtime.ensure-agent";
-const MESH_RUNTIME_ENSURE_CONTROL_PLANE: &str = "opute.capability.mesh-runtime.ensure-control-plane";
+const MESH_RUNTIME_ENSURE_CONTROL_PLANE: &str =
+    "opute.capability.mesh-runtime.ensure-control-plane";
 const MESH_RUNTIME_STATUS: &str = "opute.capability.mesh-runtime.status";
 const MESH_MEMBERSHIP_ENROLL: &str = "opute.capability.mesh-membership.enroll";
 const MESH_MEMBERSHIP_STATUS: &str = "opute.capability.mesh-membership.status";
@@ -91,7 +92,14 @@ fn mesh_target_binding() -> Vec<ResourceBinding> {
 }
 
 fn mesh_operation(id: &str, effect: &str, input: J) -> Operation {
-    provider_operation(id, effect, input, json!({"type": "object"}), &["host", "network"], mesh_target_binding())
+    provider_operation(
+        id,
+        effect,
+        input,
+        json!({"type": "object"}),
+        &["host", "network"],
+        mesh_target_binding(),
+    )
 }
 
 pub(super) fn runtime_operations() -> Vec<Operation> {
@@ -103,7 +111,8 @@ pub(super) fn runtime_operations() -> Vec<Operation> {
         "operatorEvidence": {"type": "string"},
         "controlPlaneRef": {"type": "string"},
     });
-    let input = || json!({"type": "object", "required": ["targetUri"], "properties": props.clone()});
+    let input =
+        || json!({"type": "object", "required": ["targetUri"], "properties": props.clone()});
     vec![
         mesh_operation(MESH_RUNTIME_VALIDATE, "read", input()),
         mesh_operation(MESH_RUNTIME_ENSURE_AGENT, "mutation", input()),
@@ -115,57 +124,81 @@ pub(super) fn runtime_operations() -> Vec<Operation> {
 pub(super) fn membership_operations() -> Vec<Operation> {
     let membership_ref = json!({"type": "string", "minLength": 1, "writeOnly": true});
     vec![
-        mesh_operation(MESH_MEMBERSHIP_ENROLL, "mutation", json!({
-            "type": "object",
-            "required": ["targetUri", "name"],
-            "properties": {
-                "targetUri": target_uri_schema(),
-                "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$"},
-                "membershipRef": membership_ref,
-            },
-        })),
-        mesh_operation(MESH_MEMBERSHIP_STATUS, "read", json!({
-            "type": "object",
-            "required": ["targetUri"],
-            "properties": {"targetUri": target_uri_schema()},
-        })),
-        mesh_operation(MESH_MEMBERSHIP_LEAVE, "destructive", json!({
-            "type": "object",
-            "required": ["membershipRef", "targetUri"],
-            "properties": {"membershipRef": membership_ref, "targetUri": target_uri_schema()},
-        })),
+        mesh_operation(
+            MESH_MEMBERSHIP_ENROLL,
+            "mutation",
+            json!({
+                "type": "object",
+                "required": ["targetUri", "name"],
+                "properties": {
+                    "targetUri": target_uri_schema(),
+                    "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$"},
+                    "membershipRef": membership_ref,
+                },
+            }),
+        ),
+        mesh_operation(
+            MESH_MEMBERSHIP_STATUS,
+            "read",
+            json!({
+                "type": "object",
+                "required": ["targetUri"],
+                "properties": {"targetUri": target_uri_schema()},
+            }),
+        ),
+        mesh_operation(
+            MESH_MEMBERSHIP_LEAVE,
+            "destructive",
+            json!({
+                "type": "object",
+                "required": ["membershipRef", "targetUri"],
+                "properties": {"membershipRef": membership_ref, "targetUri": target_uri_schema()},
+            }),
+        ),
     ]
 }
 
 pub(super) fn public_ingress_operations() -> Vec<Operation> {
     let membership_ref = json!({"type": "string", "minLength": 1, "writeOnly": true});
     vec![
-        mesh_operation(PUBLIC_INGRESS_ENSURE, "mutation", json!({
-            "type": "object",
-            "required": ["targetUri", "membershipRef"],
-            "properties": {
-                "targetUri": target_uri_schema(),
-                "membershipRef": membership_ref,
-                "localTarget": {"type": "string", "format": "uri"},
-                "hostname": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,252}$"},
-                "endpoint": {"type": "string"},
-                "tunnelName": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$"},
-                "peerTargetUris": {"type": "array", "items": target_uri_schema()},
-                "operatorMode": {"type": "boolean"},
-                "ingressClassName": {"type": "string"},
-                "operatorEvidence": {"type": "string"},
-            },
-        })),
-        mesh_operation(PUBLIC_INGRESS_PROMOTE, "mutation", json!({
-            "type": "object",
-            "required": ["targetUri", "membershipRef"],
-            "properties": {"targetUri": target_uri_schema(), "membershipRef": membership_ref},
-        })),
-        mesh_operation(PUBLIC_INGRESS_PROBE, "read", json!({
-            "type": "object",
-            "required": ["targetUri"],
-            "properties": {"targetUri": target_uri_schema(), "peerMeshIp": {"type": "string", "format": "ipv4"}},
-        })),
+        mesh_operation(
+            PUBLIC_INGRESS_ENSURE,
+            "mutation",
+            json!({
+                "type": "object",
+                "required": ["targetUri", "membershipRef"],
+                "properties": {
+                    "targetUri": target_uri_schema(),
+                    "membershipRef": membership_ref,
+                    "localTarget": {"type": "string", "format": "uri"},
+                    "hostname": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,252}$"},
+                    "endpoint": {"type": "string"},
+                    "tunnelName": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$"},
+                    "peerTargetUris": {"type": "array", "items": target_uri_schema()},
+                    "operatorMode": {"type": "boolean"},
+                    "ingressClassName": {"type": "string"},
+                    "operatorEvidence": {"type": "string"},
+                },
+            }),
+        ),
+        mesh_operation(
+            PUBLIC_INGRESS_PROMOTE,
+            "mutation",
+            json!({
+                "type": "object",
+                "required": ["targetUri", "membershipRef"],
+                "properties": {"targetUri": target_uri_schema(), "membershipRef": membership_ref},
+            }),
+        ),
+        mesh_operation(
+            PUBLIC_INGRESS_PROBE,
+            "read",
+            json!({
+                "type": "object",
+                "required": ["targetUri"],
+                "properties": {"targetUri": target_uri_schema(), "peerMeshIp": {"type": "string", "format": "ipv4"}},
+            }),
+        ),
     ]
 }
 
@@ -175,14 +208,17 @@ pub(super) fn public_ingress_operations() -> Vec<Operation> {
 /// operation that is not a mesh one.
 pub(super) fn dispatch(ctx: &Ctx, operation: &str, args: &Args) -> Option<Outcome> {
     Some(match operation {
-        MESH_RUNTIME_VALIDATE | MESH_RUNTIME_ENSURE_AGENT | MESH_RUNTIME_ENSURE_CONTROL_PLANE | MESH_RUNTIME_STATUS => {
-            runtime(operation, args)
-        }
+        MESH_RUNTIME_VALIDATE
+        | MESH_RUNTIME_ENSURE_AGENT
+        | MESH_RUNTIME_ENSURE_CONTROL_PLANE
+        | MESH_RUNTIME_STATUS => runtime(operation, args),
         MESH_MEMBERSHIP_ENROLL | OVERLAY_PREPARE_MEMBERSHIP => prepare(args),
         MESH_MEMBERSHIP_STATUS | OVERLAY_VALIDATE => validate(args),
         MESH_MEMBERSHIP_LEAVE | OVERLAY_REMOVE_MEMBERSHIP => remove(ctx, args),
         // Cloudflare HA endpoints are already the stable public form.
-        PUBLIC_INGRESS_ENSURE | PUBLIC_INGRESS_PROMOTE | OVERLAY_ENSURE_HA_ENDPOINT => ensure_ha_endpoint(ctx, args),
+        PUBLIC_INGRESS_ENSURE | PUBLIC_INGRESS_PROMOTE | OVERLAY_ENSURE_HA_ENDPOINT => {
+            ensure_ha_endpoint(ctx, args)
+        }
         PUBLIC_INGRESS_PROBE | OVERLAY_PROBE_REACHABILITY => probe(ctx, args),
         OVERLAY_ATTACH_TARGET => attach(ctx, args),
         OVERLAY_REMOVE_HA_ENDPOINT => remove_ha_endpoint(ctx, args),
@@ -206,13 +242,17 @@ fn runtime(operation: &str, args: &Args) -> Outcome {
         }
         MESH_RUNTIME_ENSURE_CONTROL_PLANE => {
             if !runtimes.get(&target).is_some_and(|r| r.agent_ready) {
-                return Err("mesh-runtime.ensure-control-plane requires mesh-runtime.ensure-agent first".into());
+                return Err(
+                    "mesh-runtime.ensure-control-plane requires mesh-runtime.ensure-agent first"
+                        .into(),
+                );
             }
             // The host-tunnel path has no separate operator control plane;
             // it is ready once the agent is.
             let rec = runtimes.entry(target).or_default();
             rec.control_plane_ready = true;
-            rec.control_plane_ref = first_non_empty(&[&args.string("controlPlaneRef", ""), "cloudflare-edge"]);
+            rec.control_plane_ref =
+                first_non_empty(&[&args.string("controlPlaneRef", ""), "cloudflare-edge"]);
             rec.ingress_class_name = args.string("ingressClassName", "");
             Ok(runtime_out(rec, true))
         }
@@ -267,7 +307,10 @@ fn string_fields(value: Option<&J>, ty: &str, fields: &[&str]) -> Result<Vec<Str
         ));
     };
     for (key, item) in map {
-        let Some(i) = fields.iter().position(|f| crate::gojson::equal_fold(f, key)) else {
+        let Some(i) = fields
+            .iter()
+            .position(|f| crate::gojson::equal_fold(f, key))
+        else {
             continue;
         };
         match item {
@@ -342,8 +385,13 @@ fn prepare(args: &Args) -> Outcome {
     ensure_mesh_connectivity(&account, &token)?;
     let base = api::api_base();
     let body = crate::gojson::encode_to_string(&json!({"name": name, "ha": false}));
-    let created = api::cloudflare_json(&token, "POST", &format!("{base}/accounts/{account}/warp_connector"), Some(body))
-        .map_err(|e| format!("create Cloudflare Mesh node: {e}"))?;
+    let created = api::cloudflare_json(
+        &token,
+        "POST",
+        &format!("{base}/accounts/{account}/warp_connector"),
+        Some(body),
+    )
+    .map_err(|e| format!("create Cloudflare Mesh node: {e}"))?;
     let node = string_fields(created.as_ref(), "meshNode", &NODE_FIELDS)
         .map_err(|e| format!("create Cloudflare Mesh node: {e}"))?;
     let node_id = node[0].clone();
@@ -372,7 +420,11 @@ fn prepare(args: &Args) -> Outcome {
     let reference = new_membership_ref()?;
     BINDINGS.lock().unwrap_or_else(|e| e.into_inner()).insert(
         reference.clone(),
-        Binding { node_id: node_id.clone(), node_token, instance_uri: uri.to_string() },
+        Binding {
+            node_id: node_id.clone(),
+            node_token,
+            instance_uri: uri.to_string(),
+        },
     );
     Ok(json!({
         "contractVersion": NETWORK_OVERLAY,
@@ -389,7 +441,10 @@ fn prepare(args: &Args) -> Outcome {
 /// `ensureMeshConnectivity`: turn on only the two account settings a
 /// WARP-to-WARP overlay needs, with a sparse PATCH.
 fn ensure_mesh_connectivity(account: &str, token: &str) -> Result<(), String> {
-    let endpoint = format!("{}/accounts/{account}/zerotrust/connectivity_settings", api::api_base());
+    let endpoint = format!(
+        "{}/accounts/{account}/zerotrust/connectivity_settings",
+        api::api_base()
+    );
     let current = api::cloudflare_json(token, "GET", &endpoint, None)
         .map_err(|e| format!("read Cloudflare Mesh connectivity settings: {e}"))?;
     let (offramp, icmp) = connectivity_flags(current.as_ref())
@@ -644,14 +699,19 @@ fn probe(ctx: &Ctx, args: &Args) -> Outcome {
             "timeoutMs": 15 * 1000,
         }),
     )?;
-    let content = structured_content(&result)
-        .ok_or_else(|| "Cloudflare Mesh reachability probe returned no structured command result".to_string())?;
+    let content = structured_content(&result).ok_or_else(|| {
+        "Cloudflare Mesh reachability probe returned no structured command result".to_string()
+    })?;
     let (exit_code, present) = numeric_input(content, "exitCode");
     if !present || exit_code != 0 {
         return Err(format!(
             "Cloudflare Mesh reachability probe failed with exit code {exit_code}: {}",
             command_diagnostics(
-                &format!("{}\n{}", string_input(content, "stdout", ""), string_input(content, "stderr", "")),
+                &format!(
+                    "{}\n{}",
+                    string_input(content, "stdout", ""),
+                    string_input(content, "stderr", "")
+                ),
                 ""
             )
         ));
@@ -672,9 +732,15 @@ fn remove(ctx: &Ctx, args: &Args) -> Outcome {
     if reference.is_empty() {
         return Err("membershipRef is required".into());
     }
-    let binding = BINDINGS.lock().unwrap_or_else(|e| e.into_inner()).get(&reference).cloned();
+    let binding = BINDINGS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&reference)
+        .cloned();
     let Some(binding) = binding else {
-        return Ok(json!({"contractVersion": NETWORK_OVERLAY, "ready": true, "deleted": true, "membershipRef": reference}));
+        return Ok(
+            json!({"contractVersion": NETWORK_OVERLAY, "ready": true, "deleted": true, "membershipRef": reference}),
+        );
     };
     if binding.instance_uri != uri.to_string() {
         return Err("network overlay membership is bound to another instance".into());
@@ -690,9 +756,17 @@ fn remove(ctx: &Ctx, args: &Args) -> Outcome {
         }),
     )?;
     let (account, _, token) = api::creds()?;
-    let endpoint = format!("{}/accounts/{account}/warp_connector/{}", api::api_base(), binding.node_id);
-    api::cloudflare_json(&token, "DELETE", &endpoint, None).map_err(|e| format!("delete Cloudflare Mesh node: {e}"))?;
-    BINDINGS.lock().unwrap_or_else(|e| e.into_inner()).remove(&reference);
+    let endpoint = format!(
+        "{}/accounts/{account}/warp_connector/{}",
+        api::api_base(),
+        binding.node_id
+    );
+    api::cloudflare_json(&token, "DELETE", &endpoint, None)
+        .map_err(|e| format!("delete Cloudflare Mesh node: {e}"))?;
+    BINDINGS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&reference);
     Ok(json!({
         "contractVersion": NETWORK_OVERLAY,
         "ready": true,
@@ -724,7 +798,11 @@ fn ensure_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
                 service: "https://127.0.0.1:6443".into(),
                 origin_request: Some(json!({"noTLSVerify": true})),
             },
-            api::IngressRule { hostname: String::new(), service: "http_status:404".into(), origin_request: None },
+            api::IngressRule {
+                hostname: String::new(),
+                service: "http_status:404".into(),
+                origin_request: None,
+            },
         ],
     )?;
     api::upsert_cname(&token, &account, &zone, &hostname, &tunnel.id)?;
@@ -762,15 +840,18 @@ fn ensure_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
         }
     };
     let endpoint_ref = new_membership_ref()?;
-    HA_ENDPOINTS.lock().unwrap_or_else(|e| e.into_inner()).insert(
-        endpoint_ref.clone(),
-        HaEndpoint {
-            hostname,
-            tunnel_name,
-            service_name,
-            target_uris: targets.iter().map(Uri::to_string).collect(),
-        },
-    );
+    HA_ENDPOINTS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(
+            endpoint_ref.clone(),
+            HaEndpoint {
+                hostname,
+                tunnel_name,
+                service_name,
+                target_uris: targets.iter().map(Uri::to_string).collect(),
+            },
+        );
     Ok(json!({
         "contractVersion": NETWORK_OVERLAY,
         "ready": true,
@@ -826,12 +907,16 @@ fn target_uris_input(args: &Args) -> Result<Vec<Uri>, String> {
     }
     if let Some(J::Array(values)) = args.get("peerTargetUris") {
         for value in values {
-            let text = value.as_str().ok_or_else(|| "targetUris must contain strings".to_string())?;
+            let text = value
+                .as_str()
+                .ok_or_else(|| "targetUris must contain strings".to_string())?;
             raw_values.push(text.to_string());
         }
     }
     if raw_values.len() < 2 {
-        return Err("targetUri and peerTargetUris must contain at least two VM resource URIs".into());
+        return Err(
+            "targetUri and peerTargetUris must contain at least two VM resource URIs".into(),
+        );
     }
     let mut targets: Vec<Uri> = Vec::with_capacity(raw_values.len());
     for raw in &raw_values {
@@ -860,7 +945,12 @@ systemctl daemon-reload
 systemctl enable --now SERVICE_NAME
 cloudflared --version >/dev/null";
 
-fn install_ha_connector(client: &HostAgent, target: &Uri, service_name: &str, token: &str) -> Result<(), String> {
+fn install_ha_connector(
+    client: &HostAgent,
+    target: &Uri,
+    service_name: &str,
+    token: &str,
+) -> Result<(), String> {
     wait_for_guest_exec(client, target)?;
     let artifact = verified_cloudflared_artifact()?;
     stage_cloudflared_artifact(client, target, &artifact)
@@ -871,14 +961,20 @@ fn install_ha_connector(client: &HostAgent, target: &Uri, service_name: &str, to
         json!({"uri": target.to_string(), "command": "bash", "args": ["-lc", script], "stdin": format!("{token}\n"), "timeoutMs": 10 * 60 * 1000}),
     )?;
     match result.get("structuredContent") {
-        None | Some(J::Null) => return Err("Cloudflare HA connector returned no command result".into()),
+        None | Some(J::Null) => {
+            return Err("Cloudflare HA connector returned no command result".into())
+        }
         Some(J::Object(output)) => {
             let (code, present) = numeric_input(output, "exitCode");
             if present && code != 0 {
                 return Err(format!(
                     "Cloudflare HA connector failed with exit code {code}: {}",
                     command_diagnostics(
-                        &format!("{}\n{}", string_input(output, "stdout", ""), string_input(output, "stderr", "")),
+                        &format!(
+                            "{}\n{}",
+                            string_input(output, "stdout", ""),
+                            string_input(output, "stderr", "")
+                        ),
                         token
                     )
                 ));
@@ -896,7 +992,11 @@ fn command_exit(result: &Map<String, J>) -> Option<i64> {
     })
 }
 
-fn stage_cloudflared_artifact(client: &HostAgent, target: &Uri, encoded: &str) -> Result<(), String> {
+fn stage_cloudflared_artifact(
+    client: &HostAgent,
+    target: &Uri,
+    encoded: &str,
+) -> Result<(), String> {
     let mut start = 0;
     while start < encoded.len() {
         let end = (start + CLOUDFLARED_CHUNK_CHARS).min(encoded.len());
@@ -929,7 +1029,9 @@ fn stage_cloudflared_artifact(client: &HostAgent, target: &Uri, encoded: &str) -
         }),
     )?;
     if let Some(code) = command_exit(&result) {
-        return Err(format!("Cloudflare connector artifact reconstruction failed with exit code {code}"));
+        return Err(format!(
+            "Cloudflare connector artifact reconstruction failed with exit code {code}"
+        ));
     }
     Ok(())
 }
@@ -956,11 +1058,16 @@ fn verified_cloudflared_artifact() -> Result<String, String> {
     })
     .map_err(|e| format!("download Cloudflare connector artifact: {e}"))?;
     if !(200..300).contains(&response.status) {
-        return Err(format!("download Cloudflare connector artifact: HTTP {}", response.status_line));
+        return Err(format!(
+            "download Cloudflare connector artifact: HTTP {}",
+            response.status_line
+        ));
     }
     let artifact = response.body;
     if artifact.len() as u64 > MAX_CLOUDFLARED_ARTIFACT {
-        return Err(format!("Cloudflare connector artifact exceeds {MAX_CLOUDFLARED_ARTIFACT} bytes"));
+        return Err(format!(
+            "Cloudflare connector artifact exceeds {MAX_CLOUDFLARED_ARTIFACT} bytes"
+        ));
     }
     use sha2::Digest as _;
     let observed = hex(&sha2::Sha256::digest(&artifact));
@@ -1016,7 +1123,9 @@ fn wait_for_ha_endpoint(endpoint: &str, timeout: Duration) -> Result<u16, String
             limit: 4096,
         }) {
             Ok(response) if acceptable_status(response.status) => return Ok(response.status),
-            Ok(response) => last_err = Some(format!("stable endpoint returned HTTP {}", response.status)),
+            Ok(response) => {
+                last_err = Some(format!("stable endpoint returned HTTP {}", response.status))
+            }
             Err(e) => last_err = Some(e),
         }
         std::thread::sleep(Duration::from_secs(5));
@@ -1090,7 +1199,8 @@ pub(super) fn find_mesh_ip(output: &str) -> String {
 pub(super) fn find_mesh_interface(output: &str, mesh_ip: &str) -> String {
     for line in output.split('\n') {
         let fields: Vec<&str> = line.split_whitespace().collect();
-        if fields.len() < 4 || fields[2] != "inet" || !fields[3].starts_with(&format!("{mesh_ip}/")) {
+        if fields.len() < 4 || fields[2] != "inet" || !fields[3].starts_with(&format!("{mesh_ip}/"))
+        {
             continue;
         }
         return fields[1].strip_suffix(':').unwrap_or(fields[1]).to_string();
@@ -1104,7 +1214,16 @@ const DIAGNOSTIC_LINE_BUDGET: usize = 16;
 /// redacted, each cut at 240 bytes.
 pub(super) fn command_diagnostics(output: &str, secret: &str) -> String {
     const WORDS: [&str; 11] = [
-        "status", "connected", "inet", "interface", "warp", "error", "failed", "unable", "cannot", "registration",
+        "status",
+        "connected",
+        "inet",
+        "interface",
+        "warp",
+        "error",
+        "failed",
+        "unable",
+        "cannot",
+        "registration",
         "terms",
     ];
     let mut lines: Vec<String> = Vec::new();

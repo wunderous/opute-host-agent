@@ -22,8 +22,8 @@ pub mod k3s;
 mod support;
 pub mod tailscale;
 
-pub use support::{go_any, go_panic, Args, HostAgent};
 pub(crate) use support::proxy_for;
+pub use support::{go_any, go_panic, Args, HostAgent};
 
 use crate::gojson::Node;
 use crate::http1::{Body, Request, Response};
@@ -111,17 +111,14 @@ impl Server {
             .collect();
         listing.sort_by(|a, b| a.0.cmp(b.0));
         let listing: Vec<J> = listing.into_iter().map(|(_, t)| t).collect();
-        let call = |name: &str, params: Option<&Node>| match self
-            .tools
-            .iter()
-            .find(|t| t.name == name)
-        {
-            None => ToolCallOutcome::Unknown,
-            Some(tool) => (tool.handler)(&Call {
-                arguments: params.and_then(|p| p.field("arguments")),
-                meta: params.and_then(|p| p.field("_meta")),
-            }),
-        };
+        let call =
+            |name: &str, params: Option<&Node>| match self.tools.iter().find(|t| t.name == name) {
+                None => ToolCallOutcome::Unknown,
+                Some(tool) => (tool.handler)(&Call {
+                    arguments: params.and_then(|p| p.field("arguments")),
+                    meta: params.and_then(|p| p.field("_meta")),
+                }),
+            };
         let sdk = Sdk {
             implementation_name: self.name,
             version: self.version,

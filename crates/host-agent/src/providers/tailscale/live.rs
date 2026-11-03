@@ -2,16 +2,16 @@
 //! Agent callbacks, devices through Tailscale's API, ownership in the same
 //! store as the fake backend.
 
+use super::super::support::{first_non_empty, numeric_input, string_input, Args, HostAgent};
 use super::api::{device_ipv4, find_device_by_hostname, Client, Device};
 use super::overlay::{
     assert_credential_presence, enrolled, ha_endpoint_removed, insert_ingress, membership_removed,
-    mesh_runtime_base, overlay_base, owned_for_removal, parse_peer_uri, parse_target_uri, parses_as_ip,
-    path_class, prepared, private_mesh_result, private_service_result, probe_result,
+    mesh_runtime_base, overlay_base, owned_for_removal, parse_peer_uri, parse_target_uri,
+    parses_as_ip, path_class, prepared, private_mesh_result, private_service_result, probe_result,
     reject_control_plane_public_target, require_credential_kind, require_host_agent_id,
     require_mesh_agent_ready, require_operator_stable_evidence, store, Membership, CRED_API_KEY,
     CRED_AUTH_KEY, PATH_PRIVATE_MESH, PATH_PUBLIC_INGRESS, PROVIDER_NAME,
 };
-use super::super::support::{first_non_empty, numeric_input, string_input, Args, HostAgent};
 use super::{getenv, op, setenv, Ctx, Outcome, GENERATION, NETWORK_OVERLAY};
 use crate::goerr::quote;
 use crate::resource::Uri;
@@ -24,16 +24,21 @@ const DEFAULT_ENV_FILE: &str = "/home/houman/.config/opute/tailscale.env";
 const DEFAULT_AUTH_KEY_FILE: &str = "/home/houman/.config/opute/tailscale.authkey";
 const CGNAT_PREFIX: &str = "100.";
 
-static PENDING_AUTH_KEYS: LazyLock<Mutex<HashMap<String, String>>> = LazyLock::new(Default::default);
+static PENDING_AUTH_KEYS: LazyLock<Mutex<HashMap<String, String>>> =
+    LazyLock::new(Default::default);
 static ENV_ONCE: Once = Once::new();
 
 /// `ensureTailscaleEnvLoaded`: once per process, the env file's values and
 /// the auth key file fill what the environment leaves unset.
 fn ensure_env_loaded() {
     ENV_ONCE.call_once(|| {
-        load_env_file(&first_non_empty(&[&getenv("OPUTE_TAILSCALE_ENV_FILE"), DEFAULT_ENV_FILE]));
+        load_env_file(&first_non_empty(&[
+            &getenv("OPUTE_TAILSCALE_ENV_FILE"),
+            DEFAULT_ENV_FILE,
+        ]));
         if getenv("TAILSCALE_AUTH_KEY").trim().is_empty() {
-            let file = first_non_empty(&[&getenv("TAILSCALE_AUTH_KEY_FILE"), DEFAULT_AUTH_KEY_FILE]);
+            let file =
+                first_non_empty(&[&getenv("TAILSCALE_AUTH_KEY_FILE"), DEFAULT_AUTH_KEY_FILE]);
             if let Ok(raw) = std::fs::read(&file) {
                 let key = String::from_utf8_lossy(&raw).trim().to_string();
                 if !key.is_empty() {
@@ -89,11 +94,16 @@ pub(super) fn overlay(ctx: &Ctx, operation: &str, args: &Args) -> Outcome {
         op::OVERLAY_REPORT_TWO_NODE_READINESS => super::overlay::report_two_node_readiness(args),
         op::OVERLAY_ENSURE_PRIVATE_MESH => ensure_private_mesh(ctx, args),
         op::OVERLAY_ENSURE_PRIVATE_SERVICE => ensure_private_service(ctx, args),
-        op::OVERLAY_ENSURE_PUBLIC_INGRESS | op::OVERLAY_ENSURE_HA_ENDPOINT => ensure_public_ingress(ctx, args),
+        op::OVERLAY_ENSURE_PUBLIC_INGRESS | op::OVERLAY_ENSURE_HA_ENDPOINT => {
+            ensure_public_ingress(ctx, args)
+        }
         op::OVERLAY_PROMOTE_PUBLIC_INGRESS => super::overlay::promote(args, true),
         op::OVERLAY_REMOVE_HA_ENDPOINT => remove_ha_endpoint(ctx, args),
         op::OVERLAY_REMOVE_MEMBERSHIP => remove_membership(ctx, args),
-        _ => Err(format!("unknown network overlay operation {}", quote(operation))),
+        _ => Err(format!(
+            "unknown network overlay operation {}",
+            quote(operation)
+        )),
     }
 }
 
@@ -111,7 +121,11 @@ pub(super) fn mesh_runtime(ctx: &Ctx, operation: &str, args: &Args) -> Outcome {
 fn agent_version(output: &str) -> Option<String> {
     output
         .split('\n')
-        .filter_map(|line| line.trim().strip_prefix("agent_version=").map(str::to_string))
+        .filter_map(|line| {
+            line.trim()
+                .strip_prefix("agent_version=")
+                .map(str::to_string)
+        })
         .next_back()
 }
 
@@ -128,13 +142,16 @@ fn ensure_mesh_agent(ctx: &Ctx, args: &Args) -> Outcome {
         "run_instance_command",
         json!({"uri": uri.to_string(), "command": "bash", "args": ["-lc", ENSURE_AGENT_SCRIPT], "timeoutMs": 10 * 60 * 1000}),
     )?;
-    let content = command_content(&result)
-        .ok_or_else(|| "mesh-runtime.ensure-agent returned no structured command result".to_string())?;
+    let content = command_content(&result).ok_or_else(|| {
+        "mesh-runtime.ensure-agent returned no structured command result".to_string()
+    })?;
     let output = string_input(content, "stdout", "");
     let stderr = string_input(content, "stderr", "");
     let (code, present) = numeric_input(content, "exitCode");
     if present && code != 0 {
-        return Err(format!("mesh-runtime.ensure-agent failed with exit code {code}: {output}\n{stderr}"));
+        return Err(format!(
+            "mesh-runtime.ensure-agent failed with exit code {code}: {output}\n{stderr}"
+        ));
     }
     let version = agent_version(&output).unwrap_or_else(|| "unknown".into());
     let target = uri.to_string();
@@ -177,7 +194,9 @@ fn ensure_mesh_control_plane(args: &Args) -> Outcome {
     let uri = parse_target_uri(args)?;
     let target = uri.to_string();
     if !store().runtimes.get(&target).is_some_and(|r| r.agent_ready) {
-        return Err("mesh-runtime.ensure-control-plane requires mesh-runtime.ensure-agent first".into());
+        return Err(
+            "mesh-runtime.ensure-control-plane requires mesh-runtime.ensure-agent first".into(),
+        );
     }
     let ingress_class = first_non_empty(&[&args.string("ingressClassName", ""), "tailscale"]);
     let evidence = args.string("operatorEvidence", "");
@@ -190,7 +209,8 @@ fn ensure_mesh_control_plane(args: &Args) -> Outcome {
     rec.target_uri = target.clone();
     rec.control_plane_ready = true;
     rec.ingress_class_name = ingress_class;
-    rec.control_plane_ref = first_non_empty(&[&args.string("controlPlaneRef", ""), "tailscale-operator"]);
+    rec.control_plane_ref =
+        first_non_empty(&[&args.string("controlPlaneRef", ""), "tailscale-operator"]);
     rec.generation = GENERATION.into();
     Ok(mesh_runtime_base(&target, rec, true))
 }
@@ -203,22 +223,35 @@ fn api_client() -> Result<Client, String> {
     if api_key.is_empty() {
         return Err("TAILSCALE_API_KEY is required for the live Tailscale backend".into());
     }
-    Ok(Client::new(&api_key, &getenv("TAILSCALE_TAILNET"), &getenv("TAILSCALE_API_BASE")))
+    Ok(Client::new(
+        &api_key,
+        &getenv("TAILSCALE_TAILNET"),
+        &getenv("TAILSCALE_API_BASE"),
+    ))
 }
 
 fn resolve_auth_key(args: &Args) -> Result<String, String> {
     ensure_env_loaded();
-    let key = first_non_empty(&[&args.string("authKey", ""), &args.string("credential", ""), &getenv("TAILSCALE_AUTH_KEY")]);
+    let key = first_non_empty(&[
+        &args.string("authKey", ""),
+        &args.string("credential", ""),
+        &getenv("TAILSCALE_AUTH_KEY"),
+    ]);
     if !key.is_empty() {
         return Ok(key);
     }
-    let client = api_client().map_err(|e| format!("auth key unavailable and API client failed: {e}"))?;
+    let client =
+        api_client().map_err(|e| format!("auth key unavailable and API client failed: {e}"))?;
     client.create_auth_key(24 * 60 * 60)
 }
 
 fn resolve_api_key(args: &Args) -> String {
     ensure_env_loaded();
-    first_non_empty(&[&args.string("apiKey", ""), &args.string("credential", ""), &getenv("TAILSCALE_API_KEY")])
+    first_non_empty(&[
+        &args.string("apiKey", ""),
+        &args.string("credential", ""),
+        &getenv("TAILSCALE_API_KEY"),
+    ])
 }
 
 // --- membership ---------------------------------------------------------------------------
@@ -281,7 +314,11 @@ fn attach_target(ctx: &Ctx, args: &Args) -> Outcome {
     if record.target_uri != uri.to_string() {
         return Err("network overlay membership is bound to another instance".into());
     }
-    let pending = PENDING_AUTH_KEYS.lock().unwrap_or_else(|e| e.into_inner()).get(&reference).cloned();
+    let pending = PENDING_AUTH_KEYS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&reference)
+        .cloned();
     let auth_key = match pending.filter(|k| !k.is_empty()) {
         Some(key) => key,
         None => resolve_auth_key(args)?,
@@ -299,10 +336,12 @@ fn enroll(ctx: &Ctx, args: &Args) -> Outcome {
     let target = uri.to_string();
     let existing = {
         let store = store();
-        store
-            .by_target
-            .get(&target)
-            .map(|r| (r.clone(), store.memberships.get(r).cloned().unwrap_or_default()))
+        store.by_target.get(&target).map(|r| {
+            (
+                r.clone(),
+                store.memberships.get(r).cloned().unwrap_or_default(),
+            )
+        })
     };
     if let Some((existing_ref, existing)) = existing {
         if existing.generation != GENERATION {
@@ -311,7 +350,11 @@ fn enroll(ctx: &Ctx, args: &Args) -> Outcome {
         if !hint.is_empty() && hint != existing_ref {
             return Err("membershipRef does not match owned enrollment for target".into());
         }
-        if existing.attached && !existing.mesh_ip.is_empty() && !existing.node_id.is_empty() && !existing.node_id.starts_with("node-") {
+        if existing.attached
+            && !existing.mesh_ip.is_empty()
+            && !existing.node_id.is_empty()
+            && !existing.node_id.starts_with("node-")
+        {
             let mut record = existing.clone();
             record.mesh_interface = first_non_empty(&[&existing.mesh_interface, "tailscale0"]);
             return Ok(enrolled(&record));
@@ -325,7 +368,13 @@ fn enroll(ctx: &Ctx, args: &Args) -> Outcome {
     enroll_guest(ctx, &uri, &name, &hint, &auth_key)
 }
 
-fn enroll_guest(ctx: &Ctx, uri: &Uri, hostname: &str, membership_ref: &str, auth_key: &str) -> Outcome {
+fn enroll_guest(
+    ctx: &Ctx,
+    uri: &Uri,
+    hostname: &str,
+    membership_ref: &str,
+    auth_key: &str,
+) -> Outcome {
     let hostname = sanitize_hostname(hostname);
     if hostname.is_empty() {
         return Err("name is required".into());
@@ -404,9 +453,16 @@ fn enroll_guest(ctx: &Ctx, uri: &Uri, hostname: &str, membership_ref: &str, auth
     record.mesh_interface = "tailscale0".into();
     record.attached = true;
     record.generation = GENERATION.into();
-    store.memberships.insert(membership_ref.clone(), record.clone());
-    store.by_target.insert(record.target_uri.clone(), membership_ref.clone());
-    PENDING_AUTH_KEYS.lock().unwrap_or_else(|e| e.into_inner()).remove(&membership_ref);
+    store
+        .memberships
+        .insert(membership_ref.clone(), record.clone());
+    store
+        .by_target
+        .insert(record.target_uri.clone(), membership_ref.clone());
+    PENDING_AUTH_KEYS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&membership_ref);
     Ok(enrolled(&record))
 }
 
@@ -423,18 +479,35 @@ fn ensure_private_mesh(ctx: &Ctx, args: &Args) -> Outcome {
     let (target, peer_target) = (uri.to_string(), peer_uri.to_string());
     let (source, mut peer) = {
         let store = store();
-        let source_ref = store.by_target.get(&target).ok_or_else(|| "source target is not enrolled".to_string())?;
-        let source = store.memberships.get(source_ref).cloned().unwrap_or_default();
-        let peer = store.by_target.get(&peer_target).map(|r| store.memberships.get(r).cloned().unwrap_or_default());
+        let source_ref = store
+            .by_target
+            .get(&target)
+            .ok_or_else(|| "source target is not enrolled".to_string())?;
+        let source = store
+            .memberships
+            .get(source_ref)
+            .cloned()
+            .unwrap_or_default();
+        let peer = store
+            .by_target
+            .get(&peer_target)
+            .map(|r| store.memberships.get(r).cloned().unwrap_or_default());
         (source, peer)
     };
     let need_adopt = match &peer {
         None => true,
-        Some(p) => p.generation != GENERATION || !p.attached || (!p.mesh_ip.is_empty() && p.mesh_ip != peer_mesh_ip),
+        Some(p) => {
+            p.generation != GENERATION
+                || !p.attached
+                || (!p.mesh_ip.is_empty() && p.mesh_ip != peer_mesh_ip)
+        }
     };
     if need_adopt {
         let mut adopt = Map::new();
-        adopt.insert("hostAgentId".into(), J::from(args.string("hostAgentId", "")));
+        adopt.insert(
+            "hostAgentId".into(),
+            J::from(args.string("hostAgentId", "")),
+        );
         adopt.insert("peerTargetUri".into(), J::from(peer_target.as_str()));
         adopt.insert("peerMeshIp".into(), J::from(peer_mesh_ip.as_str()));
         adopt.insert("name".into(), J::from(peer_uri.resource_id.as_str()));
@@ -460,13 +533,16 @@ fn ensure_private_mesh(ctx: &Ctx, args: &Args) -> Outcome {
         return Err("ambiguous peer: peerMeshIp does not match enrolled peer".into());
     }
     let client = connect_host_agent(ctx)?;
-    ping_from_guest(&client, &uri, &peer.mesh_ip).map_err(|e| format!("forward private-mesh probe failed: {e}"))?;
+    ping_from_guest(&client, &uri, &peer.mesh_ip)
+        .map_err(|e| format!("forward private-mesh probe failed: {e}"))?;
     let mut reverse_method = "guest-ping";
     if let Err(e) = ping_from_guest(&client, &peer_uri, &source.mesh_ip) {
         // The peer may live on a remote Incus host; prove the reverse path
         // with a Tailscale ping from the source.
         if let Err(e2) = tailscale_ping_from_guest(&client, &uri, &peer.mesh_ip) {
-            return Err(format!("reverse private-mesh probe failed: guest={e} tailscale-ping={e2}"));
+            return Err(format!(
+                "reverse private-mesh probe failed: guest={e} tailscale-ping={e2}"
+            ));
         }
         reverse_method = "tailscale-ping-from-source";
     }
@@ -482,7 +558,10 @@ fn adopt_remote_peer(args: &Args) -> Outcome {
     let peer_uri = Uri::parse(raw.trim())
         .map_err(|e| format!("peerTargetUri must be a canonical resource URI: {e}"))?;
     let mut peer_mesh_ip = args.string("peerMeshIp", "");
-    let hostname = sanitize_hostname(&first_non_empty(&[&args.string("name", ""), &peer_uri.resource_id]));
+    let hostname = sanitize_hostname(&first_non_empty(&[
+        &args.string("name", ""),
+        &peer_uri.resource_id,
+    ]));
     let devices = api_client()?.list_devices()?;
     let mut matched = None;
     for device in &devices {
@@ -502,7 +581,9 @@ fn adopt_remote_peer(args: &Args) -> Outcome {
         }
     }
     let Some(device) = matched else {
-        return Err(format!("remote Tailscale peer not found for hostname={hostname} meshIp={peer_mesh_ip}"));
+        return Err(format!(
+            "remote Tailscale peer not found for hostname={hostname} meshIp={peer_mesh_ip}"
+        ));
     };
     if peer_mesh_ip.is_empty() {
         peer_mesh_ip = device_ipv4(&device);
@@ -512,40 +593,78 @@ fn adopt_remote_peer(args: &Args) -> Outcome {
     }
     let peer_target = peer_uri.to_string();
     let mut store = store();
-    let mut record = store.upsert_membership(&peer_target, &first_non_empty(&[&hostname, &device.hostname, "peer"]), true)?;
+    let mut record = store.upsert_membership(
+        &peer_target,
+        &first_non_empty(&[&hostname, &device.hostname, "peer"]),
+        true,
+    )?;
     record.attached = true;
     record.mesh_ip = peer_mesh_ip;
     record.node_id = first_non_empty(&[&device.id, &record.node_id]);
     record.node_name = first_non_empty(&[&hostname, &device.hostname, &record.node_name]);
     record.mesh_interface = "tailscale0".into();
-    store.memberships.insert(record.reference.clone(), record.clone());
-    store.by_target.insert(peer_target, record.reference.clone());
-    Ok(overlay_base(&record, json!({
-        "ready": true, "membershipRef": record.reference, "nodeId": record.node_id,
-        "nodeName": record.node_name, "meshIp": record.mesh_ip, "adopted": true,
-        "overlayUri": record.overlay_uri,
-    })))
+    store
+        .memberships
+        .insert(record.reference.clone(), record.clone());
+    store
+        .by_target
+        .insert(peer_target, record.reference.clone());
+    Ok(overlay_base(
+        &record,
+        json!({
+            "ready": true, "membershipRef": record.reference, "nodeId": record.node_id,
+            "nodeName": record.node_name, "meshIp": record.mesh_ip, "adopted": true,
+            "overlayUri": record.overlay_uri,
+        }),
+    ))
 }
 
-fn ping_with(client: &HostAgent, guest: &Uri, command: &str, args: J, timeout_ms: i64, label: &str, peer_ip: &str) -> Result<(), String> {
+fn ping_with(
+    client: &HostAgent,
+    guest: &Uri,
+    command: &str,
+    args: J,
+    timeout_ms: i64,
+    label: &str,
+    peer_ip: &str,
+) -> Result<(), String> {
     let result = client.call_host(
         "run_instance_command",
         json!({"uri": guest.to_string(), "command": command, "args": args, "timeoutMs": timeout_ms}),
     )?;
-    let content = command_content(&result).ok_or_else(|| format!("{label} returned no structured command result"))?;
+    let content = command_content(&result)
+        .ok_or_else(|| format!("{label} returned no structured command result"))?;
     let (code, present) = numeric_input(content, "exitCode");
     if !present || code != 0 {
-        return Err(format!("{label} {peer_ip} from {guest} failed with exit code {code}"));
+        return Err(format!(
+            "{label} {peer_ip} from {guest} failed with exit code {code}"
+        ));
     }
     Ok(())
 }
 
 fn ping_from_guest(client: &HostAgent, guest: &Uri, peer_ip: &str) -> Result<(), String> {
-    ping_with(client, guest, "ping", json!(["-c", "1", "-W", "3", peer_ip]), 15 * 1000, "ping", peer_ip)
+    ping_with(
+        client,
+        guest,
+        "ping",
+        json!(["-c", "1", "-W", "3", peer_ip]),
+        15 * 1000,
+        "ping",
+        peer_ip,
+    )
 }
 
 fn tailscale_ping_from_guest(client: &HostAgent, guest: &Uri, peer_ip: &str) -> Result<(), String> {
-    ping_with(client, guest, "tailscale", json!(["ping", "-c", "1", peer_ip]), 30 * 1000, "tailscale ping", peer_ip)
+    ping_with(
+        client,
+        guest,
+        "tailscale",
+        json!(["ping", "-c", "1", peer_ip]),
+        30 * 1000,
+        "tailscale ping",
+        peer_ip,
+    )
 }
 
 fn ensure_private_service(ctx: &Ctx, args: &Args) -> Outcome {
@@ -578,7 +697,10 @@ fn ensure_private_service(ctx: &Ctx, args: &Args) -> Outcome {
     }
     store().services.insert(
         record.overlay_uri.clone(),
-        super::overlay::PrivateService { target_uri: record.target_uri.clone(), generation: GENERATION.into() },
+        super::overlay::PrivateService {
+            target_uri: record.target_uri.clone(),
+            generation: GENERATION.into(),
+        },
     );
     Ok(private_service_result(&record, &local_target))
 }
@@ -621,7 +743,11 @@ fn ensure_public_ingress(ctx: &Ctx, args: &Args) -> Outcome {
             if hostname.is_empty() {
                 return Err("operatorMode requires endpoint or hostname".into());
             }
-            endpoint = if hostname.contains("://") { hostname.clone() } else { format!("https://{hostname}") };
+            endpoint = if hostname.contains("://") {
+                hostname.clone()
+            } else {
+                format!("https://{hostname}")
+            };
         }
         if hostname.is_empty() {
             let rest = endpoint.strip_prefix("https://").unwrap_or(&endpoint);
@@ -630,12 +756,15 @@ fn ensure_public_ingress(ctx: &Ctx, args: &Args) -> Outcome {
         }
         let mut store = store();
         let endpoint_ref = insert_ingress(&mut store, &record, &endpoint, true, &hostname)?;
-        return Ok(overlay_base(&record, json!({
-            "ready": true, "pathClass": PATH_PUBLIC_INGRESS, "endpoint": endpoint,
-            "endpointRef": endpoint_ref, "stable": true, "operatorMode": true,
-            "operatorEvidence": args.string("operatorEvidence", ""),
-            "ingressClassName": args.string("ingressClassName", ""),
-        })));
+        return Ok(overlay_base(
+            &record,
+            json!({
+                "ready": true, "pathClass": PATH_PUBLIC_INGRESS, "endpoint": endpoint,
+                "endpointRef": endpoint_ref, "stable": true, "operatorMode": true,
+                "operatorEvidence": args.string("operatorEvidence", ""),
+                "ingressClassName": args.string("ingressClassName", ""),
+            }),
+        ));
     }
     let serve_url = normalize_loopback_http(&local_target)?;
     let client = connect_host_agent(ctx)?;
@@ -663,10 +792,13 @@ fn ensure_public_ingress(ctx: &Ctx, args: &Args) -> Outcome {
     let endpoint = format!("https://{hostname}");
     let mut store = store();
     let endpoint_ref = insert_ingress(&mut store, &record, &endpoint, operator_mode, &hostname)?;
-    Ok(overlay_base(&record, json!({
-        "ready": true, "pathClass": PATH_PUBLIC_INGRESS, "endpoint": endpoint,
-        "endpointRef": endpoint_ref, "stable": operator_mode,
-    })))
+    Ok(overlay_base(
+        &record,
+        json!({
+            "ready": true, "pathClass": PATH_PUBLIC_INGRESS, "endpoint": endpoint,
+            "endpointRef": endpoint_ref, "stable": operator_mode,
+        }),
+    ))
 }
 
 fn remove_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
@@ -687,7 +819,10 @@ fn remove_ha_endpoint(ctx: &Ctx, args: &Args) -> Outcome {
             json!({"uri": ingress.target_uri, "command": "bash", "args": ["-lc", "tailscale funnel --bg=false || true; tailscale serve reset || true"], "timeoutMs": 30 * 1000}),
         );
     }
-    Ok(ha_endpoint_removed(&ingress.target_uri, Some(&endpoint_ref)))
+    Ok(ha_endpoint_removed(
+        &ingress.target_uri,
+        Some(&endpoint_ref),
+    ))
 }
 
 fn logout_and_delete(client: Option<&HostAgent>, api: Option<&Client>, record: &Membership) {
@@ -809,7 +944,11 @@ pub(super) fn finalize_owned_teardown(ctx: &Ctx, inputs: &Map<String, J>) -> Res
         .filter(|r| r.generation == generation)
         .cloned()
         .collect();
-    let client = if records.is_empty() { None } else { connect_host_agent(ctx).ok() };
+    let client = if records.is_empty() {
+        None
+    } else {
+        connect_host_agent(ctx).ok()
+    };
     let api = api_client().ok();
     for record in &records {
         logout_and_delete(client.as_ref(), api.as_ref(), record);
@@ -823,9 +962,14 @@ pub(super) fn finalize_owned_teardown(ctx: &Ctx, inputs: &Map<String, J>) -> Res
 fn connect_host_agent(ctx: &Ctx) -> Result<HostAgent, String> {
     let endpoint = getenv("OPUTE_HOST_AGENT_ENDPOINT").trim().to_string();
     if endpoint.is_empty() {
-        return Err("OPUTE_HOST_AGENT_ENDPOINT is required for Tailscale provider callbacks".into());
+        return Err(
+            "OPUTE_HOST_AGENT_ENDPOINT is required for Tailscale provider callbacks".into(),
+        );
     }
-    let token = first_non_empty(&[&getenv("OPUTE_HOST_AGENT_BEARER_TOKEN"), &getenv("MCP_AUTH_TOKEN")]);
+    let token = first_non_empty(&[
+        &getenv("OPUTE_HOST_AGENT_BEARER_TOKEN"),
+        &getenv("MCP_AUTH_TOKEN"),
+    ]);
     HostAgent::connect(&endpoint, &token, &ctx.delegation)
 }
 
@@ -862,7 +1006,13 @@ pub(super) fn sanitize_hostname(name: &str) -> String {
     let lowered = name.trim().to_lowercase();
     let mapped: String = lowered
         .chars()
-        .map(|c| if c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_' | '.') { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_' | '.') {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect();
     mapped.trim_matches(['-', '.']).to_string()
 }
@@ -922,7 +1072,8 @@ pub(super) fn normalize_loopback_http(local_target: &str) -> Result<String, Stri
         }
         return Err("localTarget must be an HTTP URL or port".into());
     }
-    let (scheme, host) = go_request_uri_host(local_target).ok_or_else(|| "localTarget must be an HTTP(S) URL".to_string())?;
+    let (scheme, host) = go_request_uri_host(local_target)
+        .ok_or_else(|| "localTarget must be an HTTP(S) URL".to_string())?;
     if scheme != "http" && scheme != "https" {
         return Err("localTarget must be an HTTP(S) URL".into());
     }
@@ -941,8 +1092,15 @@ fn go_request_uri_host(raw: &str) -> Option<(String, String)> {
     // getScheme: a letter, then letters, digits, '+', '-' or '.', then ':'.
     let colon = raw.find(':')?;
     let scheme = &raw[..colon];
-    let first_ok = scheme.bytes().next().is_some_and(|b| b.is_ascii_alphabetic());
-    if !first_ok || !scheme.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'-' | b'.')) {
+    let first_ok = scheme
+        .bytes()
+        .next()
+        .is_some_and(|b| b.is_ascii_alphabetic());
+    if !first_ok
+        || !scheme
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'-' | b'.'))
+    {
         return None;
     }
     let rest = raw[colon + 1..].split('?').next().unwrap_or("");
@@ -954,9 +1112,9 @@ fn go_request_uri_host(raw: &str) -> Option<(String, String)> {
     let host = match authority.rfind('@') {
         Some(i) => {
             let userinfo = &authority[..i];
-            let valid = userinfo.bytes().all(|b| {
-                b.is_ascii_alphanumeric() || b"-._:~!$&'()*+,;=%@".contains(&b)
-            });
+            let valid = userinfo
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"-._:~!$&'()*+,;=%@".contains(&b));
             if !valid {
                 return None;
             }
@@ -964,7 +1122,11 @@ fn go_request_uri_host(raw: &str) -> Option<(String, String)> {
         }
         None => authority,
     };
-    let port_ok = |p: &str| p.is_empty() || p.strip_prefix(':').is_some_and(|d| d.bytes().all(|b| b.is_ascii_digit()));
+    let port_ok = |p: &str| {
+        p.is_empty()
+            || p.strip_prefix(':')
+                .is_some_and(|d| d.bytes().all(|b| b.is_ascii_digit()))
+    };
     let hostname = if let Some(inner) = host.strip_prefix('[') {
         let close = inner.find(']')?;
         if !port_ok(&inner[close + 1..]) {
@@ -979,7 +1141,9 @@ fn go_request_uri_host(raw: &str) -> Option<(String, String)> {
         if !port_ok(port) {
             return None;
         }
-        let allowed = |b: u8| b >= 0x80 || b.is_ascii_alphanumeric() || b"-_.~!$&'()*+,;=:[]<>\"%".contains(&b);
+        let allowed = |b: u8| {
+            b >= 0x80 || b.is_ascii_alphanumeric() || b"-_.~!$&'()*+,;=:[]<>\"%".contains(&b)
+        };
         if !name.bytes().all(allowed) {
             return None;
         }

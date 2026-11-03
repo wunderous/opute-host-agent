@@ -2,7 +2,9 @@
 //! dedicated tunnel per host, its ingress and its proxied CNAMEs, never the
 //! Platform's own tunnel or hostnames.
 
-use super::super::support::{first_non_empty, go_any, http_do, string_slice_input, Args, HttpRequest};
+use super::super::support::{
+    first_non_empty, go_any, http_do, string_slice_input, Args, HttpRequest,
+};
 use super::query_escape;
 use crate::goerr::quote;
 use serde_json::{json, Map, Value as J};
@@ -46,7 +48,11 @@ impl IngressRule {
             out.insert("hostname".into(), J::from(self.hostname.as_str()));
         }
         out.insert("service".into(), J::from(self.service.as_str()));
-        if let Some(origin) = self.origin_request.as_ref().filter(|o| o.as_object().is_some_and(|m| !m.is_empty())) {
+        if let Some(origin) = self
+            .origin_request
+            .as_ref()
+            .filter(|o| o.as_object().is_some_and(|m| !m.is_empty()))
+        {
             out.insert("originRequest".into(), origin.clone());
         }
         J::Object(out)
@@ -71,7 +77,10 @@ impl IngressRule {
 }
 
 pub(super) fn identifier_ok(id: &str) -> bool {
-    !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+    !id.is_empty()
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
 }
 
 fn dedicated_tunnel_name(args: &Args) -> String {
@@ -84,7 +93,10 @@ pub(super) fn refuse_platform_tunnel_name(name: &str) -> Result<(), String> {
         return Err("tunnelName is required".into());
     }
     if trimmed.eq_ignore_ascii_case(PLATFORM_TUNNEL_NAME) {
-        return Err(format!("refusing to mutate platform Cloudflare tunnel {}", quote(trimmed)));
+        return Err(format!(
+            "refusing to mutate platform Cloudflare tunnel {}",
+            quote(trimmed)
+        ));
     }
     Ok(())
 }
@@ -107,7 +119,10 @@ pub(super) fn refuse_platform_ingress(rules: &[IngressRule]) -> Result<(), Strin
     for rule in rules {
         let hostname = rule.hostname.trim().to_lowercase();
         if PLATFORM_HOSTNAMES.contains(&hostname.as_str()) {
-            return Err(format!("refusing to mutate a tunnel whose ingress includes {}", quote(&hostname)));
+            return Err(format!(
+                "refusing to mutate a tunnel whose ingress includes {}",
+                quote(&hostname)
+            ));
         }
     }
     Ok(())
@@ -123,14 +138,21 @@ fn parse_tunnel_id_from_cname(content: &str) -> String {
 }
 
 pub(super) fn api_base() -> String {
-    first_non_empty(&[&std::env::var("CLOUDFLARE_API_BASE").unwrap_or_default(), API_DEFAULT_BASE])
-        .trim_end_matches('/')
-        .to_string()
+    first_non_empty(&[
+        &std::env::var("CLOUDFLARE_API_BASE").unwrap_or_default(),
+        API_DEFAULT_BASE,
+    ])
+    .trim_end_matches('/')
+    .to_string()
 }
 
 pub(super) fn creds() -> Result<(String, String, String), String> {
     let get = |k: &str| std::env::var(k).unwrap_or_default().trim().to_string();
-    let (account, zone, token) = (get("CLOUDFLARE_ACCOUNT_ID"), get("CLOUDFLARE_ZONE_ID"), get("CLOUDFLARE_API_TOKEN"));
+    let (account, zone, token) = (
+        get("CLOUDFLARE_ACCOUNT_ID"),
+        get("CLOUDFLARE_ZONE_ID"),
+        get("CLOUDFLARE_API_TOKEN"),
+    );
     if account.is_empty() || zone.is_empty() || token.is_empty() {
         return Err("dedicated Cloudflare tunnel requires CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_ZONE_ID, and CLOUDFLARE_API_TOKEN".into());
     }
@@ -157,9 +179,17 @@ pub(super) fn ensure_dedicated_tunnel(args: &Args) -> Result<Dedicated, String> 
     refuse_platform_ingress(&rules)?;
     let mut ingress: Vec<IngressRule> = hostnames
         .iter()
-        .map(|h| IngressRule { hostname: h.clone(), service: local_target.clone(), origin_request: None })
+        .map(|h| IngressRule {
+            hostname: h.clone(),
+            service: local_target.clone(),
+            origin_request: None,
+        })
         .collect();
-    ingress.push(IngressRule { hostname: String::new(), service: "http_status:404".into(), origin_request: None });
+    ingress.push(IngressRule {
+        hostname: String::new(),
+        service: "http_status:404".into(),
+        origin_request: None,
+    });
     put_tunnel_ingress(&token, &account, &tunnel.id, &ingress)?;
     let mut primary: Option<Record> = None;
     for hostname in &hostnames {
@@ -214,12 +244,21 @@ pub(super) fn unpublish_dedicated_tunnel(args: &Args) -> Result<(), String> {
                 refuse_platform_ingress(&tunnel_ingress(&token, &account, &target.id)?)?;
             }
         }
-        delete(&token, &format!("{base}/zones/{zone}/dns_records/{}", record.id))
-            .map_err(|e| format!("delete dedicated CNAME: {e}"))?;
+        delete(
+            &token,
+            &format!("{base}/zones/{zone}/dns_records/{}", record.id),
+        )
+        .map_err(|e| format!("delete dedicated CNAME: {e}"))?;
     }
     if let Some(tunnel) = tunnel {
-        delete(&token, &format!("{base}/accounts/{account}/cfd_tunnel/{}?force=true", tunnel.id))
-            .map_err(|e| format!("delete dedicated tunnel: {e}"))?;
+        delete(
+            &token,
+            &format!(
+                "{base}/accounts/{account}/cfd_tunnel/{}?force=true",
+                tunnel.id
+            ),
+        )
+        .map_err(|e| format!("delete dedicated tunnel: {e}"))?;
     }
     Ok(())
 }
@@ -227,7 +266,10 @@ pub(super) fn unpublish_dedicated_tunnel(args: &Args) -> Result<(), String> {
 /// `probeTunnelRouting`: the hostnames the named tunnel's ingress serves
 /// (nil when none was read), whether every requested one is among them, and
 /// the tunnel id.
-pub(super) fn probe_tunnel_routing(args: &Args, hostnames: &[String]) -> (Option<Vec<String>>, bool, String) {
+pub(super) fn probe_tunnel_routing(
+    args: &Args,
+    hostnames: &[String],
+) -> (Option<Vec<String>>, bool, String) {
     let tunnel_name = dedicated_tunnel_name(args);
     if tunnel_name.is_empty() || hostnames.is_empty() {
         return (None, false, String::new());
@@ -253,40 +295,79 @@ pub(super) fn probe_tunnel_routing(args: &Args, hostnames: &[String]) -> (Option
         served.push(name.clone());
         routed_hostnames.get_or_insert_with(Vec::new).push(name);
     }
-    let routed = hostnames.iter().all(|h| served.contains(&h.trim().to_lowercase()));
+    let routed = hostnames
+        .iter()
+        .all(|h| served.contains(&h.trim().to_lowercase()));
     (routed_hostnames, routed, tunnel.id)
 }
 
-pub(super) fn ensure_tunnel_by_name(token: &str, account: &str, name: &str) -> Result<Tunnel, String> {
+pub(super) fn ensure_tunnel_by_name(
+    token: &str,
+    account: &str,
+    name: &str,
+) -> Result<Tunnel, String> {
     if let Some(existing) = find_tunnel_by_name(token, account, name)? {
         return Ok(existing);
     }
     let mut body = String::new();
-    crate::gojson::encode(&json!({"name": name, "config_src": "cloudflare"}), &mut body);
-    let created = cloudflare_json(token, "POST", &format!("{}/accounts/{account}/cfd_tunnel", api_base()), Some(body))
-        .map_err(|e| format!("create Cloudflare tunnel: {e}"))?;
-    let created = created.map(|r| decode_tunnel(&r)).transpose().map_err(|e| format!("create Cloudflare tunnel: {e}"))?.unwrap_or_default();
+    crate::gojson::encode(
+        &json!({"name": name, "config_src": "cloudflare"}),
+        &mut body,
+    );
+    let created = cloudflare_json(
+        token,
+        "POST",
+        &format!("{}/accounts/{account}/cfd_tunnel", api_base()),
+        Some(body),
+    )
+    .map_err(|e| format!("create Cloudflare tunnel: {e}"))?;
+    let created = created
+        .map(|r| decode_tunnel(&r))
+        .transpose()
+        .map_err(|e| format!("create Cloudflare tunnel: {e}"))?
+        .unwrap_or_default();
     if created.id.is_empty() {
         return Err("create Cloudflare tunnel: missing id".into());
     }
     Ok(created)
 }
 
-pub(super) fn find_tunnel_by_name(token: &str, account: &str, name: &str) -> Result<Option<Tunnel>, String> {
-    let endpoint = format!("{}/accounts/{account}/cfd_tunnel?is_deleted=false&name={}", api_base(), query_escape(name));
-    let result = cloudflare_json(token, "GET", &endpoint, None).map_err(|e| format!("list Cloudflare tunnels: {e}"))?;
+pub(super) fn find_tunnel_by_name(
+    token: &str,
+    account: &str,
+    name: &str,
+) -> Result<Option<Tunnel>, String> {
+    let endpoint = format!(
+        "{}/accounts/{account}/cfd_tunnel?is_deleted=false&name={}",
+        api_base(),
+        query_escape(name)
+    );
+    let result = cloudflare_json(token, "GET", &endpoint, None)
+        .map_err(|e| format!("list Cloudflare tunnels: {e}"))?;
     let tunnels = match result {
-        Some(r) => decode_list(&r, decode_tunnel, "[]main.cloudflareTunnel").map_err(|e| format!("list Cloudflare tunnels: {e}"))?,
+        Some(r) => decode_list(&r, decode_tunnel, "[]main.cloudflareTunnel")
+            .map_err(|e| format!("list Cloudflare tunnels: {e}"))?,
         None => Vec::new(),
     };
-    Ok(tunnels.into_iter().find(|t| t.name == name && !t.id.is_empty()))
+    Ok(tunnels
+        .into_iter()
+        .find(|t| t.name == name && !t.id.is_empty()))
 }
 
-pub(super) fn get_tunnel(token: &str, account: &str, tunnel_id: &str) -> Result<Option<Tunnel>, String> {
+pub(super) fn get_tunnel(
+    token: &str,
+    account: &str,
+    tunnel_id: &str,
+) -> Result<Option<Tunnel>, String> {
     if !identifier_ok(tunnel_id) {
         return Err("invalid Cloudflare tunnel id".into());
     }
-    match cloudflare_json(token, "GET", &format!("{}/accounts/{account}/cfd_tunnel/{tunnel_id}", api_base()), None) {
+    match cloudflare_json(
+        token,
+        "GET",
+        &format!("{}/accounts/{account}/cfd_tunnel/{tunnel_id}", api_base()),
+        None,
+    ) {
         Err(e) if is_not_found(&e) => Ok(None),
         Err(e) => Err(e),
         Ok(None) => Ok(None),
@@ -297,8 +378,20 @@ pub(super) fn get_tunnel(token: &str, account: &str, tunnel_id: &str) -> Result<
     }
 }
 
-pub(super) fn tunnel_ingress(token: &str, account: &str, tunnel_id: &str) -> Result<Vec<IngressRule>, String> {
-    let result = match cloudflare_json(token, "GET", &format!("{}/accounts/{account}/cfd_tunnel/{tunnel_id}/configurations", api_base()), None) {
+pub(super) fn tunnel_ingress(
+    token: &str,
+    account: &str,
+    tunnel_id: &str,
+) -> Result<Vec<IngressRule>, String> {
+    let result = match cloudflare_json(
+        token,
+        "GET",
+        &format!(
+            "{}/accounts/{account}/cfd_tunnel/{tunnel_id}/configurations",
+            api_base()
+        ),
+        None,
+    ) {
         Err(e) if is_not_found(&e) => return Ok(Vec::new()),
         Err(e) => return Err(format!("read Cloudflare tunnel ingress: {e}")),
         Ok(r) => r,
@@ -313,26 +406,59 @@ pub(super) fn tunnel_ingress(token: &str, account: &str, tunnel_id: &str) -> Res
     Ok(rules
         .iter()
         .map(|r| IngressRule {
-            hostname: r.get("hostname").and_then(J::as_str).unwrap_or("").to_string(),
-            service: r.get("service").and_then(J::as_str).unwrap_or("").to_string(),
+            hostname: r
+                .get("hostname")
+                .and_then(J::as_str)
+                .unwrap_or("")
+                .to_string(),
+            service: r
+                .get("service")
+                .and_then(J::as_str)
+                .unwrap_or("")
+                .to_string(),
             origin_request: r.get("originRequest").cloned(),
         })
         .collect())
 }
 
-pub(super) fn put_tunnel_ingress(token: &str, account: &str, tunnel_id: &str, rules: &[IngressRule]) -> Result<(), String> {
+pub(super) fn put_tunnel_ingress(
+    token: &str,
+    account: &str,
+    tunnel_id: &str,
+    rules: &[IngressRule],
+) -> Result<(), String> {
     let body = format!(
         "{{\"config\":{{\"ingress\":[{}]}}}}",
-        rules.iter().map(IngressRule::encode).collect::<Vec<_>>().join(",")
+        rules
+            .iter()
+            .map(IngressRule::encode)
+            .collect::<Vec<_>>()
+            .join(",")
     );
-    cloudflare_json(token, "PUT", &format!("{}/accounts/{account}/cfd_tunnel/{tunnel_id}/configurations", api_base()), Some(body))
-        .map_err(|e| format!("put Cloudflare tunnel ingress: {e}"))?;
+    cloudflare_json(
+        token,
+        "PUT",
+        &format!(
+            "{}/accounts/{account}/cfd_tunnel/{tunnel_id}/configurations",
+            api_base()
+        ),
+        Some(body),
+    )
+    .map_err(|e| format!("put Cloudflare tunnel ingress: {e}"))?;
     Ok(())
 }
 
 pub(super) fn tunnel_token(token: &str, account: &str, tunnel_id: &str) -> Result<String, String> {
-    let result = cloudflare_json(token, "GET", &format!("{}/accounts/{account}/cfd_tunnel/{tunnel_id}/token", api_base()), None)
-        .map_err(|e| format!("mint Cloudflare tunnel token: {e}"))?;
+    let result = cloudflare_json(
+        token,
+        "GET",
+        &format!(
+            "{}/accounts/{account}/cfd_tunnel/{tunnel_id}/token",
+            api_base()
+        ),
+        None,
+    )
+    .map_err(|e| format!("mint Cloudflare tunnel token: {e}"))?;
     let run_token = match result {
         None => String::new(),
         Some(J::String(s)) => s,
@@ -356,16 +482,31 @@ fn find_hostname_cname(token: &str, zone: &str, hostname: &str) -> Result<Option
 }
 
 fn list_hostname_records(token: &str, zone: &str, hostname: &str) -> Result<Vec<Record>, String> {
-    let endpoint = format!("{}/zones/{zone}/dns_records?name={}", api_base(), query_escape(hostname));
-    let result = cloudflare_json(token, "GET", &endpoint, None).map_err(|e| format!("list Cloudflare DNS records: {e}"))?;
+    let endpoint = format!(
+        "{}/zones/{zone}/dns_records?name={}",
+        api_base(),
+        query_escape(hostname)
+    );
+    let result = cloudflare_json(token, "GET", &endpoint, None)
+        .map_err(|e| format!("list Cloudflare DNS records: {e}"))?;
     let records = match result {
-        Some(r) => decode_list(&r, decode_record, "[]main.cloudflareDNSRecord").map_err(|e| format!("list Cloudflare DNS records: {e}"))?,
+        Some(r) => decode_list(&r, decode_record, "[]main.cloudflareDNSRecord")
+            .map_err(|e| format!("list Cloudflare DNS records: {e}"))?,
         None => Vec::new(),
     };
-    Ok(records.into_iter().filter(|r| r.name.eq_ignore_ascii_case(hostname)).collect())
+    Ok(records
+        .into_iter()
+        .filter(|r| r.name.eq_ignore_ascii_case(hostname))
+        .collect())
 }
 
-pub(super) fn upsert_cname(token: &str, account: &str, zone: &str, hostname: &str, tunnel_id: &str) -> Result<Record, String> {
+pub(super) fn upsert_cname(
+    token: &str,
+    account: &str,
+    zone: &str,
+    hostname: &str,
+    tunnel_id: &str,
+) -> Result<Record, String> {
     let desired = format!("{tunnel_id}.cfargotunnel.com");
     let base = api_base();
     let mut matching = None;
@@ -377,13 +518,26 @@ pub(super) fn upsert_cname(token: &str, account: &str, zone: &str, hostname: &st
                     refuse_platform_tunnel_name(&target.name)?;
                 }
             }
-            if record.content.strip_suffix('.').unwrap_or(&record.content).eq_ignore_ascii_case(&desired) {
+            if record
+                .content
+                .strip_suffix('.')
+                .unwrap_or(&record.content)
+                .eq_ignore_ascii_case(&desired)
+            {
                 matching = Some(record);
                 continue;
             }
         }
-        delete(token, &format!("{base}/zones/{zone}/dns_records/{}", record.id))
-            .map_err(|e| format!("delete conflicting DNS {} {}: {e}", record.kind, record.name))?;
+        delete(
+            token,
+            &format!("{base}/zones/{zone}/dns_records/{}", record.id),
+        )
+        .map_err(|e| {
+            format!(
+                "delete conflicting DNS {} {}: {e}",
+                record.kind, record.name
+            )
+        })?;
     }
     if let Some(record) = matching {
         return Ok(record);
@@ -393,8 +547,13 @@ pub(super) fn upsert_cname(token: &str, account: &str, zone: &str, hostname: &st
         &json!({"type": "CNAME", "name": hostname, "content": desired, "proxied": true, "ttl": 1}),
         &mut body,
     );
-    let created = cloudflare_json(token, "POST", &format!("{base}/zones/{zone}/dns_records"), Some(body))
-        .map_err(|e| format!("create dedicated CNAME: {e}"))?;
+    let created = cloudflare_json(
+        token,
+        "POST",
+        &format!("{base}/zones/{zone}/dns_records"),
+        Some(body),
+    )
+    .map_err(|e| format!("create dedicated CNAME: {e}"))?;
     let created = created
         .map(|r| decode_record(&r))
         .transpose()
@@ -428,11 +587,17 @@ fn string_fields(value: &J, ty: &str, fields: &[&str]) -> Result<Vec<String>, St
         if value.is_null() {
             return Ok(vec![String::new(); fields.len()]);
         }
-        return Err(format!("decode Cloudflare result: json: cannot unmarshal {} into Go value of type main.{ty}", json_kind(value)));
+        return Err(format!(
+            "decode Cloudflare result: json: cannot unmarshal {} into Go value of type main.{ty}",
+            json_kind(value)
+        ));
     };
     let mut out = vec![String::new(); fields.len()];
     for (key, item) in map {
-        let Some(i) = fields.iter().position(|f| crate::gojson::equal_fold(f, key)) else {
+        let Some(i) = fields
+            .iter()
+            .position(|f| crate::gojson::equal_fold(f, key))
+        else {
             continue;
         };
         match item {
@@ -452,19 +617,38 @@ fn string_fields(value: &J, ty: &str, fields: &[&str]) -> Result<Vec<String>, St
 
 fn decode_tunnel(value: &J) -> Result<Tunnel, String> {
     let f = string_fields(value, "cloudflareTunnel", &["id", "name"])?;
-    Ok(Tunnel { id: f[0].clone(), name: f[1].clone() })
+    Ok(Tunnel {
+        id: f[0].clone(),
+        name: f[1].clone(),
+    })
 }
 
 fn decode_record(value: &J) -> Result<Record, String> {
-    let f = string_fields(value, "cloudflareDNSRecord", &["id", "type", "name", "content"])?;
-    Ok(Record { id: f[0].clone(), kind: f[1].clone(), name: f[2].clone(), content: f[3].clone() })
+    let f = string_fields(
+        value,
+        "cloudflareDNSRecord",
+        &["id", "type", "name", "content"],
+    )?;
+    Ok(Record {
+        id: f[0].clone(),
+        kind: f[1].clone(),
+        name: f[2].clone(),
+        content: f[3].clone(),
+    })
 }
 
-fn decode_list<T>(value: &J, item: fn(&J) -> Result<T, String>, ty: &str) -> Result<Vec<T>, String> {
+fn decode_list<T>(
+    value: &J,
+    item: fn(&J) -> Result<T, String>,
+    ty: &str,
+) -> Result<Vec<T>, String> {
     match value {
         J::Null => Ok(Vec::new()),
         J::Array(items) => items.iter().map(item).collect(),
-        other => Err(format!("decode Cloudflare result: json: cannot unmarshal {} into Go value of type {ty}", json_kind(other))),
+        other => Err(format!(
+            "decode Cloudflare result: json: cannot unmarshal {} into Go value of type {ty}",
+            json_kind(other)
+        )),
     }
 }
 
@@ -489,7 +673,12 @@ fn unmarshal(payload: &[u8]) -> Result<J, String> {
 /// `cloudflareJSON`: one authenticated call; 404 is "cloudflare not found";
 /// the envelope must report success. The result is absent when Cloudflare
 /// sent none (or null).
-pub(super) fn cloudflare_json(token: &str, method: &str, endpoint: &str, body: Option<String>) -> Result<Option<J>, String> {
+pub(super) fn cloudflare_json(
+    token: &str,
+    method: &str,
+    endpoint: &str,
+    body: Option<String>,
+) -> Result<Option<J>, String> {
     let mut headers = vec![("Authorization", format!("Bearer {token}"))];
     let body = body.filter(|b| !b.is_empty());
     if body.is_some() {
@@ -508,10 +697,16 @@ pub(super) fn cloudflare_json(token: &str, method: &str, endpoint: &str, body: O
         return Err(format!("cloudflare not found: {endpoint}"));
     }
     if !(200..300).contains(&response.status) {
-        return Err(format!("HTTP {}: {}", response.status, String::from_utf8_lossy(&response.body).trim()));
+        return Err(format!(
+            "HTTP {}: {}",
+            response.status,
+            String::from_utf8_lossy(&response.body).trim()
+        ));
     }
-    let envelope = unmarshal(&response.body).map_err(|e| format!("decode Cloudflare response: {e}"))?;
-    let (success, errors) = envelope_fields(&envelope).map_err(|e| format!("decode Cloudflare response: {e}"))?;
+    let envelope =
+        unmarshal(&response.body).map_err(|e| format!("decode Cloudflare response: {e}"))?;
+    let (success, errors) =
+        envelope_fields(&envelope).map_err(|e| format!("decode Cloudflare response: {e}"))?;
     if !success {
         if let Some((code, message)) = errors.first() {
             return Err(format!("Cloudflare API error {code}: {message}"));
@@ -527,7 +722,10 @@ fn envelope_fields(envelope: &J) -> Result<(bool, Vec<(i64, String)>), String> {
         if envelope.is_null() {
             return Ok((false, Vec::new()));
         }
-        return Err(format!("json: cannot unmarshal {} into Go value of type main.cloudflareEnvelope", json_kind(envelope)));
+        return Err(format!(
+            "json: cannot unmarshal {} into Go value of type main.cloudflareEnvelope",
+            json_kind(envelope)
+        ));
     };
     let mut success = false;
     let mut errors = Vec::new();
@@ -542,7 +740,11 @@ fn envelope_fields(envelope: &J) -> Result<(bool, Vec<(i64, String)>), String> {
             errors.clear();
             for item in value.as_array().cloned().unwrap_or_default() {
                 let code = item.get("code").and_then(J::as_f64).map_or(0, |f| f as i64);
-                let message = item.get("message").and_then(J::as_str).unwrap_or("").to_string();
+                let message = item
+                    .get("message")
+                    .and_then(J::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 errors.push((code, message));
             }
         }
@@ -566,10 +768,16 @@ pub(super) fn delete(token: &str, endpoint: &str) -> Result<(), String> {
         return Ok(());
     }
     if !(200..300).contains(&response.status) {
-        return Err(format!("HTTP {}: {}", response.status, String::from_utf8_lossy(&response.body).trim()));
+        return Err(format!(
+            "HTTP {}: {}",
+            response.status,
+            String::from_utf8_lossy(&response.body).trim()
+        ));
     }
-    let envelope = unmarshal(&response.body).map_err(|e| format!("decode Cloudflare delete response: {e}"))?;
-    let (success, errors) = envelope_fields(&envelope).map_err(|e| format!("decode Cloudflare delete response: {e}"))?;
+    let envelope =
+        unmarshal(&response.body).map_err(|e| format!("decode Cloudflare delete response: {e}"))?;
+    let (success, errors) = envelope_fields(&envelope)
+        .map_err(|e| format!("decode Cloudflare delete response: {e}"))?;
     if !success {
         if let Some((code, message)) = errors.first() {
             return Err(format!("Cloudflare API error {code}: {message}"));
@@ -588,7 +796,11 @@ pub(super) fn cleanup_external_resources(inputs: &Map<String, J>) -> Result<(), 
         return Ok(());
     }
     let get = |k: &str| std::env::var(k).unwrap_or_default().trim().to_string();
-    let (account, zone, token) = (get("CLOUDFLARE_ACCOUNT_ID"), get("CLOUDFLARE_ZONE_ID"), get("CLOUDFLARE_API_TOKEN"));
+    let (account, zone, token) = (
+        get("CLOUDFLARE_ACCOUNT_ID"),
+        get("CLOUDFLARE_ZONE_ID"),
+        get("CLOUDFLARE_API_TOKEN"),
+    );
     if account.is_empty() || zone.is_empty() || token.is_empty() {
         return Err("external Cloudflare cleanup requires CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_ZONE_ID, and CLOUDFLARE_API_TOKEN".into());
     }
@@ -605,7 +817,10 @@ pub(super) fn cleanup_external_resources(inputs: &Map<String, J>) -> Result<(), 
             errors.push("invalid Cloudflare DNS record id".to_string());
             continue;
         }
-        if let Err(e) = delete(&token, &format!("https://api.cloudflare.com/client/v4/zones/{zone}/dns_records/{record_id}")) {
+        if let Err(e) = delete(
+            &token,
+            &format!("https://api.cloudflare.com/client/v4/zones/{zone}/dns_records/{record_id}"),
+        ) {
             errors.push(format!("delete Cloudflare DNS record: {e}"));
         }
     }

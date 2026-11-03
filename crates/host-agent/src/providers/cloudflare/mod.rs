@@ -18,15 +18,13 @@
 mod api;
 mod mesh;
 
-use super::support::{
-    first_non_empty, string_input, Args, HostAgent, HttpRequest,
-};
+use super::support::{first_non_empty, string_input, Args, HostAgent, HttpRequest};
 use super::{Call, Server, Tool};
 use crate::goerr::quote;
 use crate::mcpsdk::ToolCallOutcome;
 use crate::provider::definition::{
-    CapabilityRef, GoSlice, InstallManifest, Operation, RecipeRef, RecipeSource,
-    ResourceBinding, ResourceCost, ServiceDefinition, ValidationRef,
+    CapabilityRef, GoSlice, InstallManifest, Operation, RecipeRef, RecipeSource, ResourceBinding,
+    ResourceCost, ServiceDefinition, ValidationRef,
 };
 use crate::provider::ProviderRef;
 use crate::resource::Uri;
@@ -160,23 +158,66 @@ fn manifest() -> InstallManifest {
             capability(PUBLIC_INGRESS),
         ])),
         recipes: GoSlice(Some(vec![
-            recipe("com.opute.cloudflare.activate-tunneling", "recipes/activate-tunneling.yaml", "sha256:6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460", "activate"),
-            recipe("com.opute.cloudflare.activate", "recipes/activate.yaml", "sha256:2c9d9ad41f1cc0c836196e6c0e56014c6eab4fde0f1eed2e746eaeb946cad0c4", "activate"),
-            recipe("com.opute.cloudflare.tunneling", "recipes/tunneling.yaml", "sha256:2f404972cbe5c463b8fe501973894c241341b2621e5941fad06af1434a958bc7", "tunnel"),
-            recipe("com.opute.cloudflare.tunneling.managed", "recipes/tunneling-managed.yaml", "sha256:de45303f69256b664ec2e137f14e98ae3113ceb935c1fb6da34f85b54758fcae", "managed"),
-            recipe("com.opute.cloudflare.tunneling.public-host", "recipes/tunneling-public-host.yaml", "sha256:db9d4e1a82d376daeaa1ed2d4448f80e5ad2e6063886395c4de60864a70b840a", "public-host"),
+            recipe(
+                "com.opute.cloudflare.activate-tunneling",
+                "recipes/activate-tunneling.yaml",
+                "sha256:6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460",
+                "activate",
+            ),
+            recipe(
+                "com.opute.cloudflare.activate",
+                "recipes/activate.yaml",
+                "sha256:2c9d9ad41f1cc0c836196e6c0e56014c6eab4fde0f1eed2e746eaeb946cad0c4",
+                "activate",
+            ),
+            recipe(
+                "com.opute.cloudflare.tunneling",
+                "recipes/tunneling.yaml",
+                "sha256:2f404972cbe5c463b8fe501973894c241341b2621e5941fad06af1434a958bc7",
+                "tunnel",
+            ),
+            recipe(
+                "com.opute.cloudflare.tunneling.managed",
+                "recipes/tunneling-managed.yaml",
+                "sha256:de45303f69256b664ec2e137f14e98ae3113ceb935c1fb6da34f85b54758fcae",
+                "managed",
+            ),
+            recipe(
+                "com.opute.cloudflare.tunneling.public-host",
+                "recipes/tunneling-public-host.yaml",
+                "sha256:db9d4e1a82d376daeaa1ed2d4448f80e5ad2e6063886395c4de60864a70b840a",
+                "public-host",
+            ),
         ])),
         services: GoSlice(Some(vec![
-            service("opute.capability.tunneling", TUNNELING, cloudflare_operations()),
-            service("opute.capability.mesh-runtime", MESH_RUNTIME, mesh::runtime_operations()),
-            service("opute.capability.mesh-membership", MESH_MEMBERSHIP, mesh::membership_operations()),
-            service("opute.capability.public-ingress", PUBLIC_INGRESS, mesh::public_ingress_operations()),
+            service(
+                "opute.capability.tunneling",
+                TUNNELING,
+                cloudflare_operations(),
+            ),
+            service(
+                "opute.capability.mesh-runtime",
+                MESH_RUNTIME,
+                mesh::runtime_operations(),
+            ),
+            service(
+                "opute.capability.mesh-membership",
+                MESH_MEMBERSHIP,
+                mesh::membership_operations(),
+            ),
+            service(
+                "opute.capability.public-ingress",
+                PUBLIC_INGRESS,
+                mesh::public_ingress_operations(),
+            ),
         ])),
         teardown: Some(Operation {
             id: "opute.provider.teardown".into(),
             version: 1,
             input_schema: object(teardown_schema()),
-            output_schema: object(json!({"type": "object", "required": ["contractVersion", "plan"]})),
+            output_schema: object(
+                json!({"type": "object", "required": ["contractVersion", "plan"]}),
+            ),
             effect: "destructive".into(),
             resource_kinds: GoSlice(Some(vec!["service".into(), "tunnel".into()])),
             idempotent: true,
@@ -250,22 +291,93 @@ fn cloudflare_operations() -> Vec<Operation> {
         provider_operation(id, effect, input, output, resources, Vec::new())
     };
     let mut ops = vec![
-        op("opute.capability.tunneling.validate", "read", validation_schema(), json!({"type": "object"}), &[]),
-        op("opute.capability.tunneling.ensure-host-tunnel", "mutation", tunnel_schema(), tunnel_output_schema(), &host_tunnel),
-        op("opute.capability.tunneling.probe-host-tunnel", "read", tunnel_schema(), tunnel_output_schema(), &host_tunnel),
-        op("opute.capability.tunneling.remove-host-tunnel", "destructive", tunnel_schema(), tunnel_output_schema(), &host_tunnel),
-        provider_operation("opute.capability.tunneling.install-kubernetes-connector", "mutation", connector_schema_requiring(&["token", "namespace", "targetUri"]), connector_output_schema(), &cluster_tunnel, cluster_binding()),
-        provider_operation("opute.capability.tunneling.delete-kubernetes-connector", "destructive", connector_schema_requiring(&["namespace", "targetUri"]), connector_output_schema(), &cluster_tunnel, cluster_binding()),
-        op("ensure_cloudflared_tunnel", "mutation", tunnel_schema(), tunnel_output_schema(), &host_tunnel),
+        op(
+            "opute.capability.tunneling.validate",
+            "read",
+            validation_schema(),
+            json!({"type": "object"}),
+            &[],
+        ),
+        op(
+            "opute.capability.tunneling.ensure-host-tunnel",
+            "mutation",
+            tunnel_schema(),
+            tunnel_output_schema(),
+            &host_tunnel,
+        ),
+        op(
+            "opute.capability.tunneling.probe-host-tunnel",
+            "read",
+            tunnel_schema(),
+            tunnel_output_schema(),
+            &host_tunnel,
+        ),
+        op(
+            "opute.capability.tunneling.remove-host-tunnel",
+            "destructive",
+            tunnel_schema(),
+            tunnel_output_schema(),
+            &host_tunnel,
+        ),
+        provider_operation(
+            "opute.capability.tunneling.install-kubernetes-connector",
+            "mutation",
+            connector_schema_requiring(&["token", "namespace", "targetUri"]),
+            connector_output_schema(),
+            &cluster_tunnel,
+            cluster_binding(),
+        ),
+        provider_operation(
+            "opute.capability.tunneling.delete-kubernetes-connector",
+            "destructive",
+            connector_schema_requiring(&["namespace", "targetUri"]),
+            connector_output_schema(),
+            &cluster_tunnel,
+            cluster_binding(),
+        ),
+        op(
+            "ensure_cloudflared_tunnel",
+            "mutation",
+            tunnel_schema(),
+            tunnel_output_schema(),
+            &host_tunnel,
+        ),
     ];
     for id in ["probe_host_exposure", "get_cloudflare_tunnel_status"] {
-        ops.push(op(id, "read", tunnel_schema(), tunnel_output_schema(), &host_tunnel));
+        ops.push(op(
+            id,
+            "read",
+            tunnel_schema(),
+            tunnel_output_schema(),
+            &host_tunnel,
+        ));
     }
-    for id in ["remove_local_llm_cloudflared_tunnel", "remove_host_exposure"] {
-        ops.push(op(id, "destructive", tunnel_schema(), tunnel_output_schema(), &host_tunnel));
+    for id in [
+        "remove_local_llm_cloudflared_tunnel",
+        "remove_host_exposure",
+    ] {
+        ops.push(op(
+            id,
+            "destructive",
+            tunnel_schema(),
+            tunnel_output_schema(),
+            &host_tunnel,
+        ));
     }
-    ops.push(op("install_cloudflared_connector", "mutation", connector_schema_requiring(&["token", "namespace"]), connector_output_schema(), &cluster_tunnel));
-    ops.push(op("delete_cloudflared_connector", "destructive", connector_schema_requiring(&["namespace"]), connector_output_schema(), &cluster_tunnel));
+    ops.push(op(
+        "install_cloudflared_connector",
+        "mutation",
+        connector_schema_requiring(&["token", "namespace"]),
+        connector_output_schema(),
+        &cluster_tunnel,
+    ));
+    ops.push(op(
+        "delete_cloudflared_connector",
+        "destructive",
+        connector_schema_requiring(&["namespace"]),
+        connector_output_schema(),
+        &cluster_tunnel,
+    ));
     ops
 }
 
@@ -373,29 +485,37 @@ fn dispatch(delegation: &str, operation: &str, mut args: Args) -> Outcome {
     }
     match operation {
         "opute.capability.tunneling.validate" => {
-            let bindings = args.get("bindings").and_then(J::as_array).cloned().unwrap_or_default();
+            let bindings = args
+                .get("bindings")
+                .and_then(J::as_array)
+                .cloned()
+                .unwrap_or_default();
             if bindings.is_empty() {
                 return Err("bindings must contain at least one declared binding".into());
             }
             let placement = placement_input(&args)?;
-            Ok(json!({"contractVersion": TUNNELING, "ready": true, "bindings": bindings, "placement": placement}))
+            Ok(
+                json!({"contractVersion": TUNNELING, "ready": true, "bindings": bindings, "placement": placement}),
+            )
         }
-        "opute.capability.tunneling.ensure-host-tunnel" | "ensure_cloudflared_tunnel" | "create_cloudflare_tunnel" => {
-            ensure_tunnel(&ctx, &mut args)
-        }
-        "opute.capability.tunneling.probe-host-tunnel" | "probe_host_exposure" | "get_cloudflare_tunnel_status" => {
-            probe_tunnel(&ctx, &args)
-        }
-        "opute.capability.tunneling.remove-host-tunnel" | "remove_local_llm_cloudflared_tunnel" | "remove_host_exposure" | "delete_cloudflare_tunnel" => {
-            remove_tunnel(&ctx, &args)
-        }
-        "opute.capability.tunneling.install-kubernetes-connector" | "install_cloudflared_connector" => {
-            install_connector(&ctx, &args)
-        }
-        "opute.capability.tunneling.delete-kubernetes-connector" | "delete_cloudflared_connector" => {
-            delete_connector(&ctx, &args)
-        }
-        _ => Err(format!("unknown Cloudflare provider operation {}", quote(operation))),
+        "opute.capability.tunneling.ensure-host-tunnel"
+        | "ensure_cloudflared_tunnel"
+        | "create_cloudflare_tunnel" => ensure_tunnel(&ctx, &mut args),
+        "opute.capability.tunneling.probe-host-tunnel"
+        | "probe_host_exposure"
+        | "get_cloudflare_tunnel_status" => probe_tunnel(&ctx, &args),
+        "opute.capability.tunneling.remove-host-tunnel"
+        | "remove_local_llm_cloudflared_tunnel"
+        | "remove_host_exposure"
+        | "delete_cloudflare_tunnel" => remove_tunnel(&ctx, &args),
+        "opute.capability.tunneling.install-kubernetes-connector"
+        | "install_cloudflared_connector" => install_connector(&ctx, &args),
+        "opute.capability.tunneling.delete-kubernetes-connector"
+        | "delete_cloudflared_connector" => delete_connector(&ctx, &args),
+        _ => Err(format!(
+            "unknown Cloudflare provider operation {}",
+            quote(operation)
+        )),
     }
 }
 
@@ -480,7 +600,10 @@ fn reconcile_host_tunnel(client: &HostAgent, args: &Args) -> Result<(), String> 
         return reconcile_legacy_host_tunnel(client, args, &scope, &run_token);
     }
     let hostname = args.string("hostname", "");
-    let endpoint = first_non_empty(&[&args.string("endpoint", ""), &format!("https://{hostname}/mcp")]);
+    let endpoint = first_non_empty(&[
+        &args.string("endpoint", ""),
+        &format!("https://{hostname}/mcp"),
+    ]);
     let mut call = json!({
         "bindingId": args.string("bindingId", ""),
         "endpoint": endpoint,
@@ -492,7 +615,14 @@ fn reconcile_host_tunnel(client: &HostAgent, args: &Args) -> Result<(), String> 
     if !origin.is_empty() {
         call["originHostId"] = J::from(origin);
     }
-    for key in ["artifactUri", "artifactSha256", "artifactPath", "tokenFile", "serviceName", "serviceFile"] {
+    for key in [
+        "artifactUri",
+        "artifactSha256",
+        "artifactPath",
+        "tokenFile",
+        "serviceName",
+        "serviceFile",
+    ] {
         let value = args.string(key, "");
         if !value.is_empty() {
             call[key] = J::from(value);
@@ -508,7 +638,10 @@ fn reconcile_legacy_host_tunnel(
     scope: &str,
     run_token: &str,
 ) -> Result<(), String> {
-    let service_name = first_non_empty(&[&args.string("serviceName", ""), "opute-cloudflare-tunnel.service"]);
+    let service_name = first_non_empty(&[
+        &args.string("serviceName", ""),
+        "opute-cloudflare-tunnel.service",
+    ]);
     let service_file = first_non_empty(&[
         &args.string("serviceFile", ""),
         &default_host_service_file(scope, &service_name),
@@ -517,8 +650,14 @@ fn reconcile_legacy_host_tunnel(
         &args.string("artifactPath", ""),
         default_cloudflared_artifact_path(scope),
     ]);
-    let artifact_uri = first_non_empty(&[&args.string("artifactUri", ""), mesh::CLOUDFLARED_ARTIFACT_URL]);
-    let artifact_sha = first_non_empty(&[&args.string("artifactSha256", ""), mesh::CLOUDFLARED_ARTIFACT_SHA]);
+    let artifact_uri = first_non_empty(&[
+        &args.string("artifactUri", ""),
+        mesh::CLOUDFLARED_ARTIFACT_URL,
+    ]);
+    let artifact_sha = first_non_empty(&[
+        &args.string("artifactSha256", ""),
+        mesh::CLOUDFLARED_ARTIFACT_SHA,
+    ]);
     client.call_host(
         "ensure_host_artifact",
         json!({"uri": artifact_uri, "destination": artifact_path, "sha256": artifact_sha, "executable": true}),
@@ -527,12 +666,19 @@ fn reconcile_legacy_host_tunnel(
         Some(rest) => format!("%h{rest}"),
         None => artifact_path.clone(),
     };
-    let wanted_by = if scope == "system" { "multi-user.target" } else { "default.target" };
+    let wanted_by = if scope == "system" {
+        "multi-user.target"
+    } else {
+        "default.target"
+    };
     let unit = format!(
         "[Unit]\nDescription=Opute Cloudflare tunnel\nAfter=network-online.target\n\n[Service]\nExecStart={executable} tunnel --no-autoupdate run --token {}\nRestart=on-failure\n\n[Install]\nWantedBy={wanted_by}\n",
         shell_quote(run_token)
     );
-    client.call_host("ensure_host_file", json!({"path": service_file, "content": unit, "mode": 0o600}))?;
+    client.call_host(
+        "ensure_host_file",
+        json!({"path": service_file, "content": unit, "mode": 0o600}),
+    )?;
     client.call_host("ensure_host_service_supervisor", json!({"scope": scope}))?;
     client.call_host(
         "set_host_service_state",
@@ -551,7 +697,10 @@ fn reconcile_legacy_host_tunnel(
 const CONTAINER_TUNNEL_SCRIPT: &str = "set -eu; curl -fsSL --proto =https --tlsv1.2 \"$1\" -o /tmp/cloudflared; echo \"$2  /tmp/cloudflared\" | sha256sum -c -; install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared; umask 077; mkdir -p /etc/opute-cloudflare; cat > /etc/opute-cloudflare/tunnel-token; chmod 0600 /etc/opute-cloudflare/tunnel-token; chmod 0700 /etc/opute-cloudflare; cat > /etc/systemd/system/opute-cloudflare-tunnel.service <<'UNIT'\n[Unit]\nAfter=network-online.target\n\n[Service]\nExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate run --token-file /etc/opute-cloudflare/tunnel-token\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\nUNIT\nchmod 0644 /etc/systemd/system/opute-cloudflare-tunnel.service; systemctl daemon-reload; systemctl enable --now opute-cloudflare-tunnel.service";
 
 fn reconcile_container_tunnel(client: &HostAgent, args: &Args) -> Result<(), String> {
-    reconcile_container_tunnel_with(&mut |name, arguments| client.call_host(name, arguments).map(|_| ()), args)
+    reconcile_container_tunnel_with(
+        &mut |name, arguments| client.call_host(name, arguments).map(|_| ()),
+        args,
+    )
 }
 
 fn reconcile_container_tunnel_with(
@@ -562,9 +711,14 @@ fn reconcile_container_tunnel_with(
     let token = args.string("runToken", "");
     let artifact_uri = args.string("artifactUri", "");
     let artifact_sha = args.string("artifactSha256", "");
-    let artifact_sha = artifact_sha.strip_prefix("sha256:").unwrap_or(&artifact_sha).to_string();
+    let artifact_sha = artifact_sha
+        .strip_prefix("sha256:")
+        .unwrap_or(&artifact_sha)
+        .to_string();
     if token.is_empty() || artifact_uri.is_empty() || artifact_sha.is_empty() {
-        return Err("container placement requires runToken, artifactUri, and artifactSha256".into());
+        return Err(
+            "container placement requires runToken, artifactUri, and artifactSha256".into(),
+        );
     }
     call(
         "provision_container",
@@ -603,7 +757,10 @@ fn install_connector(ctx: &Ctx, args: &Args) -> Outcome {
 }
 
 fn install_kubernetes_connector(client: &HostAgent, args: &Args) -> Result<(), String> {
-    install_kubernetes_connector_with(&mut |name, arguments| client.call_host(name, arguments).map(|_| ()), args)
+    install_kubernetes_connector_with(
+        &mut |name, arguments| client.call_host(name, arguments).map(|_| ()),
+        args,
+    )
 }
 
 /// Only `put_k8s_secret` receives the token, in its write-only data field;
@@ -617,7 +774,8 @@ fn install_kubernetes_connector_with(
     let name = first_non_empty(&[&args.string("name", ""), "cloudflared"]);
     let image = first_non_empty(&[&args.string("image", ""), "cloudflare/cloudflared:2026.7.2"]);
     let local_targets = parse_local_targets(args.get("localTargets"))?;
-    let forwarder_image = first_non_empty(&[&args.string("forwarderImage", ""), DEFAULT_FORWARDER_IMAGE]);
+    let forwarder_image =
+        first_non_empty(&[&args.string("forwarderImage", ""), DEFAULT_FORWARDER_IMAGE]);
     let token = first_non_empty(&[&args.string("token", ""), &args.string("runToken", "")]);
     if token.is_empty() {
         return Err("Cloudflare connector token is required".into());
@@ -626,7 +784,10 @@ fn install_kubernetes_connector_with(
     crate::clusterops::validate_name(&name, "name")?;
     let secret_name = format!("{name}-token");
     crate::clusterops::validate_name(&secret_name, "name")?;
-    call("apply_manifest", json!({"uri": target.to_string(), "manifest": namespace_manifest(&namespace)}))?;
+    call(
+        "apply_manifest",
+        json!({"uri": target.to_string(), "manifest": namespace_manifest(&namespace)}),
+    )?;
     call(
         "put_k8s_secret",
         json!({"uri": target.to_string(), "namespace": namespace, "name": secret_name, "data": {"token": token}}),
@@ -644,7 +805,9 @@ fn delete_connector(ctx: &Ctx, args: &Args) -> Outcome {
         "delete_k8s_resource",
         json!({"uri": target.to_string(), "kind": "namespace", "resourceName": first_non_empty(&[&args.string("namespace", ""), "cloudflare-connector"])}),
     )?;
-    Ok(json!({"contractVersion": TUNNELING, "ready": true, "deleted": true, "placement": "kubernetes"}))
+    Ok(
+        json!({"contractVersion": TUNNELING, "ready": true, "deleted": true, "placement": "kubernetes"}),
+    )
 }
 
 fn probe_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
@@ -706,21 +869,31 @@ fn authenticated_public_tools_list(resource_url: &str) -> Result<J, String> {
         limit: 1 << 20,
     })?;
     if response.status >= 300 {
-        return Err(format!("public tools/list failed: {}", response.status_line));
+        return Err(format!(
+            "public tools/list failed: {}",
+            response.status_line
+        ));
     }
     let doc: J = api::decode_first(&response.body)?;
     if let Some(error) = doc.get("error").filter(|e| !e.is_null()) {
         let message = error.get("message").and_then(J::as_str).unwrap_or("");
         return Err(format!("public tools/list: {message}"));
     }
-    let tools = doc.get("result").and_then(|r| r.get("tools")).cloned().unwrap_or(J::Null);
+    let tools = doc
+        .get("result")
+        .and_then(|r| r.get("tools"))
+        .cloned()
+        .unwrap_or(J::Null);
     Ok(json!({"endpoint": resource_url, "ready": true, "tools": tools}))
 }
 
 /// The audience-bound credential an HTTPS Host Agent endpoint requires; a
 /// local MCP_AUTH_TOKEN is never sent to a public route.
 fn mint_public_host_agent_token(resource_url: &str) -> Result<String, String> {
-    let token_url = format!("{}/oauth/token", resource_url.strip_suffix("/mcp").unwrap_or(resource_url));
+    let token_url = format!(
+        "{}/oauth/token",
+        resource_url.strip_suffix("/mcp").unwrap_or(resource_url)
+    );
     let form = format!(
         "grant_type=client_credentials&client_id=opute-mcp-host&resource={}",
         query_escape(resource_url)
@@ -735,11 +908,18 @@ fn mint_public_host_agent_token(resource_url: &str) -> Result<String, String> {
         limit: 64 * 1024,
     })?;
     if response.status >= 300 {
-        return Err(format!("public token mint failed: {}", response.status_line));
+        return Err(format!(
+            "public token mint failed: {}",
+            response.status_line
+        ));
     }
     api::decode_first(&response.body)
         .ok()
-        .and_then(|doc| doc.get("access_token").and_then(J::as_str).map(String::from))
+        .and_then(|doc| {
+            doc.get("access_token")
+                .and_then(J::as_str)
+                .map(String::from)
+        })
         .filter(|t| !t.is_empty())
         .ok_or_else(|| "public token mint missing access_token".to_string())
 }
@@ -749,7 +929,9 @@ pub(super) fn query_escape(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char)
+            }
             b' ' => out.push('+'),
             _ => out.push_str(&format!("%{b:02X}")),
         }
@@ -761,7 +943,10 @@ fn remove_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
     let scope = host_service_scope(args)?;
     let hostname = args.string("hostname", "");
     let dedicated = !hostname.is_empty() || !args.string("tunnelName", "").is_empty();
-    let service_name = first_non_empty(&[&args.string("serviceName", ""), "opute-cloudflare-tunnel.service"]);
+    let service_name = first_non_empty(&[
+        &args.string("serviceName", ""),
+        "opute-cloudflare-tunnel.service",
+    ]);
     let service_file = first_non_empty(&[
         &args.string("serviceFile", ""),
         &default_host_service_file(&scope, &service_name),
@@ -774,9 +959,18 @@ fn remove_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
     if let Some(client) = client {
         let uri = host_service_uri(&scope, &service_name);
         let calls = [
-            ("set_host_service_state", json!({"uri": uri, "serviceName": service_name, "state": "stop", "scope": scope})),
-            ("set_host_service_state", json!({"uri": uri, "serviceName": service_name, "state": "disable", "scope": scope})),
-            ("remove_host_file", json!({"path": service_file, "confirm": true, "scope": scope})),
+            (
+                "set_host_service_state",
+                json!({"uri": uri, "serviceName": service_name, "state": "stop", "scope": scope}),
+            ),
+            (
+                "set_host_service_state",
+                json!({"uri": uri, "serviceName": service_name, "state": "disable", "scope": scope}),
+            ),
+            (
+                "remove_host_file",
+                json!({"path": service_file, "confirm": true, "scope": scope}),
+            ),
         ];
         for (name, arguments) in calls {
             if let Err(e) = client.call_host(name, arguments) {
@@ -813,7 +1007,10 @@ fn teardown(call: &Call) -> Outcome {
         return Ok(json!({"completed": true}));
     }
     let args = Args::from_map(inputs.clone());
-    let service_name = first_non_empty(&[&args.string("serviceName", ""), "opute-cloudflare-tunnel.service"]);
+    let service_name = first_non_empty(&[
+        &args.string("serviceName", ""),
+        "opute-cloudflare-tunnel.service",
+    ]);
     let scope = host_service_scope(&args)?;
     if !service_name_ok(&service_name) {
         return Err("serviceName must name a .service unit".into());
@@ -823,8 +1020,15 @@ fn teardown(call: &Call) -> Outcome {
         &default_host_service_file(&scope, &service_name),
     ]);
     validate_service_file(&scope, &service_file)?;
-    let service_uri = first_non_empty(&[&args.string("serviceUri", ""), &host_service_uri(&scope, &service_name)]);
-    let cleanup_key = format!("{}-{}", args.string("tunnelId", ""), args.strings("dnsRecordIds").join(","));
+    let service_uri = first_non_empty(&[
+        &args.string("serviceUri", ""),
+        &host_service_uri(&scope, &service_name),
+    ]);
+    let cleanup_key = format!(
+        "{}-{}",
+        args.string("tunnelId", ""),
+        args.strings("dnsRecordIds").join(",")
+    );
     let plan_id = "com.opute.cloudflare.teardown";
     Ok(json!({"contractVersion": "host-plan.v1", "plan": {
         "contractVersion": "host-plan.v1",
@@ -846,7 +1050,9 @@ fn service_name_ok(name: &str) -> bool {
 
 fn validate_service_file(scope: &str, service_file: &str) -> Result<String, String> {
     let service_file = service_file.trim();
-    let name = service_file.rsplit_once('/').map_or(service_file, |(_, n)| n);
+    let name = service_file
+        .rsplit_once('/')
+        .map_or(service_file, |(_, n)| n);
     if !service_name_ok(name) {
         return Err("Cloudflare service file must name a .service unit".into());
     }
@@ -866,7 +1072,9 @@ fn connect_host_agent(ctx: &Ctx) -> Result<HostAgent, String> {
     let endpoint = std::env::var("OPUTE_HOST_AGENT_ENDPOINT").unwrap_or_default();
     let endpoint = endpoint.trim();
     if endpoint.is_empty() {
-        return Err("OPUTE_HOST_AGENT_ENDPOINT is required for Cloudflare provider callbacks".into());
+        return Err(
+            "OPUTE_HOST_AGENT_ENDPOINT is required for Cloudflare provider callbacks".into(),
+        );
     }
     let mut token = first_non_empty(&[
         &std::env::var("OPUTE_HOST_AGENT_BEARER_TOKEN").unwrap_or_default(),
@@ -880,9 +1088,8 @@ fn connect_host_agent(ctx: &Ctx) -> Result<HostAgent, String> {
 }
 
 fn typed_target_uri(raw: &str, expected: &str) -> Result<Uri, String> {
-    let target = Uri::parse(raw.trim()).map_err(|e| {
-        format!("targetUri must be a canonical {expected} resource URI: {e}")
-    })?;
+    let target = Uri::parse(raw.trim())
+        .map_err(|e| format!("targetUri must be a canonical {expected} resource URI: {e}"))?;
     if target.resource_type != expected {
         return Err(format!(
             "targetUri requires resource type {}, got {}",
@@ -897,7 +1104,10 @@ fn placement_input(args: &Args) -> Result<String, String> {
     let placement = first_non_empty(&[&args.string("placement", ""), "host"]);
     match placement.as_str() {
         "host" | "container" | "kubernetes" => Ok(placement),
-        _ => Err(format!("unsupported Cloudflare placement {}", quote(&placement))),
+        _ => Err(format!(
+            "unsupported Cloudflare placement {}",
+            quote(&placement)
+        )),
     }
 }
 
@@ -924,7 +1134,10 @@ fn validate_local_target(raw: &str, connector: &str, origin_host_id: &str) -> Re
     }
     let (hostname, port) = if let Some(inner) = host_port.strip_prefix('[') {
         let (h, after) = inner.split_once(']').ok_or_else(invalid)?;
-        (h.to_string(), after.strip_prefix(':').unwrap_or("").to_string())
+        (
+            h.to_string(),
+            after.strip_prefix(':').unwrap_or("").to_string(),
+        )
     } else {
         match host_port.split_once(':') {
             Some((h, p)) => (h.to_string(), p.to_string()),
@@ -951,7 +1164,11 @@ fn hostnames_from_args(args: &Args) -> Vec<String> {
 }
 
 fn host_service_uri(scope: &str, service_name: &str) -> String {
-    format!("host-service:local:{}/{}", scope.trim(), service_name.trim())
+    format!(
+        "host-service:local:{}/{}",
+        scope.trim(),
+        service_name.trim()
+    )
 }
 
 fn host_service_scope(args: &Args) -> Result<String, String> {
@@ -990,7 +1207,10 @@ fn yaml_quote(value: &str) -> String {
 }
 
 fn namespace_manifest(namespace: &str) -> String {
-    format!("apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {}\n", yaml_quote(namespace))
+    format!(
+        "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {}\n",
+        yaml_quote(namespace)
+    )
 }
 
 struct LocalTarget {
@@ -1007,7 +1227,12 @@ fn cloudflared_manifest(
     forwarder_image: &str,
 ) -> String {
     let replicas = replicas.max(1);
-    let (n, ns, img, secret) = (yaml_quote(name), yaml_quote(namespace), yaml_quote(image), yaml_quote(&format!("{name}-token")));
+    let (n, ns, img, secret) = (
+        yaml_quote(name),
+        yaml_quote(namespace),
+        yaml_quote(image),
+        yaml_quote(&format!("{name}-token")),
+    );
     format!("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {n}\n  namespace: {ns}\nspec:\n  replicas: {replicas}\n  selector:\n    matchLabels:\n      app: {n}\n  template:\n    metadata:\n      labels:\n        app: {n}\n    spec:\n      containers:\n      - name: cloudflared\n        image: {img}\n        args: [tunnel, --no-autoupdate, run, --token-file, /etc/cloudflared/tunnel-token]\n        volumeMounts:\n        - name: tunnel-token\n          mountPath: /etc/cloudflared/tunnel-token\n          subPath: tunnel-token\n          readOnly: true\n        readinessProbe:\n          exec:\n            command: [cloudflared, --version]\n          initialDelaySeconds: 5\n          periodSeconds: 10\n      volumes:\n      - name: tunnel-token\n        secret:\n          secretName: {secret}\n          defaultMode: 0444\n          items:\n          - key: token\n            path: tunnel-token\n")
         + &forwarder_containers(targets, forwarder_image)
 }
@@ -1024,7 +1249,9 @@ fn parse_local_targets(raw: Option<&J>) -> Result<Vec<LocalTarget>, String> {
     let mut targets: Vec<LocalTarget> = Vec::new();
     for (index, entry) in entries.iter().enumerate() {
         let Some(fields) = entry.as_object() else {
-            return Err(format!("localTargets[{index}] must be an object with localPort and target"));
+            return Err(format!(
+                "localTargets[{index}] must be an object with localPort and target"
+            ));
         };
         let port = Args::from_map(fields.clone()).int("localPort", 0);
         if !(1..=65535).contains(&port) {
@@ -1039,7 +1266,10 @@ fn parse_local_targets(raw: Option<&J>) -> Result<Vec<LocalTarget>, String> {
         }
         let split = split_host_port(&target);
         if !split.is_some_and(|(h, p)| !h.trim().is_empty() && !p.trim().is_empty()) {
-            return Err(format!("localTargets[{index}].target must be host:port, got {}", quote(&target)));
+            return Err(format!(
+                "localTargets[{index}].target must be host:port, got {}",
+                quote(&target)
+            ));
         }
         if let Some(previous) = targets.iter().find(|t| t.local_port == port) {
             return Err(format!(
@@ -1048,7 +1278,10 @@ fn parse_local_targets(raw: Option<&J>) -> Result<Vec<LocalTarget>, String> {
                 quote(&target)
             ));
         }
-        targets.push(LocalTarget { local_port: port, target });
+        targets.push(LocalTarget {
+            local_port: port,
+            target,
+        });
     }
     Ok(targets)
 }
@@ -1072,11 +1305,18 @@ fn go_v(value: Option<&J>) -> String {
         Some(J::Bool(b)) => b.to_string(),
         Some(J::Array(items)) => format!(
             "[{}]",
-            items.iter().map(|i| go_v(Some(i))).collect::<Vec<_>>().join(" ")
+            items
+                .iter()
+                .map(|i| go_v(Some(i)))
+                .collect::<Vec<_>>()
+                .join(" ")
         ),
         Some(J::Object(map)) => format!(
             "map[{}]",
-            map.iter().map(|(k, v)| format!("{k}:{}", go_v(Some(v)))).collect::<Vec<_>>().join(" ")
+            map.iter()
+                .map(|(k, v)| format!("{k}:{}", go_v(Some(v))))
+                .collect::<Vec<_>>()
+                .join(" ")
         ),
     }
 }
@@ -1101,11 +1341,18 @@ fn split_host_port(hostport: &str) -> Option<(String, String)> {
 fn forwarder_containers(targets: &[LocalTarget], image: &str) -> String {
     let mut out = String::new();
     for target in targets {
-        let listen = format!("TCP-LISTEN:{},fork,reuseaddr,bind=127.0.0.1", target.local_port);
+        let listen = format!(
+            "TCP-LISTEN:{},fork,reuseaddr,bind=127.0.0.1",
+            target.local_port
+        );
         let connect = format!("TCP:{}", target.target);
         out.push_str(&format!("      - name: forward-{}\n", target.local_port));
         out.push_str(&format!("        image: {}\n", yaml_quote(image)));
-        out.push_str(&format!("        args: [{}, {}]\n", yaml_quote(&listen), yaml_quote(&connect)));
+        out.push_str(&format!(
+            "        args: [{}, {}]\n",
+            yaml_quote(&listen),
+            yaml_quote(&connect)
+        ));
         out.push_str("        resources:\n          requests:\n            cpu: 10m\n            memory: 16Mi\n          limits:\n            memory: 64Mi\n");
     }
     out

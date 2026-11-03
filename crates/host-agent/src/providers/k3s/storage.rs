@@ -15,7 +15,8 @@ const REGISTRY_SCALE_TIMEOUT: Duration = Duration::from_secs(2 * 60);
 const REGISTRY_JOB_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const REGISTRY_READY_TIMEOUT: Duration = Duration::from_secs(3 * 60);
 const REGISTRY_POLL: Duration = Duration::from_secs(2);
-const MISSING_CREATED: &str = "crictl images did not report createdAt; unused images are treated as age-eligible";
+const MISSING_CREATED: &str =
+    "crictl images did not report createdAt; unused images are treated as age-eligible";
 
 pub(super) struct GuestImage {
     pub(super) id: String,
@@ -57,9 +58,15 @@ pub(super) fn inspect_guest_storage(args: &Args) -> Outcome {
         args,
         &[
             ("containerdBytes", "/var/lib/rancher/k3s/agent/containerd"),
-            ("contentBytes", "/var/lib/rancher/k3s/agent/containerd/io.containerd.content.v1.content"),
+            (
+                "contentBytes",
+                "/var/lib/rancher/k3s/agent/containerd/io.containerd.content.v1.content",
+            ),
             ("k3sStorageBytes", "/var/lib/rancher/k3s/storage"),
-            ("snapshotsBytes", "/var/lib/rancher/k3s/agent/containerd/io.containerd.snapshotter.v1.overlayfs"),
+            (
+                "snapshotsBytes",
+                "/var/lib/rancher/k3s/agent/containerd/io.containerd.snapshotter.v1.overlayfs",
+            ),
         ],
     );
     if let Some(e) = err {
@@ -113,13 +120,19 @@ pub(super) fn prune_unused_images(args: &Args) -> Outcome {
     add_keep_refs(&mut keep, &optional_string_slice(args, "extraKeepTags"));
     for container in &containers {
         if is_running(&container.state) {
-            add_keep_refs(&mut keep, &[container.image.clone(), container.image_id.clone()]);
+            add_keep_refs(
+                &mut keep,
+                &[container.image.clone(), container.image_id.clone()],
+            );
         }
     }
     let before: i64 = images.iter().map(|i| i.size_bytes).sum();
-    let exited: Vec<&GuestContainer> =
-        containers.iter().filter(|c| !is_running(&c.state) && !c.id.trim().is_empty()).collect();
-    let (candidates, skipped, missing_created) = plan_unused_images(&images, &keep, min_age, now_nanos());
+    let exited: Vec<&GuestContainer> = containers
+        .iter()
+        .filter(|c| !is_running(&c.state) && !c.id.trim().is_empty())
+        .collect();
+    let (candidates, skipped, missing_created) =
+        plan_unused_images(&images, &keep, min_age, now_nanos());
     let mut warnings = Vec::new();
     if missing_created {
         warnings.push(MISSING_CREATED.to_string());
@@ -162,7 +175,9 @@ pub(super) fn prune_unused_images(args: &Args) -> Outcome {
         reclaimed += candidate.size_bytes;
     }
     match list_guest_images(args) {
-        Ok(after) => result["afterImageBytes"] = J::from(after.iter().map(|i| i.size_bytes).sum::<i64>()),
+        Ok(after) => {
+            result["afterImageBytes"] = J::from(after.iter().map(|i| i.size_bytes).sum::<i64>())
+        }
         Err(e) => {
             warnings.push(e);
             result["afterImageBytes"] = J::from(before - reclaimed);
@@ -193,9 +208,10 @@ pub(super) fn trim_guest_storage(args: &Args) -> Outcome {
     if !lowered.contains("operation not permitted") && !lowered.contains("fitrim") {
         return Err(format!("fstrim guest root: {guest_err}"));
     }
-    let (output, _) = super::spawn_and_wait("sudo", &["-n", "fstrim", "-v", "/"], None, None, true).map_err(
-        |(err, message)| format!("fstrim guest root not permitted and host fstrim failed: {err}: {message}"),
-    )?;
+    let (output, _) = super::spawn_and_wait("sudo", &["-n", "fstrim", "-v", "/"], None, None, true)
+        .map_err(|(err, message)| {
+            format!("fstrim guest root not permitted and host fstrim failed: {err}: {message}")
+        })?;
     Ok(json!({
         "targetUri": s(args, "targetUri"),
         "trimmed": true,
@@ -229,7 +245,14 @@ fn inspect_guest_paths(args: &Args, paths: &[(&str, &str)]) -> (J, Option<String
 }
 
 fn inspect_pvc_dirs(args: &Args) -> Result<Vec<J>, String> {
-    let output = run_guest(args, &["bash", "-lc", "du -sb /var/lib/rancher/k3s/storage/* 2>/dev/null || true"])?;
+    let output = run_guest(
+        args,
+        &[
+            "bash",
+            "-lc",
+            "du -sb /var/lib/rancher/k3s/storage/* 2>/dev/null || true",
+        ],
+    )?;
     let text = String::from_utf8_lossy(&output).into_owned();
     let mut pvcs: Vec<(String, i64)> = text
         .trim()
@@ -239,16 +262,21 @@ fn inspect_pvc_dirs(args: &Args) -> Result<Vec<J>, String> {
         .map(|(size, path)| (path, size))
         .collect();
     pvcs.sort_by(|a, b| a.0.cmp(&b.0));
-    Ok(pvcs.into_iter().map(|(path, size)| json!({"path": path, "bytes": size})).collect())
+    Ok(pvcs
+        .into_iter()
+        .map(|(path, size)| json!({"path": path, "bytes": size}))
+        .collect())
 }
 
 fn list_guest_images(args: &Args) -> Result<Vec<GuestImage>, String> {
-    let output = run_guest_crictl(args, &["images", "-o", "json"]).map_err(|e| format!("list guest images: {e}"))?;
+    let output = run_guest_crictl(args, &["images", "-o", "json"])
+        .map_err(|e| format!("list guest images: {e}"))?;
     parse_cri_images(&output)
 }
 
 fn list_guest_containers(args: &Args) -> Result<Vec<GuestContainer>, String> {
-    let output = run_guest_crictl(args, &["ps", "-a", "-o", "json"]).map_err(|e| format!("list guest containers: {e}"))?;
+    let output = run_guest_crictl(args, &["ps", "-a", "-o", "json"])
+        .map_err(|e| format!("list guest containers: {e}"))?;
     parse_cri_containers(&output)
 }
 
@@ -342,9 +370,7 @@ pub(super) fn plan_unused_images(
     let mut candidates = Vec::new();
     let mut skipped = Vec::new();
     let mut missing_created = false;
-    let skip = |image: &GuestImage, reason: &str| {
-        json!({"id": image.id, "tags": image.tags, "sizeBytes": image.size_bytes, "reason": reason})
-    };
+    let skip = |image: &GuestImage, reason: &str| json!({"id": image.id, "tags": image.tags, "sizeBytes": image.size_bytes, "reason": reason});
     for image in images {
         if image.pinned || image_matches_keep_set(image, keep) {
             skipped.push(skip(image, "keep-set"));
@@ -359,7 +385,11 @@ pub(super) fn plan_unused_images(
         } else {
             missing_created = true;
         }
-        candidates.push(Candidate { id: image.id.clone(), tags: image.tags.clone(), size_bytes: image.size_bytes });
+        candidates.push(Candidate {
+            id: image.id.clone(),
+            tags: image.tags.clone(),
+            size_bytes: image.size_bytes,
+        });
     }
     (candidates, skipped, missing_created)
 }
@@ -368,7 +398,11 @@ fn image_matches_keep_set(image: &GuestImage, keep: &KeepSet) -> bool {
     std::iter::once(&image.id)
         .chain(&image.tags)
         .chain(&image.digests)
-        .any(|reference| image_aliases(reference).iter().any(|alias| keep.contains(alias)))
+        .any(|reference| {
+            image_aliases(reference)
+                .iter()
+                .any(|alias| keep.contains(alias))
+        })
 }
 
 fn parse_cri_images(raw: &[u8]) -> Result<Vec<GuestImage>, String> {
@@ -405,7 +439,11 @@ fn parse_cri_containers(raw: &[u8]) -> Result<Vec<GuestContainer>, String> {
         slice(anon(vec![
             field("ID", "id", Shape::Str),
             field("State", "state", Shape::Str),
-            field("Image", "image", anon(vec![field("Image", "image", Shape::Str)])),
+            field(
+                "Image",
+                "image",
+                anon(vec![field("Image", "image", Shape::Str)]),
+            ),
             field("ImageRef", "imageRef", Shape::Str),
         ])),
     )]);
@@ -555,7 +593,9 @@ fn run_guest_kubectl(args: &Args, kubectl_args: &[&str]) -> Result<Vec<u8>, Stri
 }
 
 fn run_guest_crictl(args: &Args, crictl_args: &[&str]) -> Result<Vec<u8>, String> {
-    if crictl_args.first() == Some(&"rmi") && crictl_args[1..].iter().any(|a| *a == "--all" || *a == "-a") {
+    if crictl_args.first() == Some(&"rmi")
+        && crictl_args[1..].iter().any(|a| *a == "--all" || *a == "-a")
+    {
         return Err("refusing crictl rmi --all".into());
     }
     let mut argv = vec!["k3s", "crictl"];
@@ -582,12 +622,16 @@ struct Tag {
 }
 
 fn tags_json(tags: &[&Tag]) -> Vec<J> {
-    tags.iter().map(|t| json!({"repository": t.repository, "tag": t.tag})).collect()
+    tags.iter()
+        .map(|t| json!({"repository": t.repository, "tag": t.tag}))
+        .collect()
 }
 
 pub(super) fn garbage_collect_registry(args: &Args) -> Outcome {
     if !args.bool("includeRegistry", false) {
-        return Ok(json!({"targetUri": s(args, "targetUri"), "skipped": true, "reason": "includeRegistry is false"}));
+        return Ok(
+            json!({"targetUri": s(args, "targetUri"), "skipped": true, "reason": "includeRegistry is false"}),
+        );
     }
     let dry_run = args.bool("dryRun", false);
     let registry = discover_registry(args)?;
@@ -595,7 +639,9 @@ pub(super) fn garbage_collect_registry(args: &Args) -> Outcome {
     add_keep_refs(&mut keep, &optional_string_slice(args, "extraKeepTags"));
     let tags = list_registry_tags(args, &registry)?;
     let (delete, retained): (Vec<&Tag>, Vec<&Tag>) = tags.iter().partition(|tag| {
-        !image_aliases(&format!("{}:{}", tag.repository, tag.tag)).iter().any(|alias| keep.contains(alias))
+        !image_aliases(&format!("{}:{}", tag.repository, tag.tag))
+            .iter()
+            .any(|alias| keep.contains(alias))
     });
     let mut result = json!({
         "targetUri": s(args, "targetUri"),
@@ -621,7 +667,11 @@ pub(super) fn garbage_collect_registry(args: &Args) -> Outcome {
             Err(e) => warnings.push(e),
         }
     }
-    let restore = if registry.replicas <= 0 { 1 } else { registry.replicas };
+    let restore = if registry.replicas <= 0 {
+        1
+    } else {
+        registry.replicas
+    };
     scale_registry(args, &registry, 0)?;
     if let Err(e) = wait_for_registry_replicas(args, &registry, 0) {
         let _ = scale_registry(args, &registry, restore);
@@ -634,7 +684,9 @@ pub(super) fn garbage_collect_registry(args: &Args) -> Outcome {
     scale_registry(args, &registry, restore)?;
     wait_for_registry_ready(args, &registry)?;
     match list_registry_tags(args, &registry) {
-        Ok(after) => result["retainedAfter"] = J::from(tags_json(&after.iter().collect::<Vec<_>>())),
+        Ok(after) => {
+            result["retainedAfter"] = J::from(tags_json(&after.iter().collect::<Vec<_>>()))
+        }
         Err(e) => warnings.push(e),
     }
     result["deletedManifests"] = J::from(deleted);
@@ -651,15 +703,22 @@ fn inspect_registry_inventory(args: &Args) -> Outcome {
     let registry = discover_registry(args)?;
     let tags = match list_registry_tags(args, &registry) {
         Ok(tags) => tags,
-        Err(e) => return Ok(json!({"name": registry.name, "namespace": registry.namespace, "error": e})),
+        Err(e) => {
+            return Ok(json!({"name": registry.name, "namespace": registry.namespace, "error": e}))
+        }
     };
     let repos: BTreeSet<&str> = tags.iter().map(|t| t.repository.as_str()).collect();
-    Ok(json!({"name": registry.name, "namespace": registry.namespace, "tagCount": tags.len(), "repoCount": repos.len()}))
+    Ok(
+        json!({"name": registry.name, "namespace": registry.namespace, "tagCount": tags.len(), "repoCount": repos.len()}),
+    )
 }
 
 /// `mapString`: a nested string, trimmed.
 fn map_string(object: &J, path: &[&str]) -> String {
-    super::nested_string(object, path).unwrap_or_default().trim().to_string()
+    super::nested_string(object, path)
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 fn discover_registry(args: &Args) -> Result<Registry, String> {
@@ -667,8 +726,11 @@ fn discover_registry(args: &Args) -> Result<Registry, String> {
     let want_namespace = s(args, "registryNamespace");
     let output = run_guest_kubectl(args, &["get", "deploy", "-A", "-o", "json"])
         .map_err(|e| format!("list registry deployments: {e}"))?;
-    let document = unmarshal(&output, &anon(vec![field("Items", "items", slice(Shape::MapAny))]))
-        .map_err(|e| format!("parse registry deployments: {e}"))?;
+    let document = unmarshal(
+        &output,
+        &anon(vec![field("Items", "items", slice(Shape::MapAny))]),
+    )
+    .map_err(|e| format!("parse registry deployments: {e}"))?;
     let found = items(&document, "items").iter().find(|item| {
         let name = map_string(item, &["metadata", "name"]);
         let namespace = map_string(item, &["metadata", "namespace"]);
@@ -678,7 +740,10 @@ fn discover_registry(args: &Args) -> Result<Registry, String> {
         name == want_name || (name == "registry" && namespace == DEFAULT_REGISTRY_NAMESPACE)
     });
     let Some(found) = found else {
-        return Err(format!("registry deployment {} was not found", quote(&want_name)));
+        return Err(format!(
+            "registry deployment {} was not found",
+            quote(&want_name)
+        ));
     };
     let volumes = super::nested_value(found, &["spec", "template", "spec", "volumes"])
         .and_then(J::as_array)
@@ -688,7 +753,13 @@ fn discover_registry(args: &Args) -> Result<Registry, String> {
         volumes
             .iter()
             .filter_map(|v| v.get(kind).filter(|c| c.is_object()))
-            .map(|c| c.get(key).and_then(J::as_str).unwrap_or("").trim().to_string())
+            .map(|c| {
+                c.get(key)
+                    .and_then(J::as_str)
+                    .unwrap_or("")
+                    .trim()
+                    .to_string()
+            })
             .find(|name| !name.is_empty())
             .unwrap_or_default()
     };
@@ -713,9 +784,21 @@ fn discover_registry(args: &Args) -> Result<Registry, String> {
     if registry.replicas < 0 {
         registry.replicas = 1;
     }
-    let service = run_guest_kubectl(args, &["-n", &registry.namespace, "get", "svc", &registry.name, "-o", "json"])
-        .map_err(|e| format!("get registry service: {e}"))?;
-    let svc = unmarshal(&service, &Shape::MapAny).map_err(|e| format!("parse registry service: {e}"))?;
+    let service = run_guest_kubectl(
+        args,
+        &[
+            "-n",
+            &registry.namespace,
+            "get",
+            "svc",
+            &registry.name,
+            "-o",
+            "json",
+        ],
+    )
+    .map_err(|e| format!("get registry service: {e}"))?;
+    let svc =
+        unmarshal(&service, &Shape::MapAny).map_err(|e| format!("parse registry service: {e}"))?;
     registry.service_ip = map_string(&svc, &["spec", "clusterIP"]);
     registry.service_port = super::nested_value(&svc, &["spec", "ports"])
         .and_then(J::as_array)
@@ -724,15 +807,25 @@ fn discover_registry(args: &Args) -> Result<Registry, String> {
         .filter(|p| *p > 0.0)
         .map_or(5000, |p| p as i64);
     if registry.service_ip.parse::<std::net::IpAddr>().is_err() || registry.service_port <= 0 {
-        return Err(format!("registry service {}/{} has no cluster IP", registry.namespace, registry.name));
+        return Err(format!(
+            "registry service {}/{} has no cluster IP",
+            registry.namespace, registry.name
+        ));
     }
     Ok(registry)
 }
 
 fn list_registry_tags(args: &Args, registry: &Registry) -> Result<Vec<Tag>, String> {
     let catalog_raw = registry_http(args, registry, "GET", "/v2/_catalog")?;
-    let catalog = unmarshal(&catalog_raw, &anon(vec![field("Repositories", "repositories", slice(Shape::Str))]))
-        .map_err(|e| format!("parse registry catalog: {e}"))?;
+    let catalog = unmarshal(
+        &catalog_raw,
+        &anon(vec![field(
+            "Repositories",
+            "repositories",
+            slice(Shape::Str),
+        )]),
+    )
+    .map_err(|e| format!("parse registry catalog: {e}"))?;
     let mut tags = Vec::new();
     for repo in items(&catalog, "repositories") {
         let repo = repo.as_str().unwrap_or("");
@@ -742,23 +835,39 @@ fn list_registry_tags(args: &Args, registry: &Registry) -> Result<Vec<Tag>, Stri
         let list_raw = registry_http(args, registry, "GET", &format!("/v2/{repo}/tags/list"))?;
         let listed = unmarshal(
             &list_raw,
-            &anon(vec![field("Name", "name", Shape::Str), field("Tags", "tags", slice(Shape::Str))]),
+            &anon(vec![
+                field("Name", "name", Shape::Str),
+                field("Tags", "tags", slice(Shape::Str)),
+            ]),
         )
         .map_err(|e| format!("parse tags for {repo}: {e}"))?;
         for tag in items(&listed, "tags") {
             let tag = tag.as_str().unwrap_or("");
             if !tag.trim().is_empty() {
-                tags.push(Tag { repository: repo.to_string(), tag: tag.to_string() });
+                tags.push(Tag {
+                    repository: repo.to_string(),
+                    tag: tag.to_string(),
+                });
             }
         }
     }
-    tags.sort_by(|a, b| a.repository.cmp(&b.repository).then_with(|| a.tag.cmp(&b.tag)));
+    tags.sort_by(|a, b| {
+        a.repository
+            .cmp(&b.repository)
+            .then_with(|| a.tag.cmp(&b.tag))
+    });
     Ok(tags)
 }
 
 fn delete_registry_manifest(args: &Args, registry: &Registry, tag: &Tag) -> Result<(), String> {
     let digest = registry_manifest_digest(args, registry, tag)?;
-    registry_http(args, registry, "DELETE", &format!("/v2/{}/manifests/{digest}", tag.repository)).map(|_| ())
+    registry_http(
+        args,
+        registry,
+        "DELETE",
+        &format!("/v2/{}/manifests/{digest}", tag.repository),
+    )
+    .map(|_| ())
 }
 
 fn registry_manifest_digest(args: &Args, registry: &Registry, tag: &Tag) -> Result<String, String> {
@@ -770,19 +879,35 @@ fn registry_manifest_digest(args: &Args, registry: &Registry, tag: &Tag) -> Resu
         .map_err(|e| format!("resolve digest for {}:{}: {e}", tag.repository, tag.tag))?;
     let digest = String::from_utf8_lossy(&output).trim().to_string();
     if !digest.starts_with("sha256:") {
-        return Err(format!("registry did not return a digest for {}:{}", tag.repository, tag.tag));
+        return Err(format!(
+            "registry did not return a digest for {}:{}",
+            tag.repository, tag.tag
+        ));
     }
     Ok(digest)
 }
 
-fn registry_http(args: &Args, registry: &Registry, method: &str, path: &str) -> Result<Vec<u8>, String> {
+fn registry_http(
+    args: &Args,
+    registry: &Registry,
+    method: &str,
+    path: &str,
+) -> Result<Vec<u8>, String> {
     let endpoint = registry_url(registry, path);
-    let script = format!("curl -sf --max-time 30 -X {} {}", shell_quote(method), shell_quote(&endpoint));
+    let script = format!(
+        "curl -sf --max-time 30 -X {} {}",
+        shell_quote(method),
+        shell_quote(&endpoint)
+    );
     run_guest(args, &["bash", "-lc", &script]).map_err(|e| format!("registry {method} {path}: {e}"))
 }
 
 fn registry_url(registry: &Registry, path: &str) -> String {
-    let path = if path.starts_with('/') { path.to_string() } else { format!("/{path}") };
+    let path = if path.starts_with('/') {
+        path.to_string()
+    } else {
+        format!("/{path}")
+    };
     let host = if registry.service_ip.contains(':') {
         format!("[{}]", registry.service_ip)
     } else {
@@ -794,7 +919,13 @@ fn registry_url(registry: &Registry, path: &str) -> String {
 fn scale_registry(args: &Args, registry: &Registry, replicas: i64) -> Result<(), String> {
     run_guest_kubectl(
         args,
-        &["-n", &registry.namespace, "scale", &format!("deploy/{}", registry.name), &format!("--replicas={replicas}")],
+        &[
+            "-n",
+            &registry.namespace,
+            "scale",
+            &format!("deploy/{}", registry.name),
+            &format!("--replicas={replicas}"),
+        ],
     )
     .map(|_| ())
     .map_err(|e| format!("scale registry to {replicas}: {e}"))
@@ -818,7 +949,18 @@ fn wait_for_registry_replicas(args: &Args, registry: &Registry, want: i64) -> Re
     let deadline = Instant::now() + REGISTRY_SCALE_TIMEOUT;
     let mut last = None;
     while Instant::now() < deadline {
-        match run_guest_kubectl(args, &["-n", &registry.namespace, "get", "deploy", &registry.name, "-o", "json"]) {
+        match run_guest_kubectl(
+            args,
+            &[
+                "-n",
+                &registry.namespace,
+                "get",
+                "deploy",
+                &registry.name,
+                "-o",
+                "json",
+            ],
+        ) {
             Err(e) => last = Some(e),
             Ok(output) => match unmarshal(&output, &Shape::MapAny) {
                 Err(e) => last = Some(e),
@@ -827,7 +969,10 @@ fn wait_for_registry_replicas(args: &Args, registry: &Registry, want: i64) -> Re
                     if replicas as i64 == want {
                         return Ok(());
                     }
-                    last = Some(format!("registry replicas = {}, want {want}", go_v_float(replicas)));
+                    last = Some(format!(
+                        "registry replicas = {}, want {want}",
+                        go_v_float(replicas)
+                    ));
                 }
             },
         }
@@ -843,7 +988,14 @@ fn wait_for_registry_ready(args: &Args, registry: &Registry) -> Result<(), Strin
         let target = format!("deploy/{}", registry.name);
         match run_guest_kubectl(
             args,
-            &["-n", &registry.namespace, "wait", "--for=condition=available", &target, "--timeout=15s"],
+            &[
+                "-n",
+                &registry.namespace,
+                "wait",
+                "--for=condition=available",
+                &target,
+                "--timeout=15s",
+            ],
         ) {
             Ok(_) => return Ok(()),
             Err(e) => last = Some(e),
@@ -855,29 +1007,60 @@ fn wait_for_registry_ready(args: &Args, registry: &Registry) -> Result<(), Strin
 
 fn run_registry_gc_job(args: &Args, registry: &Registry) -> Result<(), String> {
     let namespace = registry.namespace.as_str();
-    let _ = run_guest_kubectl(args, &["-n", namespace, "delete", "job", "opute-registry-gc", "--ignore-not-found=true"]);
+    let _ = run_guest_kubectl(
+        args,
+        &[
+            "-n",
+            namespace,
+            "delete",
+            "job",
+            "opute-registry-gc",
+            "--ignore-not-found=true",
+        ],
+    );
     let manifest = registry_gc_job_manifest(registry);
     let instance = s(args, "providerInstanceName");
-    run_command(&["exec", &instance, "--", "k3s", "kubectl", "apply", "-f", "-"], Some(manifest.as_bytes()))
-        .map_err(|e| format!("apply registry garbage-collect job: {e}"))?;
+    run_command(
+        &[
+            "exec", &instance, "--", "k3s", "kubectl", "apply", "-f", "-",
+        ],
+        Some(manifest.as_bytes()),
+    )
+    .map_err(|e| format!("apply registry garbage-collect job: {e}"))?;
     let deadline = Instant::now() + REGISTRY_JOB_TIMEOUT;
     let mut last = None;
     while Instant::now() < deadline {
         match run_guest_kubectl(
             args,
-            &["-n", namespace, "wait", "--for=condition=complete", "job/opute-registry-gc", "--timeout=15s"],
+            &[
+                "-n",
+                namespace,
+                "wait",
+                "--for=condition=complete",
+                "job/opute-registry-gc",
+                "--timeout=15s",
+            ],
         ) {
             Ok(_) => return Ok(()),
             Err(e) => last = Some(e),
         }
         let failed = run_guest_kubectl(
             args,
-            &["-n", namespace, "get", "job", "opute-registry-gc", "-o", "jsonpath={.status.failed}"],
+            &[
+                "-n",
+                namespace,
+                "get",
+                "job",
+                "opute-registry-gc",
+                "-o",
+                "jsonpath={.status.failed}",
+            ],
         )
         .unwrap_or_default();
         let failed = String::from_utf8_lossy(&failed).trim().to_string();
         if !failed.is_empty() && failed != "0" {
-            let logs = run_guest_kubectl(args, &["-n", namespace, "logs", "job/opute-registry-gc"]).unwrap_or_default();
+            let logs = run_guest_kubectl(args, &["-n", namespace, "logs", "job/opute-registry-gc"])
+                .unwrap_or_default();
             return Err(format!(
                 "registry garbage-collect job failed: {}",
                 String::from_utf8_lossy(&logs).trim()
@@ -925,4 +1108,3 @@ spec:
         registry.namespace
     )
 }
-

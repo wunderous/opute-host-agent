@@ -233,7 +233,9 @@ pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
 
 /// The teardown tool's own decode: `phase` and `inputs`, matched without
 /// case; a mistyped field is Go's `UnmarshalTypeError`.
-pub fn teardown_input(arguments: Option<&crate::gojson::Node>) -> Result<(String, Map<String, J>), String> {
+pub fn teardown_input(
+    arguments: Option<&crate::gojson::Node>,
+) -> Result<(String, Map<String, J>), String> {
     use crate::gojson::Value;
     let mut phase = String::new();
     let mut inputs = Map::new();
@@ -259,7 +261,10 @@ pub fn teardown_input(arguments: Option<&crate::gojson::Node>) -> Result<(String
                 Value::String(s) => phase = s.clone(),
                 other => {
                     first_error.get_or_insert_with(|| {
-                        format!("json: cannot unmarshal {} into Go struct field .phase of type string", crate::gojson::kind_name(other))
+                        format!(
+                            "json: cannot unmarshal {} into Go struct field .phase of type string",
+                            crate::gojson::kind_name(other)
+                        )
                     });
                 }
             }
@@ -282,7 +287,6 @@ pub fn teardown_input(arguments: Option<&crate::gojson::Node>) -> Result<(String
     }
     first_error.map_or(Ok((phase, inputs)), Err)
 }
-
 
 // --- pkg/hostagentclient ------------------------------------------------------------
 
@@ -462,11 +466,19 @@ pub(crate) fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
 pub(super) fn in_cidr(ip: std::net::IpAddr, net: std::net::IpAddr, bits: u32) -> bool {
     match (ip, net) {
         (std::net::IpAddr::V4(a), std::net::IpAddr::V4(b)) if bits <= 32 => {
-            let mask = if bits == 0 { 0 } else { u32::MAX << (32 - bits) };
+            let mask = if bits == 0 {
+                0
+            } else {
+                u32::MAX << (32 - bits)
+            };
             u32::from(a) & mask == u32::from(b) & mask
         }
         (std::net::IpAddr::V6(a), std::net::IpAddr::V6(b)) if bits <= 128 => {
-            let mask = if bits == 0 { 0 } else { u128::MAX << (128 - bits) };
+            let mask = if bits == 0 {
+                0
+            } else {
+                u128::MAX << (128 - bits)
+            };
             u128::from(a) & mask == u128::from(b) & mask
         }
         _ => false,
@@ -594,7 +606,8 @@ pub fn http_do(request: HttpRequest) -> Result<HttpResponse, String> {
                     }
                     source = e.source();
                 }
-                let text = dial_error(&host, port, proxy.as_deref()).unwrap_or_else(|| t.to_string());
+                let text =
+                    dial_error(&host, port, proxy.as_deref()).unwrap_or_else(|| t.to_string());
                 return Err(format!("{op} {quoted}: {text}"));
             }
         };
@@ -607,10 +620,7 @@ pub fn http_do(request: HttpRequest) -> Result<HttpResponse, String> {
                         .map(|u| u.to_string())
                         .unwrap_or_else(|_| location.to_string());
                     if !next.starts_with("https:") {
-                        return Err(format!(
-                            "{op} {}: {refusal}",
-                            crate::goerr::quote(&next)
-                        ));
+                        return Err(format!("{op} {}: {refusal}", crate::goerr::quote(&next)));
                     }
                     current = next;
                     continue;
@@ -646,7 +656,8 @@ mod tests {
             Args::decode(Some(&parse("[1]")), "decode provider arguments: ").err().unwrap(),
             "decode provider arguments: json: cannot unmarshal array into Go value of type map[string]interface {}"
         );
-        let args = Args::decode(Some(&parse(r#"{"a":" x ","n":2.0,"a2":[" y ",3,""]}"#)), "").unwrap();
+        let args =
+            Args::decode(Some(&parse(r#"{"a":" x ","n":2.0,"a2":[" y ",3,""]}"#)), "").unwrap();
         assert_eq!(args.string("a", "f"), "x");
         assert_eq!(args.int("n", 0), 2);
         assert_eq!(args.strings("a2"), vec!["y"]);

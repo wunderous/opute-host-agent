@@ -22,12 +22,30 @@ pub(super) fn install_k3s_server(
     token: &str,
 ) -> Result<(), String> {
     let (installer, binary, checksum) = download_artifacts(version)?;
-    let (mut file, temporary) = crate::goerr::create_temp(&std::env::temp_dir().display().to_string(), "opute-k3s-", "")
-        .map_err(|e| format!("create staged K3s binary: {e}"))?;
+    let (mut file, temporary) = crate::goerr::create_temp(
+        &std::env::temp_dir().display().to_string(),
+        "opute-k3s-",
+        "",
+    )
+    .map_err(|e| format!("create staged K3s binary: {e}"))?;
     let result = (|| {
-        file.write_all(&binary).map_err(|e| format!("stage K3s binary: write {temporary}: {}", crate::goerr::errno_text(&e)))?;
+        file.write_all(&binary).map_err(|e| {
+            format!(
+                "stage K3s binary: write {temporary}: {}",
+                crate::goerr::errno_text(&e)
+            )
+        })?;
         drop(file);
-        stage_and_install(instance, version, install_exec, address, token, &temporary, &checksum, installer)
+        stage_and_install(
+            instance,
+            version,
+            install_exec,
+            address,
+            token,
+            &temporary,
+            &checksum,
+            installer,
+        )
     })();
     let _ = std::fs::remove_file(&temporary);
     result
@@ -45,16 +63,40 @@ fn stage_and_install(
     installer: Vec<u8>,
 ) -> Result<(), String> {
     let remote = format!("/tmp/opute-k3s-{}", &checksum[..16]);
-    run_command(&["file", "push", temporary, &format!("{instance}{remote}")], None)
-        .map_err(|e| format!("stage K3s binary in guest: {e}"))?;
+    run_command(
+        &["file", "push", temporary, &format!("{instance}{remote}")],
+        None,
+    )
+    .map_err(|e| format!("stage K3s binary in guest: {e}"))?;
     let result = (|| {
-        run_command(&["exec", instance, "--", "install", "-m", "0755", &remote, "/usr/local/bin/k3s"], None)
-            .map_err(|e| format!("install staged K3s binary: {e}"))?;
+        run_command(
+            &[
+                "exec",
+                instance,
+                "--",
+                "install",
+                "-m",
+                "0755",
+                &remote,
+                "/usr/local/bin/k3s",
+            ],
+            None,
+        )
+        .map_err(|e| format!("install staged K3s binary: {e}"))?;
         let skip = "INSTALL_K3S_SKIP_DOWNLOAD=true".to_string();
         let version_env = format!("INSTALL_K3S_VERSION={version}");
         let exec_env = format!("INSTALL_K3S_EXEC={install_exec}");
         let url_env = format!("K3S_URL={address}");
-        let mut args = vec!["exec", instance, "--env", &skip, "--env", &version_env, "--env", &exec_env];
+        let mut args = vec![
+            "exec",
+            instance,
+            "--env",
+            &skip,
+            "--env",
+            &version_env,
+            "--env",
+            &exec_env,
+        ];
         let input = if token.is_empty() {
             args.extend(["--", "bash", "-s"]);
             installer
@@ -74,7 +116,9 @@ fn stage_and_install(
         if let Err(e) = run_command(&args, Some(&input)) {
             let diagnostics = install_diagnostics(instance, token);
             if !diagnostics.is_empty() {
-                return Err(format!("run verified K3s installer: {e}; guest diagnostics: {diagnostics}"));
+                return Err(format!(
+                    "run verified K3s installer: {e}; guest diagnostics: {diagnostics}"
+                ));
             }
             return Err(format!("run verified K3s installer: {e}"));
         }
@@ -88,8 +132,12 @@ fn stage_and_install(
 /// join token redacted.
 fn install_diagnostics(instance: &str, token: &str) -> String {
     let script = "systemctl status --no-pager --full k3s || true; journalctl -u k3s -n 120 --no-pager || true";
-    let Ok(output) = super::run_program("incus", &["exec", instance, "--", "bash", "-lc", script], None, Some(DIAGNOSTIC_TIMEOUT))
-    else {
+    let Ok(output) = super::run_program(
+        "incus",
+        &["exec", instance, "--", "bash", "-lc", script],
+        None,
+        Some(DIAGNOSTIC_TIMEOUT),
+    ) else {
         return String::new();
     };
     let diagnostics = String::from_utf8_lossy(&output).trim().to_string();
@@ -122,13 +170,17 @@ fn download_artifacts(version: &str) -> Result<(Vec<u8>, Vec<u8>, String), Strin
     let checksums = download(&format!("{base}/sha256sum-amd64.txt"), MAX_BOOTSTRAP_SCRIPT)
         .map_err(|e| format!("download K3s release checksums: {e}"))?;
     let checksum = checksum_for_binary(&String::from_utf8_lossy(&checksums))?;
-    let binary = download(&format!("{base}/k3s"), MAX_BINARY_BYTES).map_err(|e| format!("download K3s binary: {e}"))?;
+    let binary = download(&format!("{base}/k3s"), MAX_BINARY_BYTES)
+        .map_err(|e| format!("download K3s binary: {e}"))?;
     use sha2::Digest as _;
     let observed = hex::encode(sha2::Sha256::digest(&binary));
     if !observed.eq_ignore_ascii_case(&checksum) {
-        return Err(format!("K3s binary checksum mismatch: expected {checksum}, observed {observed}"));
+        return Err(format!(
+            "K3s binary checksum mismatch: expected {checksum}, observed {observed}"
+        ));
     }
-    let installer = download(BOOTSTRAP_SCRIPT_URL, MAX_BOOTSTRAP_SCRIPT).map_err(|e| format!("download K3s installer: {e}"))?;
+    let installer = download(BOOTSTRAP_SCRIPT_URL, MAX_BOOTSTRAP_SCRIPT)
+        .map_err(|e| format!("download K3s installer: {e}"))?;
     Ok((installer, binary, checksum))
 }
 
@@ -184,11 +236,13 @@ pub(super) fn checksum_for_binary(checksums: &str) -> Result<String, String> {
         let name = base_name(fields[1]);
         if name.strip_prefix('*').unwrap_or(name) == "k3s" {
             if let Some(&bad) = fields[0].as_bytes().iter().find(|b| !b.is_ascii_hexdigit()) {
-                return Err(format!("K3s release checksum is not hexadecimal: {}", hex_invalid_byte(bad)));
+                return Err(format!(
+                    "K3s release checksum is not hexadecimal: {}",
+                    hex_invalid_byte(bad)
+                ));
             }
             return Ok(fields[0].to_lowercase());
         }
     }
     Err("K3s release checksums do not contain the amd64 k3s binary".into())
 }
-

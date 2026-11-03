@@ -34,7 +34,8 @@ pub(super) struct Invitation {
     pub(super) consumed: bool,
 }
 
-pub(super) static INVITATIONS: LazyLock<Mutex<HashMap<String, Invitation>>> = LazyLock::new(Default::default);
+pub(super) static INVITATIONS: LazyLock<Mutex<HashMap<String, Invitation>>> =
+    LazyLock::new(Default::default);
 static RECEIVER_KEY: OnceLock<rsa::RsaPrivateKey> = OnceLock::new();
 
 /// `membershipObservation`.
@@ -79,7 +80,9 @@ impl Observation {
 }
 
 pub(super) fn receiver_key() -> &'static rsa::RsaPrivateKey {
-    RECEIVER_KEY.get_or_init(|| rsa::RsaPrivateKey::new(&mut rand_core::OsRng, 2048).expect("generate RSA key"))
+    RECEIVER_KEY.get_or_init(|| {
+        rsa::RsaPrivateKey::new(&mut rand_core::OsRng, 2048).expect("generate RSA key")
+    })
 }
 
 pub(super) fn get_join_receiver_key(args: &Args) -> Outcome {
@@ -100,7 +103,10 @@ pub(super) fn inspect_membership(args: &Args) -> Outcome {
     let mut observation = read_membership(args)?;
     let expected_role = s(args, "expectedRole");
     if !expected_role.is_empty() && expected_role != "server" {
-        return Err(format!("unsupported expectedRole {}", quote(&expected_role)));
+        return Err(format!(
+            "unsupported expectedRole {}",
+            quote(&expected_role)
+        ));
     }
     let expected_servers = args.int("expectedServers", 0);
     if expected_servers > 0 && observation.server_count < expected_servers {
@@ -110,7 +116,10 @@ pub(super) fn inspect_membership(args: &Args) -> Outcome {
         ));
     }
     if args.bool("requireEmbeddedEtcd", false) && observation.datastore_mode != "embedded-etcd" {
-        return Err(format!("K3s target is not using embedded-etcd (observed {})", observation.datastore_mode));
+        return Err(format!(
+            "K3s target is not using embedded-etcd (observed {})",
+            observation.datastore_mode
+        ));
     }
     let endpoint = s(args, "endpoint");
     if !endpoint.is_empty() {
@@ -123,7 +132,10 @@ pub(super) fn inspect_membership(args: &Args) -> Outcome {
 pub(super) fn prepare_ha(args: &Args) -> Outcome {
     let observation = read_membership(args)?;
     if observation.datastore_mode != "embedded-etcd" {
-        return Err(format!("server promotion requires embedded-etcd; observed {}", observation.datastore_mode));
+        return Err(format!(
+            "server promotion requires embedded-etcd; observed {}",
+            observation.datastore_mode
+        ));
     }
     if observation.server_count < 1 {
         return Err("K3s target has no ready server membership".into());
@@ -172,11 +184,23 @@ pub(super) fn prepare_join(args: &Args) -> Outcome {
     }
     let observation = read_membership(args)?;
     if observation.datastore_mode != "embedded-etcd" {
-        return Err(format!("server join requires embedded-etcd; observed {}", observation.datastore_mode));
+        return Err(format!(
+            "server join requires embedded-etcd; observed {}",
+            observation.datastore_mode
+        ));
     }
     let instance = s(args, "providerInstanceName");
-    let token_output = run_command(&["exec", &instance, "--", "cat", "/var/lib/rancher/k3s/server/token"], None)
-        .map_err(|e| format!("read K3s join material for handshake: {e}"))?;
+    let token_output = run_command(
+        &[
+            "exec",
+            &instance,
+            "--",
+            "cat",
+            "/var/lib/rancher/k3s/server/token",
+        ],
+        None,
+    )
+    .map_err(|e| format!("read K3s join material for handshake: {e}"))?;
     let join_token = String::from_utf8_lossy(&token_output).trim().to_string();
     if join_token.is_empty() || super::has_unsafe(&join_token, "\0\r\n") {
         return Err("K3s source returned empty or invalid join material".into());
@@ -266,7 +290,10 @@ fn raw_url_decode(text: &str) -> Result<Vec<u8>, String> {
         }
     }
     if in_quantum == 1 {
-        return Err(format!("illegal base64 data at input byte {}", bytes.len() - 1));
+        return Err(format!(
+            "illegal base64 data at input byte {}",
+            bytes.len() - 1
+        ));
     }
     use base64::engine::{general_purpose::GeneralPurpose, GeneralPurposeConfig};
     use base64::Engine as _;
@@ -282,7 +309,10 @@ fn raw_url_decode(text: &str) -> Result<Vec<u8>, String> {
 /// `x509.MarshalPKCS1PublicKey`: SEQUENCE { INTEGER n, INTEGER e }.
 pub(super) fn pkcs1_public_der(n: &[u8], e: &[u8]) -> Vec<u8> {
     fn integer(magnitude: &[u8]) -> Vec<u8> {
-        let start = magnitude.iter().position(|&b| b != 0).unwrap_or(magnitude.len().saturating_sub(1));
+        let start = magnitude
+            .iter()
+            .position(|&b| b != 0)
+            .unwrap_or(magnitude.len().saturating_sub(1));
         let mut content = magnitude[start..].to_vec();
         if content.is_empty() {
             content.push(0);
@@ -303,7 +333,12 @@ fn tlv(tag: u8, content: &[u8]) -> Vec<u8> {
     if len < 0x80 {
         out.push(len as u8);
     } else {
-        let bytes: Vec<u8> = len.to_be_bytes().iter().copied().skip_while(|&b| b == 0).collect();
+        let bytes: Vec<u8> = len
+            .to_be_bytes()
+            .iter()
+            .copied()
+            .skip_while(|&b| b == 0)
+            .collect();
         out.push(0x80 | bytes.len() as u8);
         out.extend(bytes);
     }
@@ -358,7 +393,12 @@ fn base128(bytes: &[u8], mut offset: usize) -> Result<(i64, usize), String> {
 fn tag_and_length(bytes: &[u8], mut offset: usize) -> Result<(TagLength, usize), String> {
     let b = bytes[offset];
     offset += 1;
-    let mut t = TagLength { class: b >> 6, tag: i64::from(b & 0x1f), length: 0, compound: b & 0x20 != 0 };
+    let mut t = TagLength {
+        class: b >> 6,
+        tag: i64::from(b & 0x1f),
+        length: 0,
+        compound: b & 0x20 != 0,
+    };
     if t.tag == 0x1f {
         let (tag, next) = base128(bytes, offset)?;
         offset = next;
@@ -429,7 +469,10 @@ fn check_integer(bytes: &[u8]) -> Result<(), String> {
     if bytes.is_empty() {
         return Err(structural("empty integer"));
     }
-    if bytes.len() > 1 && ((bytes[0] == 0 && bytes[1] & 0x80 == 0) || (bytes[0] == 0xff && bytes[1] & 0x80 == 0x80)) {
+    if bytes.len() > 1
+        && ((bytes[0] == 0 && bytes[1] & 0x80 == 0)
+            || (bytes[0] == 0xff && bytes[1] & 0x80 == 0x80))
+    {
         return Err(structural("integer not minimally-encoded"));
     }
     Ok(())
@@ -456,7 +499,10 @@ fn is_pkix(der: &[u8]) -> bool {
         }
         let (bits, _) = expect(info, offset, 3, false, "BitString")?;
         let padding = *bits.first().ok_or_else(String::new)?;
-        if padding > 7 || (bits.len() == 1 && padding > 0) || bits[bits.len() - 1] & ((1u8 << padding) - 1) != 0 {
+        if padding > 7
+            || (bits.len() == 1 && padding > 0)
+            || bits[bits.len() - 1] & ((1u8 << padding) - 1) != 0
+        {
             return Err(String::new());
         }
         Ok(())
@@ -535,25 +581,39 @@ fn encrypt_oaep(n: &[u8], e: i64, msg: &[u8]) -> Result<Vec<u8>, String> {
         usize::MAX,
     )
     .map_err(|err| format!("crypto/rsa: {err}"))?;
-    key.encrypt(&mut rand_core::OsRng, rsa::Oaep::new_with_label::<sha2::Sha256, _>(JOIN_LABEL), msg)
-        .map_err(|_| "crypto/rsa: message too long for RSA key size".to_string())
+    key.encrypt(
+        &mut rand_core::OsRng,
+        rsa::Oaep::new_with_label::<sha2::Sha256, _>(JOIN_LABEL),
+        msg,
+    )
+    .map_err(|_| "crypto/rsa: message too long for RSA key size".to_string())
 }
 
-pub(super) fn seal_join_material(public_key: &str, material: &[(&str, &str)]) -> Result<String, String> {
-    let der = raw_url_decode(public_key).map_err(|e| format!("decode destination public key: {e}"))?;
-    let (n, e) = parse_pkcs1_public_key(&der).map_err(|e| format!("parse destination public key: {e}"))?;
+pub(super) fn seal_join_material(
+    public_key: &str,
+    material: &[(&str, &str)],
+) -> Result<String, String> {
+    let der =
+        raw_url_decode(public_key).map_err(|e| format!("decode destination public key: {e}"))?;
+    let (n, e) =
+        parse_pkcs1_public_key(&der).map_err(|e| format!("parse destination public key: {e}"))?;
     let payload = marshal_strings(material);
     let mut data_key = [0u8; 32];
     getrandom::getrandom(&mut data_key).map_err(|e| format!("create join material key: {e}"))?;
     let mut nonce = [0u8; 12];
     getrandom::getrandom(&mut nonce).map_err(|e| format!("create join material nonce: {e}"))?;
-    let encrypted_key = encrypt_oaep(&n, e, &data_key).map_err(|e| format!("encrypt join material key: {e}"))?;
+    let encrypted_key =
+        encrypt_oaep(&n, e, &data_key).map_err(|e| format!("encrypt join material key: {e}"))?;
     let key = ring::aead::LessSafeKey::new(
         ring::aead::UnboundKey::new(&ring::aead::AES_256_GCM, &data_key).expect("AES-256 key"),
     );
     let mut sealed = payload.into_bytes();
-    key.seal_in_place_append_tag(ring::aead::Nonce::assume_unique_for_key(nonce), ring::aead::Aad::empty(), &mut sealed)
-        .expect("seal");
+    key.seal_in_place_append_tag(
+        ring::aead::Nonce::assume_unique_for_key(nonce),
+        ring::aead::Aad::empty(),
+        &mut sealed,
+    )
+    .expect("seal");
     let envelope = marshal_strings(&[
         ("key", &raw_url_encode(&encrypted_key)),
         ("nonce", &raw_url_encode(&nonce)),
@@ -563,41 +623,67 @@ pub(super) fn seal_join_material(public_key: &str, material: &[(&str, &str)]) ->
 }
 
 fn string_struct(name: &'static str, fields: &[(&'static str, &'static str)]) -> Shape {
-    Shape::Struct { name, fields: fields.iter().map(|(go, json)| field(go, json, Shape::Str)).collect() }
+    Shape::Struct {
+        name,
+        fields: fields
+            .iter()
+            .map(|(go, json)| field(go, json, Shape::Str))
+            .collect(),
+    }
 }
 
 /// `unsealJoinMaterial`: the material's fields, by JSON name.
 pub(super) fn unseal_join_material(sealed: &str) -> Result<J, String> {
-    let envelope_bytes = raw_url_decode(sealed).map_err(|e| format!("decode sealed join material: {e}"))?;
+    let envelope_bytes =
+        raw_url_decode(sealed).map_err(|e| format!("decode sealed join material: {e}"))?;
     let envelope_shape = string_struct(
         "sealedJoinEnvelope",
-        &[("Key", "key"), ("Nonce", "nonce"), ("Ciphertext", "ciphertext")],
+        &[
+            ("Key", "key"),
+            ("Nonce", "nonce"),
+            ("Ciphertext", "ciphertext"),
+        ],
     );
     let envelope = unmarshal(&envelope_bytes, &envelope_shape)
         .map_err(|e| format!("decode sealed join material envelope: {e}"))?;
-    let encrypted_key =
-        raw_url_decode(text(&envelope, "key")).map_err(|e| format!("decode sealed join material key: {e}"))?;
-    let nonce = raw_url_decode(text(&envelope, "nonce")).map_err(|e| format!("decode sealed join material nonce: {e}"))?;
+    let encrypted_key = raw_url_decode(text(&envelope, "key"))
+        .map_err(|e| format!("decode sealed join material key: {e}"))?;
+    let nonce = raw_url_decode(text(&envelope, "nonce"))
+        .map_err(|e| format!("decode sealed join material nonce: {e}"))?;
     let ciphertext = raw_url_decode(text(&envelope, "ciphertext"))
         .map_err(|e| format!("decode sealed join material ciphertext: {e}"))?;
     let data_key = receiver_key()
-        .decrypt_blinded(&mut rand_core::OsRng, rsa::Oaep::new_with_label::<sha2::Sha256, _>(JOIN_LABEL), &encrypted_key)
-        .map_err(|_| "decrypt sealed join material key: crypto/rsa: decryption error".to_string())?;
+        .decrypt_blinded(
+            &mut rand_core::OsRng,
+            rsa::Oaep::new_with_label::<sha2::Sha256, _>(JOIN_LABEL),
+            &encrypted_key,
+        )
+        .map_err(|_| {
+            "decrypt sealed join material key: crypto/rsa: decryption error".to_string()
+        })?;
     let algorithm = match data_key.len() {
         16 => &ring::aead::AES_128_GCM,
         32 => &ring::aead::AES_256_GCM,
         // AES-192 (a 24-byte key) is a recorded gap: ring has no AES-192 GCM.
-        n => return Err(format!("create sealed join material cipher: crypto/aes: invalid key size {n}")),
+        n => {
+            return Err(format!(
+                "create sealed join material cipher: crypto/aes: invalid key size {n}"
+            ))
+        }
     };
     if nonce.len() != 12 {
         super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
     }
-    let key = ring::aead::LessSafeKey::new(ring::aead::UnboundKey::new(algorithm, &data_key).expect("AES key"));
+    let key = ring::aead::LessSafeKey::new(
+        ring::aead::UnboundKey::new(algorithm, &data_key).expect("AES key"),
+    );
     let mut buffer = ciphertext;
     let nonce = ring::aead::Nonce::try_assume_unique_for_key(&nonce).expect("nonce");
     let payload = key
         .open_in_place(nonce, ring::aead::Aad::empty(), &mut buffer)
-        .map_err(|_| "decrypt sealed join material: cipher: message authentication failed".to_string())?
+        .map_err(|_| {
+            "decrypt sealed join material: cipher: message authentication failed".to_string()
+        })?
         .to_vec();
     let material_shape = string_struct(
         "sealedJoinMaterial",
@@ -626,7 +712,9 @@ pub(super) fn redeem_join(args: &Args) -> Outcome {
         None => {
             let sealed = s(args, "sealedJoinMaterial");
             if sealed.is_empty() {
-                return Err("join redemption reference is unknown or belongs to another Host Agent".into());
+                return Err(
+                    "join redemption reference is unknown or belongs to another Host Agent".into(),
+                );
             }
             let material = unseal_join_material(&sealed)?;
             let m = |k: &str| text(&material, k).to_string();
@@ -639,7 +727,9 @@ pub(super) fn redeem_join(args: &Args) -> Outcome {
             }
             let destination = s(args, "destinationHostId");
             if destination.is_empty() || destination != m("destinationHostId") {
-                return Err("sealed join material is bound to another destination Host Agent".into());
+                return Err(
+                    "sealed join material is bound to another destination Host Agent".into(),
+                );
             }
             let expires_at = match crate::hostobs::parse_rfc3339(&m("expiresAt")) {
                 Some(t) if SystemTime::now() <= t => t,
@@ -669,7 +759,9 @@ pub(super) fn redeem_join(args: &Args) -> Outcome {
     invitation.redeemed = true;
     let expires = crate::hostobs::rfc3339_nano(invitation.expires_at);
     invitations.insert(reference.clone(), invitation);
-    Ok(json!({"redemptionRef": reference, "redeemed": true, "expiresAt": expires, "joinMaterialExposed": false}))
+    Ok(
+        json!({"redemptionRef": reference, "redeemed": true, "expiresAt": expires, "joinMaterialExposed": false}),
+    )
 }
 
 pub(super) fn join_node(args: &Args) -> Outcome {
@@ -698,7 +790,8 @@ pub(super) fn join_node(args: &Args) -> Outcome {
     // The installer's exit is one attempt's report: a first-start etcd join
     // can exit fatally and be restarted into a completed join, so the
     // membership observation is the authority.
-    let install = bootstrap::install_k3s_server(&instance, &version, &install_exec, &address, &token);
+    let install =
+        bootstrap::install_k3s_server(&instance, &version, &install_exec, &address, &token);
     let observation = match await_joined_membership(args) {
         Ok(observation) => observation,
         Err(e) => {
@@ -739,7 +832,10 @@ pub(super) fn join_token_for_node(args: &Args) -> Result<(String, String, String
             return Err("join redemption reference is expired or already consumed".into());
         }
         if !invitation.redeemed {
-            return Err("join redemption reference has not been redeemed by the destination Host Agent".into());
+            return Err(
+                "join redemption reference has not been redeemed by the destination Host Agent"
+                    .into(),
+            );
         }
         if !provided.is_empty() && provided != invitation.join_token {
             return Err("join token does not match the redeemed invitation".into());
@@ -748,7 +844,11 @@ pub(super) fn join_token_for_node(args: &Args) -> Result<(String, String, String
             return Err("K3s version does not match the source invitation".into());
         }
         invitation.consumed = true;
-        return Ok((invitation.join_token.clone(), reference, invitation.k3s_version.clone()));
+        return Ok((
+            invitation.join_token.clone(),
+            reference,
+            invitation.k3s_version.clone(),
+        ));
     }
     if provided.is_empty() || super::has_unsafe(&provided, "\0\r\n") {
         return Err("joinToken is required as transient secret material".into());
@@ -761,12 +861,16 @@ pub(super) fn ensure_ha_endpoint(args: &Args) -> Outcome {
     validate_endpoint(&endpoint)?;
     let observation = read_membership(args)?;
     if observation.datastore_mode != "embedded-etcd" {
-        return Err(format!("stable HA endpoint requires embedded-etcd; observed {}", observation.datastore_mode));
+        return Err(format!(
+            "stable HA endpoint requires embedded-etcd; observed {}",
+            observation.datastore_mode
+        ));
     }
     if observation.ready_servers < 1 {
         return Err("stable HA endpoint requires at least one ready server".into());
     }
-    let status = probe_ha_endpoint(&endpoint).map_err(|e| format!("probe stable HA endpoint: {e}"))?;
+    let status =
+        probe_ha_endpoint(&endpoint).map_err(|e| format!("probe stable HA endpoint: {e}"))?;
     Ok(json!({
         "targetUri": observation.target_uri,
         "endpoint": endpoint.trim_end_matches('/'),
@@ -795,13 +899,17 @@ fn probe_ha_endpoint(endpoint: &str) -> Result<u16, String> {
     })?;
     let status = response.status;
     if !((200..400).contains(&status) || status == 401 || status == 403) {
-        return Err(format!("stable HA endpoint returned invalid HTTP status {status}"));
+        return Err(format!(
+            "stable HA endpoint returned invalid HTTP status {status}"
+        ));
     }
     Ok(status)
 }
 
 fn find_node<'a>(nodes: &'a [J], name: &str) -> Option<&'a J> {
-    nodes.iter().find(|node| node.get("name").and_then(J::as_str) == Some(name))
+    nodes
+        .iter()
+        .find(|node| node.get("name").and_then(J::as_str) == Some(name))
 }
 
 fn is_ready(node: &J) -> bool {
@@ -817,7 +925,10 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
     }
     let observation = read_membership(args)?;
     if observation.datastore_mode != "embedded-etcd" {
-        return Err(format!("server removal requires embedded-etcd; observed {}", observation.datastore_mode));
+        return Err(format!(
+            "server removal requires embedded-etcd; observed {}",
+            observation.datastore_mode
+        ));
     }
     if !observation.hostname.is_empty() && observation.hostname == node_name {
         return Err(format!(
@@ -834,13 +945,27 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
     };
     let (remaining_servers, remaining_ready) = quorum_after_removal(&observation, &member)?;
     run_command(
-        &["exec", &s(args, "providerInstanceName"), "--", "k3s", "kubectl", "delete", "node", &node_name, "--wait=true"],
+        &[
+            "exec",
+            &s(args, "providerInstanceName"),
+            "--",
+            "k3s",
+            "kubectl",
+            "delete",
+            "node",
+            &node_name,
+            "--wait=true",
+        ],
         None,
     )
     .map_err(|e| format!("retire K3s server {}: {e}", quote(&node_name)))?;
-    let after = read_membership(args).map_err(|e| format!("read membership after retiring {}: {e}", quote(&node_name)))?;
+    let after = read_membership(args)
+        .map_err(|e| format!("read membership after retiring {}: {e}", quote(&node_name)))?;
     if find_node(&after.nodes, &node_name).is_some() {
-        return Err(format!("K3s server {} is still a member after removal", quote(&node_name)));
+        return Err(format!(
+            "K3s server {} is still a member after removal",
+            quote(&node_name)
+        ));
     }
     if after.ready_servers * 2 <= after.server_count {
         return Err(format!(
@@ -870,7 +995,10 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
 
 /// The servers that stay ready must remain a strict majority of the servers
 /// that stay members.
-pub(super) fn quorum_after_removal(observation: &Observation, member: &J) -> Result<(i64, i64), String> {
+pub(super) fn quorum_after_removal(
+    observation: &Observation,
+    member: &J,
+) -> Result<(i64, i64), String> {
     let remaining_servers = observation.server_count - 1;
     let mut remaining_ready = observation.ready_servers;
     if is_ready(member) {
@@ -892,30 +1020,73 @@ pub(super) fn read_membership(args: &Args) -> Result<Observation, String> {
 }
 
 /// The membership read under the caller's target guard.
-pub(super) fn read_membership_for_target(args: &Args, guard: fn(&Args) -> Result<(), String>) -> Result<Observation, String> {
+pub(super) fn read_membership_for_target(
+    args: &Args,
+    guard: fn(&Args) -> Result<(), String>,
+) -> Result<Observation, String> {
     guard(args)?;
     let instance = s(args, "providerInstanceName");
     let version_output = run_command(&["exec", &instance, "--", "k3s", "--version"], None)?;
-    let nodes_output = run_command(&["exec", &instance, "--", "k3s", "kubectl", "get", "nodes", "-o", "json"], None)
-        .map_err(|e| format!("read native K3s membership: {e}"))?;
+    let nodes_output = run_command(
+        &[
+            "exec", &instance, "--", "k3s", "kubectl", "get", "nodes", "-o", "json",
+        ],
+        None,
+    )
+    .map_err(|e| format!("read native K3s membership: {e}"))?;
     let nodes = parse_native_membership(&nodes_output)?;
     let mut identity = String::new();
-    if let Ok(output) = run_command(&["exec", &instance, "--", "sha256sum", "/var/lib/rancher/k3s/server/token"], None) {
+    if let Ok(output) = run_command(
+        &[
+            "exec",
+            &instance,
+            "--",
+            "sha256sum",
+            "/var/lib/rancher/k3s/server/token",
+        ],
+        None,
+    ) {
         let text = String::from_utf8_lossy(&output).into_owned();
         if let Some(first) = text.split_whitespace().next().filter(|f| f.len() == 64) {
             identity = format!("sha256:{first}");
         }
     }
     let mut datastore = "unknown";
-    if run_command(&["exec", &instance, "--", "test", "-d", "/var/lib/rancher/k3s/server/db/etcd/member"], None).is_ok() {
+    if run_command(
+        &[
+            "exec",
+            &instance,
+            "--",
+            "test",
+            "-d",
+            "/var/lib/rancher/k3s/server/db/etcd/member",
+        ],
+        None,
+    )
+    .is_ok()
+    {
         datastore = "embedded-etcd";
-    } else if run_command(&["exec", &instance, "--", "test", "-f", "/var/lib/rancher/k3s/server/db/state.db"], None).is_ok() {
+    } else if run_command(
+        &[
+            "exec",
+            &instance,
+            "--",
+            "test",
+            "-f",
+            "/var/lib/rancher/k3s/server/db/state.db",
+        ],
+        None,
+    )
+    .is_ok()
+    {
         datastore = "sqlite";
     }
     let hostname = run_command(&["exec", &instance, "--", "hostname"], None).unwrap_or_default();
     let (mut ready_servers, mut server_count) = (0, 0);
     for node in &nodes {
-        let roles: Vec<&str> = node["roles"].as_array().map_or(Vec::new(), |r| r.iter().filter_map(J::as_str).collect());
+        let roles: Vec<&str> = node["roles"]
+            .as_array()
+            .map_or(Vec::new(), |r| r.iter().filter_map(J::as_str).collect());
         if roles.is_empty() || roles.contains(&"control-plane") || roles.contains(&"etcd") {
             server_count += 1;
             if is_ready(node) {
@@ -924,11 +1095,16 @@ pub(super) fn read_membership_for_target(args: &Args, guard: fn(&Args) -> Result
         }
     }
     let requested = s(args, "datastoreMode");
-    let (availability, recovery) = classify_two_node_availability(datastore, server_count, &requested);
+    let (availability, recovery) =
+        classify_two_node_availability(datastore, server_count, &requested);
     Ok(Observation {
         target_uri: s(args, "targetUri"),
         cluster_identity: identity,
-        datastore_mode: if requested.is_empty() { datastore.to_string() } else { requested },
+        datastore_mode: if requested.is_empty() {
+            datastore.to_string()
+        } else {
+            requested
+        },
         version: super::parse_k3s_version(&String::from_utf8_lossy(&version_output)),
         hostname: String::from_utf8_lossy(&hostname).trim().to_string(),
         nodes,
@@ -940,14 +1116,24 @@ pub(super) fn read_membership_for_target(args: &Args, guard: fn(&Args) -> Result
     })
 }
 
-fn classify_two_node_availability(observed: &str, server_count: i64, requested: &str) -> (&'static str, &'static str) {
-    let mode = if requested.trim().is_empty() { observed } else { requested.trim() };
+fn classify_two_node_availability(
+    observed: &str,
+    server_count: i64,
+    requested: &str,
+) -> (&'static str, &'static str) {
+    let mode = if requested.trim().is_empty() {
+        observed
+    } else {
+        requested.trim()
+    };
     match mode {
         "external-datastore" => ("control-plane-write-continuity", "datastore-failover"),
         "embedded-etcd-two-node" | "embedded-etcd" if server_count <= 2 => {
             ("serving-continuity-only", "acknowledge-single-member-reset")
         }
-        "embedded-etcd-two-node" | "embedded-etcd" => ("control-plane-write-continuity", "etcd-quorum"),
+        "embedded-etcd-two-node" | "embedded-etcd" => {
+            ("control-plane-write-continuity", "etcd-quorum")
+        }
         _ => ("unproven", "none"),
     }
 }
@@ -960,7 +1146,10 @@ fn native_membership_shape() -> Shape {
             field(
                 "Metadata",
                 "metadata",
-                anon(vec![field("Name", "name", Shape::Str), field("Labels", "labels", Shape::MapStr)]),
+                anon(vec![
+                    field("Name", "name", Shape::Str),
+                    field("Labels", "labels", Shape::MapStr),
+                ]),
             ),
             field(
                 "Status",
@@ -969,9 +1158,16 @@ fn native_membership_shape() -> Shape {
                     field(
                         "Conditions",
                         "conditions",
-                        slice(anon(vec![field("Type", "type", Shape::Str), field("Status", "status", Shape::Str)])),
+                        slice(anon(vec![
+                            field("Type", "type", Shape::Str),
+                            field("Status", "status", Shape::Str),
+                        ])),
                     ),
-                    field("NodeInfo", "nodeInfo", anon(vec![field("KubeletVersion", "kubeletVersion", Shape::Str)])),
+                    field(
+                        "NodeInfo",
+                        "nodeInfo",
+                        anon(vec![field("KubeletVersion", "kubeletVersion", Shape::Str)]),
+                    ),
                 ]),
             ),
         ])),
@@ -981,7 +1177,8 @@ fn native_membership_shape() -> Shape {
 /// `parseNativeMembership`. Roles come from a Go map's keys, in random
 /// order there; here they are sorted.
 pub(super) fn parse_native_membership(raw: &[u8]) -> Result<Vec<J>, String> {
-    let list = unmarshal(raw, &native_membership_shape()).map_err(|e| format!("invalid native K3s membership response: {e}"))?;
+    let list = unmarshal(raw, &native_membership_shape())
+        .map_err(|e| format!("invalid native K3s membership response: {e}"))?;
     let mut nodes = Vec::new();
     for item in items(&list, "items") {
         let metadata = &item["metadata"];
@@ -991,7 +1188,12 @@ pub(super) fn parse_native_membership(raw: &[u8]) -> Result<Vec<J>, String> {
         }
         let mut roles: Vec<&str> = metadata["labels"]
             .as_object()
-            .map(|labels| labels.keys().filter_map(|k| k.strip_prefix("node-role.kubernetes.io/")).collect())
+            .map(|labels| {
+                labels
+                    .keys()
+                    .filter_map(|k| k.strip_prefix("node-role.kubernetes.io/"))
+                    .collect()
+            })
             .unwrap_or_default();
         roles.sort_unstable();
         let mut ready = false;
@@ -1027,7 +1229,9 @@ pub(super) fn validate_endpoint(value: &str) -> Result<(), String> {
             && u.fragment.is_empty()
     });
     if !valid || super::has_unsafe(value, "\0\r\n") {
-        return Err("endpoint must be an absolute http or https URL without a path or query".into());
+        return Err(
+            "endpoint must be an absolute http or https URL without a path or query".into(),
+        );
     }
     Ok(())
 }
@@ -1072,8 +1276,18 @@ fn await_joined_membership(args: &Args) -> Result<Observation, String> {
 pub(super) fn recover_quorum(args: &Args) -> Outcome {
     let instance = s(args, "providerInstanceName");
     let acknowledged = args.bool("acknowledgeSingleMemberReset", false);
-    let embedded_etcd =
-        run_command(&["exec", &instance, "--", "test", "-d", "/var/lib/rancher/k3s/server/db/etcd/member"], None).is_ok();
+    let embedded_etcd = run_command(
+        &[
+            "exec",
+            &instance,
+            "--",
+            "test",
+            "-d",
+            "/var/lib/rancher/k3s/server/db/etcd/member",
+        ],
+        None,
+    )
+    .is_ok();
     let (answered, probes, last_probe_error) = probe_api_server_during_window(&instance);
     quorum_recovery_admissible(embedded_etcd, answered, acknowledged)?;
     let hostname = run_command(&["exec", &instance, "--", "hostname"], None).unwrap_or_default();
@@ -1081,12 +1295,23 @@ pub(super) fn recover_quorum(args: &Args) -> Outcome {
     run_command(&["exec", &instance, "--", "systemctl", "stop", "k3s"], None)
         .map_err(|e| format!("stop K3s before cluster reset on {}: {e}", quote(&instance)))?;
     // A half-rewritten datastore is left stopped, with the original error.
-    super::run_program("incus", &["exec", &instance, "--", "k3s", "server", "--cluster-reset"], None, Some(QUORUM_RESET_TIMEOUT))
-        .map_err(|(err, message)| {
-            format!("reset K3s etcd membership on {}: incus K3s command failed: {err}: {message}", quote(&instance))
-        })?;
-    run_command(&["exec", &instance, "--", "systemctl", "start", "k3s"], None)
-        .map_err(|e| format!("start K3s after cluster reset on {}: {e}", quote(&instance)))?;
+    super::run_program(
+        "incus",
+        &["exec", &instance, "--", "k3s", "server", "--cluster-reset"],
+        None,
+        Some(QUORUM_RESET_TIMEOUT),
+    )
+    .map_err(|(err, message)| {
+        format!(
+            "reset K3s etcd membership on {}: incus K3s command failed: {err}: {message}",
+            quote(&instance)
+        )
+    })?;
+    run_command(
+        &["exec", &instance, "--", "systemctl", "start", "k3s"],
+        None,
+    )
+    .map_err(|e| format!("start K3s after cluster reset on {}: {e}", quote(&instance)))?;
     let observation = await_recovered_membership(args)?;
     if observation.datastore_mode != "embedded-etcd" {
         return Err(format!(
@@ -1116,7 +1341,12 @@ fn probe_api_server_during_window(instance: &str) -> (bool, i64, String) {
     let mut probes = 0;
     loop {
         probes += 1;
-        let last = match run_command(&["exec", instance, "--", "k3s", "kubectl", "get", "nodes", "-o", "json"], None) {
+        let last = match run_command(
+            &[
+                "exec", instance, "--", "k3s", "kubectl", "get", "nodes", "-o", "json",
+            ],
+            None,
+        ) {
             Ok(_) => return (true, probes, String::new()),
             Err(e) => truncate_probe_error(&e),
         };
@@ -1136,7 +1366,11 @@ pub(super) fn truncate_probe_error(message: &str) -> String {
     message.to_string()
 }
 
-pub(super) fn quorum_recovery_admissible(embedded_etcd: bool, answered: bool, acknowledged: bool) -> Result<(), String> {
+pub(super) fn quorum_recovery_admissible(
+    embedded_etcd: bool,
+    answered: bool,
+    acknowledged: bool,
+) -> Result<(), String> {
     if !acknowledged {
         return Err("recover-quorum requires acknowledgeSingleMemberReset=true: the reset collapses etcd membership to the surviving server".into());
     }

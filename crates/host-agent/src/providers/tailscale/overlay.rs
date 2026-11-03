@@ -112,7 +112,9 @@ fn use_fake_backend() -> bool {
 fn normalize(operation: &str) -> &str {
     match operation {
         op::MEMBERSHIP_ENROLL => op::OVERLAY_ENROLL,
-        op::MEMBERSHIP_STATUS | op::PRIVATE_MESH_PROBE | op::PUBLIC_INGRESS_PROBE => op::OVERLAY_PROBE,
+        op::MEMBERSHIP_STATUS | op::PRIVATE_MESH_PROBE | op::PUBLIC_INGRESS_PROBE => {
+            op::OVERLAY_PROBE
+        }
         op::MEMBERSHIP_LEAVE => op::OVERLAY_REMOVE_MEMBERSHIP,
         op::PRIVATE_MESH_ENSURE => op::OVERLAY_ENSURE_PRIVATE_MESH,
         op::PRIVATE_MESH_ENSURE_SERVICE => op::OVERLAY_ENSURE_PRIVATE_SERVICE,
@@ -124,10 +126,17 @@ fn normalize(operation: &str) -> &str {
 
 pub(super) fn dispatch(ctx: &Ctx, original: &str, args: Args) -> Outcome {
     // A nil argument map is an empty one here.
-    let mut args = if args.nil { Args::from_map(Map::new()) } else { args };
+    let mut args = if args.nil {
+        Args::from_map(Map::new())
+    } else {
+        args
+    };
     if matches!(
         original,
-        op::MESH_RUNTIME_VALIDATE | op::MESH_RUNTIME_ENSURE_AGENT | op::MESH_RUNTIME_ENSURE_CONTROL_PLANE | op::MESH_RUNTIME_STATUS
+        op::MESH_RUNTIME_VALIDATE
+            | op::MESH_RUNTIME_ENSURE_AGENT
+            | op::MESH_RUNTIME_ENSURE_CONTROL_PLANE
+            | op::MESH_RUNTIME_STATUS
     ) {
         return if use_fake_backend() {
             fake_mesh_runtime(original, &args)
@@ -137,7 +146,9 @@ pub(super) fn dispatch(ctx: &Ctx, original: &str, args: Args) -> Outcome {
     }
     let operation = normalize(original);
     match original {
-        op::MEMBERSHIP_STATUS if args.get("pathClass").is_none() => args.set("pathClass", J::from(PATH_PRIVATE_MESH)),
+        op::MEMBERSHIP_STATUS if args.get("pathClass").is_none() => {
+            args.set("pathClass", J::from(PATH_PRIVATE_MESH))
+        }
         op::PRIVATE_MESH_PROBE => args.set("pathClass", J::from(PATH_PRIVATE_MESH)),
         op::PUBLIC_INGRESS_PROBE => args.set("pathClass", J::from(PATH_PUBLIC_INGRESS)),
         _ => {}
@@ -166,11 +177,16 @@ fn fake_overlay(operation: &str, args: &Args) -> Outcome {
         op::OVERLAY_REPORT_TWO_NODE_READINESS => report_two_node_readiness(args),
         op::OVERLAY_ENSURE_PRIVATE_MESH => ensure_private_mesh(args),
         op::OVERLAY_ENSURE_PRIVATE_SERVICE => ensure_private_service(args),
-        op::OVERLAY_ENSURE_PUBLIC_INGRESS | op::OVERLAY_ENSURE_HA_ENDPOINT => ensure_public_ingress(args),
+        op::OVERLAY_ENSURE_PUBLIC_INGRESS | op::OVERLAY_ENSURE_HA_ENDPOINT => {
+            ensure_public_ingress(args)
+        }
         op::OVERLAY_PROMOTE_PUBLIC_INGRESS => promote_public_ingress(args),
         op::OVERLAY_REMOVE_HA_ENDPOINT => remove_ha_endpoint(args),
         op::OVERLAY_REMOVE_MEMBERSHIP => remove_membership(args),
-        _ => Err(format!("unknown network overlay operation {}", quote(operation))),
+        _ => Err(format!(
+            "unknown network overlay operation {}",
+            quote(operation)
+        )),
     }
 }
 
@@ -179,10 +195,14 @@ fn fake_overlay(operation: &str, args: &Args) -> Outcome {
 pub(super) fn require_host_agent_id(args: &Args) -> Result<String, String> {
     let host_id = args.string("hostAgentId", "").trim().to_string();
     if host_id.is_empty() {
-        return Err("hostAgentId is required and must be the exact opaque Host Agent identity".into());
+        return Err(
+            "hostAgentId is required and must be the exact opaque Host Agent identity".into(),
+        );
     }
     if host_id.contains(['.', '/', ':']) {
-        return Err("hostAgentId must be an opaque Host Agent identity, not a network address".into());
+        return Err(
+            "hostAgentId must be an opaque Host Agent identity, not a network address".into(),
+        );
     }
     Ok(host_id)
 }
@@ -201,8 +221,9 @@ pub(super) fn parse_target_uri(args: &Args) -> Result<Uri, String> {
 
 /// The peer's canonical VM or container URI.
 pub(super) fn parse_peer_uri(args: &Args) -> Result<Uri, String> {
-    let peer = Uri::parse(args.string("peerTargetUri", "").trim())
-        .map_err(|e| format!("peerTargetUri must be a canonical VM or container resource URI: {e}"))?;
+    let peer = Uri::parse(args.string("peerTargetUri", "").trim()).map_err(|e| {
+        format!("peerTargetUri must be a canonical VM or container resource URI: {e}")
+    })?;
     if peer.resource_type != "vm" && peer.resource_type != "container" {
         return Err("peerTargetUri requires resource type \"vm\" or \"container\"".into());
     }
@@ -230,7 +251,9 @@ pub(super) fn require_credential_kind(args: &Args, expected: &str) -> Result<Str
         return Err(format!("unsupported credentialKind {}", quote(&kind)));
     }
     if !expected.is_empty() && kind != expected {
-        return Err(format!("credential kind mismatch: operation requires {expected}"));
+        return Err(format!(
+            "credential kind mismatch: operation requires {expected}"
+        ));
     }
     Ok(kind)
 }
@@ -261,11 +284,17 @@ fn has_any_credential(args: &Args) -> bool {
         || !args.string("authKey", "").is_empty()
 }
 
-pub(super) fn reject_control_plane_public_target(local_target: &str, target_kind: &str) -> Result<(), String> {
+pub(super) fn reject_control_plane_public_target(
+    local_target: &str,
+    target_kind: &str,
+) -> Result<(), String> {
     let combined = format!("{local_target} {target_kind}").to_lowercase();
     for forbidden in ["etcd", "k8s-api", "kubernetes-api", "cni", "host-admin"] {
         if combined.contains(forbidden) {
-            return Err(format!("public ingress rejects control-plane target {}", quote(forbidden)));
+            return Err(format!(
+                "public ingress rejects control-plane target {}",
+                quote(forbidden)
+            ));
         }
     }
     if combined.contains("remote://") {
@@ -287,7 +316,9 @@ pub(super) fn require_operator_stable_evidence(args: &Args) -> Result<(), String
         return Err("operatorMode/stable=true requires operatorEvidence or ingressClassName=tailscale with an operator-managed endpoint".into());
     }
     if endpoint.is_empty() {
-        return Err("operatorMode requires endpoint/hostname for the operator-managed public URL".into());
+        return Err(
+            "operatorMode requires endpoint/hostname for the operator-managed public URL".into(),
+        );
     }
     let lower = endpoint.to_lowercase();
     if lower.contains("opute-ha-a.") || lower.contains("opute-ha-b.") {
@@ -321,7 +352,11 @@ pub(super) fn mesh_key(source: &str, peer: &str) -> String {
 /// The fake backend's deterministic address for a target.
 fn allocate_mesh_ip(target_uri: &str) -> String {
     let sum = sha256(target_uri);
-    format!("100.64.{}.{}", sum[0] as u32 % 250 + 1, sum[1] as u32 % 250 + 1)
+    format!(
+        "100.64.{}.{}",
+        sum[0] as u32 % 250 + 1,
+        sum[1] as u32 % 250 + 1
+    )
 }
 
 /// `overlayBase`: the membership's identity, then the operation's fields.
@@ -356,7 +391,11 @@ pub(super) fn mesh_runtime_base(target_uri: &str, rec: &Runtime, ready: bool) ->
 }
 
 pub(super) fn require_mesh_agent_ready(target_uri: &str) -> Result<(), String> {
-    if !store().runtimes.get(target_uri).is_some_and(|r| r.agent_ready) {
+    if !store()
+        .runtimes
+        .get(target_uri)
+        .is_some_and(|r| r.agent_ready)
+    {
         return Err(format!(
             "mesh agent not ready on {target_uri}; call opute.capability.mesh-runtime.ensure-agent first"
         ));
@@ -367,7 +406,12 @@ pub(super) fn require_mesh_agent_ready(target_uri: &str) -> Result<(), String> {
 // --- store operations ------------------------------------------------------------------
 
 impl Store {
-    pub(super) fn upsert_membership(&mut self, target_uri: &str, name: &str, attached: bool) -> Result<Membership, String> {
+    pub(super) fn upsert_membership(
+        &mut self,
+        target_uri: &str,
+        name: &str,
+        attached: bool,
+    ) -> Result<Membership, String> {
         if let Some(existing) = self.by_target.get(target_uri).cloned() {
             let record = self.memberships.entry(existing).or_default();
             if record.generation != GENERATION {
@@ -406,9 +450,16 @@ impl Store {
         Ok(record)
     }
 
-    pub(super) fn require_owned_membership(&self, args: &Args, target_uri: &str) -> Result<Membership, String> {
+    pub(super) fn require_owned_membership(
+        &self,
+        args: &Args,
+        target_uri: &str,
+    ) -> Result<Membership, String> {
         let hint = args.string("membershipRef", "");
-        let reference = self.by_target.get(target_uri).ok_or_else(|| "target is not enrolled".to_string())?;
+        let reference = self
+            .by_target
+            .get(target_uri)
+            .ok_or_else(|| "target is not enrolled".to_string())?;
         if !hint.is_empty() && &hint != reference {
             return Err("membershipRef does not match owned enrollment".into());
         }
@@ -424,9 +475,17 @@ impl Store {
 
     pub(super) fn private_mesh_ready(&self, source_uri: &str, peer_mesh_ip: &str) -> bool {
         for edge in self.mesh_edges.values() {
-            if edge.generation == GENERATION && edge.source_uri == source_uri && edge.peer_mesh_ip == peer_mesh_ip && edge.ready {
+            if edge.generation == GENERATION
+                && edge.source_uri == source_uri
+                && edge.peer_mesh_ip == peer_mesh_ip
+                && edge.ready
+            {
                 // The reverse edge is required too.
-                let reverse = self.mesh_edges.get(&mesh_key(&edge.peer_uri, &edge.source_uri)).cloned().unwrap_or_default();
+                let reverse = self
+                    .mesh_edges
+                    .get(&mesh_key(&edge.peer_uri, &edge.source_uri))
+                    .cloned()
+                    .unwrap_or_default();
                 return reverse.ready && reverse.generation == GENERATION;
             }
         }
@@ -434,9 +493,9 @@ impl Store {
     }
 
     pub(super) fn public_ready(&self, target_uri: &str) -> bool {
-        self.ingresses
-            .values()
-            .any(|i| i.target_uri == target_uri && i.generation == GENERATION && !i.endpoint.is_empty())
+        self.ingresses.values().any(|i| {
+            i.target_uri == target_uri && i.generation == GENERATION && !i.endpoint.is_empty()
+        })
     }
 
     /// The first owned ingress of the target, in map order as Go's range.
@@ -461,17 +520,25 @@ impl Store {
             ready: true,
             generation: GENERATION.into(),
         };
-        self.mesh_edges.insert(mesh_key(source, peer), edge(source, peer, peer_ip));
-        self.mesh_edges.insert(mesh_key(peer, source), edge(peer, source, source_ip));
+        self.mesh_edges
+            .insert(mesh_key(source, peer), edge(source, peer, peer_ip));
+        self.mesh_edges
+            .insert(mesh_key(peer, source), edge(peer, source, source_ip));
     }
 
     pub(super) fn delete_owned_for_target(&mut self, target_uri: &str, reference: &str) {
         self.memberships.remove(reference);
-        if self.by_target.get(target_uri).is_some_and(|r| r == reference) {
+        if self
+            .by_target
+            .get(target_uri)
+            .is_some_and(|r| r == reference)
+        {
             self.by_target.remove(target_uri);
         }
-        self.mesh_edges
-            .retain(|_, e| !(e.generation == GENERATION && (e.source_uri == target_uri || e.peer_uri == target_uri)));
+        self.mesh_edges.retain(|_, e| {
+            !(e.generation == GENERATION
+                && (e.source_uri == target_uri || e.peer_uri == target_uri))
+        });
         self.services
             .retain(|_, s| !(s.generation == GENERATION && s.target_uri == target_uri));
         self.ingresses
@@ -553,11 +620,10 @@ fn attach_target(args: &Args) -> Outcome {
         return Err("membershipRef is required".into());
     }
     let mut store = store();
-    let mut record = store
-        .memberships
-        .get(&reference)
-        .cloned()
-        .ok_or_else(|| "network overlay membership reference is unknown or expired".to_string())?;
+    let mut record =
+        store.memberships.get(&reference).cloned().ok_or_else(|| {
+            "network overlay membership reference is unknown or expired".to_string()
+        })?;
     if record.generation != GENERATION {
         return Err("stale provider generation for membership".into());
     }
@@ -571,14 +637,17 @@ fn attach_target(args: &Args) -> Outcome {
     }
     store.memberships.insert(reference.clone(), record.clone());
     store.by_target.insert(record.target_uri.clone(), reference);
-    Ok(overlay_base(&record, json!({
-        "ready": true,
-        "membershipRef": record.reference,
-        "nodeId": record.node_id,
-        "meshIp": record.mesh_ip,
-        "meshInterface": record.mesh_interface,
-        "overlayUri": record.overlay_uri,
-    })))
+    Ok(overlay_base(
+        &record,
+        json!({
+            "ready": true,
+            "membershipRef": record.reference,
+            "nodeId": record.node_id,
+            "meshIp": record.mesh_ip,
+            "meshInterface": record.mesh_interface,
+            "overlayUri": record.overlay_uri,
+        }),
+    ))
 }
 
 fn enroll(args: &Args) -> Outcome {
@@ -592,7 +661,11 @@ fn enroll(args: &Args) -> Outcome {
     let hint = args.string("membershipRef", "");
     let mut store = store();
     if let Some(existing) = store.by_target.get(&target).cloned() {
-        let mut record = store.memberships.get(&existing).cloned().unwrap_or_default();
+        let mut record = store
+            .memberships
+            .get(&existing)
+            .cloned()
+            .unwrap_or_default();
         if record.generation != GENERATION {
             return Err("stale provider generation for membership".into());
         }
@@ -644,7 +717,11 @@ fn probe_path_aware(args: &Args) -> Outcome {
         .by_target
         .get(&target)
         .ok_or_else(|| "target is not enrolled in the overlay".to_string())?;
-    let record = store.memberships.get(reference).cloned().unwrap_or_default();
+    let record = store
+        .memberships
+        .get(reference)
+        .cloned()
+        .unwrap_or_default();
     if record.generation != GENERATION {
         return Err("stale provider generation for membership".into());
     }
@@ -701,10 +778,19 @@ pub(super) fn report_two_node_readiness(args: &Args) -> Outcome {
     }
     let store = store();
     let record = store.require_owned_membership(args, &uri.to_string())?;
-    let peer_ref = store.by_target.get(&peer_uri).ok_or_else(|| "peer target is not enrolled".to_string())?;
+    let peer_ref = store
+        .by_target
+        .get(&peer_uri)
+        .ok_or_else(|| "peer target is not enrolled".to_string())?;
     let peer = store.memberships.get(peer_ref).cloned().unwrap_or_default();
-    let edge = |a: &str, b: &str| store.mesh_edges.get(&mesh_key(a, b)).is_some_and(|e| e.ready);
-    let mesh_ready = edge(&record.target_uri, &peer.target_uri) && edge(&peer.target_uri, &record.target_uri);
+    let edge = |a: &str, b: &str| {
+        store
+            .mesh_edges
+            .get(&mesh_key(a, b))
+            .is_some_and(|e| e.ready)
+    };
+    let mesh_ready =
+        edge(&record.target_uri, &peer.target_uri) && edge(&peer.target_uri, &record.target_uri);
     let mut funnel_stable = None;
     let mut public_ready = false;
     for ingress in store.ingresses.values() {
@@ -716,8 +802,12 @@ pub(super) fn report_two_node_readiness(args: &Args) -> Outcome {
             funnel_stable = Some(ingress.stable);
         }
     }
-    let (mut availability, mut recovery, mut api_write_ready, mut durable_ready) =
-        ("serving-continuity-only", "acknowledge-single-member-reset", false, false);
+    let (mut availability, mut recovery, mut api_write_ready, mut durable_ready) = (
+        "serving-continuity-only",
+        "acknowledge-single-member-reset",
+        false,
+        false,
+    );
     if datastore_mode == "external-datastore" {
         if !args.bool("datastoreEvidence", false) {
             return Err("external-datastore mode requires datastoreEvidence=true with independent datastore proof".into());
@@ -728,17 +818,20 @@ pub(super) fn report_two_node_readiness(args: &Args) -> Outcome {
         durable_ready = true;
     }
     let ready = mesh_ready && (datastore_mode != "external-datastore" || durable_ready);
-    let mut out = overlay_base(&record, json!({
-        "ready": ready,
-        "datastoreMode": datastore_mode,
-        "availabilityClass": availability,
-        "recoveryPolicy": recovery,
-        "membership": {"ready": true, "sourceUri": record.target_uri, "destUri": peer.target_uri, "generation": GENERATION},
-        "privateMesh": {"ready": mesh_ready, "pathClass": PATH_PRIVATE_MESH, "sourceUri": record.target_uri, "destUri": peer.target_uri, "generation": GENERATION},
-        "publicIngress": {"ready": public_ready, "pathClass": PATH_PUBLIC_INGRESS, "generation": GENERATION},
-        "durableStore": {"ready": durable_ready, "generation": GENERATION},
-        "apiWriteAvailable": {"ready": api_write_ready, "generation": GENERATION},
-    }));
+    let mut out = overlay_base(
+        &record,
+        json!({
+            "ready": ready,
+            "datastoreMode": datastore_mode,
+            "availabilityClass": availability,
+            "recoveryPolicy": recovery,
+            "membership": {"ready": true, "sourceUri": record.target_uri, "destUri": peer.target_uri, "generation": GENERATION},
+            "privateMesh": {"ready": mesh_ready, "pathClass": PATH_PRIVATE_MESH, "sourceUri": record.target_uri, "destUri": peer.target_uri, "generation": GENERATION},
+            "publicIngress": {"ready": public_ready, "pathClass": PATH_PUBLIC_INGRESS, "generation": GENERATION},
+            "durableStore": {"ready": durable_ready, "generation": GENERATION},
+            "apiWriteAvailable": {"ready": api_write_ready, "generation": GENERATION},
+        }),
+    );
     if let Some(stable) = funnel_stable {
         out["funnelStable"] = J::Bool(stable);
     }
@@ -749,16 +842,19 @@ pub(super) fn report_two_node_readiness(args: &Args) -> Outcome {
 }
 
 pub(super) fn private_mesh_result(source: &Membership, peer_ip: &str, args: &Args) -> J {
-    overlay_base(source, json!({
-        "ready": true,
-        "pathClass": PATH_PRIVATE_MESH,
-        "peerMeshIp": peer_ip,
-        "overlayUri": source.overlay_uri,
-        "datastoreMode": args.string("datastoreMode", "external-datastore"),
-        "availabilityClass": args.string("availabilityClass", "serving-continuity"),
-        "recoveryPolicy": args.string("recoveryPolicy", "explicit-acknowledgement"),
-        "bothDirectionsReady": true,
-    }))
+    overlay_base(
+        source,
+        json!({
+            "ready": true,
+            "pathClass": PATH_PRIVATE_MESH,
+            "peerMeshIp": peer_ip,
+            "overlayUri": source.overlay_uri,
+            "datastoreMode": args.string("datastoreMode", "external-datastore"),
+            "availabilityClass": args.string("availabilityClass", "serving-continuity"),
+            "recoveryPolicy": args.string("recoveryPolicy", "explicit-acknowledgement"),
+            "bothDirectionsReady": true,
+        }),
+    )
 }
 
 fn ensure_private_mesh(args: &Args) -> Outcome {
@@ -771,12 +867,22 @@ fn ensure_private_mesh(args: &Args) -> Outcome {
     }
     let (target, peer_target) = (uri.to_string(), peer_uri.to_string());
     let mut store = store();
-    let source_ref = store.by_target.get(&target).ok_or_else(|| "source target is not enrolled".to_string())?;
-    let source = store.memberships.get(source_ref).cloned().unwrap_or_default();
+    let source_ref = store
+        .by_target
+        .get(&target)
+        .ok_or_else(|| "source target is not enrolled".to_string())?;
+    let source = store
+        .memberships
+        .get(source_ref)
+        .cloned()
+        .unwrap_or_default();
     if source.generation != GENERATION || !source.attached {
         return Err("source membership is not attached for this generation".into());
     }
-    let peer_ref = store.by_target.get(&peer_target).ok_or_else(|| "peer target is not enrolled".to_string())?;
+    let peer_ref = store
+        .by_target
+        .get(&peer_target)
+        .ok_or_else(|| "peer target is not enrolled".to_string())?;
     let peer = store.memberships.get(peer_ref).cloned().unwrap_or_default();
     if peer.generation != GENERATION || !peer.attached {
         return Err("peer membership is not attached for this generation".into());
@@ -792,7 +898,10 @@ fn ensure_private_mesh(args: &Args) -> Outcome {
 }
 
 pub(super) fn private_service_result(record: &Membership, local_target: &str) -> J {
-    overlay_base(record, json!({"ready": true, "pathClass": PATH_PRIVATE_MESH, "endpoint": local_target, "stable": true}))
+    overlay_base(
+        record,
+        json!({"ready": true, "pathClass": PATH_PRIVATE_MESH, "endpoint": local_target, "stable": true}),
+    )
 }
 
 fn ensure_private_service(args: &Args) -> Outcome {
@@ -806,12 +915,21 @@ fn ensure_private_service(args: &Args) -> Outcome {
     let record = store.require_owned_membership(args, &uri.to_string())?;
     store.services.insert(
         record.overlay_uri.clone(),
-        PrivateService { target_uri: record.target_uri.clone(), generation: GENERATION.into() },
+        PrivateService {
+            target_uri: record.target_uri.clone(),
+            generation: GENERATION.into(),
+        },
     );
     Ok(private_service_result(&record, &local_target))
 }
 
-pub(super) fn insert_ingress(store: &mut Store, record: &Membership, endpoint: &str, stable: bool, hostname: &str) -> Result<String, String> {
+pub(super) fn insert_ingress(
+    store: &mut Store,
+    record: &Membership,
+    endpoint: &str,
+    stable: bool,
+    hostname: &str,
+) -> Result<String, String> {
     let endpoint_ref = new_opaque_ref("ingress")?;
     store.ingresses.insert(
         endpoint_ref.clone(),
@@ -842,13 +960,16 @@ fn ensure_public_ingress(args: &Args) -> Outcome {
     let hostname = first_non_empty(&[&args.string("hostname", ""), "node.ingress.example"]);
     let endpoint = format!("https://{hostname}");
     let endpoint_ref = insert_ingress(&mut store, &record, &endpoint, operator_mode, &hostname)?;
-    Ok(overlay_base(&record, json!({
-        "ready": true,
-        "pathClass": PATH_PUBLIC_INGRESS,
-        "endpoint": endpoint,
-        "endpointRef": endpoint_ref,
-        "stable": operator_mode,
-    })))
+    Ok(overlay_base(
+        &record,
+        json!({
+            "ready": true,
+            "pathClass": PATH_PUBLIC_INGRESS,
+            "endpoint": endpoint,
+            "endpointRef": endpoint_ref,
+            "stable": operator_mode,
+        }),
+    ))
 }
 
 /// `promotePublicIngress`, shared by both backends (the live one checks the
@@ -876,17 +997,23 @@ pub(super) fn promote(args: &Args, check_evidence: bool) -> Outcome {
     }
     ingress.target_uri = record.target_uri.clone();
     ingress.overlay_uri = record.overlay_uri.clone();
-    ingress.endpoint = format!("https://{}/promoted", first_non_empty(&[&ingress.hostname, "node.ingress.example"]));
+    ingress.endpoint = format!(
+        "https://{}/promoted",
+        first_non_empty(&[&ingress.hostname, "node.ingress.example"])
+    );
     ingress.stable = operator_mode;
     let endpoint = ingress.endpoint.clone();
     store.ingresses.insert(endpoint_ref.clone(), ingress);
-    Ok(overlay_base(&record, json!({
-        "ready": true,
-        "pathClass": PATH_PUBLIC_INGRESS,
-        "endpoint": endpoint,
-        "endpointRef": endpoint_ref,
-        "stable": operator_mode,
-    })))
+    Ok(overlay_base(
+        &record,
+        json!({
+            "ready": true,
+            "pathClass": PATH_PUBLIC_INGRESS,
+            "endpoint": endpoint,
+            "endpointRef": endpoint_ref,
+            "stable": operator_mode,
+        }),
+    ))
 }
 
 fn promote_public_ingress(args: &Args) -> Outcome {
@@ -921,7 +1048,10 @@ fn remove_ha_endpoint(args: &Args) -> Outcome {
         return Err("refusing to delete endpoint owned by a foreign generation".into());
     }
     store.ingresses.remove(&endpoint_ref);
-    Ok(ha_endpoint_removed(&ingress.target_uri, Some(&endpoint_ref)))
+    Ok(ha_endpoint_removed(
+        &ingress.target_uri,
+        Some(&endpoint_ref),
+    ))
 }
 
 pub(super) fn membership_removed(reference: &str, target_uri: &str) -> J {
@@ -993,27 +1123,37 @@ fn fake_mesh_runtime(operation: &str, args: &Args) -> Outcome {
             Ok(mesh_runtime_base(&target, rec, true))
         }
         op::MESH_RUNTIME_ENSURE_CONTROL_PLANE => {
-            let ingress_class = first_non_empty(&[&args.string("ingressClassName", ""), "tailscale"]);
+            let ingress_class =
+                first_non_empty(&[&args.string("ingressClassName", ""), "tailscale"]);
             let evidence = args.string("operatorEvidence", "");
             let operator_mode = args.bool("operatorMode", true);
             let mut store = store();
             if !store.runtimes.get(&target).is_some_and(|r| r.agent_ready) {
-                return Err("mesh-runtime.ensure-control-plane requires mesh-runtime.ensure-agent first".into());
+                return Err(
+                    "mesh-runtime.ensure-control-plane requires mesh-runtime.ensure-agent first"
+                        .into(),
+                );
             }
             if operator_mode && evidence.is_empty() && ingress_class != "tailscale" {
-                return Err("operatorMode requires operatorEvidence or ingressClassName=tailscale".into());
+                return Err(
+                    "operatorMode requires operatorEvidence or ingressClassName=tailscale".into(),
+                );
             }
             let rec = store.runtimes.entry(target.clone()).or_default();
             rec.target_uri = target.clone();
             rec.control_plane_ready = true;
             rec.ingress_class_name = ingress_class;
-            rec.control_plane_ref = first_non_empty(&[&args.string("controlPlaneRef", ""), "fake-tailscale-operator"]);
+            rec.control_plane_ref = first_non_empty(&[
+                &args.string("controlPlaneRef", ""),
+                "fake-tailscale-operator",
+            ]);
             rec.generation = GENERATION.into();
             Ok(mesh_runtime_base(&target, rec, true))
         }
         _ => {
             let rec = store().runtimes.get(&target).cloned().unwrap_or_default();
-            let ready = rec.agent_ready && (rec.control_plane_ready || !args.bool("requireControlPlane", false));
+            let ready = rec.agent_ready
+                && (rec.control_plane_ready || !args.bool("requireControlPlane", false));
             Ok(mesh_runtime_base(&target, &rec, ready))
         }
     }
