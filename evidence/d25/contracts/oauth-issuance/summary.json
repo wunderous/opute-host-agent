@@ -1,0 +1,232 @@
+{
+ "decision": "D8",
+ "items": {
+  "abuse.backoff-only-failures": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "a6b1d658464010c6711865a5ca8ac47976ebaed588f925aa228b7970bb09c23a"
+   },
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "Failures from a shared address do not lock out a valid client",
+   "status": "pass"
+  },
+  "abuse.pending-flood": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "43682f1f467f217de546a04e183163caf40bfeaaa960f0b1d830f2742206e7dc"
+   },
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "Pending request flood",
+   "status": "pass"
+  },
+  "approval.cli-approve": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "1fa7c803019448bc196432a5c8da66640ac079642bc7d802c6cd6bcc345b1301"
+   },
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Operator approves from the CLI",
+   "status": "pass"
+  },
+  "approval.deny": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "7c96c6753c3c9edcd4cbd0d12d0e67eb1ff3c5c699b135e5ee710f3777f5d3a1"
+   },
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Operator denies",
+   "status": "pass"
+  },
+  "approval.expiry": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "cea219b9f304d8eeaff837dde4309de824ffbc114bd837c898f2394453bbb7f7"
+   },
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Request expires",
+   "status": "pass"
+  },
+  "approval.not-over-http": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "620b2b5bcd94d12086c7beb03beb2489b3d198818e5c18c133e56bc5fe832702"
+   },
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Approval is not reachable over HTTP",
+   "status": "pass"
+  },
+  "approval.once-and-disabled": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "5fba55543232a3cd61e49649a21762e8e15812d7779b9b501efc6a9c16c775b9"
+   },
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Remembered consent",
+   "status": "pass"
+  },
+  "approval.remembered-consent": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "25b39173a45be7f9fc8f980983715dbfddcaa6c1df8b5e6fb4f8ef6ff9d68e72"
+   },
+   "requirement": "Operator approval of interactive authorization requests",
+   "specScenario": "Remembered consent",
+   "status": "pass"
+  },
+  "audience.arbitrary-host": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "4cf50cb281d4908c435318d0a399239407b5172fd0c5df83cfcc5c436935d39c"
+   },
+   "requirement": "Issued tokens name only resources this agent serves",
+   "specScenario": "Minting for an arbitrary host",
+   "status": "pass"
+  },
+  "audit.issuance-line": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "b23783cb5eecce04a08fef34972150f1b9de90bdfe9d45e21ff3cdf95b197151"
+   },
+   "requirement": "Issuance is audited without secrets",
+   "specScenario": "Audit line content",
+   "status": "pass"
+  },
+  "authorize.unapproved": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "d5e0e28d7146db891a9c1b336aa392049c26a12aae309203811b787ff1b66ea2"
+   },
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "Unapproved authorization request",
+   "status": "pass"
+  },
+  "cc.confidential-without-hash": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "dabd0ce4f7930d14bd6288a62de573db7866fc9ad0df1120455e37ac6204e702"
+   },
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "Confidential client with no registered secret",
+   "status": "pass"
+  },
+  "cc.no-secret": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "60d2fb5c2624c6e09b1599f3863e5668bd7bbdb5e493dc29e315d63025903816"
+   },
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "client_credentials without a secret",
+   "status": "pass"
+  },
+  "cc.public-client": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "980d12c2d4b9af1d31a51e1871e1b33209c824cbbad3e16fa6f6d8f45fb457a2"
+   },
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "Public client cannot use client_credentials",
+   "status": "pass"
+  },
+  "cc.unknown-client": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "a339e214e05b979b604879b71f7dce9fada1062816b33e79d476d2e01b002fd2"
+   },
+   "requirement": "Every issued token is backed by a credential or an operator approval",
+   "specScenario": "client_credentials without a secret",
+   "status": "pass"
+  },
+  "cimd.refuses-local-metadata": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "04605ace61ec8550319f0102e3d0479ce4bd97c5b5d8bff75929fe0dbd983871"
+   },
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "CIMD DNS rebinding",
+   "status": "pass"
+  },
+  "credentials.first-start": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "7f70726836e05d7a195f5f9d76b72cd3a56811aceca5f4ded478f96708a81327"
+   },
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "specScenario": "First start provisions credentials",
+   "status": "pass"
+  },
+  "credentials.operator-secret": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "b27bd2319df9f411beef2f7d4a27bbbd434ef9440ad9bc13cc9488722457eb05"
+   },
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "specScenario": "Operator-configured Platform secret wins",
+   "status": "pass"
+  },
+  "credentials.rotation": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "8fdaf02ccee858c66758e2d364fbdf4066f599144f44cb05cedd79dafba034a8"
+   },
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "specScenario": "Rotation revokes outstanding tokens",
+   "status": "pass"
+  },
+  "migration.idempotent": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "f70612f5c040b1af6c1f9d69cae1f3ae08353ca8ffbdc74f97889c504c6c28dd"
+   },
+   "requirement": "Migration revokes pre-existing tokens",
+   "specScenario": "Idempotent migration",
+   "status": "pass"
+  },
+  "migration.revokes-live-tokens": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "3c3692cb4c31fb5c2533138060e611d4808df0817f09434729541c552002180d"
+   },
+   "requirement": "Migration revokes pre-existing tokens",
+   "specScenario": "Upgrade with live tokens",
+   "status": "pass"
+  },
+  "provider.colocated-bearer": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "dc0ffadd946879b1bdec615029bb7b413d13bcfa7e82c30ae833206730772a8a"
+   },
+   "requirement": "Provider access paths",
+   "specScenario": "Co-located callback",
+   "status": "pass"
+  },
+  "provider.public-without-credential": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "bba3eeb2f5986b311a955f6761138cc9d292ec2885c444af2563ee65c9d4465e"
+   },
+   "requirement": "Provider access paths",
+   "specScenario": "Provider without the credential",
+   "status": "pass"
+  },
+  "redirect.exact-and-loopback": {
+   "failures": [],
+   "files": {
+    "observation.json.gz": "eba557e65f75a494652aa9f3db4f05cb72d988c476963314a720012f715607a4"
+   },
+   "requirement": "Redirect, client metadata and abuse hardening",
+   "specScenario": "Redirect prefix trick",
+   "status": "pass"
+  }
+ },
+ "provenance": {
+  "contractSha256": "df30b720cbc162a750ee7f7ca4b29920a4a233ff6c3188c9455aa05f6554855b",
+  "durationSeconds": 0.5,
+  "impl": {
+   "binarySha256": "5eb911c8c8758a1fd27450ee7a925dfc2e8dc68d2b77911f7b28189bd46065b2",
+   "label": "rust"
+  },
+  "startedAt": "2026-11-02T20:25:13Z"
+ },
+ "schemaVersion": 1,
+ "suite": "oauth-issuance"
+}

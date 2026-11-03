@@ -36,7 +36,7 @@ TOOLS_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = TOOLS_DIR.parent.parent
 GUEST_JOURNEY = TOOLS_DIR / "t2guest" / "distjourney.py"
 WORK = t2.WORK
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 # --- clean-machine goldens ----------------------------------------------------------
 #
@@ -600,6 +600,13 @@ def _launcher_env(root: Path, base: str, port: int, name: str = "a", cache: str 
                       "OPUTE_HOST_AGENT_RELEASE_BASE_URL": base, "OPUTE_HOST_AGENT_CACHE_DIR": str(root / cache),
                       "OPUTE_LOCAL_HOST_AGENT_RUNTIME_DIR": str(root / f"runtime-{name}"),
                       "OPUTE_STANDALONE_STATE_DIR": str(root / f"state-{name}"),
+                      # Each launcher's agent is its own instance: under D25 two
+                      # agents on one instance refuse each other, and this
+                      # journey is about launchers sharing one download cache.
+                      # The launcher strips OPUTE_HOST_AGENT_INSTANCE_ROOT, so
+                      # the default instance root (the user config directory)
+                      # is set apart instead.
+                      "XDG_CONFIG_HOME": str(root / f"config-{name}"),
                       "OPUTE_REMOTE_AGENT_ID": NPM_AGENT_ID, "MCP_AUTH_TOKEN": NPM_TOKEN,
                       "HOST_MCP_BIND_HOST": "127.0.0.1", "HOST_MCP_PORT": str(port), "HOME": str(root / "home")})
 
@@ -902,11 +909,16 @@ def observe_site(go_src: Path, go_binary: Path, rust_binary: Path, work: Path) -
 # journey installs one release set the way the published files are used (the
 # user unit with its env file; the bootstrap system unit as published, which
 # has no identity and must refuse to start; the bootstrap unit with an
-# identity drop-in) and removes it again. The upgrade journey keeps one
+# identity drop-in) and removes it again. While that bootstrap unit serves,
+# the user unit is installed on the same instance on another port: D25
+# refuses it (exit 1, one refusal line) and systemd retries it until the
+# bootstrap unit stops, and then it starts. The upgrade journey keeps one
 # identity, env file and state across Go -> <middle> -> Go.
 MACHINE_ENV = {"OPUTE_REMOTE_AGENT_ID": "parity-m10-agent", "MCP_AUTH_TOKEN": "parity-m10-token-not-a-secret-0123456789",
                "OPUTE_AGENT_MODE": "standalone", "HOST_MCP_BIND_HOST": "127.0.0.1", "HOST_MCP_PORT": "3014"}
 BOOTSTRAP_ID = "parity-m10-bootstrap"
+# Both units run as opute with the default standalone instance root.
+WRITER_LOCK = "/home/opute/.config/opute/instances/standalone/host-agent.lock"
 HOME_ROOTS = ["/home/opute"]
 # Binaries are compared through their release receipts, and SQLite files
 # through their tables and row counts (the state step), not their bytes.
@@ -944,7 +956,13 @@ def install_program(release: str) -> dict:
                                             "/etc/systemd/system/opute-bootstrap-mcp.service",
                                             "/etc/systemd/system/opute-bootstrap-mcp.service.d"],
                                   "noHashPatterns": NO_HASH}},
+        {"as": "pairInstall", "userInstall": {"release": release, "version": VERSION,
+                                              "env": {**MACHINE_ENV, "HOST_MCP_PORT": "3015"}}},
+        {"as": "pairRefused", "waitRefused": {}},
+        {"as": "pairFirstServing", "firstCall": {"token": token}},
         {"as": "idStop", "stop": {"scope": "system"}},
+        {"as": "pairNextStarted", "health": {"port": 3015}},
+        {"as": "pairUninstall", "uninstall": {}},
         {"as": "idUnitDown", "unit": {"scope": "system"}},
         {"as": "idJournal", "journal": {"scope": "system"}},
         {"as": "idUninstall", "uninstall": {"scope": "system"}},
@@ -1185,7 +1203,9 @@ def machine_expectations(obs: dict) -> dict:
     """What the Go journey itself must show for the comparison to mean
     anything: the user unit healthy and answering, then stopped; the
     published bootstrap unit refusing to start without an identity; the
-    bootstrap unit with an identity healthy; nothing left after uninstall."""
+    bootstrap unit with an identity healthy, and still serving while the
+    user unit on its instance is refused (D25) and retried until the
+    bootstrap unit stops; nothing left after uninstall."""
     s = obs["steps"]
     return {
         "userUnitActive": s["unitUp"].get("ActiveState") == "active",
@@ -1197,6 +1217,12 @@ def machine_expectations(obs: dict) -> dict:
         and any("OPUTE_REMOTE_AGENT_ID is required" in line for line in s["bootJournal"]),
         "bootstrapWithIdentityHealthy": s["idHealth"].get("body", {}).get("agentId") == BOOTSTRAP_ID,
         "sudoersValid": s["idInstall"].get("visudo") == 0,
+        "userUnitRefusedWhileBootstrapServes": s["pairRefused"] == {
+            "restarted": True,
+            "refusals": [f"host agent instance is already in use: {WRITER_LOCK} is locked by another process"]},
+        "bootstrapKeptServing": s["pairFirstServing"]["toolsList"]["status"] == 200,
+        "userUnitStartsOnceBootstrapStops": s["pairNextStarted"].get("body", {}).get("agentId")
+        == MACHINE_ENV["OPUTE_REMOTE_AGENT_ID"],
         "uninstalled": not any(p.endswith(("opute-host-agent", "host-agent.env", "opute-host-agent.service"))
                                for p in s["treeAfter"]),
     }
@@ -1270,12 +1296,14 @@ def evaluate_npm(obs: dict) -> dict:
 
 
 STABLE_REFUSAL = "a stable package version cannot publish a different catalog revision"
+PREVIEW_REFUSAL = ("site release parity failed: decision anchor changed: site/context/release-catalog.json "
+                   "(review and re-anchor explicitly)")
 
 
 def evaluate_site(obs: dict, reviewed: list[str]) -> dict:
     """Go's own check-site passes on the committed site from Go's binary
-    (the control); Go's release policy refuses the Rust catalog for the
-    stable 0.2.3 package (a finding, recorded as expected); the preview
+    (the control); Go's site tooling refuses the Rust catalog (a finding,
+    recorded as expected); the preview
     sites differ in exactly the reviewed files, and not at all once Rust's
     catalog is spelled the Go way by the declared D19-D24 rule."""
     go = obs["committed-go"]
@@ -1283,8 +1311,17 @@ def evaluate_site(obs: dict, reviewed: list[str]) -> dict:
     checks = {
         "goCheckSite": all(step["exit"] == 0 for step in go["steps"].values())
         and set(go["steps"]) == {"captureTest", "capture", "generate", *SITE_CHECKS} and go["status"] == [],
-        "rustStableRefused": rust["captureTest"]["exit"] == 0 and rust["capture"]["exit"] == 1
-        and rust["capture"]["last"] == STABLE_REFUSAL and obs["committed-rust"]["status"] == [],
+        # Go's site tooling refuses the Rust catalog for the committed site.
+        # At v0.2.4 the site carries the release as a preview, so the capture
+        # is written and Go's release-parity check refuses its changed
+        # decision anchor; at a stable version the capture itself refuses.
+        "rustStableRefused": rust["captureTest"]["exit"] == 0 and (
+            (rust["capture"]["exit"] == 1 and rust["capture"]["last"] == STABLE_REFUSAL
+             and obs["committed-rust"]["status"] == [])
+            or (rust["capture"]["exit"] == 0 and rust["check_site_release_parity"]["exit"] == 1
+                and rust["check_site_release_parity"]["last"] == PREVIEW_REFUSAL
+                and sorted(line.split()[-1].removeprefix("site/") for line in obs["committed-rust"]["status"])
+                == sorted(reviewed))),
         "previewsGenerate": all(obs[k][step]["exit"] == 0 for k in ("preview-go", "preview-rust")
                                 for step in ("capture", "generate"))
         and obs["preview-rust-as-go"]["generate"]["exit"] == 0,

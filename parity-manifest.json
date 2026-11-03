@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/m12a/canaries.json"
+  "results": "evidence/d25/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
@@ -167,23 +167,23 @@
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/m12a/contracts/evidence-redaction/summary.json"
+   "results": "evidence/d25/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/m12a/contracts/oauth-issuance/summary.json"
+   "results": "evidence/d25/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/m12a/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/d25/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/m12a/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/d25/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/m12a/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/d25/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -307,14 +307,6 @@
    "status": "approved",
    "summary": "Rust publishes the PostgreSQL relay token writeOnly (release_postgresql_service_relay.relayToken and localRelay.relayToken of get_postgresql_service_status, reconcile_postgresql_service and remove_postgresql_service), so its storage projection redacts it in every durable row; Go's catalog leaves it unmarked and stores it verbatim in capability_invocations"
   },
-  "D8": {
-   "approvedBy": "owner",
-   "change": "openspec/changes/secure-oauth-issuance",
-   "date": "2026-10-01",
-   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
-   "status": "approved",
-   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
-  },
   "D25": {
    "approvedBy": "owner",
    "change": "openspec/changes/state-directory-writer-lock",
@@ -322,6 +314,14 @@
    "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D25)",
    "status": "approved",
    "summary": "Option A: Go and Rust each take an exclusive, non-blocking lock on the instance state before opening any store or binding the listener, and a second agent on the same instance refuses identically; Go changes first in wunderous/host-agents and Rust follows its release through the parity rebase. Until that release is pinned, both keep the pinned Go behaviour (no lock)"
+  },
+  "D8": {
+   "approvedBy": "owner",
+   "change": "openspec/changes/secure-oauth-issuance",
+   "date": "2026-10-01",
+   "record": "openspec/changes/reimplement-host-agent-in-rust/milestones.md (decision table, D8)",
+   "status": "approved",
+   "summary": "Rust implements the stricter oauth-issuance contract instead of Go's token issuance"
   }
  },
  "distEvidence": {
@@ -336,14 +336,14 @@
   "purpose": "M10: release artifacts, clean-machine install, upgrade and downgrade, npm launcher and site (parity dist run), re-derived by parity/dist_verify.py",
   "releases": {
    "go": {
-    "build": "parity dist release-go: Go's own Makefile targets (build-linux-x64, build-linux-arm64, build-provider-*-linux-x64) in an export of the pinned tree at a fixed path, VERSION=0.2.3, gzip -9 -kf; the binaries reproduce byte for byte, the archives differ only by gzip's recorded mtime",
+    "build": "parity dist release-go: Go's own Makefile targets (build-linux-x64, build-linux-arm64, build-provider-*-linux-x64) in an export of the pinned tree at a fixed path, VERSION=0.2.4, gzip -9 -kf; the binaries reproduce byte for byte, the archives differ only by gzip's recorded mtime",
     "path": ".parity/releases/go",
-    "sha256sums": "7f8d3a89e6e633b90e94fe6bf763697f4f89d0fd274d4c415d991221d9ef2461"
+    "sha256sums": "47d95d867431765ee50d36b709b50abdf2727a8c7f93be42d1fd5a0a6aa7f56b"
    },
    "rust": {
     "build": "make artifacts (tools/release/build-artifacts.sh, cargo-zigbuild 0.23.4 and zig 0.15.2 from make release-toolchain): host-agent-linux-x64 for x86_64-unknown-linux-gnu.2.34, host-agent-linux-arm64 for aarch64-unknown-linux-musl, Go's providers from the pinned tree; the binaries reproduce byte for byte",
     "path": "dist",
-    "sha256sums": "3c7eb0af4e765f020936ca42cbd937cb16622772f01bc3c54f0a1625b673fe7d"
+    "sha256sums": "c45862fc57bc2175df7dedf8931a4f23d14faa2862b4af06160404c00fe5ed00"
    }
   },
   "reviewedSiteDiff": [
@@ -366,7 +366,7 @@
      "D23",
      "D24"
     ],
-    "file": "public/docs/previews/v0.2.3/capabilities/catalog.json",
+    "file": "public/docs/previews/v0.2.4/capabilities/catalog.json",
     "reason": "the same catalog as published under the preview docs"
    },
    {
@@ -377,7 +377,7 @@
      "D23",
      "D24"
     ],
-    "file": "public/docs/previews/v0.2.3/capabilities/index.html",
+    "file": "public/docs/previews/v0.2.4/capabilities/index.html",
     "reason": "the capability page renders the neutral tool names, values and revision"
    },
    {
@@ -392,20 +392,20 @@
     "reason": "the search index lists the neutral tool names"
    }
   ],
-  "summary": "evidence/m12a/dist/summary.json"
+  "summary": "evidence/d25/dist/summary.json"
  },
  "evidence": {
   "go-vs-go": {
    "minRepeat": 3,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/m12a/go-vs-go/summary.json"
+   "summary": "evidence/d25/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 1,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/m12a/go-vs-rust/summary.json"
+   "summary": "evidence/d25/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -551,6 +551,54 @@
     }
    ],
    "requireRehearsal": true,
+   "requireT2": true,
+   "requireT2Oracles": true
+  },
+  "m12b": {
+   "description": "M12b (M12 validation 5, soak): the m12a gate plus the soak re-derived from committed raw samples: Go and Rust twins from one pinned golden under one seeded mixed workload (read-only calls, task-aware mutations, plans, k3s provider reloads, input-required tasks, SIGTERM and SIGKILL restarts) for 15 minutes; per-iteration outcome classes equal to Go's, latency and growth within the thresholds declared from a Go/Go shakedown, no more journal errors than Go, and final durable state equal after the declared masks. M11 (staging Platform), the writer lock (D25), Windows, WSL2, arm64 runtime, the M13 evidence and the 0.2.3 publish decision remain owned gaps.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireDistribution": true,
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
+      "tasks"
+     ]
+    }
+   ],
+   "requireRehearsal": true,
+   "requireSoak": true,
    "requireT2": true,
    "requireT2Oracles": true
   },
@@ -955,8 +1003,7 @@
    "requireT2": true,
    "requireT2Oracles": true
   },
-  "m12b": {
-   "description": "M12b (M12 validation 5, soak): the m12a gate plus the soak re-derived from committed raw samples: Go and Rust twins from one pinned golden under one seeded mixed workload (read-only calls, task-aware mutations, plans, k3s provider reloads, input-required tasks, SIGTERM and SIGKILL restarts) for 15 minutes; per-iteration outcome classes equal to Go's, latency and growth within the thresholds declared from a Go/Go shakedown, no more journal errors than Go, and final durable state equal after the declared masks. M11 (staging Platform), the writer lock (D25), Windows, WSL2, arm64 runtime, the M13 evidence and the 0.2.3 publish decision remain owned gaps.",
+  "d25": {
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
@@ -999,13 +1046,23 @@
     }
    ],
    "requireRehearsal": true,
+   "requireSoak": true,
    "requireT2": true,
    "requireT2Oracles": true,
-   "requireSoak": true
+   "description": "D25 (state-directory writer lock): the m12b gate on the v0.2.4 rebase, plus the writer-lock drill for Go/Go, Rust/Rust, Go then Rust and Rust then Go (the second agent exits 1 with the refusal line alone, prints nothing, binds no port and writes nothing while the first keeps serving; after a SIGKILL the next agent starts), the clean-machine user unit refused and retried while the bootstrap unit serves its instance, and the writer-lock inventory item covered.",
+   "requireRehearsalDrills": [
+    "writerLock.go-go",
+    "writerLock.rust-rust",
+    "writerLock.go-rust",
+    "writerLock.rust-go"
+   ],
+   "requireCovered": [
+    "state-directory writer lock"
+   ]
   }
  },
  "goReference": {
-  "binarySha256": "71924b62bf09a659489327f6ffe66057f239596fa476ad36f02fc0b63fb62215",
+  "binarySha256": "2e2b5486ab116e9f28fe46e9f197884c97d3086bc0d0fedfb497401b7051becc",
   "build": "tools/parity/build-go-reference.sh",
   "note": "CGO_ENABLED=0, -trimpath, -buildvcs=false, fixed ldflags; reproducible for a given Go toolchain"
  },
@@ -4516,26 +4573,26 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/m12a/m5/crash/summary.json"
+   "summary": "evidence/d25/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/m12a/m5/cross-read/summary.json"
+   "summary": "evidence/d25/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/m12a/m5/migration/summary.json"
+   "summary": "evidence/d25/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/m12a/m5/secrets/summary.json"
+   "summary": "evidence/d25/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/m12a/m5/shape/summary.json"
+   "summary": "evidence/d25/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/m12a/m5/unknown-projection/summary.json"
+   "summary": "evidence/d25/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/m12a/oracles.json",
+  "results": "evidence/d25/oracles.json",
   "suites": "tools/parity/oracles.json"
  },
  "rehearsalEvidence": {
@@ -4548,20 +4605,27 @@
   ],
   "minRepeat": 1,
   "purpose": "M12 without Platform (parity rehearsal), re-derived by parity/rehearsal_verify.py: representative Go state stopped with a task in flight and snapshotted with checksums; Go's restart on a copy as the oracle; the target (Go control, Rust) forward on a copy with a restart and work of its own; Go rolled back onto the target's copy; and the stop drills (a synchronous call and long tasks in flight at SIGINT, two agents on one state directory)",
-  "summary": "evidence/m12a/rehearsal/summary.json"
+  "summary": "evidence/d25/rehearsal/summary.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/m12a/rust-canaries.json"
+  "results": "evidence/d25/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "e29512002e372be87184caf58d1342a2d8cc1e52178df500b05a772b85bb3ddb",
+  "binarySha256": "5eb911c8c8758a1fd27450ee7a925dfc2e8dc68d2b77911f7b28189bd46065b2",
   "build": "make artifacts (tools/release/build-artifacts.sh): cargo zigbuild --release --locked --target x86_64-unknown-linux-gnu.2.34, installed as dist/host-agent-linux-x64",
-  "note": "The x64 release artifact itself is the candidate from M10 on; every suite of evidence/m12a ran against it. Rebuild the release set and rerun the round after any Rust change."
+  "note": "The x64 release artifact itself is the candidate from M10 on; every suite of evidence/d25 ran against it. Rebuild the release set and rerun the round after any Rust change."
  },
  "schemaVersion": 1,
+ "soakEvidence": {
+  "minMinutes": 15,
+  "purpose": "M12 validation 5, re-derived by parity/soak_verify.py: a Go and a Rust twin booted from the pinned base golden under one seeded mixed workload with periodic SIGTERM and SIGKILL restarts, sampled for error classes, latency percentiles, RSS, FDs, threads, state size, journal errors and final durable state, judged against thresholds declared from a Go/Go shakedown before the soak (owner rule: 15 minutes, no step over 30)",
+  "summary": "evidence/d25/soak/summary.json",
+  "thresholds": "tools/parity/soak-thresholds.json",
+  "thresholdsSha256": "cfa6a23ca1c94fca96df970760a22266b4cd60983e6f10e2cdadaadbdd64ba21"
+ },
  "sourceLock": "baseline/source-lock.json",
- "sourceLockSha256": "c6569081de02a86834dbd363661c1274a483f1d7e0e783a94ee6466854e7cfc6",
+ "sourceLockSha256": "14d342e14af7dea6612f1ac02dbeabb343cc535540495f8c48f893872b293aeb",
  "t2Evidence": {
   "golden": {
    "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
@@ -4603,25 +4667,31 @@
     "minRepeat": 3,
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
-    "summary": "evidence/m12a/t2-go-vs-go/summary.json"
+    "shards": [
+     "evidence/d25/t2-go-vs-go-host/summary.json",
+     "evidence/d25/t2-go-vs-go-incus/summary.json",
+     "evidence/d25/t2-go-vs-go-serving-llm/summary.json",
+     "evidence/d25/t2-go-vs-go-cluster-a/summary.json",
+     "evidence/d25/t2-go-vs-go-cluster-b/summary.json",
+     "evidence/d25/t2-go-vs-go-oci-a/summary.json",
+     "evidence/d25/t2-go-vs-go-oci-b/summary.json",
+     "evidence/d25/t2-go-vs-go-postgres/summary.json"
+    ]
    },
    "go-vs-rust": {
     "minRepeat": 1,
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
-    "summary": "evidence/m12a/t2-go-vs-rust/summary.json"
+    "shards": [
+     "evidence/d25/t2-go-vs-rust-host/summary.json",
+     "evidence/d25/t2-go-vs-rust-incus/summary.json",
+     "evidence/d25/t2-go-vs-rust-cluster/summary.json"
+    ]
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/m12a/oracles-t2.json",
+  "results": "evidence/d25/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
- },
- "soakEvidence": {
-  "minMinutes": 15,
-  "purpose": "M12 validation 5, re-derived by parity/soak_verify.py: a Go and a Rust twin booted from the pinned base golden under one seeded mixed workload with periodic SIGTERM and SIGKILL restarts, sampled for error classes, latency percentiles, RSS, FDs, threads, state size, journal errors and final durable state, judged against thresholds declared from a Go/Go shakedown before the soak (owner rule: 15 minutes, no step over 30)",
-  "summary": "evidence/m12b/soak/summary.json",
-  "thresholds": "tools/parity/soak-thresholds.json",
-  "thresholdsSha256": "cfa6a23ca1c94fca96df970760a22266b4cd60983e6f10e2cdadaadbdd64ba21"
  }
 }

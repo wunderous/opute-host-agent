@@ -15,7 +15,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-VERSION=${VERSION:-0.2.3}
+VERSION=${VERSION:-0.2.4}
 DIST=${DIST:-$ROOT/dist}
 GO_SRC=${GO_SRC:-$ROOT/.parity/go-src}
 SETUP=${SETUP:-$ROOT/.parity/setup}

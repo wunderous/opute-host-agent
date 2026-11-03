@@ -5,6 +5,7 @@
 //!
 //! ```text
 //!   config.Load → Validate → platform check
+//!     → instance lock (host-agent.lock, D25)
 //!     → resource coordinator lock dir (0700)
 //!     → state store (state.db)
 //!     → authz store (authz.sqlite, built-in clients)
@@ -17,6 +18,7 @@
 
 use std::io::Write;
 use std::net::{SocketAddr, ToSocketAddrs};
+use std::path::Path;
 
 use crate::config::{Config, Env};
 use crate::goerr::{self, Result};
@@ -54,6 +56,8 @@ fn validate(cfg: &Config) -> Result<()> {
 pub fn check(env: &Env) -> Result<()> {
     let cfg = Config::load(env);
     validate(&cfg)?;
+    // state.Open creates tables, so check refuses next to a live agent too.
+    let _lock = acquire_instance_lock(&cfg)?;
     if cfg.agent_mode == "standalone" {
         let mut store = StateStore::open(&cfg.standalone_state_dir)?;
         store.close();
@@ -67,6 +71,118 @@ pub struct Runtime {
     // Field order is drop order: state is released before anything declared
     // later in `run` (which is dropped first because locals drop in reverse).
     pub state: std::sync::Arc<std::sync::Mutex<StateStore>>,
+    // Declared last, so it is released after everything the runtime opened.
+    _lock: InstanceLock,
+}
+
+/// `instancelock.FileName`: the lock file created in each locked root.
+pub(crate) const LOCK_FILE_NAME: &str = "host-agent.lock";
+
+/// `instancelock.Lock`: one process per instance state. An exclusive,
+/// non-blocking flock on host-agent.lock in each state root, taken before
+/// any store is opened or a port bound and held for the life of the
+/// process. The kernel releases it when the process exits, so a crashed
+/// agent leaves no stale lock and the file itself is never deleted.
+pub(crate) struct InstanceLock {
+    files: Vec<nix::fcntl::Flock<std::fs::File>>,
+}
+
+impl Drop for InstanceLock {
+    /// `Lock.Release`: unlock and close in reverse order.
+    fn drop(&mut self) {
+        while let Some(file) = self.files.pop() {
+            drop(file);
+        }
+    }
+}
+
+impl InstanceLock {
+    /// `instancelock.Acquire`: lock host-agent.lock in each root, in the
+    /// order given, creating a missing root (0700) and lock file (0600). It
+    /// never waits; on a refusal every lock already taken is released.
+    /// Roots that resolve to the same directory are locked once.
+    pub(crate) fn acquire(roots: &[&Path]) -> Result<InstanceLock> {
+        use nix::errno::Errno;
+        use nix::fcntl::{Flock, FlockArg};
+        use std::os::unix::fs::OpenOptionsExt;
+        let mut lock = InstanceLock { files: Vec::new() };
+        let mut seen: Vec<String> = Vec::new();
+        for root in roots {
+            let raw = root.to_string_lossy();
+            let dir = crate::hostread::absolute(&raw).map_err(|e| {
+                go_err!(
+                    "resolve host agent instance root {}: {e}",
+                    goerr::quote(&raw)
+                )
+            })?;
+            if seen.contains(&dir) {
+                continue;
+            }
+            seen.push(dir.clone());
+            goerr::mkdir_all(Path::new(&dir), 0o700)
+                .map_err(|e| go_err!("create host agent instance root: {e}"))?;
+            let path = format!("{dir}/{LOCK_FILE_NAME}");
+            let file = std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .truncate(false)
+                .mode(0o600)
+                .open(&path)
+                .map_err(|e| {
+                    go_err!(
+                        "open host agent instance lock: {}",
+                        goerr::path_error("open", Path::new(&path), &e)
+                    )
+                })?;
+            let mut file = file;
+            loop {
+                match Flock::lock(file, FlockArg::LockExclusiveNonblock) {
+                    Ok(held) => {
+                        lock.files.push(held);
+                        break;
+                    }
+                    Err((back, Errno::EINTR)) => file = back,
+                    Err((_, Errno::EWOULDBLOCK)) => {
+                        return Err(go_err!(
+                            "host agent instance is already in use: {path} is locked by another process"
+                        ));
+                    }
+                    Err((_, errno)) => {
+                        return Err(go_err!(
+                            "lock host agent instance {path}: {}",
+                            goerr::errno_text(&std::io::Error::from(errno))
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(lock)
+    }
+}
+
+/// `instancelock.Within`: whether path lies inside root (or is root) once
+/// both are absolute.
+fn within(root: &Path, path: &Path) -> bool {
+    let (Ok(root), Ok(path)) = (
+        crate::hostread::absolute(&root.to_string_lossy()),
+        crate::hostread::absolute(&path.to_string_lossy()),
+    ) else {
+        return false;
+    };
+    root == "/" || path == root || path.starts_with(&format!("{root}/"))
+}
+
+/// `app.acquireInstanceLock`: the instance root, then the standalone state
+/// and SQLite database roots when they lie outside it, in that fixed order.
+fn acquire_instance_lock(cfg: &Config) -> Result<InstanceLock> {
+    let mut roots: Vec<&Path> = vec![&cfg.instance_root];
+    for root in [&cfg.standalone_state_dir, &cfg.sqlite_database_root] {
+        if !root.as_os_str().is_empty() && !within(&cfg.instance_root, root) {
+            roots.push(root);
+        }
+    }
+    InstanceLock::acquire(&roots)
 }
 
 /// `app.NewRuntime` for M1: validation, coordinator lock dir, state store.
@@ -77,6 +193,9 @@ pub fn new_runtime(env: &Env) -> Result<Runtime> {
 fn new_runtime_with(env: &Env, fault: Option<&str>) -> Result<Runtime> {
     let cfg = Config::load(env);
     validate(&cfg)?;
+    // One process per instance state: taken before any store is opened or a
+    // port bound, and held until the runtime is dropped.
+    let lock = acquire_instance_lock(&cfg)?;
     inject_fault(fault, "coordinator")?;
     goerr::mkdir_all(&cfg.host_resource_lock_dir, 0o700)?;
     inject_fault(fault, "state")?;
@@ -84,6 +203,7 @@ fn new_runtime_with(env: &Env, fault: Option<&str>) -> Result<Runtime> {
     Ok(Runtime {
         config: cfg,
         state: std::sync::Arc::new(std::sync::Mutex::new(state)),
+        _lock: lock,
     })
 }
 
@@ -657,18 +777,30 @@ mod tests {
 
     #[test]
     fn each_stage_failure_stops_startup_and_releases_earlier_stages() {
-        // (fault stage, files that must exist afterwards)
+        // (fault stage, files that must exist afterwards). The instance lock
+        // comes first: its root and the state directory outside it keep
+        // their host-agent.lock files.
+        const LOCKS: [&str; 6] = [
+            "state",
+            "state/host-agent.lock",
+            "xdg",
+            "xdg/instances",
+            "xdg/instances/standalone",
+            "xdg/instances/standalone/host-agent.lock",
+        ];
         let cases: [(&str, &[&str]); 3] = [
-            ("coordinator", &[]),
-            ("state", &["xdg", "xdg/host-resource-coordinator"]),
+            ("coordinator", &LOCKS),
+            (
+                "state",
+                &[&LOCKS[..], &["xdg/host-resource-coordinator"]].concat(),
+            ),
             (
                 "authz",
                 &[
-                    "state",
-                    "state/state.db",
-                    "xdg",
-                    "xdg/host-resource-coordinator",
-                ],
+                    &LOCKS[..],
+                    &["state/state.db", "xdg/host-resource-coordinator"],
+                ]
+                .concat(),
             ),
         ];
         for (stage, expected) in cases {
@@ -743,7 +875,91 @@ mod tests {
         assert!(dir.path().join("state/state.db").exists());
         let dir = tempfile::tempdir().unwrap();
         check(&env(dir.path(), &[("OPUTE_AGENT_MODE", "platform")])).unwrap();
-        assert!(!dir.path().join("state").exists());
+        assert!(!dir.path().join("state/state.db").exists());
+    }
+
+    fn refusal(root: &std::path::Path) -> String {
+        format!(
+            "host agent instance is already in use: {}/{LOCK_FILE_NAME} is locked by another process",
+            root.display()
+        )
+    }
+
+    #[test]
+    fn instance_lock_refuses_second_holder_until_released() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("instance");
+        let first = InstanceLock::acquire(&[&root]).unwrap();
+        let err = InstanceLock::acquire(&[&root]).err().unwrap();
+        assert_eq!(err.0, refusal(&root));
+        drop(first);
+        let second = InstanceLock::acquire(&[&root]).unwrap();
+        drop(second);
+        let meta = std::fs::metadata(root.join(LOCK_FILE_NAME)).unwrap();
+        assert_eq!(meta.permissions().mode() & 0o777, 0o600, "lock file kept");
+        let meta = std::fs::metadata(&root).unwrap();
+        assert_eq!(meta.permissions().mode() & 0o777, 0o700);
+    }
+
+    #[test]
+    fn instance_lock_releases_earlier_roots_when_a_later_one_is_held() {
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (dir.path().join("a"), dir.path().join("b"));
+        let _held = InstanceLock::acquire(&[&b]).unwrap();
+        let err = InstanceLock::acquire(&[&a, &b]).err().unwrap();
+        assert_eq!(err.0, refusal(&b));
+        InstanceLock::acquire(&[&a]).expect("a stayed locked after the refusal");
+    }
+
+    #[test]
+    fn instance_lock_locks_a_repeated_root_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_path_buf();
+        let dot = root.join(".");
+        let slash = std::path::PathBuf::from(format!("{}/", root.display()));
+        let lock = InstanceLock::acquire(&[&root, &dot, &slash]).unwrap();
+        assert_eq!(lock.files.len(), 1);
+    }
+
+    #[test]
+    fn within_matches_go() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("instance");
+        let r = root.display().to_string();
+        for (path, want) in [
+            (r.clone(), true),
+            (format!("{r}/state"), true),
+            (format!("{r}/a/../b"), true),
+            (format!("{r}/../state"), false),
+            (format!("{r}-other"), false),
+            (format!("{r}/../../db"), false),
+        ] {
+            assert_eq!(within(&root, std::path::Path::new(&path)), want, "{path}");
+        }
+    }
+
+    #[test]
+    fn startup_and_check_are_refused_before_any_store_while_the_instance_is_held() {
+        let dir = tempfile::tempdir().unwrap();
+        let env = env(dir.path(), &[]);
+        let cfg = Config::load(&env);
+        let held = InstanceLock::acquire(&[&cfg.instance_root]).unwrap();
+        let mut sink = Vec::new();
+        let err = run_with(&env, &mut sink, None).unwrap_err();
+        assert_eq!(err.0, refusal(&cfg.instance_root));
+        assert!(sink.is_empty());
+        assert_eq!(check(&env).unwrap_err().0, refusal(&cfg.instance_root));
+        assert!(!dir.path().join("state").exists(), "no state store");
+        drop(held);
+        // The state directory lies outside the instance root: it is locked
+        // second, and the instance root is released on its refusal.
+        let held = InstanceLock::acquire(&[&cfg.standalone_state_dir]).unwrap();
+        let err = check(&env).unwrap_err();
+        assert_eq!(err.0, refusal(&cfg.standalone_state_dir));
+        InstanceLock::acquire(&[&cfg.instance_root]).expect("instance root released");
+        drop(held);
+        check(&env).unwrap();
     }
 
     #[test]

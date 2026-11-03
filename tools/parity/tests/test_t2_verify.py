@@ -188,6 +188,36 @@ class T2VerifyTest(unittest.TestCase):
                                          {SCENARIO["id"]: SCENARIO}, problems.append)
         self.assertEqual(statuses.get(SCENARIO["id"]), "fail")
 
+    def shards(self, scenarios: dict) -> tuple[dict, list[str]]:
+        """The capture as one shard, next to an empty second shard."""
+        self.summary_path.write_text(json.dumps(self.summary))
+        other = self.root / "evidence" / "t2-other" / "summary.json"
+        other.parent.mkdir(parents=True)
+        other.write_text(json.dumps({**self.summary, "scenarios": {}}))
+        problems: list[str] = []
+        suite = {"shards": ["evidence/t2/summary.json", "evidence/t2-other/summary.json"],
+                 "minRepeat": 1, "right": "rust"}
+        return t2_verify.check_suite(self.root, self.manifest, "go-vs-rust", suite, scenarios,
+                                     problems.append), problems
+
+    def test_shards_merge(self) -> None:
+        statuses, problems = self.shards({SCENARIO["id"]: SCENARIO})
+        self.assertEqual(problems, [])
+        self.assertEqual(statuses, {SCENARIO["id"]: "pass"})
+
+    def test_scenario_in_no_shard_has_no_evidence(self) -> None:
+        missing = {**SCENARIO, "id": "t2.synthetic-missing"}
+        statuses, problems = self.shards({SCENARIO["id"]: SCENARIO, missing["id"]: missing})
+        self.assertNotIn(missing["id"], statuses)
+        self.assertIn("go-vs-rust/t2.synthetic-missing: no evidence", problems)
+
+    def test_shard_pins_only_its_own_goldens(self) -> None:
+        incus = {**SCENARIO, "id": "t2.synthetic-incus", "golden": "incus"}
+        statuses, problems = self.shards({SCENARIO["id"]: SCENARIO, incus["id"]: incus})
+        self.assertEqual(statuses.get(SCENARIO["id"]), "pass")
+        self.assertFalse(any("nested-Incus golden" in p for p in problems), problems)
+        self.assertIn("go-vs-rust/t2.synthetic-incus: no evidence", problems)
+
 
 if __name__ == "__main__":
     unittest.main()

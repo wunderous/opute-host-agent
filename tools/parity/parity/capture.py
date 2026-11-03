@@ -568,7 +568,7 @@ def capture(go_binary: Path, src: Path) -> dict[str, Any]:
         "runtime-gaps.json": {
             "surface": "runtime-observations",
             "items": [
-                {"name": sid, "owner": SURFACE_OWNERS[by_id[sid]["surface"]],
+                {"name": sid, "owner": SURFACE_OWNERS.get(by_id[sid]["surface"], by_id[sid]["owner"]),
                  "status": "gap", "gapReason": obs["_executionError"]}
                 for sid, (obs, _) in sorted(observed.items()) if "_executionError" in obs
             ],
@@ -769,9 +769,13 @@ def capture_cutover() -> dict:
         ("in-flight drill: task in binding", "SIGINT with a task still in resource binding: both drain the same "
                                              "way; after a restart Go reports it cancelled and Rust does not know "
                                              "it, the declared D12 difference"),
-        ("two agents on one state directory", "Go takes no state-directory lock: on both sides the second agent "
-                                              "starts and serves, neither sees the other's in-memory tasks, and a "
-                                              "restart sees both agents' tasks"),
+        ("two agents on one state directory", "D25 writer lock: a second agent on a held instance exits 1 with "
+                                              "\"host agent instance is already in use\" before it binds, for "
+                                              "Go/Go, Rust/Rust, Go then Rust and Rust then Go; after a SIGKILL "
+                                              "of the first the next one starts (evidence/d25)"),
+        ("state-directory writer lock", "the bootstrap unit and the user unit on one instance: the user unit is "
+                                        "refused and restarted while the bootstrap unit serves, and starts once it "
+                                        "stops, on Ubuntu 24.04 and Debian 12 (evidence/d25/dist)"),
         ("soak", "15 minutes, Go and Rust twins from one golden under one seeded mixed workload with SIGTERM and "
                  "SIGKILL restarts: outcome classes equal per iteration, latency and growth within thresholds "
                  "declared from a Go/Go shakedown, no more journal errors, final durable state equal after the "
@@ -780,10 +784,6 @@ def capture_cutover() -> dict:
     items = [{"name": name, "kind": "rehearsal", "owner": "release", "status": "covered", "coverage": text}
              for name, text in covered]
     gaps = [
-        ("state-directory writer lock", "core", "M12",
-         "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent "
-         "takes no lock and both implementations let it start (evidence/m12a); D25 decided a lock in Go and "
-         "Rust (option A), which waits on the Go release and the parity rebase"),
         ("M11 staging validation identity", "platform", "M11", _M11_GAP),
         ("M11 Platform-driven journey", "platform", "M11", _M11_GAP),
         ("M11 client first-success", "platform", "M11", _M11_GAP + "; codex over WSL2 also needs a WSL2 runner"),
