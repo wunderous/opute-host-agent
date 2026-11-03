@@ -43,9 +43,16 @@
    "status": "covered"
   },
   {
-   "coverage": "Go takes no state-directory lock: on both sides the second agent starts and serves, neither sees the other's in-memory tasks, and a restart sees both agents' tasks",
+   "coverage": "D25 writer lock: a second agent on a held instance exits 1 with \"host agent instance is already in use\" before it binds, for Go/Go, Rust/Rust, Go then Rust and Rust then Go; after a SIGKILL of the first the next one starts (evidence/d25)",
    "kind": "rehearsal",
    "name": "two agents on one state directory",
+   "owner": "release",
+   "status": "covered"
+  },
+  {
+   "coverage": "the bootstrap unit and the user unit on one instance: the user unit is refused and restarted while the bootstrap unit serves, and starts once it stops, on Ubuntu 24.04 and Debian 12 (evidence/d25/dist)",
+   "kind": "rehearsal",
+   "name": "state-directory writer lock",
    "owner": "release",
    "status": "covered"
   },
@@ -55,14 +62,6 @@
    "name": "soak",
    "owner": "release",
    "status": "covered"
-  },
-  {
-   "gapReason": "M12 and task 4.4 ask that a second writer on one state directory be refused, but the pinned Go agent takes no lock and both implementations let it start (evidence/m12a); D25 decided a lock in Go and Rust (option A), which waits on the Go release and the parity rebase",
-   "kind": "cutover",
-   "milestone": "M12",
-   "name": "state-directory writer lock",
-   "owner": "core",
-   "status": "gap"
   },
   {
    "gapReason": "M11 dependency: needs staging Platform and a dedicated Rust validation identity; M12 depends on M11, so only the M12 items that need no Platform were run",
