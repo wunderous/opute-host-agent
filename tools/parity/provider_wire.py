@@ -9,13 +9,14 @@ and the body (parsed JSON when it is JSON). Two recordings compare equal when
 the provider's wire contract is the same.
 
   python3 provider_wire.py record <executable> <out.json> [--env K=V ...] [--calls calls.json]
-                                 [--fake cloudflare|tailscale]
+                                 [--fake cloudflare|tailscale|k3s]
 
 `--fake <api>` serves a stateful stand-in for that API
 (provider-wire/fake_<api>.py), points the provider at it, and records every
 request the provider sent it. Random references (`mesh-`, `node-` and
 `ingress-<hex>`) are
-masked in the recording.
+masked in the recording, as are the fake's own MASKS. `${FAKE}` in a call
+stands for the fake's base URL, and the URL is recorded as `${FAKE}`.
 
 `calls.json` lists provider-specific tool calls, `[[tool, arguments], ...]`,
 each sent in both eras; an optional third element is merged into `_meta`.
@@ -215,12 +216,14 @@ def process_lines(stderr: bytes, port: int) -> list[str]:
 
 def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: str | None = None) -> int:
     port = free_port()
-    fake_state = None
+    fake_state, base, masks = None, None, []
     if fake:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "provider-wire"))
         module = __import__(f"fake_{fake}")
         base, fake_state, _ = module.serve()
         env_pairs = module.env(base) + env_pairs
+        masks = getattr(module, "MASKS", [])
+        calls = json.loads(json.dumps(calls).replace("${FAKE}", base.rstrip("/")))
     env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.environ.get("HOME", "/tmp"),
            "OPUTE_PROVIDER_PORT": str(port)}
     env.update(pair.split("=", 1) for pair in env_pairs)
@@ -267,6 +270,10 @@ def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: s
     text = json.dumps(doc, indent=1, sort_keys=True)
     text = re.sub(r"mesh-[0-9a-f]{36}", "mesh-${REF}", text)
     text = re.sub(r"\b(mesh|node|ingress)-[0-9a-f]{24}\b", r"\1-${REF}", text)
+    for pattern, replacement in masks:
+        text = re.sub(pattern, replacement, text)
+    if base:
+        text = text.replace(base.rstrip("/"), "${FAKE}")
     with open(out, "w") as f:
         f.write(text + "\n")
     return 0
