@@ -693,9 +693,15 @@ _DIST_COVERED = {
                             "installed, started under systemd, called and removed on clean Ubuntu 24.04 and "
                             "Debian 12 twins; Go -> Rust -> Go on one identity",
     "host-agent-linux-arm64": "release name, gzip, SHA256SUMS, static ELF linkage for aarch64",
-    "opute-provider-cloudflare-linux-x64": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
-    "opute-provider-k3s-linux-x64": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
-    "opute-provider-tailscale-linux-x64": "built unchanged from the pinned Go tree with Go's target (D2, M9)",
+    "opute-provider-cloudflare-linux-x64": ("the Rust port (D26, M9), static x86_64 musl, built with no Go toolchain or "
+                                      "tree; its wire corpus equals the pinned Go executable's and its provider "
+                                      "swap passes (gate m9-cloudflare)"),
+    "opute-provider-k3s-linux-x64": ("the Rust port (D26, M9), static x86_64 musl, built with no Go toolchain or "
+                                      "tree; its wire corpus equals the pinned Go executable's and its provider "
+                                      "swap passes (gate m9-k3s)"),
+    "opute-provider-tailscale-linux-x64": ("the Rust port (D26, M9), static x86_64 musl, built with no Go toolchain or "
+                                      "tree; its wire corpus equals the pinned Go executable's and its provider "
+                                      "swap passes (gate m9-tailscale)"),
 }
 _WINDOWS_GAP = ("needs a Windows build: Go's own Windows build needs modernc.org/libc's Windows files, absent "
                 "from the pinned offline module cache, and the Rust Windows target is not built or run here")
