@@ -156,6 +156,8 @@ def main(argv: list[str] | None = None) -> int:
     t2run.add_argument("--out", required=True, type=Path)
     t2run.add_argument("--repeat", type=int, default=1)
     t2run.add_argument("--workers", type=int, default=1, help="scenarios run concurrently (each a twin pair)")
+    t2run.add_argument("--left-providers", type=Path, help="the left side's provider executables (M9 swap)")
+    t2run.add_argument("--right-providers", type=Path, help="the right side's provider executables (M9 swap)")
     t2run.add_argument("scenarios", nargs="*")
 
     ds = sub.add_parser("dist", help="M10: release artifacts, clean machines, npm launcher and site")
@@ -218,7 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.t2_command == "golden-postgres":
             print(json.dumps(t2.build_postgres_golden(), indent=1))
             return 0
-        summary = t2.run_suite(_impl(args.left), _impl(args.right), args.out, args.scenarios or None, args.repeat, args.workers)
+        summary = t2.run_suite(_impl(args.left, args.left_providers), _impl(args.right, args.right_providers),
+                               args.out, args.scenarios or None, args.repeat, args.workers)
         return 0 if all(r["status"] == "pass" for r in summary["scenarios"].values()) else 1
     if args.command == "dist":
         from . import dist

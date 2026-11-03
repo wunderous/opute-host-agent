@@ -819,10 +819,14 @@ def postgres_golden_record() -> dict:
 K3S_OVERLAYS = ("k3s", "oci", "postgres")
 GOLDEN_IMAGES = {"base": "golden.qcow2", "incus": f"{INCUS_GOLDEN}.qcow2", "k3s": f"{K3S_GOLDEN}.qcow2",
                  "oci": f"{OCI_GOLDEN}.qcow2", "postgres": f"{POSTGRES_GOLDEN}.qcow2"}
-# The k3s twins also carry the pinned Go k3s provider, which the scenario
-# starts in the guest (the agent never spawns providers).
-GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"], "oci": [agent.PROVIDER_BIN / "opute-provider-k3s"],
-                "postgres": [agent.PROVIDER_BIN / "opute-provider-k3s"]}
+# The k3s twins also carry the k3s provider, which the scenario starts in
+# the guest (the agent never spawns providers): the pinned Go one, or the
+# side's own under an M9 provider swap.
+GOLDEN_EXTRA = {"k3s": ["opute-provider-k3s"], "oci": ["opute-provider-k3s"], "postgres": ["opute-provider-k3s"]}
+
+
+def golden_extra(golden: str, providers: Path | None = None) -> list[Path]:
+    return [(providers or agent.PROVIDER_BIN) / name for name in GOLDEN_EXTRA.get(golden, [])]
 
 
 # --- one twin -----------------------------------------------------------------------
@@ -831,8 +835,9 @@ GOLDEN_EXTRA = {"k3s": [agent.PROVIDER_BIN / "opute-provider-k3s"], "oci": [agen
 class Twin:
     """One disposable VM: an overlay of the golden image, deleted on exit."""
 
-    def __init__(self, label: str, binary: Path, run_dir: Path, golden: str = "base", memory_mb: int = 0):
-        self.label, self.binary, self.run_dir = label, binary, run_dir
+    def __init__(self, label: str, binary: Path, run_dir: Path, golden: str = "base", memory_mb: int = 0,
+                 providers: Path | None = None):
+        self.label, self.binary, self.run_dir, self.providers = label, binary, run_dir, providers
         self.image = WORK / GOLDEN_IMAGES[golden]
         # A scenario may ask for more memory than its golden's default: the
         # heavy admission class reserves 2 GiB, which a 2 GiB twin never fits.
@@ -867,7 +872,7 @@ class Twin:
                               "chown -R ubuntu:ubuntu /opt/parity-t2"], check=True, capture_output=True)
         scp = ["scp", "-q"] + [a for a in _ssh_base(self.port)[1:-3] if a != "-p"] + ["-P", str(self.port)]
         subprocess.run(scp + [str(self.binary)] + [str(GUEST_DIR / f) for f in GUEST_FILES]
-                       + [str(f) for f in GOLDEN_EXTRA.get(self.golden, [])]
+                       + [str(f) for f in golden_extra(self.golden, self.providers)]
                        + ["root@127.0.0.1:/opt/parity-t2/"], check=True)
         subprocess.run(ssh + ["mv /opt/parity-t2/" + shlex.quote(self.binary.name) + " /opt/parity-t2/agent && "
                               "chmod 0755 /opt/parity-t2/agent && chown ubuntu:ubuntu /opt/parity-t2/agent"],
@@ -1056,7 +1061,8 @@ def load_scenarios(ids: list[str] | None = None) -> list[dict]:
 def _execute(impl: agent.Impl, scenario: dict, side: str, run_dir: Path) -> dict:
     program = {"agent": {"env": AGENT_ENV}, "steps": scenario["steps"]}
     try:
-        with Twin(side, impl.binary, run_dir, scenario.get("golden", "base"), scenario.get("memoryMb", 0)) as twin:
+        with Twin(side, impl.binary, run_dir, scenario.get("golden", "base"), scenario.get("memoryMb", 0),
+                  impl.providers) as twin:
             raw = twin.run(program)
             twin_record = dict(twin.record)
         return {"raw": raw, "twin": twin_record, "error": None}
@@ -1151,6 +1157,7 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
     harness_hash = sha256_file(Path(__file__))
     scenario_hashes = {str(p.relative_to(REPO_ROOT)): sha256_file(p) for p in sorted(SCENARIO_DIR.glob("*.json"))}
     binaries = {"left": left.sha256(), "right": right.sha256()}
+    providers = {"left": left.provider_sha256s(), "right": right.provider_sha256s()}
     scenarios = scenarios_all
     out_dir.mkdir(parents=True, exist_ok=True)
     # Workers bound how many twin pairs run at once; the memory budget also
@@ -1209,18 +1216,23 @@ def run_suite(left: agent.Impl, right: agent.Impl, out_dir: Path, ids: list[str]
         results[scenario["id"]] = {"status": status, "iterations": iterations, "file": scenario["_file"]}
         print(f"{status:4}  {scenario['id']}  ({repeat} iterations)", flush=True)
     changed = (binaries != {"left": left.sha256(), "right": right.sha256()}
+               or providers != {"left": left.provider_sha256s(), "right": right.provider_sha256s()}
                or guest_hashes != {name: sha256_file(GUEST_DIR / name) for name in GUEST_FILES}
                or harness_hash != sha256_file(Path(__file__))
                or scenario_hashes != {str(p.relative_to(REPO_ROOT)): sha256_file(p)
                                       for p in sorted(SCENARIO_DIR.glob("*.json"))})
     summary = {
-        "tier": "T2", "left": {"label": left.label, "sha256": binaries["left"]},
-        "right": {"label": right.label, "sha256": binaries["right"]}, "changedDuringRun": changed,
+        "tier": "T2",
+        "left": {"label": left.label, "sha256": binaries["left"],
+                 **({"providerSha256s": providers["left"]} if providers["left"] else {})},
+        "right": {"label": right.label, "sha256": binaries["right"],
+                  **({"providerSha256s": providers["right"]} if providers["right"] else {})},
+        "changedDuringRun": changed,
         "workers": workers,
         "golden": {k: golden[k] for k in ("goldenSha256", "baseImageSha256", "baseImageSource", "seedSha256")},
         **({"incusGolden": {k: incus[k] for k in ("goldenSha256", "baseGoldenSha256")}} if incus else {}),
         **({"k3sGolden": {"goldenSha256": k3s["goldenSha256"], "incusGoldenSha256": k3s["incusGoldenSha256"],
-                          "providerSha256": {p.name: sha256_file(p) for p in GOLDEN_EXTRA["k3s"]}}}
+                          "providerSha256": {p.name: sha256_file(p) for p in golden_extra("k3s")}}}
            if k3s else {}),
         **({"ociGolden": {"goldenSha256": oci["goldenSha256"], "k3sGoldenSha256": oci["k3sGoldenSha256"],
                           "packages": oci["facts"]["packages"], "debSha256": oci["facts"]["debSha256"]}}
