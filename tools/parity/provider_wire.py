@@ -266,7 +266,9 @@ def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: s
         proc.terminate()
         out_bytes, err_bytes = proc.communicate(timeout=10)
     stdout += out_bytes
-    doc = {"tools": tools, "steps": steps, "stdout": stdout.decode(), "stderr": process_lines(err_bytes, port)}
+    import hashlib
+    doc = {"tools": tools, "steps": steps, "stdout": stdout.decode(), "stderr": process_lines(err_bytes, port),
+           "executableSha256": hashlib.sha256(open(executable, "rb").read()).hexdigest()}
     text = json.dumps(doc, indent=1, sort_keys=True)
     text = re.sub(r"mesh-[0-9a-f]{36}", "mesh-${REF}", text)
     text = re.sub(r"\b(mesh|node|ingress)-[0-9a-f]{24}\b", r"\1-${REF}", text)
@@ -279,36 +281,46 @@ def record(executable: str, out: str, env_pairs: list[str], calls: list, fake: s
     return 0
 
 
-def compare(left: str, right: str) -> int:
-    a, b = json.load(open(left)), json.load(open(right))
-    diffs = 0
+def differences(a: dict, b: dict) -> tuple[list[str], list[str]]:
+    """The steps two recordings differ in, and those whose fake requests
+    differ only in order (Go ranges over maps in random order)."""
+    differ, order_only = [], []
     if a["tools"] != b["tools"]:
-        print("tools differ"); diffs += 1
+        differ.append("tools")
     if a["stderr"] != b["stderr"] or a["stdout"] != b["stdout"]:
-        print("process output differs:", a["stderr"], b["stderr"]); diffs += 1
-    order_only = 0
-    for x, y in zip(a["steps"], b["steps"], strict=True):
+        differ.append("process output")
+    if len(a["steps"]) != len(b["steps"]):
+        return differ + ["step count"], order_only
+    for x, y in zip(a["steps"], b["steps"]):
+        x, y = dict(x), dict(y)
         fx, fy = x.pop("fakeRequests", None), y.pop("fakeRequests", None)
         if fx != fy:
             canon = lambda reqs: sorted(json.dumps(r, sort_keys=True) for r in reqs or [])
             if canon(fx) == canon(fy):
-                # Go ranges over maps in random order; within one step the
-                # same requests in another order are reported, not failed.
-                order_only += 1
-                print(f"~~ {x['as']}: the same {len(fx)} fake requests in another order")
+                order_only.append(x["as"])
             else:
-                diffs += 1
-                for i, (rx, ry) in enumerate(zip(fx or [], fy or [])):
-                    if rx != ry:
-                        print(f"== {x['as']} fake request {i}\n  L {json.dumps(rx, sort_keys=True)[:600]}\n  R {json.dumps(ry, sort_keys=True)[:600]}")
-                        break
-                if len(fx or []) != len(fy or []):
-                    print(f"== {x['as']}: fake request counts differ: {len(fx or [])} vs {len(fy or [])}")
+                differ.append(x["as"])
+                continue
         if x != y:
-            diffs += 1
-            print(f"== {x['as']}\n  L {json.dumps(x['response'], sort_keys=True)[:600]}\n  R {json.dumps(y['response'], sort_keys=True)[:600]}")
-    print(f"{len(a['steps'])} steps, {diffs} differ" + (f", {order_only} in another order only" if order_only else ""))
-    return 1 if diffs else 0
+            differ.append(x["as"])
+    return differ, order_only
+
+
+def compare(left: str, right: str) -> int:
+    a, b = json.load(open(left)), json.load(open(right))
+    differ, order_only = differences(a, b)
+    steps = {s["as"]: s for s in a["steps"]}
+    others = {s["as"]: s for s in b["steps"]}
+    for name in order_only:
+        print(f"~~ {name}: the same {len(steps[name].get('fakeRequests') or [])} fake requests in another order")
+    for name in differ:
+        if name in steps and name in others:
+            print(f"== {name}\n  L {json.dumps(steps[name]['response'], sort_keys=True)[:600]}"
+                  f"\n  R {json.dumps(others[name]['response'], sort_keys=True)[:600]}")
+        else:
+            print(f"== {name}")
+    print(f"{len(a['steps'])} steps, {len(differ)} differ" + (f", {len(order_only)} in another order only" if order_only else ""))
+    return 1 if differ else 0
 
 
 if __name__ == "__main__":
