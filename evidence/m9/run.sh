@@ -7,6 +7,7 @@
 #   bash evidence/m9/run.sh round      # every suite the gates re-derive
 #   bash evidence/m9/run.sh providers  # wire corpora, provider swap, T2 swap
 #   bash evidence/m9/run.sh t2-go-go   # Go/Go T2 self-validation, in shards
+#   bash evidence/m9/run.sh t1-recapture  # T1 and M5 shape after 4014a0c35
 #   bash evidence/m9/run.sh soak       # M12 validation 5, 15 minutes
 #   bash evidence/m9/run.sh gates      # inventory recapture, gate reports
 #
@@ -44,7 +45,7 @@ GP=$ROOT/.parity/bin/providers
 PORTS="hostos cloudflare tailscale k3s"
 GO=$ROOT/.parity/setup/go/bin/go
 P="python3 -m parity"
-PHASE=${1:?usage: run.sh round|providers|t2-go-go|soak|gates}
+PHASE=${1:?usage: run.sh round|providers|t2-go-go|t1-recapture|soak|gates}
 export PATH=$ROOT/.parity/setup/go/bin:$ROOT/.parity/setup/node-v22.14.0-linux-x64/bin:$PATH
 command -v go >/dev/null && go version | grep -q "go1.25.4" || { echo "pinned Go toolchain missing" >&2; exit 1; }
 mkdir -p "$C"
@@ -188,6 +189,17 @@ print(' '.join(s['id'] for f in sorted(Path('tools/parity/scenarios-t2').glob('*
   done
   echo "t2-go-go complete" >&2
   ;;
+t1-recapture)
+  # 4014a0c35 declared a one-of mask in twelve provider-lifecycle callback
+  # scenarios (a race in Go itself), which stales the suites that pin every
+  # scenario's hash: T1 Go/Go and Go/Rust, and the M5 shape suite. Their
+  # round-3 captures are retired and these three are captured again.
+  : >> "$C/exits.log"
+  step go-vs-go bash -c "cd tools/parity && $P run --left go=$G --right go=$G --suite go-vs-go --repeat 3 --workers 4 --out $E/go-vs-go"
+  step go-vs-rust bash -c "cd tools/parity && $P run --left go=$G --right rust=$R --suite go-vs-rust --repeat 1 --workers 4 --out $E/go-vs-rust"
+  step m5-shape bash -c "cd tools/parity && $P shape --go $G --rust $R --repeat 1 --out $E/m5/shape"
+  echo "t1-recapture complete" >&2
+  ;;
 soak)
   T=tools/parity/soak-thresholds.json
   git ls-files --error-unmatch "$T" >/dev/null 2>&1 && git diff --quiet HEAD -- "$T" \
@@ -206,5 +218,5 @@ gates)
   done
   echo "gates complete" >&2
   ;;
-*) echo "usage: run.sh round|providers|t2-go-go|soak|gates" >&2; exit 1 ;;
+*) echo "usage: run.sh round|providers|t2-go-go|t1-recapture|soak|gates" >&2; exit 1 ;;
 esac
