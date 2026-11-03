@@ -498,6 +498,17 @@ def verify(manifest_path: Path, gate: str) -> dict:
         bad = sorted(name for name, status in rehearsal.items() if status != PASS)
         if not rehearsal or bad:
             failures.append(f"rehearsal: {', '.join(bad) if bad else 'no evidence'} not pass")
+    for drill in rules.get("requireRehearsalDrills", []):
+        # A drill the gate names must have been run and passed: a rehearsal
+        # round without it does not satisfy the gate.
+        if (rehearsal or {}).get(f"drill:{drill}") != PASS:
+            failures.append(f"rehearsal drill {drill}: missing or not pass")
+    for name in rules.get("requireCovered", []):
+        # A named cutover inventory item must be covered, not an owned gap.
+        cutover, err = _load(root / "baseline/inventory/cutover.json")
+        rows = [] if err else [i for i in cutover.get("items", []) if i.get("name") == name]
+        if not rows or any(r.get("status") != "covered" for r in rows):
+            failures.append(f"inventory item {name!r}: not covered")
     soak_items = None
     if rules.get("requireSoak"):
         # M12 validation 5: Go and Rust twins under one seeded mixed workload,
