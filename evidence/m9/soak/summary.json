@@ -1,0 +1,164 @@
+{
+ "crashed": false,
+ "files": {
+  "a-events.jsonl.gz": "a18c1294c4bf22561d580c603358cd9609f23b45de23779b8a8445e1893072fd",
+  "a-final.json.gz": "ca6090079d7dec6f343af77925bad9a97df88d94c5a92df0fd9fe8b3b5f15650",
+  "a-ops.jsonl.gz": "702d5f7c0df0f47b10bc023570abc0d6b935cd010e3e2427cd514740c361ac83",
+  "a-samples.jsonl.gz": "46e3f424981d94d6083740f99bb659e92dd182c8896cdf880a12f813ed837b58",
+  "b-events.jsonl.gz": "d7d4ccf94049da6348dbf93ac788d82218ff403fe8d39efb8ec9e1390cce6e06",
+  "b-final.json.gz": "d52cc8ca90f570e414762f2e37bbed23898175a1fd75152237e62a32843aa9b8",
+  "b-ops.jsonl.gz": "0883a23b1ccd8b4b4a3cbeddcfa76ee659f8967b572ae5ca8dad3a9f532f6cb8",
+  "b-samples.jsonl.gz": "e04f8e41c991b08f78a6a28419dec359e2a3fd1548f6a7c5664cf600a55ff441"
+ },
+ "provenance": {
+  "changedDuringRun": false,
+  "config": {
+   "env": {
+    "HOST_MCP_BIND_HOST": "127.0.0.1",
+    "HOST_MCP_PORT": "3014",
+    "MCP_AUTH_TOKEN": "parity-t2-token-not-a-secret-0123456789",
+    "OPUTE_AGENT_MODE": "standalone",
+    "OPUTE_HOST_AGENT_INSTANCE_ROOT": "/opt/parity-t2/instance",
+    "OPUTE_HOST_MAX_HEAVY_OPERATIONS": "64",
+    "OPUTE_HOST_MAX_NORMAL_OPERATIONS": "64",
+    "OPUTE_HOST_RESOURCE_CPU_CAPACITY_CORES": "64",
+    "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
+    "OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES": "68719476736",
+    "OPUTE_REMOTE_AGENT_ID": "parity-t2-agent",
+    "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+    "OPUTE_STANDALONE_STATE_DIR": "/opt/parity-t2/state"
+   },
+   "intervalSec": 1.0,
+   "iterations": 900,
+   "provider": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:3015/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/opt/parity-t2/recipes/activate.yaml"
+   },
+   "reload": {
+    "activate": true,
+    "recipeSource": "/opt/parity-t2/recipes/activate.yaml",
+    "source": "/opt/parity-t2/recipes/descriptor.json"
+   },
+   "restartEvery": 60,
+   "sampleEverySec": 10,
+   "seed": 1204,
+   "serveEnv": {
+    "OPUTE_HOST_AGENT_RELAY_DIR": "/home/ubuntu/.opute/relays",
+    "OPUTE_HOST_AGENT_SQLITE_ROOT": "/home/ubuntu/.opute/databases"
+   }
+  },
+  "driverSha256": "71009b485417e799c865f42a73673a3aebc6ed1024c193b3585d191b5da5818e",
+  "golden": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "harnessSha256": "2ac8bfeaa684fc23846abc407172d1091dcf3495e1ced07c13ee1e75ec1c807d",
+  "left": {
+   "binarySha256": "2e2b5486ab116e9f28fe46e9f197884c97d3086bc0d0fedfb497401b7051becc",
+   "label": "go"
+  },
+  "minutes": 15.0,
+  "providerSha256": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915",
+  "right": {
+   "binarySha256": "d55314ae7e822097baf2fb6cb0171052b41f56d7fa86a12c6a665cdab35fab97",
+   "label": "rust"
+  },
+  "sourceLock": {
+   "capturedOn": "2026-11-02",
+   "goModule": "github.com/wunderous/host-agents",
+   "goToolchain": "go1.25.4",
+   "interpretation": "These two counts describe different projections. Complete parity is determined from the pinned source contracts plus actual tools/list for each supported mode and provider combination, not from either count alone.",
+   "npmPublication": "Postponed (owner, 2026-11-02): the v0.2.4 tag and GitHub release exist, npm still lists 0.2.3. The parity journeys pack the launcher from the pinned tree and use a local release base, so none reads the npm registry.",
+   "publicCatalogRevision": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
+   "publicCatalogToolCount": 142,
+   "publishedPackage": "@opute/host-agent@0.2.4",
+   "runtimeAuthority": "The live, authenticated, revisioned Host Agent catalog for the selected mode and active providers.",
+   "sourceCommit": "c9f9e775d8648a54ebaccc052c840cc1dcbdc42e",
+   "sourceRelease": "v0.2.4",
+   "sourceReleaseRebuild": "The GitHub release v0.2.4 assets are the installed artifacts (SHA256SUMS above). The harness rebuilds Go's release set from a git-archive export of the pinned tree (M10), so its bytes differ from the release: Go stamps the module version and vcs.* settings only when building from a git checkout, and records the build directory. The build flags, toolchain and dependencies are the same.",
+   "sourceReleaseSha256Sums": "sha256:c96f42433547f5f03905833c81407486e09f0363658b7ce27e774916bcc6196a",
+   "sourceRepository": "https://github.com/wunderous/host-agents",
+   "sourceTree": "3bea852b417ab08a8a512674cffa03e6cb81bb24",
+   "staticAllToolsSchemaCount": 115
+  },
+  "thresholdsSha256": "cfa6a23ca1c94fca96df970760a22266b4cd60983e6f10e2cdadaadbdd64ba21"
+ },
+ "sides": [
+  {
+   "binary": "go",
+   "finished": 1793740644.5988545,
+   "label": "a",
+   "qemuArgv": [
+    "qemu-system-x86_64",
+    "-enable-kvm",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "6144",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m9/.parity/t2/soak/soak/a.qcow2,if=virtio,format=qcow2",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m9/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+    "-netdev",
+    "user,id=net0,hostfwd=tcp:127.0.0.1:33801-:22",
+    "-device",
+    "virtio-net-pci,netdev=net0",
+    "-display",
+    "none",
+    "-serial",
+    "file:/home/houman/github/wunderous/opute-host-agent-m9/.parity/t2/soak/soak/a-serial.log",
+    "-monitor",
+    "none"
+   ],
+   "setupExit": 0,
+   "soakStarted": true,
+   "started": 1793739742.5765743
+  },
+  {
+   "binary": "rust",
+   "finished": 1793740644.6589894,
+   "label": "b",
+   "qemuArgv": [
+    "qemu-system-x86_64",
+    "-enable-kvm",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "6144",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m9/.parity/t2/soak/soak/b.qcow2,if=virtio,format=qcow2",
+    "-drive",
+    "file=/home/houman/github/wunderous/opute-host-agent-m9/.parity/t2/seed.img,if=virtio,format=raw,readonly=on",
+    "-netdev",
+    "user,id=net0,hostfwd=tcp:127.0.0.1:60961-:22",
+    "-device",
+    "virtio-net-pci,netdev=net0",
+    "-display",
+    "none",
+    "-serial",
+    "file:/home/houman/github/wunderous/opute-host-agent-m9/.parity/t2/soak/soak/b-serial.log",
+    "-monitor",
+    "none"
+   ],
+   "setupExit": 0,
+   "soakStarted": true,
+   "started": 1793739742.7050095
+  }
+ ]
+}

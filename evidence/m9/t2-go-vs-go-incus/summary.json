@@ -1,0 +1,222 @@
+{
+ "changedDuringRun": false,
+ "golden": {
+  "baseImageSha256": "6a81c37564db9b1ee84e141922625e1d7c5b389b99bb3c572e0243607d5bb4d2",
+  "baseImageSource": "https://cloud-images.ubuntu.com/noble/20260926/noble-server-cloudimg-amd64.img",
+  "goldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "seedSha256": "362cb2e5357b7add7adceb4d8c3b5e0d3873caa3f587ae3146f033da713be794"
+ },
+ "guestSha256": {
+  "driver.py": "eaca544200f794f442b7b9bff28745bce1643e1c7343ecfda4339848c8f5bbd3",
+  "llmstub.py": "a9bb392bbe3cec5a9da7f30582ce14805deb486c873a1dfa724afd95fa5549ad",
+  "snapshot.py": "ded27a17c4b0bd19288cfc8b95c426f43b42f18a394dc2b83a125dbef3c46d49",
+  "tlsstub.py": "aa7a1f724fa77f293bb5080687c0a8747c76fb9406258487013fb43c36345b64"
+ },
+ "harnessSha256": "7b27649531e8227af178660e5e13530d9360b0ada9fae5b12ee2946f7a8a313c",
+ "incusGolden": {
+  "baseGoldenSha256": "14174781d9a2bd0f69e472395ac6e20b16a38afe5556af1dad8816af6d416399",
+  "goldenSha256": "25356eccf866ef89d06b755a2cae0391657d07684525e571d2234d722deb7057"
+ },
+ "left": {
+  "label": "go",
+  "sha256": "2e2b5486ab116e9f28fe46e9f197884c97d3086bc0d0fedfb497401b7051becc"
+ },
+ "repeat": 3,
+ "right": {
+  "label": "go",
+  "sha256": "2e2b5486ab116e9f28fe46e9f197884c97d3086bc0d0fedfb497401b7051becc"
+ },
+ "scenarioSha256": {
+  "tools/parity/scenarios-t2/cluster-domain.json": "980ae1b57f7a641bfec5ae96789860bbbe26b17618a687ba50240ba98adac40d",
+  "tools/parity/scenarios-t2/host-domain.json": "7f366c9fd62508a5f3ee25d4d805dd1e71ef4114f288d16b8f283cc0123171fd",
+  "tools/parity/scenarios-t2/incus-domain.json": "feed0d1a22112643b83e5f051f620a5770dab15c5a11ee109fe885038bedef92",
+  "tools/parity/scenarios-t2/llm-domain.json": "d107c037ce8594df96a6ad7634dc505dc247852c71b1f0316a2b12668d2c76ee",
+  "tools/parity/scenarios-t2/oci-domain.json": "6bdee717ff3104c93135f5800b17f083c4c4161e4bc6aa711ed687b3db7b08b1",
+  "tools/parity/scenarios-t2/postgres-domain.json": "e4808f0734d41f522448b3b8850e21a32e183511b8fd88424620cddf42ac3bcc",
+  "tools/parity/scenarios-t2/serving-domain.json": "83d359a45f3f5d11df4bc6ca0a046736f5e6ce4cd19c124b4fad7fabd772e49b"
+ },
+ "scenarios": {
+  "t2.incus-domain.admission.rejected-no-effect": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "17f1aa8113594107bea101c1db0bb70de73034bf8ace238a512d06ae611b312a",
+      "b0.json.gz": "b1aa076262fcae92365a2c0157c541780c9ab59fbd75a19c4905579138a0e8db",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "f75d0cfcd1f41ad8d92997398766d32f794ca92fc04851b6c3d1f2bff5219c2b",
+      "b1.json.gz": "d697495b9c190215bd616b2f662c3c609ea31f6a25813254559c65c3b8350a25",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "10a0b26a8a51b1708ca148a0112b2f32ce0960951e5f6a3562de8332b3d5031c",
+      "b2.json.gz": "3dcff4fe8948f1cc68cc307bdf8ecd7c3afd35f28df27f67d7d4b9088d32213f",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.container.lifecycle": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "3a4d75d46b7b61c25de5a9290b4f3e224bdf9f7339715694f501ee8f30f8a755",
+      "b0.json.gz": "140436a6a28ea1b3a0c76abb0c479de5588d206d7ecd343aafc08d995a7fc509",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "491dbaad56dc0160023db50a44bde7ee6a31f31c8b5b40da83fa5c30edf17c50",
+      "b1.json.gz": "866b379e4daf9b6273d680f983100d44089048f61957176bab696bee85f04b7c",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "1508e1f5e37eb24a6808ccda29008c3fdad58b97a177dab4b124296915be89cd",
+      "b2.json.gz": "9bcf22ae872dafd1da7aa324cca8cf2a356d239476cfb4167a6598bc1626cdd4",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.reset.owned-container": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "f0a1c9a6f50c4543f499050d62f6538056a1aa5d5eff767cb70036c9600a7d3d",
+      "b0.json.gz": "214ef1a0d66ee99e8f038f0e32dea64ca41c28d48b16666d4b9afb257f16aaf9",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "58f7c98e978bbed72e5be6d4dcb17d4e07d5387f50dc9013c2c8856e7c593817",
+      "b1.json.gz": "fd383edaffe5e5addf53f478fdbecc811760a885685aa88bb7d608a4e5444a29",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "64654ab8da973e8985d02b2a28b09024f9d9945e66f4e382cf0ade95b971caf2",
+      "b2.json.gz": "9c00a149ced0ee0a880b73f30f4009d3ca24524ae1ba5e70b1936a05b1a77de1",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.standalone.reads": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "11847dd02d8f6113f7551000bb647e917d37b3bc7ed3d546c0e7d6f1f2697a91",
+      "b0.json.gz": "d79e29b12e4c8b10284e288181425df771ba9041e8ba46aec52a484d055d9de7",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "eb08aa3db1da8f6ea11bf4e5fc9d16c76496e306d38c49d1af197c11b82fb849",
+      "b1.json.gz": "d4d9fb92dc6657b29b4df92321971fcbf07e75f2cd5e9c4da182a17762a1054d",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "32f7f2917e84fa92a120235b8c0e5f2312a8ac4ac46ed58a3948a321843a10af",
+      "b2.json.gz": "90ba6db5b57ecde69152bd0ca6f2ab82186dd4e5ec3dc591ee2b3734b589f558",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  },
+  "t2.incus-domain.vm.lifecycle": {
+   "file": "tools/parity/scenarios-t2/incus-domain.json",
+   "iterations": [
+    {
+     "diffCount": 0,
+     "iteration": 0,
+     "pass": true,
+     "receipts": {
+      "a0.json.gz": "311af8bf649d5beab91896588e31bf3ba3284b6bd810ba8db3b038ef1c351e56",
+      "b0.json.gz": "1e76730edad6b8dae839f0b0f98e0ecc0095fdf9ccb75648aa2e1891212c8517",
+      "diff0.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 1,
+     "pass": true,
+     "receipts": {
+      "a1.json.gz": "126363286f831e980667744cbf391e77069f774e35a497ab14bdfdaba682c079",
+      "b1.json.gz": "ff49a9a8a9a6b93706b25300c40ee6f8df5c1f6f2cd1ff59e03ba09c07aeadca",
+      "diff1.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    },
+    {
+     "diffCount": 0,
+     "iteration": 2,
+     "pass": true,
+     "receipts": {
+      "a2.json.gz": "b5d422b21e1d72037e8acdb761ff7a5bfd8c3313dc4a1fd6f743a3ea11bc9bd6",
+      "b2.json.gz": "8af1bf9bddff6a33391a8d18cb6f0f4f18813216452659b3fdfa1cebff09196d",
+      "diff2.json": "525e1a663636bd0093e2caa0c28860ac429d347aee9189cf3fb7bf8ae15accc1"
+     }
+    }
+   ],
+   "status": "pass"
+  }
+ },
+ "tier": "T2",
+ "workers": 4
+}
