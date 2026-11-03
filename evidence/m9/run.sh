@@ -6,12 +6,15 @@
 # on a clean tree, after `make release-toolchain` and `make artifacts`:
 #   bash evidence/m9/run.sh round      # every suite the gates re-derive
 #   bash evidence/m9/run.sh providers  # wire corpora, provider swap, T2 swap
+#   bash evidence/m9/run.sh t2-go-go   # Go/Go T2 self-validation, in shards
 #   bash evidence/m9/run.sh soak       # M12 validation 5, 15 minutes
 #   bash evidence/m9/run.sh gates      # inventory recapture, gate reports
 #
 # Owner rules (2026-11-01): every suite runs once, Go/Go self-validation
-# three times, and no step runs over 30 minutes. Go/Go T2 is not run again:
-# Go and its goldens are unchanged since D25, whose seven Go/Go shards stand.
+# three times, and no step runs over 30 minutes, so Go/Go T2 runs in D25's
+# eight shards. (The round first assumed D25's Go/Go T2 shards would stand,
+# as Go and its goldens are unchanged; the verifier refuses them because
+# M9's T2 provider swap changed the T2 harness hash, so they are recaptured.)
 #
 # Providers: Go stays the authority. Each port is compared with the pinned Go
 # executable on its wire corpus (tools/parity/provider-wire/; the Go side is
@@ -41,7 +44,7 @@ GP=$ROOT/.parity/bin/providers
 PORTS="hostos cloudflare tailscale k3s"
 GO=$ROOT/.parity/setup/go/bin/go
 P="python3 -m parity"
-PHASE=${1:?usage: run.sh round|providers|soak|gates}
+PHASE=${1:?usage: run.sh round|providers|t2-go-go|soak|gates}
 export PATH=$ROOT/.parity/setup/go/bin:$ROOT/.parity/setup/node-v22.14.0-linux-x64/bin:$PATH
 command -v go >/dev/null && go version | grep -q "go1.25.4" || { echo "pinned Go toolchain missing" >&2; exit 1; }
 mkdir -p "$C"
@@ -169,6 +172,22 @@ providers)
   done
   echo "providers complete" >&2
   ;;
+t2-go-go)
+  : >> "$C/exits.log"
+  ids() { python3 -c "import json,sys; from pathlib import Path
+want=sys.argv[1].split(',')
+print(' '.join(s['id'] for f in sorted(Path('tools/parity/scenarios-t2').glob('*.json')) for s in json.loads(f.read_text())
+               if any(s['id'].startswith(w) for w in want)))" "$1"; }
+  for shard in host:t2.host-domain. incus:t2.incus-domain. serving-llm:t2.serving-domain.,t2.llm-domain. \
+      cluster-a:t2.cluster-domain.resources.,t2.cluster-domain.packages. \
+      cluster-b:t2.cluster-domain.storage.,t2.cluster-domain.agent.,t2.cluster-domain.admission. \
+      oci-a:t2.oci-domain.admission.,t2.oci-domain.build. oci-b:t2.oci-domain.storage. \
+      postgres:t2.postgres-domain.; do
+    name=${shard%%:*}
+    step t2-go-vs-go-$name bash -c "cd tools/parity && $P t2 run --left go=$G --right go=$G --repeat 3 --workers 4 --out $E/t2-go-vs-go-$name $(ids "${shard#*:}")"
+  done
+  echo "t2-go-go complete" >&2
+  ;;
 soak)
   T=tools/parity/soak-thresholds.json
   git ls-files --error-unmatch "$T" >/dev/null 2>&1 && git diff --quiet HEAD -- "$T" \
@@ -187,5 +206,5 @@ gates)
   done
   echo "gates complete" >&2
   ;;
-*) echo "usage: run.sh round|providers|soak|gates" >&2; exit 1 ;;
+*) echo "usage: run.sh round|providers|t2-go-go|soak|gates" >&2; exit 1 ;;
 esac
