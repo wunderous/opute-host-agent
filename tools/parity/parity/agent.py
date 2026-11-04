@@ -144,11 +144,23 @@ class Impl:
 
     label: str  # "go" or "rust"
     binary: Path
+    # Where this side's provider executables come from (the M9 provider
+    # swap); None is the pinned Go providers in PROVIDER_BIN.
+    providers: Path | None = None
 
     def sha256(self) -> str:
         import hashlib
 
         return hashlib.sha256(Path(self.binary).read_bytes()).hexdigest()
+
+    def provider_sha256s(self) -> dict[str, str] | None:
+        """The swapped provider executables by name, or None when unswapped."""
+        import hashlib
+
+        if self.providers is None:
+            return None
+        return {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(Path(self.providers).iterdir()) if p.name.startswith("opute-provider-")}
 
 
 @dataclass
@@ -476,7 +488,7 @@ class ProviderProcess:
     spawns a provider; the harness owns this process and always stops it.
     """
 
-    def __init__(self, sandbox: "Sandbox", binary: str):
+    def __init__(self, sandbox: "Sandbox", binary: str, directory: Path | None = None):
         if "/" in binary or not binary.startswith("opute-provider-"):
             raise ValueError(f"not a pinned provider executable: {binary!r}")
         # A leased port, never a kernel-chosen one: provider stubs take
@@ -494,7 +506,7 @@ class ProviderProcess:
             "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost",
         })
         self.log = open(sandbox.root / f"{binary}.log", "wb")
-        self.proc = subprocess.Popen([str(PROVIDER_BIN / binary), "serve"], env=env, cwd=sandbox.root,
+        self.proc = subprocess.Popen([str((directory or PROVIDER_BIN) / binary), "serve"], env=env, cwd=sandbox.root,
                                      stdin=subprocess.DEVNULL, stdout=self.log, stderr=subprocess.STDOUT)
         deadline = time.monotonic() + 10
         while True:

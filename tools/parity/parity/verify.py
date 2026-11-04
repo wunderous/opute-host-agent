@@ -519,6 +519,16 @@ def verify(manifest_path: Path, gate: str) -> dict:
         bad = sorted(name for name, status in soak_items.items() if status != PASS)
         if not soak_items or bad:
             failures.append(f"soak: {', '.join(bad) if bad else 'no evidence'} not pass")
+    providers = None
+    if rules.get("requireProviders"):
+        # M9 (D26): each ported provider's wire corpus, provider swap, T2
+        # swap and release artifact, re-derived from committed receipts.
+        from . import provider_verify
+        providers = provider_verify.check(root, manifest, rules["requireProviders"],
+                                          lambda text: report.problem(text, "providers"))
+        bad = sorted(name for name, status in providers.items() if status != PASS)
+        if not providers or bad:
+            failures.append(f"providers: {', '.join(bad) if bad else 'no evidence'} not pass")
     oracles = _check_oracles(root, manifest, lock, report) if rules.get("requireOracles") else None
     if rules.get("requireOracles") and oracles != PASS:
         failures.append(f"oracles {oracles}")
@@ -552,6 +562,8 @@ def verify(manifest_path: Path, gate: str) -> dict:
         scopes.add("rehearsal")
     if rules.get("requireSoak"):
         scopes.add("soak")
+    if rules.get("requireProviders"):
+        scopes.add("providers")
     gating = [text for scope, text in report.problems if scope in scopes]
     if gating:
         failures.append(f"{len(gating)} provenance/evidence problem(s)")
@@ -569,6 +581,7 @@ def verify(manifest_path: Path, gate: str) -> dict:
         **({"distribution": distribution} if rules.get("requireDistribution") else {}),
         **({"rehearsal": rehearsal} if rules.get("requireRehearsal") else {}),
         **({"soak": soak_items} if rules.get("requireSoak") else {}),
+        **({"providers": providers} if rules.get("requireProviders") else {}),
     }
 
 

@@ -1,0 +1,2118 @@
+{
+ "drain": {
+  "go": {
+   "aliveWhileInFlight": true,
+   "exit": 0,
+   "gate": {
+    "released": true,
+    "shimAliveAtRelease": true
+   },
+   "gateReached": true,
+   "newConnectionAccepted": false,
+   "response": {
+    "hasContent": true,
+    "isError": null,
+    "status": 200
+   }
+  },
+  "rust": {
+   "aliveWhileInFlight": true,
+   "exit": 0,
+   "gate": {
+    "released": true,
+    "shimAliveAtRelease": true
+   },
+   "gateReached": true,
+   "newConnectionAccepted": false,
+   "response": {
+    "hasContent": true,
+    "isError": null,
+    "status": 200
+   }
+  }
+ },
+ "longTask": {
+  "admitted": {
+   "go": {
+    "afterRestart": {
+     "code": null,
+     "isError": null,
+     "status": "cancelled",
+     "statusMessage": "The Host Agent shut down before the task completed."
+    },
+    "beforeStop": "working",
+    "gateReached": true,
+    "stop": {
+     "aliveWhileInFlight": true,
+     "exit": 0,
+     "gate": {
+      "released": true,
+      "shimAliveAtRelease": true
+     },
+     "newConnectionAccepted": false,
+     "shimAliveAtSignal": true
+    },
+    "stop2": {
+     "exit": 0,
+     "killed": false,
+     "seconds": 0.0
+    },
+    "taskHandle": true
+   },
+   "rust": {
+    "afterRestart": {
+     "code": null,
+     "isError": null,
+     "status": "cancelled",
+     "statusMessage": "The Host Agent shut down before the task completed."
+    },
+    "beforeStop": "working",
+    "gateReached": true,
+    "stop": {
+     "aliveWhileInFlight": true,
+     "exit": 0,
+     "gate": {
+      "released": true,
+      "shimAliveAtRelease": true
+     },
+     "newConnectionAccepted": false,
+     "shimAliveAtSignal": true
+    },
+    "stop2": {
+     "exit": 0,
+     "killed": false,
+     "seconds": 0.0
+    },
+    "taskHandle": true
+   }
+  },
+  "binding": {
+   "go": {
+    "afterRestart": {
+     "code": null,
+     "isError": null,
+     "status": "cancelled",
+     "statusMessage": "The Host Agent shut down before the task completed."
+    },
+    "beforeStop": "working",
+    "gateReached": true,
+    "stop": {
+     "aliveWhileInFlight": true,
+     "exit": 0,
+     "gate": {
+      "released": true,
+      "shimAliveAtRelease": true
+     },
+     "newConnectionAccepted": false,
+     "shimAliveAtSignal": true
+    },
+    "stop2": {
+     "exit": 0,
+     "killed": false,
+     "seconds": 0.0
+    },
+    "taskHandle": true
+   },
+   "rust": {
+    "afterRestart": {
+     "code": null,
+     "isError": null,
+     "status": {
+      "error": -32603
+     },
+     "statusMessage": null
+    },
+    "beforeStop": "working",
+    "gateReached": true,
+    "stop": {
+     "aliveWhileInFlight": true,
+     "exit": 0,
+     "gate": {
+      "released": true,
+      "shimAliveAtRelease": true
+     },
+     "newConnectionAccepted": false,
+     "shimAliveAtSignal": true
+    },
+    "stop2": {
+     "exit": 0,
+     "killed": false,
+     "seconds": 0.0
+    },
+    "taskHandle": true
+   }
+  }
+ },
+ "rehearsals": {
+  "go": [
+   {
+    "forward": {
+     "accepted": {
+      "G": "5076852b-82fb-4e0c-a324-523bcd3b45ff"
+     },
+     "afterWork": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:07Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:02Z",
+         "lastUpdatedAt": "2026-11-03T19:32:03Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "G": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:07Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:07Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "5076852b-82fb-4e0c-a324-523bcd3b45ff",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "first": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:02Z",
+         "lastUpdatedAt": "2026-11-03T19:32:03Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "health": {
+      "agentId": "parity-m12a-agent",
+      "instanceId": "standalone",
+      "ok": true
+     },
+     "restarted": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:02Z",
+         "lastUpdatedAt": "2026-11-03T19:32:03Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "stop1": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     },
+     "stop2": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     }
+    },
+    "origin": {
+     "files": [
+      "instance/host-agent.lock",
+      "state/authz.sqlite",
+      "state/host-agent.lock",
+      "state/state.db"
+     ],
+     "preStop": {
+      "answers": {
+       "A": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:31:17Z",
+          "inputRequests": {
+           "response": {
+            "prompt": "Continue?",
+            "type": "boolean"
+           }
+          },
+          "lastUpdatedAt": "2026-11-03T19:31:17Z",
+          "pollIntervalMs": 3000,
+          "resultType": "complete",
+          "status": "input_required",
+          "statusMessage": "The task requires input before it can continue.",
+          "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "B": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:31:17Z",
+          "inputRequests": {
+           "response": {
+            "prompt": "Continue?",
+            "type": "boolean"
+           }
+          },
+          "lastUpdatedAt": "2026-11-03T19:31:17Z",
+          "pollIntervalMs": 3000,
+          "resultType": "complete",
+          "status": "cancelled",
+          "statusMessage": "The task was cancelled by request.",
+          "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "C": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:31:17Z",
+          "lastUpdatedAt": "2026-11-03T19:31:17Z",
+          "pollIntervalMs": 3000,
+          "result": {
+           "content": null,
+           "isError": false,
+           "structuredContent": {
+            "response": true
+           }
+          },
+          "resultType": "complete",
+          "status": "completed",
+          "statusMessage": "The operation completed successfully.",
+          "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "D": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:31:17Z",
+          "lastUpdatedAt": "2026-11-03T19:31:17Z",
+          "pollIntervalMs": 3000,
+          "result": {
+           "content": [
+            {
+             "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+             "type": "text"
+            }
+           ],
+           "isError": true,
+           "structuredContent": {
+            "code": "resource_binding",
+            "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "owner": "admission"
+           }
+          },
+          "resultType": "complete",
+          "status": "completed",
+          "statusMessage": "The operation completed successfully.",
+          "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "E": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:32:02Z",
+          "lastUpdatedAt": "2026-11-03T19:32:02Z",
+          "pollIntervalMs": 3000,
+          "resultType": "complete",
+          "status": "working",
+          "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       }
+      },
+      "gateReached": true,
+      "health": {
+       "agentId": "parity-m12a-agent",
+       "instanceId": "standalone",
+       "ok": true
+      },
+      "stop": {
+       "aliveWhileInFlight": true,
+       "exit": 0,
+       "gate": {
+        "released": true,
+        "shimAliveAtRelease": true
+       },
+       "newConnectionAccepted": false,
+       "shimAliveAtSignal": true
+      }
+     }
+    },
+    "reference": {
+     "first": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:02Z",
+         "lastUpdatedAt": "2026-11-03T19:32:03Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "health": {
+      "agentId": "parity-m12a-agent",
+      "instanceId": "standalone",
+      "ok": true
+     },
+     "restarted": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:02Z",
+         "lastUpdatedAt": "2026-11-03T19:32:03Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "stop1": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     },
+     "stop2": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     }
+    },
+    "rollback": {
+     "answers": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:32:07Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "de384844-1701-477c-93af-e74c4cd04eed",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "261fee56-ea57-4023-ad62-3af846645435",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:31:17Z",
+         "lastUpdatedAt": "2026-11-03T19:31:17Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:02Z",
+         "lastUpdatedAt": "2026-11-03T19:32:03Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "G": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:07Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:07Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "5076852b-82fb-4e0c-a324-523bcd3b45ff",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "health": {
+      "agentId": "parity-m12a-agent",
+      "instanceId": "standalone",
+      "ok": true
+     },
+     "ready": true,
+     "stop": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     }
+    },
+    "snapshotUnchanged": true,
+    "variables": {
+     "TASK_A": "de384844-1701-477c-93af-e74c4cd04eed",
+     "TASK_B": "261fee56-ea57-4023-ad62-3af846645435",
+     "TASK_C": "df9512da-c10b-43ba-9ed7-7a51e0e2480f",
+     "TASK_D": "149c7c1e-d825-418a-b667-57bd9e1e9404",
+     "TASK_E": "621a7d10-ca7b-435d-85e2-4ebf4eb066b4",
+     "TASK_G": "5076852b-82fb-4e0c-a324-523bcd3b45ff"
+    }
+   }
+  ],
+  "rust": [
+   {
+    "forward": {
+     "accepted": {
+      "G": "76f6e03b-02e6-40b8-891b-19f5335ba4d2"
+     },
+     "afterWork": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:57Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:53Z",
+         "lastUpdatedAt": "2026-11-03T19:32:53Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "G": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:57Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:57Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "76f6e03b-02e6-40b8-891b-19f5335ba4d2",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "first": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:53Z",
+         "lastUpdatedAt": "2026-11-03T19:32:53Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "health": {
+      "agentId": "parity-m12a-agent",
+      "instanceId": "standalone",
+      "ok": true
+     },
+     "restarted": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:53Z",
+         "lastUpdatedAt": "2026-11-03T19:32:53Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "stop1": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     },
+     "stop2": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     }
+    },
+    "origin": {
+     "files": [
+      "instance/host-agent.lock",
+      "state/authz.sqlite",
+      "state/host-agent.lock",
+      "state/state.db"
+     ],
+     "preStop": {
+      "answers": {
+       "A": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:32:08Z",
+          "inputRequests": {
+           "response": {
+            "prompt": "Continue?",
+            "type": "boolean"
+           }
+          },
+          "lastUpdatedAt": "2026-11-03T19:32:08Z",
+          "pollIntervalMs": 3000,
+          "resultType": "complete",
+          "status": "input_required",
+          "statusMessage": "The task requires input before it can continue.",
+          "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "B": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:32:08Z",
+          "inputRequests": {
+           "response": {
+            "prompt": "Continue?",
+            "type": "boolean"
+           }
+          },
+          "lastUpdatedAt": "2026-11-03T19:32:08Z",
+          "pollIntervalMs": 3000,
+          "resultType": "complete",
+          "status": "cancelled",
+          "statusMessage": "The task was cancelled by request.",
+          "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "C": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:32:08Z",
+          "lastUpdatedAt": "2026-11-03T19:32:08Z",
+          "pollIntervalMs": 3000,
+          "result": {
+           "content": null,
+           "isError": false,
+           "structuredContent": {
+            "response": true
+           }
+          },
+          "resultType": "complete",
+          "status": "completed",
+          "statusMessage": "The operation completed successfully.",
+          "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "D": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:32:08Z",
+          "lastUpdatedAt": "2026-11-03T19:32:08Z",
+          "pollIntervalMs": 3000,
+          "result": {
+           "content": [
+            {
+             "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+             "type": "text"
+            }
+           ],
+           "isError": true,
+           "structuredContent": {
+            "code": "resource_binding",
+            "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "owner": "admission"
+           }
+          },
+          "resultType": "complete",
+          "status": "completed",
+          "statusMessage": "The operation completed successfully.",
+          "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       },
+       "E": {
+        "body": {
+         "id": 1,
+         "jsonrpc": "2.0",
+         "result": {
+          "createdAt": "2026-11-03T19:32:53Z",
+          "lastUpdatedAt": "2026-11-03T19:32:53Z",
+          "pollIntervalMs": 3000,
+          "resultType": "complete",
+          "status": "working",
+          "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+          "ttlMs": 3600000
+         }
+        },
+        "status": 200
+       }
+      },
+      "gateReached": true,
+      "health": {
+       "agentId": "parity-m12a-agent",
+       "instanceId": "standalone",
+       "ok": true
+      },
+      "stop": {
+       "aliveWhileInFlight": true,
+       "exit": 0,
+       "gate": {
+        "released": true,
+        "shimAliveAtRelease": true
+       },
+       "newConnectionAccepted": false,
+       "shimAliveAtSignal": true
+      }
+     }
+    },
+    "reference": {
+     "first": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:53Z",
+         "lastUpdatedAt": "2026-11-03T19:32:53Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "health": {
+      "agentId": "parity-m12a-agent",
+      "instanceId": "standalone",
+      "ok": true
+     },
+     "restarted": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:53Z",
+         "lastUpdatedAt": "2026-11-03T19:32:53Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "stop1": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     },
+     "stop2": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     }
+    },
+    "rollback": {
+     "answers": {
+      "A": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:57Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "64e37220-6943-4499-bf85-f7bca1873fca",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "B": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The task was cancelled by request.",
+         "taskId": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "C": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "error": {
+          "code": -32603,
+          "message": "The Host Agent restarted before the task completed."
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "failed",
+         "statusMessage": "The Host Agent restarted before the task completed.",
+         "taskId": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "D": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:08Z",
+         "lastUpdatedAt": "2026-11-03T19:32:08Z",
+         "pollIntervalMs": 3000,
+         "result": {
+          "content": [
+           {
+            "text": "Error: resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+            "type": "text"
+           }
+          ],
+          "isError": true,
+          "structuredContent": {
+           "code": "resource_binding",
+           "message": "resolve start_vm argument \"uri\": resource URI belongs to a different tenant: active tenant \"local\"",
+           "owner": "admission"
+          }
+         },
+         "resultType": "complete",
+         "status": "completed",
+         "statusMessage": "The operation completed successfully.",
+         "taskId": "79969017-6a24-45c5-8246-097eeef48e2b",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "E": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:53Z",
+         "lastUpdatedAt": "2026-11-03T19:32:53Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "cancelled",
+         "statusMessage": "The Host Agent shut down before the task completed.",
+         "taskId": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      },
+      "G": {
+       "body": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+         "createdAt": "2026-11-03T19:32:57Z",
+         "inputRequests": {
+          "response": {
+           "prompt": "Continue?",
+           "type": "boolean"
+          }
+         },
+         "lastUpdatedAt": "2026-11-03T19:32:57Z",
+         "pollIntervalMs": 3000,
+         "resultType": "complete",
+         "status": "input_required",
+         "statusMessage": "The task requires input before it can continue.",
+         "taskId": "76f6e03b-02e6-40b8-891b-19f5335ba4d2",
+         "ttlMs": 3600000
+        }
+       },
+       "status": 200
+      }
+     },
+     "health": {
+      "agentId": "parity-m12a-agent",
+      "instanceId": "standalone",
+      "ok": true
+     },
+     "ready": true,
+     "stop": {
+      "exit": 0,
+      "killed": false,
+      "seconds": 0.0
+     }
+    },
+    "snapshotUnchanged": true,
+    "variables": {
+     "TASK_A": "64e37220-6943-4499-bf85-f7bca1873fca",
+     "TASK_B": "54972f89-acdb-40b5-880c-d7e15dd9eb5b",
+     "TASK_C": "8c0f6680-c630-400a-839c-ec1896fed5a3",
+     "TASK_D": "79969017-6a24-45c5-8246-097eeef48e2b",
+     "TASK_E": "3fc9bc9b-153a-448b-8a38-74a6a4d872b5",
+     "TASK_G": "76f6e03b-02e6-40b8-891b-19f5335ba4d2"
+    }
+   }
+  ]
+ },
+ "writerLock": {
+  "go-go": {
+   "afterKill": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "secondStarted": true,
+    "task": "input_required"
+   },
+   "firstServing": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "task": "input_required"
+   },
+   "firstTreeUnchanged": true,
+   "killFirst": {
+    "exit": -9,
+    "killed": false
+   },
+   "second": {
+    "exit": 1,
+    "portBound": false,
+    "stderr": "host agent instance is already in use: ${SANDBOX}/instance/host-agent.lock is locked by another process\n",
+    "stdout": ""
+   },
+   "stopSecond": {
+    "exit": 0,
+    "killed": false,
+    "seconds": 0.0
+   }
+  },
+  "go-rust": {
+   "afterKill": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "secondStarted": true,
+    "task": "input_required"
+   },
+   "firstServing": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "task": "input_required"
+   },
+   "firstTreeUnchanged": true,
+   "killFirst": {
+    "exit": -9,
+    "killed": false
+   },
+   "second": {
+    "exit": 1,
+    "portBound": false,
+    "stderr": "host agent instance is already in use: ${SANDBOX}/instance/host-agent.lock is locked by another process\n",
+    "stdout": ""
+   },
+   "stopSecond": {
+    "exit": 0,
+    "killed": false,
+    "seconds": 0.0
+   }
+  },
+  "rust-go": {
+   "afterKill": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "secondStarted": true,
+    "task": "input_required"
+   },
+   "firstServing": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "task": "input_required"
+   },
+   "firstTreeUnchanged": true,
+   "killFirst": {
+    "exit": -9,
+    "killed": false
+   },
+   "second": {
+    "exit": 1,
+    "portBound": false,
+    "stderr": "host agent instance is already in use: ${SANDBOX}/instance/host-agent.lock is locked by another process\n",
+    "stdout": ""
+   },
+   "stopSecond": {
+    "exit": 0,
+    "killed": false,
+    "seconds": 0.0
+   }
+  },
+  "rust-rust": {
+   "afterKill": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "secondStarted": true,
+    "task": "input_required"
+   },
+   "firstServing": {
+    "health": {
+     "agentId": "parity-m12a-agent",
+     "instanceId": "standalone",
+     "ok": true
+    },
+    "task": "input_required"
+   },
+   "firstTreeUnchanged": true,
+   "killFirst": {
+    "exit": -9,
+    "killed": false
+   },
+   "second": {
+    "exit": 1,
+    "portBound": false,
+    "stderr": "host agent instance is already in use: ${SANDBOX}/instance/host-agent.lock is locked by another process\n",
+    "stdout": ""
+   },
+   "stopSecond": {
+    "exit": 0,
+    "killed": false,
+    "seconds": 0.0
+   }
+  }
+ }
+}

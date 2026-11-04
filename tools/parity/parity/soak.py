@@ -240,7 +240,13 @@ RESTART_JITTER = 0.5
 def growth(samples: list[dict], events: list[dict]) -> dict:
     """Leak indicators that survive restarts: the slope of each epoch's last
     sample (between restarts) across the run, for RSS, FDs and threads, and
-    the state size slope."""
+    the state size slope. A sample inside a restart window observed the
+    agent stopping or starting, not running, so no epoch takes it."""
+    # A restart event is written when the agent is ready again, so its window
+    # is [t - readyMs, t]; a sample taken inside it is the restart itself.
+    windows = [(e["t"] - e.get("readyMs", 0) / 1000 - RESTART_JITTER, e["t"] + RESTART_JITTER)
+               for e in events if e.get("event") == "restart"]
+    in_restart = lambda t: any(lo <= t <= hi for lo, hi in windows)
     restarts = sorted(e["t"] for e in events if e.get("event") == "restart")
     epochs: list[list[dict]] = [[]]
     bound = iter(restarts + [math.inf])
@@ -249,7 +255,7 @@ def growth(samples: list[dict], events: list[dict]) -> dict:
         while sample["t"] >= edge:
             epochs.append([])
             edge = next(bound)
-        if not sample.get("down"):
+        if not sample.get("down") and not in_restart(sample["t"]):
             epochs[-1].append(sample)
     out: dict[str, Any] = {"epochs": len([e for e in epochs if e])}
     for key in ("rssKb", "fds", "threads"):
@@ -260,13 +266,9 @@ def growth(samples: list[dict], events: list[dict]) -> dict:
                     "medianWithinEpochSlopePerHour": percentile(within, 0.5)}
     out["stateBytes"] = {"slopePerHour": slope_per_hour([(s["t"], s["stateBytes"]) for s in samples]),
                          "last": samples[-1]["stateBytes"] if samples else None}
-    # A restart event is written when the agent is ready again, so its window
-    # is [t - readyMs, t]; a sample taken inside it is the restart itself.
-    windows = [(e["t"] - e.get("readyMs", 0) / 1000 - RESTART_JITTER, e["t"] + RESTART_JITTER)
-               for e in events if e.get("event") == "restart"]
     down = [s["t"] for s in samples if s.get("down")]
     out["downSamplesTotal"] = len(down)
-    out["downSamples"] = sum(1 for t in down if not any(lo <= t <= hi for lo, hi in windows))
+    out["downSamples"] = sum(1 for t in down if not in_restart(t))
     return out
 
 

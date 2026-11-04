@@ -389,7 +389,7 @@ def _execute(impl: agent.Impl, scenario: dict, side: str, run_id: str,
                 steps[label] = {"started": True}
             elif "providerProcess" in step:
                 spec = step["providerProcess"]
-                process = agent.ProviderProcess(sandbox, spec["binary"])
+                process = agent.ProviderProcess(sandbox, spec["binary"], impl.providers)
                 stubs[label] = process
                 sandbox.captured[spec.get("portVar", "PROVIDER_PORT")] = str(process.port)
                 steps[label] = {"started": True}
@@ -691,6 +691,7 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
     started = time.time()
     started_harness_sha = harness_sha256()
     started_binary_shas = (left.sha256(), right.sha256())
+    started_provider_shas = (left.provider_sha256s(), right.provider_sha256s())
 
     def job(item: tuple[dict, int]) -> tuple[str, int, dict]:
         scenario, i = item
@@ -748,15 +749,21 @@ def run_suite(left: agent.Impl, right: agent.Impl, suite: str, out_dir: Path,
             "files": hashes,
         }
 
+    sides = {}
+    for name, impl, sha, providers in (("left", left, started_binary_shas[0], started_provider_shas[0]),
+                                       ("right", right, started_binary_shas[1], started_provider_shas[1])):
+        sides[name] = {"label": impl.label, "binarySha256": sha}
+        if providers is not None:
+            sides[name]["providerSha256s"] = providers
     summary = {
         "schemaVersion": 1,
         "suite": suite,
         "provenance": {
-            "left": {"label": left.label, "binarySha256": started_binary_shas[0]},
-            "right": {"label": right.label, "binarySha256": started_binary_shas[1]},
+            **sides,
             "harnessSha256": started_harness_sha,
             "changedDuringRun": (started_harness_sha != harness_sha256()
-                                 or started_binary_shas != (left.sha256(), right.sha256())),
+                                 or started_binary_shas != (left.sha256(), right.sha256())
+                                 or started_provider_shas != (left.provider_sha256s(), right.provider_sha256s())),
             "sourceCommit": (source_lock or {}).get("sourceCommit"),
             "sourceTree": (source_lock or {}).get("sourceTree"),
             "repeat": repeat,

@@ -1,7 +1,7 @@
 {
  "canaries": {
   "expected": "canaries.json",
-  "results": "evidence/d25/canaries.json"
+  "results": "evidence/m9/canaries.json"
  },
  "catalogRevisions": {
   "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). platform and standalone are the served catalogs (crate test catalog::tests::revisions_match_manifest checks both sides: the Go value is the revision of the un-renamed catalog). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
@@ -167,23 +167,23 @@
  "contracts": {
   "evidence-redaction": {
    "decision": "D13",
-   "results": "evidence/d25/contracts/evidence-redaction/summary.json"
+   "results": "evidence/m9/contracts/evidence-redaction/summary.json"
   },
   "oauth-issuance": {
    "decision": "D8",
-   "results": "evidence/d25/contracts/oauth-issuance/summary.json"
+   "results": "evidence/m9/contracts/oauth-issuance/summary.json"
   },
   "refuse-before-operation-record": {
    "decision": "D12",
-   "results": "evidence/d25/contracts/refuse-before-operation-record/summary.json"
+   "results": "evidence/m9/contracts/refuse-before-operation-record/summary.json"
   },
   "reject-without-audit-writes": {
    "decision": "D11",
-   "results": "evidence/d25/contracts/reject-without-audit-writes/summary.json"
+   "results": "evidence/m9/contracts/reject-without-audit-writes/summary.json"
   },
   "standalone-read-only-gate": {
    "decision": "D10",
-   "results": "evidence/d25/contracts/standalone-read-only-gate/summary.json"
+   "results": "evidence/m9/contracts/standalone-read-only-gate/summary.json"
   }
  },
  "decisions": {
@@ -338,12 +338,12 @@
    "go": {
     "build": "parity dist release-go: Go's own Makefile targets (build-linux-x64, build-linux-arm64, build-provider-*-linux-x64) in an export of the pinned tree at a fixed path, VERSION=0.2.4, gzip -9 -kf; the binaries reproduce byte for byte, the archives differ only by gzip's recorded mtime",
     "path": ".parity/releases/go",
-    "sha256sums": "47d95d867431765ee50d36b709b50abdf2727a8c7f93be42d1fd5a0a6aa7f56b"
+    "sha256sums": "2f2c6eb9a1f4564e770ccdd80e5ef0fc8cfeadbf1bc8a7e0282f464d4e329896"
    },
    "rust": {
-    "build": "make artifacts (tools/release/build-artifacts.sh, cargo-zigbuild 0.23.4 and zig 0.15.2 from make release-toolchain): host-agent-linux-x64 for x86_64-unknown-linux-gnu.2.34, host-agent-linux-arm64 for aarch64-unknown-linux-musl, Go's providers from the pinned tree; the binaries reproduce byte for byte",
+    "build": "tools/release/build-artifacts.sh (no Go toolchain, no Go tree)",
     "path": "dist",
-    "sha256sums": "c45862fc57bc2175df7dedf8931a4f23d14faa2862b4af06160404c00fe5ed00"
+    "sha256sums": "a6632f91a924e779e4d9005fa673203e2fba485bd4f9ab152792007786b248c8"
    }
   },
   "reviewedSiteDiff": [
@@ -392,20 +392,20 @@
     "reason": "the search index lists the neutral tool names"
    }
   ],
-  "summary": "evidence/d25/dist/summary.json"
+  "summary": "evidence/m9/dist/summary.json"
  },
  "evidence": {
   "go-vs-go": {
    "minRepeat": 3,
    "purpose": "harness self-validation: the pinned Go binary compared with itself must be clean and deterministic",
    "right": "go",
-   "summary": "evidence/d25/go-vs-go/summary.json"
+   "summary": "evidence/m9/go-vs-go/summary.json"
   },
   "go-vs-rust": {
    "minRepeat": 1,
    "purpose": "T1 differential parity of the Rust candidate; items outside a gate's surfaces may fail until their milestone",
    "right": "rust",
-   "summary": "evidence/d25/go-vs-rust/summary.json"
+   "summary": "evidence/m9/go-vs-rust/summary.json"
   }
  },
  "gates": {
@@ -435,6 +435,63 @@
     "go-vs-rust"
    ],
    "requireT2": true
+  },
+  "d25": {
+   "description": "D25 (state-directory writer lock): the m12b gate on the v0.2.4 rebase, plus the writer-lock drill for Go/Go, Rust/Rust, Go then Rust and Rust then Go (the second agent exits 1 with the refusal line alone, prints nothing, binds no port and writes nothing while the first keeps serving; after a SIGKILL the next agent starts), the clean-machine user unit refused and retried while the bootstrap unit serves its instance, and the writer-lock inventory item covered.",
+   "requireCanaries": true,
+   "requireContracts": [
+    "oauth-issuance",
+    "standalone-read-only-gate",
+    "reject-without-audit-writes",
+    "refuse-before-operation-record"
+   ],
+   "requireCovered": [
+    "state-directory writer lock"
+   ],
+   "requireDistribution": true,
+   "requireInventory": true,
+   "requireM5": true,
+   "requireOracles": true,
+   "requirePass": [
+    "go-vs-go",
+    {
+     "suite": "go-vs-rust",
+     "surfaces": [
+      "admission",
+      "auth",
+      "catalog",
+      "cli",
+      "cluster-domain",
+      "config",
+      "durable-state",
+      "host-domain",
+      "host-read",
+      "http",
+      "incus-domain",
+      "lifecycle",
+      "llm-domain",
+      "mcp-wire",
+      "oci-domain",
+      "postgres-domain",
+      "provider-lifecycle",
+      "provider-real",
+      "read-only-tools",
+      "recipe-corpus",
+      "serving-domain",
+      "tasks"
+     ]
+    }
+   ],
+   "requireRehearsal": true,
+   "requireRehearsalDrills": [
+    "writerLock.go-go",
+    "writerLock.rust-rust",
+    "writerLock.go-rust",
+    "writerLock.rust-go"
+   ],
+   "requireSoak": true,
+   "requireT2": true,
+   "requireT2Oracles": true
   },
   "m0": {
    "description": "M0 exit: harness proven (Go-vs-Go clean x3, every canary caught), inventory captured with zero unowned gaps, every Rust item present and unverified",
@@ -1003,13 +1060,16 @@
    "requireT2": true,
    "requireT2Oracles": true
   },
-  "d25": {
+  "m9": {
    "requireCanaries": true,
    "requireContracts": [
     "oauth-issuance",
     "standalone-read-only-gate",
     "reject-without-audit-writes",
     "refuse-before-operation-record"
+   ],
+   "requireCovered": [
+    "state-directory writer lock"
    ],
    "requireDistribution": true,
    "requireInventory": true,
@@ -1046,19 +1106,46 @@
     }
    ],
    "requireRehearsal": true,
-   "requireSoak": true,
-   "requireT2": true,
-   "requireT2Oracles": true,
-   "description": "D25 (state-directory writer lock): the m12b gate on the v0.2.4 rebase, plus the writer-lock drill for Go/Go, Rust/Rust, Go then Rust and Rust then Go (the second agent exits 1 with the refusal line alone, prints nothing, binds no port and writes nothing while the first keeps serving; after a SIGKILL the next agent starts), the clean-machine user unit refused and retried while the bootstrap unit serves its instance, and the writer-lock inventory item covered.",
    "requireRehearsalDrills": [
     "writerLock.go-go",
     "writerLock.rust-rust",
     "writerLock.go-rust",
     "writerLock.rust-go"
    ],
-   "requireCovered": [
-    "state-directory writer lock"
-   ]
+   "requireSoak": true,
+   "requireT2": true,
+   "requireT2Oracles": true,
+   "requireProviders": [
+    "hostos",
+    "cloudflare",
+    "tailscale",
+    "k3s"
+   ],
+   "description": "M9 (D26, the provider executables in Rust): the d25 gate on the final Rust core, plus each ported provider re-derived from its receipts: its wire corpus equal to the pinned Go executable's (Go recorded twice; a request reorder passes only where declared and Go/Go shows it), the provider-real swap under one Rust core passing with the Rust executable on the right, k3s's T2 swap passing, and each shipped executable the one in the Rust release set, which builds with no Go toolchain or tree."
+  },
+  "m9-cloudflare": {
+   "requireProviders": [
+    "cloudflare"
+   ],
+   "description": "M9 opute-provider-cloudflare: the provider evidence of the m9 gate for this executable alone."
+  },
+  "m9-hostos": {
+   "requireProviders": [
+    "hostos"
+   ],
+   "description": "M9 opute-provider-hostos: the provider evidence of the m9 gate for this executable alone."
+  },
+  "m9-k3s": {
+   "requireProviders": [
+    "k3s"
+   ],
+   "description": "M9 opute-provider-k3s: the provider evidence of the m9 gate for this executable alone."
+  },
+  "m9-tailscale": {
+   "requireProviders": [
+    "tailscale"
+   ],
+   "description": "M9 opute-provider-tailscale: the provider evidence of the m9 gate for this executable alone."
   }
  },
  "goReference": {
@@ -4573,27 +4660,201 @@
  ],
  "m5Evidence": {
   "crash": {
-   "summary": "evidence/d25/m5/crash/summary.json"
+   "summary": "evidence/m9/m5/crash/summary.json"
   },
   "cross-read": {
-   "summary": "evidence/d25/m5/cross-read/summary.json"
+   "summary": "evidence/m9/m5/cross-read/summary.json"
   },
   "migration": {
-   "summary": "evidence/d25/m5/migration/summary.json"
+   "summary": "evidence/m9/m5/migration/summary.json"
   },
   "secrets": {
-   "summary": "evidence/d25/m5/secrets/summary.json"
+   "summary": "evidence/m9/m5/secrets/summary.json"
   },
   "shape": {
-   "summary": "evidence/d25/m5/shape/summary.json"
+   "summary": "evidence/m9/m5/shape/summary.json"
   },
   "unknown-projection": {
-   "summary": "evidence/d25/m5/unknown-projection/summary.json"
+   "summary": "evidence/m9/m5/unknown-projection/summary.json"
   }
  },
  "oracles": {
-  "results": "evidence/d25/oracles.json",
+  "results": "evidence/m9/oracles.json",
   "suites": "tools/parity/oracles.json"
+ },
+ "providerEvidence": {
+  "releases": {
+   "path": "evidence/m9/dist/releases.json",
+   "sha256": "781b1e8f08af985c492a5696eb39ae9d11e032abee26a90b8f5a37801ef9bde4"
+  },
+  "providers": {
+   "hostos": {
+    "goSha256": "2fc89359b348ab6e46e44e43df9388f9b81519708e14c2af8a86044d66d3492d",
+    "rustSha256": "02e751e0234c1a06dab361416ff3b7659add0f82bbec842206132f817b64e48b",
+    "wire": [
+     {
+      "calls": "tools/parity/provider-wire/hostos.json",
+      "orderOnly": {},
+      "go": {
+       "path": "evidence/m9/wire/hostos.go.json.gz",
+       "sha256": "7be99c568e8dddd5e5b3fd1714713a6db52b05941320a582272e9642367a6d25"
+      },
+      "goAgain": {
+       "path": "evidence/m9/wire/hostos.goAgain.json.gz",
+       "sha256": "7be99c568e8dddd5e5b3fd1714713a6db52b05941320a582272e9642367a6d25"
+      },
+      "rust": {
+       "path": "evidence/m9/wire/hostos.rust.json.gz",
+       "sha256": "699f9a2409118b4b6d3f972d6c4d47958d0df10cee9401b133bcca8346f593aa"
+      }
+     }
+    ],
+    "swap": {
+     "path": "evidence/m9/swap/summary.json",
+     "sha256": "9952adee0df5cbdf2c06564d7ed02aed70d7c9027bd1c99d51fa183e80cbd109",
+     "scenarios": [
+      "provider-real.hostos"
+     ]
+    }
+   },
+   "cloudflare": {
+    "goSha256": "9df9a02d5b69fe092e9931de55b606624a9e70d76ebb9f1dc2258db29811c4dc",
+    "rustSha256": "581fa29139b89121d919f0cd31d1ef08fd66f49035c43cd83ff94fbf6cf0469a",
+    "wire": [
+     {
+      "calls": "tools/parity/provider-wire/cloudflare.json",
+      "orderOnly": {},
+      "go": {
+       "path": "evidence/m9/wire/cloudflare.go.json.gz",
+       "sha256": "f7bc9793d6771e08475eeec4fa96e6fda5b577e7ea87339d08d94e8166dd2e84"
+      },
+      "goAgain": {
+       "path": "evidence/m9/wire/cloudflare.goAgain.json.gz",
+       "sha256": "f7bc9793d6771e08475eeec4fa96e6fda5b577e7ea87339d08d94e8166dd2e84"
+      },
+      "rust": {
+       "path": "evidence/m9/wire/cloudflare.rust.json.gz",
+       "sha256": "66a23f11a0ca2661631dafb5649801aa783ceddcce9183a6e928d367f05485fa"
+      }
+     },
+     {
+      "calls": "tools/parity/provider-wire/cloudflare-api.json",
+      "orderOnly": {},
+      "go": {
+       "path": "evidence/m9/wire/cloudflare-api.go.json.gz",
+       "sha256": "98dfebb02aa28e30246048071cfc2935170da677d2627f43ce9a9fcb8de3acf7"
+      },
+      "goAgain": {
+       "path": "evidence/m9/wire/cloudflare-api.goAgain.json.gz",
+       "sha256": "98dfebb02aa28e30246048071cfc2935170da677d2627f43ce9a9fcb8de3acf7"
+      },
+      "rust": {
+       "path": "evidence/m9/wire/cloudflare-api.rust.json.gz",
+       "sha256": "3d5597e9859139d0ef5981c869b1735c654d8135e3faeb89dbcff92cc199b19c"
+      }
+     }
+    ],
+    "swap": {
+     "path": "evidence/m9/swap/summary.json",
+     "sha256": "9952adee0df5cbdf2c06564d7ed02aed70d7c9027bd1c99d51fa183e80cbd109",
+     "scenarios": [
+      "provider-real.cloudflare"
+     ]
+    },
+    "artifact": "opute-provider-cloudflare-linux-x64"
+   },
+   "tailscale": {
+    "goSha256": "6f888f8f850f8d57f95a37db46f5a76ab545364fe5051b4e8f059614872c1397",
+    "rustSha256": "0de281a77befeebeadbb7125e80571fdeb6892051442be1841ea239bb86263a5",
+    "wire": [
+     {
+      "calls": "tools/parity/provider-wire/tailscale.json",
+      "orderOnly": {},
+      "go": {
+       "path": "evidence/m9/wire/tailscale.go.json.gz",
+       "sha256": "ca69fcf48a9ed3172032b1f4aa8f9b5e764732b4f958950720d32df584c41ef8"
+      },
+      "goAgain": {
+       "path": "evidence/m9/wire/tailscale.goAgain.json.gz",
+       "sha256": "ca69fcf48a9ed3172032b1f4aa8f9b5e764732b4f958950720d32df584c41ef8"
+      },
+      "rust": {
+       "path": "evidence/m9/wire/tailscale.rust.json.gz",
+       "sha256": "98581b0506d504ab3134a158cb8bcbb08ea967aaaa3c456c673e228bc021e9f3"
+      }
+     },
+     {
+      "calls": "tools/parity/provider-wire/tailscale-live.json",
+      "orderOnly": {
+       "call opute.provider.teardown": "Go ranges over a map of nodes to delete; the Go/Go recording shows the same reorder"
+      },
+      "go": {
+       "path": "evidence/m9/wire/tailscale-live.go.json.gz",
+       "sha256": "935b783f49cdb5ad9ef84a5643cd005f422d9f64552412809fe80b778eaef000"
+      },
+      "goAgain": {
+       "path": "evidence/m9/wire/tailscale-live.goAgain.json.gz",
+       "sha256": "7eea0b80c54cf37b99f448e5e53d823c005661a4b4e440ee567be3838c09d09e"
+      },
+      "rust": {
+       "path": "evidence/m9/wire/tailscale-live.rust.json.gz",
+       "sha256": "a834a89957ab23a5c18d9ec32781e3c6dd6a3083a54a8c51c36a8f3dc7b39660"
+      }
+     }
+    ],
+    "swap": {
+     "path": "evidence/m9/swap/summary.json",
+     "sha256": "9952adee0df5cbdf2c06564d7ed02aed70d7c9027bd1c99d51fa183e80cbd109",
+     "scenarios": [
+      "provider-real.tailscale"
+     ]
+    },
+    "artifact": "opute-provider-tailscale-linux-x64"
+   },
+   "k3s": {
+    "goSha256": "724301fe55c0c4cdcae40deb33af06b42510a06a3a49b25aa4864be1aa7b1915",
+    "rustSha256": "852e352f72e8db5574ed05b8297991927832e238122f0c618292a81bbf7f8dae",
+    "wire": [
+     {
+      "calls": "tools/parity/provider-wire/k3s.json",
+      "orderOnly": {
+       "opute.capability.kubernetes.inspect-guest-storage": "Go ranges over the du map of guest paths; the Go/Go recording shows the same reorder"
+      },
+      "go": {
+       "path": "evidence/m9/wire/k3s.go.json.gz",
+       "sha256": "1c1d45f64e6681ce71d700d641152968e2fabc0408d85e059f484349fc084f92"
+      },
+      "goAgain": {
+       "path": "evidence/m9/wire/k3s.goAgain.json.gz",
+       "sha256": "aeabdf91b94c91db13d74dd2df9a55665325d6661cca98fbc6116a1c56ff6408"
+      },
+      "rust": {
+       "path": "evidence/m9/wire/k3s.rust.json.gz",
+       "sha256": "c2a1c883c19e195232027dace8417ffa6ded29ee30d16f84d52d81d6659ec09e"
+      }
+     }
+    ],
+    "swap": {
+     "path": "evidence/m9/swap/summary.json",
+     "sha256": "9952adee0df5cbdf2c06564d7ed02aed70d7c9027bd1c99d51fa183e80cbd109",
+     "scenarios": [
+      "provider-real.k3s",
+      "provider-real.k3s.restart"
+     ]
+    },
+    "artifact": "opute-provider-k3s-linux-x64",
+    "t2": [
+     {
+      "path": "evidence/m9/t2-swap-cluster/summary.json",
+      "sha256": "78fea693cde20290a9b2daa9724d2736b06bd0cc54b137f20b81035870384b2a"
+     },
+     {
+      "path": "evidence/m9/t2-swap-oci-postgres/summary.json",
+      "sha256": "1f30deb06069b98026a900d9b8fbf7925071851581e46acd0f8b76c7082d4ec5"
+     }
+    ]
+   }
+  }
  },
  "rehearsalEvidence": {
   "declared": [
@@ -4605,22 +4866,22 @@
   ],
   "minRepeat": 1,
   "purpose": "M12 without Platform (parity rehearsal), re-derived by parity/rehearsal_verify.py: representative Go state stopped with a task in flight and snapshotted with checksums; Go's restart on a copy as the oracle; the target (Go control, Rust) forward on a copy with a restart and work of its own; Go rolled back onto the target's copy; and the stop drills (a synchronous call and long tasks in flight at SIGINT, two agents on one state directory)",
-  "summary": "evidence/d25/rehearsal/summary.json"
+  "summary": "evidence/m9/rehearsal/summary.json"
  },
  "rustCanaries": {
   "expected": "tools/parity/rust-canaries.json",
-  "results": "evidence/d25/rust-canaries.json"
+  "results": "evidence/m9/rust-canaries.json"
  },
  "rustCandidate": {
-  "binarySha256": "5eb911c8c8758a1fd27450ee7a925dfc2e8dc68d2b77911f7b28189bd46065b2",
+  "binarySha256": "d55314ae7e822097baf2fb6cb0171052b41f56d7fa86a12c6a665cdab35fab97",
   "build": "make artifacts (tools/release/build-artifacts.sh): cargo zigbuild --release --locked --target x86_64-unknown-linux-gnu.2.34, installed as dist/host-agent-linux-x64",
-  "note": "The x64 release artifact itself is the candidate from M10 on; every suite of evidence/d25 ran against it. Rebuild the release set and rerun the round after any Rust change."
+  "note": "The x64 release artifact itself is the candidate from M10 on; every suite of evidence/m9 ran against it. Rebuild the release set and rerun the round after any Rust change."
  },
  "schemaVersion": 1,
  "soakEvidence": {
   "minMinutes": 15,
   "purpose": "M12 validation 5, re-derived by parity/soak_verify.py: a Go and a Rust twin booted from the pinned base golden under one seeded mixed workload with periodic SIGTERM and SIGKILL restarts, sampled for error classes, latency percentiles, RSS, FDs, threads, state size, journal errors and final durable state, judged against thresholds declared from a Go/Go shakedown before the soak (owner rule: 15 minutes, no step over 30)",
-  "summary": "evidence/d25/soak/summary.json",
+  "summary": "evidence/m9/soak/summary.json",
   "thresholds": "tools/parity/soak-thresholds.json",
   "thresholdsSha256": "cfa6a23ca1c94fca96df970760a22266b4cd60983e6f10e2cdadaadbdd64ba21"
  },
@@ -4668,14 +4929,14 @@
     "purpose": "T2 harness self-validation: Go twins from one golden must agree",
     "right": "go",
     "shards": [
-     "evidence/d25/t2-go-vs-go-host/summary.json",
-     "evidence/d25/t2-go-vs-go-incus/summary.json",
-     "evidence/d25/t2-go-vs-go-serving-llm/summary.json",
-     "evidence/d25/t2-go-vs-go-cluster-a/summary.json",
-     "evidence/d25/t2-go-vs-go-cluster-b/summary.json",
-     "evidence/d25/t2-go-vs-go-oci-a/summary.json",
-     "evidence/d25/t2-go-vs-go-oci-b/summary.json",
-     "evidence/d25/t2-go-vs-go-postgres/summary.json"
+     "evidence/m9/t2-go-vs-go-host/summary.json",
+     "evidence/m9/t2-go-vs-go-incus/summary.json",
+     "evidence/m9/t2-go-vs-go-serving-llm/summary.json",
+     "evidence/m9/t2-go-vs-go-cluster-a/summary.json",
+     "evidence/m9/t2-go-vs-go-cluster-b/summary.json",
+     "evidence/m9/t2-go-vs-go-oci-a/summary.json",
+     "evidence/m9/t2-go-vs-go-oci-b/summary.json",
+     "evidence/m9/t2-go-vs-go-postgres/summary.json"
     ]
    },
    "go-vs-rust": {
@@ -4683,15 +4944,15 @@
     "purpose": "T2 effect, cleanup and no-unauthorized-effect parity of the Rust candidate",
     "right": "rust",
     "shards": [
-     "evidence/d25/t2-go-vs-rust-host/summary.json",
-     "evidence/d25/t2-go-vs-rust-incus/summary.json",
-     "evidence/d25/t2-go-vs-rust-cluster/summary.json"
+     "evidence/m9/t2-go-vs-rust-host/summary.json",
+     "evidence/m9/t2-go-vs-rust-incus/summary.json",
+     "evidence/m9/t2-go-vs-rust-cluster/summary.json"
     ]
    }
   }
  },
  "t2Oracles": {
-  "results": "evidence/d25/oracles-t2.json",
+  "results": "evidence/m9/oracles-t2.json",
   "suites": "tools/parity/oracles-t2.json"
  }
 }

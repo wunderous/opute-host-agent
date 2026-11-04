@@ -39,6 +39,13 @@ impl Client {
             .tcp_keepalive_retries(9);
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         let builder = builder.tcp_user_timeout(None);
+        // http.DefaultTransport's proxy: from the environment, never for
+        // localhost or loopback (reqwest's own would proxy loopback too).
+        let builder = builder.no_proxy().proxy(reqwest::Proxy::custom(|url| {
+            let port = url.port_or_known_default()?;
+            crate::providers::proxy_for(url.scheme(), url.host_str()?, port)
+                .and_then(|p| reqwest::Url::parse(&p).ok())
+        }));
         let http = builder.build().map_err(|e| e.to_string())?;
         Ok(Self {
             http,

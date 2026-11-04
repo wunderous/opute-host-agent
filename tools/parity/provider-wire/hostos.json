@@ -1,0 +1,15 @@
+[
+ ["opute.capability.host-platform.validate", {"expectedKind": "linux"}],
+ ["opute.capability.host-platform.validate", {"expectedKind": "wsl2", "expectedCPUFamily": "apple-silicon"}],
+ ["opute.capability.host-platform.validate", {"EXPECTEDKIND": "macos", "expectedcpufamily": "x86"}],
+ ["opute.capability.host-platform.validate", {"expectedKind": "bogus <&>"}],
+ ["opute.capability.host-platform.validate", {"expectedKind": 5}],
+ ["opute.capability.host-platform.validate", {"expectedCPUFamily": {"a": 1}, "expectedKind": "linux"}],
+ ["opute.capability.host-platform.validate", {"expectedKind": null, "expectedCPUFamily": [1]}],
+ ["opute.capability.host-platform.validate", {"expectedKind": true}],
+ ["opute.capability.host-platform.validate", {"expectedKind": "linux", "expectedKind": "wsl1"}],
+ ["opute.capability.host-platform.validate", {"other": 1}],
+ ["opute.capability.host-platform.validate", 7],
+ ["opute.capability.host-platform.detect", {"anything": [1, 2]}],
+ ["opute.provider.get_install_manifest", {"x": 1}]
+]

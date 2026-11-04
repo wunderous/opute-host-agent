@@ -302,6 +302,10 @@ def observe_artifacts(go: Path, rust: Path) -> dict:
             plain = directory / name[:-3]
             side_out["gzip"][name]["matchesPlain"] = gz.decompress((directory / name).read_bytes()) == plain.read_bytes()
             side_out["elf"][name[:-3]] = _elf(plain)
+        # The provider executables: Go's are static x64 builds (D26, M9).
+        for name in RELEASE_FILES:
+            if name.startswith("opute-provider-"):
+                side_out["elf"][name] = _elf(directory / name)
         binary = directory / "host-agent-linux-x64"
         for flag in ("--version", "-version"):
             done = subprocess.run([str(binary), flag], capture_output=True, text=True)

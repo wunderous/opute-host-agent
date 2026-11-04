@@ -814,6 +814,27 @@ no gap in the domain (D14); the domain's catalog tools move from
 
 ### M9: Provider executables in Rust (optional, per provider)
 
+**Status (2026-11-03): done for hostos, cloudflare, tailscale and k3s (D26);
+ollama stays the Go reference and leaves the release set (D15).** Each port
+is a Rust executable with Go's name, flags, env, wire and errors, on the D14
+seam, in the host-agent crate's library
+([`port-provider-executables`](../port-provider-executables/tasks.md)). The
+release set builds with cargo and zig only: no Go toolchain, no Go tree.
+Evidence in [`evidence/m9`](../../../evidence/m9/README.md):
+- every suite the gates re-derive, rerun on the final Rust core;
+- per provider: its wire corpus equal to Go's, the provider-real swap
+  under one Rust core, and for k3s the T2 swap;
+- the release rebuilt byte for byte, and the dist journeys pass.
+
+Gates m0–m6, m8a–m8f, m10, m12a, m12b, d25, m9 and m9-<provider> pass,
+the seam verifier reports no gap, and cutover fails only on its owned gaps
+and the M13 evidence. The soak's growth check now skips restart windows
+(owner decision, 2026-11-03). No Go
+test drives a provider executable, so the wire corpora and the ported unit
+tests stand in for black-box tests. Owned gaps: live Cloudflare and
+Tailscale accounts, T2 for the tunnel providers and hostos (no T2 scenario
+starts them), and cancellation propagation into provider callbacks.
+
 **Closes:** 3.3 where a port is chosen. **Depends on:** M7, and M8 for the
 domains a provider uses.
 
@@ -1040,7 +1061,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | # | Decision | Recommendation | Why |
 | --- | --- | --- | --- |
 | D1 | Keep the SQLite schema and layout bit-compatible for cutover (M5) | **Yes** | This turns conversion into a verified identity, makes rollback symmetric, and removes the largest cutover risk. Any reorganization can be a separate change later. |
-| D2 | Port provider executables to Rust (M9) | **Defer, per provider** | They sit behind a versioned process contract. Porting them is not needed to prove core parity, and it adds five more parity surfaces. |
+| D2 | Port provider executables to Rust (M9) | **Defer, per provider; superseded by D26 (2026-11-02)** | They sit behind a versioned process contract. Porting them is not needed to prove core parity, and it adds five more parity surfaces. |
 | D3 | `host-agent-windows-x64.gz` is built by Go `make artifacts`, but the spec limits native execution to Linux and WSL2, and the npm launcher rejects Windows | **Record as a parity item and ask the owner** | Dropping the artifact silently would be a removed capability. Shipping it would need its own contract. |
 | D4 | T2 sandbox infrastructure (where the nested-Incus VMs run) | A dedicated, disposable pool with no shared Incus, Kubernetes, or tunnel state | `AGENTS.md` forbids mutating shared runtime to validate. |
 | D5 | Staging Platform identity for M11 | A dedicated `parity-rs-*` ID and tenant | Spec: distinct identity, never inferred. |
@@ -1064,6 +1085,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D23 | Provider-neutral OCI selector values | **Decided (owner, 2026-10-17): extend D19 with values.** Rust publishes `container-engine`, `image-builder` and `build-daemon` for Go's `podman`, `buildah` and `buildkit` in the `builder` field (`ensure_oci_builder`, `build_and_push_oci_image`) and the `runtime` field (`configure_oci_storage`, `inspect_container_storage`, `cleanup_container_storage`), in inputs and results. Go's values stay hidden, accepted aliases until cutover; host state keeps Go's values ([`neutral-oci-selector-values`](../neutral-oci-selector-values/proposal.md)). The owner chose this over keeping Go's values | Under D14 only a Service Provider names its implementation; the nine OCI tool names are already neutral. |
 | D24 | Write-only PostgreSQL relay token | **Decided (owner, 2026-10-19): mark it.** Rust publishes `relayToken` `writeOnly` in `release_postgresql_service_relay` and under `localRelay` in `get_postgresql_service_status`, `reconcile_postgresql_service` and `remove_postgresql_service`, so the schema-driven storage projection redacts it in every durable row. Go leaves it unmarked and stores it verbatim in `capability_invocations` ([`write-only-relay-token`](../write-only-relay-token/proposal.md)). The owner chose this over keeping Go's behaviour | A relay token is a credential; the M8e goal requires that no credential reach a row unredacted. |
 | D25 | One writer per instance state | **Decided (owner, 2026-11-01): option A, lock in Go and Rust.** Each agent takes an exclusive, non-blocking lock on its instance state before opening any store or binding its listener; a second agent on the same instance refuses identically on both implementations, including across Go and Rust. The details were confirmed on 2026-11-01 as design.md proposes them. The Go change is merged in wunderous/host-agents#28 (`29103271`) and released in v0.2.4 (`c9f9e775`). **Done:** parity is rebased onto v0.2.4 and Rust takes the same lock; the writer-lock drill (Go/Go, Rust/Rust, Go then Rust, Rust then Go, then a SIGKILL) and the clean-machine user/bootstrap refusal pass, and gates m0–m6, m8a–m8f, m10, m12a, m12b and d25 pass on evidence/d25 ([`state-directory-writer-lock`](../state-directory-writer-lock/design.md)) | M12 validation 4 and task 4.4 ask for the lock, and only a lock on both sides protects Go -> Rust -> Go rollback. |
+| D26 | Provider executables in the Rust release | **Decided (owner, 2026-11-02): port.** hostos, cloudflare, tailscale and k3s become Rust executables matching the pinned Go ones (M9); ollama stays out (D15). Until a provider's m9 gate passes, the release ships the Go executable from the pinned v0.2.4 GitHub release, never a build from the Go tree ([`port-provider-executables`](../port-provider-executables/proposal.md)). |
 
 ## 7. Risks this plan specifically mitigates
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Pinned release toolchain under .parity/setup: Zig (the linker that targets
-# glibc 2.34 and static musl), cargo-zigbuild, and the arm64 musl standard
-# library. Nothing is installed system-wide.
+# glibc 2.34 and static musl), cargo-zigbuild, and the musl standard
+# libraries (arm64 for the agent, x64 for the static provider executables). Nothing is installed system-wide.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -20,4 +20,4 @@ fi
 if [ "$("$SETUP/cargo-zigbuild/bin/cargo-zigbuild" --version 2>/dev/null)" != "cargo-zigbuild $ZIGBUILD_VERSION" ]; then
   cargo install --locked --version "$ZIGBUILD_VERSION" --root "$SETUP/cargo-zigbuild" cargo-zigbuild
 fi
-rustup target add aarch64-unknown-linux-musl
+rustup target add aarch64-unknown-linux-musl x86_64-unknown-linux-musl

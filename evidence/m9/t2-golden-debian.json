@@ -1,0 +1,40 @@
+{
+ "scope": "M10 clean-machine golden: dedicated, disposable; nothing of Opute installed",
+ "baseImage": "/home/houman/github/wunderous/opute-host-agent-m8f/.parity/local-native/t2/debian-12-genericcloud-amd64-20261018-2635.qcow2",
+ "baseImageSha512": "dc0d7b526a3a9a9265142fe8e903984c03f8d605ac4ba6f14d15d27988a69581fb05fc06cd2a6d79f6eaf68ba9725f2eb38b5ddd64ad166faadad279af776c9e",
+ "baseImageSource": "https://cloud.debian.org/images/cloud/bookworm/20261018-2635/debian-12-genericcloud-amd64-20261018-2635.qcow2",
+ "seedSha256": "a37819d6e70dde6773592fa0b3f0bb40cc69a5cb2043ba6f475a829aa45d4e22",
+ "userData": "#cloud-config\nhostname: opute-parity-t2\nssh_pwauth: false\ndisable_root: false\nssh_authorized_keys:\n  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmn4/1eY9zGI0liMc5pVoPF21dGoj0hIlvemjrhXu17 opute-parity-t2\n",
+ "stabilize": [
+  "for u in apt-daily.timer apt-daily-upgrade.timer motd-news.timer unattended-upgrades.service man-db.timer dpkg-db-backup.timer e2scrub_all.timer fstrim.timer logrotate.timer sysstat-collect.timer sysstat-summary.timer update-notifier-download.timer update-notifier-motd.timer snapd.service snapd.socket snapd.seeded.service; do systemctl disable --now \"$u\" >/dev/null 2>&1; done; true",
+  "for u in $(systemctl list-unit-files --type=timer --state=enabled --no-legend | awk '{print $1}'); do systemctl disable --now \"$u\" >/dev/null 2>&1; done; systemctl mask fwupd-refresh.timer fwupd-refresh.service >/dev/null 2>&1; true",
+  "apt-get update -q",
+  "sync"
+ ],
+ "goldenSha256": "21e4080fa342c85315c199d777769549e486c2baef9be7e5c41cf11707a32b70",
+ "created": "2026-10-23T06:44:16Z",
+ "qemuArgv": [
+  "qemu-system-x86_64",
+  "-enable-kvm",
+  "-cpu",
+  "host",
+  "-smp",
+  "2",
+  "-m",
+  "2048",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/golden-debian.qcow2,if=virtio,format=qcow2",
+  "-drive",
+  "file=/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/seed-debian.img,if=virtio,format=raw,readonly=on",
+  "-netdev",
+  "user,id=net0,hostfwd=tcp:127.0.0.1:34805-:22",
+  "-device",
+  "virtio-net-pci,netdev=net0",
+  "-display",
+  "none",
+  "-serial",
+  "file:/home/houman/github/wunderous/opute-host-agent-m8f/.parity/t2/golden-debian-serial.log",
+  "-monitor",
+  "none"
+ ]
+}

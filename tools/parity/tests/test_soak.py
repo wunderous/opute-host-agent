@@ -61,6 +61,20 @@ class StatisticsTest(unittest.TestCase):
         self.assertEqual((out["downSamplesTotal"], out["downSamples"]), (1, 1))
         self.assertEqual(out["rssKb"]["max"], 119)
 
+    def test_growth_skips_a_sample_taken_during_a_restart(self):
+        # Three epochs; the agent shutting down at t=9.9 (restart ready at
+        # t=10.2) shows one thread and is not its epoch's last running sample.
+        run = lambda ts: [{"t": t, "rssKb": 100, "fds": 10, "threads": 3, "stateBytes": 1000} for t in ts]
+        samples = run(range(0, 9)) + [{"t": 9.9, "rssKb": 50, "fds": 2, "threads": 1, "stateBytes": 1000}]
+        samples += run(range(11, 20)) + run(range(21, 30))
+        restarts = [{"event": "restart", "t": 20.2, "readyMs": 300}]
+        out = soak.growth(samples, [{"event": "restart", "t": 10.2, "readyMs": 300}] + restarts)
+        self.assertEqual(out["epochs"], 3)
+        self.assertEqual((out["threads"]["epochEndSlopePerHour"], out["rssKb"]["epochEndSlopePerHour"]), (0.0, 0.0))
+        # The same sample outside any window is its epoch's end.
+        out = soak.growth(samples, [{"event": "restart", "t": 10.45, "readyMs": 0}] + restarts)
+        self.assertGreater(out["threads"]["epochEndSlopePerHour"], 0)
+
 
 class FinalStateTest(unittest.TestCase):
     def test_align_rows_aliases_only_random_ids(self):
