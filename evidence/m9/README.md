@@ -57,7 +57,9 @@ Tailscale account was reached:
 | soak 2 | `cc1c44e0` | Every check passes | 15 minutes, seed 1204 |
 | gates 1 | after `32215223` | Retired (`m9-gates-1`) | The four per-provider m9 gates passed. Every T2 gate refused D25's Go/Go shards as stale: M9's T2 provider swap changed the T2 harness hash |
 | t2-go-go | after `32215223` | All eight Go/Go shards pass (×3) | host, incus, serving-llm, cluster-a, cluster-b, oci-a, oci-b, postgres |
-| gates 2 | after the above | Every gate passes except cutover, as expected | |
+| gates 2 | after the above | Retired (`m9-gates-2`) | Every gate passed except cutover. PR CI then showed a callback scenario's bridged operation status racing in Go itself |
+| t1-recapture | `4014a0c3` | T1 Go/Go (×3), Go/Rust and M5 shape pass | `4014a0c3` declares the race one-of (working or completed) in twelve callback scenarios. The round-3 captures it staled are retired (`m9-t1-stale`) |
+| gates 3 | after the above | Every gate passes except cutover, as expected | |
 
 ## Provider evidence
 
