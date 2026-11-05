@@ -1,0 +1,284 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/j7-kill.txt",
+   "files//home/opute/.config/opute-e2e/j7-term.txt"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.restart",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "slow"
+    },
+    {
+     "actual": 2,
+     "gte": 1,
+     "ok": true,
+     "path": "attempts",
+     "step": "termInFlight"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "termInFlight"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "term"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "termStart"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "termList"
+    },
+    {
+     "actual": "9602900c-fe2a-473a-8d0d-d6e0f0d67447",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "ok": true,
+     "other": "9602900c-fe2a-473a-8d0d-d6e0f0d67447",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "termAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "termDb"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "killInFlight"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "kill"
+    },
+    {
+     "actual": "1",
+     "matches": "^[1-9][0-9]*$",
+     "ok": true,
+     "path": "json.NRestarts",
+     "step": "kill"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "killList"
+    },
+    {
+     "actual": "7720f698-519f-4e94-bba6-9d6dd0bb47d9",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": true,
+     "other": "7720f698-519f-4e94-bba6-9d6dd0bb47d9",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "killAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "killDb"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "integrity"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.rows",
+     "step": "secretInDb"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "secretInJournal"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "9602900c-fe2a-473a-8d0d-d6e0f0d67447",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "ok": true,
+     "other": "9602900c-fe2a-473a-8d0d-d6e0f0d67447",
+     "path": "json.planRunIds[0]",
+     "step": "termDb"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "json.planRunIds[1]",
+     "step": "termDb"
+    },
+    {
+     "actual": "7720f698-519f-4e94-bba6-9d6dd0bb47d9",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": true,
+     "other": "7720f698-519f-4e94-bba6-9d6dd0bb47d9",
+     "path": "json.planRunIds[0]",
+     "step": "killDb"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "json.planRunIds[1]",
+     "step": "killDb"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "unknown",
+     "equals": "cancelled",
+     "ok": false,
+     "path": "response.body.result.structuredContent.status",
+     "step": "termAfter"
+    },
+    {
+     "actual": "unknown",
+     "equals": "failed",
+     "ok": false,
+     "path": "response.body.result.structuredContent.status",
+     "step": "killAfter"
+    }
+   ],
+   "observedAsAsserted": false,
+   "openQuestion": "Q5",
+   "outcome": "unverified",
+   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "equals": "failed",
+     "ok": false,
+     "path": "response.body.result.status",
+     "step": "killTask"
+    },
+    {
+     "actual": true,
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": false,
+     "path": "response.body.result.isError",
+     "step": "resubmit"
+    },
+    {
+     "absent": true,
+     "actual": "host_capacity_saturated",
+     "ok": false,
+     "path": "response.body.result.structuredContent.code",
+     "step": "resubmit"
+    }
+   ],
+   "observedAsAsserted": false,
+   "openQuestion": "Q15",
+   "outcome": "unverified",
+   "requirement": "A crashed plan run's orphaned reservation is reclaimed without a task",
+   "spec": "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "integrity": 185,
+   "kill": 3747,
+   "killAfter": 15,
+   "killDb": 184,
+   "killInFlight": 1017,
+   "killList": 27,
+   "killRun": 49,
+   "killTask": 1,
+   "resubmit": 15,
+   "secretInDb": 189,
+   "secretInJournal": 146,
+   "slow": 206,
+   "slowStop": 193,
+   "term": 714,
+   "termAfter": 15,
+   "termDb": 191,
+   "termInFlight": 1017,
+   "termList": 28,
+   "termRun": 51,
+   "termStart": 751,
+   "tool": 283,
+   "wire": 278
+  },
+  "stepsSeconds": 53.4
+ },
+ "unverified": [
+  "Q15",
+  "Q5"
+ ]
+}
