@@ -72,7 +72,7 @@
     "m0": "make parity-verify",
     "manifest": "parity-manifest.json"
   },
-  "verificationStatus": "Verifier implemented and fail closed. `make parity-verify-cutover` FAILS, as intended, until the inventory has no gaps (38 remain, all M8 or M10) and every reviewed cutoverEvidence file exists. Task 0.5 review recorded in `review`.",
+  "verificationStatus": "Amended by D27: the cutover gate is spec-based (see amendments). Its verifier is evidence/e2e/verify.py, added with the E2E harness (e2e-0); until the e2e gates pass, the cutover gate is closed. The retired parity verifier was implemented and fail closed. `make parity-verify-cutover` FAILS, as intended, until the inventory has no gaps (38 remain, all M8 or M10) and every reviewed cutoverEvidence file exists. Task 0.5 review recorded in `review`.",
   "supersedes": [],
   "withdrawn": false,
   "review": {
@@ -118,5 +118,23 @@
       }
     ],
     "outcome": "The invariant is preserved as written, with no product capability introduced and none retired. Its verifier is active and fails closed. The Host Agent, Platform, release and deployment owners' review of an actual cutover remains a separate decision, recorded as the ownerReview cutover evidence."
-  }
+  },
+  "amendments": [
+    {
+      "id": "D27",
+      "date": "2026-11-04",
+      "by": "owner",
+      "change": "openspec/changes/rust-spec-authority/",
+      "retires": "The requirement for differential Go/Rust parity evidence against the selected current Go revision, and the rebase of that evidence on a new Go revision.",
+      "claim": "No Rust slice may receive production traffic or justify Go retirement until the Rust-only contract suites, the E2E journey gates e2e-1 to e2e-5 (each naming the spec requirements it proves) and the state-conversion and rollback evidence pass, and the Host Agent, Platform, release and deployment owners have reviewed them. Missing, stale, malformed or blocked evidence fails the gate. Cutover and Go retirement are separate decisions.",
+      "evidenceRequired": [
+        "Rust-only contract suites (tools/parity/contracts)",
+        "E2E journey gates e2e-1 to e2e-5, verified from hash-pinned receipts by evidence/e2e/verify.py",
+        "state conversion of a real Go host's state and rollback evidence (e2e-4)",
+        "Host Agent, Platform, release and deployment owner cutover review"
+      ],
+      "historical": "The parity evidence committed under evidence/ for m0–m6, m8a–m8f, m10, m12a, m12b, d25 and m9 stays as the record of the migration; its gates are not rerun. `make parity-verify-cutover` checks the retired parity manifest and is no longer the cutover gate.",
+      "openQuestions": "openspec/changes/rust-spec-authority/questions.md"
+    }
+  ]
 }

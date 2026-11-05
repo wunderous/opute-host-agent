@@ -8,9 +8,19 @@ It is planning-only until the OpenSpec change is reviewed. Read
 
 ## Authority and scope
 
-- The pinned `wunderous/host-agents` Go tree, its typed contracts, and its
-  focused tests define the behavior to preserve. Resolve disagreements with
-  runtime `tools/list` and boundary evidence; do not guess from a tool name.
+- The contract spec (`openspec/specs/`), the accepted OpenSpec changes and
+  decisions, and the design docs (this file and
+  `openspec/changes/reimplement-host-agent-in-rust/`) define the behavior.
+  The frozen v0.2.4 contract record (`baseline/inventory`,
+  `baseline/source-lock.json`) settles what the spec words leave to it.
+  Since decision D27 (owner, 2026-11-04) Go is not the authority: do not
+  capture new Go baselines or compare Rust with Go. A behavior none of these
+  sources decides is an owner question
+  (`openspec/changes/rust-spec-authority/questions.md`); never guess it,
+  from Go or from a tool name.
+- Go remains the production owner until cutover and the migration source for
+  existing hosts' state. The committed parity evidence (m0–m12b, d25, m9) is
+  the historical record and is not rerun.
 - Implement no new product capability, endpoint, mode, provider, auth path,
   default, or user-visible policy as part of the language migration. An actual
   contract change needs a separate OpenSpec change and owner decision.
@@ -26,12 +36,12 @@ It is planning-only until the OpenSpec change is reviewed. Read
 
 ## Work protocol
 
-1. Pin and inventory the current Go contract before each Rust milestone. A
-   newer Go release requires an explicit rebase of the parity inventory.
-2. Identify invariant delta before changing a boundary. This change preserves
-   the existing Host Agent invariants and proposes a fail-closed parity gate;
-   it retires none. Read `.agents/decisions/rust-cutover-parity-gate.json` and
-   implement its verifier before a Rust runtime seam is promoted.
+1. Name the spec requirements a change touches before making it. A gap in
+   the spec gets an OpenSpec proposal and an owner question, not a Go
+   lookup.
+2. Identify invariant delta before changing a boundary. The Host Agent
+   invariants are preserved; cutover is gated by the spec-based evidence in
+   `.agents/decisions/rust-cutover-parity-gate.json` as amended by D27.
 3. Keep Rust modules few and ownership-focused. Do not translate Go package
    names one for one or add trait layers without a real boundary.
    Every capability, built-in or external, has a Service Definition, a

@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci rust-suites parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 .PHONY: parity-verify-m5 parity-verify-m6
@@ -129,8 +129,17 @@ parity-m4: parity-m3 parity-verify-m4
 
 parity-m6: rust-check rust-build parity-m4 parity-go-vs-rust parity-verify-m6
 
-# CI: verify the committed evidence, then re-prove parity on every surface
-# with a freshly built Rust binary (fails on any diff).
+# CI (D27): the Rust-only suites. The harness unit tests, then every contract
+# suite against a freshly built Rust binary. The canaries
+# (parity-rust-canaries) and the go-sdk OAuth client
+# (tools/parity/oauth-sdk-client) are slower local suites.
+RUST_SUITES := $(CONTRACT_SUITES) evidence-redaction
+
+rust-suites: parity-test rust-build
+	for s in $(RUST_SUITES); do ($(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s) || exit 1; done
+
+# Historical (before D27): verify the committed evidence, then re-prove
+# parity on every surface against the Go reference.
 parity-ci: parity-test go-reference rust-build
 	$(PARITY) catalog-source --go-src $(GO_SRC) --check
 	$(PARITY) verify --gate m4
