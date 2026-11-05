@@ -22,6 +22,7 @@ the last parity gate. Nothing here is guessed.
 | Q11 | Incidental go-sdk wire details | go-sdk v1.7.0: session log lines, server info | Which of these does a client rely on? |
 | Q12 | Catalog revision computation | Go catalog | Is the revision a contract value, meaning its algorithm, or only an opaque token that changes when the catalog changes? |
 | Q13 | Cutover evidence | `rust-cutover-parity-gate.json` | Are the e2e-1 to e2e-5 journey gates, the contract suites and the conversion and rollback evidence the agreed M13 evidence set? |
+| Q14 | What `HOST_MCP_BIND_HOST=0.0.0.0` binds | ADR 0008 and the Go listener; the record never observed a listen address (M0 review, finding 2) | Found in e2e-1 journey 1: the agent opens one IPv6 wildcard socket in dual-stack mode (`*:3014`), so it also accepts IPv6 connections. Should `0.0.0.0` bind IPv4 only, or all addresses? |
 
 The spec's Purpose paragraph still describes behaviour preserved "from the
 pinned Go source". OpenSpec deltas cannot change a Purpose, so it is
