@@ -1,0 +1,38 @@
+{
+ "id": "selfcheck.undeclared-effect",
+ "gate": "e2e-0",
+ "description": "Negative control: a file change the journey does not declare fails it (undeclared-effect).",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: undeclared effects fail",
+   "pass": [
+    {
+     "step": "touch",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "touch",
+   "guest": "touch /etc/opute-e2e-undeclared-probe"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "rm",
+   "guest": "rm -f /etc/opute-e2e-undeclared-probe"
+  }
+ ],
+ "maxMinutes": 10
+}

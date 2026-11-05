@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci rust-suites parity-contracts parity-rust-canaries catalog-source
+.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci rust-suites e2e-test e2e-devvm-build e2e-verify parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 .PHONY: parity-verify-m5 parity-verify-m6
@@ -130,13 +130,32 @@ parity-m4: parity-m3 parity-verify-m4
 parity-m6: rust-check rust-build parity-m4 parity-go-vs-rust parity-verify-m6
 
 # CI (D27): the Rust-only suites. The harness unit tests, then every contract
-# suite against a freshly built Rust binary. The canaries
+# suite against a freshly built Rust binary, then the e2e-0 gate re-derived
+# from its committed receipts. The canaries
 # (parity-rust-canaries) and the go-sdk OAuth client
 # (tools/parity/oauth-sdk-client) are slower local suites.
 RUST_SUITES := $(CONTRACT_SUITES) evidence-redaction
 
-rust-suites: parity-test rust-build
+rust-suites: parity-test e2e-test rust-build
 	for s in $(RUST_SUITES); do ($(PARITY) contract --impl rust=$(RUST_BIN) --suite $$s) || exit 1; done
+	python3 evidence/e2e/verify.py --gate e2e-0 > /dev/null
+
+# --- E2E dev VM and journeys (e2e-0; evidence/e2e/README.md).
+E2E := python3 evidence/e2e
+E2E_PARITY := $(shell git rev-parse --path-format=absolute --git-common-dir | xargs dirname)/.parity
+E2E_RELEASE ?= $(E2E_PARITY)/e2e/release/rust
+E2E_GATE ?= e2e-0
+
+e2e-test:
+	python3 -m unittest discover -s evidence/e2e/tests
+
+# One command: the Rust release set, then the VM (needs the dev-vm lease).
+e2e-devvm-build:
+	SETUP=$(E2E_PARITY)/setup DIST=$(E2E_RELEASE) tools/release/build-artifacts.sh
+	$(E2E)/devvm/devvm.py build --rust-release $(E2E_RELEASE)
+
+e2e-verify:
+	$(E2E)/verify.py --gate $(E2E_GATE)
 
 # Historical (before D27): verify the committed evidence, then re-prove
 # parity on every surface against the Go reference.

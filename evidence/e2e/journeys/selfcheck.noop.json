@@ -1,0 +1,99 @@
+{
+ "id": "selfcheck.noop",
+ "gate": "e2e-0",
+ "description": "Positive control: the authenticated read-only first call changes nothing on the VM and passes.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Compatible authenticated MCP surface",
+   "scenario": "Read-only authenticated first call",
+   "pass": [
+    {
+     "step": "discover",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "discover",
+     "path": "response.body.result",
+     "exists": true
+    },
+    {
+     "step": "list",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "list",
+     "path": "response.body.result.tools[0].name",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.isError",
+     "in": [
+      null,
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent",
+     "exists": true
+    }
+   ]
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One exact Host Agent identity",
+   "scenario": "Identity is missing (the configured identity is served exactly)",
+   "pass": [
+    {
+     "step": "health",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "health",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "health",
+   "health": true
+  },
+  {
+   "id": "discover",
+   "mcp": "server/discover"
+  },
+  {
+   "id": "list",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "info",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {}
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 10
+}

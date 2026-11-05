@@ -1037,6 +1037,32 @@ through the normal rollout path, with Go kept as the rollback candidate
 throughout the agreed window. Go retirement, and ownership of releases and the
 website, are later decisions that need their own evidence.
 
+### E2E journeys on the dev VM (after D27)
+
+The spec-based evidence M13 now requires. Harness, rules and resource lease:
+[evidence/e2e/README.md](../../../evidence/e2e/README.md).
+
+- **e2e-0 (done, 2026-11-05).** The dev VM is one qemu/KVM VM run as the
+  user (8 vCPU, 16 GiB, 100 GiB), a new overlay on the pinned
+  `golden-incus`. It holds Incus with pool and project `opute-e2e` and
+  bridge `opute-e2e0`, and the Rust agent installed production-style:
+  Go's recorded system unit and sudoers, plus an env file with the test
+  identity and token. It is built by `make e2e-devvm-build` (about 90 s)
+  and reset by `devvm.py restore`. The dev-vm lease is shared with the T2
+  twins. The journey runner and `evidence/e2e/verify.py` pass gate e2e-0
+  on run `e2e-0-r3`:
+  - the no-op and declared-effect journeys pass;
+  - the undeclared-effect, broken-pass and schema-violation journeys fail
+    as expected;
+  - restore returns the baseline.
+
+  Runs r1 and r2 are retired under `.parity/retired/` for two harness
+  defects in the state document:
+  - r1: the agent's own instance root was not excluded;
+  - r2: the order of Incus's nft chains varies per boot.
+- **e2e-1 to e2e-5.** Blocked in `evidence/e2e/gates.json` until each goal
+  records its run. e2e-5 also waits on the owner (the Platform repository).
+
 ## 4. The catalog and provider matrix
 
 Catalog parity is checked per cell and never across cells, because different

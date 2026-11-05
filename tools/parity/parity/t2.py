@@ -832,6 +832,18 @@ def golden_extra(golden: str, providers: Path | None = None) -> list[Path]:
 # --- one twin -----------------------------------------------------------------------
 
 
+def refuse_during_dev_vm_lease() -> None:
+    """Twins and the E2E dev VM (16 GiB) share this host's memory: while the
+    dev-vm lease (evidence/e2e/devvm) is held and unexpired, no twin starts."""
+    try:
+        lease = json.loads((WORK / "dev-vm.lease.json").read_text())
+    except (FileNotFoundError, ValueError):
+        return
+    if lease.get("expiresEpoch", 0) > time.time():
+        raise RuntimeError(f"the E2E dev-vm lease is held by {lease.get('holder')} until {lease.get('expires')}; "
+                           "T2 twins share its runtime and do not start")
+
+
 class Twin:
     """One disposable VM: an overlay of the golden image, deleted on exit."""
 
@@ -849,6 +861,7 @@ class Twin:
         self.record: dict = {}
 
     def __enter__(self) -> "Twin":
+        refuse_during_dev_vm_lease()
         self.run_dir.mkdir(parents=True, exist_ok=True)
         subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b",
                         str(self.image), str(self.disk)], check=True)
