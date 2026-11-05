@@ -117,6 +117,8 @@ class Format(unittest.TestCase):
     def test_e2e1_journeys_are_the_generator_output(self):
         sys.path.insert(0, str(E2E / "journeys"))
         import make_e2e1
+        if not (make_e2e1.PARITY / "e2e" / "go-src-v0.2.4").exists():
+            self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
         for name, text in make_e2e1.render().items():
             self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_e2e1.py")
 
