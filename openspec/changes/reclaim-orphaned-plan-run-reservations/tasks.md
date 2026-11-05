@@ -4,6 +4,6 @@
 
 ## 2. Implementation (only after 1.1)
 
-- [ ] 2.1 Failing-first test: SIGKILL during a plan launched by plain `run_host_plan`, restart, resubmit is admitted.
+- [ ] 2.1 Failing-first test: SIGKILL during a plan launched by `run_host_plan` under default heavy capacity, restart, resubmit is admitted.
 - [ ] 2.2 Reclaim reservations owned by plan runs restored as not running.
 - [ ] 2.3 Rerun e2e-1 journey 7 with the resubmission as a pass condition.

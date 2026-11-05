@@ -1064,7 +1064,7 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   - r1: the agent's own instance root was not excluded;
   - r2: the order of Incus's nft chains varies per boot.
 - **e2e-1 (done, 2026-11-05): install, clients, operate.** Eight journeys
-  on the dev VM pass gate e2e-1 on run `e2e-1-r2`, and e2e-0 is rerun as
+  on the dev VM pass gate e2e-1 on run `e2e-1-r4`, and e2e-0 is rerun as
   `e2e-0-r4` with a step-kinds self-check. The journeys:
   1. the system unit;
   2. the user unit and the npm launcher, packed locally and never published;
@@ -1085,19 +1085,29 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     Rust serves `unknown`) and Q14 (`HOST_MCP_BIND_HOST=0.0.0.0` opens a
     dual-stack `*:3014`).
   - **Q15, proposed:** [reclaim-orphaned-plan-run-reservations](../reclaim-orphaned-plan-run-reservations/proposal.md).
-    After a SIGKILL during a plan started by a plain `run_host_plan`, the
-    run's `heavy` reservation survives the restart, and every heavy call,
-    including the resubmission, is refused with `host_capacity_saturated`
-    until it expires 15 minutes later. `plan-reservation-inheritance` covers
-    only the task path, so this is an unclear spec, not a defect.
+    After a SIGKILL during `run_host_plan`, the run's `heavy` reservation
+    survives the restart. Every heavy call, including the resubmission, is
+    then refused with `host_capacity_saturated` until the reservation expires
+    15 minutes later. Classified as an unclear spec, not a Rust defect:
+    - `plan-reservation-inheritance` reclaims through a restored task
+      snapshot, but a plan's task is persisted only on failure or resume,
+      in Go v0.2.4 as in Rust;
+    - its scenario's precondition therefore never occurs for a plan;
+    - M6's `restart-mid-plan-reconcile` masked the leak with 64 heavy slots.
   - **Doc gaps, not broken docs.** The published docs have no
     system-install page; a production install goes through Platform's
     Connect Remote Host flow. The tutorial is read-only and documents no
     mutation. The website changes owner only at cutover.
-  - **Retired.** Run r1 has four harness defects, recorded in
-    `.parity/retired/e2e-1-r1/CAUSE.md`. Dev VM build 3 used the stale
-    v0.2.3 Go set; `devvm.py` now refuses any set other than the published
-    v0.2.4 sums.
+  - **Retired runs** (causes under `.parity/retired/`; the setup's run id
+    `e2e-1-r1` was the first):
+    - r1: four harness defects;
+    - r2: merged with PR 31, but journey 7 filed the refused resubmission
+      under Q5, which asks about status, not admission;
+    - r3: journey 7 assumed `run_host_plan` with the Tasks extension
+      becomes an MCP task, but it is a lifecycle tool.
+
+    Dev VM build 3 used the stale v0.2.3 Go set; `devvm.py` now refuses any
+    set other than the published v0.2.4 sums.
 - **e2e-2 to e2e-5.** Blocked in `evidence/e2e/gates.json` until each goal
   records its run. e2e-5 also waits on the owner (the Platform repository).
 

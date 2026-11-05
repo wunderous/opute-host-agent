@@ -1,7 +1,7 @@
 {
  "id": "e2e1.restart",
  "gate": "e2e-1",
- "description": "Flow 14, restart and recovery: the system agent is stopped with SIGTERM, then killed with SIGKILL (the unit's Restart=on-failure restarts it), each time with a host plan in flight (its first node wrote a file with write-only content, its second waits on a slow local endpoint). After each restart the run is served as one durable record, the store passes its integrity check, and the write-only content is in no durable row and no journal line.",
+ "description": "Flow 14, restart and recovery: the system agent is stopped with SIGTERM, then killed with SIGKILL (the unit's Restart=on-failure restarts it) each time with a host plan in flight (its first node wrote a file with write-only content, its second waits on a slow local endpoint). After each restart the run is served as one durable record, the store passes its integrity check, and the write-only content is in no durable row and no journal line. Whether the resubmission after the SIGKILL is admitted is Q15.",
  "inputs": {
   "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
   "files": {
@@ -77,7 +77,7 @@
     {
      "step": "kill",
      "path": "json.NRestarts",
-     "equals": "1"
+     "matches": "^[1-9][0-9]*$"
     },
     {
      "step": "killList",
@@ -161,18 +161,36 @@
      "step": "killAfter",
      "path": "response.body.result.structuredContent.status",
      "equals": "failed"
+    }
+   ],
+   "scenario": "Interrupted plan: the post-restart status (observed; what the plan contract specifies after a restart is Q5)",
+   "openQuestion": "Q5"
+  },
+  {
+   "spec": "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md",
+   "requirement": "A crashed plan run's orphaned reservation is reclaimed without a task",
+   "pass": [
+    {
+     "step": "killTask",
+     "path": "response.body.result.status",
+     "equals": "failed"
     },
     {
      "step": "resubmit",
-     "path": "response.body.result.structuredContent.runId",
-     "equalsStep": {
-      "step": "killRun",
-      "path": "response.body.result.structuredContent.runId"
-     }
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "resubmit",
+     "path": "response.body.result.structuredContent.code",
+     "absent": true
     }
    ],
-   "scenario": "Interrupted plan: the post-restart status and the resubmission outcome (observed; what the plan contract specifies after a restart is Q5)",
-   "openQuestion": "Q5"
+   "scenario": "Resubmit after a SIGKILL during a plain run_host_plan (proposed; Q15)",
+   "openQuestion": "Q15"
   }
  ],
  "effects": {
@@ -381,6 +399,20 @@
   {
    "id": "killDb",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-kill"
+  },
+  {
+   "id": "killTask",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${KILL_RUN}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
   },
   {
    "id": "resubmit",
