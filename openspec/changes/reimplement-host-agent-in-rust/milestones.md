@@ -941,9 +941,12 @@ and downgrade round trip is green.
    satisfaction (mirrors `TestHostAgentNeverAssertsSatisfaction`), and
    Platform-side records attribute the semantic outcome to Platform.
 4. **Client first-success:** `codex exec` over WSL2 (mirrors
-   `TestCodexWSLNonInteractiveE2E`), a modern MCP client, and
-   `pkg/hostagentclient`, each starting from a clean machine using only the
-   published tutorial steps.
+   `TestCodexWSLNonInteractiveE2E`), and each client's first success through
+   a Platform-routed connection. Local first success against a standalone
+   agent (a 2026-07-28 client, the legacy client, `pkg/hostagentclient` and
+   the documented IDE configuration, from a clean connection using only the
+   published tutorial steps) is covered by e2e-1 journey 3 and is no longer
+   part of this item.
 
 **Exit gate:** all journeys green in staging, with evidence bound to the
 artifact hashes from M10.
@@ -1060,7 +1063,42 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   defects in the state document:
   - r1: the agent's own instance root was not excluded;
   - r2: the order of Incus's nft chains varies per boot.
-- **e2e-1 to e2e-5.** Blocked in `evidence/e2e/gates.json` until each goal
+- **e2e-1 (done, 2026-11-05): install, clients, operate.** Eight journeys
+  on the dev VM pass gate e2e-1 on run `e2e-1-r2`, and e2e-0 is rerun as
+  `e2e-0-r4` with a step-kinds self-check. The journeys:
+  1. the system unit;
+  2. the user unit and the npm launcher, packed locally and never published;
+  3. tutorial first success with four scripted clients: 2026-07-28, legacy,
+     `pkg/hostagentclient` and the documented VS Code configuration;
+  4. auth;
+  5. admission;
+  6. two prefixed agents and the D25 writer lock;
+  7. restart under SIGTERM and SIGKILL with a plan in flight;
+  8. migration of a Go v0.2.4 install to Rust, then an upgrade to a newer
+     local build.
+
+  The runner gains `http`, `copy` and `restore` steps, captured values and
+  secrets kept out of every record, and an `openQuestion` that records a
+  requirement as unverified instead of guessing. Findings:
+  - **Unverified, owner questions.** Q1 (the auth refusal body and header),
+    Q3 (the admission error fields), Q5 (a run's status after a restart:
+    Rust serves `unknown`) and Q14 (`HOST_MCP_BIND_HOST=0.0.0.0` opens a
+    dual-stack `*:3014`).
+  - **Q15, proposed:** [reclaim-orphaned-plan-run-reservations](../reclaim-orphaned-plan-run-reservations/proposal.md).
+    After a SIGKILL during a plan started by a plain `run_host_plan`, the
+    run's `heavy` reservation survives the restart, and every heavy call,
+    including the resubmission, is refused with `host_capacity_saturated`
+    until it expires 15 minutes later. `plan-reservation-inheritance` covers
+    only the task path, so this is an unclear spec, not a defect.
+  - **Doc gaps, not broken docs.** The published docs have no
+    system-install page; a production install goes through Platform's
+    Connect Remote Host flow. The tutorial is read-only and documents no
+    mutation. The website changes owner only at cutover.
+  - **Retired.** Run r1 has four harness defects, recorded in
+    `.parity/retired/e2e-1-r1/CAUSE.md`. Dev VM build 3 used the stale
+    v0.2.3 Go set; `devvm.py` now refuses any set other than the published
+    v0.2.4 sums.
+- **e2e-2 to e2e-5.** Blocked in `evidence/e2e/gates.json` until each goal
   records its run. e2e-5 also waits on the owner (the Platform repository).
 
 ## 4. The catalog and provider matrix
