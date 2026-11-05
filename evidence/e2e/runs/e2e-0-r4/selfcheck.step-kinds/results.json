@@ -1,0 +1,117 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.step-kinds",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "6610ad97181fbe3b5df444a78b9df6e50b73de169d0c2f77b40425691e52b268",
+     "equals": "6610ad97181fbe3b5df444a78b9df6e50b73de169d0c2f77b40425691e52b268",
+     "ok": true,
+     "path": "sha256",
+     "step": "copy"
+    },
+    {
+     "actual": "6610ad97181fbe3b5df444a78b9df6e50b73de169d0c2f77b40425691e52b268",
+     "equalsStep": {
+      "path": "sha256",
+      "step": "copy"
+     },
+     "ok": true,
+     "other": "6610ad97181fbe3b5df444a78b9df6e50b73de169d0c2f77b40425691e52b268",
+     "path": "json.sha256",
+     "step": "copied"
+    },
+    {
+     "actual": "<secret:probe>",
+     "equals": "<secret:probe>",
+     "ok": true,
+     "path": "json.s",
+     "step": "secret"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "http"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equalsStep": {
+      "path": "response.body.agentId",
+      "step": "guestHealth"
+     },
+     "ok": true,
+     "other": "e2e-devvm-agent",
+     "path": "response.body.agentId",
+     "step": "http"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "guestList"
+    },
+    {
+     "actual": "guest:3014",
+     "equals": "guest:3014",
+     "ok": true,
+     "path": "target",
+     "step": "guestList"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "attempts",
+     "step": "guestInfo"
+    },
+    {
+     "actual": "host:local:e2e-devvm-agent",
+     "matches": ":e2e-devvm-agent$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "guestInfo"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "json.agent",
+     "step": "expanded"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: the e2e-1 step kinds work",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "copied": 158,
+   "copy": 292,
+   "expanded": 137,
+   "guestHealth": 506,
+   "guestInfo": 296,
+   "guestList": 235,
+   "http": 20,
+   "secret": 139,
+   "tool": 286,
+   "wire": 282
+  },
+  "stepsSeconds": 46.6
+ },
+ "unverified": []
+}

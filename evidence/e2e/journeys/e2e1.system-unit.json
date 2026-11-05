@@ -1,0 +1,273 @@
+{
+ "id": "e2e1.system-unit",
+ "gate": "e2e-1",
+ "description": "Flow 2, system unit: uninstall the agent, verify the release artifact against SHA256SUMS, reinstall the binary, Go's recorded deploy/opute-bootstrap-mcp.service and sudoers, the env file and drop-in, pass --check, enable, and serve. The published docs route a production host's install through Platform's Connect Remote Host flow (docs/install), so the recorded deploy files and distribution contract are the reference; reinstalling must reproduce the snapshot exactly (no declared effect).",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  },
+  "release": "/opt/opute-e2e/releases/rust/v0.2.4 (local Rust v0.2.4 release set)"
+ },
+ "requirements": [
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Compatible modes, configuration, and distribution",
+   "pass": [
+    {
+     "step": "uninstall",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "gone",
+     "path": "stdout",
+     "equals": "000"
+    },
+    {
+     "step": "verify",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "verify",
+     "path": "stdout",
+     "contains": "host-agent-linux-x64.gz: OK"
+    },
+    {
+     "step": "binary",
+     "path": "stdout",
+     "equalsStep": {
+      "step": "pinned",
+      "path": "stdout"
+     }
+    },
+    {
+     "step": "deploy",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "envfile",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "check",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "check",
+     "path": "stdout",
+     "equals": "configuration ok\n"
+    },
+    {
+     "step": "enable",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "enable",
+     "path": "json.ActiveState",
+     "equals": "active"
+    },
+    {
+     "step": "enable",
+     "path": "json.SubState",
+     "equals": "running"
+    },
+    {
+     "step": "enable",
+     "path": "json.User",
+     "equals": "opute"
+    },
+    {
+     "step": "enable",
+     "path": "json.UnitFileState",
+     "equals": "enabled"
+    },
+    {
+     "step": "enable",
+     "path": "json.EnvironmentFiles",
+     "equals": "/etc/opute/host-agent.env"
+    },
+    {
+     "step": "ipv4",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "ipv4",
+     "path": "json.agentId",
+     "equals": "e2e-devvm-agent"
+    }
+   ],
+   "scenario": "install from the release artifact; the configured port applies and the configured bind (HOST_MCP_BIND_HOST=0.0.0.0 in the recorded unit) serves the host's own IPv4 address"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Compatible modes, configuration, and distribution",
+   "pass": [
+    {
+     "step": "listen",
+     "path": "json.addresses",
+     "equals": [
+      "0.0.0.0:3014"
+     ]
+    }
+   ],
+   "scenario": "whether HOST_MCP_BIND_HOST=0.0.0.0 binds IPv4 only (observed: one dual-stack IPv6 wildcard socket, *:3014); Q14",
+   "openQuestion": "Q14"
+  },
+  {
+   "spec": "baseline/inventory/distribution.json",
+   "requirement": "deployFiles: the installed unit and sudoers are the recorded deploy files",
+   "pass": [
+    {
+     "step": "deployHashes",
+     "path": "stdout",
+     "contains": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/opute-bootstrap-mcp.service"
+    },
+    {
+     "step": "deployHashes",
+     "path": "stdout",
+     "contains": "38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/opute-host-agent"
+    }
+   ]
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One exact Host Agent identity",
+   "pass": [
+    {
+     "step": "health",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "health",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.uri",
+     "matches": ":e2e-devvm-agent$"
+    }
+   ]
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Compatible authenticated MCP surface",
+   "pass": [
+    {
+     "step": "list",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "info",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    }
+   ],
+   "scenario": "Read-only authenticated first call"
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "uninstall",
+   "guest": "systemctl disable --now opute-bootstrap-mcp.service && rm -f /home/opute/.local/share/opute/opute-host-agent /etc/systemd/system/opute-bootstrap-mcp.service /etc/sudoers.d/opute-host-agent /etc/opute/host-agent.env && rm -rf /etc/systemd/system/opute-bootstrap-mcp.service.d && systemctl daemon-reload"
+  },
+  {
+   "id": "gone",
+   "guest": "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3014/health; true"
+  },
+  {
+   "id": "verify",
+   "guest": "cd /opt/opute-e2e/releases/rust/v0.2.4 && sha256sum -c SHA256SUMS"
+  },
+  {
+   "id": "pinned",
+   "guest": "awk '$2==\"host-agent-linux-x64\"{print $1}' /opt/opute-e2e/releases/rust/v0.2.4/SHA256SUMS"
+  },
+  {
+   "id": "binary",
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64"
+  },
+  {
+   "id": "deploy",
+   "guest": "install -m 0644 /opt/opute-e2e/deploy/opute-bootstrap-mcp.service /etc/systemd/system/opute-bootstrap-mcp.service && install -m 0440 /opt/opute-e2e/deploy/opute-host-agent-sudoers /etc/sudoers.d/opute-host-agent && visudo -cf /etc/sudoers.d/opute-host-agent"
+  },
+  {
+   "id": "deployHashes",
+   "guest": "sha256sum /etc/systemd/system/opute-bootstrap-mcp.service /etc/sudoers.d/opute-host-agent"
+  },
+  {
+   "id": "envfile",
+   "guest": "install -d -m 0750 -g opute /etc/opute && (umask 027 && printf 'OPUTE_REMOTE_AGENT_ID=e2e-devvm-agent\\nMCP_AUTH_TOKEN=%s\\n' '${TOKEN}' > /etc/opute/host-agent.env) && chgrp opute /etc/opute/host-agent.env && chmod 0640 /etc/opute/host-agent.env && install -d /etc/systemd/system/opute-bootstrap-mcp.service.d && printf '[Service]\\nEnvironmentFile=/etc/opute/host-agent.env\\n' > /etc/systemd/system/opute-bootstrap-mcp.service.d/e2e.conf"
+  },
+  {
+   "id": "check",
+   "guest": "runuser -u opute -- /home/opute/.local/share/opute/opute-host-agent --check --env-file /etc/opute/host-agent.env"
+  },
+  {
+   "id": "enable",
+   "guest": "systemctl daemon-reload && systemctl enable --now opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && python3 /opt/opute-e2e/guest/e2etool.py unit opute-bootstrap-mcp.service"
+  },
+  {
+   "id": "health",
+   "health": true
+  },
+  {
+   "id": "listen",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3014"
+  },
+  {
+   "id": "ipv4",
+   "guest": "curl -fsS http://$(hostname -I | awk '{print $1}'):3014/health"
+  },
+  {
+   "id": "list",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "info",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {}
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 20
+}

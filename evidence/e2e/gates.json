@@ -1,6 +1,6 @@
 {
  "e2e-0": {
-  "run": "e2e-0-r3",
+  "run": "e2e-0-r4",
   "journeys": {
    "selfcheck.noop": {
     "pass": true
@@ -28,13 +28,55 @@
    },
    "selfcheck.restore": {
     "pass": true
+   },
+   "selfcheck.step-kinds": {
+    "pass": true
    }
   }
  },
  "e2e-1": {
-  "run": null,
-  "journeys": {},
-  "blocked": "goal e2e-1 (install, clients and operation) has not run; no journeys are recorded"
+  "run": "e2e-1-r2",
+  "journeys": {
+   "e2e1.system-unit": {
+    "pass": true,
+    "unverified": [
+     "Q14"
+    ]
+   },
+   "e2e1.user-unit-npm": {
+    "pass": true
+   },
+   "e2e1.tutorial-clients": {
+    "pass": true
+   },
+   "e2e1.auth": {
+    "pass": true,
+    "unverified": [
+     "Q1"
+    ]
+   },
+   "e2e1.admission": {
+    "pass": true,
+    "unverified": [
+     "Q3"
+    ]
+   },
+   "e2e1.two-agents": {
+    "pass": true
+   },
+   "e2e1.restart": {
+    "pass": true,
+    "unverified": [
+     "Q5"
+    ]
+   },
+   "e2e1.migrate-upgrade": {
+    "pass": true,
+    "unverified": [
+     "Q5"
+    ]
+   }
+  }
  },
  "e2e-2": {
   "run": null,

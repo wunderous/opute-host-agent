@@ -43,7 +43,10 @@ GUEST = HERE / "guest"
 SNAPSHOT_PY = e2elib.REPO_ROOT / "tools/parity/t2guest/snapshot.py"
 GOLDEN = T2 / "golden-incus.qcow2"
 GOLDEN_RECORD = T2 / "golden-incus.json"
-GO_RELEASE = e2elib.PARITY / "releases/go"
+# The published Go v0.2.4 GitHub release assets, pinned by the SHA256SUMS hash
+# in baseline/source-lock.json (e2e-1 found the build used a stale v0.2.3 set).
+GO_RELEASE = e2elib.PARITY / "releases/go-published-v0.2.4"
+SOURCE_LOCK = e2elib.REPO_ROOT / "baseline/source-lock.json"
 GO_DEPLOY = e2elib.PARITY / "go-src/deploy"
 DISTRIBUTION = e2elib.REPO_ROOT / "baseline/inventory/distribution.json"
 VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
@@ -105,9 +108,10 @@ def scp(sources: list[Path], target: str) -> None:
     subprocess.run(argv + [str(s) for s in sources] + [f"root@127.0.0.1:{target}"], check=True)
 
 
-def guest(command: str, timeout: float = 1800, check: bool = False) -> subprocess.CompletedProcess:
-    done = subprocess.run(ssh_base() + [command], stdin=subprocess.DEVNULL, capture_output=True, text=True,
-                          timeout=timeout)
+def guest(command: str, timeout: float = 1800, check: bool = False, input: str | None = None
+          ) -> subprocess.CompletedProcess:
+    done = subprocess.run(ssh_base() + [command], input=input, stdin=None if input is not None else subprocess.DEVNULL,
+                          capture_output=True, text=True, timeout=timeout)
     if check and done.returncode != 0:
         raise RuntimeError(f"guest {command!r} exited {done.returncode}: {done.stderr[-2000:]}")
     return done
@@ -221,6 +225,9 @@ def build(rust_release: Path) -> dict:
         "rust": _verify_release(rust_release, ["host-agent-linux-x64", "host-agent-linux-x64.gz"]),
         "go": _verify_release(GO_RELEASE, ["host-agent-linux-x64", "host-agent-linux-x64.gz"]),
     }
+    pinned = json.loads(SOURCE_LOCK.read_text())["sourceReleaseSha256Sums"]
+    if f"sha256:{releases['go']['SHA256SUMS']}" != pinned:
+        raise SystemExit(f"refused: {GO_RELEASE}/SHA256SUMS is not the pinned Go release ({pinned})")
     DEV.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(T2 / "seed.img", DEV / "seed.img")
     (DEV / "token").touch(mode=0o600)

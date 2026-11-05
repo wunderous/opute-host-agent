@@ -1,0 +1,250 @@
+{
+ "id": "e2e1.two-agents",
+ "gate": "e2e-1",
+ "description": "Flow 1, two agents in one workspace: two Rust agents as one user with distinct IDs, ports, tokens and instance roots and OPUTE_MCP_PREFIX_TOOL_NAMES=true; each publishes only its own prefixed names and the /health prefix; a third process on the first agent's instance root is refused as D25 specifies while the first keeps serving.",
+ "inputs": {
+  "agent": "two Rust agents started for the journey under /tmp/e2e-agents (ports 3021, 3022)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/configuration/index.html",
+   "requirement": "OPUTE_MCP_PREFIX_TOOL_NAMES: prefix wire tool names for multi-agent IDE workspaces",
+   "pass": [
+    {
+     "step": "agentA",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "agentB",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "healthA",
+     "path": "response.body.mcpToolNamePrefix",
+     "exists": true
+    },
+    {
+     "step": "healthB",
+     "path": "response.body.mcpToolNamePrefix",
+     "exists": true
+    },
+    {
+     "step": "prefixed",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "prefixed",
+     "path": "json.prefixesDiffer",
+     "equals": true
+    },
+    {
+     "step": "prefixed",
+     "path": "json.allPrefixedA",
+     "equals": true
+    },
+    {
+     "step": "prefixed",
+     "path": "json.allPrefixedB",
+     "equals": true
+    },
+    {
+     "step": "prefixed",
+     "path": "json.overlap",
+     "equals": 0
+    },
+    {
+     "step": "prefixed",
+     "path": "json.unprefixedA",
+     "equals": true
+    },
+    {
+     "step": "prefixed",
+     "path": "json.countA",
+     "gte": 1
+    },
+    {
+     "step": "infoA",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "infoB",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    }
+   ]
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One exact Host Agent identity",
+   "pass": [
+    {
+     "step": "healthA",
+     "path": "response.body.agentId",
+     "equals": "e2e-ws-a"
+    },
+    {
+     "step": "healthB",
+     "path": "response.body.agentId",
+     "equals": "e2e-ws-b"
+    },
+    {
+     "step": "infoA",
+     "path": "response.body.result.structuredContent.uri",
+     "matches": ":e2e-ws-a$"
+    },
+    {
+     "step": "infoB",
+     "path": "response.body.result.structuredContent.uri",
+     "matches": ":e2e-ws-b$"
+    }
+   ],
+   "scenario": "Two agents share a physical machine"
+  },
+  {
+   "spec": "openspec/changes/state-directory-writer-lock/specs/state-directory-writer-lock/spec.md",
+   "requirement": "One running agent per instance state",
+   "pass": [
+    {
+     "step": "third",
+     "path": "stdout",
+     "equals": "exit=1\n"
+    },
+    {
+     "step": "third",
+     "path": "stderr",
+     "equals": "host agent instance is already in use: /tmp/e2e-agents/ws-a/instance/host-agent.lock is locked by another process\n"
+    },
+    {
+     "step": "aStillServes",
+     "path": "response.body.agentId",
+     "equals": "e2e-ws-a"
+    },
+    {
+     "step": "aStillCalls",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    }
+   ],
+   "scenario": "A second agent on the same instance root"
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "agentA",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start ws-a --port 3021 --id e2e-ws-a --env MCP_AUTH_TOKEN=${SECRET:wsa} --env OPUTE_MCP_PREFIX_TOOL_NAMES=true"
+  },
+  {
+   "id": "agentB",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start ws-b --port 3022 --id e2e-ws-b --env MCP_AUTH_TOKEN=${SECRET:wsb} --env OPUTE_MCP_PREFIX_TOOL_NAMES=true"
+  },
+  {
+   "id": "healthA",
+   "health": true,
+   "port": 3021,
+   "capture": {
+    "PA": "response.body.mcpToolNamePrefix"
+   }
+  },
+  {
+   "id": "healthB",
+   "health": true,
+   "port": 3022,
+   "capture": {
+    "PB": "response.body.mcpToolNamePrefix"
+   }
+  },
+  {
+   "id": "listA",
+   "mcp": "tools/list",
+   "port": 3021,
+   "auth": "secret:wsa"
+  },
+  {
+   "id": "listB",
+   "mcp": "tools/list",
+   "port": 3022,
+   "auth": "secret:wsb"
+  },
+  {
+   "id": "prefixed",
+   "guest": "python3 /opt/opute-e2e/guest/mcpwire.py <<'EOF' > /tmp/e2e-j6-a.json\n{\"kind\": \"mcp\", \"port\": 3021, \"token\": \"${SECRET:wsa}\", \"method\": \"tools/list\"}\nEOF\npython3 /opt/opute-e2e/guest/mcpwire.py <<'EOF' > /tmp/e2e-j6-b.json\n{\"kind\": \"mcp\", \"port\": 3022, \"token\": \"${SECRET:wsb}\", \"method\": \"tools/list\"}\nEOF\npython3 - <<'EOF'\nimport json\nna = [t['name'] for t in json.load(open('/tmp/e2e-j6-a.json'))['body']['result']['tools']]\nnb = [t['name'] for t in json.load(open('/tmp/e2e-j6-b.json'))['body']['result']['tools']]\npa, pb = '${PA}', '${PB}'\nprint(json.dumps({'countA': len(na), 'countB': len(nb), 'allPrefixedA': all(n.startswith(pa + '_') for n in na), 'allPrefixedB': all(n.startswith(pb + '_') for n in nb), 'overlap': len(set(na) & set(nb)), 'prefixesDiffer': pa != pb, 'unprefixedA': sorted({n[len(pa) + 1:] for n in na}) == sorted({n[len(pb) + 1:] for n in nb})}))\nEOF\nrm -f /tmp/e2e-j6-a.json /tmp/e2e-j6-b.json"
+  },
+  {
+   "id": "infoA",
+   "mcp": "tools/call",
+   "tool": "${PA}_get_host_info",
+   "arguments": {},
+   "port": 3021,
+   "auth": "secret:wsa"
+  },
+  {
+   "id": "infoB",
+   "mcp": "tools/call",
+   "tool": "${PB}_get_host_info",
+   "arguments": {},
+   "port": 3022,
+   "auth": "secret:wsb"
+  },
+  {
+   "id": "third",
+   "guest": "runuser -u opute -- env OPUTE_REMOTE_AGENT_ID=e2e-ws-a MCP_AUTH_TOKEN=${SECRET:wsa} HOST_MCP_PORT=3023 OPUTE_MCP_PREFIX_TOOL_NAMES=true OPUTE_HOST_AGENT_INSTANCE_ROOT=/tmp/e2e-agents/ws-a/instance OPUTE_STANDALONE_STATE_DIR=/tmp/e2e-agents/ws-a/state HOME=/tmp/e2e-agents/ws-a/home timeout 30 /home/opute/.local/share/opute/opute-host-agent serve --mode standalone --transport http; echo exit=$?",
+   "timeout": 60
+  },
+  {
+   "id": "aStillServes",
+   "health": true,
+   "port": 3021
+  },
+  {
+   "id": "aStillCalls",
+   "mcp": "tools/call",
+   "tool": "${PA}_get_host_info",
+   "arguments": {},
+   "port": 3021,
+   "auth": "secret:wsa"
+  },
+  {
+   "id": "stop",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove ws-a && python3 /opt/opute-e2e/guest/e2etool.py agent remove ws-b"
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 15
+}

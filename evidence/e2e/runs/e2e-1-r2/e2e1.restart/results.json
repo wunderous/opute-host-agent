@@ -1,0 +1,260 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/j7-kill.txt",
+   "files//home/opute/.config/opute-e2e/j7-term.txt"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.restart",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "slow"
+    },
+    {
+     "actual": 2,
+     "gte": 1,
+     "ok": true,
+     "path": "attempts",
+     "step": "termInFlight"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "termInFlight"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "term"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "termStart"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "termList"
+    },
+    {
+     "actual": "213c7fa3-6d6c-4916-ba71-36413433ce9b",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "ok": true,
+     "other": "213c7fa3-6d6c-4916-ba71-36413433ce9b",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "termAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "termDb"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "killInFlight"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "kill"
+    },
+    {
+     "actual": "1",
+     "equals": "1",
+     "ok": true,
+     "path": "json.NRestarts",
+     "step": "kill"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "killList"
+    },
+    {
+     "actual": "b92144b7-639d-43c2-ba18-d4c4a02e2837",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": true,
+     "other": "b92144b7-639d-43c2-ba18-d4c4a02e2837",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "killAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "killDb"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "integrity"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.rows",
+     "step": "secretInDb"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "secretInJournal"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "213c7fa3-6d6c-4916-ba71-36413433ce9b",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "ok": true,
+     "other": "213c7fa3-6d6c-4916-ba71-36413433ce9b",
+     "path": "json.planRunIds[0]",
+     "step": "termDb"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "json.planRunIds[1]",
+     "step": "termDb"
+    },
+    {
+     "actual": "b92144b7-639d-43c2-ba18-d4c4a02e2837",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": true,
+     "other": "b92144b7-639d-43c2-ba18-d4c4a02e2837",
+     "path": "json.planRunIds[0]",
+     "step": "killDb"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "json.planRunIds[1]",
+     "step": "killDb"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "unknown",
+     "equals": "cancelled",
+     "ok": false,
+     "path": "response.body.result.structuredContent.status",
+     "step": "termAfter"
+    },
+    {
+     "actual": "unknown",
+     "equals": "failed",
+     "ok": false,
+     "path": "response.body.result.structuredContent.status",
+     "step": "killAfter"
+    },
+    {
+     "actual": "<absent>",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": false,
+     "other": "b92144b7-639d-43c2-ba18-d4c4a02e2837",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "resubmit"
+    }
+   ],
+   "observedAsAsserted": false,
+   "openQuestion": "Q5",
+   "outcome": "unverified",
+   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "integrity": 189,
+   "kill": 3749,
+   "killAfter": 16,
+   "killDb": 190,
+   "killInFlight": 1019,
+   "killList": 28,
+   "killRun": 49,
+   "resubmit": 15,
+   "secretInDb": 189,
+   "secretInJournal": 162,
+   "slow": 207,
+   "slowStop": 196,
+   "term": 711,
+   "termAfter": 16,
+   "termDb": 187,
+   "termInFlight": 1020,
+   "termList": 28,
+   "termRun": 59,
+   "termStart": 763,
+   "tool": 283,
+   "wire": 286
+  },
+  "stepsSeconds": 53.5
+ },
+ "unverified": [
+  "Q5"
+ ]
+}

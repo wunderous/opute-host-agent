@@ -15,6 +15,10 @@ the verifier and the committed receipts.
 | `gates.json` | which run and journeys each gate requires, and their expected verdicts |
 | `runs/<run>/<journey>/` | receipts (committed) |
 | `tests/` | offline harness tests (`make e2e-test`, in CI) |
+| `mcpwire.py` | the MCP/HTTP client, used on the host and copied into the guest |
+| `guest-tools/e2etool.py` | guest helpers: transient agents under `/tmp/e2e-agents`, read-only database probes, the documented IDE config, a slow endpoint |
+| `clients/hostagentclient/` | the e2e-1 client on the published Go library `pkg/hostagentclient` (built offline by `build.sh`) |
+| `journeys/make_e2e1.py` | writes the e2e-1 journeys, with their hash pins |
 
 ## The VM
 
@@ -38,7 +42,9 @@ and changes nothing on the host outside `.parity/` in the main checkout.
   - `/etc/opute/host-agent.env` (root:opute, 0640), loaded through the
     drop-in `e2e.conf`. It holds the test identity `e2e-devvm-agent` and a
     generated test token.
-- **Go:** the pinned Go v0.2.4 release set is in
+- **Go:** the published Go v0.2.4 release set
+  (`.parity/releases/go-published-v0.2.4`, refused unless its SHA256SUMS
+  hash is `baseline/source-lock.json`'s) is in
   `/opt/opute-e2e/releases/go/v0.2.4`. It is only the migration source for
   e2e-1 journey 8 and e2e-4, and is not installed.
 - **The token:** it exists only in `.parity/e2e/devvm/token` (0600) and in
@@ -112,7 +118,21 @@ A journey declares:
   assertion is refused;
 - **effects:** the state-diff paths it may change (`allow`), and what may
   remain after cleanup (`persist`);
-- **steps:** `mcp`, `health`, `guest` or `restore`;
+- **steps:**
+  - `mcp`: a JSON-RPC request to the forwarded agent, to a guest port
+    (`port`), or to a self-check stub. It accepts `capture`, `until`
+    polling, `auth` (`token`, `none`, `var:`, `secret:` or `literal:`),
+    `meta` and `modern: false` for a legacy client;
+  - `http`: a plain HTTP request, such as the OAuth endpoints;
+  - `health`;
+  - `guest`: a root shell command. JSON stdout is recorded as `json`, and
+    `schemaResults` validates a client's reported structured results;
+  - `copy`: a hash-pinned `inputs.files` entry into the VM;
+  - `restore`.
+
+  `${NAME}` expands a captured value, `${SECRET:name}` a per-run random
+  secret, and `${TOKEN}` the agent's token. All three are redacted from
+  every record;
 - **cleanup:** the steps that undo it;
 - **maxMinutes:** at most 30.
 
@@ -133,6 +153,12 @@ It records:
   after cleanup outside `persist` fails it too;
 - the timings.
 
+A requirement whose outcome depends on an open owner question
+(`openspec/changes/rust-spec-authority/questions.md`) names it in
+`openQuestion`. Its assertions are recorded as observations, and its outcome
+is `unverified`, never a pass or a fail. Every journey starts from the
+snapshot, through a checked restore in preflight.
+
 A journey fails on any of: `pass-condition`, `schema`, `undeclared-effect`,
 `cleanup-residue`, `harness-error` or `time-limit`.
 
@@ -149,7 +175,8 @@ record runs.
 
 ## The e2e-0 self-checks
 
-The run `e2e-0-r3` proves the harness can pass and fail:
+The run `e2e-0-r4` proves the harness can pass and fail (r3 ran on the
+first harness; r4 reran it after e2e-1 extended the runner):
 
 | Journey | Expected |
 | --- | --- |
@@ -159,6 +186,7 @@ The run `e2e-0-r3` proves the harness can pass and fail:
 | `selfcheck.broken-pass` | fail: `pass-condition` |
 | `selfcheck.schema-violation` (a loopback stub declared as input) | fail: `schema` |
 | `selfcheck.restore` (a change, then restore) | pass, with the restored state equal to the baseline |
+| `selfcheck.step-kinds` (copy, secrets, http, guest-port mcp, polling, captures) | pass |
 
 ## Rules
 

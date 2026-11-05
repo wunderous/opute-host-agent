@@ -1,0 +1,161 @@
+{
+ "id": "selfcheck.step-kinds",
+ "gate": "e2e-0",
+ "description": "Positive control for the step kinds e2e-1 added: a hash-pinned copy, a per-run secret that is redacted from the record, a plain HTTP request, health and MCP requests made inside the guest (schema-validated against the guest port's own tools/list), polling, and captured values.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "probe": {
+    "path": "${REPO}/evidence/e2e/journeys/selfcheck.noop.json",
+    "sha256": "6610ad97181fbe3b5df444a78b9df6e50b73de169d0c2f77b40425691e52b268"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: the e2e-1 step kinds work",
+   "pass": [
+    {
+     "step": "copy",
+     "path": "sha256",
+     "equals": "6610ad97181fbe3b5df444a78b9df6e50b73de169d0c2f77b40425691e52b268"
+    },
+    {
+     "step": "copied",
+     "path": "json.sha256",
+     "equalsStep": {
+      "step": "copy",
+      "path": "sha256"
+     }
+    },
+    {
+     "step": "secret",
+     "path": "json.s",
+     "equals": "<secret:probe>"
+    },
+    {
+     "step": "http",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "http",
+     "path": "response.body.agentId",
+     "equalsStep": {
+      "step": "guestHealth",
+      "path": "response.body.agentId"
+     }
+    },
+    {
+     "step": "guestList",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "guestList",
+     "path": "target",
+     "equals": "guest:3014"
+    },
+    {
+     "step": "guestInfo",
+     "path": "attempts",
+     "equals": 1
+    },
+    {
+     "step": "guestInfo",
+     "path": "response.body.result.structuredContent.uri",
+     "matches": ":e2e-devvm-agent$"
+    },
+    {
+     "step": "expanded",
+     "path": "json.agent",
+     "equals": "e2e-devvm-agent"
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "copy",
+   "copy": "probe",
+   "to": "/tmp/e2e-copy-probe.json"
+  },
+  {
+   "id": "copied",
+   "guest": "sha256sum /tmp/e2e-copy-probe.json | cut -c1-64 | tr -d '\\n' | python3 -c \"import json,sys; print(json.dumps({'sha256': sys.stdin.read()}))\""
+  },
+  {
+   "id": "secret",
+   "guest": "printf '{\"s\": \"%s\"}' '${SECRET:probe}'",
+   "capture": {
+    "S": "json.s"
+   }
+  },
+  {
+   "id": "http",
+   "http": "GET",
+   "path": "/health"
+  },
+  {
+   "id": "guestHealth",
+   "health": true,
+   "port": 3014,
+   "capture": {
+    "AGENT": "response.body.agentId"
+   }
+  },
+  {
+   "id": "guestList",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "id": "guestInfo",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3014,
+   "until": {
+    "path": "response.status",
+    "in": [
+     200
+    ]
+   },
+   "timeout": 10
+  },
+  {
+   "id": "expanded",
+   "guest": "printf '{\"agent\": \"%s\"}' '${AGENT}'"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "rm",
+   "guest": "rm -f /tmp/e2e-copy-probe.json"
+  }
+ ],
+ "maxMinutes": 10
+}
