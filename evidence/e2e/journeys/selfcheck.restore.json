@@ -1,0 +1,60 @@
+{
+ "id": "selfcheck.restore",
+ "gate": "e2e-0",
+ "description": "Restore returns the baseline: a change on the VM is discarded by `devvm.py restore`, the restored state equals the recorded baseline, and the agent serves again.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: restore returns the baseline",
+   "pass": [
+    {
+     "step": "touch",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "restore",
+     "path": "response.equal",
+     "equals": true
+    },
+    {
+     "step": "gone",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "health",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "touch",
+   "guest": "touch /etc/opute-e2e-restore-probe && useradd e2e-restore-probe"
+  },
+  {
+   "id": "restore",
+   "restore": true
+  },
+  {
+   "id": "gone",
+   "guest": "test ! -e /etc/opute-e2e-restore-probe && ! id e2e-restore-probe"
+  },
+  {
+   "id": "health",
+   "health": true
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 15
+}

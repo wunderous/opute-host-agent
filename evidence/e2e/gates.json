@@ -1,0 +1,59 @@
+{
+ "e2e-0": {
+  "run": "e2e-0-r3",
+  "journeys": {
+   "selfcheck.noop": {
+    "pass": true
+   },
+   "selfcheck.declared-effect": {
+    "pass": true
+   },
+   "selfcheck.undeclared-effect": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ]
+   },
+   "selfcheck.broken-pass": {
+    "pass": false,
+    "failures": [
+     "pass-condition"
+    ]
+   },
+   "selfcheck.schema-violation": {
+    "pass": false,
+    "failures": [
+     "schema"
+    ]
+   },
+   "selfcheck.restore": {
+    "pass": true
+   }
+  }
+ },
+ "e2e-1": {
+  "run": null,
+  "journeys": {},
+  "blocked": "goal e2e-1 (install, clients and operation) has not run; no journeys are recorded"
+ },
+ "e2e-2": {
+  "run": null,
+  "journeys": {},
+  "blocked": "goal e2e-2 (host workloads) has not run; no journeys are recorded"
+ },
+ "e2e-3": {
+  "run": null,
+  "journeys": {},
+  "blocked": "goal e2e-3 (k3s, deploy and serving) has not run; no journeys are recorded"
+ },
+ "e2e-4": {
+  "run": null,
+  "journeys": {},
+  "blocked": "goal e2e-4 (durability and cutover) has not run; no journeys are recorded"
+ },
+ "e2e-5": {
+  "run": null,
+  "journeys": {},
+  "blocked": "goal e2e-5 (Platform-enrolled) has not run; no journeys are recorded"
+ }
+}
