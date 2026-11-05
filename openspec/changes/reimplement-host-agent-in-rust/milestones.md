@@ -6,6 +6,15 @@ end-to-end (E2E) evidence each one must produce. It refines
 milestone below names the task IDs it closes. Like the rest of this change, it
 is a plan. It does not claim that any milestone has started or passed.
 
+> **D27 (owner, 2026-11-04): Rust follows the spec, not Go parity.** The
+> parity evidence committed for m0–m6, m8a–m8f, m10, m12a, m12b, d25 and m9
+> is the historical record of this plan. Its gates are not rerun, and no new
+> Go baseline is captured. From D27 on, the authority is the contract spec,
+> the accepted decisions and the frozen v0.2.4 record; CI runs the Rust-only
+> suites, and M13 is gated by the spec-based E2E journeys (e2e-1 to e2e-5).
+> Sections 1–5 describe the parity method as it was used
+> ([`rust-spec-authority`](../rust-spec-authority/proposal.md)).
+
 Facts about the Go baseline cited here were read from the pinned tree
 `ace7013df17528fee1bed13a1d70a132d6c5eb9b`. Milestone 0 must re-verify them
 into the machine-readable inventory before anything depends on them.
@@ -1019,8 +1028,11 @@ OpenSpec change.
 
 ### M13: Cutover decision, then retirement as a separate decision
 
-**Closes:** 6.3, and later 6.4. The Host Agent, Platform, release, and
-deployment owners review the complete manifest. Production selection happens
+**Closes:** 6.3, and later 6.4. Since D27 the cutover evidence is
+spec-based: the Rust-only contract suites, the E2E journey gates e2e-1 to
+e2e-5 (each names the spec requirements it proves), and the state-conversion
+and rollback evidence. The Host Agent, Platform, release, and deployment
+owners review that evidence. Production selection happens
 through the normal rollout path, with Go kept as the rollback candidate
 throughout the agreed window. Go retirement, and ownership of releases and the
 website, are later decisions that need their own evidence.
@@ -1086,6 +1098,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D24 | Write-only PostgreSQL relay token | **Decided (owner, 2026-10-19): mark it.** Rust publishes `relayToken` `writeOnly` in `release_postgresql_service_relay` and under `localRelay` in `get_postgresql_service_status`, `reconcile_postgresql_service` and `remove_postgresql_service`, so the schema-driven storage projection redacts it in every durable row. Go leaves it unmarked and stores it verbatim in `capability_invocations` ([`write-only-relay-token`](../write-only-relay-token/proposal.md)). The owner chose this over keeping Go's behaviour | A relay token is a credential; the M8e goal requires that no credential reach a row unredacted. |
 | D25 | One writer per instance state | **Decided (owner, 2026-11-01): option A, lock in Go and Rust.** Each agent takes an exclusive, non-blocking lock on its instance state before opening any store or binding its listener; a second agent on the same instance refuses identically on both implementations, including across Go and Rust. The details were confirmed on 2026-11-01 as design.md proposes them. The Go change is merged in wunderous/host-agents#28 (`29103271`) and released in v0.2.4 (`c9f9e775`). **Done:** parity is rebased onto v0.2.4 and Rust takes the same lock; the writer-lock drill (Go/Go, Rust/Rust, Go then Rust, Rust then Go, then a SIGKILL) and the clean-machine user/bootstrap refusal pass, and gates m0–m6, m8a–m8f, m10, m12a, m12b and d25 pass on evidence/d25 ([`state-directory-writer-lock`](../state-directory-writer-lock/design.md)) | M12 validation 4 and task 4.4 ask for the lock, and only a lock on both sides protects Go -> Rust -> Go rollback. |
 | D26 | Provider executables in the Rust release | **Decided (owner, 2026-11-02): port.** hostos, cloudflare, tailscale and k3s become Rust executables matching the pinned Go ones (M9); ollama stays out (D15). Until a provider's m9 gate passes, the release ships the Go executable from the pinned v0.2.4 GitHub release, never a build from the Go tree ([`port-provider-executables`](../port-provider-executables/proposal.md)). |
+| D27 | Authority after the parity record | **Decided (owner, 2026-11-04): the spec.** Rust is developed against the contract spec, the accepted decisions and the frozen v0.2.4 record, not against Go. CI drops the Go/Rust comparison and runs the Rust-only suites; the committed parity evidence is historical; M13 becomes spec-based. Behaviours only Go decided are owner questions ([`rust-spec-authority`](../rust-spec-authority/questions.md)) | The parity record is complete; comparing with Go would block every improvement on it. |
 
 ## 7. Risks this plan specifically mitigates
 
