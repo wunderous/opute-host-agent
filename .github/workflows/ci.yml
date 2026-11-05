@@ -27,48 +27,16 @@ jobs:
           node-version: "22"
       - run: make spec-validate
 
-  parity:
+  rust-suites:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24.7"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install pinned toolchain (rust-toolchain.toml)
         run: rustup show active-toolchain || rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - name: Build the harness, the Go reference, its providers and the Rust candidate
-        run: make parity-test go-reference go-providers rust-build
-      # The oci-domain scenarios run on a bare host (fixture oci-domain-bare):
-      # every OCI tool they see comes from their shims. The runner image ships
-      # real podman and buildah in /usr/bin, which both sides would otherwise
-      # call, sharing one rootless store; remove them so the scenarios see the
-      # host they describe.
-      - name: Remove the runner's own OCI tools
-        run: |
-          sudo apt-get remove -y podman buildah
-          for t in podman buildah buildkitd; do ! command -v "$t" || { echo "$t still on PATH" >&2; exit 1; }; done
-      # Admission counts the agent cgroup's memory.current, which includes the
-      # page cache the checkout and the builds charged to this job. Release
-      # it so the agents see the runner's memory, and print what they read.
-      - name: Release the job's page cache before the parity run
-        run: |
-          cg=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
-          report() { free -m; df -h .; echo "memory.current=$(cat $cg/memory.current) memory.max=$(cat $cg/memory.max)"; grep -E '^(anon|file) ' $cg/memory.stat; }
-          report
-          sync && echo 1 | sudo tee /proc/sys/vm/drop_caches >/dev/null
-          report
-      - name: Verify committed evidence and re-prove M1 parity
-        run: make parity-ci
-      - name: Upload parity diffs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: parity-ci-evidence
-          path: .parity/ci-*
-          if-no-files-found: ignore
-          # .parity is a hidden directory, which upload-artifact v4 skips by default.
-          include-hidden-files: true
+      # D27: the Rust-only suites. Rust is no longer compared with Go.
+      - name: Harness tests and the Rust contract suites
+        run: make rust-suites
