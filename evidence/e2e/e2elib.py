@@ -11,10 +11,10 @@ import os
 import re
 import subprocess
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
+
+
 
 E2E_DIR = Path(__file__).resolve().parent
 REPO_ROOT = E2E_DIR.parent.parent
@@ -36,7 +36,6 @@ DEV = PARITY / "e2e" / "devvm"
 # reads the same file): while it is held, no twin starts.
 LEASE = T2 / "dev-vm.lease.json"
 LEASE_MAX_HOURS = 12
-PROTOCOL_VERSION = "2026-07-28"
 
 
 def sha256_file(path: Path) -> str:
@@ -115,58 +114,12 @@ def release_lease(holder: str) -> None:
     LEASE.unlink(missing_ok=True)
 
 
-# --- MCP over Streamable HTTP ---------------------------------------------------------
+# --- MCP over Streamable HTTP (mcpwire, shared with the guest) ---------------------
 
+import sys  # noqa: E402
 
-def mcp(port: int, token: str | None, method: str, params: dict | None = None, request_id: int = 1,
-        client: str = "opute-e2e", timeout: float = 120) -> dict:
-    """One 2026-07-28 JSON-RPC request; returns status, content type and the decoded body."""
-    body = {"jsonrpc": "2.0", "method": method, "id": request_id, "params": {
-        **(params or {}), "_meta": {
-            "io.modelcontextprotocol/protocolVersion": PROTOCOL_VERSION,
-            "io.modelcontextprotocol/clientCapabilities": {},
-            "io.modelcontextprotocol/clientInfo": {"name": client, "version": "1"}}}}
-    headers = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json",
-               "MCP-Protocol-Version": PROTOCOL_VERSION, "Mcp-Method": method,
-               "Origin": f"http://127.0.0.1:{port}"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    if method == "tools/call":
-        headers["Mcp-Name"] = (params or {})["name"]
-    request = urllib.request.Request(f"http://127.0.0.1:{port}/mcp", data=json.dumps(body).encode(),
-                                     headers=headers, method="POST")
-    started = time.monotonic()
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            raw, status, ctype = response.read(), response.status, response.headers.get("Content-Type", "")
-    except urllib.error.HTTPError as error:
-        raw, status, ctype = error.read(), error.code, error.headers.get("Content-Type", "")
-    except OSError as error:
-        return {"status": None, "error": type(getattr(error, "reason", error)).__name__,
-                "ms": round((time.monotonic() - started) * 1000)}
-    return {"status": status, "contentType": ctype.split(";")[0].strip(), "body": decode_body(ctype, raw),
-            "ms": round((time.monotonic() - started) * 1000)}
-
-
-def decode_body(ctype: str, raw: bytes) -> Any:
-    text = raw.decode(errors="replace")
-    if ctype.startswith("text/event-stream"):
-        events = [json.loads(line[5:]) for line in text.splitlines() if line.startswith("data:") and line[5:].strip()]
-        return events[-1] if events else None
-    try:
-        return json.loads(text) if text.strip() else None
-    except ValueError:
-        return {"raw": text[:400]}
-
-
-def health(port: int, timeout: float = 5) -> dict:
-    try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=timeout) as response:
-            return {"status": response.status, "body": json.loads(response.read())}
-    except urllib.error.HTTPError as error:
-        return {"status": error.code, "body": None}
-    except (OSError, ValueError) as error:
-        return {"status": None, "error": type(error).__name__}
+sys.path.insert(0, str(E2E_DIR))
+from mcpwire import decode_body, health, http, mcp  # noqa: E402,F401
 
 
 # --- JSON Schema (the subset the catalog uses; anything else fails closed) ------------

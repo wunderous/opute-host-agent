@@ -65,12 +65,15 @@ def verify_receipt(directory: Path, expect: dict) -> list[str]:
     recorded = json.loads((directory / "results.json").read_text())
     if derived != recorded:
         problems.append("results.json does not re-derive from the transcript and states")
-    if receipt["verdict"] != {"pass": derived["pass"], "failures": derived["failures"]}:
+    if receipt["verdict"] != {"pass": derived["pass"], "failures": derived["failures"],
+                              "unverified": derived["unverified"]}:
         problems.append("receipt verdict differs from the derived one")
     if derived["pass"] != expect["pass"]:
         problems.append(f"verdict pass={derived['pass']} ({derived['failures']}), expected pass={expect['pass']}")
     if "failures" in expect and derived["failures"] != expect["failures"]:
         problems.append(f"failures {derived['failures']} != expected {expect['failures']}")
+    if derived["unverified"] != expect.get("unverified", []):
+        problems.append(f"unverified {derived['unverified']} != expected {expect.get('unverified', [])}")
     return problems
 
 

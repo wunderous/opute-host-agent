@@ -10,9 +10,25 @@ A journey (journeys/<id>.json) declares:
                 assertion is refused, so a pass is never vacuous)
   effects       glob patterns over state-diff paths the journey may change
                 ("allow"), and what may remain after cleanup ("persist")
-  steps         mcp | health | guest | restore, in order
+  steps         in order, each one of:
+                mcp     a JSON-RPC request to the agent (forwarded port), to a
+                        guest port (`port`), or to a self-check stub; with
+                        `capture`, `until` polling, `auth` and `meta`
+                http    a plain HTTP request (OAuth endpoints, /health)
+                guest   a shell command in the VM as root; stdout that parses
+                        as JSON is recorded as `json`
+                copy    a hash-pinned input file (inputs.files) into the VM
+                restore discard the run overlay and boot the snapshot
+                `${NAME}` expands a captured value; `${SECRET:name}` a per-run
+                random secret; `${TOKEN}` the agent's test token. All three are
+                redacted from every record.
   cleanup       steps that undo what the journey did
   maxMinutes    at most 30
+A requirement whose outcome depends on an open owner question
+(openspec/changes/rust-spec-authority/questions.md) names it in
+`openQuestion`: its assertions are recorded as observations and its outcome
+is `unverified`, never a pass or a fail.
+Every journey starts from the snapshot (a checked restore, preflight).
 
 The run records, under runs/<run>/<journey>/:
   journey.json        the journey as run
@@ -33,6 +49,8 @@ import gzip
 import http.server
 import json
 import re
+import secrets
+import shlex
 import sys
 import threading
 import time
@@ -47,8 +65,9 @@ E2E = e2elib.E2E_DIR
 JOURNEYS = E2E / "journeys"
 RUNS = E2E / "runs"
 TOKEN_PATTERN = re.compile(r"e2e-test-token-[0-9a-f]{48}")
-STEP_KINDS = ("mcp", "health", "guest", "restore")
-OPS = ("equals", "in", "exists", "absent", "matches", "gte", "lte", "contains")
+STEP_KINDS = ("mcp", "health", "guest", "restore", "copy", "http")
+OPS = ("equals", "in", "exists", "absent", "matches", "gte", "lte", "contains", "equalsStep")
+QUESTION = re.compile(r"^Q\d+$")
 MAX_MINUTES = 30
 
 
@@ -90,11 +109,19 @@ def journey_problems(journey: dict) -> list[str]:
             out.append("a requirement needs spec and requirement")
         if not req.get("pass"):
             out.append(f"requirement {req.get('requirement')!r} has no pass condition")
+        if "openQuestion" in req and not QUESTION.match(str(req["openQuestion"])):
+            out.append(f"openQuestion {req['openQuestion']!r} is not a question number")
         for a in req.get("pass") or []:
             if a.get("step") not in step_ids:
                 out.append(f"assertion on unknown step {a.get('step')!r}")
+            if "equalsStep" in a and a["equalsStep"].get("step") not in step_ids:
+                out.append(f"equalsStep on unknown step {a['equalsStep'].get('step')!r}")
             if len([op for op in OPS if op in a]) != 1:
                 out.append(f"assertion on {a.get('step')!r} needs exactly one of {OPS}")
+    files = (journey["inputs"] or {}).get("files", {})
+    for step in journey["steps"] + journey["cleanup"]:
+        if "copy" in step and (step["copy"] not in files or not files[step["copy"]].get("sha256")):
+            out.append(f"step {step['id']}: copy needs a hash-pinned inputs.files entry")
     effects = journey["effects"]
     if not isinstance(effects.get("allow"), list) or not isinstance(effects.get("persist"), list):
         out.append("effects needs allow and persist lists")
@@ -121,7 +148,7 @@ def dig(obj: Any, path: str) -> tuple[bool, Any]:
     return True, obj
 
 
-def check(assertion: dict, record: dict | None) -> dict:
+def check(assertion: dict, record: dict | None, records: dict | None = None) -> dict:
     found, actual = dig(record, assertion.get("path", "")) if record is not None else (False, None)
     if not found:
         actual = "<absent>"  # an `in` or `equals` may name the sentinel to accept absence
@@ -141,6 +168,11 @@ def check(assertion: dict, record: dict | None) -> dict:
         ok = isinstance(actual, (int, float)) and actual >= expected
     elif op == "lte":
         ok = isinstance(actual, (int, float)) and actual <= expected
+    elif op == "equalsStep":
+        other = (records or {}).get(expected["step"])
+        other_found, other_value = dig(other, expected.get("path", "")) if other is not None else (False, None)
+        ok = found and other_found and actual == other_value
+        return {**assertion, "actual": actual, "other": other_value if other_found else "<absent>", "ok": ok}
     else:  # contains
         ok = isinstance(actual, (list, str, dict)) and expected in actual
     return {**assertion, "actual": actual, "ok": ok}
@@ -165,9 +197,14 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
     records = {r["step"]: r for r in transcript if r.get("phase") == "step"}
     requirements = []
     for req in journey["requirements"]:
-        checks = [check(a, records.get(a["step"])) for a in req["pass"]]
-        requirements.append({"spec": req["spec"], "requirement": req["requirement"],
-                             "pass": all(c["ok"] for c in checks), "assertions": checks})
+        checks = [check(a, records.get(a["step"]), records) for a in req["pass"]]
+        entry = {"spec": req["spec"], "requirement": req["requirement"], "assertions": checks}
+        if "openQuestion" in req:
+            entry.update(outcome="unverified", openQuestion=req["openQuestion"],
+                         observedAsAsserted=all(c["ok"] for c in checks))
+        else:
+            entry.update(outcome="pass" if all(c["ok"] for c in checks) else "fail")
+        requirements.append(entry)
     # Every MCP response is validated against the tools/list its own target
     # published earlier in the same run.
     schema = []
@@ -184,6 +221,25 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
                 catalog[tool["name"]] = tool
         if errors:
             schema.append({"step": r["step"], "phase": r["phase"], "errors": errors})
+    # A client that hides the JSON-RPC envelope (pkg/hostagentclient) reports
+    # each call's structured result; each is validated against the outputSchema
+    # its target published.
+    for r in transcript:
+        if r.get("kind") != "guest" or not r.get("schemaResults"):
+            continue
+        found, results = dig(r, r["schemaResults"])
+        catalog = tools.get(r.get("schemaTarget", "agent"), {})
+        errors = []
+        if not found or not isinstance(results, list) or not results:
+            errors.append(f"{r['schemaResults']}: no client results to validate")
+        for i, item in enumerate(results if isinstance(results, list) else []):
+            schema_ = (catalog.get(item.get("tool")) or {}).get("outputSchema")
+            if item.get("tool") not in catalog:
+                errors.append(f"[{i}] tool {item.get('tool')!r} was not in its target's tools/list")
+            elif schema_ and not item.get("isError") and "structuredContent" in item:
+                errors += e2elib.validate(item["structuredContent"], schema_, f"[{i}].structuredContent")
+        if errors:
+            schema.append({"step": r["step"], "phase": r["phase"], "errors": errors})
     changed = state_diff(states["before"], states["after"])
     residue = state_diff(states["before"], states["cleanup"])
     allowed = journey["effects"]["allow"]
@@ -193,7 +249,7 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
     harness_errors = [{"step": r["step"], "error": r["harnessError"]} for r in transcript if r.get("harnessError")]
     seconds = sum(r.get("ms", 0) for r in transcript) / 1000
     reasons = []
-    if not all(r["pass"] for r in requirements):
+    if any(r["outcome"] == "fail" for r in requirements):
         reasons.append("pass-condition")
     if schema:
         reasons.append("schema")
@@ -205,7 +261,9 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
         reasons.append("harness-error")
     if seconds > journey["maxMinutes"] * 60:
         reasons.append("time-limit")
+    unverified = sorted({r["openQuestion"] for r in requirements if r["outcome"] == "unverified"})
     return {"journey": journey["id"], "gate": journey["gate"], "pass": not reasons, "failures": reasons,
+            "unverified": unverified,
             "requirements": requirements, "schemaErrors": schema,
             "effects": {"changed": changed, "undeclared": undeclared, "residue": residue, "residueUndeclared": left},
             "harnessErrors": harness_errors,
@@ -252,42 +310,167 @@ class Stub:
         self.server.shutdown()
 
 
-def scrub(value: Any, token: str) -> Any:
+def scrub(value: Any, ctx: dict) -> Any:
+    """Every test credential the run knows, replaced by its name."""
     text = json.dumps(value)
-    return json.loads(text.replace(token, "<test-token>")) if token in text else value
+    for secret, name in [(ctx["token"], "<test-token>")] + [(v, f"<secret:{k}>") for k, v in ctx["secrets"].items()]:
+        if secret and secret in text:
+            text = text.replace(secret, name)
+    return json.loads(text)
+
+
+_VAR = re.compile(r"\$\{(SECRET:)?([A-Za-z0-9_.-]+)\}")
+
+
+def expand(value: Any, ctx: dict) -> Any:
+    """`${TOKEN}`, `${SECRET:name}` (a per-run random secret) and `${NAME}` (a capture)."""
+    if isinstance(value, str):
+        def sub(m: re.Match) -> str:
+            if m.group(1):
+                return ctx["secrets"].setdefault(m.group(2), f"e2e-secret-{secrets.token_hex(16)}")
+            if m.group(2) == "TOKEN":
+                return ctx["token"]
+            if m.group(2) not in ctx["vars"]:
+                raise KeyError(f"${{{m.group(2)}}} was never captured")
+            return str(ctx["vars"][m.group(2)])
+        return _VAR.sub(sub, value)
+    if isinstance(value, list):
+        return [expand(v, ctx) for v in value]
+    if isinstance(value, dict):
+        return {k: expand(v, ctx) for k, v in value.items()}
+    return value
+
+
+def capture(step: dict, record: dict, ctx: dict) -> None:
+    for name, spec in (step.get("capture") or {}).items():
+        spec = spec if isinstance(spec, dict) else {"path": spec}
+        found, value = dig(record, spec["path"])
+        if not found:
+            raise KeyError(f"capture {name}: {spec['path']} is absent")
+        if spec.get("secret"):
+            ctx["secrets"][name] = str(value)
+        ctx["vars"][name] = value
+
+
+def bearer(auth: str, ctx: dict) -> str | None:
+    if auth == "token":
+        return ctx["token"]
+    if auth == "none":
+        return None
+    if auth.startswith("var:"):
+        return str(ctx["vars"][auth[4:]])
+    if auth.startswith("literal:"):
+        return auth[8:]
+    if auth.startswith("secret:"):
+        return expand(f"${{SECRET:{auth[7:]}}}", ctx)
+    raise ValueError(f"unknown auth {auth!r}")
+
+
+GUEST_WIRE = "/opt/opute-e2e/guest/mcpwire.py"
+
+
+def wire(kind: str, port: int | None, ctx: dict, **request: Any) -> dict:
+    """A request from the host to the forwarded agent port, or from inside the guest to a guest port."""
+    import devvm
+    if port is None:
+        return getattr(e2elib, kind)(devvm.MCP_PORT, **request)
+    if not ctx.get("guestWire"):
+        devvm.guest("install -d /opt/opute-e2e/guest", check=True)
+        devvm.scp([E2E / "mcpwire.py"], GUEST_WIRE)
+        ctx["guestWire"] = True
+    done = devvm.guest(f"python3 {GUEST_WIRE}", input=json.dumps({"kind": kind, "port": port, **request}),
+                       timeout=request.get("timeout", 120) + 30, check=True)
+    return json.loads(done.stdout)
+
+
+def run_mcp(step: dict, ctx: dict) -> dict:
+    target = step.get("target", "agent")
+    port = ctx["stub"].port if target == "stub" else None
+    guest_port = step.get("port")
+    key = f"guest:{guest_port}" if guest_port else target
+    auth = step.get("auth", "token")
+    if step["mcp"] == "tools/call":
+        params = {"name": expand(step["tool"], ctx), "arguments": expand(step.get("arguments", {}), ctx),
+                  **expand(step.get("params", {}), ctx)}
+    else:
+        params = expand(step.get("params"), ctx)
+    deadline = time.monotonic() + step.get("timeout", 0)
+    attempts = 0
+    while True:
+        ctx["requestId"] += 1
+        attempts += 1
+        request = dict(token=bearer(auth, ctx), method=step["mcp"], params=params, request_id=ctx["requestId"],
+                       modern=step.get("modern", True), meta=expand(step.get("meta"), ctx))
+        if target == "stub":
+            response = e2elib.mcp(port, **request)
+        else:
+            response = wire("mcp", guest_port, ctx, **request)
+        record = {"kind": "mcp", "target": key, "method": step["mcp"], "requestId": ctx["requestId"],
+                  "tool": params.get("name") if step["mcp"] == "tools/call" else None,
+                  "auth": auth.split(":")[0], "params": params, "response": response, "attempts": attempts}
+        until = step.get("until")
+        if not until:
+            return record
+        found, value = dig(record, until["path"])
+        if found and value in until["in"]:
+            return record
+        if time.monotonic() >= deadline:
+            record["untilTimedOut"] = True
+            return record
+        time.sleep(step.get("interval", 1))
 
 
 def run_step(step: dict, phase: str, ctx: dict) -> dict:
     import devvm
-    token = ctx["token"]
     record: dict[str, Any] = {"step": step["id"], "phase": phase}
     t0 = time.monotonic()
     try:
         if "mcp" in step:
-            target = step.get("target", "agent")
-            port = ctx["stub"].port if target == "stub" else devvm.MCP_PORT
-            auth = step.get("auth", "token")
-            bearer = {"token": token, "none": None}.get(auth, auth)
-            ctx["requestId"] += 1
-            params = {"name": step["tool"], "arguments": step.get("arguments", {})} if step["mcp"] == "tools/call" \
-                else step.get("params")
-            response = e2elib.mcp(port, bearer, step["mcp"], params, ctx["requestId"])
-            record.update(kind="mcp", target=target, method=step["mcp"], requestId=ctx["requestId"],
-                          tool=step.get("tool"), auth=auth if auth in ("token", "none") else "<other>",
-                          params=params, response=response)
+            record.update(run_mcp(step, ctx))
+        elif "http" in step:
+            request = {k: expand(step[k], ctx) for k in ("path", "query", "form", "basic", "headers") if k in step}
+            if "json" in step:
+                request["json_body"] = expand(step["json"], ctx)
+            record.update(kind="http", method=step["http"], port=step.get("port"), request=request,
+                          response=wire("http", step.get("port"), ctx, method=step["http"], **request))
         elif "health" in step:
-            record.update(kind="health", response=e2elib.health(devvm.MCP_PORT))
+            port = step.get("port")
+            record.update(kind="health", port=port, response=wire("health", port, ctx) if port
+                          else e2elib.health(devvm.MCP_PORT))
         elif "guest" in step:
             command = step["guest"]
-            done = devvm.guest(command.replace("${TOKEN}", token), timeout=step.get("timeout", 600))
-            record.update(kind="guest", command=command, exit=done.returncode, stdout=done.stdout[-4000:],
+            done = devvm.guest(expand(command, ctx), timeout=step.get("timeout", 600))
+            record.update(kind="guest", command=command, exit=done.returncode, stdout=done.stdout[-8000:],
                           stderr=done.stderr[-4000:])
+            try:
+                record["json"] = json.loads(done.stdout)
+            except ValueError:
+                pass
+            for key in ("schemaResults", "schemaTarget"):
+                if key in step:
+                    record[key] = step[key]
+        elif "copy" in step:
+            spec = ctx["files"][step["copy"]]
+            source = Path(expand_path(spec["path"]))
+            actual = e2elib.sha256_file(source)
+            if actual != spec["sha256"]:
+                raise ValueError(f"input {step['copy']} sha256 {actual} != pinned {spec['sha256']}")
+            devvm.guest(f"install -d {shlex.quote(str(Path(step['to']).parent))}", check=True)
+            devvm.scp([source], step["to"])
+            if "mode" in step:
+                devvm.guest(f"chmod {step['mode']} {shlex.quote(step['to'])}", check=True)
+            record.update(kind="copy", input=step["copy"], to=step["to"], sha256=actual)
         else:
             record.update(kind="restore", response=devvm.restore(check=True))
+        capture(step, record, ctx)
     except Exception as error:  # recorded, never retried: the verdict says harness-error
         record["harnessError"] = f"{type(error).__name__}: {error}"
     record["ms"] = round((time.monotonic() - t0) * 1000)
-    return scrub(record, token)
+    return scrub(record, ctx)
+
+
+def expand_path(path: str) -> str:
+    return path.replace("${PARITY}", str(e2elib.PARITY)).replace("${REPO}", str(e2elib.REPO_ROOT))
 
 
 def write_gz(path: Path, obj: Any) -> None:
@@ -295,7 +478,7 @@ def write_gz(path: Path, obj: Any) -> None:
 
 
 def harness_hashes() -> dict:
-    files = [E2E / "run.py", E2E / "e2elib.py", E2E / "verify.py", E2E / "devvm/devvm.py",
+    files = [E2E / "run.py", E2E / "e2elib.py", E2E / "mcpwire.py", E2E / "verify.py", E2E / "devvm/devvm.py",
              E2E / "devvm/guest/state.py", e2elib.REPO_ROOT / "tools/parity/t2guest/snapshot.py"]
     return {str(f.relative_to(e2elib.REPO_ROOT)): e2elib.sha256_file(f) for f in files}
 
@@ -311,12 +494,19 @@ def run(journey_id: str, run_id: str) -> dict:
     if out.exists():
         raise SystemExit(f"refused: {out} exists; a journey runs once")
     out.mkdir(parents=True)
-    ctx = {"token": devvm.token(), "requestId": 0,
+    ctx = {"token": devvm.token(), "requestId": 0, "vars": {}, "secrets": {},
+           "files": journey["inputs"].get("files", {}),
            "stub": Stub(journey["inputs"]["stub"]) if "stub" in journey["inputs"] else None}
     started = e2elib.now()
     transcript = []
     states = {}
     try:
+        # Every journey starts from the snapshot; a restore that does not
+        # return the baseline is a harness error, not a journey result.
+        restored = run_step({"id": "snapshot", "restore": True}, "preflight", ctx)
+        if not restored.get("harnessError") and not restored["response"].get("equal"):
+            restored["harnessError"] = "restore did not return the baseline"
+        transcript.append(restored)
         catalog = {"id": "catalog", "mcp": "tools/list"}
         transcript.append(run_step(catalog, "preflight", ctx))
         states["before"] = devvm.state()
@@ -337,15 +527,16 @@ def run(journey_id: str, run_id: str) -> dict:
     (out / "results.json").write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
     for path in out.iterdir():
         data = gzip.decompress(path.read_bytes()) if path.suffix == ".gz" else path.read_bytes()
-        if TOKEN_PATTERN.search(data.decode(errors="replace")) or ctx["token"].encode() in data:
+        if TOKEN_PATTERN.search(data.decode(errors="replace")) or any(
+                v.encode() in data for v in [ctx["token"], *ctx["secrets"].values()] if v):
             for p in out.iterdir():
                 p.unlink()
             out.rmdir()
-            raise SystemExit(f"refused: {path.name} would carry the test token; nothing written")
+            raise SystemExit(f"refused: {path.name} would carry a test credential; nothing written")
     build = json.loads((e2elib.DEV / "build.json").read_text())
     receipt = {
         "journey": journey_id, "gate": journey["gate"], "run": run_id, "started": started, "finished": e2elib.now(),
-        "verdict": {"pass": results["pass"], "failures": results["failures"]},
+        "verdict": {"pass": results["pass"], "failures": results["failures"], "unverified": results["unverified"]},
         "journeySourceSha256": e2elib.sha256_file(JOURNEYS / f"{journey_id}.json"),
         "files": {p.name: e2elib.sha256_file(p) for p in sorted(out.iterdir())},
         "harness": harness_hashes(),
