@@ -25,6 +25,8 @@ GATE_SPEC = "openspec/changes/standalone-read-only-gate/specs/standalone-read-on
 OAUTH_SPEC = "openspec/changes/secure-oauth-issuance/specs/oauth-issuance/spec.md"
 REJECT_SPEC = "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
 LOCK_SPEC = "openspec/changes/state-directory-writer-lock/specs/state-directory-writer-lock/spec.md"
+Q15_SPEC = "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md"
+TASKS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}}
 DOCS = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/"
 DIST = "baseline/inventory/distribution.json"
 
@@ -661,6 +663,9 @@ def j7() -> dict:
         mcp("killList", "tools/list"),
         call("killAfter", "get_host_plan_run", {"runId": "${KILL_RUN}"}),
         {"id": "killDb", "guest": f"{T} db {SDB} --plan-id e2e1-j7-kill"},
+        # The run's in-memory task (id = run id) is persisted only on failure or resume, so after the
+        # SIGKILL there is no snapshot for restart reclaim to act on (Q15).
+        mcp("killTask", "tasks/get", params={"taskId": "${KILL_RUN}"}, meta=TASKS_META),
         call("resubmit", "run_host_plan", {"plan": kill_plan}),
         {"id": "integrity", "guest": f"{T} db {SDB}"},
         {"id": "secretInDb", "guest": f"{T} contains {SDB} '${{SECRET:j7content}}'"},
@@ -679,7 +684,7 @@ def j7() -> dict:
               equalsStep={"step": "termRun", "path": "response.body.result.structuredContent.runId"}),
             a("termDb", "json.integrity", equals="ok"),
             a("killInFlight", "response.body.result.structuredContent.nodes.n2.attempts", equals=1),
-            a("kill", "json.ActiveState", equals="active"), a("kill", "json.NRestarts", equals="1"),
+            a("kill", "json.ActiveState", equals="active"), a("kill", "json.NRestarts", matches="^[1-9][0-9]*$"),
             a("killList", "response.status", equals=200),
             a("killAfter", "response.body.result.structuredContent.runId",
               equalsStep={"step": "killRun", "path": "response.body.result.structuredContent.runId"}),
@@ -696,19 +701,24 @@ def j7() -> dict:
         req(SPEC, "One typed plan and recipe execution path",
             a("termAfter", "response.body.result.structuredContent.status", equals="cancelled"),
             a("killAfter", "response.body.result.structuredContent.status", equals="failed"),
-            a("resubmit", "response.body.result.structuredContent.runId",
-              equalsStep={"step": "killRun", "path": "response.body.result.structuredContent.runId"}),
-            scenario="Interrupted plan: the post-restart status and the resubmission outcome (observed; what the "
-                     "plan contract specifies after a restart is Q5)",
+            scenario="Interrupted plan: the post-restart status (observed; what the plan contract specifies "
+                     "after a restart is Q5)",
             question="Q5"),
+        req(Q15_SPEC, "A crashed plan run's orphaned reservation is reclaimed without a task",
+            a("killTask", "response.body.result.status", equals="failed"),
+            a("resubmit", "response.body.result.isError", **{"in": [False, "<absent>"]}),
+            a("resubmit", "response.body.result.structuredContent.code", absent=True),
+            scenario="Resubmit after a SIGKILL during a plain run_host_plan (proposed; Q15)",
+            question="Q15"),
     ]
     return journey(
         "e2e1.restart",
         "Flow 14, restart and recovery: the system agent is stopped with SIGTERM, then killed with SIGKILL (the "
-        "unit's Restart=on-failure restarts it), each time with a host plan in flight (its first node wrote a file "
+        "unit's Restart=on-failure restarts it) each time with a host plan in flight (its first node wrote a file "
         "with write-only content, its second waits on a slow local endpoint). After each restart the run is "
         "served as one durable record, the store passes its integrity check, and the write-only content is in no "
-        "durable row and no journal line.",
+        "durable row and no journal line. Whether the "
+        "resubmission after the SIGKILL is admitted is Q15.",
         {"agent": AGENT, "files": files, "slow": "a local endpoint answering after 30 s (e2etool slow)"},
         reqs, steps, cleanup, allow=["files//home/opute/.config/opute-e2e*", "system/units/e2e-slow*",
                                      "system/unitFiles/e2e-slow*"], minutes=15)
