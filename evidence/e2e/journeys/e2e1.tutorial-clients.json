@@ -1,0 +1,514 @@
+{
+ "id": "e2e1.tutorial-clients",
+ "gate": "e2e-1",
+ "description": "Flow 1 and 3, tutorial first success with scripted clients, each from a clean connection: a 2026-07-28 MCP client; a legacy-handshake client (an agent started with OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true, ADR 0011); the published Go client library pkg/hostagentclient (v0.2.4, built offline); and the VS Code configuration the tutorial documents, used exactly as written. Each follows the published steps (tools/list, catalog, get_host_info, a read-only call), then, with mutations enabled, one approved mutation as a host plan polled to completion. The published tutorial is read-only and documents no mutation step, so the mutation is judged against the spec only.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "hostagentclient": {
+    "path": "${PARITY}/e2e/inputs/hostagentclient",
+    "sha256": "79e3a7de5c949bc568edae82f7587947cc6cdb5e5304f81756026cdf9721051f"
+   },
+   "getStarted": {
+    "path": "${PARITY}/e2e/go-src-v0.2.4/site/public/docs/get-started/index.html",
+    "sha256": "06277a1ac25ca03cab824fd3e2ff82a2bd9ba1b4d420da3272d9fd9553ac193e"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/get-started/index.html",
+   "requirement": "First success: health, connect, refresh tools, get_host_info {}",
+   "pass": [
+    {
+     "step": "health",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    },
+    {
+     "step": "list",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "list",
+     "path": "response.body.result.tools[0].name",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.uri",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.hostName",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.providerId",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.lxcBinaryPath",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.systemctlPath",
+     "exists": true
+    },
+    {
+     "step": "info",
+     "path": "response.body.result.structuredContent.supportedTools",
+     "exists": true
+    }
+   ],
+   "scenario": "the six required host facts the tutorial names"
+  },
+  {
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/get-started/index.html",
+   "requirement": "Connect VS Code: the documented .vscode/mcp.json",
+   "pass": [
+    {
+     "step": "ide",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "ide",
+     "path": "json.config.type",
+     "equals": "http"
+    },
+    {
+     "step": "ide",
+     "path": "json.config.url",
+     "equals": "http://127.0.0.1:3014/mcp"
+    },
+    {
+     "step": "ide",
+     "path": "json.config.authorization",
+     "equals": "Bearer ${input:opute-host-token}"
+    },
+    {
+     "step": "ide",
+     "path": "json.config.inputs[0].password",
+     "equals": true
+    },
+    {
+     "step": "ide",
+     "path": "json.toolsListStatus",
+     "equals": 200
+    },
+    {
+     "step": "ide",
+     "path": "json.callStatus",
+     "equals": 200
+    },
+    {
+     "step": "ide",
+     "path": "json.results[0].isError",
+     "equals": false
+    }
+   ]
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Compatible authenticated MCP surface",
+   "pass": [
+    {
+     "step": "discover",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "discover",
+     "path": "response.body.result",
+     "exists": true
+    },
+    {
+     "step": "catalog",
+     "path": "response.body.result.structuredContent.catalogRevision",
+     "matches": "^sha256:"
+    },
+    {
+     "step": "capacity",
+     "path": "response.body.result.structuredContent.enforcement",
+     "exists": true
+    }
+   ],
+   "scenario": "Read-only authenticated first call"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Compatible authenticated MCP surface",
+   "pass": [
+    {
+     "step": "legacyAgent",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "legacyInit",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "legacyInit",
+     "path": "response.body.result.protocolVersion",
+     "equals": "2025-06-18"
+    },
+    {
+     "step": "legacyList",
+     "path": "response.status",
+     "equals": 200
+    },
+    {
+     "step": "legacyInfo",
+     "path": "response.body.result.structuredContent.uri",
+     "matches": ":e2e-legacy-agent$"
+    },
+    {
+     "step": "legacyCatalog",
+     "path": "response.body.result.structuredContent.catalogRevision",
+     "matches": "^sha256:"
+    },
+    {
+     "step": "legacyPlanDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "legacyDiscover",
+     "path": "response.status",
+     "equals": 400
+    },
+    {
+     "step": "legacyDiscover",
+     "path": "response.body.error.code",
+     "exists": true
+    }
+   ],
+   "scenario": "Legacy exception remains bounded: the opt-in legacy client completes the tutorial, a modern-only method without modern metadata is refused"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One typed plan and recipe execution path",
+   "pass": [
+    {
+     "step": "plan",
+     "path": "response.body.result.structuredContent.runId",
+     "exists": true
+    },
+    {
+     "step": "planDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "client",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "client",
+     "path": "json.plan.status",
+     "equals": "completed"
+    },
+    {
+     "step": "client",
+     "path": "json.catalog.revision",
+     "matches": "^sha256:"
+    },
+    {
+     "step": "client",
+     "path": "json.toolsList",
+     "gte": 1
+    }
+   ],
+   "scenario": "an approved mutation (mutations enabled on the agent) runs as a host plan; its run is polled to completion by each client"
+  }
+ ],
+ "effects": {
+  "allow": [
+   "files//home/opute/.config/opute-e2e*",
+   "files//opt/opute-e2e/clients*",
+   "files//opt/opute-e2e/docs*"
+  ],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "health",
+   "health": true
+  },
+  {
+   "id": "discover",
+   "mcp": "server/discover"
+  },
+  {
+   "id": "list",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "catalog",
+   "mcp": "tools/call",
+   "tool": "get_capability_catalog",
+   "arguments": {}
+  },
+  {
+   "id": "info",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {}
+  },
+  {
+   "id": "capacity",
+   "mcp": "tools/call",
+   "tool": "get_host_capacity",
+   "arguments": {}
+  },
+  {
+   "id": "plan",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e1-j3-modern",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j3-modern-1",
+     "nodes": [
+      {
+       "id": "n1",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": ".config/opute-e2e/j3-modern.txt",
+         "content": "e2e\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": ".config/opute-e2e/j3-modern.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "RUN": "response.body.result.structuredContent.runId"
+   }
+  },
+  {
+   "id": "planDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 90
+  },
+  {
+   "id": "legacyAgent",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start legacy --port 3017 --id e2e-legacy-agent --env MCP_AUTH_TOKEN=${SECRET:legacy} --env OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+  },
+  {
+   "id": "legacyInit",
+   "mcp": "initialize",
+   "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+     "name": "e2e-legacy",
+     "version": "1"
+    }
+   },
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyList",
+   "mcp": "tools/list",
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyCatalog",
+   "mcp": "tools/call",
+   "tool": "get_capability_catalog",
+   "arguments": {},
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyInfo",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyCapacity",
+   "mcp": "tools/call",
+   "tool": "get_host_capacity",
+   "arguments": {},
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyPlan",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e1-j3-legacy",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j3-legacy-1",
+     "nodes": [
+      {
+       "id": "n1",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": ".config/opute-e2e/j3-legacy.txt",
+         "content": "e2e\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": ".config/opute-e2e/j3-legacy.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "LRUN": "response.body.result.structuredContent.runId"
+   },
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyPlanDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${LRUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 90,
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyDiscover",
+   "mcp": "server/discover",
+   "port": 3017,
+   "auth": "secret:legacy",
+   "modern": false
+  },
+  {
+   "id": "legacyStop",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove legacy"
+  },
+  {
+   "id": "clientCopy",
+   "copy": "hostagentclient",
+   "to": "/opt/opute-e2e/clients/hostagentclient",
+   "mode": "0755"
+  },
+  {
+   "id": "client",
+   "guest": "printf '%s' '{\"contractVersion\": \"host-plan.v1\", \"planId\": \"e2e1-j3-client\", \"generation\": 1, \"idempotencyKey\": \"e2e1-j3-client-1\", \"nodes\": [{\"id\": \"n1\", \"action\": {\"tool\": \"ensure_host_file\", \"args\": {\"path\": \".config/opute-e2e/j3-client.txt\", \"content\": \"e2e\\n\", \"scope\": \"user\"}}, \"validate\": {\"tool\": \"inspect_host_file\", \"args\": {\"path\": \".config/opute-e2e/j3-client.txt\", \"scope\": \"user\"}, \"assert\": [{\"path\": \"/exists\", \"op\": \"eq\", \"value\": true}]}}]}' > /tmp/e2e-j3-plan.json && HOST_AGENT_URL=http://127.0.0.1:3014/mcp HOST_AGENT_TOKEN='${TOKEN}' /opt/opute-e2e/clients/hostagentclient /tmp/e2e-j3-plan.json; rc=$?; rm -f /tmp/e2e-j3-plan.json; exit $rc",
+   "schemaResults": "json.results",
+   "schemaTarget": "agent",
+   "timeout": 300
+  },
+  {
+   "id": "docsCopy",
+   "copy": "getStarted",
+   "to": "/opt/opute-e2e/docs/get-started.html",
+   "mode": "0644"
+  },
+  {
+   "id": "ide",
+   "guest": "E2E_TOKEN='${TOKEN}' python3 /opt/opute-e2e/guest/e2etool.py ideconfig /opt/opute-e2e/docs/get-started.html",
+   "schemaResults": "json.results",
+   "schemaTarget": "agent"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "remove",
+   "guest": "rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/clients /opt/opute-e2e/docs"
+  }
+ ],
+ "maxMinutes": 20
+}

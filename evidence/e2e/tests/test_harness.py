@@ -114,6 +114,12 @@ class Format(unittest.TestCase):
             self.assertEqual(runner.journey_problems(j), [], path.name)
             self.assertEqual(j["id"], path.stem)
 
+    def test_e2e1_journeys_are_the_generator_output(self):
+        sys.path.insert(0, str(E2E / "journeys"))
+        import make_e2e1
+        for name, text in make_e2e1.render().items():
+            self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_e2e1.py")
+
     def test_gates_name_committed_journeys(self):
         gates = json.loads((E2E / "gates.json").read_text())
         for gate, spec in gates.items():
@@ -177,6 +183,78 @@ class Lease(unittest.TestCase):
                 t2.refuse_during_dev_vm_lease()
         finally:
             t2.WORK = saved
+
+
+class Extensions(unittest.TestCase):
+    def ctx(self):
+        return {"token": "e2e-test-token-" + "a" * 48, "vars": {"RUN": "r-1"}, "secrets": {}}
+
+    def test_expand_and_scrub(self):
+        ctx = self.ctx()
+        out = runner.expand({"cmd": "x ${TOKEN} ${RUN} ${SECRET:s}"}, ctx)
+        secret = ctx["secrets"]["s"]
+        self.assertEqual(out["cmd"], f"x {ctx['token']} r-1 {secret}")
+        self.assertEqual(runner.scrub(out, ctx)["cmd"], "x <test-token> r-1 <secret:s>")
+        self.assertEqual(runner.expand("${SECRET:s}", ctx), secret, "a secret is stable within a run")
+        with self.assertRaises(KeyError):
+            runner.expand("${NEVER}", ctx)
+
+    def test_secret_capture_is_scrubbed(self):
+        ctx = self.ctx()
+        runner.capture({"capture": {"T": {"path": "json.access_token", "secret": True}}},
+                       {"json": {"access_token": "issued-abc"}}, ctx)
+        self.assertEqual(ctx["vars"]["T"], "issued-abc")
+        self.assertEqual(runner.scrub({"x": "Bearer issued-abc"}, ctx), {"x": "Bearer <secret:T>"})
+        with self.assertRaises(KeyError):
+            runner.capture({"capture": {"U": "json.missing"}}, {"json": {}}, ctx)
+
+    def test_open_question_is_unverified_not_pass_or_fail(self):
+        j = journey(requirements=[
+            {"spec": SPEC, "requirement": "R", "pass": [{"step": "h", "path": "response.status", "equals": 200}]},
+            {"spec": SPEC, "requirement": "Q", "openQuestion": "Q5",
+             "pass": [{"step": "h", "path": "response.status", "equals": 500}]}])
+        out = runner.evaluate(j, [health()], {"before": STATE, "after": STATE, "cleanup": STATE})
+        self.assertTrue(out["pass"])
+        self.assertEqual(out["unverified"], ["Q5"])
+        self.assertEqual(out["requirements"][1]["outcome"], "unverified")
+        self.assertFalse(out["requirements"][1]["observedAsAsserted"])
+        self.assertTrue(runner.journey_problems(journey(requirements=[
+            {"spec": SPEC, "requirement": "Q", "openQuestion": "five", "pass": [
+                {"step": "h", "path": "response.status", "equals": 200}]}])))
+
+    def test_equals_step(self):
+        a = {"step": "a", "phase": "step", "json": {"n": 3}}
+        b = {"step": "b", "phase": "step", "json": {"n": 3}}
+        records = {"a": a, "b": b}
+        ok = runner.check({"step": "a", "path": "json.n", "equalsStep": {"step": "b", "path": "json.n"}}, a, records)
+        self.assertTrue(ok["ok"])
+        b["json"]["n"] = 4
+        self.assertFalse(runner.check({"step": "a", "path": "json.n", "equalsStep": {"step": "b", "path": "json.n"}},
+                                      a, records)["ok"])
+
+    def test_client_reported_results_are_schema_checked(self):
+        tool = {"name": "p", "inputSchema": {"type": "object"},
+                "outputSchema": {"type": "object", "required": ["n"]}}
+        listed = {"step": "l", "phase": "step", "kind": "mcp", "target": "agent", "method": "tools/list",
+                  "requestId": 1, "response": {"status": 200, "body": {"jsonrpc": "2.0", "id": 1,
+                                                                       "result": {"tools": [tool]}}}}
+        client = {"step": "c", "phase": "step", "kind": "guest", "exit": 0, "schemaResults": "json.results",
+                  "json": {"results": [{"tool": "p", "structuredContent": {}}]}}
+        j = journey(steps=[{"id": "l", "mcp": "tools/list"}, {"id": "c", "guest": "client"}],
+                    requirements=[{"spec": SPEC, "requirement": "R", "pass": [
+                        {"step": "c", "path": "exit", "equals": 0}]}])
+        states = {"before": STATE, "after": STATE, "cleanup": STATE}
+        self.assertEqual(runner.evaluate(j, [listed, client], states)["failures"], ["schema"])
+        client["json"]["results"][0]["structuredContent"] = {"n": 1}
+        self.assertTrue(runner.evaluate(j, [listed, client], states)["pass"])
+        client["json"]["results"] = []
+        self.assertEqual(runner.evaluate(j, [listed, client], states)["failures"], ["schema"])
+
+    def test_copy_needs_a_pinned_input(self):
+        j = journey(steps=[{"id": "h", "health": True}, {"id": "c", "copy": "bin", "to": "/x"}])
+        self.assertTrue(runner.journey_problems(j))
+        j["inputs"] = {"files": {"bin": {"path": "${PARITY}/x", "sha256": "ab"}}}
+        self.assertEqual(runner.journey_problems(j), [])
 
 
 class GuestState(unittest.TestCase):
