@@ -1174,10 +1174,64 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     install; r4 (merged with PR 33) skipped the goal's `ensure-ha-endpoint`
     and pre-provision calls, and did not tie the `list_secret_keys` refusal
     to the gap register.
-- **e2e-2, e2e-3 (deploy and serving), e2e-4 and e2e-5.** Blocked in
-  `evidence/e2e/gates.json` until each goal records its run. e2e-3's HA
-  journey is covered by e2e-3a. e2e-5 also waits on the owner (the Platform
-  repository).
+- **e2e-4a (2026-11-07): the remaining Use cases through the Rust agent
+  alone.** Ten journeys pass gates e2e-2, e2e-3 and e2e-4 on run
+  `e2e-4a-r1` (generator `evidence/e2e/journeys/make_e2e4a.py`). Each
+  starts from the snapshot of a VM rebuilt on a release set from this
+  branch (`rust-e2e4a-2`), and resolves its tools from the agent's
+  `tools/list`. Gaps came from the journeys, not from a catalog sweep
+  (`evidence/gaps/e2e-4a.json`).
+  - **e2e-2:** host operations (services, commands, tools, artifacts,
+    archives, the virtualization stack, bridge diagnosis); Incus through an
+    ownership-enforcing second agent (static address, VM, resize, disk
+    quota, foreign refusals); a cross-domain plan and recipe, a repeat that
+    re-runs the same run, and a cancel mid-plan; OCI build, push to an
+    in-cluster registry and a pod pulling by digest, then storage policy
+    and cleanup; CloudNativePG with a token-checked relay, and SQLite.
+  - **e2e-3:** discovery under the neutral `list_compute_clusters` (no
+    provider, empty, healthy, stopped server, provider down, recovered; no
+    K3s token in any record or journal); the site built from the published
+    source at c9f9e775 and deployed by digest through the opute-site-deploy
+    recipe's own nodes, served at `www.e2e.test`, re-run without a change
+    and torn down; a fixture OpenAI runtime behind the token-checked
+    gateway. A real runtime and weights need downloads and are blocked.
+  - **e2e-4:** a Go v0.2.4 install with real history served by Rust on the
+    same instance root (counts and ids per table reconcile), Rust-era work,
+    and Go reading it back on rollback; SIGTERM with a plan and a task in
+    flight, SIGKILL and an in-place upgrade to 0.2.5-e2e with a task in
+    flight.
+
+  Findings:
+  - **Gap, ported:** `list_operations`, `get_operation`, `cancel_operation`
+    (Go `internal/hostmcp/server.go:1422-1468`, `plan_run.go:877`) answered
+    `not_implemented`. Ported onto the seam as service `operations`; stage
+    `evidence/seam/e2e4a` reports 133 compliant, 17 unported, no gaps.
+  - **Rust defect, fixed:** a plan cancelled mid-node ended `unknown`;
+    Go keeps a run whose task was cancelled by request `cancelled`.
+    Failing-first test `a_plan_cancelled_mid_node_stays_cancelled`.
+  - **Proposed, in Go as in Rust (unverified until answered):** Q20 the
+    first supervisor call races the user bus; Q21 inputs read but not
+    declared (`restart_host_service` serviceName, `provision_container`
+    ipv4Address); Q22 a nullable output field fails its own check; Q23
+    restarting a system service needs polkit; Q24 a stopped cluster vanishes
+    from discovery; Q25 operation rows say `working` or `unknown` where
+    `tasks/get` says terminal; Q26 Podman's stderr breaks the storage
+    report parse without a user session; Q27 a serving launch reports
+    started when `systemd-run --user` failed on a system-unit agent; Q28
+    the standalone service domain tools cannot bind their VM.
+  - **Owned gaps, not added:** `list_configmap_keys` and `list_secret_keys`
+    have no Go handler (Q18).
+  - **Outside this repository:** the Use cases page names
+    `list_kubernetes_clusters`, Go's published name; Rust lists the neutral
+    name (D22), so the page changes at cutover. The opute-site-deploy
+    teardown recipe (9cdd932) has mutating nodes without validate blocks,
+    which v0.2.4 refuses; the journey's copy adds one.
+  - **Admission:** normal work is never admitted beside a running plan,
+    and a repeat `run_host_plan` returns while its re-run holds the heavy
+    reservation. Journeys wait out `host_capacity_saturated` per
+    `retryAfterMs` (runner `retryOn`).
+- **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
+  (the Platform repository).
 
 ## 4. The catalog and provider matrix
 

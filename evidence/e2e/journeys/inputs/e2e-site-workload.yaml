@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: host-agent-site
+  labels:
+    app.kubernetes.io/name: host-agent-site
+    app.kubernetes.io/part-of: opute-host-agent
+    opute.io/dogfood: www-opute-io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: host-agent-www
+  namespace: host-agent-site
+  labels:
+    app.kubernetes.io/name: host-agent-www
+    opute.io/dogfood: www-opute-io
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: host-agent-www
+  template:
+    metadata:
+      labels:
+        app: host-agent-www
+    spec:
+      containers:
+        - name: www
+          image: __IMAGE__
+          ports:
+            - containerPort: 80
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: host-agent-www
+  namespace: host-agent-site
+  labels:
+    app.kubernetes.io/name: host-agent-www
+    opute.io/dogfood: www-opute-io
+spec:
+  selector:
+    app: host-agent-www
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

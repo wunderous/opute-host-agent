@@ -1,0 +1,209 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/systemd",
+   "files//home/opute/.config/systemd/user",
+   "files//home/opute/.config/systemd/user/e2e-model.service",
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/model",
+   "files//home/opute/e2e/model/serve.py",
+   "files//var/lib/systemd/linger/opute",
+   "linger",
+   "system/units/run-user-1001.mount",
+   "system/units/user-1001.slice",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user@1001.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-3",
+ "harnessErrors": [],
+ "journey": "e2e3.serving",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "ready",
+     "equals": "ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "modelStart"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "modelUp"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "gateway"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.status",
+     "step": "chat"
+    },
+    {
+     "actual": "e2e fixture completion",
+     "equals": "e2e fixture completion",
+     "ok": true,
+     "path": "json.content",
+     "step": "chat"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "json.status",
+     "step": "chatNoToken"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.ready",
+     "step": "probe"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A prompt returns a completion through the gateway",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "assign"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.started",
+     "step": "assign"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "assignAgain"
+    },
+    {
+     "actual": "Failed to connect to bus: No medium found\ntime=2026-11-07T19:25:46.355Z level=INFO msg=\"server connecting\"\ntime=2026-11-07T19:25:46.355Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-07T19:25:46.355Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-07T19:25:46.364Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-07T19:25:49.762Z level=INFO msg=\"server connecting\"\ntime=2026-11-07T19:25:49.762Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-07T19:25:49.762Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-07T19:25:49.878Z level=INFO msg=\"server session disconnected\" session_id=\"\"\nQueued start job for default target default.target.\nCreated slice app.slice - User Application Slice.\nStarted launchpadlib-cache-clean.timer - Clean up old files in the Launchpadlib cache.\nReached target paths.target - Paths.\nReached target timers.target - Timers.\nStarting dbus.socket - D-Bus User Message Bus Socket...\nListening on dirmngr.socket - GnuPG network certificate management daemon.\nListening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).\nListening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).\nStarting gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...\nListening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.\nListening on keyboxd.socket - GnuPG public key management service.\nListening on pk-debconf-helper.socket - debconf communication socket.\nListening on snapd.session-agent.socket - REST API socket for snapd user session agent.\nListening on dbus.socket - D-Bus User Message Bus Socket.\nListening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).\nReached target sockets.target - Sockets.\nReached target basic.target - Basic System.\nReached target default.target - Main User Target.\nStartup finished in 99ms.\ntime=2026-11-07T19:25:50.033Z level=INFO msg=\"server connecting\"\ntime=2026-11-07T19:25:50.033Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-07T19:25:50.033Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-07T19:25:50.082Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-07T19:25:50.088Z level=INFO msg=\"server connecting\"\ntime=2026-11-07T19:25:50.088Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-07T19:25:50.089Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-07T19:25:55.499Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-07T19:25:55.505Z level=INFO msg=\"server connecting\"\ntime=2026-11-07T19:25:55.506Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-07T19:25:55.506Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-07T19:26:00.892Z level=INFO msg=\"server session disconnected\" session_id=\"\"\n0\n",
+     "matches": "\n1\n$",
+     "ok": false,
+     "path": "stdout",
+     "step": "assignLog"
+    }
+   ],
+   "observedAsAsserted": false,
+   "openQuestion": "Q27",
+   "outcome": "unverified",
+   "requirement": "A serving assignment starts its runtime",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.rows",
+     "step": "tokenRows"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "removeGateway"
+    },
+    {
+     "actual": "000",
+     "equals": "000",
+     "ok": true,
+     "path": "stdout",
+     "step": "gatewayGone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Removing the gateway and runtime leaves nothing behind",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "assign": 5364,
+   "assignAgain": 5367,
+   "assignLog": 3273,
+   "chat": 200,
+   "chatNoToken": 203,
+   "fixtureCopy": 421,
+   "gateway": 38,
+   "gatewayGone": 166,
+   "modelStart": 193,
+   "modelStop": 136,
+   "modelUnit": 40,
+   "modelUp": 155,
+   "own": 143,
+   "probe": 51,
+   "removeGateway": 36,
+   "supervisor": 126,
+   "supervisorAgain": 55,
+   "tokenRows": 200,
+   "tool": 281,
+   "units": 245,
+   "userBus": 145,
+   "wire": 290
+  },
+  "stepsSeconds": 61.7
+ },
+ "unverified": [
+  "Q27"
+ ]
+}

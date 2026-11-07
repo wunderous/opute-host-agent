@@ -1,0 +1,9 @@
+## 1. Decision
+
+- [ ] 1.1 Owner answers Q21 (rust-spec-authority/questions.md).
+
+## 2. Implementation (only after 1.1)
+
+- [ ] 2.1 Failing-first catalog test: every input a handler reads is declared.
+- [ ] 2.2 Declare serviceName and ipv4Address (or derive serviceName from uri); repin the catalog revision.
+- [ ] 2.3 Rerun e2e2.host-ops and e2e2.incus with declared inputs only.

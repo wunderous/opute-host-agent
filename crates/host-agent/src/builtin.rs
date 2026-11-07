@@ -304,6 +304,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         host_resources(host),
         tasks(server),
         plans(server),
+        operations(server),
         host_recipes(server),
         runtime_recipes(server),
         tunnel_recipes(server),
@@ -387,6 +388,36 @@ fn plans(server: &ServerHandle) -> Service {
                 "get_host_plan_run",
                 lifecycle(server, |server, call| {
                     handle_get_host_plan_run(server, call.args)
+                }),
+            ),
+        ],
+    }
+}
+
+/// e2e-4a: durable operations and their live tasks; a plan run is cancelled
+/// through its plan (Go `hostmcp` standalone operation tools).
+fn operations(server: &ServerHandle) -> Service {
+    use crate::plan_mcp::handle_operation;
+    Service {
+        id: "operations",
+        dependencies: &["plans"],
+        operations: vec![
+            (
+                "list_operations",
+                lifecycle(server, |server, call| {
+                    handle_operation(server, "list_operations", call.args)
+                }),
+            ),
+            (
+                "get_operation",
+                lifecycle(server, |server, call| {
+                    handle_operation(server, "get_operation", call.args)
+                }),
+            ),
+            (
+                "cancel_operation",
+                lifecycle(server, |server, call| {
+                    handle_operation(server, "cancel_operation", call.args)
                 }),
             ),
         ],

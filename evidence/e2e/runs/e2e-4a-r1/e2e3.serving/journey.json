@@ -1,0 +1,435 @@
+{
+ "cleanup": [
+  {
+   "guest": "uid=$(id -u opute); for u in $(runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$uid systemctl --user list-units --plain --no-legend 'opute-*' 2>/dev/null | awk '{print $1}'); do runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$uid systemctl --user stop $u; done; rm -rf /home/opute/e2e /tmp/serving-assignment-* /home/opute/.config/systemd/user/e2e-model.service; rmdir /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; loginctl disable-linger opute; true",
+   "id": "cleanServing"
+  }
+ ],
+ "description": "Local model serving through the Host Agent's serving path: a serving assignment runs an OpenAI-compatible runtime (a test fixture), the gateway (ensure_local_llm_relay) admits a token-bearing request and returns a completion, the probe reports it ready, and removal leaves nothing behind. A real runtime and weights are blocked: they need downloads beyond test fixtures.",
+ "effects": {
+  "allow": [
+   "files//home/opute/e2e*",
+   "files//home/opute/.opute*",
+   "files//home/opute/.config/systemd*",
+   "files//tmp/serving-assignment*",
+   "user/*",
+   "linger*",
+   "files//var/lib/systemd/linger*",
+   "system/units/user*",
+   "system/units/run-user-*",
+   "system/units/opute-*"
+  ],
+  "persist": [
+   "files//home/opute/.opute*"
+  ]
+ },
+ "gate": "e2e-3",
+ "id": "e2e3.serving",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "fixture": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/e2e-openai-fixture.py",
+    "sha256": "1b17a98d633937f9e834cab43e1bdaa90be2bf8c7877c717cefacf80874c5a4c"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  },
+  "runtime": "evidence/e2e/journeys/inputs/e2e-openai-fixture.py (a fixture, not a model)"
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "modelStart"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "modelUp"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "gateway"
+    },
+    {
+     "equals": 200,
+     "path": "json.status",
+     "step": "chat"
+    },
+    {
+     "equals": "e2e fixture completion",
+     "path": "json.content",
+     "step": "chat"
+    },
+    {
+     "equals": 401,
+     "path": "json.status",
+     "step": "chatNoToken"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.ready",
+     "step": "probe"
+    }
+   ],
+   "requirement": "A prompt returns a completion through the gateway",
+   "scenario": "An OpenAI-compatible runtime runs on the host as a user service, the gateway admits a request with its token and refuses one without, and a chat completion comes back. The runtime is a test fixture: a real model runtime and its weights need downloads beyond test fixtures and are recorded blocked",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  },
+  {
+   "openQuestion": "Q27",
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "assign"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.started",
+     "step": "assign"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "assignAgain"
+    },
+    {
+     "matches": "\n1\n$",
+     "path": "stdout",
+     "step": "assignLog"
+    }
+   ],
+   "requirement": "A serving assignment starts its runtime",
+   "scenario": "reconcile_serving_assignment launches the process under the user service manager and it listens (Q27: on a system-unit agent the launch lacks the user bus and reports started anyway, in Go as in Rust)",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "json.rows",
+     "step": "tokenRows"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Secret-bearing input: the gateway's incoming token is in no durable row",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "removeGateway"
+    },
+    {
+     "equals": "000",
+     "path": "stdout",
+     "step": "gatewayGone"
+    }
+   ],
+   "requirement": "Removing the gateway and runtime leaves nothing behind",
+   "scenario": "The gateway is gone after removal; the runtime's transient unit is stopped in cleanup",
+   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "fixture",
+   "id": "fixtureCopy",
+   "mode": "0755",
+   "to": "/home/opute/e2e/model/serve.py"
+  },
+  {
+   "guest": "chown -R opute:opute /home/opute/e2e && echo ok",
+   "id": "own"
+  },
+  {
+   "arguments": {},
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up",
+   "id": "userBus"
+  },
+  {
+   "arguments": {},
+   "id": "supervisorAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "arguments": {
+    "artifact": {
+     "command": [
+      "python3",
+      "/home/opute/e2e/model/serve.py",
+      "18091"
+     ],
+     "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+     },
+     "kind": "source",
+     "sourceDir": "/home/opute/e2e/model"
+    },
+    "assignmentId": "e2e/model",
+    "contractVersion": "serving-assignment.v1",
+    "desiredState": "start",
+    "endpoints": [
+     {
+      "name": "http",
+      "port": 18091,
+      "protocol": "http"
+     }
+    ],
+    "exposure": {
+     "kind": "none"
+    },
+    "generation": 1,
+    "idempotencyKey": "e2e-model-1",
+    "mode": "dev-process",
+    "readiness": [
+     {
+      "endpointName": "http",
+      "path": "/v1/models"
+     }
+    ],
+    "restartPolicy": "on-failure",
+    "runtime": "process",
+    "service": "model",
+    "target": {
+     "hostId": "e2e-devvm-agent",
+     "instanceType": "host",
+     "kind": "host",
+     "resourceId": "model"
+    }
+   },
+   "id": "assign",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "reconcile_serving_assignment"
+  },
+  {
+   "arguments": {
+    "artifact": {
+     "command": [
+      "python3",
+      "/home/opute/e2e/model/serve.py",
+      "18091"
+     ],
+     "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+     },
+     "kind": "source",
+     "sourceDir": "/home/opute/e2e/model"
+    },
+    "assignmentId": "e2e/model",
+    "contractVersion": "serving-assignment.v1",
+    "desiredState": "start",
+    "endpoints": [
+     {
+      "name": "http",
+      "port": 18091,
+      "protocol": "http"
+     }
+    ],
+    "exposure": {
+     "kind": "none"
+    },
+    "generation": 1,
+    "idempotencyKey": "e2e-model-1",
+    "mode": "dev-process",
+    "readiness": [
+     {
+      "endpointName": "http",
+      "path": "/v1/models"
+     }
+    ],
+    "restartPolicy": "on-failure",
+    "runtime": "process",
+    "service": "model",
+    "target": {
+     "hostId": "e2e-devvm-agent",
+     "instanceType": "host",
+     "kind": "host",
+     "resourceId": "model"
+    }
+   },
+   "id": "assignAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "reconcile_serving_assignment"
+  },
+  {
+   "guest": "sleep 3; tail -n 20 /tmp/serving-assignment-*-supervisor.log 2>/dev/null; journalctl _UID=$(id -u opute) --no-pager -n 40 -o cat; ss -ltnH 'sport = :18091' | wc -l",
+   "id": "assignLog"
+  },
+  {
+   "arguments": {
+    "content": "[Unit]\nDescription=e2e model fixture\n\n[Service]\nExecStart=/usr/bin/python3 /home/opute/e2e/model/serve.py 18091\n",
+    "path": "~/.config/systemd/user/e2e-model.service"
+   },
+   "id": "modelUnit",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-model.service",
+    "state": "start",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "modelStart",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "guest": "for i in $(seq 50); do ss -ltnH 'sport = :18091' | grep -q . && break; sleep 0.2; done; ss -ltnH 'sport = :18091' | wc -l",
+   "id": "modelUp"
+  },
+  {
+   "arguments": {
+    "allowedSourceCIDRs": [
+     "127.0.0.0/8"
+    ],
+    "incomingToken": "${SECRET:gatewayToken}",
+    "listenHost": "127.0.0.1",
+    "listenPort": 18434,
+    "sessionId": "e2e-gateway",
+    "targetHost": "127.0.0.1",
+    "targetPort": 18091,
+    "upstreamToken": ""
+   },
+   "id": "gateway",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_local_llm_relay"
+  },
+  {
+   "guest": "python3 - <<'PY'\nimport json, urllib.request, urllib.error\nreq = urllib.request.Request('http://127.0.0.1:18434/v1/chat/completions', method='POST', data=json.dumps({'model': 'e2e-fixture', 'messages': [{'role': 'user', 'content': 'hi'}]}).encode())\nreq.add_header('Content-Type', 'application/json')\nreq.add_header('Authorization', 'Bearer ${SECRET:gatewayToken}')\ntry:\n    r = urllib.request.urlopen(req, timeout=10); body = json.loads(r.read())\n    print(json.dumps({'status': r.status, 'content': body['choices'][0]['message']['content']}))\nexcept urllib.error.HTTPError as e:\n    print(json.dumps({'status': e.code}))\nPY",
+   "id": "chat"
+  },
+  {
+   "guest": "python3 - <<'PY'\nimport json, urllib.request, urllib.error\nreq = urllib.request.Request('http://127.0.0.1:18434/v1/chat/completions', method='POST', data=json.dumps({'model': 'e2e-fixture', 'messages': [{'role': 'user', 'content': 'hi'}]}).encode())\nreq.add_header('Content-Type', 'application/json')\ntry:\n    r = urllib.request.urlopen(req, timeout=10); body = json.loads(r.read())\n    print(json.dumps({'status': r.status, 'content': body['choices'][0]['message']['content']}))\nexcept urllib.error.HTTPError as e:\n    print(json.dumps({'status': e.code}))\nPY",
+   "id": "chatNoToken"
+  },
+  {
+   "arguments": {
+    "bearerToken": "${SECRET:gatewayToken}",
+    "endpoint": "http://127.0.0.1:18434",
+    "includeChat": true
+   },
+   "id": "probe",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "probe_openai_compatible_server"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py contains /home/opute/.config/opute/instances/standalone/state/state.db '${SECRET:gatewayToken}'",
+   "id": "tokenRows"
+  },
+  {
+   "arguments": {
+    "sessionId": "e2e-gateway"
+   },
+   "id": "removeGateway",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_local_llm_relay"
+  },
+  {
+   "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:18434/v1/models || true",
+   "id": "gatewayGone"
+  },
+  {
+   "arguments": {},
+   "id": "units",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_host_services"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-model.service",
+    "state": "stop",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "modelStop",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  }
+ ]
+}

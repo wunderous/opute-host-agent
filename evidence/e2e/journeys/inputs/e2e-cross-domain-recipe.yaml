@@ -1,0 +1,50 @@
+contractVersion: host-recipe.v1
+recipeId: com.opute.e2e.cross-domain
+recipeVersion: 1.0.0
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools: [ensure_host_file, inspect_host_file, provision_vm, get_vm_info, ensure_sqlite_database,
+    get_sqlite_database_status]
+inputs:
+  name:
+    required: true
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,20}$'}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.e2e.cross-domain
+  generation: 1
+  idempotencyKey: e2e-cross-domain-${vars.inputs.name}
+  nodes:
+    - id: file
+      action:
+        tool: ensure_host_file
+        args: {path: '~/e2e/${vars.inputs.name}.txt', content: "recipe\n", scope: user}
+      validate:
+        tool: inspect_host_file
+        args: {path: '~/e2e/${vars.inputs.name}.txt', scope: user}
+        assert:
+          - {path: /exists, op: eq, value: true}
+    - id: guest
+      dependsOn: [file]
+      timeoutMs: 600000
+      action:
+        tool: provision_vm
+        args: {name: 'e2e-${vars.inputs.name}', image: parity-noble, instanceType: container, cpus: 1,
+          memory: 512MiB}
+      validate:
+        tool: get_vm_info
+        args: {uri: 'container:local:e2e-${vars.inputs.name}'}
+        assert:
+          - {path: /status, op: eq, value: running}
+    - id: data
+      dependsOn: [guest]
+      action:
+        tool: ensure_sqlite_database
+        args: {consumerId: 'e2e-${vars.inputs.name}', databaseName: main}
+      validate:
+        tool: get_sqlite_database_status
+        args: {consumerId: 'e2e-${vars.inputs.name}', databaseName: main}
+        assert:
+          - {path: /exists, op: eq, value: true}

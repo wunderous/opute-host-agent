@@ -1,0 +1,785 @@
+{
+ "id": "e2e3.discovery",
+ "gate": "e2e-3",
+ "description": "Cluster discovery through the neutral name, as the Use cases page describes it: no provider; an available provider with an empty inventory; one healthy single-node K3s cluster with its resources, events and keys; the cluster's server stopped; the provider unreachable (a failed probe), then back.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "providerK3s": {
+    "path": "${PARITY}/e2e/release/rust-e2e4a-2/opute-provider-k3s-linux-x64",
+    "sha256": "94b509bf8cbdc919cf651c4705b32fc2e365a737f7b4bfd58f14ee94fac49dd7"
+   },
+   "activate": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
+    "sha256": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")",
+   "requirement": "An empty inventory and a failed inventory probe are different outcomes",
+   "pass": [
+    {
+     "step": "noProvider",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "noProvider",
+     "path": "response.body.result.content[0].text",
+     "equals": "Error: no active Kubernetes provider is installed"
+    },
+    {
+     "step": "empty",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "empty",
+     "path": "response.body.result.structuredContent.total",
+     "equals": 0
+    },
+    {
+     "step": "healthy",
+     "path": "response.body.result.structuredContent.total",
+     "equals": 1
+    },
+    {
+     "step": "healthy",
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "unreachable",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "recovered",
+     "path": "response.body.result.structuredContent.total",
+     "equals": 1
+    }
+   ],
+   "scenario": "No provider, an available provider with no cluster, one healthy cluster, and an unreachable provider: the empty inventory is a successful result with no clusters, the failed probe an error result"
+  },
+  {
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")",
+   "requirement": "Discovery under the name tools/list resolves",
+   "pass": [
+    {
+     "step": "names",
+     "path": "json.list_compute_clusters",
+     "equals": true
+    },
+    {
+     "step": "names",
+     "path": "json.list_kubernetes_clusters",
+     "equals": false
+    }
+   ],
+   "scenario": "The page names list_kubernetes_clusters, Go v0.2.4's published name and the deployed product's. Rust's tools/list resolves discovery to the neutral list_compute_clusters (D22); the Go name is a hidden alias until cutover, so the page must change with the cutover"
+  },
+  {
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
+   "requirement": "list_namespaces, list_pods, list_services, list_cluster_events on a discovered cluster",
+   "pass": [
+    {
+     "step": "namespaces",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "pods",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "services",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "events",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    }
+   ],
+   "scenario": "Resources and events of the discovered cluster are read through typed calls"
+  },
+  {
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
+   "requirement": "A probe of a stopped cluster fails closed",
+   "pass": [
+    {
+     "step": "stop",
+     "path": "response.body.result.result.structuredContent.status",
+     "equals": "stopped"
+    },
+    {
+     "step": "stoppedEvents",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "stoppedEvents",
+     "path": "response.body.result.content[0].text",
+     "matches": "Instance is not running"
+    }
+   ],
+   "scenario": "With its server stopped, reading the cluster's events fails closed with an error result"
+  },
+  {
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")",
+   "requirement": "A stopped cluster in the inventory",
+   "pass": [
+    {
+     "step": "stoppedList",
+     "path": "response.body.result.structuredContent.total",
+     "equals": 1
+    },
+    {
+     "step": "stoppedList",
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "equals": "cluster:local:e2e-k1"
+    }
+   ],
+   "scenario": "With its only server stopped, is the cluster listed (with its status), or dropped so that the inventory reads as empty? The k3s provider skips an instance whose k3s --version fails, in Go v0.2.4 as in Rust",
+   "openQuestion": "Q24"
+  },
+  {
+   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md",
+   "requirement": "Every capability has its three roles",
+   "pass": [
+    {
+     "step": "configmapKeys",
+     "path": "response.body.result.structuredContent.code",
+     "equals": "not_implemented"
+    },
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.structuredContent.code",
+     "equals": "not_implemented"
+    }
+   ],
+   "scenario": "The e2e-3 goal lists config and secret keys: both tools are published but have no provider in Rust and no handler in Go v0.2.4, so they fail closed (Q18)"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Durable and redacted observations",
+   "pass": [
+    {
+     "step": "tokenLeaks",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "tokenLeaks",
+     "path": "stdout",
+     "equals": "0\n"
+    }
+   ],
+   "scenario": "No discovery result, state row or journal line carries the cluster's join token"
+  }
+ ],
+ "effects": {
+  "allow": [
+   "incus/*",
+   "files//home/opute/.config/opute-e2e*",
+   "files//home/opute/.config/incus*",
+   "files//opt/opute-e2e/providers*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*"
+  ],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "catalog",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "noProvider",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "providerCopy",
+   "copy": "providerK3s",
+   "to": "/opt/opute-e2e/providers/opute-provider-k3s",
+   "mode": "0755"
+  },
+  {
+   "id": "recipeCopy",
+   "copy": "activate",
+   "to": "/home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "mode": "0644"
+  },
+  {
+   "id": "setup",
+   "guest": "chown -R opute /home/opute/.config/opute-e2e && systemd-run --collect --unit=e2e-provider-k3s --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=4320 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | wc -l"
+  },
+  {
+   "id": "installA",
+   "mcp": "tools/call",
+   "tool": "opute.provider.install",
+   "arguments": {
+    "descriptor": {
+     "schema": "opute-provider-plugin.v1",
+     "pluginId": "com.opute.k3s",
+     "version": "1.0.2",
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "server": {
+      "transport": "streamable_http",
+      "endpoint": "http://127.0.0.1:4320/mcp"
+     }
+    },
+    "activate": true,
+    "recipeSource": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "providerToolsA",
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+  },
+  {
+   "id": "catalogAfterA",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "empty",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "names",
+   "guest": "python3 -c 'import sys, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nr = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=1)\nnames = {t[\"name\"] for t in r[\"body\"][\"result\"][\"tools\"]}\nprint(json.dumps({n: n in names for n in (\"list_compute_clusters\", \"list_kubernetes_clusters\")}))' '${TOKEN}'"
+  },
+  {
+   "id": "vm1Call",
+   "mcp": "tools/call",
+   "tool": "provision_vm",
+   "arguments": {
+    "name": "e2e-k1",
+    "image": "parity-noble",
+    "instanceType": "container",
+    "cpus": 2,
+    "memory": "3GiB",
+    "disk": "15GiB"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_vm1": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "vm1",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_vm1}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "info1",
+   "mcp": "tools/call",
+   "tool": "get_vm_info",
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "K1_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "provisionCall",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.provision",
+   "arguments": {
+    "targetUri": "container:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container",
+    "version": "v1.31.8+k3s1",
+    "clusterInit": true
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_provision": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "provision",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_provision}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "ready",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.status",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.readyNodeCount",
+    "in": [
+     1
+    ]
+   },
+   "timeout": 300,
+   "interval": 5,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "healthy",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "namespaces",
+   "mcp": "tools/call",
+   "tool": "list_namespaces",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "pods",
+   "mcp": "tools/call",
+   "tool": "list_pods",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "kube-system"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "services",
+   "mcp": "tools/call",
+   "tool": "list_services",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "kube-system"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "events",
+   "mcp": "tools/call",
+   "tool": "list_cluster_events",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "kube-system"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "configmapKeys",
+   "mcp": "tools/call",
+   "tool": "list_configmap_keys",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "kube-system",
+    "configMapName": "coredns"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "secretKeys",
+   "mcp": "tools/call",
+   "tool": "list_secret_keys",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "kube-system",
+    "secretName": "k3s-serving"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "stopCall",
+   "mcp": "tools/call",
+   "tool": "stop_vm",
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_stop": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "stop",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_stop}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "stoppedList",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "stoppedEvents",
+   "mcp": "tools/call",
+   "tool": "list_cluster_events",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "kube-system"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "providerDown",
+   "guest": "systemctl stop e2e-provider-k3s && echo stopped"
+  },
+  {
+   "id": "unreachable",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "providerUp",
+   "guest": "systemd-run --collect --unit=e2e-provider-k3s --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=4320 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; echo started"
+  },
+  {
+   "id": "startCall",
+   "mcp": "tools/call",
+   "tool": "start_vm",
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_start": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "start",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_start}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "recovered",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters",
+   "arguments": {},
+   "until": {
+    "path": "response.body.result.structuredContent.total",
+    "in": [
+     1
+    ]
+   },
+   "timeout": 180,
+   "interval": 5,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "joinToken",
+   "guest": "incus exec e2e-k1 -- cat /var/lib/rancher/k3s/server/token | tr -d '\\n'",
+   "capture": {
+    "K3S_TOKEN": {
+     "path": "stdout",
+     "secret": true
+    }
+   }
+  },
+  {
+   "id": "tokenLeaks",
+   "guest": "{ grep -a -r -o -F '${K3S_TOKEN}' /home/opute/.config/opute 2>/dev/null; for u in opute-bootstrap-mcp e2e-provider-k3s; do journalctl -u $u --no-pager -o cat; done | grep -o -F '${K3S_TOKEN}'; } | wc -l"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "cleanRemoveCall",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.remove",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_cleanRemove": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "cleanRemove",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_cleanRemove}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "cleanDelete1Call",
+   "mcp": "tools/call",
+   "tool": "delete_vm",
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_cleanDelete1": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "cleanDelete1",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_cleanDelete1}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "cleanSetup",
+   "guest": "systemctl stop e2e-provider-k3s 2>/dev/null; incus delete -f e2e-k1 2>/dev/null; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true"
+  }
+ ],
+ "maxMinutes": 25
+}

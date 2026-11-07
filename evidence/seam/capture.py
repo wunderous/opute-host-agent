@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGE = ROOT / "evidence/seam" / sys.argv[1]
-CANARY_TOOL = "list_operations"
+CANARY_TOOL = "list_agents"
 ANCHOR = """    let Some(descriptor) = catalog_snapshot
         .find(name)
         .or_else(|| catalog::internal().tools.iter().find(|d| d.name == name))

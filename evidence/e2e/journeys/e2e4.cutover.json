@@ -1,0 +1,955 @@
+{
+ "id": "e2e4.cutover",
+ "gate": "e2e-4",
+ "description": "Forward cutover and rollback on a Go host's own accumulated state: the host is reinstalled as Go v0.2.4 (same unit, instance root and agent ID), does real mixed work and is stopped with an open synchronous call, a working task and a running plan in flight; the Rust release starts on that state, which must reconcile per table and read back; Rust does new work; then Go starts again on Rust's state and must report every record with the status Rust last reported.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
+  "slow": "a local endpoint answering after 25 s (e2etool slow)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
+   "requirement": "Durable and redacted observations: Go's real state is served by Rust unchanged",
+   "pass": [
+    {
+     "step": "aside",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "goInstall",
+     "path": "stdout",
+     "matches": "\n0\\.2\\.4\n$"
+    },
+    {
+     "step": "goPlanDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "goFailDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "failed"
+    },
+    {
+     "step": "goSupervisorAgain",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "ready"
+    },
+    {
+     "step": "goTask",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "go-era\n"
+    },
+    {
+     "step": "goStop",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "goStop",
+     "path": "json.integrity",
+     "equals": "ok"
+    },
+    {
+     "step": "rustInstall",
+     "path": "stdout",
+     "matches": "\n0\\.2\\.4\n$"
+    },
+    {
+     "step": "rustDb",
+     "path": "json.integrity",
+     "equals": "ok"
+    },
+    {
+     "step": "rustDb",
+     "path": "json.counts",
+     "equalsStep": {
+      "step": "goStop",
+      "path": "json.counts"
+     }
+    },
+    {
+     "step": "rustDb",
+     "path": "json.operationIds",
+     "equalsStep": {
+      "step": "goStop",
+      "path": "json.operationIds"
+     }
+    },
+    {
+     "step": "rustDb",
+     "path": "json.planRunIds",
+     "equalsStep": {
+      "step": "goStop",
+      "path": "json.planRunIds"
+     }
+    },
+    {
+     "step": "rustOps",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "rustTaskWire",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    },
+    {
+     "step": "rustPlan",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "rustFailed",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "failed"
+    },
+    {
+     "step": "rustGuest",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "running"
+    },
+    {
+     "step": "rustSqlite",
+     "path": "response.body.result.structuredContent.exists",
+     "equals": true
+    }
+   ],
+   "scenario": "A Go v0.2.4 install with real history (a completed cross-domain plan with its guest and database, a failed plan, a completed task) is stopped and served by the Rust release on the same instance root: counts and ids reconcile per table, every record reads back with its status, and the guest and database keep working"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One exact Host Agent identity",
+   "pass": [
+    {
+     "step": "goHealth",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    },
+    {
+     "step": "rustHealth",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    },
+    {
+     "step": "goBackHealth",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    }
+   ]
+  },
+  {
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
+   "requirement": "Forward cutover with work in flight",
+   "pass": [
+    {
+     "step": "syncAnswer",
+     "path": "json.status",
+     "equals": 200
+    },
+    {
+     "step": "syncAnswer",
+     "path": "json.result.ready",
+     "exists": true
+    },
+    {
+     "step": "goLong",
+     "path": "response.body.result.status",
+     "equals": "working"
+    },
+    {
+     "step": "rustLong",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "cancelled"
+    }
+   ],
+   "scenario": "Go stopped with a working task and an open synchronous call: the call is answered before Go exits; the operation row Rust reads for the task (Q25: Go writes its live rows working)",
+   "openQuestion": "Q25"
+  },
+  {
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
+   "requirement": "Forward cutover: the stopped task's terminal state",
+   "pass": [
+    {
+     "step": "rustLongWire",
+     "path": "response.body.result.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "rustLongWire",
+     "path": "response.body.result.statusMessage",
+     "equals": "The Host Agent shut down before the task completed."
+    }
+   ],
+   "scenario": "The task Go was running at shutdown is restored by Rust from Go's snapshot as cancelled, with Go's shutdown message (M12 in-flight drill)"
+  },
+  {
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
+   "requirement": "Rollback: Go reports every task, Rust-era work included, with the status Rust last reported",
+   "pass": [
+    {
+     "step": "rustNewDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "rustTaskNew",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "rust-era\n"
+    },
+    {
+     "step": "rustStop",
+     "path": "json.integrity",
+     "equals": "ok"
+    },
+    {
+     "step": "goBack",
+     "path": "stdout",
+     "matches": "\n0\\.2\\.4\n$"
+    },
+    {
+     "step": "goBackRustTaskWire",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    },
+    {
+     "step": "goBackLongWire",
+     "path": "response.body.result.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "goBackRustTask",
+     "path": "response.body.result.structuredContent.operationId",
+     "exists": true
+    },
+    {
+     "step": "goBackRustPlan",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "goBackGoPlan",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "goBackDb",
+     "path": "json.operationIds",
+     "equalsStep": {
+      "step": "rustStop",
+      "path": "json.operationIds"
+     }
+    },
+    {
+     "step": "goBackDb",
+     "path": "json.planRunIds",
+     "equalsStep": {
+      "step": "rustStop",
+      "path": "json.planRunIds"
+     }
+    }
+   ],
+   "scenario": "After Rust did new work, Go v0.2.4 started on Rust's state reads every operation and plan run, Rust-era work included, with the status Rust last reported"
+  }
+ ],
+ "effects": {
+  "allow": [
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "incus/*",
+   "files//home/opute/e2e*",
+   "files//home/opute/.opute*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/opute-host-workload-*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*",
+   "linger",
+   "files//var/lib/systemd/linger*",
+   "system/units/user*",
+   "system/units/run-user-*",
+   "user/*"
+  ],
+  "persist": [
+   "files//home/opute/.opute*"
+  ]
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "aside",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && mv /home/opute/.config/opute/instances /tmp/e2e-cutover-rust-instances && echo aside"
+  },
+  {
+   "id": "goInstall",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+  },
+  {
+   "id": "goHealth",
+   "health": true
+  },
+  {
+   "id": "goList",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "slow",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 25"
+  },
+  {
+   "id": "goSupervisor",
+   "mcp": "tools/call",
+   "tool": "ensure_host_service_supervisor",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "userBus",
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up"
+  },
+  {
+   "id": "goSupervisorAgain",
+   "mcp": "tools/call",
+   "tool": "ensure_host_service_supervisor",
+   "arguments": {},
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goPlan",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.go",
+     "generation": 1,
+     "idempotencyKey": "e2e-go-1",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/g1.txt",
+         "content": "g1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/g1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      },
+      {
+       "id": "guest",
+       "dependsOn": [
+        "file"
+       ],
+       "timeoutMs": 600000,
+       "action": {
+        "tool": "provision_vm",
+        "args": {
+         "name": "e2e-g1",
+         "image": "parity-noble",
+         "instanceType": "container",
+         "cpus": 1,
+         "memory": "512MiB"
+        }
+       },
+       "validate": {
+        "tool": "get_vm_info",
+        "args": {
+         "uri": "container:local:e2e-g1"
+        },
+        "assert": [
+         {
+          "path": "/status",
+          "op": "eq",
+          "value": "running"
+         }
+        ]
+       }
+      },
+      {
+       "id": "data",
+       "dependsOn": [
+        "guest"
+       ],
+       "action": {
+        "tool": "ensure_sqlite_database",
+        "args": {
+         "consumerId": "e2e-g1",
+         "databaseName": "main"
+        }
+       },
+       "validate": {
+        "tool": "get_sqlite_database_status",
+        "args": {
+         "consumerId": "e2e-g1",
+         "databaseName": "main"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "GO_RUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goPlanDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goFail",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.fail",
+     "generation": 1,
+     "idempotencyKey": "e2e-fail-1",
+     "nodes": [
+      {
+       "id": "denied",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/fail.txt",
+         "content": "x\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/fail.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": "never"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "GO_FAIL": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goFailDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_FAIL}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 120,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goTaskCall",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "echo go-era"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_goTask": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goTask",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_goTask}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "settle",
+   "guest": "sleep 5"
+  },
+  {
+   "id": "goLong",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "sleep 120"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "LONG": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goSync",
+   "guest": "nohup python3 -c 'import sys, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nr = mcpwire.mcp(3014, sys.argv[1], \"tools/call\", {\"name\": \"probe_http_endpoint\", \"arguments\": {\"endpoint\": \"http://127.0.0.1:8799/\"}}, timeout=120)\nopen(\"/tmp/e2e-sync.json\", \"w\").write(json.dumps({\"status\": r.get(\"status\"), \"result\": ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"structuredContent\")}))' '${TOKEN}' >/dev/null 2>&1 & sleep 2; echo open"
+  },
+  {
+   "id": "goStop",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db && sha256sum /home/opute/.config/opute/instances/standalone/state/state.db | cut -c1-64 > /tmp/e2e-go-state.sha"
+  },
+  {
+   "id": "syncAnswer",
+   "guest": "cat /tmp/e2e-sync.json"
+  },
+  {
+   "id": "rustInstall",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+  },
+  {
+   "id": "rustHealth",
+   "health": true
+  },
+  {
+   "id": "rustList",
+   "mcp": "tools/list"
+  },
+  {
+   "id": "rustDb",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
+  },
+  {
+   "id": "rustOps",
+   "mcp": "tools/call",
+   "tool": "list_operations",
+   "arguments": {
+    "limit": 100
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustLong",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "${LONG}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustLongWire",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${LONG}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "rustTask",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "${TID_goTask}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustTaskWire",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_goTask}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "rustPlan",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustFailed",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_FAIL}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustGuest",
+   "mcp": "tools/call",
+   "tool": "get_vm_info",
+   "arguments": {
+    "uri": "container:local:e2e-g1"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustSqlite",
+   "mcp": "tools/call",
+   "tool": "get_sqlite_database_status",
+   "arguments": {
+    "consumerId": "e2e-g1",
+    "databaseName": "main"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustNew",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.rust",
+     "generation": 1,
+     "idempotencyKey": "e2e-rust-1",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/n1.txt",
+         "content": "n1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/n1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "RUST_RUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustNewDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUST_RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 120,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustTaskNewCall",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "echo rust-era"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_rustTaskNew": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "rustTaskNew",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_rustTaskNew}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "rustStop",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
+  },
+  {
+   "id": "goBack",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+  },
+  {
+   "id": "goBackHealth",
+   "health": true
+  },
+  {
+   "id": "goBackOps",
+   "mcp": "tools/call",
+   "tool": "list_operations",
+   "arguments": {
+    "limit": 100
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goBackRustTask",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "${TID_rustTaskNew}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goBackLong",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "${LONG}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goBackRustTaskWire",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_rustTaskNew}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "goBackLongWire",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${LONG}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "goBackRustPlan",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUST_RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goBackGoPlan",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "goBackDb",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "restoreRust",
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases /tmp/e2e-sync.json /tmp/e2e-go-state.sha; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+  }
+ ],
+ "maxMinutes": 28
+}

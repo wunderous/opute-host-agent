@@ -1,0 +1,102 @@
+# e2e-4a test variant of wunderous/opute-site-deploy site/recipes/www-opute-io.yaml (recipe 1.1.6,
+# private repository, commit 9cdd932). Kept byte for byte up to the workload
+# node; removed: the tunnel, route and probe-apex nodes (no tunnel, no public host) and the inputs only they
+# read. Changed: the image input accepts the e2e registry, pinned by digest. __EXPECTED_IMAGE__ is filled in
+# by the journey, as scripts/deploy_site.py does.
+contractVersion: host-recipe.v1
+recipeId: com.opute.host-agent.docs-site.www.e2e
+recipeVersion: 1.1.6-e2e
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools:
+    - apply_manifest
+    - get_k8s_resource
+    - get_k8s_resource_status
+    - list_pods
+inputs:
+  host:
+    required: true
+    description: Exact opaque Host Agent id executing this recipe (must be self).
+    schema: {type: string, minLength: 1}
+  clusterUri:
+    required: true
+    description: Admitted canonical cluster URI (e.g. cluster:local:opute-ha-a).
+    schema: {type: string, minLength: 1, pattern: '^cluster:[a-z][a-z0-9-]{0,31}:.+$'}
+  image:
+    required: true
+    description: The e2e registry's image pinned to its immutable sha256 manifest digest.
+    schema:
+      type: string
+      pattern: '^[0-9.]+:30500/host-agent-www@sha256:[a-f0-9]{64}$'
+  workloadManifest:
+    required: true
+    description: Kubernetes manifest YAML for namespace/deploy/service (image already substituted).
+    schema: {type: string, minLength: 1}
+  hostname:
+    default: www.e2e.test
+    schema: {type: string, minLength: 1, maxLength: 253}
+  runNonce:
+    default: default
+    description: Source run and attempt for this deployment generation.
+    schema: {type: string, minLength: 1, maxLength: 128}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.host-agent.docs-site.www
+  generation: 6
+  idempotencyKey: com.opute.host-agent.docs-site.www-${vars.inputs.hostname}-${vars.inputs.image}-${vars.inputs.runNonce}
+  defaults:
+    timeoutMs: 900000
+  nodes:
+    - id: inspect-workload
+      target:
+        hostRef: ${vars.inputs.host}
+      action:
+        tool: get_k8s_resource_status
+        args:
+          uri: ${vars.inputs.clusterUri}
+          resourceKind: Deployment
+          namespace: host-agent-site
+          resourceName: host-agent-www
+    - id: apply
+      dependsOn: [inspect-workload]
+      when:
+        - path: /nodes/inspect-workload/status
+          op: ne
+          value: error
+      timeoutMs: 1200000
+      target:
+        hostRef: ${vars.inputs.host}
+      action:
+        tool: apply_manifest
+        args:
+          uri: ${vars.inputs.clusterUri}
+          manifest: ${vars.inputs.workloadManifest}
+      # The status capability represents an absent workload as missing,
+      # allowing the first deployment to reach apply_manifest on a fresh cluster.
+      validate:
+        tool: get_k8s_resource_status
+        args:
+          uri: ${vars.inputs.clusterUri}
+          resourceKind: Deployment
+          namespace: host-agent-site
+          resourceName: host-agent-www
+        assert:
+          - path: /status
+            op: eq
+            value: ready
+          - path: /resource/spec/template/spec/containers/0/image
+            op: eq
+            value: "__EXPECTED_IMAGE__"
+          - path: /resource/status/updatedReplicas
+            op: eq
+            value: 1
+          - path: /resource/status/readyReplicas
+            op: eq
+            value: 1
+          - path: /resource/status/availableReplicas
+            op: eq
+            value: 1
+        pollIntervalMs: 5000
+        timeoutMs: 1200000
