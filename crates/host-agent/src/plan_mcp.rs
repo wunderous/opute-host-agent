@@ -774,11 +774,23 @@ fn spawn_plan_execution(
             ctx
         };
         let (mut final_state, mut run_err) = runner.run(&ctx, &doc, state_value);
-        let mut status = if final_state.status.is_empty() {
-            "failed".to_string()
-        } else {
-            final_state.status.clone()
-        };
+        let mut status = final_state.status.clone();
+        // A run cancelled by request (`cancelHostPlan`) stays cancelled; any
+        // other interrupted run is unknown.
+        let cancelled = server
+            .tasks
+            .get(&run_id)
+            .is_some_and(|task| task.status == "cancelled");
+        if cancelled {
+            status = "cancelled".into();
+            final_state.error = "cancelled by request".into();
+        }
+        if run_err.is_err() && ctx.err().is_some() {
+            status = if cancelled { "cancelled" } else { "unknown" }.into();
+        }
+        if status.is_empty() {
+            status = "failed".into();
+        }
         let mut active_runtime = None;
         if let Some(metadata) = &metadata {
             apply_recipe_output_mapping(&mut final_state, metadata);
@@ -855,6 +867,8 @@ fn spawn_plan_execution(
             }
         }
         match run_err {
+            // The cancelled task is already terminal.
+            _ if cancelled => {}
             Err(e) => server.tasks.fail(&run_id, &e),
             Ok(()) => {
                 // `planRunStateResult`: the same redacted projection the
@@ -1429,5 +1443,61 @@ mod tests {
         );
         let after = call("get_operation", json!({"operationId": "op-1"}));
         assert_eq!(after["structuredContent"]["status"], "cancelled");
+    }
+
+    /// Go `runHostPlan`'s finish: a run whose task was cancelled by request
+    /// keeps `cancelled` when its interrupted node returns, rather than the
+    /// `unknown` an interrupted run otherwise reports.
+    #[test]
+    fn a_plan_cancelled_mid_node_stays_cancelled() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming().flatten() {
+                std::thread::spawn(move || {
+                    use std::io::Write;
+                    std::thread::sleep(std::time::Duration::from_millis(1500));
+                    let mut stream = stream;
+                    let _ = stream.write_all(b"HTTP/1.1 200 OK\r\ncontent-length: 0\r\n\r\n");
+                });
+            }
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let server = test_server(dir.path());
+        let mut doc = sample_plan();
+        doc.plan_id = "slow".into();
+        doc.nodes[0].action = Some(Action {
+            tool: "probe_http_endpoint".to_string(),
+            args: map(&[("endpoint", J::String(format!("http://127.0.0.1:{port}/")))]),
+        });
+        let run = handle_run_host_plan(
+            &server,
+            &plan_args(&doc),
+            test_reservation(&server),
+            unclaimed(),
+        );
+        let run_id = run["structuredContent"]["runId"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let cancelled = crate::tools::dispatch(
+            &server,
+            "cancel_operation",
+            json!({"operationId": run_id}).as_object().unwrap(),
+            None,
+            None,
+        );
+        assert_eq!(
+            cancelled["structuredContent"]["status"], "cancelled",
+            "{cancelled}"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(2500));
+        let after = poll_until_terminal(&server, &run_id);
+        assert_eq!(after["structuredContent"]["status"], "cancelled", "{after}");
+        assert_eq!(
+            after["structuredContent"]["error"], "cancelled by request",
+            "{after}"
+        );
     }
 }
