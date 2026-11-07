@@ -175,7 +175,7 @@
    "id": "cleanSetup"
   }
  ],
- "description": "Build: three K3s server Incus containers with embedded etcd, only through typed Host Agent calls. Host A provisions e2e-k1 (clusterInit) and checks prepare-ha; host B provisions e2e-k2 and e2e-k3, and each joins through prepare-join on A (join material sealed to B's receiver key), redeem-join on B (unsealed by B's provider) and join-node on B. Pass: 3 Ready servers, 3 etcd members, and the join token in no record, row or log.",
+ "description": "Workload on the HA cluster built as in e2e3a.build: install the podinfo Helm chart as a NodePort service (install_cluster_package), put a secret, exec in a pod, list services, and request the service from the VM on every server. list_secret_keys is published but unported, so the key is read back with a template that prints keys only.",
  "effects": {
   "allow": [
    "incus/instances/e2e-k*",
@@ -194,7 +194,7 @@
   "persist": []
  },
  "gate": "e2e-3a",
- "id": "e2e3a.build",
+ "id": "e2e3a.workload",
  "inputs": {
   "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "agentB": "a transient Rust agent e2e-ha-b on port 3031 (e2etool agent start), with its own Rust k3s provider (e2e-provider-k3s-b, port 4321)",
@@ -512,6 +512,97 @@
    "requirement": "Durable and redacted observations",
    "scenario": "Secret-bearing input: the K3s join token reaches no Host Agent state, journal or client-visible record; it crosses hosts only sealed to the destination's key",
    "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "installing",
+     "path": "response.body.result.structuredContent.status",
+     "step": "chart"
+    },
+    {
+     "equals": 0,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "rollout"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "secret"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.configured",
+     "step": "secret"
+    },
+    {
+     "equals": "apiKey ",
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "secretKeys"
+    },
+    {
+     "equals": 0,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "pods"
+    },
+    {
+     "equals": "e2e-exec-ok\n",
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "pods"
+    },
+    {
+     "equals": "e2e-web-podinfo",
+     "path": "response.body.result.structuredContent.services[0].name",
+     "step": "services"
+    },
+    {
+     "equals": "200 200 200 ",
+     "path": "stdout",
+     "step": "serve"
+    }
+   ],
+   "requirement": "install_cluster_package, put_cluster_secret, exec_cluster_command and list_services on the HA cluster",
+   "scenario": "A Helm chart installed, a secret put, a command run in a pod, and the service exposed inside the VM answering HTTP on every server",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "pass": [
+    {
+     "equals": "Kubernetes Secret configured.",
+     "path": "response.body.result.result.content[0].text",
+     "step": "secret"
+    },
+    {
+     "absent": true,
+     "path": "response.body.result.result.structuredContent.data",
+     "step": "secret"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Secret-bearing input: the secret's value is in no result; its key is read back without it",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "secretKeysTool"
+    },
+    {
+     "equals": "not_implemented",
+     "path": "response.body.result.structuredContent.code",
+     "step": "secretKeysTool"
+    },
+    {
+     "equals": "capability",
+     "path": "response.body.result.structuredContent.owner",
+     "step": "secretKeysTool"
+    }
+   ],
+   "requirement": "Every capability has its three roles",
+   "scenario": "The goal's pass check (list_secret_keys shows the key) cannot pass: list_secret_keys is a definition without a provider, registered unported in evidence/seam/final/report.json, and fails closed with not_implemented as the spec requires. An owned gap, not added here; the key is read back through exec_cluster_command",
+   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
   }
  ],
  "steps": [
@@ -1269,6 +1360,181 @@
   {
    "guest": "{ grep -a -r -o -F '${K3S_TOKEN}' /home/opute/.config/opute /tmp/e2e-agents/b 2>/dev/null; for u in opute-bootstrap-mcp e2e-agent-b e2e-provider-k3s e2e-provider-k3s-b; do journalctl -u $u --no-pager -o cat; done | grep -o -F '${K3S_TOKEN}'; } | wc -l",
    "id": "tokenLeaks"
+  },
+  {
+   "arguments": {
+    "chart": "podinfo",
+    "namespace": "e2e-web",
+    "releaseName": "e2e-web",
+    "repo": "https://stefanprodan.github.io/podinfo",
+    "uri": "container:local:e2e-k1",
+    "values": {
+     "replicaCount": 2,
+     "service": {
+      "nodePort": 30080,
+      "type": "NodePort"
+     }
+    },
+    "vmName": "e2e-k1"
+   },
+   "id": "chart",
+   "mcp": "tools/call",
+   "tool": "install_cluster_package"
+  },
+  {
+   "arguments": {
+    "args": [
+     "status",
+     "deployment/e2e-web-podinfo",
+     "-n",
+     "e2e-web",
+     "--timeout=60s"
+    ],
+    "command": "rollout",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "rollout",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 480,
+   "tool": "exec_cluster_command",
+   "until": {
+    "in": [
+     0
+    ],
+    "path": "response.body.result.structuredContent.exitCode"
+   }
+  },
+  {
+   "arguments": {
+    "data": {
+     "apiKey": "${SECRET:apiValue}"
+    },
+    "name": "e2e-secret",
+    "namespace": "e2e-web",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_secret": "response.body.result.taskId"
+   },
+   "id": "secretCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "put_cluster_secret"
+  },
+  {
+   "id": "secret",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_secret}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "namespace": "e2e-web",
+    "secretName": "e2e-secret",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "secretKeysTool",
+   "mcp": "tools/call",
+   "tool": "list_secret_keys"
+  },
+  {
+   "arguments": {
+    "args": [
+     "secret",
+     "e2e-secret",
+     "-n",
+     "e2e-web",
+     "-o",
+     "go-template={{range $k, $v := .data}}{{$k}} {{end}}"
+    ],
+    "command": "get",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "secretKeys",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command"
+  },
+  {
+   "arguments": {
+    "args": [
+     "-n",
+     "e2e-web",
+     "deployment/e2e-web-podinfo",
+     "--",
+     "sh",
+     "-c",
+     "echo e2e-exec-ok"
+    ],
+    "command": "exec",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "pods",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command"
+  },
+  {
+   "arguments": {
+    "namespace": "e2e-web",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "services",
+   "mcp": "tools/call",
+   "tool": "list_services"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k2"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "K2_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info2",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "get_vm_info"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k3"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "K3_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info3",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "get_vm_info"
+  },
+  {
+   "guest": "for ip in ${K1_IP} ${K2_IP} ${K3_IP}; do curl -s -o /dev/null -w '%{http_code} ' --max-time 10 http://$ip:30080/; done",
+   "id": "serve"
   }
  ]
 }

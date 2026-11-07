@@ -175,7 +175,7 @@
    "id": "cleanSetup"
   }
  ],
- "description": "Lose one server on the HA cluster built and loaded as in e2e3a.build and e2e3a.workload: stop e2e-k2 with stop_vm. Pass: 2 of 3 nodes stay Ready, a typed ConfigMap write and read succeed, the service still answers on the surviving servers; after start_vm, e2e-k2 is Ready and an etcd member again.",
+ "description": "Build: three K3s server Incus containers with embedded etcd, only through typed Host Agent calls. Host A provisions e2e-k1 (clusterInit) and checks prepare-ha; host B provisions e2e-k2 and e2e-k3, and each joins through prepare-join on A (join material sealed to B's receiver key), redeem-join on B (unsealed by B's provider) and join-node on B. The goal's prepare-ha and ensure-ha-endpoint before provisioning are refused (unknown cluster target); ensure-ha-endpoint against the built cluster is recorded. Pass: 3 Ready servers, 3 etcd members, and the join token in no record, row or log.",
  "effects": {
   "allow": [
    "incus/instances/e2e-k*",
@@ -194,7 +194,7 @@
   "persist": []
  },
  "gate": "e2e-3a",
- "id": "e2e3a.lose-one",
+ "id": "e2e3a.build",
  "inputs": {
   "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "agentB": "a transient Rust agent e2e-ha-b on port 3031 (e2etool agent start), with its own Rust k3s provider (e2e-provider-k3s-b, port 4321)",
@@ -218,7 +218,7 @@
   },
   "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries"
  },
- "maxMinutes": 28,
+ "maxMinutes": 25,
  "requirements": [
   {
    "pass": [
@@ -516,197 +516,61 @@
   {
    "pass": [
     {
-     "equals": "installing",
-     "path": "response.body.result.structuredContent.status",
-     "step": "chart"
-    },
-    {
-     "equals": 0,
-     "path": "response.body.result.structuredContent.exitCode",
-     "step": "rollout"
-    },
-    {
-     "equals": false,
+     "equals": true,
      "path": "response.body.result.result.isError",
-     "step": "secret"
+     "step": "prepareHaFirst"
+    },
+    {
+     "equals": "resource_binding",
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "prepareHaFirst"
+    },
+    {
+     "equals": "admission",
+     "path": "response.body.result.result.structuredContent.owner",
+     "step": "prepareHaFirst"
+    },
+    {
+     "matches": "resource not found: cluster:local:e2e-k1$",
+     "path": "response.body.result.result.structuredContent.message",
+     "step": "prepareHaFirst"
     },
     {
      "equals": true,
-     "path": "response.body.result.result.structuredContent.configured",
-     "step": "secret"
+     "path": "response.body.result.result.isError",
+     "step": "endpointFirst"
     },
     {
-     "equals": "apiKey ",
-     "path": "response.body.result.structuredContent.stdout",
-     "step": "secretKeys"
+     "equals": "resource_binding",
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "endpointFirst"
     },
     {
-     "equals": 0,
-     "path": "response.body.result.structuredContent.exitCode",
-     "step": "pods"
-    },
-    {
-     "equals": "e2e-exec-ok\n",
-     "path": "response.body.result.structuredContent.stdout",
-     "step": "pods"
-    },
-    {
-     "equals": "e2e-web-podinfo",
-     "path": "response.body.result.structuredContent.services[0].name",
-     "step": "services"
-    },
-    {
-     "equals": "200 200 200 ",
-     "path": "stdout",
-     "step": "serve"
+     "matches": "resource not found: cluster:local:e2e-k1$",
+     "path": "response.body.result.result.structuredContent.message",
+     "step": "endpointFirst"
     }
    ],
-   "requirement": "install_cluster_package, put_cluster_secret, exec_cluster_command and list_services on the HA cluster",
-   "scenario": "A Helm chart installed, a secret put, a command run in a pod, and the service exposed inside the VM answering HTTP on every server",
-   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
-  },
-  {
-   "pass": [
-    {
-     "equals": "Kubernetes Secret configured.",
-     "path": "response.body.result.result.content[0].text",
-     "step": "secret"
-    },
-    {
-     "absent": true,
-     "path": "response.body.result.result.structuredContent.data",
-     "step": "secret"
-    }
-   ],
-   "requirement": "Durable and redacted observations",
-   "scenario": "Secret-bearing input: the secret's value is in no result; its key is read back without it",
+   "requirement": "Typed target and effect admission",
+   "scenario": "The goal's order (prepare-ha, then ensure-ha-endpoint, then provision): before the first server is provisioned the cluster URI is unknown, and both calls are refused before execution; no success is invented from an unknown target",
    "spec": "openspec/specs/host-agent-contract/spec.md"
   },
   {
    "pass": [
     {
      "equals": true,
-     "path": "response.body.result.isError",
-     "step": "secretKeysTool"
-    },
-    {
-     "equals": "not_implemented",
-     "path": "response.body.result.structuredContent.code",
-     "step": "secretKeysTool"
-    },
-    {
-     "equals": "capability",
-     "path": "response.body.result.structuredContent.owner",
-     "step": "secretKeysTool"
-    }
-   ],
-   "requirement": "Every capability has its three roles",
-   "scenario": "Definition without a provider: list_secret_keys stays published and fails closed with not_implemented (an owned gap; the key is read through exec_cluster_command instead)",
-   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
-  },
-  {
-   "pass": [
-    {
-     "equals": false,
      "path": "response.body.result.result.isError",
-     "step": "stop2"
+     "step": "endpoint"
     },
     {
-     "equals": "stopped",
-     "path": "response.body.result.result.structuredContent.status",
-     "step": "stop2"
-    },
-    {
-     "equals": 2,
-     "path": "response.body.result.structuredContent.readyNodeCount",
-     "step": "degraded"
-    },
-    {
-     "equals": 3,
-     "path": "response.body.result.structuredContent.nodeCount",
-     "step": "degraded"
-    },
-    {
-     "equals": "e2e-k2",
-     "path": "response.body.result.structuredContent.nodes[1].name",
-     "step": "degradedMembers"
-    },
-    {
-     "equals": false,
-     "path": "response.body.result.structuredContent.nodes[1].ready",
-     "step": "degradedMembers"
-    },
-    {
-     "equals": 2,
-     "path": "response.body.result.structuredContent.readyServers",
-     "step": "degradedMembers"
-    },
-    {
-     "equals": false,
-     "path": "response.body.result.result.isError",
-     "step": "write"
-    },
-    {
-     "equals": true,
-     "path": "response.body.result.result.structuredContent.applied",
-     "step": "write"
-    },
-    {
-     "matches": "during-k2-down",
-     "path": "response.body.result.structuredContent.json",
-     "step": "read"
-    },
-    {
-     "equals": "running",
-     "path": "response.body.result.result.structuredContent.status",
-     "step": "start2"
-    },
-    {
-     "equals": 3,
-     "path": "response.body.result.structuredContent.readyServers",
-     "step": "rejoined"
-    },
-    {
-     "equals": 3,
-     "path": "response.body.result.structuredContent.serverCount",
-     "step": "rejoined"
-    },
-    {
-     "equals": "Ready",
-     "path": "response.body.result.structuredContent.nodes[1].status",
-     "step": "rejoined"
-    },
-    {
-     "contains": "etcd",
-     "path": "response.body.result.structuredContent.nodes[1].roles",
-     "step": "rejoined"
-    },
-    {
-     "matches": "during-k2-down",
-     "path": "response.body.result.structuredContent.json",
-     "step": "readAfter"
+     "matches": "probe stable HA endpoint: .*invalid peer certificate: UnknownIssuer",
+     "path": "response.body.result.result.content[0].text",
+     "step": "endpoint"
     }
    ],
-   "requirement": "After one guest stopped, 2 of 3 Kubernetes nodes remained Ready and a typed API write and read succeeded; starting the guest restored 3 of 3 Ready nodes",
-   "scenario": "One Incus guest/server failure on one physical host, stopped and started through typed calls",
-   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
-  },
-  {
-   "pass": [
-    {
-     "equals": 10,
-     "path": "json.consecutive",
-     "step": "serveDegraded"
-    },
-    {
-     "lte": 120,
-     "path": "json.seconds",
-     "step": "serveDegraded"
-    }
-   ],
-   "requirement": "Application serving is recorded separately from control-plane writes",
-   "scenario": "The service answers 10 consecutive rounds on both surviving servers within 120 s of the server being NotReady (beyond the page's tested scope; recorded, with the time it took)",
-   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+   "requirement": "ensure-ha-endpoint verifies a caller's stable HA endpoint; it creates none",
+   "scenario": "Against the only endpoint the VM can offer, a server's own K3s API, the probe fails closed on the certificate. No typed operation creates a stable endpoint (an owned gap); the page's test record also had none",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
   }
  ],
  "steps": [
@@ -873,6 +737,98 @@
    "id": "info1",
    "mcp": "tools/call",
    "tool": "get_vm_info"
+  },
+  {
+   "arguments": {
+    "expectedRole": "server",
+    "expectedServers": 3,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "requireEmbeddedEtcd": true,
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_prepareHaFirst": "response.body.result.taskId"
+   },
+   "id": "prepareHaFirstCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.prepare-ha"
+  },
+  {
+   "id": "prepareHaFirst",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_prepareHaFirst}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "endpoint": "https://${K1_IP}:6443",
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_endpointFirst": "response.body.result.taskId"
+   },
+   "id": "endpointFirstCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.ensure-ha-endpoint"
+  },
+  {
+   "id": "endpointFirst",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_endpointFirst}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
   },
   {
    "arguments": {
@@ -1467,259 +1423,15 @@
   },
   {
    "arguments": {
-    "chart": "podinfo",
-    "namespace": "e2e-web",
-    "releaseName": "e2e-web",
-    "repo": "https://stefanprodan.github.io/podinfo",
-    "uri": "container:local:e2e-k1",
-    "values": {
-     "replicaCount": 2,
-     "service": {
-      "nodePort": 30080,
-      "type": "NodePort"
-     }
-    },
-    "vmName": "e2e-k1"
-   },
-   "id": "chart",
-   "mcp": "tools/call",
-   "tool": "install_cluster_package"
-  },
-  {
-   "arguments": {
-    "args": [
-     "status",
-     "deployment/e2e-web-podinfo",
-     "-n",
-     "e2e-web",
-     "--timeout=60s"
-    ],
-    "command": "rollout",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "rollout",
-   "interval": 5,
-   "mcp": "tools/call",
-   "timeout": 480,
-   "tool": "exec_cluster_command",
-   "until": {
-    "in": [
-     0
-    ],
-    "path": "response.body.result.structuredContent.exitCode"
-   }
-  },
-  {
-   "arguments": {
-    "data": {
-     "apiKey": "${SECRET:apiValue}"
-    },
-    "name": "e2e-secret",
-    "namespace": "e2e-web",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "capture": {
-    "TID_secret": "response.body.result.taskId"
-   },
-   "id": "secretCall",
-   "mcp": "tools/call",
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "tool": "put_cluster_secret"
-  },
-  {
-   "id": "secret",
-   "interval": 3,
-   "mcp": "tasks/get",
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "params": {
-    "taskId": "${TID_secret}"
-   },
-   "timeout": 600,
-   "until": {
-    "in": [
-     "completed",
-     "failed",
-     "cancelled"
-    ],
-    "path": "response.body.result.status"
-   }
-  },
-  {
-   "arguments": {
-    "namespace": "e2e-web",
-    "secretName": "e2e-secret",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "secretKeysTool",
-   "mcp": "tools/call",
-   "tool": "list_secret_keys"
-  },
-  {
-   "arguments": {
-    "args": [
-     "secret",
-     "e2e-secret",
-     "-n",
-     "e2e-web",
-     "-o",
-     "go-template={{range $k, $v := .data}}{{$k}} {{end}}"
-    ],
-    "command": "get",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "secretKeys",
-   "mcp": "tools/call",
-   "tool": "exec_cluster_command"
-  },
-  {
-   "arguments": {
-    "args": [
-     "-n",
-     "e2e-web",
-     "deployment/e2e-web-podinfo",
-     "--",
-     "sh",
-     "-c",
-     "echo e2e-exec-ok"
-    ],
-    "command": "exec",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "pods",
-   "mcp": "tools/call",
-   "tool": "exec_cluster_command"
-  },
-  {
-   "arguments": {
-    "namespace": "e2e-web",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "services",
-   "mcp": "tools/call",
-   "tool": "list_services"
-  },
-  {
-   "arguments": {
-    "uri": "container:local:e2e-k2"
-   },
-   "auth": "secret:tokenB",
-   "capture": {
-    "K2_IP": "response.body.result.structuredContent.ipv4[0]"
-   },
-   "id": "info2",
-   "mcp": "tools/call",
-   "port": 3031,
-   "tool": "get_vm_info"
-  },
-  {
-   "arguments": {
-    "uri": "container:local:e2e-k3"
-   },
-   "auth": "secret:tokenB",
-   "capture": {
-    "K3_IP": "response.body.result.structuredContent.ipv4[0]"
-   },
-   "id": "info3",
-   "mcp": "tools/call",
-   "port": 3031,
-   "tool": "get_vm_info"
-  },
-  {
-   "guest": "for ip in ${K1_IP} ${K2_IP} ${K3_IP}; do curl -s -o /dev/null -w '%{http_code} ' --max-time 10 http://$ip:30080/; done",
-   "id": "serve"
-  },
-  {
-   "arguments": {
-    "uri": "container:local:e2e-k2"
-   },
-   "capture": {
-    "TID_stop2": "response.body.result.taskId"
-   },
-   "id": "stop2Call",
-   "mcp": "tools/call",
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "tool": "stop_vm"
-  },
-  {
-   "id": "stop2",
-   "interval": 3,
-   "mcp": "tasks/get",
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "params": {
-    "taskId": "${TID_stop2}"
-   },
-   "timeout": 600,
-   "until": {
-    "in": [
-     "completed",
-     "failed",
-     "cancelled"
-    ],
-    "path": "response.body.result.status"
-   }
-  },
-  {
-   "arguments": {
+    "endpoint": "https://${K1_IP}:6443",
     "instanceType": "container",
     "providerInstanceName": "e2e-k1",
     "targetUri": "cluster:local:e2e-k1"
    },
-   "id": "degraded",
-   "interval": 5,
-   "mcp": "tools/call",
-   "timeout": 180,
-   "tool": "opute.capability.kubernetes.status",
-   "until": {
-    "in": [
-     2
-    ],
-    "path": "response.body.result.structuredContent.readyNodeCount"
-   }
-  },
-  {
-   "arguments": {
-    "expectedServers": 3,
-    "instanceType": "container",
-    "providerInstanceName": "e2e-k1",
-    "targetUri": "cluster:local:e2e-k1"
-   },
-   "id": "degradedMembers",
-   "mcp": "tools/call",
-   "tool": "opute.capability.kubernetes.inspect-membership"
-  },
-  {
-   "arguments": {
-    "manifest": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: e2e-during-failure\n  namespace: e2e-web\ndata:\n  written: during-k2-down\n",
-    "uri": "cluster:local:e2e-k1"
-   },
    "capture": {
-    "TID_write": "response.body.result.taskId"
+    "TID_endpoint": "response.body.result.taskId"
    },
-   "id": "writeCall",
+   "id": "endpointCall",
    "mcp": "tools/call",
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {
@@ -1728,10 +1440,10 @@
      }
     }
    },
-   "tool": "apply_manifest"
+   "tool": "opute.capability.kubernetes.ensure-ha-endpoint"
   },
   {
-   "id": "write",
+   "id": "endpoint",
    "interval": 3,
    "mcp": "tasks/get",
    "meta": {
@@ -1742,7 +1454,7 @@
     }
    },
    "params": {
-    "taskId": "${TID_write}"
+    "taskId": "${TID_endpoint}"
    },
    "timeout": 600,
    "until": {
@@ -1753,95 +1465,6 @@
     ],
     "path": "response.body.result.status"
    }
-  },
-  {
-   "arguments": {
-    "kind": "configmap",
-    "namespace": "e2e-web",
-    "resourceName": "e2e-during-failure",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "read",
-   "mcp": "tools/call",
-   "tool": "get_cluster_resource"
-  },
-  {
-   "guest": "start=$(date +%s); n=0; while [ $n -lt 10 ] && [ $(( $(date +%s) - start )) -lt 120 ]; do ok=1; for ip in ${K1_IP} ${K3_IP}; do code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://$ip:30080/); [ \"$code\" = 200 ] || ok=0; done; if [ $ok = 1 ]; then n=$((n+1)); else n=0; fi; sleep 1; done; printf '{\"consecutive\": %d, \"seconds\": %d}' $n $(( $(date +%s) - start ))",
-   "id": "serveDegraded",
-   "timeout": 200
-  },
-  {
-   "arguments": {
-    "uri": "container:local:e2e-k2"
-   },
-   "capture": {
-    "TID_start2": "response.body.result.taskId"
-   },
-   "id": "start2Call",
-   "mcp": "tools/call",
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "tool": "start_vm"
-  },
-  {
-   "id": "start2",
-   "interval": 3,
-   "mcp": "tasks/get",
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "params": {
-    "taskId": "${TID_start2}"
-   },
-   "timeout": 600,
-   "until": {
-    "in": [
-     "completed",
-     "failed",
-     "cancelled"
-    ],
-    "path": "response.body.result.status"
-   }
-  },
-  {
-   "arguments": {
-    "expectedServers": 3,
-    "instanceType": "container",
-    "providerInstanceName": "e2e-k1",
-    "requireEmbeddedEtcd": true,
-    "targetUri": "cluster:local:e2e-k1"
-   },
-   "id": "rejoined",
-   "interval": 5,
-   "mcp": "tools/call",
-   "timeout": 300,
-   "tool": "opute.capability.kubernetes.inspect-membership",
-   "until": {
-    "in": [
-     3
-    ],
-    "path": "response.body.result.structuredContent.readyServers"
-   }
-  },
-  {
-   "arguments": {
-    "kind": "configmap",
-    "namespace": "e2e-web",
-    "resourceName": "e2e-during-failure",
-    "uri": "cluster:local:e2e-k1"
-   },
-   "id": "readAfter",
-   "mcp": "tools/call",
-   "tool": "get_cluster_resource"
   }
  ]
 }

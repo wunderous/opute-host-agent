@@ -1,7 +1,7 @@
 {
  "id": "e2e3a.build",
  "gate": "e2e-3a",
- "description": "Build: three K3s server Incus containers with embedded etcd, only through typed Host Agent calls. Host A provisions e2e-k1 (clusterInit) and checks prepare-ha; host B provisions e2e-k2 and e2e-k3, and each joins through prepare-join on A (join material sealed to B's receiver key), redeem-join on B (unsealed by B's provider) and join-node on B. Pass: 3 Ready servers, 3 etcd members, and the join token in no record, row or log.",
+ "description": "Build: three K3s server Incus containers with embedded etcd, only through typed Host Agent calls. Host A provisions e2e-k1 (clusterInit) and checks prepare-ha; host B provisions e2e-k2 and e2e-k3, and each joins through prepare-join on A (join material sealed to B's receiver key), redeem-join on B (unsealed by B's provider) and join-node on B. The goal's prepare-ha and ensure-ha-endpoint before provisioning are refused (unknown cluster target); ensure-ha-endpoint against the built cluster is recorded. Pass: 3 Ready servers, 3 etcd members, and the join token in no record, row or log.",
  "inputs": {
   "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "agentB": "a transient Rust agent e2e-ha-b on port 3031 (e2etool agent start), with its own Rust k3s provider (e2e-provider-k3s-b, port 4321)",
@@ -318,6 +318,65 @@
     }
    ],
    "scenario": "Secret-bearing input: the K3s join token reaches no Host Agent state, journal or client-visible record; it crosses hosts only sealed to the destination's key"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Typed target and effect admission",
+   "pass": [
+    {
+     "step": "prepareHaFirst",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "prepareHaFirst",
+     "path": "response.body.result.result.structuredContent.code",
+     "equals": "resource_binding"
+    },
+    {
+     "step": "prepareHaFirst",
+     "path": "response.body.result.result.structuredContent.owner",
+     "equals": "admission"
+    },
+    {
+     "step": "prepareHaFirst",
+     "path": "response.body.result.result.structuredContent.message",
+     "matches": "resource not found: cluster:local:e2e-k1$"
+    },
+    {
+     "step": "endpointFirst",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "endpointFirst",
+     "path": "response.body.result.result.structuredContent.code",
+     "equals": "resource_binding"
+    },
+    {
+     "step": "endpointFirst",
+     "path": "response.body.result.result.structuredContent.message",
+     "matches": "resource not found: cluster:local:e2e-k1$"
+    }
+   ],
+   "scenario": "The goal's order (prepare-ha, then ensure-ha-endpoint, then provision): before the first server is provisioned the cluster URI is unknown, and both calls are refused before execution; no success is invented from an unknown target"
+  },
+  {
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)",
+   "requirement": "ensure-ha-endpoint verifies a caller's stable HA endpoint; it creates none",
+   "pass": [
+    {
+     "step": "endpoint",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "endpoint",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "probe stable HA endpoint: .*invalid peer certificate: UnknownIssuer"
+    }
+   ],
+   "scenario": "Against the only endpoint the VM can offer, a server's own K3s API, the probe fails closed on the certificate. No typed operation creates a stable endpoint (an owned gap); the page's test record also had none"
   }
  ],
  "effects": {
@@ -501,6 +560,98 @@
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
    }
+  },
+  {
+   "id": "prepareHaFirstCall",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.prepare-ha",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container",
+    "expectedServers": 3,
+    "requireEmbeddedEtcd": true,
+    "expectedRole": "server"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_prepareHaFirst": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "prepareHaFirst",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_prepareHaFirst}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "endpointFirstCall",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.ensure-ha-endpoint",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container",
+    "endpoint": "https://${K1_IP}:6443"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_endpointFirst": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "endpointFirst",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_endpointFirst}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
   },
   {
    "id": "provisionCall",
@@ -1092,6 +1243,51 @@
   {
    "id": "tokenLeaks",
    "guest": "{ grep -a -r -o -F '${K3S_TOKEN}' /home/opute/.config/opute /tmp/e2e-agents/b 2>/dev/null; for u in opute-bootstrap-mcp e2e-agent-b e2e-provider-k3s e2e-provider-k3s-b; do journalctl -u $u --no-pager -o cat; done | grep -o -F '${K3S_TOKEN}'; } | wc -l"
+  },
+  {
+   "id": "endpointCall",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.ensure-ha-endpoint",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container",
+    "endpoint": "https://${K1_IP}:6443"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_endpoint": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "endpoint",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_endpoint}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
   }
  ],
  "cleanup": [

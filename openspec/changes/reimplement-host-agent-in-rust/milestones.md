@@ -1109,23 +1109,23 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     Dev VM build 3 used the stale v0.2.3 Go set; `devvm.py` now refuses any
     set other than the published v0.2.4 sums.
 - **e2e-3a (done, 2026-11-07): HA k3s through the Rust agent alone.** Four
-  journeys pass gate e2e-3a on run `e2e-3a-r4`. Each starts from the snapshot
+  journeys pass gate e2e-3a on run `e2e-3a-r5`. Each starts from the snapshot
   and builds its own cluster through typed calls only. Host A is the system
   agent with the Rust k3s provider 1.0.2 (`opute-provider-k3s-linux-x64`,
   sha256 `852e352f…`, from the release). Host B is a transient second Rust
   agent with its own provider, so a join is sealed by A's provider to B's
   receiver key and unsealed by B's. The cluster is three Incus server
   containers running K3s v1.31.8+k3s1 with embedded etcd.
-  1. **Build** (188 s): `provision_vm`, `provision` with clusterInit,
+  1. **Build** (207 s): `provision_vm`, `provision` with clusterInit,
      `prepare-ha`, then for two servers `get-join-receiver-key`,
      `prepare-join`, `redeem-join` and `join-node`. Result: 3 Ready servers,
      3 etcd members, availability class `control-plane-write-continuity`. The
      K3s join token is in no record, no agent state and no agent or provider
      journal.
-  2. **Workload** (219 s): a Helm chart through `install_cluster_package`,
+  2. **Workload** (226 s): a Helm chart through `install_cluster_package`,
      `put_cluster_secret`, an exec in a pod, `list_services`, and HTTP 200 on
      NodePort 30080 from every server.
-  3. **Lose one server** (290 s): `stop_vm` on one server. 2 of 3 nodes stay
+  3. **Lose one server** (300 s): `stop_vm` on one server. 2 of 3 nodes stay
      Ready, and a typed ConfigMap write and read succeed. The service answers
      10 consecutive rounds on both survivors within 10 s. After `start_vm`
      the server is Ready and an etcd member again. This reproduces the Use
@@ -1145,24 +1145,32 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     instance state in `default`. With another current project,
     `provision_vm` fails. The journeys put their guests in `default`.
   - **Owned gaps, not added here:**
-    - `list_secret_keys` is published and fails closed with
-      `not_implemented`, as the capability-seam spec requires for an
-      unported capability. The key is read back through
-      `exec_cluster_command` instead.
+    - `list_secret_keys`: the goal's journey 2 check ("shows the key")
+      cannot pass. The tool is registered unported in
+      `evidence/seam/final/report.json` and fails closed with
+      `not_implemented`, as the capability-seam spec requires. The journey
+      asserts that refusal and reads the key back through
+      `exec_cluster_command`.
     - No typed operation creates a stable HA endpoint.
       `ensure-ha-endpoint` only probes a caller's endpoint against the
-      host's certificate roots, and one server's K3s API fails that with
-      `UnknownIssuer`. The page's test record also had no endpoint.
+      host's certificate roots. Journey 1 records it failing closed with
+      `UnknownIssuer` against a server's own K3s API. The page's test record
+      also had no endpoint.
     - `install_cluster_package` takes no chart version, so the chart is
       unpinned (podinfo 6.17.0 at the run).
-  - **Goal correction:** the goal ordered `prepare-ha` and
-    `ensure-ha-endpoint` before `provision`, but both target an existing
-    cluster.
+  - **The goal's order:** the goal ordered `prepare-ha` and
+    `ensure-ha-endpoint` before `provision`. Journey 1 runs them there, and
+    both are refused before execution with the typed `resource_binding`
+    error (`resource not found: cluster:local:e2e-k1`), as the contract
+    spec's typed-target requirement demands. `prepare-ha` then succeeds
+    after the first server exists.
   - **Retired runs** (causes under `.parity/retired/`; the setup's run id
     `e2e-3a-r1` was the first): r1 expanded the recipe's `${...}` and
     missed the veth units; r2 changed the recipe bytes the provider pins;
     r3 validated responses against a catalog listed before the provider
-    install.
+    install; r4 (merged with PR 33) skipped the goal's `ensure-ha-endpoint`
+    and pre-provision calls, and did not tie the `list_secret_keys` refusal
+    to the gap register.
 - **e2e-2, e2e-3 (deploy and serving), e2e-4 and e2e-5.** Blocked in
   `evidence/e2e/gates.json` until each goal records its run. e2e-3's HA
   journey is covered by e2e-3a. e2e-5 also waits on the owner (the Platform

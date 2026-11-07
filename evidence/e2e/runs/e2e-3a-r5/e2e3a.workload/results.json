@@ -5,14 +5,28 @@
    "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
    "files//opt/opute-e2e/providers",
    "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "incus/instances/e2e-k1",
+   "incus/instances/e2e-k2",
+   "incus/instances/e2e-k3",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
    "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-k1",
+   "incus/volumes/default/container/e2e-k2",
+   "incus/volumes/default/container/e2e-k3",
    "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
    "system/unitFiles/e2e-agent-b.service",
    "system/unitFiles/e2e-provider-k3s-b.service",
    "system/unitFiles/e2e-provider-k3s.service",
    "system/units/e2e-agent-b.service",
    "system/units/e2e-provider-k3s-b.service",
-   "system/units/e2e-provider-k3s.service"
+   "system/units/e2e-provider-k3s.service",
+   "system/units/sys-devices-virtual-net-veth45400c85.device",
+   "system/units/sys-devices-virtual-net-veth8f8cd076.device",
+   "system/units/sys-devices-virtual-net-vethad9e1d94.device",
+   "system/units/sys-subsystem-net-devices-veth45400c85.device",
+   "system/units/sys-subsystem-net-devices-veth8f8cd076.device",
+   "system/units/sys-subsystem-net-devices-vethad9e1d94.device"
   ],
   "residue": [],
   "residueUndeclared": [],
@@ -21,7 +35,7 @@
  "failures": [],
  "gate": "e2e-3a",
  "harnessErrors": [],
- "journey": "e2e3a.quorum-removal",
+ "journey": "e2e3a.workload",
  "pass": true,
  "requirements": [
   {
@@ -440,225 +454,182 @@
   {
    "assertions": [
     {
-     "actual": false,
-     "equals": false,
+     "actual": "installing",
+     "equals": "installing",
      "ok": true,
-     "path": "response.body.result.result.isError",
-     "step": "writeBefore"
-    },
-    {
-     "actual": "stopped",
-     "equals": "stopped",
-     "ok": true,
-     "path": "response.body.result.result.structuredContent.status",
-     "step": "stop2"
-    },
-    {
-     "actual": "stopped",
-     "equals": "stopped",
-     "ok": true,
-     "path": "response.body.result.result.structuredContent.status",
-     "step": "stop3"
-    },
-    {
-     "actual": true,
-     "equals": true,
-     "ok": true,
-     "path": "response.body.result.result.isError",
-     "step": "writeNoQuorum"
-    },
-    {
-     "actual": true,
-     "equals": true,
-     "ok": true,
-     "path": "response.body.result.isError",
-     "step": "statusNoQuorum"
-    }
-   ],
-   "outcome": "pass",
-   "requirement": "K3s datastore quorum: with a majority of servers lost, Kubernetes writes are not available",
-   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
-  },
-  {
-   "assertions": [
-    {
-     "actual": false,
-     "equals": false,
-     "ok": true,
-     "path": "response.body.result.result.isError",
-     "step": "recover"
-    },
-    {
-     "actual": true,
-     "equals": true,
-     "ok": true,
-     "path": "response.body.result.result.structuredContent.quorumRestored",
-     "step": "recover"
-    },
-    {
-     "actual": "{\n    \"apiVersion\": \"v1\",\n    \"data\": {\n        \"written\": \"before-quorum-loss\"\n    },\n    \"kind\": \"ConfigMap\",\n    \"metadata\": {\n        \"annotations\": {\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"v1\\\",\\\"data\\\":{\\\"written\\\":\\\"before-quorum-loss\\\"},\\\"kind\\\":\\\"ConfigMap\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"e2e-before-loss\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-07T04:51:49Z\",\n        \"name\": \"e2e-before-loss\",\n        \"namespace\": \"default\",\n        \"resourceVersion\": \"1155\",\n        \"uid\": \"962607ea-0706-4720-8c5e-95acfaf6a3c3\"\n    }\n}\n",
-     "matches": "before-quorum-loss",
-     "ok": true,
-     "path": "response.body.result.structuredContent.json",
-     "step": "readRecovered"
-    },
-    {
-     "actual": 1,
-     "equals": 1,
-     "ok": true,
-     "path": "response.body.result.structuredContent.readyServers",
-     "step": "staleGone"
-    },
-    {
-     "actual": true,
-     "equals": false,
-     "ok": false,
-     "path": "response.body.result.result.isError",
-     "step": "removeNode2"
-    }
-   ],
-   "observedAsAsserted": false,
-   "openQuestion": "Q17",
-   "outcome": "unverified",
-   "requirement": "recover-quorum restores a single-member etcd majority; remove-node retires a dead server",
-   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
-  },
-  {
-   "assertions": [
-    {
-     "actual": false,
-     "equals": false,
-     "ok": true,
-     "path": "response.body.result.result.isError",
-     "step": "remove"
-    },
-    {
-     "actual": true,
-     "equals": true,
-     "ok": true,
-     "path": "response.body.result.result.structuredContent.removed",
-     "step": "remove"
+     "path": "response.body.result.structuredContent.status",
+     "step": "chart"
     },
     {
      "actual": 0,
      "equals": 0,
      "ok": true,
-     "path": "response.body.result.structuredContent.total",
-     "step": "clustersAfter"
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "rollout"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "secret"
     },
     {
      "actual": true,
      "equals": true,
      "ok": true,
-     "path": "response.body.result.result.structuredContent.deleted",
-     "step": "delete1"
+     "path": "response.body.result.result.structuredContent.configured",
+     "step": "secret"
     },
     {
-     "actual": true,
-     "equals": true,
+     "actual": "apiKey ",
+     "equals": "apiKey ",
      "ok": true,
-     "path": "response.body.result.result.structuredContent.deleted",
-     "step": "delete2"
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "secretKeys"
     },
     {
-     "actual": true,
-     "equals": true,
+     "actual": 0,
+     "equals": 0,
      "ok": true,
-     "path": "response.body.result.result.structuredContent.deleted",
-     "step": "delete3"
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "pods"
     },
     {
-     "actual": [],
-     "in": [
-      [],
-      "<absent>"
-     ],
+     "actual": "e2e-exec-ok\n",
+     "equals": "e2e-exec-ok\n",
      "ok": true,
-     "path": "response.body.result.structuredContent.vms",
-     "step": "vmsAfter"
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "pods"
+    },
+    {
+     "actual": "e2e-web-podinfo",
+     "equals": "e2e-web-podinfo",
+     "ok": true,
+     "path": "response.body.result.structuredContent.services[0].name",
+     "step": "services"
+    },
+    {
+     "actual": "200 200 200 ",
+     "equals": "200 200 200 ",
+     "ok": true,
+     "path": "stdout",
+     "step": "serve"
     }
    ],
    "outcome": "pass",
-   "requirement": "remove and delete_vm leave no cluster or guest",
+   "requirement": "install_cluster_package, put_cluster_secret, exec_cluster_command and list_services on the HA cluster",
    "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "Kubernetes Secret configured.",
+     "equals": "Kubernetes Secret configured.",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "secret"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.data",
+     "step": "secret"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "secretKeysTool"
+    },
+    {
+     "actual": "not_implemented",
+     "equals": "not_implemented",
+     "ok": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "secretKeysTool"
+    },
+    {
+     "actual": "capability",
+     "equals": "capability",
+     "ok": true,
+     "path": "response.body.result.structuredContent.owner",
+     "step": "secretKeysTool"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every capability has its three roles",
+   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
   }
  ],
  "schemaErrors": [],
  "timings": {
   "steps": {
-   "catalogA": 20,
-   "catalogAfterA": 25,
+   "catalogA": 21,
+   "catalogAfterA": 24,
    "catalogAfterB": 248,
-   "catalogB": 539,
-   "clustersAfter": 126,
-   "delete1": 3003,
-   "delete1Call": 12,
-   "delete2": 3002,
-   "delete2Call": 13,
-   "delete3": 3003,
-   "delete3Call": 13,
-   "info1": 111,
-   "installA": 102,
-   "installB": 299,
-   "join2": 38730,
-   "join2Call": 219,
-   "join3": 35535,
-   "join3Call": 226,
-   "joinToken": 186,
-   "key2": 445,
-   "key3": 223,
-   "listClusters": 219,
-   "members": 315,
+   "catalogB": 541,
+   "chart": 458,
+   "info1": 109,
+   "info2": 690,
+   "info3": 320,
+   "installA": 95,
+   "installB": 304,
+   "join2": 35509,
+   "join2Call": 218,
+   "join3": 38920,
+   "join3Call": 218,
+   "joinToken": 189,
+   "key2": 446,
+   "key3": 234,
+   "listClusters": 242,
+   "members": 320,
+   "pods": 183,
    "prepare2": 3002,
    "prepare2Call": 13,
    "prepare3": 3002,
    "prepare3Call": 13,
    "prepareHa": 3002,
    "prepareHaCall": 12,
-   "providerCopy": 452,
-   "providerToolsA": 241,
-   "providerToolsB": 231,
-   "provision": 24010,
-   "provisionCall": 11,
-   "readRecovered": 340,
-   "recipeCopy": 426,
-   "recover": 129062,
-   "recoverCall": 11,
-   "redeem2": 207,
-   "redeem2Call": 223,
-   "redeem3": 453,
-   "redeem3Call": 219,
-   "remove": 3002,
-   "removeCall": 12,
-   "removeNode2": 3002,
-   "removeNode2Call": 12,
-   "settle": 20180,
-   "setup": 614,
-   "staleGone": 59617,
-   "status": 181,
-   "statusNoQuorum": 226,
-   "stop2": 3002,
-   "stop2Call": 12,
-   "stop3": 3002,
-   "stop3Call": 11,
-   "tokenLeaks": 171,
-   "tool": 289,
-   "vm1": 6003,
-   "vm1Call": 11,
-   "vm2": 6641,
-   "vm2Call": 610,
-   "vm3": 6617,
-   "vm3Call": 224,
-   "vmsAfter": 37,
-   "wire": 282,
-   "writeBefore": 3002,
-   "writeBeforeCall": 12,
-   "writeNoQuorum": 3002,
-   "writeNoQuorumCall": 12
+   "providerCopy": 466,
+   "providerToolsA": 239,
+   "providerToolsB": 240,
+   "provision": 24011,
+   "provisionCall": 12,
+   "recipeCopy": 433,
+   "redeem2": 210,
+   "redeem2Call": 214,
+   "redeem3": 210,
+   "redeem3Call": 235,
+   "rollout": 28759,
+   "secret": 3002,
+   "secretCall": 12,
+   "secretKeys": 151,
+   "secretKeysTool": 18,
+   "serve": 173,
+   "services": 145,
+   "setup": 613,
+   "status": 182,
+   "tokenLeaks": 168,
+   "tool": 284,
+   "vm1": 6004,
+   "vm1Call": 13,
+   "vm2": 6632,
+   "vm2Call": 589,
+   "vm3": 6623,
+   "vm3Call": 221,
+   "wire": 281
   },
-  "stepsSeconds": 416.4
+  "stepsSeconds": 225.6
  },
- "unverified": [
-  "Q17"
- ]
+ "unverified": []
 }
