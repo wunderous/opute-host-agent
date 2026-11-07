@@ -1,0 +1,1847 @@
+{
+ "cleanup": [
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_cleanRemove": "response.body.result.taskId"
+   },
+   "id": "cleanRemoveCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.remove"
+  },
+  {
+   "id": "cleanRemove",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanRemove}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "TID_cleanDelete1": "response.body.result.taskId"
+   },
+   "id": "cleanDelete1Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "delete_vm"
+  },
+  {
+   "id": "cleanDelete1",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanDelete1}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k2"
+   },
+   "capture": {
+    "TID_cleanDelete2": "response.body.result.taskId"
+   },
+   "id": "cleanDelete2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "delete_vm"
+  },
+  {
+   "id": "cleanDelete2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanDelete2}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k3"
+   },
+   "capture": {
+    "TID_cleanDelete3": "response.body.result.taskId"
+   },
+   "id": "cleanDelete3Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "delete_vm"
+  },
+  {
+   "id": "cleanDelete3",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanDelete3}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "systemctl stop e2e-provider-k3s e2e-provider-k3s-b 2>/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; for n in e2e-k1 e2e-k2 e2e-k3; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true",
+   "id": "cleanSetup"
+  }
+ ],
+ "description": "Lose one server on the HA cluster built and loaded as in e2e3a.build and e2e3a.workload: stop e2e-k2 with stop_vm. Pass: 2 of 3 nodes stay Ready, a typed ConfigMap write and read succeed, the service still answers on the surviving servers; after start_vm, e2e-k2 is Ready and an etcd member again.",
+ "effects": {
+  "allow": [
+   "incus/instances/e2e-k*",
+   "incus/volumes/*",
+   "incus/storage/default/used_by*",
+   "incus/profiles/default/used_by*",
+   "incus/networks/incusbr0/used_by*",
+   "files//home/opute/.config/opute-e2e*",
+   "files//home/opute/.config/incus*",
+   "files//opt/opute-e2e/providers*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-3a",
+ "id": "e2e3a.lose-one",
+ "inputs": {
+  "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "agentB": "a transient Rust agent e2e-ha-b on port 3031 (e2etool agent start), with its own Rust k3s provider (e2e-provider-k3s-b, port 4321)",
+  "files": {
+   "activate": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
+    "sha256": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788"
+   },
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "providerK3s": {
+    "path": "${PARITY}/e2e/release/rust/opute-provider-k3s-linux-x64",
+    "sha256": "852e352f72e8db5574ed05b8297991927832e238122f0c618292a81bbf7f8dae"
+   }
+  },
+  "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries"
+ },
+ "maxMinutes": 28,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "equals": "2\n",
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "installB"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "providerToolsB"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "catalogA"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "equals": "container:local:e2e-k1",
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm1"
+    },
+    {
+     "equals": "container:local:e2e-k2",
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm2"
+    },
+    {
+     "equals": "container:local:e2e-k3",
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm3"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "provision"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "equals": "v1.31.8+k3s1",
+     "path": "response.body.result.result.structuredContent.version",
+     "step": "provision"
+    },
+    {
+     "equals": "cluster:local:e2e-k1",
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "step": "listClusters"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.readyForServerPromotion",
+     "step": "prepareHa"
+    },
+    {
+     "equals": "embedded-etcd",
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "prepareHa"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "redeem2"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem2"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem2"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "join2"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join2"
+    },
+    {
+     "equals": "embedded-etcd",
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join2"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "redeem3"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem3"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem3"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "join3"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join3"
+    },
+    {
+     "equals": "embedded-etcd",
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join3"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.structuredContent.serverCount",
+     "step": "members"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "members"
+    },
+    {
+     "equals": "embedded-etcd",
+     "path": "response.body.result.structuredContent.datastoreMode",
+     "step": "members"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.clusterIdentityKnown",
+     "step": "members"
+    },
+    {
+     "equals": "e2e-k1",
+     "path": "response.body.result.structuredContent.nodes[0].name",
+     "step": "members"
+    },
+    {
+     "equals": "Ready",
+     "path": "response.body.result.structuredContent.nodes[0].status",
+     "step": "members"
+    },
+    {
+     "contains": "etcd",
+     "path": "response.body.result.structuredContent.nodes[0].roles",
+     "step": "members"
+    },
+    {
+     "equals": "v1.31.8+k3s1",
+     "path": "response.body.result.structuredContent.nodes[0].version",
+     "step": "members"
+    },
+    {
+     "equals": "e2e-k2",
+     "path": "response.body.result.structuredContent.nodes[1].name",
+     "step": "members"
+    },
+    {
+     "equals": "Ready",
+     "path": "response.body.result.structuredContent.nodes[1].status",
+     "step": "members"
+    },
+    {
+     "contains": "etcd",
+     "path": "response.body.result.structuredContent.nodes[1].roles",
+     "step": "members"
+    },
+    {
+     "equals": "v1.31.8+k3s1",
+     "path": "response.body.result.structuredContent.nodes[1].version",
+     "step": "members"
+    },
+    {
+     "equals": "e2e-k3",
+     "path": "response.body.result.structuredContent.nodes[2].name",
+     "step": "members"
+    },
+    {
+     "equals": "Ready",
+     "path": "response.body.result.structuredContent.nodes[2].status",
+     "step": "members"
+    },
+    {
+     "contains": "etcd",
+     "path": "response.body.result.structuredContent.nodes[2].roles",
+     "step": "members"
+    },
+    {
+     "equals": "v1.31.8+k3s1",
+     "path": "response.body.result.structuredContent.nodes[2].version",
+     "step": "members"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "status"
+    }
+   ],
+   "requirement": "Three Incus server containers provisioned and configured through typed Host Agent operations as a K3s cluster with embedded-etcd",
+   "scenario": "3 Ready servers and 3 etcd members after joining through the sealed handshake",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare2"
+    },
+    {
+     "equals": "host-agent-handshake",
+     "path": "response.body.result.result.structuredContent.secretDelivery",
+     "step": "prepare2"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare3"
+    },
+    {
+     "equals": "RSA-OAEP-SHA256",
+     "path": "response.body.result.structuredContent.keyAlgorithm",
+     "step": "key2"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "joinToken"
+    },
+    {
+     "equals": "<secret:K3S_TOKEN>",
+     "path": "stdout",
+     "step": "joinToken"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "tokenLeaks"
+    },
+    {
+     "equals": "0\n",
+     "path": "stdout",
+     "step": "tokenLeaks"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Secret-bearing input: the K3s join token reaches no Host Agent state, journal or client-visible record; it crosses hosts only sealed to the destination's key",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "installing",
+     "path": "response.body.result.structuredContent.status",
+     "step": "chart"
+    },
+    {
+     "equals": 0,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "rollout"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "secret"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.configured",
+     "step": "secret"
+    },
+    {
+     "equals": "apiKey ",
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "secretKeys"
+    },
+    {
+     "equals": 0,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "pods"
+    },
+    {
+     "equals": "e2e-exec-ok\n",
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "pods"
+    },
+    {
+     "equals": "e2e-web-podinfo",
+     "path": "response.body.result.structuredContent.services[0].name",
+     "step": "services"
+    },
+    {
+     "equals": "200 200 200 ",
+     "path": "stdout",
+     "step": "serve"
+    }
+   ],
+   "requirement": "install_cluster_package, put_cluster_secret, exec_cluster_command and list_services on the HA cluster",
+   "scenario": "A Helm chart installed, a secret put, a command run in a pod, and the service exposed inside the VM answering HTTP on every server",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "pass": [
+    {
+     "equals": "Kubernetes Secret configured.",
+     "path": "response.body.result.result.content[0].text",
+     "step": "secret"
+    },
+    {
+     "absent": true,
+     "path": "response.body.result.result.structuredContent.data",
+     "step": "secret"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Secret-bearing input: the secret's value is in no result; its key is read back without it",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "secretKeysTool"
+    },
+    {
+     "equals": "not_implemented",
+     "path": "response.body.result.structuredContent.code",
+     "step": "secretKeysTool"
+    },
+    {
+     "equals": "capability",
+     "path": "response.body.result.structuredContent.owner",
+     "step": "secretKeysTool"
+    }
+   ],
+   "requirement": "Every capability has its three roles",
+   "scenario": "Definition without a provider: list_secret_keys stays published and fails closed with not_implemented (an owned gap; the key is read through exec_cluster_command instead)",
+   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "stop2"
+    },
+    {
+     "equals": "stopped",
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stop2"
+    },
+    {
+     "equals": 2,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "degraded"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.structuredContent.nodeCount",
+     "step": "degraded"
+    },
+    {
+     "equals": "e2e-k2",
+     "path": "response.body.result.structuredContent.nodes[1].name",
+     "step": "degradedMembers"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.structuredContent.nodes[1].ready",
+     "step": "degradedMembers"
+    },
+    {
+     "equals": 2,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "degradedMembers"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "write"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.applied",
+     "step": "write"
+    },
+    {
+     "matches": "during-k2-down",
+     "path": "response.body.result.structuredContent.json",
+     "step": "read"
+    },
+    {
+     "equals": "running",
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "start2"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "rejoined"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.structuredContent.serverCount",
+     "step": "rejoined"
+    },
+    {
+     "equals": "Ready",
+     "path": "response.body.result.structuredContent.nodes[1].status",
+     "step": "rejoined"
+    },
+    {
+     "contains": "etcd",
+     "path": "response.body.result.structuredContent.nodes[1].roles",
+     "step": "rejoined"
+    },
+    {
+     "matches": "during-k2-down",
+     "path": "response.body.result.structuredContent.json",
+     "step": "readAfter"
+    }
+   ],
+   "requirement": "After one guest stopped, 2 of 3 Kubernetes nodes remained Ready and a typed API write and read succeeded; starting the guest restored 3 of 3 Ready nodes",
+   "scenario": "One Incus guest/server failure on one physical host, stopped and started through typed calls",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  },
+  {
+   "pass": [
+    {
+     "equals": 10,
+     "path": "json.consecutive",
+     "step": "serveDegraded"
+    },
+    {
+     "lte": 120,
+     "path": "json.seconds",
+     "step": "serveDegraded"
+    }
+   ],
+   "requirement": "Application serving is recorded separately from control-plane writes",
+   "scenario": "The service answers 10 consecutive rounds on both surviving servers within 120 s of the server being NotReady (beyond the page's tested scope; recorded, with the time it took)",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "providerK3s",
+   "id": "providerCopy",
+   "mode": "0755",
+   "to": "/opt/opute-e2e/providers/opute-provider-k3s"
+  },
+  {
+   "copy": "activate",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+  },
+  {
+   "guest": "chown -R opute /home/opute/.config/opute-e2e && for p in 4320:e2e-provider-k3s 4321:e2e-provider-k3s-b; do systemd-run --collect --unit=${p#*:} --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=${p%%:*} --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s || exit 1; done && python3 /opt/opute-e2e/guest/e2etool.py agent start b --port 3031 --id e2e-ha-b --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env MCP_AUTH_TOKEN='${SECRET:tokenB}' >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && ss -ltnH 'sport = :4321' | grep -q . && break; sleep 0.5; done; ss -ltnH '( sport = :4320 or sport = :4321 )' | wc -l",
+   "id": "setup"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "catalogB",
+   "mcp": "tools/list",
+   "port": 3031
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4320/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+   },
+   "id": "installA",
+   "mcp": "tools/call",
+   "tool": "opute.provider.install"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4321/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+   },
+   "auth": "secret:tokenB",
+   "id": "installB",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "opute.provider.install"
+  },
+  {
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "id": "providerToolsA"
+  },
+  {
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'",
+   "id": "providerToolsB"
+  },
+  {
+   "id": "catalogAfterA",
+   "mcp": "tools/list"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "catalogAfterB",
+   "mcp": "tools/list",
+   "port": 3031
+  },
+  {
+   "arguments": {},
+   "id": "catalogA",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.validate"
+  },
+  {
+   "arguments": {
+    "cpus": 2,
+    "disk": "15GiB",
+    "image": "parity-noble",
+    "instanceType": "container",
+    "memory": "3GiB",
+    "name": "e2e-k1"
+   },
+   "capture": {
+    "TID_vm1": "response.body.result.taskId"
+   },
+   "id": "vm1Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "provision_vm"
+  },
+  {
+   "id": "vm1",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_vm1}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "K1_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info1",
+   "mcp": "tools/call",
+   "tool": "get_vm_info"
+  },
+  {
+   "arguments": {
+    "clusterInit": true,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "container:local:e2e-k1",
+    "version": "v1.31.8+k3s1"
+   },
+   "capture": {
+    "TID_provision": "response.body.result.taskId"
+   },
+   "id": "provisionCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.provision"
+  },
+  {
+   "id": "provision",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_provision}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {},
+   "id": "listClusters",
+   "mcp": "tools/call",
+   "tool": "list_compute_clusters"
+  },
+  {
+   "arguments": {
+    "expectedRole": "server",
+    "expectedServers": 3,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "requireEmbeddedEtcd": true,
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_prepareHa": "response.body.result.taskId"
+   },
+   "id": "prepareHaCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.prepare-ha"
+  },
+  {
+   "id": "prepareHa",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_prepareHa}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "cpus": 2,
+    "disk": "15GiB",
+    "image": "parity-noble",
+    "instanceType": "container",
+    "memory": "3GiB",
+    "name": "e2e-k2"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_vm2": "response.body.result.taskId"
+   },
+   "id": "vm2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3031,
+   "tool": "provision_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "vm2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_vm2}"
+   },
+   "port": 3031,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k2",
+    "targetUri": "container:local:e2e-k2"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "PUB2": "response.body.result.structuredContent.publicKey"
+   },
+   "id": "key2",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "opute.capability.kubernetes.get-join-receiver-key"
+  },
+  {
+   "arguments": {
+    "destinationHostId": "e2e-ha-b",
+    "destinationPublicKey": "${PUB2}",
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "role": "server",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_prepare2": "response.body.result.taskId"
+   },
+   "id": "prepare2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.prepare-join"
+  },
+  {
+   "capture": {
+    "REF2": "response.body.result.result.structuredContent.redemptionRef",
+    "SEALED2": {
+     "path": "response.body.result.result.structuredContent.sealedJoinMaterial",
+     "secret": true
+    }
+   },
+   "id": "prepare2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_prepare2}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "destinationHostId": "e2e-ha-b",
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k2",
+    "redemptionRef": "${REF2}",
+    "sealedJoinMaterial": "${SEALED2}",
+    "sourceTargetUri": "cluster:local:e2e-k1",
+    "targetUri": "container:local:e2e-k2"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_redeem2": "response.body.result.taskId"
+   },
+   "id": "redeem2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3031,
+   "tool": "opute.capability.kubernetes.redeem-join"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "redeem2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_redeem2}"
+   },
+   "port": 3031,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "clusterInit": false,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k2",
+    "redemptionRef": "${REF2}",
+    "role": "server",
+    "serverAddress": "https://${K1_IP}:6443",
+    "targetUri": "container:local:e2e-k2"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_join2": "response.body.result.taskId"
+   },
+   "id": "join2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3031,
+   "tool": "opute.capability.kubernetes.join-node"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "join2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_join2}"
+   },
+   "port": 3031,
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "cpus": 2,
+    "disk": "15GiB",
+    "image": "parity-noble",
+    "instanceType": "container",
+    "memory": "3GiB",
+    "name": "e2e-k3"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_vm3": "response.body.result.taskId"
+   },
+   "id": "vm3Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3031,
+   "tool": "provision_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "vm3",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_vm3}"
+   },
+   "port": 3031,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k3",
+    "targetUri": "container:local:e2e-k3"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "PUB3": "response.body.result.structuredContent.publicKey"
+   },
+   "id": "key3",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "opute.capability.kubernetes.get-join-receiver-key"
+  },
+  {
+   "arguments": {
+    "destinationHostId": "e2e-ha-b",
+    "destinationPublicKey": "${PUB3}",
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "role": "server",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_prepare3": "response.body.result.taskId"
+   },
+   "id": "prepare3Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "opute.capability.kubernetes.prepare-join"
+  },
+  {
+   "capture": {
+    "REF3": "response.body.result.result.structuredContent.redemptionRef",
+    "SEALED3": {
+     "path": "response.body.result.result.structuredContent.sealedJoinMaterial",
+     "secret": true
+    }
+   },
+   "id": "prepare3",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_prepare3}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "destinationHostId": "e2e-ha-b",
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k3",
+    "redemptionRef": "${REF3}",
+    "sealedJoinMaterial": "${SEALED3}",
+    "sourceTargetUri": "cluster:local:e2e-k1",
+    "targetUri": "container:local:e2e-k3"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_redeem3": "response.body.result.taskId"
+   },
+   "id": "redeem3Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3031,
+   "tool": "opute.capability.kubernetes.redeem-join"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "redeem3",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_redeem3}"
+   },
+   "port": 3031,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "clusterInit": false,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k3",
+    "redemptionRef": "${REF3}",
+    "role": "server",
+    "serverAddress": "https://${K1_IP}:6443",
+    "targetUri": "container:local:e2e-k3"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_join3": "response.body.result.taskId"
+   },
+   "id": "join3Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3031,
+   "tool": "opute.capability.kubernetes.join-node"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "join3",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_join3}"
+   },
+   "port": 3031,
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "expectedServers": 3,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "requireEmbeddedEtcd": true,
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "members",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 300,
+   "tool": "opute.capability.kubernetes.inspect-membership",
+   "until": {
+    "in": [
+     3
+    ],
+    "path": "response.body.result.structuredContent.readyServers"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "status",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.status"
+  },
+  {
+   "capture": {
+    "K3S_TOKEN": {
+     "path": "stdout",
+     "secret": true
+    }
+   },
+   "guest": "incus exec e2e-k1 -- cat /var/lib/rancher/k3s/server/token | tr -d '\\n'",
+   "id": "joinToken"
+  },
+  {
+   "guest": "{ grep -a -r -o -F '${K3S_TOKEN}' /home/opute/.config/opute /tmp/e2e-agents/b 2>/dev/null; for u in opute-bootstrap-mcp e2e-agent-b e2e-provider-k3s e2e-provider-k3s-b; do journalctl -u $u --no-pager -o cat; done | grep -o -F '${K3S_TOKEN}'; } | wc -l",
+   "id": "tokenLeaks"
+  },
+  {
+   "arguments": {
+    "chart": "podinfo",
+    "namespace": "e2e-web",
+    "releaseName": "e2e-web",
+    "repo": "https://stefanprodan.github.io/podinfo",
+    "uri": "container:local:e2e-k1",
+    "values": {
+     "replicaCount": 2,
+     "service": {
+      "nodePort": 30080,
+      "type": "NodePort"
+     }
+    },
+    "vmName": "e2e-k1"
+   },
+   "id": "chart",
+   "mcp": "tools/call",
+   "tool": "install_cluster_package"
+  },
+  {
+   "arguments": {
+    "args": [
+     "status",
+     "deployment/e2e-web-podinfo",
+     "-n",
+     "e2e-web",
+     "--timeout=60s"
+    ],
+    "command": "rollout",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "rollout",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 480,
+   "tool": "exec_cluster_command",
+   "until": {
+    "in": [
+     0
+    ],
+    "path": "response.body.result.structuredContent.exitCode"
+   }
+  },
+  {
+   "arguments": {
+    "data": {
+     "apiKey": "${SECRET:apiValue}"
+    },
+    "name": "e2e-secret",
+    "namespace": "e2e-web",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_secret": "response.body.result.taskId"
+   },
+   "id": "secretCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "put_cluster_secret"
+  },
+  {
+   "id": "secret",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_secret}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "namespace": "e2e-web",
+    "secretName": "e2e-secret",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "secretKeysTool",
+   "mcp": "tools/call",
+   "tool": "list_secret_keys"
+  },
+  {
+   "arguments": {
+    "args": [
+     "secret",
+     "e2e-secret",
+     "-n",
+     "e2e-web",
+     "-o",
+     "go-template={{range $k, $v := .data}}{{$k}} {{end}}"
+    ],
+    "command": "get",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "secretKeys",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command"
+  },
+  {
+   "arguments": {
+    "args": [
+     "-n",
+     "e2e-web",
+     "deployment/e2e-web-podinfo",
+     "--",
+     "sh",
+     "-c",
+     "echo e2e-exec-ok"
+    ],
+    "command": "exec",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "pods",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command"
+  },
+  {
+   "arguments": {
+    "namespace": "e2e-web",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "services",
+   "mcp": "tools/call",
+   "tool": "list_services"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k2"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "K2_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info2",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "get_vm_info"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k3"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "K3_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info3",
+   "mcp": "tools/call",
+   "port": 3031,
+   "tool": "get_vm_info"
+  },
+  {
+   "guest": "for ip in ${K1_IP} ${K2_IP} ${K3_IP}; do curl -s -o /dev/null -w '%{http_code} ' --max-time 10 http://$ip:30080/; done",
+   "id": "serve"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k2"
+   },
+   "capture": {
+    "TID_stop2": "response.body.result.taskId"
+   },
+   "id": "stop2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "stop_vm"
+  },
+  {
+   "id": "stop2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_stop2}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "degraded",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 180,
+   "tool": "opute.capability.kubernetes.status",
+   "until": {
+    "in": [
+     2
+    ],
+    "path": "response.body.result.structuredContent.readyNodeCount"
+   }
+  },
+  {
+   "arguments": {
+    "expectedServers": 3,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "degradedMembers",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.inspect-membership"
+  },
+  {
+   "arguments": {
+    "manifest": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: e2e-during-failure\n  namespace: e2e-web\ndata:\n  written: during-k2-down\n",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_write": "response.body.result.taskId"
+   },
+   "id": "writeCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "apply_manifest"
+  },
+  {
+   "id": "write",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_write}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "kind": "configmap",
+    "namespace": "e2e-web",
+    "resourceName": "e2e-during-failure",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "read",
+   "mcp": "tools/call",
+   "tool": "get_cluster_resource"
+  },
+  {
+   "guest": "start=$(date +%s); n=0; while [ $n -lt 10 ] && [ $(( $(date +%s) - start )) -lt 120 ]; do ok=1; for ip in ${K1_IP} ${K3_IP}; do code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://$ip:30080/); [ \"$code\" = 200 ] || ok=0; done; if [ $ok = 1 ]; then n=$((n+1)); else n=0; fi; sleep 1; done; printf '{\"consecutive\": %d, \"seconds\": %d}' $n $(( $(date +%s) - start ))",
+   "id": "serveDegraded",
+   "timeout": 200
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k2"
+   },
+   "capture": {
+    "TID_start2": "response.body.result.taskId"
+   },
+   "id": "start2Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "start_vm"
+  },
+  {
+   "id": "start2",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_start2}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "expectedServers": 3,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "requireEmbeddedEtcd": true,
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "rejoined",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 300,
+   "tool": "opute.capability.kubernetes.inspect-membership",
+   "until": {
+    "in": [
+     3
+    ],
+    "path": "response.body.result.structuredContent.readyServers"
+   }
+  },
+  {
+   "arguments": {
+    "kind": "configmap",
+    "namespace": "e2e-web",
+    "resourceName": "e2e-during-failure",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "readAfter",
+   "mcp": "tools/call",
+   "tool": "get_cluster_resource"
+  }
+ ]
+}

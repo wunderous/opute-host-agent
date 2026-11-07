@@ -19,6 +19,8 @@ the verifier and the committed receipts.
 | `guest-tools/e2etool.py` | guest helpers: transient agents under `/tmp/e2e-agents`, read-only database probes, the documented IDE config, a slow endpoint |
 | `clients/hostagentclient/` | the e2e-1 client on the published Go library `pkg/hostagentclient` (built offline by `build.sh`) |
 | `journeys/make_e2e1.py` | writes the e2e-1 journeys, with their hash pins |
+| `journeys/make_e2e3a.py` | writes the e2e-3a (HA k3s) journeys, with their hash pins |
+| `journeys/inputs/` | hash-pinned journey inputs kept in the repository (the M9 k3s activation recipe) |
 
 ## The VM
 
@@ -132,7 +134,12 @@ A journey declares:
 
   `${NAME}` expands a captured value, `${SECRET:name}` a per-run random
   secret, and `${TOKEN}` the agent's token. All three are redacted from
-  every record;
+  every record. A captured value marked `secret` is redacted too. Text a
+  journey must pass through verbatim (a recipe with its own `${...}`) goes
+  in as a `copy` input, never inline;
+- **schema:** every MCP response is checked against the `tools/list` its
+  target published earlier in the run, so a journey lists an agent's tools
+  again after a provider install changes them;
 - **cleanup:** the steps that undo it;
 - **maxMinutes:** at most 30.
 

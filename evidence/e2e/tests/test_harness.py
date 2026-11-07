@@ -122,6 +122,15 @@ class Format(unittest.TestCase):
         for name, text in make_e2e1.render().items():
             self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_e2e1.py")
 
+    def test_e2e3a_journeys_are_the_generator_output(self):
+        sys.path.insert(0, str(E2E / "journeys"))
+        import make_e2e1
+        if not (make_e2e1.PARITY / "e2e" / "release" / "rust").exists():
+            self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
+        import make_e2e3a  # hashes its inputs on import
+        for name, text in make_e2e3a.render().items():
+            self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_e2e3a.py")
+
     def test_gates_name_committed_journeys(self):
         gates = json.loads((E2E / "gates.json").read_text())
         for gate, spec in gates.items():

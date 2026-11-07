@@ -1108,8 +1108,65 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
 
     Dev VM build 3 used the stale v0.2.3 Go set; `devvm.py` now refuses any
     set other than the published v0.2.4 sums.
-- **e2e-2 to e2e-5.** Blocked in `evidence/e2e/gates.json` until each goal
-  records its run. e2e-5 also waits on the owner (the Platform repository).
+- **e2e-3a (done, 2026-11-07): HA k3s through the Rust agent alone.** Four
+  journeys pass gate e2e-3a on run `e2e-3a-r4`. Each starts from the snapshot
+  and builds its own cluster through typed calls only. Host A is the system
+  agent with the Rust k3s provider 1.0.2 (`opute-provider-k3s-linux-x64`,
+  sha256 `852e352f…`, from the release). Host B is a transient second Rust
+  agent with its own provider, so a join is sealed by A's provider to B's
+  receiver key and unsealed by B's. The cluster is three Incus server
+  containers running K3s v1.31.8+k3s1 with embedded etcd.
+  1. **Build** (188 s): `provision_vm`, `provision` with clusterInit,
+     `prepare-ha`, then for two servers `get-join-receiver-key`,
+     `prepare-join`, `redeem-join` and `join-node`. Result: 3 Ready servers,
+     3 etcd members, availability class `control-plane-write-continuity`. The
+     K3s join token is in no record, no agent state and no agent or provider
+     journal.
+  2. **Workload** (219 s): a Helm chart through `install_cluster_package`,
+     `put_cluster_secret`, an exec in a pod, `list_services`, and HTTP 200 on
+     NodePort 30080 from every server.
+  3. **Lose one server** (290 s): `stop_vm` on one server. 2 of 3 nodes stay
+     Ready, and a typed ConfigMap write and read succeed. The service answers
+     10 consecutive rounds on both survivors within 10 s. After `start_vm`
+     the server is Ready and an etcd member again. This reproduces the Use
+     cases page's HA claim with Rust, so the page needs no correction.
+  4. **Quorum and removal** (416 s): with two servers stopped, a typed write
+     and the status read fail closed. `recover-quorum` restores a
+     single-member etcd and keeps earlier data. `remove` and `delete_vm`
+     leave no cluster and no guest, and nothing remains after cleanup.
+
+  Findings:
+  - **Q17, proposed:** [k3s-quorum-recovery-retirement](../k3s-quorum-recovery-retirement/proposal.md).
+    Once the stopped servers are NotReady after recovery, `remove-node`
+    refuses to retire them ("1 ready of 2"). Right after recovery it would
+    retire them on stale Ready conditions. Recorded as unverified.
+  - **Q16, proposed:** [incus-project-selection](../incus-project-selection/proposal.md).
+    The agent launches in the `incus` client's current project but reads
+    instance state in `default`. With another current project,
+    `provision_vm` fails. The journeys put their guests in `default`.
+  - **Owned gaps, not added here:**
+    - `list_secret_keys` is published and fails closed with
+      `not_implemented`, as the capability-seam spec requires for an
+      unported capability. The key is read back through
+      `exec_cluster_command` instead.
+    - No typed operation creates a stable HA endpoint.
+      `ensure-ha-endpoint` only probes a caller's endpoint against the
+      host's certificate roots, and one server's K3s API fails that with
+      `UnknownIssuer`. The page's test record also had no endpoint.
+    - `install_cluster_package` takes no chart version, so the chart is
+      unpinned (podinfo 6.17.0 at the run).
+  - **Goal correction:** the goal ordered `prepare-ha` and
+    `ensure-ha-endpoint` before `provision`, but both target an existing
+    cluster.
+  - **Retired runs** (causes under `.parity/retired/`; the setup's run id
+    `e2e-3a-r1` was the first): r1 expanded the recipe's `${...}` and
+    missed the veth units; r2 changed the recipe bytes the provider pins;
+    r3 validated responses against a catalog listed before the provider
+    install.
+- **e2e-2, e2e-3 (deploy and serving), e2e-4 and e2e-5.** Blocked in
+  `evidence/e2e/gates.json` until each goal records its run. e2e-3's HA
+  journey is covered by e2e-3a. e2e-5 also waits on the owner (the Platform
+  repository).
 
 ## 4. The catalog and provider matrix
 
