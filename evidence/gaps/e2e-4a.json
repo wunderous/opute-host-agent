@@ -1,0 +1,76 @@
+{
+ "goal": ".agents/goals (e2e-4a): gaps come from the journeys; a gap is a step a journey needs where Rust answers not_implemented or has no tool, but Go v0.2.4 had a handler",
+ "go": "wunderous/host-agents c9f9e775 (v0.2.4)",
+ "gaps": [
+  {
+   "journey": "e2e2.plans",
+   "steps": [
+    "operation",
+    "operations",
+    "cancel",
+    "cancelAgain",
+    "unknown"
+   ],
+   "tools": [
+    "get_operation",
+    "list_operations",
+    "cancel_operation"
+   ],
+   "rust": "not_implemented (draft run, dev VM, before the port): \"get_operation is not implemented by this Host Agent build\"",
+   "goHandler": [
+    "internal/hostmcp/server.go:1422-1468 (standalone list_operations, get_operation, cancel_operation)",
+    "internal/hostmcp/plan_run.go:877 (cancelHostPlan)"
+   ],
+   "spec": "host-agent-contract: No capability change during the language migration; One typed plan and recipe execution path (Interrupted plan)",
+   "remedy": "ported: crates/host-agent/src/plan_mcp.rs handle_operation, service `operations` in builtin.rs; failing-first test plan_mcp::tests::operation_tools_read_and_cancel_durable_operations",
+   "status": "ported"
+  }
+ ],
+ "notGaps": [
+  {
+   "journey": "e2e3.discovery",
+   "step": "configmapKeys",
+   "tool": "list_configmap_keys",
+   "rust": "not_implemented (registered unported in the seam report)",
+   "goHandler": null,
+   "why": "no Go v0.2.4 handler (no Go source names it); implementing it adds a capability Go never had",
+   "remedy": "owned gap with list_secret_keys under Q18 (implement-list-secret-keys)"
+  },
+  {
+   "journey": "e2e3.discovery",
+   "step": "secretKeys",
+   "tool": "list_secret_keys",
+   "rust": "not_implemented",
+   "goHandler": null,
+   "why": "no Go v0.2.4 handler",
+   "remedy": "owned gap Q18"
+  },
+  {
+   "journey": "e2e2.incus",
+   "step": "container",
+   "tool": "provision_container (static address)",
+   "rust": "works through ipv4Address, an input the published schema does not declare",
+   "goHandler": "internal/domain/incus/incus_container.go (IPv4Address)",
+   "why": "not missing: implemented in both; the schema omits the input",
+   "remedy": "Q21 (declare-read-inputs)"
+  },
+  {
+   "journey": "e2e2.host-ops",
+   "step": "catalog",
+   "tool": "ensure_host_firewall_rule (the e2e-2 goal's firewall item)",
+   "rust": "not in tools/list on Linux",
+   "goHandler": "a no-effect tool on Linux in Go (T2 host-domain.linux.no-effect-tools)",
+   "why": "neither implementation offers a Linux firewall effect",
+   "remedy": "none; recorded"
+  },
+  {
+   "journey": "e2e3.serving",
+   "step": "-",
+   "tool": "a real model runtime and weights (Ollama, llama-server)",
+   "rust": "not run",
+   "goHandler": "the LEGACY local-LLM wrappers and runtime-recipe.v1",
+   "why": "needs downloads beyond test fixtures (runtime binaries, model weights); the goal records such needs as blocked",
+   "remedy": "blocked; the serving path runs with a fixture runtime"
+  }
+ ]
+}
