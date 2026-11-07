@@ -1,0 +1,867 @@
+{
+ "id": "e2e2.plans",
+ "gate": "e2e-2",
+ "description": "Plans across domains: one host-plan.v1 run and one host-local recipe, each combining a host file, an Incus container and a SQLite database, using published primitives only, to completion; the run read back as a durable operation; then a running plan cancelled mid-way through cancel_operation.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "slow": "a local endpoint answering after 25 s (e2etool slow)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "recipe": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/e2e-cross-domain-recipe.yaml",
+    "sha256": "a268a8fd15f87639c9589feab593564e32b7b74ce41b6d71dd7d5a0f34e2b3ef"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One typed plan and recipe execution path",
+   "pass": [
+    {
+     "step": "validate",
+     "path": "response.body.result.structuredContent.valid",
+     "equals": true
+    },
+    {
+     "step": "done",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "done",
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "equals": "applied"
+    },
+    {
+     "step": "done",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "equals": "applied"
+    },
+    {
+     "step": "done",
+     "path": "response.body.result.structuredContent.nodes.data.status",
+     "equals": "applied"
+    },
+    {
+     "step": "again",
+     "path": "response.body.result.structuredContent.runId",
+     "equalsStep": {
+      "step": "run",
+      "path": "response.body.result.structuredContent.runId"
+     }
+    },
+    {
+     "step": "againDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "recipeValidate",
+     "path": "response.body.result.structuredContent.plan.valid",
+     "equals": true
+    },
+    {
+     "step": "recipeDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "recipeDone",
+     "path": "response.body.result.structuredContent.nodes.data.status",
+     "equals": "applied"
+    }
+   ],
+   "scenario": "One plan and one host-local recipe combining a host file, an Incus container and a SQLite database reach completed; their evidence records each node; a repeat re-runs the same run to completed"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Durable and redacted observations",
+   "pass": [
+    {
+     "step": "operation",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "operation",
+     "path": "response.body.result.structuredContent.taskId",
+     "equalsStep": {
+      "step": "run",
+      "path": "response.body.result.structuredContent.runId"
+     }
+    },
+    {
+     "step": "operations",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "unknown",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "unknown",
+     "path": "response.body.result.content[0].text",
+     "equals": "Error: operation not found: no-such-operation"
+    }
+   ],
+   "scenario": "The plan run reads back by id through get_operation; the operation list answers; an unknown id is an error"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Durable and redacted observations (operation status)",
+   "pass": [
+    {
+     "step": "operation",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    }
+   ],
+   "scenario": "The completed plan run's operation row reports completed (Q25: Go writes a live task's row working, and Rust keeps it)",
+   "openQuestion": "Q25"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "One typed plan and recipe execution path (Interrupted plan)",
+   "pass": [
+    {
+     "step": "slow",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "waiting",
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "equals": "applied"
+    },
+    {
+     "step": "cancel",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "cancel",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "cancelled",
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "equals": "applied"
+    },
+    {
+     "step": "cancelled",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "in": [
+      "pending",
+      "<absent>"
+     ]
+    },
+    {
+     "step": "afterCancel",
+     "path": "stdout",
+     "equals": "0\nfile-kept\n"
+    },
+    {
+     "step": "cancelAgain",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "cancelAgain",
+     "path": "response.body.result.content[0].text",
+     "matches": "cannot be cancelled in status"
+    }
+   ],
+   "scenario": "A running plan cancelled through cancel_operation: the completed node's effect stays, the nodes after it never run, and the run's durable state is cancelled; a second cancel is refused"
+  }
+ ],
+ "effects": {
+  "allow": [
+   "incus/*",
+   "files//home/opute/e2e*",
+   "files//home/opute/.opute*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*"
+  ],
+  "persist": [
+   "files//home/opute/.opute*"
+  ]
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "recipeCopy",
+   "copy": "recipe",
+   "to": "/home/opute/e2e/recipe.yaml",
+   "mode": "0644"
+  },
+  {
+   "id": "own",
+   "guest": "chown -R opute:opute /home/opute/e2e && echo ok"
+  },
+  {
+   "id": "slow",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 25"
+  },
+  {
+   "id": "validate",
+   "mcp": "tools/call",
+   "tool": "validate_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.cross",
+     "generation": 1,
+     "idempotencyKey": "e2e-cross-1",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/p1.txt",
+         "content": "p1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/p1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      },
+      {
+       "id": "guest",
+       "dependsOn": [
+        "file"
+       ],
+       "timeoutMs": 600000,
+       "action": {
+        "tool": "provision_vm",
+        "args": {
+         "name": "e2e-p1",
+         "image": "parity-noble",
+         "instanceType": "container",
+         "cpus": 1,
+         "memory": "512MiB"
+        }
+       },
+       "validate": {
+        "tool": "get_vm_info",
+        "args": {
+         "uri": "container:local:e2e-p1"
+        },
+        "assert": [
+         {
+          "path": "/status",
+          "op": "eq",
+          "value": "running"
+         }
+        ]
+       }
+      },
+      {
+       "id": "data",
+       "dependsOn": [
+        "guest"
+       ],
+       "action": {
+        "tool": "ensure_sqlite_database",
+        "args": {
+         "consumerId": "e2e-p1",
+         "databaseName": "main"
+        }
+       },
+       "validate": {
+        "tool": "get_sqlite_database_status",
+        "args": {
+         "consumerId": "e2e-p1",
+         "databaseName": "main"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "run",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.cross",
+     "generation": 1,
+     "idempotencyKey": "e2e-cross-1",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/p1.txt",
+         "content": "p1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/p1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      },
+      {
+       "id": "guest",
+       "dependsOn": [
+        "file"
+       ],
+       "timeoutMs": 600000,
+       "action": {
+        "tool": "provision_vm",
+        "args": {
+         "name": "e2e-p1",
+         "image": "parity-noble",
+         "instanceType": "container",
+         "cpus": 1,
+         "memory": "512MiB"
+        }
+       },
+       "validate": {
+        "tool": "get_vm_info",
+        "args": {
+         "uri": "container:local:e2e-p1"
+        },
+        "assert": [
+         {
+          "path": "/status",
+          "op": "eq",
+          "value": "running"
+         }
+        ]
+       }
+      },
+      {
+       "id": "data",
+       "dependsOn": [
+        "guest"
+       ],
+       "action": {
+        "tool": "ensure_sqlite_database",
+        "args": {
+         "consumerId": "e2e-p1",
+         "databaseName": "main"
+        }
+       },
+       "validate": {
+        "tool": "get_sqlite_database_status",
+        "args": {
+         "consumerId": "e2e-p1",
+         "databaseName": "main"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "RUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "done",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "again",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.cross",
+     "generation": 1,
+     "idempotencyKey": "e2e-cross-1",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/p1.txt",
+         "content": "p1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/p1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      },
+      {
+       "id": "guest",
+       "dependsOn": [
+        "file"
+       ],
+       "timeoutMs": 600000,
+       "action": {
+        "tool": "provision_vm",
+        "args": {
+         "name": "e2e-p1",
+         "image": "parity-noble",
+         "instanceType": "container",
+         "cpus": 1,
+         "memory": "512MiB"
+        }
+       },
+       "validate": {
+        "tool": "get_vm_info",
+        "args": {
+         "uri": "container:local:e2e-p1"
+        },
+        "assert": [
+         {
+          "path": "/status",
+          "op": "eq",
+          "value": "running"
+         }
+        ]
+       }
+      },
+      {
+       "id": "data",
+       "dependsOn": [
+        "guest"
+       ],
+       "action": {
+        "tool": "ensure_sqlite_database",
+        "args": {
+         "consumerId": "e2e-p1",
+         "databaseName": "main"
+        }
+       },
+       "validate": {
+        "tool": "get_sqlite_database_status",
+        "args": {
+         "consumerId": "e2e-p1",
+         "databaseName": "main"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "againDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "released",
+   "guest": "sleep 5"
+  },
+  {
+   "id": "operation",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "${RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "operations",
+   "mcp": "tools/call",
+   "tool": "list_operations",
+   "arguments": {
+    "limit": 50
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "recipeValidate",
+   "mcp": "tools/call",
+   "tool": "validate_host_local_recipe",
+   "arguments": {
+    "source": "/home/opute/e2e/recipe.yaml",
+    "inputs": {
+     "name": "r1"
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "recipeRun",
+   "mcp": "tools/call",
+   "tool": "run_host_local_recipe",
+   "arguments": {
+    "source": "/home/opute/e2e/recipe.yaml",
+    "inputs": {
+     "name": "r1"
+    }
+   },
+   "capture": {
+    "RRUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "recipeDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RRUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "released2",
+   "guest": "sleep 5"
+  },
+  {
+   "id": "slowRun",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.cancel",
+     "generation": 1,
+     "idempotencyKey": "e2e-cancel-1",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/c1.txt",
+         "content": "c1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/c1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      },
+      {
+       "id": "wait",
+       "dependsOn": [
+        "file"
+       ],
+       "action": {
+        "tool": "probe_http_endpoint",
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        }
+       }
+      },
+      {
+       "id": "guest",
+       "dependsOn": [
+        "wait"
+       ],
+       "timeoutMs": 600000,
+       "action": {
+        "tool": "provision_vm",
+        "args": {
+         "name": "e2e-c1",
+         "image": "parity-noble",
+         "instanceType": "container",
+         "cpus": 1,
+         "memory": "512MiB"
+        }
+       },
+       "validate": {
+        "tool": "get_vm_info",
+        "args": {
+         "uri": "container:local:e2e-c1"
+        },
+        "assert": [
+         {
+          "path": "/status",
+          "op": "eq",
+          "value": "running"
+         }
+        ]
+       }
+      },
+      {
+       "id": "data",
+       "dependsOn": [
+        "guest"
+       ],
+       "action": {
+        "tool": "ensure_sqlite_database",
+        "args": {
+         "consumerId": "e2e-c1",
+         "databaseName": "main"
+        }
+       },
+       "validate": {
+        "tool": "get_sqlite_database_status",
+        "args": {
+         "consumerId": "e2e-c1",
+         "databaseName": "main"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "CRUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "waiting",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${CRUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.nodes.file.status",
+    "in": [
+     "applied"
+    ]
+   },
+   "timeout": 60,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "settle",
+   "guest": "sleep 3"
+  },
+  {
+   "id": "cancel",
+   "mcp": "tools/call",
+   "tool": "cancel_operation",
+   "arguments": {
+    "operationId": "${CRUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "cancelled",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${CRUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 120,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "afterCancel",
+   "guest": "sleep 30; incus list e2e-c1 -c n -f csv | wc -l; test -e /home/opute/e2e/c1.txt && echo file-kept"
+  },
+  {
+   "id": "cancelAgain",
+   "mcp": "tools/call",
+   "tool": "cancel_operation",
+   "arguments": {
+    "operationId": "${CRUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "unknown",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "no-such-operation"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "cleanPlans",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; for n in e2e-p1 e2e-r1 e2e-c1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases/e2e-*; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+  }
+ ],
+ "maxMinutes": 25
+}
