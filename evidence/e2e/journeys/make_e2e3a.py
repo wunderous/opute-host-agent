@@ -259,15 +259,48 @@ def journey(id_, description, requirements, steps, cleanup, allow=(), minutes=25
 
 # --- 1. build ---------------------------------------------------------------------------------------------
 
+HA_FIRST = {**CL, "expectedServers": 3, "requireEmbeddedEtcd": True, "expectedRole": "server"}
+
+
 def j1() -> dict:
+    steps = build_steps()
+    # The goal's order: prepare-ha and ensure-ha-endpoint before the first server is provisioned. Both
+    # target a cluster URI, so they run here, after the guest exists but before K3s does.
+    first = steps.index(next(s for s in steps if s["id"] == "provisionCall"))
+    steps[first:first] = [*task("prepareHaFirst", K + "prepare-ha", HA_FIRST),
+                          *task("endpointFirst", K + "ensure-ha-endpoint", {**CL, "endpoint": "https://${K1_IP}:6443"})]
+    # The same call once the three servers are members: the only endpoint the VM can offer is a server's
+    # own K3s API, whose certificate the host's roots do not trust.
+    steps += task("endpoint", K + "ensure-ha-endpoint", {**CL, "endpoint": "https://${K1_IP}:6443"})
+    reqs = build_requirements() + [
+        req(SPEC, "Typed target and effect admission",
+            res("prepareHaFirst", "isError", equals=True),
+            res("prepareHaFirst", "structuredContent.code", equals="resource_binding"),
+            res("prepareHaFirst", "structuredContent.owner", equals="admission"),
+            res("prepareHaFirst", "structuredContent.message", matches="resource not found: cluster:local:e2e-k1$"),
+            res("endpointFirst", "isError", equals=True),
+            res("endpointFirst", "structuredContent.code", equals="resource_binding"),
+            res("endpointFirst", "structuredContent.message", matches="resource not found: cluster:local:e2e-k1$"),
+            scenario="The goal's order (prepare-ha, then ensure-ha-endpoint, then provision): before the first "
+                     "server is provisioned the cluster URI is unknown, and both calls are refused before "
+                     "execution; no success is invented from an unknown target"),
+        req(CATALOG, "ensure-ha-endpoint verifies a caller's stable HA endpoint; it creates none",
+            res("endpoint", "isError", equals=True),
+            res("endpoint", "content[0].text", matches="probe stable HA endpoint: .*invalid peer certificate: "
+                                                         "UnknownIssuer"),
+            scenario="Against the only endpoint the VM can offer, a server's own K3s API, the probe fails closed "
+                     "on the certificate. No typed operation creates a stable endpoint (an owned gap); the "
+                     "page's test record also had none"),
+    ]
     return journey(
         "e2e3a.build",
         "Build: three K3s server Incus containers with embedded etcd, only through typed Host Agent calls. Host "
         "A provisions e2e-k1 (clusterInit) and checks prepare-ha; host B provisions e2e-k2 and e2e-k3, and each "
         "joins through prepare-join on A (join material sealed to B's receiver key), redeem-join on B (unsealed "
-        "by B's provider) and join-node on B. Pass: 3 Ready servers, 3 etcd members, and the join token in no "
-        "record, row or log.",
-        build_requirements(), build_steps(), cleanup_steps())
+        "by B's provider) and join-node on B. The goal's prepare-ha and ensure-ha-endpoint before provisioning "
+        "are refused (unknown cluster target); ensure-ha-endpoint against the built cluster is recorded. Pass: "
+        "3 Ready servers, 3 etcd members, and the join token in no record, row or log.",
+        reqs, steps, cleanup_steps())
 
 
 # --- 2. workload ------------------------------------------------------------------------------------------
@@ -323,8 +356,10 @@ def workload_requirements() -> list[dict]:
             direct("secretKeysTool", "isError", equals=True),
             direct("secretKeysTool", "structuredContent.code", equals="not_implemented"),
             direct("secretKeysTool", "structuredContent.owner", equals="capability"),
-            scenario="Definition without a provider: list_secret_keys stays published and fails closed with "
-                     "not_implemented (an owned gap; the key is read through exec_cluster_command instead)"),
+            scenario="The goal's pass check (list_secret_keys shows the key) cannot pass: list_secret_keys is a "
+                     "definition without a provider, registered unported in evidence/seam/final/report.json, and "
+                     "fails closed with not_implemented as the spec requires. An owned gap, not added here; the "
+                     "key is read back through exec_cluster_command"),
     ]
 
 
