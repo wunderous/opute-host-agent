@@ -395,6 +395,7 @@ def run_mcp(step: dict, ctx: dict) -> dict:
     else:
         params = expand(step.get("params"), ctx)
     deadline = time.monotonic() + step.get("timeout", 0)
+    retry_deadline = time.monotonic() + step.get("retryTimeout", 120)
     attempts = 0
     while True:
         ctx["requestId"] += 1
@@ -408,6 +409,11 @@ def run_mcp(step: dict, ctx: dict) -> dict:
         record = {"kind": "mcp", "target": key, "method": step["mcp"], "requestId": ctx["requestId"],
                   "tool": params.get("name") if step["mcp"] == "tools/call" else None,
                   "auth": auth.split(":")[0], "params": params, "response": response, "attempts": attempts}
+        # retryOn: an admission refusal the step may wait out, honouring the advertised retryAfterMs
+        refused = (((response or {}).get("body") or {}).get("result") or {}).get("structuredContent") or {}
+        if refused.get("code") in step.get("retryOn", ()) and time.monotonic() < retry_deadline:
+            time.sleep(min(max(refused.get("retryAfterMs", 1000), 100), 5000) / 1000)
+            continue
         until = step.get("until")
         if not until:
             return record
