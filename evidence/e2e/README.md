@@ -20,7 +20,9 @@ the verifier and the committed receipts.
 | `clients/hostagentclient/` | the e2e-1 client on the published Go library `pkg/hostagentclient` (built offline by `build.sh`) |
 | `journeys/make_e2e1.py` | writes the e2e-1 journeys, with their hash pins |
 | `journeys/make_e2e3a.py` | writes the e2e-3a (HA k3s) journeys, with their hash pins |
-| `journeys/inputs/` | hash-pinned journey inputs kept in the repository (the M9 k3s activation recipe) |
+| `journeys/make_e2e4a.py` | writes the e2e-4a journeys (gates e2e-2, e2e-3 and e2e-4), with their hash pins |
+| `journeys/inputs/` | hash-pinned journey inputs kept in the repository: the M9 k3s activation recipe; the cross-domain recipe; the opute-site-deploy recipe variants and workload manifest; the OpenAI-compatible test fixture |
+| `../gaps/e2e-4a.json` | the gaps the e2e-4a journeys hit, each with its step, tool, Go handler and remedy |
 
 ## The VM
 
@@ -94,6 +96,15 @@ then the VM:
 log, the baseline hash and the timings. It holds no secret. A built VM is
 never rebuilt in place.
 
+A new release needs a new VM. e2e-4a ported Rust capabilities, so it moved
+the e2e-3a VM's files aside (`.parity/e2e/devvm-prev-e2e3a/`, kept) and
+built a new VM on a release set built from its branch
+(`.parity/e2e/release/rust-e2e4a`, with `DIST` set for
+`build-artifacts.sh`). A fix found by its drafts (a cancelled plan run kept
+`cancelled`) needed one more release set, `rust-e2e4a-2`, and VM; the
+draft VM's files are kept in `.parity/e2e/devvm-prev-e2e4a-draft/`. Earlier gates are unaffected: `verify.py` judges
+committed receipts only.
+
 ```bash
 python3 evidence/e2e/devvm/devvm.py start
 ```
@@ -123,7 +134,8 @@ A journey declares:
 - **steps:**
   - `mcp`: a JSON-RPC request to the forwarded agent, to a guest port
     (`port`), or to a self-check stub. It accepts `capture`, `until`
-    polling, `auth` (`token`, `none`, `var:`, `secret:` or `literal:`),
+    polling, `retryOn` (admission codes waited out per `retryAfterMs`,
+    up to `retryTimeout`, default 120 s), `auth` (`token`, `none`, `var:`, `secret:` or `literal:`),
     `meta` and `modern: false` for a legacy client;
   - `http`: a plain HTTP request, such as the OAuth endpoints;
   - `health`;
