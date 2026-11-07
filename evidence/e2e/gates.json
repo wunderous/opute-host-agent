@@ -80,9 +80,40 @@
   }
  },
  "e2e-2": {
-  "run": null,
-  "journeys": {},
-  "blocked": "goal e2e-2 (host workloads) has not run; no journeys are recorded"
+  "run": "e2e-4a-r1",
+  "journeys": {
+   "e2e2.host-ops": {
+    "pass": true,
+    "unverified": [
+     "Q20",
+     "Q21",
+     "Q22",
+     "Q23"
+    ]
+   },
+   "e2e2.incus": {
+    "pass": true,
+    "unverified": [
+     "Q21"
+    ]
+   },
+   "e2e2.plans": {
+    "pass": true,
+    "unverified": [
+     "Q25"
+    ]
+   },
+   "e2e2.oci": {
+    "pass": true,
+    "unverified": [
+     "Q26"
+    ]
+   },
+   "e2e2.data": {
+    "pass": true,
+    "unverified": []
+   }
+  }
  },
  "e2e-3a": {
   "run": "e2e-3a-r5",
@@ -108,14 +139,45 @@
   }
  },
  "e2e-3": {
-  "run": null,
-  "journeys": {},
-  "blocked": "goal e2e-3 (k3s, deploy and serving) has not run; no journeys are recorded"
+  "run": "e2e-4a-r1",
+  "journeys": {
+   "e2e3.discovery": {
+    "pass": true,
+    "unverified": [
+     "Q24"
+    ]
+   },
+   "e2e3.site": {
+    "pass": true,
+    "unverified": [
+     "Q28"
+    ]
+   },
+   "e2e3.serving": {
+    "pass": true,
+    "unverified": [
+     "Q27"
+    ]
+   }
+  }
  },
  "e2e-4": {
-  "run": null,
-  "journeys": {},
-  "blocked": "goal e2e-4 (durability and cutover) has not run; no journeys are recorded"
+  "run": "e2e-4a-r1",
+  "journeys": {
+   "e2e4.cutover": {
+    "pass": true,
+    "unverified": [
+     "Q25"
+    ]
+   },
+   "e2e4.restart": {
+    "pass": true,
+    "unverified": [
+     "Q25",
+     "Q5"
+    ]
+   }
+  }
  },
  "e2e-5": {
   "run": null,
