@@ -1,0 +1,52 @@
+# e2e-4a test variant of wunderous/opute-site-deploy deployment/recipes/www-opute-io-teardown.yaml (1.0.0):
+# the workload-namespace node only; the tunnel and connector nodes and the platform probe are out of scope.
+# Upstream, the mutating nodes have no validate block, which Host Agent v0.2.4 refuses ("mutating node
+# requires a readiness validate block"); this variant adds one that waits for the namespace to be gone.
+contractVersion: host-recipe.v1
+recipeId: com.opute.host-agent.docs-site.www.e2e.teardown
+recipeVersion: 1.0.0-e2e
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools:
+    - delete_k8s_resource
+    - get_k8s_resource_status
+inputs:
+  host:
+    required: true
+    schema: {type: string, minLength: 1}
+  clusterUri:
+    required: true
+    schema: {type: string, minLength: 1, pattern: '^cluster:[a-z][a-z0-9-]{0,31}:.+$'}
+  workloadNamespace:
+    default: host-agent-site
+    schema: {type: string, minLength: 1}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.host-agent.docs-site.www.e2e.teardown
+  generation: 1
+  idempotencyKey: com.opute.host-agent.docs-site.www.e2e.teardown-${vars.inputs.workloadNamespace}
+  defaults:
+    timeoutMs: 600000
+  nodes:
+    - id: delete-workload
+      target:
+        hostRef: ${vars.inputs.host}
+      action:
+        tool: delete_k8s_resource
+        args:
+          uri: ${vars.inputs.clusterUri}
+          kind: Namespace
+          resourceName: ${vars.inputs.workloadNamespace}
+      validate:
+        tool: get_k8s_resource_status
+        args:
+          uri: ${vars.inputs.clusterUri}
+          resourceKind: Namespace
+          namespace: ${vars.inputs.workloadNamespace}
+          resourceName: ${vars.inputs.workloadNamespace}
+        timeoutMs: 300000
+        pollIntervalMs: 5000
+        assert:
+          - {op: eq, path: /status, value: missing}
