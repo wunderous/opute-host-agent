@@ -945,6 +945,101 @@ pub fn handle_get_host_plan_run(server: &Server, args: &Map<String, J>) -> J {
     }
 }
 
+/// `cancelHostPlan`: `cancel_operation` on a durable plan run id. `None` when
+/// the id names no plan run, so the caller falls back to the generic
+/// operation cancel.
+fn cancel_host_plan(server: &Server, run_id: &str) -> Option<J> {
+    let record = {
+        let state = server.host.state.lock().ok()?;
+        state.get_plan(run_id).ok().flatten()?
+    };
+    if matches!(record.status.as_str(), "completed" | "failed" | "cancelled") {
+        return Some(crate::tools::error_result(&format!(
+            "host plan run cannot be cancelled in status {}",
+            crate::goerr::quote(&record.status)
+        )));
+    }
+    // The run's executor observes its task's cancellation flag.
+    if server.tasks.is_working(run_id) {
+        server.tasks.cancel(run_id);
+    }
+    let mut state_json = record.state_json.clone();
+    if let Ok(doc) = plan::decode_bytes(record.plan_json.as_bytes()) {
+        // Go decodes the stored state over `initialPlanState`; the stored
+        // state of a live run already names every node.
+        if let Ok(mut state_value) = serde_json::from_str::<RunState>(&record.state_json) {
+            state_value.run_id = run_id.to_string();
+            state_value.status = "cancelled".into();
+            state_value.error = "cancelled by request".into();
+            let capabilities = capabilities_from_snapshot(&server.catalog.snapshot());
+            state_json = marshal_plan_state(&state_value, &doc, &capabilities);
+        }
+    }
+    let state = server.host.state.lock().ok()?;
+    let _ = state.update_plan(run_id, "cancelled", &state_json, "cancelled by request");
+    let record = state.get_plan(run_id).ok().flatten().unwrap_or(record);
+    Some(plan_run_result_in(Some(&state), &record))
+}
+
+/// `list_operations`, `get_operation` and `cancel_operation`: the durable
+/// operation records and their live tasks. A plan run id is cancelled through
+/// its plan; the generic reads and cancel are standalone operations.
+pub fn handle_operation(server: &Server, name: &str, args: &Map<String, J>) -> J {
+    let id = args.get("operationId").and_then(J::as_str).unwrap_or("");
+    if name == "cancel_operation" && !id.is_empty() {
+        if let Some(result) = cancel_host_plan(server, id) {
+            return result;
+        }
+    }
+    if !server.standalone {
+        return crate::tools::capability_error(
+            "capability",
+            "not_implemented",
+            &format!("{name} is not implemented by this Host Agent build"),
+        );
+    }
+    let state = match server.host.state.lock() {
+        Ok(state) => state,
+        Err(_) => return crate::tools::error_result("durable operation state is unavailable"),
+    };
+    match name {
+        "list_operations" => {
+            let limit = args.get("limit").and_then(J::as_f64).unwrap_or(0.0) as i64;
+            match state.list_operations(limit) {
+                Ok(operations) => {
+                    // Go's nil slice: an empty store lists null.
+                    let operations = if operations.is_empty() {
+                        J::Null
+                    } else {
+                        J::Array(operations)
+                    };
+                    crate::tools::structured_result(json!({ "operations": operations }), None)
+                }
+                Err(e) => crate::tools::error_result(&e),
+            }
+        }
+        "get_operation" => match state.get_operation(id) {
+            Err(e) => crate::tools::error_result(&e),
+            Ok(Some(operation)) => crate::tools::structured_result(operation, None),
+            Ok(None) => match server.tasks.get(id) {
+                Some(task) => crate::tools::structured_result(task.get_result(), None),
+                None => crate::tools::error_result(&format!("operation not found: {id}")),
+            },
+        },
+        _ => {
+            let _ = state.cancel_operation(id);
+            drop(state);
+            match server.tasks.cancel(id) {
+                None => crate::tools::error_result(&format!("operation cannot be cancelled: {id}")),
+                Some(task) => {
+                    crate::tools::persist_task(server, &task);
+                    crate::tools::structured_result(task.get_result(), None)
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1242,5 +1337,97 @@ mod tests {
         let server = test_server(dir.path());
         let result = handle_get_host_plan_run(&server, &Map::new());
         assert_eq!(result["isError"], J::Bool(true));
+    }
+
+    /// e2e-4a (journey e2e2.plans): the standalone operation tools answer
+    /// through the one dispatch boundary, and a running plan is cancelled by
+    /// its run id with a truthful durable state (contract spec: "No
+    /// capability change during the language migration"; "Interrupted
+    /// plan"). Go: `hostmcp` `cancelHostPlan` and the standalone
+    /// `list_operations`/`get_operation`/`cancel_operation` cases.
+    #[test]
+    fn operation_tools_read_and_cancel_durable_operations() {
+        let dir = tempfile::tempdir().unwrap();
+        let server = test_server(dir.path());
+        let doc = sample_plan();
+        let record = PlanRecord {
+            run_id: "run-live".into(),
+            plan_id: doc.plan_id.clone(),
+            generation: 1,
+            idempotency_key: "live".into(),
+            status: "running".into(),
+            plan_json: serde_json::to_string(&doc).unwrap(),
+            state_json: serde_json::to_string(&initial_plan_state("run-live", &doc)).unwrap(),
+            ..Default::default()
+        };
+        server
+            .host
+            .state
+            .lock()
+            .unwrap()
+            .create_plan(&record)
+            .unwrap();
+        let (_, flag) =
+            server
+                .tasks
+                .create_with_id("run-live", "run_host_plan", "Executing...", json!({}));
+        let call = |name: &str, args: J| {
+            crate::tools::dispatch(&server, name, args.as_object().unwrap(), None, None)
+        };
+
+        let cancelled = call("cancel_operation", json!({"operationId": "run-live"}));
+        assert_eq!(
+            cancelled["structuredContent"]["status"], "cancelled",
+            "{cancelled}"
+        );
+        assert_eq!(
+            cancelled["structuredContent"]["error"],
+            "cancelled by request"
+        );
+        assert!(flag.load(std::sync::atomic::Ordering::SeqCst));
+        let stored = server
+            .host
+            .state
+            .lock()
+            .unwrap()
+            .get_plan("run-live")
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.status, "cancelled");
+        let again = call("cancel_operation", json!({"operationId": "run-live"}));
+        assert_eq!(
+            again["content"][0]["text"],
+            "Error: host plan run cannot be cancelled in status \"cancelled\""
+        );
+
+        server
+            .host
+            .state
+            .lock()
+            .unwrap()
+            .create_operation("op-1", "get_host_info", "Reading")
+            .unwrap();
+        let got = call("get_operation", json!({"operationId": "op-1"}));
+        assert_eq!(got["structuredContent"]["operationId"], "op-1", "{got}");
+        assert_eq!(got["structuredContent"]["status"], "working");
+        let listed = call("list_operations", json!({"limit": 10}));
+        assert_eq!(
+            listed["structuredContent"]["operations"][0]["operationId"], "op-1",
+            "{listed}"
+        );
+        let missing = call("get_operation", json!({"operationId": "nope"}));
+        assert_eq!(
+            missing["content"][0]["text"],
+            "Error: operation not found: nope"
+        );
+        // No live task: the durable record is cancelled, the call reports it
+        // could not cancel a task, as Go does.
+        let orphan = call("cancel_operation", json!({"operationId": "op-1"}));
+        assert_eq!(
+            orphan["content"][0]["text"],
+            "Error: operation cannot be cancelled: op-1"
+        );
+        let after = call("get_operation", json!({"operationId": "op-1"}));
+        assert_eq!(after["structuredContent"]["status"], "cancelled");
     }
 }
