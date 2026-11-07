@@ -1150,12 +1150,15 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
       `evidence/seam/final/report.json` and fails closed with
       `not_implemented`, as the capability-seam spec requires. The journey
       asserts that refusal and reads the key back through
-      `exec_cluster_command`.
+      `exec_cluster_command`. Go v0.2.4 has no handler either, so
+      implementing it adds a capability: Q18, proposal
+      [implement-list-secret-keys](../implement-list-secret-keys/proposal.md).
     - No typed operation creates a stable HA endpoint.
       `ensure-ha-endpoint` only probes a caller's endpoint against the
       host's certificate roots. Journey 1 records it failing closed with
       `UnknownIssuer` against a server's own K3s API. The page's test record
-      also had no endpoint.
+      also had no endpoint. Q19, proposal
+      [typed-ha-endpoint](../typed-ha-endpoint/proposal.md).
     - `install_cluster_package` takes no chart version, so the chart is
       unpinned (podinfo 6.17.0 at the run).
   - **The goal's order:** the goal ordered `prepare-ha` and
