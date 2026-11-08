@@ -748,7 +748,7 @@ def oci() -> dict:
             scenario="The cluster guest pulls the image by its digest from the registry and runs it"),
         req(Q26_SPEC, "A runtime warning does not fail a storage report",
             direct("inspectNoSession", "isError", **{"in": [False, "<absent>"]}),
-            direct("inspectNoSession", "structuredContent.runtime", equals="podman"),
+            direct("inspectNoSession", "structuredContent.runtime", equals="container-engine"),
             scenario="Right after the builder is installed, with no user session, the storage report is read "
                      "while Podman warns on stderr (D28)"),
         req(CATALOG, "configure_oci_storage, inspect_container_storage, cleanup_container_storage",
