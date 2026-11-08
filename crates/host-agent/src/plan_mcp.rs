@@ -1146,18 +1146,26 @@ mod tests {
     /// `run_host_plan`/`get_host_plan_run` exercise the actual durable store
     /// and task registry rather than a stand-in.
     fn test_server(dir: &std::path::Path) -> Arc<Server> {
-        let env = crate::config::Env::from_pairs([
-            ("HOME", dir.join("home").to_str().unwrap()),
-            ("XDG_CONFIG_HOME", dir.join("xdg").to_str().unwrap()),
+        test_server_with(dir, &[])
+    }
+
+    fn test_server_with(dir: &std::path::Path, extra: &[(&str, &str)]) -> Arc<Server> {
+        let (home, xdg, state) = (
+            dir.join("home").display().to_string(),
+            dir.join("xdg").display().to_string(),
+            dir.join("state").display().to_string(),
+        );
+        let mut pairs: Vec<(&str, &str)> = vec![
+            ("HOME", home.as_str()),
+            ("XDG_CONFIG_HOME", xdg.as_str()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-test"),
             ("OPUTE_AGENT_MODE", "standalone"),
-            (
-                "OPUTE_STANDALONE_STATE_DIR",
-                dir.join("state").to_str().unwrap(),
-            ),
+            ("OPUTE_STANDALONE_STATE_DIR", state.as_str()),
             ("HOST_MCP_BIND_HOST", "127.0.0.1"),
             ("HOST_MCP_PORT", "1"),
-        ]);
+        ];
+        pairs.extend_from_slice(extra);
+        let env = crate::config::Env::from_pairs(pairs);
         let runtime = crate::app::new_runtime(&env).unwrap();
         let cfg = runtime.config.clone();
         let authz =
@@ -1499,5 +1507,105 @@ mod tests {
             after["structuredContent"]["error"], "cancelled by request",
             "{after}"
         );
+    }
+
+    /// D28 (Q15): after a SIGKILL during `run_host_plan`, the restarted
+    /// agent releases the run's orphaned reservation before it admits the
+    /// next call, although the run's task was never persisted. A
+    /// reservation whose owner is not a stopped plan run is untouched.
+    #[test]
+    fn restart_reclaims_a_crashed_plan_runs_reservation() {
+        let dir = tempfile::tempdir().unwrap();
+        let server = test_server(dir.path());
+        let doc = sample_plan();
+        let record = PlanRecord {
+            run_id: "run-crashed".into(),
+            plan_id: doc.plan_id.clone(),
+            generation: 1,
+            idempotency_key: "crashed".into(),
+            status: "running".into(),
+            plan_json: serde_json::to_string(&doc).unwrap(),
+            state_json: serde_json::to_string(&initial_plan_state("run-crashed", &doc)).unwrap(),
+            ..Default::default()
+        };
+        server
+            .host
+            .state
+            .lock()
+            .unwrap()
+            .create_plan(&record)
+            .unwrap();
+        let lease = |id: &str, task: &str| {
+            let request = crate::resource::AdmissionRequest {
+                class: "heavy".into(),
+                operation: "run_host_plan".into(),
+                agent_id: server.agent_id.clone(),
+                task_id: task.into(),
+                tasks: 1,
+                ..Default::default()
+            };
+            (
+                id.to_string(),
+                json!({"id": id, "request": request.to_json(),
+                       "createdAt": "2026-11-07T00:00:00Z", "expiresAt": "2999-01-01T00:00:00Z"}),
+            )
+        };
+        let records: crate::resource::Records = [
+            lease("crashed", "run-crashed"),
+            lease("other", "task-elsewhere"),
+        ]
+        .into_iter()
+        .collect();
+        server.host.coordinator.write_records(&records).unwrap();
+        // The first process dies without releasing anything.
+        std::mem::forget(server);
+
+        let restarted = test_server(dir.path());
+        let left = restarted.host.coordinator.read_records().unwrap();
+        assert!(!left.contains_key("crashed"), "{left:?}");
+        assert!(left.contains_key("other"), "{left:?}");
+    }
+
+    /// D28 (Q5, Q25): a task killed mid-flight reads back after the restart
+    /// with one truthful status: `tasks/get` and `get_operation` both say
+    /// failed, and nothing resumes it.
+    #[test]
+    fn a_task_killed_mid_flight_reads_back_failed_everywhere() {
+        let dir = tempfile::tempdir().unwrap();
+        let server = test_server(dir.path());
+        {
+            let state = server.host.state.lock().unwrap();
+            state
+                .create_operation(
+                    "task-killed",
+                    "run_host_command",
+                    "Executing run_host_command...",
+                )
+                .unwrap();
+            state
+                .save_registry_task_snapshot(
+                    "task-killed",
+                    "run_host_command",
+                    "Executing run_host_command...",
+                    &json!({"taskId": "task-killed", "status": "working",
+                            "toolName": "run_host_command", "toolArgs": {"command": "sleep 120"},
+                            "createdAt": "2026-11-07T00:00:00Z", "lastUpdatedAt": "2026-11-07T00:00:00Z",
+                            "ttlMs": 3600000, "pollIntervalMs": 3000}),
+                )
+                .unwrap();
+        }
+        std::mem::forget(server);
+
+        let restarted = test_server(dir.path());
+        let task = restarted.tasks.get("task-killed").unwrap();
+        assert_eq!(task.status, "failed");
+        let row = crate::tools::dispatch(
+            &restarted,
+            "get_operation",
+            json!({"operationId": "task-killed"}).as_object().unwrap(),
+            None,
+            None,
+        );
+        assert_eq!(row["structuredContent"]["status"], "failed", "{row}");
     }
 }

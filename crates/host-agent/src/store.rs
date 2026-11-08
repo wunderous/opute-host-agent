@@ -400,11 +400,9 @@ impl StateStore {
         self.save_snapshot_with_status(task_id, tool_name, description, snapshot, status)
     }
 
-    /// Go's live Tasks projection carries `tasks.Status`, a named string
-    /// type. `SaveTaskSnapshot`'s plain-string assertion therefore falls back
-    /// to `working`, even for a terminal task. Preserve that legacy row
-    /// projection without altering the truthful protocol snapshot. Decoded
-    /// JSON callers of `save_task_snapshot` still have plain-string semantics.
+    /// The live task registry's snapshot. The row carries the task's own
+    /// status, so `get_operation` agrees with `tasks/get` (D28, Q25). Go
+    /// v0.2.4 wrote `working` here for every task, a named-string-type quirk.
     pub fn save_registry_task_snapshot(
         &self,
         task_id: &str,
@@ -412,7 +410,7 @@ impl StateStore {
         description: &str,
         snapshot: &J,
     ) -> std::result::Result<(), String> {
-        self.save_snapshot_with_status(task_id, tool_name, description, snapshot, "working")
+        self.save_task_snapshot(task_id, tool_name, description, snapshot)
     }
 
     fn save_snapshot_with_status(
@@ -539,6 +537,24 @@ impl StateStore {
             }
             None => Err(format!("plan run was not persisted: {}", record.run_id)),
         }
+    }
+
+    /// The ids of plan runs no process executes: every run that is not
+    /// `running` or `waiting`. Called at start-up, after the DDL has marked
+    /// the previous process's `running` runs `unknown` (D28, Q15).
+    pub fn stopped_plan_run_ids(
+        &self,
+    ) -> std::result::Result<std::collections::HashSet<String>, String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let mut stmt = conn
+            .prepare("SELECT run_id FROM plan_runs WHERE status NOT IN ('running', 'waiting')")
+            .map_err(sqlite_err)?;
+        let ids = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(sqlite_err)?
+            .collect::<rusqlite::Result<_>>()
+            .map_err(sqlite_err)?;
+        Ok(ids)
     }
 
     /// `Store.FindPlan`.
@@ -1177,7 +1193,7 @@ mod tests {
     }
 
     #[test]
-    fn registry_snapshot_preserves_go_named_status_projection() {
+    fn registry_snapshot_records_the_task_status() {
         let dir = tempfile::tempdir().unwrap();
         let store = StateStore::open(dir.path()).unwrap();
         for status in [
@@ -1199,7 +1215,9 @@ mod tests {
                     |r| Ok((r.get(0)?, r.get(1)?)),
                 )
                 .unwrap();
-            assert_eq!(legacy, "working");
+            // D28 (Q25): the row carries the task's own status, so
+            // get_operation agrees with tasks/get.
+            assert_eq!(legacy, status);
             assert_eq!(serde_json::from_str::<J>(&encoded).unwrap(), snapshot);
         }
         // A JSON-decoded string does pass Go's assertion.

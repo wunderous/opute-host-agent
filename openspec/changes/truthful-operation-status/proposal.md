@@ -1,8 +1,8 @@
-# A durable operation's status for a finished task (proposed)
+# A durable operation's status for a finished task
 
-Status: proposed. Owner question Q25
+Status: decided (owner, 2026-11-07, D28). Owner questions Q25 and Q9
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -24,7 +24,7 @@ contract spec asks Rust to "expose the truthful durable state".
 
 ## What Changes
 
-If the owner chooses it, the row's `status` is the task's terminal status
+As decided, the row's `status` is the task's terminal status
 (`completed`, `failed` or `cancelled`), so `get_operation` agrees with
 `tasks/get`. Go rolled back onto such a row reads the same column, so the
 rollback reading stays compatible. This changes a durable value Go writes
@@ -34,3 +34,7 @@ differently, so it needs a decision.
 
 - `crates/host-agent/src/store.rs` (`save_registry_task_snapshot`).
 - `e2e4.restart` and `e2e4.cutover` then assert the terminal status.
+
+Q9 (a bridged operation's terminal status) is answered by the same row: the
+bridge is keyed on the task id, so its row now carries the task's terminal
+status too.

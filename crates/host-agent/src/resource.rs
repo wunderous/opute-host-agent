@@ -236,7 +236,7 @@ pub struct AdmissionRequest {
 
 impl AdmissionRequest {
     /// Go's JSON field order; `omitempty` fields dropped when zero.
-    fn to_json(&self) -> J {
+    pub(crate) fn to_json(&self) -> J {
         let mut m = Map::new();
         if self.cpu_cores != 0.0 {
             m.insert(
@@ -565,7 +565,7 @@ fn reservation_owner_can_inherit(parent: &AdmissionRequest, nested: &AdmissionRe
     true
 }
 
-type Records = Map<String, J>;
+pub(crate) type Records = Map<String, J>;
 
 /// `removeExpired`: a lease whose `expiresAt` is not after now is gone.
 fn remove_expired(records: &mut Records) -> bool {
@@ -713,7 +713,7 @@ impl Coordinator {
             .map_err(|(_, errno)| AdmitError::Other(errno.desc().to_lowercase()))
     }
 
-    fn read_records(&self) -> Result<Records, AdmitError> {
+    pub(crate) fn read_records(&self) -> Result<Records, AdmitError> {
         let raw = match std::fs::read(self.lock_dir.join("reservations.json")) {
             Ok(raw) => raw,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Records::new()),
@@ -732,7 +732,7 @@ impl Coordinator {
     }
 
     /// Temp file + rename, mode 0600; the file is removed once empty.
-    fn write_records(&self, records: &Records) -> Result<(), AdmitError> {
+    pub(crate) fn write_records(&self, records: &Records) -> Result<(), AdmitError> {
         let path = self.lock_dir.join("reservations.json");
         if records.is_empty() {
             return match std::fs::remove_file(&path) {

@@ -445,6 +445,40 @@ pub(crate) fn compose(
     for snapshot in &snapshots {
         tasks.restore_snapshot(snapshot);
     }
+    // A task snapshotted mid-flight comes back failed; its operation row
+    // says so too, rather than `unknown` (D28, Q5 and Q25).
+    {
+        let store = state
+            .lock()
+            .map_err(|_| go_err!("restore MCP tasks: state store lock poisoned"))?;
+        for snapshot in &snapshots {
+            if snapshot.get("status").and_then(serde_json::Value::as_str) != Some("working") {
+                continue;
+            }
+            let id = snapshot
+                .get("taskId")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("");
+            if let Some(task) = tasks.get(id).filter(|t| t.status == "failed") {
+                let _ = store.save_registry_task_snapshot(
+                    id,
+                    &task.tool_name,
+                    &task.description,
+                    &crate::tools::task_document(&task),
+                );
+            }
+        }
+    }
+    // The reservation owners that died with the previous process: terminal
+    // tasks, and plan runs no process executes (reclaimed below).
+    let mut ownerless = tasks.terminal_ids();
+    ownerless.extend(
+        state
+            .lock()
+            .map_err(|_| go_err!("reclaim plan run reservations: state store lock poisoned"))?
+            .stopped_plan_run_ids()
+            .map_err(|e| go_err!("reclaim plan run reservations: {e}"))?,
+    );
     let host = crate::tools::Host {
         env: cfg.env.clone(),
         incus: crate::incus::Incus {
@@ -519,9 +553,11 @@ pub(crate) fn compose(
         cluster_adopter: Default::default(),
     };
     // `reclaimTerminalTaskReservations`: a reservation whose task is now
-    // terminal lost its owner with the previous process.
+    // terminal lost its owner with the previous process. So did one bound to
+    // a plan run no process executes, whose task was never persisted (D28,
+    // Q15).
     host.coordinator
-        .reclaim_terminal_task_reservations(&tasks.terminal_ids())
+        .reclaim_terminal_task_reservations(&ownerless)
         .map_err(|e| go_err!("reclaim terminal task reservations: {e}"))?;
     // Decision D14: the host's own capabilities are services in the same
     // context as provider generations, mounted before any generation is
