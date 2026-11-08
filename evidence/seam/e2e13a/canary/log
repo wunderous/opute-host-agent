@@ -7,19 +7,19 @@ failures:
 failures:
     seam::seam_verifier
 
-test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 345 filtered out; finished in 0.28s
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 350 filtered out; finished in 0.30s
 
-   Compiling opute-host-agent v0.2.4 (/tmp/tmpngt7bcbm/crates/host-agent)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.14s
+   Compiling opute-host-agent v0.2.4 (/tmp/tmprz4po2xy/crates/host-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.80s
      Running unittests src/lib.rs (/home/houman/github/wunderous/opute-host-agent-e2e/target/seam-canary/debug/deps/opute_host_agent-3278b563e0e45c6f)
-time=2026-11-08T09:01:48.107Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
-time=2026-11-08T09:01:48.107Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
-time=2026-11-08T09:01:48.107Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
-time=2026-11-08T09:01:48.251Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
-time=2026-11-08T09:01:48.251Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
-time=2026-11-08T09:01:48.251Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-11-08T23:17:43.068Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-11-08T23:17:43.068Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-11-08T23:17:43.068Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+time=2026-11-08T23:17:43.221Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-11-08T23:17:43.221Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0
+time=2026-11-08T23:17:43.221Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
 
-thread 'seam::seam_verifier' (1498687) panicked at crates/host-agent/src/seam.rs:279:5:
+thread 'seam::seam_verifier' (1610553) panicked at crates/host-agent/src/seam.rs:279:5:
 assertion `left == right` failed: seam gaps differ from seam-gaps.json: a capability is reached outside the service context, or a revised one is still listed
   left: ["list_agents"]
  right: []

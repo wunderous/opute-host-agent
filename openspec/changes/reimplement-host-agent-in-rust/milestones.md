@@ -1041,8 +1041,8 @@ throughout the agreed window. Go retirement, and ownership of releases and the
 website, are later decisions that need their own evidence.
 
 *Status (2026-11-08):* D28 fixes the evidence and the window (14 days).
-`make cutover-readiness` passes with only Q4, Q18, Q19, Q29, e2e-5 and
-WSL2 not passed (entry e2e-13a below). The owners' review (6.3) has not
+`make cutover-readiness` passes with only Q4, Q18, Q19, e2e-5 and WSL2
+not passed (Q29 answered and fixed, 2026-11-08) (entry e2e-13a below). The owners' review (6.3) has not
 happened.
 
 ### E2E journeys on the dev VM (after D27)
@@ -1273,6 +1273,23 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     (open), Q18 and Q19 (deferred), e2e-5 (Platform staging), WSL2 (a
     Windows runner), and Q29, opened during this round (identical tasks
     share a workload unit).
+- **Q29 (2026-11-08): one workload unit per task.** The owner chose both
+  parts of `workload-unit-per-task`.
+  - **What changed:**
+    - A `run_host_command` task's unit is named from its task, so two
+      identical commands run side by side.
+    - A shell-command task runs under its task's cancellation.
+    - Its unit is stopped when the cancel arrives.
+  - **What the e2e reruns found:**
+    - r7: a conditional stop that never ran.
+    - r8: host-tool tasks ran on a background context, so the SIGTERM
+      restart waited 90 s for systemd's SIGKILL.
+    - r9: `systemd-run --pipe` left the readers waiting on the unit, so
+      the upgrade waited 90 s.
+    - r10: a harness race on `systemctl kill`.
+  - **Result:** gate e2e-4 passes on run `e2e-13a-r11`. Each cancelled
+    task leaves no process, and the restart and the upgrade stop in under
+    a second.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
