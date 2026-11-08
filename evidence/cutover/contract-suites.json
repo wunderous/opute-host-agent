@@ -1,0 +1,84 @@
+{
+ "schemaVersion": "opute-contract-suites.v1",
+ "binarySha256": "96fdb6cb1cc987b3136be6588fc483a77b24cbae90f04c4d859e7577a3a7058f",
+ "suites": {
+  "oauth-issuance": {
+   "exit": 0,
+   "passed": 24,
+   "total": 24,
+   "scenarios": [
+    "abuse.backoff-only-failures",
+    "abuse.pending-flood",
+    "approval.cli-approve",
+    "approval.deny",
+    "approval.expiry",
+    "approval.not-over-http",
+    "approval.once-and-disabled",
+    "approval.remembered-consent",
+    "audience.arbitrary-host",
+    "audit.issuance-line",
+    "authorize.unapproved",
+    "cc.confidential-without-hash",
+    "cc.no-secret",
+    "cc.public-client",
+    "cc.unknown-client",
+    "cimd.refuses-local-metadata",
+    "credentials.first-start",
+    "credentials.operator-secret",
+    "credentials.rotation",
+    "migration.idempotent",
+    "migration.revokes-live-tokens",
+    "provider.colocated-bearer",
+    "provider.public-without-credential",
+    "redirect.exact-and-loopback"
+   ]
+  },
+  "standalone-read-only-gate": {
+   "exit": 0,
+   "passed": 8,
+   "total": 8,
+   "scenarios": [
+    "gate.mutations-allowed",
+    "gate.platform-unaffected",
+    "gate.published-non-read-refused",
+    "gate.published-read-not-refused",
+    "gate.refused-leaves-no-trace",
+    "gate.stale-revision-first",
+    "gate.unpublished-with-declared-read",
+    "gate.unpublished-without-declared-read"
+   ]
+  },
+  "reject-without-audit-writes": {
+   "exit": 0,
+   "passed": 3,
+   "total": 3,
+   "scenarios": [
+    "reject.platform",
+    "reject.standalone",
+    "reject.standalone-mutations-enabled"
+   ]
+  },
+  "refuse-before-operation-record": {
+   "exit": 0,
+   "passed": 3,
+   "total": 3,
+   "scenarios": [
+    "refuse.binding-platform",
+    "refuse.binding-standalone",
+    "refuse.coordinator"
+   ]
+  },
+  "evidence-redaction": {
+   "exit": 0,
+   "passed": 4,
+   "total": 4,
+   "scenarios": [
+    "arg.unmarked",
+    "covered.unaffected",
+    "result.unmarked",
+    "task.unmarked"
+   ]
+  }
+ },
+ "pass": true
+}
