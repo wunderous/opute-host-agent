@@ -16,8 +16,9 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
   starts on the defaults, and nothing printed mentions it.
 - [ ] 2.3 OAuth clients from `OPUTE_OAUTH_CLIENTS` only; none provisioned by
   default; bearer works.
-- [ ] 2.4 Reserved names from `OPUTE_RESERVED_HOSTNAMES` only; refused with
-  `reserved_hostname` before any Cloudflare call.
+- [x] 2.4 Reserved names from `OPUTE_RESERVED_HOSTNAMES` only; refused with
+  `reserved_hostname` before any Cloudflare call. Shown red by breaking
+  the suffix match (2 of the 4 tests fail).
 - [ ] 2.5 The boundary test in `make rust-check`.
 
 ## 3. Implementation (one concern per commit)
@@ -25,7 +26,7 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 - [ ] 3.1 The single profile.
 - [ ] 3.2 Remove mode reading and all its branches.
 - [ ] 3.3 OAuth clients from configuration (after N4).
-- [ ] 3.4 Reserved names from configuration.
+- [x] 3.4 Reserved names from configuration.
 - [ ] 3.5 Remove Platform names from CLI, help and catalog descriptions.
 - [ ] 3.6 Repin the catalog revisions in the manifest.
 

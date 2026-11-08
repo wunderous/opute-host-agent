@@ -107,7 +107,7 @@ fn respond(outcome: Outcome) -> ToolCallOutcome {
             crate::gojson::encode(&value, &mut text);
             super::structured(super::go_text(text), value)
         }
-        Err(e) => ToolCallOutcome::Protocol(0, e, None),
+        Err(e) => super::error_outcome(e),
     }
 }
 

@@ -23,10 +23,17 @@ host today. The mode selects:
   `OPUTE_HOST_ALLOW_MUTATIONS`.
 - Mode reading is deleted, not aliased: nothing parses `OPUTE_AGENT_MODE`,
   so it cannot be refused or logged.
-- The reserved-name guard moves from a constant to an operator setting, read
-  once into the provider's configuration. Patterns are an exact,
-  case-insensitive name or `*.suffix`, which matches any name ending in
-  `.suffix`, never the bare suffix.
+- The reserved-name guard moves from constants to the operator setting
+  `OPUTE_RESERVED_HOSTNAMES`: comma-separated, each an exact,
+  case-insensitive name or `*.suffix`, which matches any name under `suffix`
+  and never the bare suffix. It checks the requested hostnames and the
+  existing ingress of the tunnel being changed, before any write, and refuses
+  with an error result whose structured content is
+  `{code: "reserved_hostname", message, hostname, pattern}`. The Platform
+  tunnel-name guard goes: a tunnel name is no longer refused for what it is,
+  only required. A Platform tunnel stays protected through its ingress once
+  its hostnames are reserved. The M9 provider-wire corpus still names the
+  old tunnel; it is historical Go-parity evidence and is not rerun.
 - The boundary test is a Rust test in the host-agent crate, run by
   `make rust-check`. It scans `src/` outside `#[cfg(test)]` modules and test
   files, every descriptor's description and schema, `Config::load` of an empty
