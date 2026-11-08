@@ -1666,6 +1666,21 @@ mod tests {
 
     /// D28 (Q21): the published descriptor declares every input its handler
     /// reads, in both modes.
+    /// D28 (Q23): restart_host_service describes user services only, and
+    /// its output schema allows the result it returns.
+    #[test]
+    fn restart_host_service_publishes_what_it_does() {
+        for standalone in [false, true] {
+            let snapshot = for_mode(standalone);
+            let d = snapshot.tools.iter().find(|d| d.name == "restart_host_service").unwrap();
+            assert!(!d.description.contains("Incus"), "{}", d.description);
+            let output = d.output_schema.as_ref().and_then(J::as_object).unwrap();
+            let result = serde_json::json!({"serviceName": "opute-bridge", "status": "scheduled",
+                "uri": "host-service:local:user/opute-bridge.service"});
+            crate::schema::validate_output(output, &result).unwrap();
+        }
+    }
+
     #[test]
     fn published_schemas_declare_the_inputs_their_handlers_read() {
         for standalone in [false, true] {

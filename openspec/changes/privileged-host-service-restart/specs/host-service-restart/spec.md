@@ -1,10 +1,16 @@
 ## ADDED Requirements
 
-### Requirement: restart_host_service does what its description offers
-The Host Agent SHALL either restart the named host-level service on the
-production install or refuse with an error that names the supported path, and
-its published description SHALL match what it does.
+### Requirement: restart_host_service restarts Opute user services only
+The Host Agent SHALL restart only an `opute-` systemd user unit with
+`restart_host_service`, without blocking, and report it `scheduled` with the
+call's `uri`. It SHALL refuse any other unit before acting, with an error
+that names `set_host_service_state` as the supported path. Its published
+description and output schema SHALL match this.
 
 #### Scenario: Restart Incus on the production-style install
-- **WHEN** a client calls `restart_host_service` for `incus.service` on an agent running as its unprivileged system-unit user
-- **THEN** Incus is restarted and reported active, or the call is refused before acting with the supported alternative named
+- **WHEN** a client calls `restart_host_service` for `incus.service`
+- **THEN** the call is refused before anything runs, and the error names `set_host_service_state`
+
+#### Scenario: Restart an Opute user service
+- **WHEN** a client calls `restart_host_service` for `opute-bridge.service`
+- **THEN** the unit's restart is scheduled and the result, `status: scheduled` with the call's `uri`, passes the published output schema

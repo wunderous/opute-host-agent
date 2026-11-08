@@ -914,8 +914,9 @@ fn host_services(host: &crate::tools::Host) -> Service {
                         instance_id: &o1.0,
                         owner_instance: &o1.1,
                     };
-                    let out =
+                    let mut out =
                         svc::restart_host_service(&e1, &owner, text(call.args, "serviceName"))?;
+                    out["uri"] = J::from(text(call.args, "uri"));
                     let text = format!(
                         "Restarted service '{}'.",
                         out["serviceName"].as_str().unwrap_or("")

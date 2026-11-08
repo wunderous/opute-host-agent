@@ -5387,11 +5387,11 @@
      }
     ]
    },
-   "description": "Restart a host-level service such as Incus and verify it becomes active",
+   "description": "Restart an Opute user service (an opute- systemd user unit) without blocking; system services are restarted with set_host_service_state",
    "inputSchema": {
     "properties": {
      "serviceName": {
-      "description": "The systemd unit to restart.",
+      "description": "The Opute user unit to restart (opute-...).",
       "pattern": "^[A-Za-z0-9_.@:-]+$",
       "type": "string"
      },
@@ -5415,7 +5415,7 @@
      },
      "status": {
       "enum": [
-       "active"
+       "scheduled"
       ],
       "type": "string"
      },
@@ -16619,11 +16619,11 @@
      }
     ]
    },
-   "description": "Restart a host-level service such as Incus and verify it becomes active",
+   "description": "Restart an Opute user service (an opute- systemd user unit) without blocking; system services are restarted with set_host_service_state",
    "inputSchema": {
     "properties": {
      "serviceName": {
-      "description": "The systemd unit to restart.",
+      "description": "The Opute user unit to restart (opute-...).",
       "pattern": "^[A-Za-z0-9_.@:-]+$",
       "type": "string"
      },
@@ -16647,7 +16647,7 @@
      },
      "status": {
       "enum": [
-       "active"
+       "scheduled"
       ],
       "type": "string"
      },

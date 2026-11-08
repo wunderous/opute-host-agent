@@ -135,8 +135,7 @@ pub fn set_host_service_state(
     Ok(json!({"serviceName": service, "state": state, "scope": scope, "status": status}))
 }
 
-/// `Service.RestartHostService`. Opute-owned units are user units, restarted
-/// without blocking because the target may be this agent.
+/// `Service.RestartHostService`.
 pub fn restart_host_service(env: &Env, owner: &Owner, service: &str) -> Result<J, String> {
     require_shared_host_owner(
         owner.instance_id,
@@ -150,30 +149,25 @@ pub fn restart_host_service(env: &Env, owner: &Owner, service: &str) -> Result<J
     if !safe_unit_name(service) {
         return Err("serviceName contains invalid characters".into());
     }
-    let opute = service.starts_with("opute-");
-    let restart = if opute {
-        argv(&[SYSTEMCTL, "--user", "--no-block", "restart", service])
-    } else {
-        argv(&[SYSTEMCTL, "restart", service])
-    };
-    let res = run(env, restart, Duration::ZERO);
+    // D28 (Q23): Opute user units only, restarted without blocking because
+    // the target may be this agent; a system unit needs privilege this
+    // tool does not take.
+    if !service.starts_with("opute-") {
+        return Err(format!(
+            "restart_host_service restarts Opute user services only; restart system service '{service}' with set_host_service_state (scope: system)"
+        ));
+    }
+    let res = run(
+        env,
+        argv(&[SYSTEMCTL, "--user", "--no-block", "restart", service]),
+        Duration::ZERO,
+    );
     if res.exit_code != 0 {
         return Err(
             first_non_empty(&[&res.stderr, &res.stdout, "failed to restart service"]).to_string(),
         );
     }
-    if opute {
-        return Ok(json!({"serviceName": service, "status": "scheduled"}));
-    }
-    let verify = run(
-        env,
-        argv(&[SYSTEMCTL, "is-active", service]),
-        Duration::ZERO,
-    );
-    if verify.exit_code != 0 || verify.stdout.trim() != "active" {
-        return Err(format!("service '{service}' is not active after restart"));
-    }
-    Ok(json!({"serviceName": service, "status": "active"}))
+    Ok(json!({"serviceName": service, "status": "scheduled"}))
 }
 
 /// `$USER`, else the account name, as the supervisor tools resolve it.
@@ -591,6 +585,20 @@ mod tests {
             Duration::ZERO,
         );
         assert_eq!(res.exit_code, 0, "after {probes} probes");
+    }
+
+    /// D28 (Q23): only Opute user services are restarted; a system unit
+    /// is refused before anything runs, naming the supported path.
+    #[test]
+    fn a_system_unit_is_refused_before_acting() {
+        let env = crate::config::Env::from_pairs([("PATH", "/nonexistent")]);
+        let owner = crate::hostfiles::Owner {
+            instance_id: "",
+            owner_instance: "",
+        };
+        let e = restart_host_service(&env, &owner, "incus.service").unwrap_err();
+        assert!(e.contains("set_host_service_state"), "{e}");
+        assert!(e.contains("incus.service"), "{e}");
     }
 
     #[test]

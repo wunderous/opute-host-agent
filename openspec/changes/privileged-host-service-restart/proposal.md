@@ -1,8 +1,8 @@
-# Restart a system service from the production install (proposed)
+# Restart a system service from the production install
 
-Status: proposed. Owner question Q23
+Status: decided (owner, 2026-11-07, D28). Owner question Q23
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -20,12 +20,14 @@ which the recorded sudoers allows.
 
 ## What Changes
 
-The owner chooses one:
-
-- `restart_host_service` restarts a system service through the same
-  non-interactive sudo path as `set_host_service_state`; or
-- its description says it restarts only `opute-` user units, and system
-  services are restarted with `set_host_service_state`.
+Decided (D28): the tool describes user services only. It restarts an
+`opute-` user unit without blocking and reports it `scheduled`; a system
+unit is refused before anything runs, with an error that names
+`set_host_service_state` (scope `system`). Found while fixing it: the
+published output schema allowed only `active` and required `uri`, while
+the tool returned `scheduled` without `uri` for every user unit, so every
+successful restart failed its own output check (Go v0.2.4 the same). The
+schema now allows `scheduled` and the result carries the call's `uri`.
 
 ## Impact
 
