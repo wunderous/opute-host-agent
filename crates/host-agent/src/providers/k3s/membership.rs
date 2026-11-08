@@ -7,7 +7,9 @@
 //! ```
 
 use super::decode::{anon, field, items, slice, text, unmarshal, Shape};
-use super::{bootstrap, require_provision_target, require_target, run_command, s, Args, Outcome};
+use super::{
+    bootstrap, endpoint, require_provision_target, require_target, run_command, s, Args, Outcome,
+};
 use crate::goerr::quote;
 use serde_json::{json, Value as J};
 use std::collections::HashMap;
@@ -829,7 +831,15 @@ pub(super) fn join_node(args: &Args) -> Outcome {
     if !invitation_ref.is_empty() {
         INVITATIONS.lock().unwrap().remove(&invitation_ref);
     }
-    Ok(json!({
+    // Q19: an opted-in cluster's new server takes the TLS name, and the
+    // endpoint resolves to it once it is Ready.
+    let endpoint = if endpoint::enabled() {
+        endpoint::follow_join(&mut |a, i| run_command(a, i), &instance, endpoint::ROLLOUT)
+            .map_err(|e| format!("bring the joined server into the cluster endpoint: {e}"))?
+    } else {
+        None
+    };
+    let mut result = json!({
         "targetUri": observation.target_uri,
         "joined": true,
         "clusterIdentity": observation.cluster_identity,
@@ -840,7 +850,11 @@ pub(super) fn join_node(args: &Args) -> Outcome {
         "serverCount": observation.server_count,
         "readyServers": observation.ready_servers,
         "installerExitedNonZero": install.is_err(),
-    }))
+    });
+    if let Some(members) = endpoint {
+        result["endpointResolvesTo"] = json!(members);
+    }
+    Ok(result)
 }
 
 /// `joinTokenForNode`: the token, the invitation it consumed, the version.
@@ -894,9 +908,37 @@ pub(super) fn ensure_ha_endpoint(args: &Args) -> Outcome {
     if observation.ready_servers < 1 {
         return Err("stable HA endpoint requires at least one ready server".into());
     }
-    let status =
-        probe_ha_endpoint(&endpoint).map_err(|e| format!("probe stable HA endpoint: {e}"))?;
-    Ok(json!({
+    let reference = s(args, "caBundleRef");
+    let mut resolved = None;
+    let status = if reference.is_empty() {
+        probe_ha_endpoint(&endpoint).map_err(|e| format!("probe stable HA endpoint: {e}"))?
+    } else {
+        // Q19: trust only the cluster CA the reference names, at the
+        // addresses the bridge resolves the hostname to.
+        if !endpoint::enabled() {
+            return Err(endpoint::unavailable("caBundleRef"));
+        }
+        let incus = &mut |a: &[&str], i: Option<&[u8]>| run_command(a, i);
+        let instance = s(args, "providerInstanceName");
+        let (ca, hostname, servers) =
+            endpoint::resolve_ca(incus, &instance, &observation.target_uri, &reference)?;
+        let url_host = endpoint
+            .trim_start_matches("https://")
+            .split([':', '/'])
+            .next()
+            .unwrap_or("");
+        if url_host != hostname {
+            return Err(format!(
+                "caBundleRef {reference} is for {hostname}, not the endpoint's host {url_host}"
+            ));
+        }
+        let addresses = endpoint::resolve(incus, &servers, &hostname)?;
+        let status = endpoint::probe(&hostname, &addresses, &ca)
+            .map_err(|e| format!("probe stable HA endpoint: {e}"))?;
+        resolved = Some(addresses);
+        status
+    };
+    let mut result = json!({
         "targetUri": observation.target_uri,
         "endpoint": endpoint.trim_end_matches('/'),
         "endpointAvailable": true,
@@ -907,7 +949,12 @@ pub(super) fn ensure_ha_endpoint(args: &Args) -> Outcome {
         "datastoreMode": observation.datastore_mode,
         "availabilityClass": observation.availability_class,
         "recoveryPolicy": observation.recovery_policy,
-    }))
+    });
+    if let Some(addresses) = resolved {
+        result["resolvedAddresses"] = json!(addresses);
+        result["caBundleRef"] = J::from(reference);
+    }
+    Ok(result)
 }
 
 /// The probe runs from the provider host, with the host's certificate roots.
@@ -1030,7 +1077,19 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
             members
         ));
     }
-    Ok(json!({
+    // Q19: the endpoint of an opted-in cluster never resolves to a retired
+    // server, nor to one a reset left out still awaiting retirement.
+    let endpoint = if endpoint::enabled() {
+        endpoint::follow(&mut |a, i| run_command(a, i), &instance, &excluded).map_err(|e| {
+            format!(
+                "update the cluster endpoint after retiring {}: {e}",
+                quote(&node_name)
+            )
+        })?
+    } else {
+        None
+    };
+    let mut result = json!({
         "targetUri": after.target_uri,
         "clusterIdentity": after.cluster_identity,
         "removedNode": node_name,
@@ -1045,7 +1104,11 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
         "serverCount": after.server_count,
         "readyServers": after.ready_servers,
         "quorumRetained": true,
-    }))
+    });
+    if let Some(members) = endpoint {
+        result["endpointResolvesTo"] = json!(members);
+    }
+    Ok(result)
 }
 
 /// The servers that stay ready must remain a strict majority of the servers
@@ -1463,7 +1526,14 @@ pub(super) fn recover_quorum(args: &Args) -> Outcome {
         .collect();
     write_recovery_record(&instance, &survivor, &excluded)
         .map_err(|e| format!("record the quorum recovery on {}: {e}", quote(&instance)))?;
-    Ok(json!({
+    // Q19: servers the reset left out of etcd leave the endpoint now.
+    let endpoint = if endpoint::enabled() {
+        endpoint::follow(&mut |a, i| run_command(a, i), &instance, &excluded)
+            .map_err(|e| format!("update the cluster endpoint after the reset: {e}"))?
+    } else {
+        None
+    };
+    let mut result = json!({
         "targetUri": observation.target_uri,
         "clusterIdentity": observation.cluster_identity,
         "datastoreMode": observation.datastore_mode,
@@ -1476,7 +1546,11 @@ pub(super) fn recover_quorum(args: &Args) -> Outcome {
         "unreachableProbes": probes,
         "lastProbeError": last_probe_error,
         "nodes": observation.nodes,
-    }))
+    });
+    if let Some(members) = endpoint {
+        result["endpointResolvesTo"] = json!(members);
+    }
+    Ok(result)
 }
 
 /// Whether the API server served the membership read within the window.

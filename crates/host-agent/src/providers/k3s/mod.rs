@@ -19,6 +19,7 @@
 
 mod bootstrap;
 mod decode;
+mod endpoint;
 mod membership;
 mod storage;
 #[cfg(test)]
@@ -68,6 +69,8 @@ mod op {
     pub const REDEEM_JOIN: &str = "opute.capability.kubernetes.redeem-join";
     pub const JOIN_NODE: &str = "opute.capability.kubernetes.join-node";
     pub const ENSURE_HA_ENDPOINT: &str = "opute.capability.kubernetes.ensure-ha-endpoint";
+    pub const ENSURE_CLUSTER_ENDPOINT: &str = "opute.capability.kubernetes.ensure-cluster-endpoint";
+    pub const REMOVE_CLUSTER_ENDPOINT: &str = "opute.capability.kubernetes.remove-cluster-endpoint";
     pub const REMOVE_NODE: &str = "opute.capability.kubernetes.remove-node";
     pub const RECOVER_QUORUM: &str = "opute.capability.kubernetes.recover-quorum";
     pub const EXEC_COMMAND: &str = "opute.capability.kubernetes.exec-command";
@@ -140,7 +143,19 @@ fn structured(value: J) -> ToolCallOutcome {
 fn respond(outcome: Outcome) -> ToolCallOutcome {
     match outcome {
         Ok(value) => structured(value),
-        Err(e) => ToolCallOutcome::Protocol(0, e, None),
+        Err(e) => match e.strip_prefix(endpoint::TYPED) {
+            // A typed error: an error result whose structured content names it.
+            Some(typed) => {
+                let value: J = serde_json::from_str(typed).unwrap_or(J::Null);
+                let text = value["message"].as_str().unwrap_or("").to_string();
+                ToolCallOutcome::Result(json!({
+                    "content": [{"type": "text", "text": text}],
+                    "structuredContent": value,
+                    "isError": true,
+                }))
+            }
+            None => ToolCallOutcome::Protocol(0, e, None),
+        },
     }
 }
 
@@ -313,7 +328,7 @@ fn operations() -> Vec<Operation> {
         operation
     };
     let string_list = || json!({"type": "array", "items": {"type": "string", "minLength": 1}});
-    vec![
+    let mut operations = vec![
         p(op::VALIDATE, "read", json!({"type": "object"}), vec![]),
         p(
             op::PROVISION,
@@ -491,7 +506,12 @@ fn operations() -> Vec<Operation> {
             op::ENSURE_HA_ENDPOINT,
             "mutation",
             target_schema(
-                json!({"endpoint": {"type": "string", "minLength": 1, "maxLength": 512}}),
+                if endpoint::enabled() {
+                    json!({"endpoint": {"type": "string", "minLength": 1, "maxLength": 512},
+                           "caBundleRef": {"type": "string", "pattern": "^cluster-endpoint:[a-z][a-z0-9-]{0,31}:.+$"}})
+                } else {
+                    json!({"endpoint": {"type": "string", "minLength": 1, "maxLength": 512}})
+                },
                 &["endpoint"],
             ),
             cluster(),
@@ -568,7 +588,35 @@ fn operations() -> Vec<Operation> {
             target_schema(json!({}), &[]),
             cluster(),
         ),
-    ]
+    ];
+    if endpoint::enabled() {
+        // Q19 (owner, 2026-11-08): published only where the deployment
+        // enables it; otherwise the catalog is exactly the one above.
+        let restarts = "Restarts each K3s server, one at a time, to change its TLS names; \
+                        stops with rollout_incomplete when a server does not return to Ready";
+        let mut ensure = p(
+            op::ENSURE_CLUSTER_ENDPOINT,
+            "mutation",
+            target_schema(
+                json!({"hostname": {"type": "string", "minLength": 3, "maxLength": 253,
+                                    "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)+$"}}),
+                &["hostname"],
+            ),
+            cluster(),
+        );
+        ensure.description =
+            format!("Opt a K3s cluster into a stable endpoint at an explicit hostname. {restarts}");
+        let mut remove = p(
+            op::REMOVE_CLUSTER_ENDPOINT,
+            "mutation",
+            target_schema(json!({}), &[]),
+            cluster(),
+        );
+        remove.description = format!("Remove a K3s cluster's endpoint. {restarts}");
+        operations.push(ensure);
+        operations.push(remove);
+    }
+    operations
 }
 
 fn teardown_schema() -> J {
@@ -677,6 +725,15 @@ fn dispatch(operation: &str, args: &Args) -> Outcome {
         op::REDEEM_JOIN => guarded(require_provision_target, membership::redeem_join),
         op::JOIN_NODE => guarded(require_provision_target, membership::join_node),
         op::ENSURE_HA_ENDPOINT => guarded(require_target, membership::ensure_ha_endpoint),
+        op::ENSURE_CLUSTER_ENDPOINT | op::REMOVE_CLUSTER_ENDPOINT if !endpoint::enabled() => {
+            Err(endpoint::unavailable(operation))
+        }
+        op::ENSURE_CLUSTER_ENDPOINT => guarded(require_target, |args| {
+            endpoint::ensure(args, &mut |a, i| run_command(a, i), endpoint::ROLLOUT)
+        }),
+        op::REMOVE_CLUSTER_ENDPOINT => guarded(require_target, |args| {
+            endpoint::remove(args, &mut |a, i| run_command(a, i), endpoint::ROLLOUT)
+        }),
         op::REMOVE_NODE => guarded(require_target, membership::remove_node),
         op::RECOVER_QUORUM => guarded(require_target, membership::recover_quorum),
         op::EXEC_COMMAND => guarded(require_target, exec_command),

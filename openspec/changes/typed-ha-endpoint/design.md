@@ -37,20 +37,25 @@ and the DNS block lists only Ready members.
 ## The record and the CA reference
 
 The record lives on the cluster, not in the provider (which keeps no state
-on disk): `/var/lib/rancher/k3s/server/opute-cluster-endpoint.json` on each
-server, with the hostname, the network and the member addresses. Any
-provider that can reach a server can read it, so a join on another host
-sees it. The CA reference `cluster-endpoint:<host>:<cluster>` resolves to
-`server/tls/server-ca.crt` read from a Ready server named in the record; the
-CA is never placed in a result, a record or a log. Opting out deletes the
-record.
+on disk): the `kube-system` ConfigMap `opute-cluster-endpoint`, with the
+hostname, the network, the cluster URI and the member addresses. Any
+provider that can reach a server reads it with `k3s kubectl`, including a
+server that has just joined. The CA reference `cluster-endpoint:<host>:<cluster>`
+resolves to `server/tls/server-ca.crt` read from a Ready member; the CA is
+never placed in a result, a record or a log. Opting out deletes the record.
+
+`ensure-ha-endpoint` with `caBundleRef` resolves the hostname as a client on
+the bridge does (`getent ahostsv4` in a Ready server) and probes each
+address in turn with only the cluster CA trusted.
 
 ## Membership hooks
 
-- `prepare-join` on an opted-in cluster carries the hostname in the
-  invitation; `join-node` adds the TLS name before K3s starts, then adds
-  the new server to the DNS block once it is Ready.
-- `remove-node` and the quorum-recovery retirement remove the server from
-  the DNS block in the same operation, before reporting.
+- `join-node`, once the new server is Ready, reads the record through it,
+  writes its TLS name, restarts it and waits for Ready, then adds it to the
+  DNS block (the sealed join material is unchanged).
+- `remove-node` (including the quorum-recovery retirement) and
+  `recover-quorum` itself rewrite the DNS block from the Ready etcd members,
+  less the servers a reset left out of etcd, in the same operation.
 - On a cluster that has not opted in, none of these touch TLS names, the
-  DNS block or the record.
+  DNS block or the record; where the capability is disabled they make no
+  extra call at all.
