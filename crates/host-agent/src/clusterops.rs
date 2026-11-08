@@ -48,6 +48,10 @@ pub const TRIM_GUEST_STORAGE: &str = "opute.capability.kubernetes.trim-guest-sto
 /// The Kubernetes provider's capability id (`capabilitycontract.Kubernetes`).
 pub const CAPABILITY: &str = "opute.capability.kubernetes.v1";
 
+/// D28 (Q24): the clusters this agent registered whose Incus instance still
+/// exists, as (instance name, instance type, Incus status).
+pub type KnownClusters = Arc<dyn Fn() -> Vec<(String, String, String)> + Send + Sync>;
+
 /// The kubernetes domain over the seams it declares.
 #[derive(Clone)]
 pub struct Kubernetes {
@@ -60,6 +64,7 @@ pub struct Kubernetes {
     pub run_host: RunHost,
     /// The process environment `exec.LookPath` searches.
     pub env: crate::config::Env,
+    pub known_clusters: KnownClusters,
 }
 
 /// `k8sname.Validate`: `^[A-Za-z0-9][A-Za-z0-9_.:-]*$` after trimming.
@@ -1445,6 +1450,7 @@ pub struct Inventory {
     pub execute: Executor,
     pub register: Register,
     pub tenant_id: String,
+    pub known_clusters: KnownClusters,
 }
 
 impl Kubernetes {
@@ -1453,6 +1459,7 @@ impl Kubernetes {
             execute: self.execute.clone(),
             register: self.register.clone(),
             tenant_id: self.tenant_id.clone(),
+            known_clusters: self.known_clusters.clone(),
         }
     }
 
@@ -1530,6 +1537,30 @@ impl Inventory {
             coordinates.insert("instanceType".into(), J::from(instance_type));
             coordinates.insert("vmName".into(), J::from(name));
             (self.register)(&uri, coordinates)?;
+        }
+        // D28 (Q24): a registered cluster the provider could not probe (its
+        // instance stopped) is listed with its instance status and no node
+        // data, so it is never mistaken for an empty inventory.
+        if listed {
+            let probed: std::collections::BTreeSet<String> = clusters
+                .iter()
+                .filter_map(|c| c.get("name").and_then(J::as_str).map(str::to_string))
+                .collect();
+            for (name, instance_type, status) in (self.known_clusters)() {
+                if probed.contains(&name) {
+                    continue;
+                }
+                let uri = Uri::new("cluster", self.effective_tenant(), &name)?.to_string();
+                let mut detail = Map::new();
+                detail.insert("uri".into(), J::from(uri.clone()));
+                detail.insert("id".into(), J::from(uri));
+                detail.insert("name".into(), J::from(name.clone()));
+                detail.insert("status".into(), J::from(status));
+                detail.insert("instanceType".into(), J::from(instance_type));
+                detail.insert("vmName".into(), J::from(name));
+                clusters.push(detail_value(detail));
+                total += 1;
+            }
         }
         let clusters = if listed {
             J::Array(clusters.into_iter().map(J::Object).collect())
@@ -2242,6 +2273,34 @@ impl ClusterAgent {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// D28 (Q24): a registered cluster whose instance is stopped is listed
+    /// as stopped, not dropped from discovery.
+    #[test]
+    fn a_stopped_registered_cluster_is_listed_as_stopped() {
+        let k8s = Kubernetes {
+            execute: Arc::new(|_: &str, _| {
+                Ok(json!({"clusters": []}).as_object().cloned().unwrap())
+            }),
+            resolve: Arc::new(|_, _| unreachable!()),
+            tenant_id: String::new(),
+            register: Arc::new(|_: &str, _| Ok(())),
+            ensure_tool: Arc::new(|_: &str| Err("unused".into())),
+            run_host: Arc::new(|_: &[String], _| unreachable!()),
+            env: crate::config::Env::from_pairs(std::iter::empty::<(String, String)>()),
+            known_clusters: Arc::new(|| {
+                vec![(
+                    "e2e-k1".to_string(),
+                    "container".to_string(),
+                    "Stopped".to_string(),
+                )]
+            }),
+        };
+        let out = k8s.list_clusters("").unwrap();
+        assert_eq!(out["total"], 1, "{out}");
+        assert_eq!(out["clusters"][0]["uri"], "cluster:local:e2e-k1");
+        assert_eq!(out["clusters"][0]["status"], "Stopped");
+    }
 
     const GO: &str = include_str!("../../../tools/parity/cluster-format-oracle/expected.json");
 

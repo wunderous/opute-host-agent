@@ -1,9 +1,9 @@
 ## 1. Decision
 
-- [ ] 1.1 Owner answers Q24 (rust-spec-authority/questions.md).
+- [x] 1.1 Owner answers Q24 (rust-spec-authority/questions.md).
 
 ## 2. Implementation (only after 1.1)
 
-- [ ] 2.1 Failing-first provider test: a stopped K3s instance does not vanish from discovery.
-- [ ] 2.2 Implement the chosen outcome in the k3s provider's list-clusters.
+- [x] 2.1 Failing-first test: a registered cluster the provider does not return is listed with its instance status.
+- [x] 2.2 Merge registered clusters whose instance exists into discovery (core, not the provider).
 - [ ] 2.3 Rerun e2e3.discovery with it as the pass condition.

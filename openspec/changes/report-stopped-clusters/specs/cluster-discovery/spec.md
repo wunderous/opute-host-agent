@@ -6,4 +6,4 @@ it manages exists but cannot be probed.
 
 #### Scenario: The only cluster's server is stopped
 - **WHEN** a client calls `list_compute_clusters` while the only managed cluster's server is stopped
-- **THEN** the result lists that cluster with its stopped status, or the call fails with an error; it is never a success with no clusters
+- **THEN** the result lists that cluster with its Incus status `Stopped`, its canonical URI and no node data; it is never a success with no clusters

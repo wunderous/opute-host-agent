@@ -1,8 +1,8 @@
-# Report a stopped cluster in discovery (proposed)
+# Report a stopped cluster in discovery
 
-Status: proposed. Owner question Q24
+Status: decided (owner, 2026-11-07, D28). Owner question Q24
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -23,16 +23,18 @@ clusters" from "my cluster is down".
 
 ## What Changes
 
-The owner chooses one:
-
-- discovery lists every K3s instance it knows, with its instance status (for
-  example `Stopped`) and no node data when it cannot probe; or
-- a probe failure on a known instance makes discovery fail with an error,
-  never an empty success.
-
-Either way the page's two outcomes stay distinct for a stopped cluster.
+Decided (D28): list it as stopped. The provider cannot probe a stopped
+instance, and nothing on the instance marks it as K3s, so the Host Agent's
+discovery, not the provider, keeps it listed: every cluster it registered
+(from an earlier discovery) whose Incus instance still exists, and that the
+provider did not return, is listed with its Incus status (for example
+`Stopped`), its instance type and canonical URI, and no node data. A
+registered cluster whose instance was deleted is not listed. `total`
+counts these entries.
 
 ## Impact
 
-- `crates/host-agent/src/providers/k3s` (list-clusters).
+- `crates/host-agent/src/clusterops.rs` (`Inventory::list_clusters`, the
+  `known_clusters` seam) and `builtin.rs` (the seam from the registry and
+  `incus list`). The k3s provider is unchanged.
 - `e2e3.discovery` then asserts the chosen outcome for the stopped cluster.
