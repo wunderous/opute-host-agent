@@ -148,7 +148,7 @@ def main() -> int:
             step("install", f"install -d $HOME/.local/share/opute && gzip -dc /tmp/host-agent-linux-arm64.gz > {bin_} "
                             f"&& chmod 0755 {bin_} && file -b {bin_} | cut -d, -f2 && {bin_} --version",
                  lambda o: "ARM aarch64" in o)
-            step("help", f"cd $HOME && {bin_} help", lambda o: "Standalone mode never requires Opute Platform." in o)
+            step("help", f"cd $HOME && {bin_} help", lambda o: o.startswith("Usage: opute-host-agent"))
             step("launch", serve, lambda o: '"agentId":"arm64-clean"' in o and o.endswith("alive\n"), timeout=300)
             step("afterLaunch", observe)
             step("mcp", mcp, lambda o: (lambda d: d["listStatus"] == 200 and d["tools"] > 0 and d["callStatus"] == 200

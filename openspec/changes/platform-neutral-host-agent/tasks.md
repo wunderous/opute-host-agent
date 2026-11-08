@@ -6,7 +6,7 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 
 - [x] 1.1 Record the owner decision (Host Agent owner, 2026-11-08).
 - [ ] 1.2 Record the Platform, release and deployment owners' sign-off.
-- [ ] 1.3 Owner answers N1-N4 (design.md).
+- [ ] 1.3 Owner answers N1-N7 (design.md).
 
 ## 2. Failing-first tests
 
@@ -19,7 +19,8 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 - [x] 2.4 Reserved names from `OPUTE_RESERVED_HOSTNAMES` only; refused with
   `reserved_hostname` before any Cloudflare call. Shown red by breaking
   the suffix match (2 of the 4 tests fail).
-- [ ] 2.5 The boundary test in `make rust-check`.
+- [ ] 2.5 The boundary test in `make rust-check` (`boundary.rs`). Written
+  and red (it lists every leak); ignored until 3.1-3.3 land, then enabled.
 
 ## 3. Implementation (one concern per commit)
 
@@ -28,7 +29,10 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 - [ ] 3.3 OAuth clients from configuration (after N4).
 - [x] 3.4 Reserved names from configuration.
 - [ ] 3.5 Remove Platform names from CLI, help and catalog descriptions.
-- [ ] 3.6 Repin the catalog revisions in the manifest.
+  Done for comments, result text, the host-recipe refusal, help and the
+  `run_host_local_recipe` description; the mode flag waits for N5.
+- [ ] 3.6 Repin the catalog revisions in the manifest (repinned for 3.5;
+  again after 3.1).
 
 ## 4. Journeys
 

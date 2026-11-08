@@ -81,8 +81,8 @@ Platform leaks into the agent today in five places:
 | OAuth clients | Operator configuration, empty by default |
 | Deployment change and the new e2e-5 | Owned by the Platform owners |
 
-Four behaviours the proposal does not state are open questions (design.md,
-N1-N4). Their parts are not implemented until the owner answers.
+Seven behaviours the proposal does not state are open questions (design.md,
+N1-N7). Their parts are not implemented until the owner answers.
 
 ## Capabilities
 

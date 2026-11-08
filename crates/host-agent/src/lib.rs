@@ -7,6 +7,8 @@
 mod goerr;
 mod admission;
 mod app;
+#[cfg(test)]
+mod boundary;
 mod builtin;
 mod catalog;
 pub mod cli;

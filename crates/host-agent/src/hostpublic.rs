@@ -61,7 +61,7 @@ fn is_root() -> bool {
     nix::unistd::geteuid().is_root()
 }
 
-/// `normalizePublicMCPInstanceID`: the Platform's service-name derivation,
+/// `normalizePublicMCPInstanceID`: the public route's service-name derivation,
 /// with a digest suffix whenever normalization changed the binding.
 fn instance_id(binding: &str) -> String {
     use sha2::{Digest, Sha256};

@@ -94,8 +94,6 @@ const USAGE: &str = "Usage: opute-host-agent [standalone|serve|public-mcp|recipe
   opute-host-agent recipe status --run-id RUN_ID
   opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]
   opute-host-agent provider install --source ./plugin.yaml --activate
-
-Standalone mode never requires Opute Platform.
 ";
 
 fn parse(fs: &FlagSet, args: &[String], io: &mut Io<'_>) -> Result<Values> {
