@@ -2242,13 +2242,10 @@ fn guest_storage(k8s: &crate::clusterops::Kubernetes) -> Service {
 /// The oci domain over its seams: the kubernetes domain for the registry,
 /// the host's container tools, and the storage policy file.
 fn oci(host: &crate::tools::Host, k8s: &crate::clusterops::Kubernetes) -> crate::ociops::Oci {
-    let env = host.env.clone();
     crate::ociops::Oci {
         k8s: k8s.clone(),
         env: host.env.clone(),
-        command: Arc::new(move |argv: &[String], deadline| {
-            crate::hostexec::combined_output(&env, argv, deadline)
-        }),
+        command: crate::ociops::host_command(host.env.clone()),
         storage_policy_path: host.oci_storage_policy_path.clone(),
         storage_mu: Default::default(),
         instance_id: host.instance_id.clone(),

@@ -1,8 +1,8 @@
-# Read container runtime reports from stdout alone (proposed)
+# Read container runtime reports from stdout alone
 
-Status: proposed. Owner question Q26
+Status: decided (owner, 2026-11-07, D28). Owner question Q26
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -27,11 +27,11 @@ or whether a runtime's stderr belongs in its machine-readable report.
 
 ## What Changes
 
-If the owner chooses it, the container storage tools parse a runtime's
-stdout only and keep stderr for error messages, so a warning does not fail
-a report. The alternative is to state that they need the user service
-supervisor and fail with an error that says so. Until the owner decides,
-Rust keeps Go's behaviour.
+As decided (D28), every container tool run parses the runtime's stdout
+alone; stderr is kept only for a failed run's error, so a warning does not
+fail a report. The seam (`ociops::host_command`) is the one place this is
+done, so `inspect_container_storage`, `configure_oci_storage` and
+`cleanup_container_storage` share it.
 
 ## Impact
 
