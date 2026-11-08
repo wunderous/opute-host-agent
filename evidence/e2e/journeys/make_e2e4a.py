@@ -30,6 +30,7 @@ Q21_SPEC = CH + "declare-read-inputs/specs/capability-input-schemas/spec.md"
 Q22_SPEC = CH + "nullable-output-schemas/specs/capability-output-schemas/spec.md"
 Q23_SPEC = CH + "privileged-host-service-restart/specs/host-service-restart/spec.md"
 Q24_SPEC = CH + "report-stopped-clusters/specs/cluster-discovery/spec.md"
+Q29_SPEC = CH + "workload-unit-per-task/specs/host-agent-contract/spec.md"
 Q25_SPEC = CH + "truthful-operation-status/specs/operation-records/spec.md"
 Q26_SPEC = CH + "container-runtime-stdout/specs/container-storage/spec.md"
 Q27_SPEC = CH + "truthful-serving-launch/specs/serving-assignment/spec.md"
@@ -1454,7 +1455,7 @@ NEXT = "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
 
 
 def restart() -> dict:
-    files = {**base.TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz")}
+    files = {**base.TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-q29/host-agent-linux-x64.gz")}
     kill = f"systemctl kill -s KILL {UNIT} && sleep 1 && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}"
     steps = base.TOOL_STEPS + [
         {"id": "nextCopy", "copy": "rustNext", "to": NEXT},
@@ -1474,12 +1475,13 @@ def restart() -> dict:
         call("termTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
              capture={"TERM_TASK": "response.body.result.taskId"}),
         {"id": "term", "guest": f"systemctl restart {UNIT} && {base.WAIT_HEALTH.format(port=3014)} && echo up"},
+        # Q29: the cancelled task's workload unit was stopped with it
+        {"id": "termGone", "guest": "sleep 3; pgrep -fx 'sleep 120' | wc -l"},
         call("termTaskAfter", "get_operation", {"operationId": "${TERM_TASK}"}),
         {"id": "termTaskWire", "mcp": "tasks/get", "params": {"taskId": "${TERM_TASK}"}, "meta": TASKS_META},
         call("termPlanAfter", "get_host_plan_run", {"runId": "${TERM_RUN}"}),
-        # SIGKILL with a task in flight
-        # distinct commands: identical run_host_command tasks share one workload unit (Q29)
-        call("killTask", "run_host_command", {"command": "sleep 121"}, meta=TASKS_META,
+        # SIGKILL with a task in flight, running the same command as the task cancelled above (Q29)
+        call("killTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
              capture={"KILL_TASK": "response.body.result.taskId"}),
         {"id": "kill", "guest": kill + " && echo up"},
         call("killTaskAfter", "get_operation", {"operationId": "${KILL_TASK}"}),
@@ -1487,12 +1489,26 @@ def restart() -> dict:
         call("opsAfterKill", "list_operations", {"limit": 100}),
         call("cancelAfterKill", "cancel_operation", {"operationId": "${KILL_TASK}"}),
         # an in-place upgrade with a task in flight
-        call("upTask", "run_host_command", {"command": "sleep 122"}, meta=TASKS_META,
+        call("upTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
              capture={"UP_TASK": "response.body.result.taskId"}),
         base.swap("upgrade", NEXT),
         call("upTaskAfter", "get_operation", {"operationId": "${UP_TASK}"}),
         {"id": "upTaskWire", "mcp": "tasks/get", "params": {"taskId": "${UP_TASK}"}, "meta": TASKS_META},
         *task("afterUpgrade", "run_host_command", {"command": "echo upgraded"}),
+        # Q29: two tasks with the same command at the same time, each in its own unit
+        call("twinA", "run_host_command", {"command": "sleep 20"}, meta=TASKS_META, retryOn=[],
+             capture={"TWIN_A": "response.body.result.taskId"}),
+        call("twinB", "run_host_command", {"command": "sleep 20"}, meta=TASKS_META, retryOn=[],
+             capture={"TWIN_B": "response.body.result.taskId"}),
+        {"id": "twins", "guest": "sleep 3; pgrep -fx 'sleep 20' | wc -l; "
+                                 "systemctl --user -M opute@ list-units 'opute-host-workload-*' --state=active "
+                                 "--no-legend 2>/dev/null | wc -l"},
+        {"id": "twinADone", "mcp": "tasks/get", "params": {"taskId": "${TWIN_A}"}, "meta": TASKS_META,
+         "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
+         "timeout": 90, "interval": 3},
+        {"id": "twinBDone", "mcp": "tasks/get", "params": {"taskId": "${TWIN_B}"}, "meta": TASKS_META,
+         "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
+         "timeout": 90, "interval": 3},
         {"id": "db", "guest": f"{T} db {SDB_}"},
     ]
     reqs = [
@@ -1518,6 +1534,19 @@ def restart() -> dict:
             scenario="A plan running at SIGTERM reads back cancelled; a task killed by SIGKILL reads back failed "
                      "and cannot be cancelled; a task in flight at the in-place upgrade's graceful stop reads back "
                      "cancelled (D28)"),
+        req(Q29_SPEC, "Each task runs in its own workload unit",
+            a("termTaskWire", "response.body.result.status", equals="cancelled"),
+            a("termGone", "stdout", equals="0\n"),
+            {"step": "killTask", "path": "response.body.result.status", "equals": "working"},
+            {"step": "upTask", "path": "response.body.result.status", "equals": "working"},
+            {"step": "twinA", "path": "response.body.result.status", "equals": "working"},
+            {"step": "twinB", "path": "response.body.result.status", "equals": "working"},
+            a("twins", "stdout", matches="^2\n"),
+            a("twinADone", "response.body.result.status", equals="completed"),
+            a("twinBDone", "response.body.result.status", equals="completed"),
+            scenario="A task cancelled by SIGTERM leaves no process running; the same command runs again after "
+                     "the restart and after a SIGKILL; two tasks with the same command run side by side and both "
+                     "complete (decided 2026-11-08)"),
         req(Q25_SPEC, "An operation record reports its task's terminal status",
             direct("termTaskAfter", "structuredContent.status", equals="cancelled"),
             direct("killTaskAfter", "structuredContent.status", equals="failed"),
@@ -1528,7 +1557,7 @@ def restart() -> dict:
     cleanup = [{"id": "restoreRust", "guest": (
         f"systemctl stop {UNIT}; {T} slow stop >/dev/null; {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} "
         f">/dev/null && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}; loginctl disable-linger opute; "
-        "incus delete -f e2e-t1 "
+        "pkill -fx 'sleep 120'; incus delete -f e2e-t1 "
         f"2>/dev/null; rm -rf {HOME}/e2e {HOME}/.opute/databases /opt/opute-e2e/releases/rust-next; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
