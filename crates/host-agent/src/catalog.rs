@@ -1672,7 +1672,11 @@ mod tests {
     fn restart_host_service_publishes_what_it_does() {
         for standalone in [false, true] {
             let snapshot = for_mode(standalone);
-            let d = snapshot.tools.iter().find(|d| d.name == "restart_host_service").unwrap();
+            let d = snapshot
+                .tools
+                .iter()
+                .find(|d| d.name == "restart_host_service")
+                .unwrap();
             assert!(!d.description.contains("Incus"), "{}", d.description);
             let output = d.output_schema.as_ref().and_then(J::as_object).unwrap();
             let result = serde_json::json!({"serviceName": "opute-bridge", "status": "scheduled",
@@ -1799,9 +1803,14 @@ mod tests {
         let src = source();
         let go_platform = build(&src.provider_id, &canonicalize(&src.go_host));
         for pair in [&recorded["platform"], &recorded["standalone"]] {
-            assert!(pair["go"].as_str().is_some_and(|go| go.starts_with("sha256:")));
+            assert!(pair["go"]
+                .as_str()
+                .is_some_and(|go| go.starts_with("sha256:")));
         }
-        assert_ne!(recorded["platform"]["go"].as_str(), Some(go_platform.revision.as_str()));
+        assert_ne!(
+            recorded["platform"]["go"].as_str(),
+            Some(go_platform.revision.as_str())
+        );
     }
 
     /// D19: neutral names published in every mode, Go names only as

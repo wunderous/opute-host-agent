@@ -327,7 +327,9 @@ mod tests {
             "properties": {"at": {"type": "string", "nullable": true}}}}});
         let value = json!({"lastHeartbeat": {"at": null}});
         assert!(validate_output(s.as_object().unwrap(), &value).is_ok());
-        assert!(validate_output(s.as_object().unwrap(), &json!({"lastHeartbeat": {"at": 3}})).is_err());
+        assert!(
+            validate_output(s.as_object().unwrap(), &json!({"lastHeartbeat": {"at": 3}})).is_err()
+        );
         assert!(check(s, value).is_err());
     }
 
