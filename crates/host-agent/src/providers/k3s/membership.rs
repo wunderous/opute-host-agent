@@ -256,7 +256,7 @@ pub(super) fn prepare_join(args: &Args) -> Outcome {
 }
 
 /// `json.Marshal` of a struct of string fields, in field order.
-fn marshal_strings(fields: &[(&str, &str)]) -> String {
+pub(super) fn marshal_strings(fields: &[(&str, &str)]) -> String {
     let mut out = String::from("{");
     for (i, (key, value)) in fields.iter().enumerate() {
         if i > 0 {
@@ -559,7 +559,7 @@ fn bit_len(magnitude: &[u8]) -> usize {
 }
 
 /// `rsa.EncryptOAEP(sha256, rand, key, msg, label)` with Go's key checks.
-fn encrypt_oaep(n: &[u8], e: i64, msg: &[u8]) -> Result<Vec<u8>, String> {
+pub(super) fn encrypt_oaep(n: &[u8], e: i64, msg: &[u8]) -> Result<Vec<u8>, String> {
     let bits = bit_len(n);
     if bits < 1024 {
         return Err(format!(
@@ -622,6 +622,54 @@ pub(super) fn seal_join_material(
     Ok(raw_url_encode(envelope.as_bytes()))
 }
 
+/// AES-GCM of the payload under the unsealed data key. Every key size Go's
+/// `crypto/aes` accepts opens it; AES-192 goes through `aes-gcm` because
+/// ring has no AES-192 GCM (D28, Q7).
+fn open_join_payload(
+    data_key: &[u8],
+    nonce: &[u8],
+    ciphertext: Vec<u8>,
+) -> Result<Vec<u8>, String> {
+    let algorithm = match data_key.len() {
+        16 => &ring::aead::AES_128_GCM,
+        24 => return open_aes192(data_key, nonce, &ciphertext),
+        32 => &ring::aead::AES_256_GCM,
+        n => {
+            return Err(format!(
+                "create sealed join material cipher: crypto/aes: invalid key size {n}"
+            ))
+        }
+    };
+    if nonce.len() != 12 {
+        super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
+    }
+    let key = ring::aead::LessSafeKey::new(
+        ring::aead::UnboundKey::new(algorithm, data_key).expect("AES key"),
+    );
+    let mut buffer = ciphertext;
+    let nonce = ring::aead::Nonce::try_assume_unique_for_key(nonce).expect("nonce");
+    Ok(key
+        .open_in_place(nonce, ring::aead::Aad::empty(), &mut buffer)
+        .map_err(|_| {
+            "decrypt sealed join material: cipher: message authentication failed".to_string()
+        })?
+        .to_vec())
+}
+
+fn open_aes192(data_key: &[u8], nonce: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::aead::{Aead as _, KeyInit as _};
+    type Aes192Gcm = aes_gcm::AesGcm<aes_gcm::aes::Aes192, aes_gcm::aead::consts::U12>;
+    if nonce.len() != 12 {
+        super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
+    }
+    let cipher = Aes192Gcm::new_from_slice(data_key).expect("AES-192 key");
+    cipher
+        .decrypt(aes_gcm::Nonce::from_slice(nonce), ciphertext)
+        .map_err(|_| {
+            "decrypt sealed join material: cipher: message authentication failed".to_string()
+        })
+}
+
 fn string_struct(name: &'static str, fields: &[(&'static str, &'static str)]) -> Shape {
     Shape::Struct {
         name,
@@ -661,30 +709,7 @@ pub(super) fn unseal_join_material(sealed: &str) -> Result<J, String> {
         .map_err(|_| {
             "decrypt sealed join material key: crypto/rsa: decryption error".to_string()
         })?;
-    let algorithm = match data_key.len() {
-        16 => &ring::aead::AES_128_GCM,
-        32 => &ring::aead::AES_256_GCM,
-        // AES-192 (a 24-byte key) is a recorded gap: ring has no AES-192 GCM.
-        n => {
-            return Err(format!(
-                "create sealed join material cipher: crypto/aes: invalid key size {n}"
-            ))
-        }
-    };
-    if nonce.len() != 12 {
-        super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
-    }
-    let key = ring::aead::LessSafeKey::new(
-        ring::aead::UnboundKey::new(algorithm, &data_key).expect("AES key"),
-    );
-    let mut buffer = ciphertext;
-    let nonce = ring::aead::Nonce::try_assume_unique_for_key(&nonce).expect("nonce");
-    let payload = key
-        .open_in_place(nonce, ring::aead::Aad::empty(), &mut buffer)
-        .map_err(|_| {
-            "decrypt sealed join material: cipher: message authentication failed".to_string()
-        })?
-        .to_vec();
+    let payload = open_join_payload(&data_key, &nonce, ciphertext)?;
     let material_shape = string_struct(
         "sealedJoinMaterial",
         &[

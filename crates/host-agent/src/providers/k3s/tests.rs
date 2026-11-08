@@ -432,3 +432,43 @@ fn release_checksums_and_version_escape() {
     assert!(checksum_for_binary("x k3s").is_err());
     assert_eq!(escape_version("v1.31.8+k3s1"), "v1.31.8%2Bk3s1");
 }
+
+/// D28 (Q7): an AES-192 data key unseals, as Go's `crypto/aes` accepts it.
+/// The ciphertext is AES-192-GCM of the payload under key 0..24 and nonce
+/// 0..12, made with Python's `cryptography`.
+#[test]
+fn an_aes192_join_key_unseals() {
+    use rsa::traits::PublicKeyParts as _;
+    let key = receiver_key();
+    let data_key: Vec<u8> = (0..24).collect();
+    let nonce: Vec<u8> = (0..12).collect();
+    let encrypted_key = encrypt_oaep(
+        &key.n().to_bytes_be(),
+        crate::goerr::atoi(&key.e().to_string()).0,
+        &data_key,
+    )
+    .unwrap();
+    let ciphertext = (0..AES192_CIPHERTEXT.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&AES192_CIPHERTEXT[i..i + 2], 16).unwrap())
+        .collect::<Vec<u8>>();
+    let seal = |ciphertext: &[u8]| {
+        let envelope = marshal_strings(&[
+            ("key", &raw_url_encode(&encrypted_key)),
+            ("nonce", &raw_url_encode(&nonce)),
+            ("ciphertext", &raw_url_encode(ciphertext)),
+        ]);
+        unseal_join_material(&raw_url_encode(envelope.as_bytes()))
+    };
+    let material = seal(&ciphertext).unwrap();
+    assert_eq!(material["redemptionRef"], "join-aes192");
+    assert_eq!(material["joinToken"], "t192");
+    let mut tampered = ciphertext;
+    *tampered.last_mut().unwrap() ^= 1;
+    assert_eq!(
+        seal(&tampered).unwrap_err(),
+        "decrypt sealed join material: cipher: message authentication failed"
+    );
+}
+
+const AES192_CIPHERTEXT: &str = "9ddb50fefddca47ea45ab3ecadccba5234bd596451cf7bdf1a2c5a01ffb40d7ebd1b9e1f4e33666e9d852b4600a3455a5ca7e1b481d1ac68664bedcb9e9cc895cbfa";
