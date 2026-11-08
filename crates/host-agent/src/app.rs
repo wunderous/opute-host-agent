@@ -445,6 +445,30 @@ pub(crate) fn compose(
     for snapshot in &snapshots {
         tasks.restore_snapshot(snapshot);
     }
+    // A task snapshotted mid-flight comes back failed; its operation row
+    // says so too, rather than `unknown` (D28, Q5 and Q25).
+    {
+        let store = state
+            .lock()
+            .map_err(|_| go_err!("restore MCP tasks: state store lock poisoned"))?;
+        for snapshot in &snapshots {
+            if snapshot.get("status").and_then(serde_json::Value::as_str) != Some("working") {
+                continue;
+            }
+            let id = snapshot
+                .get("taskId")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("");
+            if let Some(task) = tasks.get(id).filter(|t| t.status == "failed") {
+                let _ = store.save_registry_task_snapshot(
+                    id,
+                    &task.tool_name,
+                    &task.description,
+                    &crate::tools::task_document(&task),
+                );
+            }
+        }
+    }
     // The reservation owners that died with the previous process: terminal
     // tasks, and plan runs no process executes (reclaimed below).
     let mut ownerless = tasks.terminal_ids();

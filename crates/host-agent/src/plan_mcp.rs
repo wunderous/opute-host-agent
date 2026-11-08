@@ -1565,4 +1565,47 @@ mod tests {
         assert!(!left.contains_key("crashed"), "{left:?}");
         assert!(left.contains_key("other"), "{left:?}");
     }
+
+    /// D28 (Q5, Q25): a task killed mid-flight reads back after the restart
+    /// with one truthful status: `tasks/get` and `get_operation` both say
+    /// failed, and nothing resumes it.
+    #[test]
+    fn a_task_killed_mid_flight_reads_back_failed_everywhere() {
+        let dir = tempfile::tempdir().unwrap();
+        let server = test_server(dir.path());
+        {
+            let state = server.host.state.lock().unwrap();
+            state
+                .create_operation(
+                    "task-killed",
+                    "run_host_command",
+                    "Executing run_host_command...",
+                )
+                .unwrap();
+            state
+                .save_registry_task_snapshot(
+                    "task-killed",
+                    "run_host_command",
+                    "Executing run_host_command...",
+                    &json!({"taskId": "task-killed", "status": "working",
+                            "toolName": "run_host_command", "toolArgs": {"command": "sleep 120"},
+                            "createdAt": "2026-11-07T00:00:00Z", "lastUpdatedAt": "2026-11-07T00:00:00Z",
+                            "ttlMs": 3600000, "pollIntervalMs": 3000}),
+                )
+                .unwrap();
+        }
+        std::mem::forget(server);
+
+        let restarted = test_server(dir.path());
+        let task = restarted.tasks.get("task-killed").unwrap();
+        assert_eq!(task.status, "failed");
+        let row = crate::tools::dispatch(
+            &restarted,
+            "get_operation",
+            json!({"operationId": "task-killed"}).as_object().unwrap(),
+            None,
+            None,
+        );
+        assert_eq!(row["structuredContent"]["status"], "failed", "{row}");
+    }
 }

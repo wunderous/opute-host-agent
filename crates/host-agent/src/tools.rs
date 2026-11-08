@@ -407,11 +407,9 @@ fn tool_result_json(result: &crate::tasks::ToolResult) -> J {
     J::Object(out)
 }
 
-/// `persistTask`: best-effort, exactly as Go's own
-/// `_ = s.state.SaveTaskSnapshot(...)`. A durability failure here must never
-/// fail the in-memory task that `server.tasks` already tracks; only a crash
-/// before this write loses the snapshot, a risk Go's design accepts too.
-pub(crate) fn persist_task(server: &Server, snapshot: &crate::tasks::Snapshot) {
+/// The durable document of a task: its `tasks/get` result plus the tool
+/// name, arguments and description `restore_snapshot` reads back.
+pub(crate) fn task_document(snapshot: &crate::tasks::Snapshot) -> J {
     let mut doc = snapshot.get_result();
     if let J::Object(map) = &mut doc {
         map.insert("toolName".into(), J::from(snapshot.tool_name.clone()));
@@ -420,6 +418,15 @@ pub(crate) fn persist_task(server: &Server, snapshot: &crate::tasks::Snapshot) {
             map.insert("description".into(), J::from(snapshot.description.clone()));
         }
     }
+    doc
+}
+
+/// `persistTask`: best-effort, exactly as Go's own
+/// `_ = s.state.SaveTaskSnapshot(...)`. A durability failure here must never
+/// fail the in-memory task that `server.tasks` already tracks; only a crash
+/// before this write loses the snapshot, a risk Go's design accepts too.
+pub(crate) fn persist_task(server: &Server, snapshot: &crate::tasks::Snapshot) {
+    let doc = task_document(snapshot);
     if let Ok(state) = server.host.state.lock() {
         // D12: refused task-aware calls have only an in-memory task handle.
         // Cancellation and terminal snapshot writes must not materialize an
