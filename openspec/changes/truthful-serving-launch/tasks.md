@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first test: a launch script that exits non-zero fails `reconcile_serving_assignment`.
 - [x] 2.2 Failing-first test: the launch environment names the user bus for an agent without `XDG_RUNTIME_DIR`.
-- [ ] 2.3 Rerun e2e3.serving with the assignment's own process as the endpoint.
+- [x] 2.3 Rerun e2e3.serving with the assignment's own process as the endpoint. Passed in run `e2e-13a-r2`.

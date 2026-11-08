@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first test: a registered cluster the provider does not return is listed with its instance status.
 - [x] 2.2 Merge registered clusters whose instance exists into discovery (core, not the provider).
-- [ ] 2.3 Rerun e2e3.discovery with it as the pass condition.
+- [x] 2.3 Rerun e2e3.discovery with it as the pass condition. Passed in run `e2e-13a-r2`.

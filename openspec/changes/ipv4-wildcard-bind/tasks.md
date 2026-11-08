@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first test: listening on `0.0.0.0:0` yields an IPv4 socket.
 - [x] 2.2 Bind `AF_INET` for an explicit `0.0.0.0`.
-- [ ] 2.3 Rerun e2e1.system-unit with the IPv4 listener as a pass condition.
+- [x] 2.3 Rerun e2e1.system-unit with the IPv4 listener as a pass condition. Passed in run `e2e-13a-r2`.

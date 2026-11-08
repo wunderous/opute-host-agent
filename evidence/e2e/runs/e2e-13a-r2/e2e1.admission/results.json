@@ -1,0 +1,238 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.admission",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "gatedAgent"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "mutation"
+    },
+    {
+     "actual": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+     "equals": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "mutation"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "destructive"
+    },
+    {
+     "actual": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+     "equals": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "destructive"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "planGate"
+    },
+    {
+     "actual": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+     "equals": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "planGate"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "gatedRead"
+    },
+    {
+     "actual": "host:local:e2e-gated-agent",
+     "matches": ":e2e-gated-agent$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "gatedRead"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Standalone without mutations runs read tools only",
+   "spec": "openspec/changes/standalone-read-only-gate/specs/standalone-read-only-gate/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "gatedNoFile"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 0,
+      "operations": 0,
+      "plan_runs": 0,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "gatedBefore"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 0,
+      "operations": 0,
+      "plan_runs": 0,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "gatedAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "The gate refuses before any effect",
+   "spec": "openspec/changes/standalone-read-only-gate/specs/standalone-read-only-gate/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "limitedAgent"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "saturated"
+    },
+    {
+     "actual": "host_capacity_saturated",
+     "equals": "host_capacity_saturated",
+     "ok": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "saturated"
+    },
+    {
+     "actual": "admission",
+     "equals": "admission",
+     "ok": true,
+     "path": "response.body.result.structuredContent.owner",
+     "step": "saturated"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "limitedNoFile"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 1,
+      "operations": 0,
+      "plan_runs": 0,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "limitedBefore"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 1,
+      "operations": 0,
+      "plan_runs": 0,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "limitedAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Typed target and effect admission",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "Error: host_capacity_saturated: class=normal pressure=normal reason=declared resource cost exceeds effective host capacity retryAfterMs=1000",
+     "matches": "^Error: host_capacity_saturated: ",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "saturated"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Typed target and effect admission",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "destructive": 210,
+   "gatedAfter": 186,
+   "gatedAgent": 557,
+   "gatedBefore": 187,
+   "gatedList": 522,
+   "gatedNoFile": 147,
+   "gatedRead": 281,
+   "limitedAfter": 191,
+   "limitedAgent": 546,
+   "limitedBefore": 190,
+   "limitedCapacity": 241,
+   "limitedList": 245,
+   "limitedNoFile": 142,
+   "mutation": 218,
+   "planGate": 216,
+   "saturated": 226,
+   "stop": 291,
+   "tool": 285,
+   "wire": 284
+  },
+  "stepsSeconds": 49.2
+ },
+ "unverified": []
+}

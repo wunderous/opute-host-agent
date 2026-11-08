@@ -1,0 +1,534 @@
+{
+ "cleanup": [
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true",
+   "id": "restoreRust"
+  }
+ ],
+ "description": "Kill, restart and upgrade mid-work on the Rust system unit: SIGTERM with a task and a plan in flight, SIGKILL with a task in flight, then an in-place upgrade to a newer local Rust build with a task in flight; each item's durable state is read back through get_operation, tasks/get and get_host_plan_run.",
+ "effects": {
+  "allow": [
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "incus/*",
+   "files//home/opute/e2e*",
+   "files//home/opute/.opute*",
+   "files//opt/opute-e2e/releases/rust-next*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/opute-host-workload-*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*",
+   "linger",
+   "files//var/lib/systemd/linger*",
+   "system/units/user*",
+   "system/units/run-user-*",
+   "user/*"
+  ],
+  "persist": [
+   "files//home/opute/.opute*"
+  ]
+ },
+ "gate": "e2e-4",
+ "id": "e2e4.restart",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "rustNext": {
+    "path": "${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz",
+    "sha256": "5737bc7a7f7895fba8988e27f0d25ebb4fabfaa41b87a86eef938844626146dd"
+   }
+  },
+  "next": "Rust release set built locally from this branch with VERSION=0.2.5-e2e (no tag, no publish)",
+  "slow": "a local endpoint answering after 25 s (e2etool slow)"
+ },
+ "maxMinutes": 20,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "equals": "working",
+     "path": "response.body.result.status",
+     "step": "termTask"
+    },
+    {
+     "equals": "up\n",
+     "path": "stdout",
+     "step": "termP"
+    },
+    {
+     "equals": "up\n",
+     "path": "stdout",
+     "step": "term"
+    },
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.status",
+     "step": "termTaskWire"
+    },
+    {
+     "equals": "The Host Agent shut down before the task completed.",
+     "path": "response.body.result.statusMessage",
+     "step": "termTaskWire"
+    },
+    {
+     "equals": "up\n",
+     "path": "stdout",
+     "step": "kill"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "opsAfterKill"
+    },
+    {
+     "matches": "\n0\\.2\\.5-e2e\n$",
+     "path": "stdout",
+     "step": "upgrade"
+    },
+    {
+     "equals": "upgraded\n",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "afterUpgrade"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "db"
+    }
+   ],
+   "requirement": "Durable and redacted observations (restart)",
+   "scenario": "A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation and tasks/get; the agent restarts after SIGKILL and an in-place upgrade and keeps serving",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "termPlanAfter"
+    },
+    {
+     "equals": "failed",
+     "path": "response.body.result.status",
+     "step": "killTaskWire"
+    },
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.status",
+     "step": "upTaskWire"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "cancelAfterKill"
+    }
+   ],
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "scenario": "A plan running at SIGTERM reads back cancelled; a task killed by SIGKILL reads back failed and cannot be cancelled; a task in flight at the in-place upgrade's graceful stop reads back cancelled (D28)",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "termTaskAfter"
+    },
+    {
+     "equals": "failed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "killTaskAfter"
+    },
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "upTaskAfter"
+    },
+    {
+     "exists": true,
+     "path": "response.body.result.structuredContent.operations",
+     "step": "opsAfterKill"
+    }
+   ],
+   "requirement": "An operation record reports its task's terminal status",
+   "scenario": "get_operation reads each task's terminal status, as tasks/get does (D28)",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "rustNext",
+   "id": "nextCopy",
+   "to": "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 25",
+   "id": "slow"
+  },
+  {
+   "arguments": {},
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up",
+   "id": "userBus"
+  },
+  {
+   "arguments": {},
+   "id": "supervisorAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e-term-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "e2e\n",
+         "path": "e2e/term.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": "e2e/term.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      },
+      {
+       "action": {
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        },
+        "tool": "probe_http_endpoint"
+       },
+       "dependsOn": [
+        "n1"
+       ],
+       "id": "n2"
+      }
+     ],
+     "planId": "e2e.term"
+    }
+   },
+   "capture": {
+    "TERM_RUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "termPlan",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {
+    "runId": "${TERM_RUN}"
+   },
+   "id": "termWaiting",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 60,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "running",
+     "working"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "guest": "systemctl restart opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up",
+   "id": "termP"
+  },
+  {
+   "guest": "sleep 5",
+   "id": "settleP"
+  },
+  {
+   "arguments": {
+    "command": "sleep 120"
+   },
+   "capture": {
+    "TERM_TASK": "response.body.result.taskId"
+   },
+   "id": "termTask",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "guest": "systemctl restart opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up",
+   "id": "term"
+  },
+  {
+   "arguments": {
+    "operationId": "${TERM_TASK}"
+   },
+   "id": "termTaskAfter",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_operation"
+  },
+  {
+   "id": "termTaskWire",
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TERM_TASK}"
+   }
+  },
+  {
+   "arguments": {
+    "runId": "${TERM_RUN}"
+   },
+   "id": "termPlanAfter",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_host_plan_run"
+  },
+  {
+   "arguments": {
+    "command": "sleep 121"
+   },
+   "capture": {
+    "KILL_TASK": "response.body.result.taskId"
+   },
+   "id": "killTask",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service && sleep 1 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up",
+   "id": "kill"
+  },
+  {
+   "arguments": {
+    "operationId": "${KILL_TASK}"
+   },
+   "id": "killTaskAfter",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_operation"
+  },
+  {
+   "id": "killTaskWire",
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${KILL_TASK}"
+   }
+  },
+  {
+   "arguments": {
+    "limit": 100
+   },
+   "id": "opsAfterKill",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_operations"
+  },
+  {
+   "arguments": {
+    "operationId": "${KILL_TASK}"
+   },
+   "id": "cancelAfterKill",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "cancel_operation"
+  },
+  {
+   "arguments": {
+    "command": "sleep 122"
+   },
+   "capture": {
+    "UP_TASK": "response.body.result.taskId"
+   },
+   "id": "upTask",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version",
+   "id": "upgrade"
+  },
+  {
+   "arguments": {
+    "operationId": "${UP_TASK}"
+   },
+   "id": "upTaskAfter",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_operation"
+  },
+  {
+   "id": "upTaskWire",
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${UP_TASK}"
+   }
+  },
+  {
+   "arguments": {
+    "command": "echo upgraded"
+   },
+   "capture": {
+    "TID_afterUpgrade": "response.body.result.taskId"
+   },
+   "id": "afterUpgradeCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "id": "afterUpgrade",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_afterUpgrade}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "db"
+  }
+ ]
+}
