@@ -168,22 +168,21 @@
    "pass": [
     {
      "step": "wrong",
-     "path": "response.body.raw",
-     "equals": "Unauthorized\n"
+     "path": "response.status",
+     "equals": 401
+    },
+    {
+     "step": "missing",
+     "path": "response.status",
+     "equals": 401
     },
     {
      "step": "wrong",
      "path": "response.headers.www-authenticate",
      "matches": "^Bearer resource_metadata="
-    },
-    {
-     "step": "missing",
-     "path": "response.body.raw",
-     "equals": "Unauthorized\n"
     }
    ],
-   "scenario": "the refusal body and challenge header (observed; whether they are contract is Q1)",
-   "openQuestion": "Q1"
+   "scenario": "the refusal's status and the MCP authorization challenge are contract; its body text is not (D28, Q1)"
   }
  ],
  "effects": {

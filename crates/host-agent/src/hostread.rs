@@ -277,6 +277,10 @@ pub fn probe_http_endpoint(endpoint: &str, accept_challenge: bool) -> Result<J, 
         let mut builder = ureq::AgentBuilder::new()
             .redirects(10)
             .timeout(Duration::from_secs(15));
+        // Go's IPv4 fallback has a transport of its own, without a proxy.
+        if !ipv4 {
+            builder = crate::providers::env_proxy(builder, endpoint);
+        }
         if ipv4 {
             builder = builder.resolver(|address: &str| {
                 use std::net::ToSocketAddrs;
@@ -595,6 +599,32 @@ fn host_services_from(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// D28 (Q7): the HTTP probe honours the proxy environment as Go's
+    /// default transport does; a loopback endpoint is never proxied.
+    #[test]
+    fn the_http_probe_goes_through_the_environment_proxy() {
+        use std::io::{Read as _, Write as _};
+        let proxy = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = proxy.local_addr().unwrap();
+        let seen = std::thread::spawn(move || {
+            let (mut conn, _) = proxy.accept().unwrap();
+            let mut buf = [0u8; 1024];
+            let n = conn.read(&mut buf).unwrap();
+            let _ = conn.write_all(b"HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n");
+            String::from_utf8_lossy(&buf[..n]).to_string()
+        });
+        std::env::set_var("HTTP_PROXY", format!("http://{address}"));
+        let result = probe_http_endpoint("http://proxy-probe.invalid/health", false);
+        std::env::remove_var("HTTP_PROXY");
+        let result = result.unwrap();
+        assert_eq!(result["ready"], true, "{result}");
+        let request = seen.join().unwrap();
+        assert!(
+            request.starts_with("GET http://proxy-probe.invalid/health"),
+            "{request}"
+        );
+    }
 
     #[test]
     fn unit_properties_follow_go_parsing() {

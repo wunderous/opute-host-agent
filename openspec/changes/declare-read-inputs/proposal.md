@@ -30,3 +30,10 @@ and its revision, so it is a contract change, not a migration fix.
 
 - `crates/host-agent/catalog/source.json` and the catalog revision pins.
 - The two journeys then call each tool with declared inputs only.
+
+## Found later (D28 round)
+
+Publishing the cluster-bound `configure_service_domain` descriptor in
+standalone mode (Q28) exposed one more case: its handler requires
+`serviceName`, which that descriptor did not declare. It now declares it as
+required.

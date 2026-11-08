@@ -520,6 +520,9 @@ fn dispatch(delegation: &str, operation: &str, mut args: Args) -> Outcome {
 }
 
 fn ensure_tunnel(ctx: &Ctx, args: &mut Args) -> Outcome {
+    // D28 (Q7): null arguments are no arguments, refused below; Go's
+    // nil-map write ended the process.
+    args.nil = false;
     let placement = placement_input(args)?;
     // The legacy host alias predates the neutral placement field; its one
     // safe connector value is derived here.

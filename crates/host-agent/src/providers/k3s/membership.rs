@@ -256,7 +256,7 @@ pub(super) fn prepare_join(args: &Args) -> Outcome {
 }
 
 /// `json.Marshal` of a struct of string fields, in field order.
-fn marshal_strings(fields: &[(&str, &str)]) -> String {
+pub(super) fn marshal_strings(fields: &[(&str, &str)]) -> String {
     let mut out = String::from("{");
     for (i, (key, value)) in fields.iter().enumerate() {
         if i > 0 {
@@ -559,7 +559,7 @@ fn bit_len(magnitude: &[u8]) -> usize {
 }
 
 /// `rsa.EncryptOAEP(sha256, rand, key, msg, label)` with Go's key checks.
-fn encrypt_oaep(n: &[u8], e: i64, msg: &[u8]) -> Result<Vec<u8>, String> {
+pub(super) fn encrypt_oaep(n: &[u8], e: i64, msg: &[u8]) -> Result<Vec<u8>, String> {
     let bits = bit_len(n);
     if bits < 1024 {
         return Err(format!(
@@ -622,6 +622,54 @@ pub(super) fn seal_join_material(
     Ok(raw_url_encode(envelope.as_bytes()))
 }
 
+/// AES-GCM of the payload under the unsealed data key. Every key size Go's
+/// `crypto/aes` accepts opens it; AES-192 goes through `aes-gcm` because
+/// ring has no AES-192 GCM (D28, Q7).
+fn open_join_payload(
+    data_key: &[u8],
+    nonce: &[u8],
+    ciphertext: Vec<u8>,
+) -> Result<Vec<u8>, String> {
+    let algorithm = match data_key.len() {
+        16 => &ring::aead::AES_128_GCM,
+        24 => return open_aes192(data_key, nonce, &ciphertext),
+        32 => &ring::aead::AES_256_GCM,
+        n => {
+            return Err(format!(
+                "create sealed join material cipher: crypto/aes: invalid key size {n}"
+            ))
+        }
+    };
+    if nonce.len() != 12 {
+        super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
+    }
+    let key = ring::aead::LessSafeKey::new(
+        ring::aead::UnboundKey::new(algorithm, data_key).expect("AES key"),
+    );
+    let mut buffer = ciphertext;
+    let nonce = ring::aead::Nonce::try_assume_unique_for_key(nonce).expect("nonce");
+    Ok(key
+        .open_in_place(nonce, ring::aead::Aad::empty(), &mut buffer)
+        .map_err(|_| {
+            "decrypt sealed join material: cipher: message authentication failed".to_string()
+        })?
+        .to_vec())
+}
+
+fn open_aes192(data_key: &[u8], nonce: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+    use aes_gcm::aead::{Aead as _, KeyInit as _};
+    type Aes192Gcm = aes_gcm::AesGcm<aes_gcm::aes::Aes192, aes_gcm::aead::consts::U12>;
+    if nonce.len() != 12 {
+        super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
+    }
+    let cipher = Aes192Gcm::new_from_slice(data_key).expect("AES-192 key");
+    cipher
+        .decrypt(aes_gcm::Nonce::from_slice(nonce), ciphertext)
+        .map_err(|_| {
+            "decrypt sealed join material: cipher: message authentication failed".to_string()
+        })
+}
+
 fn string_struct(name: &'static str, fields: &[(&'static str, &'static str)]) -> Shape {
     Shape::Struct {
         name,
@@ -661,30 +709,7 @@ pub(super) fn unseal_join_material(sealed: &str) -> Result<J, String> {
         .map_err(|_| {
             "decrypt sealed join material key: crypto/rsa: decryption error".to_string()
         })?;
-    let algorithm = match data_key.len() {
-        16 => &ring::aead::AES_128_GCM,
-        32 => &ring::aead::AES_256_GCM,
-        // AES-192 (a 24-byte key) is a recorded gap: ring has no AES-192 GCM.
-        n => {
-            return Err(format!(
-                "create sealed join material cipher: crypto/aes: invalid key size {n}"
-            ))
-        }
-    };
-    if nonce.len() != 12 {
-        super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
-    }
-    let key = ring::aead::LessSafeKey::new(
-        ring::aead::UnboundKey::new(algorithm, &data_key).expect("AES key"),
-    );
-    let mut buffer = ciphertext;
-    let nonce = ring::aead::Nonce::try_assume_unique_for_key(&nonce).expect("nonce");
-    let payload = key
-        .open_in_place(nonce, ring::aead::Aad::empty(), &mut buffer)
-        .map_err(|_| {
-            "decrypt sealed join material: cipher: message authentication failed".to_string()
-        })?
-        .to_vec();
+    let payload = open_join_payload(&data_key, &nonce, ciphertext)?;
     let material_shape = string_struct(
         "sealedJoinMaterial",
         &[
@@ -936,14 +961,30 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
             quote(&node_name)
         ));
     }
-    let Some(member) = find_node(&observation.nodes, &node_name).cloned() else {
+    let Some(mut member) = find_node(&observation.nodes, &node_name).cloned() else {
         return Err(format!(
             "node {} is not a member of the cluster at {}",
             quote(&node_name),
             observation.target_uri
         ));
     };
-    let (remaining_servers, remaining_ready) = quorum_after_removal(&observation, &member)?;
+    // D28 (Q17): a server an acknowledged reset left out of etcd is retired
+    // once recovery settles: it must be observed NotReady, within a bound.
+    let instance = s(args, "providerInstanceName");
+    let excluded = recovery_record(&instance);
+    let mut observation = observation;
+    if excluded.contains(&node_name) {
+        let deadline = Instant::now() + RECOVERY_SETTLE_TIMEOUT;
+        while is_ready(&member) && Instant::now() < deadline {
+            std::thread::sleep(RECOVERY_SETTLE_POLL);
+            observation = read_membership(args)?;
+            if let Some(found) = find_node(&observation.nodes, &node_name) {
+                member = found.clone();
+            }
+        }
+    }
+    let (remaining_servers, remaining_ready) =
+        quorum_after_recovery(&observation, &member, &excluded)?;
     run_command(
         &[
             "exec",
@@ -967,12 +1008,26 @@ pub(super) fn remove_node(args: &Args) -> Outcome {
             quote(&node_name)
         ));
     }
-    if after.ready_servers * 2 <= after.server_count {
+    let mut excluded = excluded;
+    let recovered = excluded.remove(&node_name);
+    let (mut members, mut ready) = (after.server_count, after.ready_servers);
+    if recovered {
+        // Servers the reset left out still to be retired carry no quorum.
+        for node in after.nodes.iter().filter(|n| is_server(n)) {
+            if excluded.contains(node.get("name").and_then(J::as_str).unwrap_or("")) {
+                members -= 1;
+                ready -= i64::from(is_ready(node));
+            }
+        }
+        write_recovery_record(&instance, &after.hostname, &excluded)
+            .map_err(|e| format!("update the quorum recovery record: {e}"))?;
+    }
+    if ready * 2 <= members {
         return Err(format!(
             "K3s cluster lost quorum after removing {}: {} ready of {} server(s)",
             quote(&node_name),
-            after.ready_servers,
-            after.server_count
+            ready,
+            members
         ));
     }
     Ok(json!({
@@ -1013,6 +1068,86 @@ pub(super) fn quorum_after_removal(
         ));
     }
     Ok((remaining_servers, remaining_ready))
+}
+
+/// D28 (Q17): the quorum proof after an acknowledged single-member reset,
+/// which left the `excluded` servers out of etcd.
+pub(super) fn quorum_after_recovery(
+    observation: &Observation,
+    member: &J,
+    excluded: &std::collections::BTreeSet<String>,
+) -> Result<(i64, i64), String> {
+    let name = member.get("name").and_then(J::as_str).unwrap_or("");
+    if !excluded.contains(name) {
+        return quorum_after_removal(observation, member);
+    }
+    if is_ready(member) {
+        return Err(format!(
+            "refusing to retire {}: quorum recovery has not settled; it still reports Ready",
+            quote(name)
+        ));
+    }
+    // The etcd members are the servers the reset kept; they alone carry quorum.
+    let (mut members, mut ready) = (0, 0);
+    for node in observation.nodes.iter().filter(|n| is_server(n)) {
+        if !excluded.contains(node.get("name").and_then(J::as_str).unwrap_or("")) {
+            members += 1;
+            ready += i64::from(is_ready(node));
+        }
+    }
+    if ready * 2 <= members {
+        return Err(format!(
+            "refusing server removal without source-cluster quorum proof: the recovered membership has {ready} ready of {members} server(s)"
+        ));
+    }
+    Ok((observation.server_count - 1, observation.ready_servers))
+}
+
+fn is_server(node: &J) -> bool {
+    let roles: Vec<&str> = node["roles"]
+        .as_array()
+        .map_or(Vec::new(), |r| r.iter().filter_map(J::as_str).collect());
+    roles.is_empty() || roles.contains(&"control-plane") || roles.contains(&"etcd")
+}
+
+/// Where `recover-quorum` records the servers its reset left out of etcd.
+const RECOVERY_RECORD: &str = "/var/lib/rancher/k3s/server/opute-quorum-recovery.json";
+/// How long `remove-node` waits for a left-out server to report NotReady.
+const RECOVERY_SETTLE_TIMEOUT: Duration = Duration::from_secs(180);
+const RECOVERY_SETTLE_POLL: Duration = Duration::from_secs(5);
+
+/// The servers the last acknowledged reset left out, still to be retired.
+fn recovery_record(instance: &str) -> std::collections::BTreeSet<String> {
+    run_command(&["exec", instance, "--", "cat", RECOVERY_RECORD], None)
+        .ok()
+        .and_then(|raw| serde_json::from_slice::<J>(&raw).ok())
+        .and_then(|doc| doc.get("excluded").and_then(J::as_array).cloned())
+        .map(|names| {
+            names
+                .iter()
+                .filter_map(J::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn write_recovery_record(
+    instance: &str,
+    survivor: &str,
+    excluded: &std::collections::BTreeSet<String>,
+) -> Result<(), String> {
+    if excluded.is_empty() {
+        return run_command(&["exec", instance, "--", "rm", "-f", RECOVERY_RECORD], None)
+            .map(|_| ());
+    }
+    let doc = json!({"survivor": survivor, "excluded": excluded});
+    let script = format!("umask 077; cat > {RECOVERY_RECORD}");
+    run_command(
+        &["exec", instance, "--", "sh", "-c", &script],
+        Some(doc.to_string().as_bytes()),
+    )
+    .map(|_| ())
 }
 
 pub(super) fn read_membership(args: &Args) -> Result<Observation, String> {
@@ -1084,10 +1219,7 @@ pub(super) fn read_membership_for_target(
     let hostname = run_command(&["exec", &instance, "--", "hostname"], None).unwrap_or_default();
     let (mut ready_servers, mut server_count) = (0, 0);
     for node in &nodes {
-        let roles: Vec<&str> = node["roles"]
-            .as_array()
-            .map_or(Vec::new(), |r| r.iter().filter_map(J::as_str).collect());
-        if roles.is_empty() || roles.contains(&"control-plane") || roles.contains(&"etcd") {
+        if is_server(node) {
             server_count += 1;
             if is_ready(node) {
                 ready_servers += 1;
@@ -1319,6 +1451,18 @@ pub(super) fn recover_quorum(args: &Args) -> Outcome {
             observation.datastore_mode
         ));
     }
+    // D28 (Q17): every other server is out of etcd now; removal retires
+    // them once recovery settles.
+    let excluded: std::collections::BTreeSet<String> = observation
+        .nodes
+        .iter()
+        .filter(|n| is_server(n))
+        .filter_map(|n| n.get("name").and_then(J::as_str))
+        .filter(|name| *name != survivor)
+        .map(str::to_string)
+        .collect();
+    write_recovery_record(&instance, &survivor, &excluded)
+        .map_err(|e| format!("record the quorum recovery on {}: {e}", quote(&instance)))?;
     Ok(json!({
         "targetUri": observation.target_uri,
         "clusterIdentity": observation.cluster_identity,

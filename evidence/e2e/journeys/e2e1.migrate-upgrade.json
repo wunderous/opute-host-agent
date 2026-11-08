@@ -14,8 +14,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "rustNext": {
-    "path": "${PARITY}/e2e/release/rust-next/host-agent-linux-x64.gz",
-    "sha256": "134c8bba88f9e4379c3af47a582ff1f1dd334d5a2b59d8f41cc262952ce31254"
+    "path": "${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz",
+    "sha256": "5737bc7a7f7895fba8988e27f0d25ebb4fabfaa41b87a86eef938844626146dd"
    }
   },
   "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
@@ -220,8 +220,8 @@
    ]
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md",
+   "requirement": "An interrupted plan or task reads back truthfully",
    "pass": [
     {
      "step": "rustFlight",
@@ -234,8 +234,7 @@
      "equals": "cancelled"
     }
    ],
-   "scenario": "the status a run stopped in flight has after the migration (observed; Q5)",
-   "openQuestion": "Q5"
+   "scenario": "A run Go stopped gracefully in flight reads back cancelled after the migration and the upgrade, and is not run again (D28)"
   }
  ],
  "effects": {

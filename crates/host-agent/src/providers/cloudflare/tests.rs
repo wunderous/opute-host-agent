@@ -111,3 +111,21 @@ fn every_manifest_operation_is_a_tool() {
     assert_eq!(names.len(), 1 + 13 + 4 + 3 + 3 + 1, "{names:?}");
     assert!(names.contains(&"opute.capability.public-ingress.probe"));
 }
+
+/// D28 (Q7): null arguments to a host-tunnel operation are refused as no
+/// arguments; the process keeps serving (Go's nil-map panic exits it).
+#[test]
+fn null_host_tunnel_arguments_are_refused() {
+    for operation in [
+        "opute.capability.tunneling.ensure-host-tunnel",
+        "ensure_cloudflared_tunnel",
+        "create_cloudflare_tunnel",
+    ] {
+        let args = Args {
+            map: Map::new(),
+            nil: true,
+        };
+        let e = dispatch("", operation, args).unwrap_err();
+        assert_eq!(e, "bindingId and localTarget are required", "{operation}");
+    }
+}

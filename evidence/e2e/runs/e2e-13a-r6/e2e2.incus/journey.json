@@ -1,0 +1,1274 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; if test -f /root/e2e-incus-config.yml; then runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml; rm -f /root/e2e-incus-config.yml; fi; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true",
+   "id": "cleanIncus"
+  }
+ ],
+ "description": "Incus containers and VMs through typed calls on a second agent with ownership enforced: a container with a pinned address and a VM, both reachable; lifecycle; a VM resize; root disk growth and its quota; refusals on an instance the agent does not own; reset of an owned container; delete. Guests live in the default project (Q16).",
+ "effects": {
+  "allow": [
+   "incus/*",
+   "files//home/opute/.config/incus*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*",
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus*",
+   "system/units/linstor-satellite.service",
+   "system/units/packagekit.service",
+   "files//var/lib/dpkg*",
+   "files//var/lib/apt*",
+   "files//var/cache*",
+   "files//var/log*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*",
+   "system/units/sys-devices-virtual-net-tap*",
+   "system/units/sys-subsystem-net-devices-tap*"
+  ],
+  "persist": [
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus*",
+   "system/units/linstor-satellite.service",
+   "system/units/packagekit.service",
+   "files//var/lib/dpkg*",
+   "files//var/lib/apt*",
+   "files//var/cache*",
+   "files//var/log*"
+  ]
+ },
+ "gate": "e2e-2",
+ "id": "e2e2.incus",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "agentB": "a transient Rust agent e2e-incus-b on port 3032 (e2etool agent start) with Incus ownership enforced and itself as the shared host owner",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  },
+  "images": "the snapshot's local Incus images parity-noble (container) and parity-noble-vm"
+ },
+ "maxMinutes": 28,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "in": [
+      [],
+      "<absent>"
+     ],
+     "path": "response.body.result.structuredContent.vms",
+     "step": "listBefore"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "container"
+    },
+    {
+     "equals": "container:local:e2e-c1",
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "container"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "vm"
+    },
+    {
+     "equals": "vm:local:e2e-v1",
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm"
+    },
+    {
+     "equals": "running",
+     "path": "response.body.result.structuredContent.status",
+     "step": "infoC"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "vmAddress"
+    },
+    {
+     "equals": "running",
+     "path": "response.body.result.structuredContent.status",
+     "step": "infoV"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.agentReady",
+     "step": "infoV"
+    },
+    {
+     "equals": "container:local:e2e-c1",
+     "path": "response.body.result.structuredContent.vms[0].uri",
+     "step": "listBoth"
+    },
+    {
+     "equals": "vm:local:e2e-v1",
+     "path": "response.body.result.structuredContent.vms[1].uri",
+     "step": "listBoth"
+    },
+    {
+     "equals": 0,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "serveC"
+    },
+    {
+     "equals": "ping-ok\n200",
+     "path": "stdout",
+     "step": "reachC"
+    },
+    {
+     "equals": "1\nLinux\n",
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "runV"
+    },
+    {
+     "matches": "^ping-ok\n",
+     "path": "stdout",
+     "step": "reachV"
+    }
+   ],
+   "requirement": "provision_container, provision_vm, get_vm_info, list_vms, run_instance_command",
+   "scenario": "A container and a virtual machine provisioned in the default project; both boot and answer at their addresses (ping and a TCP service)",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": "1\ne2e-other (current)\n",
+     "path": "stdout",
+     "step": "otherProject"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "container"
+    },
+    {
+     "equals": "running",
+     "path": "response.body.result.structuredContent.status",
+     "step": "infoC"
+    },
+    {
+     "equals": "e2e-c1\n0\n",
+     "path": "stdout",
+     "step": "inDefault"
+    },
+    {
+     "equals": "restored\n",
+     "path": "stdout",
+     "step": "projectBack"
+    }
+   ],
+   "requirement": "One Incus project per agent",
+   "scenario": "With agent B's Incus client switched to project e2e-other, the container it provisions is created and observed in default, and e2e-other stays empty (D28)",
+   "spec": "openspec/changes/incus-project-selection/specs/incus-project-selection/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "10.0.100.50",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "step": "infoC"
+    },
+    {
+     "equals": "10.0.100.50",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "step": "infoAfter"
+    }
+   ],
+   "requirement": "A tool's published input schema declares every input it reads",
+   "scenario": "provision_container's declared ipv4Address pins the container's bridge address across stop, start and restart (D28)",
+   "spec": "openspec/changes/declare-read-inputs/specs/capability-input-schemas/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "stopped",
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stopC"
+    },
+    {
+     "equals": "running",
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "startC"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "restartC"
+    },
+    {
+     "equals": "stopped",
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stopV"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "resizeV"
+    },
+    {
+     "equals": "running",
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "startV"
+    },
+    {
+     "equals": "2\n1536MiB\n",
+     "path": "stdout",
+     "step": "limitsV"
+    }
+   ],
+   "requirement": "stop_vm, start_vm, restart_vm, update_vm_resources",
+   "scenario": "Lifecycle of both kinds; a stopped VM resized and started with its new limits",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "grow"
+    },
+    {
+     "equals": "5GiB\n",
+     "path": "stdout",
+     "step": "rootSize"
+    },
+    {
+     "gte": 1,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "overQuota"
+    },
+    {
+     "matches": "(Disk quota exceeded|No space left on device)",
+     "path": "response.body.result.structuredContent.stderr",
+     "step": "overQuota"
+    }
+   ],
+   "requirement": "update_vm_resources disk is admitted only where the pool enforces it",
+   "scenario": "The container's root disk grows to 5GiB on the btrfs pool, and a 6GiB write inside it fails at the quota",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      [],
+      "<absent>"
+     ],
+     "path": "response.body.result.structuredContent.vms",
+     "step": "listBefore"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "stopForeign"
+    },
+    {
+     "equals": "resource_binding",
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "stopForeign"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "deleteForeign"
+    },
+    {
+     "equals": "resource_binding",
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "deleteForeign"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "resetForeign"
+    },
+    {
+     "matches": "refuses unowned instance",
+     "path": "response.body.result.result.content[0].text",
+     "step": "resetForeign"
+    },
+    {
+     "equals": "RUNNING\n",
+     "path": "stdout",
+     "step": "foreignAfter"
+    }
+   ],
+   "requirement": "Incus ownership (OPUTE_INCUS_OWNERSHIP_MODE=enforce)",
+   "scenario": "An instance created outside the agent is not listed by the enforcing agent, so stop and delete are refused at admission (unknown resource), reset refuses it as unowned, and it keeps running",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "reset"
+    },
+    {
+     "equals": "0\n",
+     "path": "stdout",
+     "step": "resetGone"
+    }
+   ],
+   "requirement": "reset_virtualization_stack resets explicitly selected owned instances",
+   "scenario": "The owned container is deleted and the stack reinstalled and verified, behind matching disposable-host fingerprints and authorization",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.deleted",
+     "step": "deleteV"
+    },
+    {
+     "in": [
+      false,
+      true
+     ],
+     "path": "response.body.result.result.isError",
+     "step": "deleteAgain"
+    },
+    {
+     "in": [
+      [],
+      "<absent>"
+     ],
+     "path": "response.body.result.structuredContent.vms",
+     "step": "listAfter"
+    },
+    {
+     "equals": "e2e-foreign\n",
+     "path": "stdout",
+     "step": "left"
+    }
+   ],
+   "requirement": "delete_vm",
+   "scenario": "Every owned guest is gone after delete; only the foreign instance remains",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start b --port 3032 --id e2e-incus-b --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_AGENT_INSTANCE=e2e-incus-b --env OPUTE_INCUS_OWNERSHIP_MODE=enforce --env OPUTE_SHARED_HOST_OWNER_INSTANCE=e2e-incus-b --env MCP_AUTH_TOKEN='${SECRET:tokenB}' >/dev/null && echo started",
+   "id": "agentB"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "catalogB",
+   "mcp": "tools/list",
+   "port": 3032
+  },
+  {
+   "guest": "incus launch parity-noble e2e-foreign -q && incus list e2e-foreign -c s -f csv",
+   "id": "foreign"
+  },
+  {
+   "guest": "cp -p /home/opute/.config/incus/config.yml /root/e2e-incus-config.yml && incus project create e2e-other -q && runuser -u opute -- incus project switch e2e-other && runuser -u opute -- incus project list -f csv | grep -c '(current)' && runuser -u opute -- incus project list -f csv | grep '(current)' | cut -d, -f1",
+   "id": "otherProject"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:tokenB",
+   "id": "listBefore",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_vms"
+  },
+  {
+   "arguments": {
+    "containerName": "e2e-c1",
+    "cpus": 1,
+    "disk": "4GiB",
+    "image": "parity-noble",
+    "ipv4Address": "10.0.100.50",
+    "memory": "1GiB"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_container": "response.body.result.taskId"
+   },
+   "id": "containerCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "provision_container"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "container",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_container}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "cpus": 1,
+    "disk": "10GiB",
+    "image": "parity-noble-vm",
+    "instanceType": "virtual-machine",
+    "memory": "1GiB",
+    "name": "e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_vm": "response.body.result.taskId"
+   },
+   "id": "vmCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "provision_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "vm",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_vm}"
+   },
+   "port": 3032,
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "id": "infoC",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_vm_info"
+  },
+  {
+   "guest": "incus list e2e-c1 --project default -c n -f csv; incus list --project e2e-other -c n -f csv | wc -l",
+   "id": "inDefault"
+  },
+  {
+   "guest": "for i in $(seq 150); do incus list e2e-v1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' && break; sleep 2; done; incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'",
+   "id": "vmAddress"
+  },
+  {
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "V1_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "infoV",
+   "interval": 5,
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 300,
+   "tool": "get_vm_info",
+   "until": {
+    "in": [
+     true
+    ],
+    "path": "response.body.result.structuredContent.agentReady"
+   }
+  },
+  {
+   "arguments": {},
+   "auth": "secret:tokenB",
+   "id": "listBoth",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_vms"
+  },
+  {
+   "arguments": {
+    "args": [
+     "-c",
+     "nohup python3 -m http.server 8080 --directory /etc >/dev/null 2>&1 & sleep 1; echo serving"
+    ],
+    "command": "sh",
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "id": "serveC",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_instance_command"
+  },
+  {
+   "guest": "ping -c1 -W5 10.0.100.50 >/dev/null && echo ping-ok; curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://10.0.100.50:8080/hostname",
+   "id": "reachC"
+  },
+  {
+   "arguments": {
+    "args": [
+     "-c",
+     "nproc; uname -s"
+    ],
+    "command": "sh",
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "id": "runV",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_instance_command"
+  },
+  {
+   "guest": "ping -c1 -W5 ${V1_IP} >/dev/null && echo ping-ok; timeout 5 bash -c 'echo > /dev/tcp/${V1_IP}/22' 2>/dev/null && echo ssh-port",
+   "id": "reachV"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_stopC": "response.body.result.taskId"
+   },
+   "id": "stopCCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "stop_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "stopC",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_stopC}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_startC": "response.body.result.taskId"
+   },
+   "id": "startCCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "start_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "startC",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_startC}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_restartC": "response.body.result.taskId"
+   },
+   "id": "restartCCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "restart_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "restartC",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_restartC}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "id": "infoAfter",
+   "interval": 3,
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 120,
+   "tool": "get_vm_info",
+   "until": {
+    "in": [
+     "10.0.100.50"
+    ],
+    "path": "response.body.result.structuredContent.ipv4[0]"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_stopV": "response.body.result.taskId"
+   },
+   "id": "stopVCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "stop_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "stopV",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_stopV}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "cpus": 2,
+    "memory": "1536MiB",
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "id": "resizeV",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "update_vm_resources"
+  },
+  {
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_startV": "response.body.result.taskId"
+   },
+   "id": "startVCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "start_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "startV",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_startV}"
+   },
+   "port": 3032,
+   "timeout": 300,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "incus config get e2e-v1 limits.cpu; incus config get e2e-v1 limits.memory",
+   "id": "limitsV"
+  },
+  {
+   "arguments": {
+    "disk": "5GiB",
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "id": "grow",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "update_vm_resources"
+  },
+  {
+   "guest": "incus config device get e2e-c1 root size",
+   "id": "rootSize"
+  },
+  {
+   "arguments": {
+    "args": [
+     "-c",
+     "head -c 6G /dev/zero > /root/fill; r=$?; rm -f /root/fill; exit $r"
+    ],
+    "command": "sh",
+    "timeoutMs": 240000,
+    "uri": "container:local:e2e-c1"
+   },
+   "auth": "secret:tokenB",
+   "id": "overQuota",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_instance_command"
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-foreign"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_stopForeign": "response.body.result.taskId"
+   },
+   "id": "stopForeignCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "stop_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "stopForeign",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_stopForeign}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-foreign"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_deleteForeign": "response.body.result.taskId"
+   },
+   "id": "deleteForeignCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "delete_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "deleteForeign",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_deleteForeign}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "disposableHostAuthorization": "dispose:e2e-devvm",
+    "disposableHostFingerprint": "e2e-devvm",
+    "expectedHostFingerprint": "e2e-devvm",
+    "instanceNames": [
+     "e2e-foreign"
+    ],
+    "reinstall": true
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_resetForeign": "response.body.result.taskId"
+   },
+   "id": "resetForeignCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "reset_virtualization_stack"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "resetForeign",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_resetForeign}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "incus list e2e-foreign -c s -f csv",
+   "id": "foreignAfter"
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "disposableHostAuthorization": "dispose:e2e-devvm",
+    "disposableHostFingerprint": "e2e-devvm",
+    "expectedHostFingerprint": "e2e-devvm",
+    "instanceNames": [
+     "e2e-c1"
+    ],
+    "reinstall": true
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_reset": "response.body.result.taskId"
+   },
+   "id": "resetCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "reset_virtualization_stack"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "reset",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_reset}"
+   },
+   "port": 3032,
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "incus list e2e-c1 -c n -f csv | wc -l",
+   "id": "resetGone"
+  },
+  {
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_deleteV": "response.body.result.taskId"
+   },
+   "id": "deleteVCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "delete_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "deleteV",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_deleteV}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "auth": "secret:tokenB",
+   "capture": {
+    "TID_deleteAgain": "response.body.result.taskId"
+   },
+   "id": "deleteAgainCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "delete_vm"
+  },
+  {
+   "auth": "secret:tokenB",
+   "id": "deleteAgain",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_deleteAgain}"
+   },
+   "port": 3032,
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {},
+   "auth": "secret:tokenB",
+   "id": "listAfter",
+   "mcp": "tools/call",
+   "port": 3032,
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_vms"
+  },
+  {
+   "guest": "incus list -c n -f csv",
+   "id": "left"
+  },
+  {
+   "guest": "runuser -u opute -- incus project switch default && incus project delete e2e-other >/dev/null && cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml && rm /root/e2e-incus-config.yml && echo restored",
+   "id": "projectBack"
+  }
+ ]
+}

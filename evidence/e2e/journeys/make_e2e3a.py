@@ -28,6 +28,7 @@ from make_e2e1 import HERE, SPEC, T, TASKS_META, a, inp, ok, req
 GATE = "e2e-3a"
 PAGE = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
 CATALOG = "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+Q17_SPEC = "openspec/changes/k3s-quorum-recovery-retirement/specs/k3s-membership/spec.md"
 SEAM_SPEC = "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
 K = "opute.capability.kubernetes."
 VERSION = "v1.31.8+k3s1"  # the page's test record
@@ -43,7 +44,7 @@ ADB_B = "/tmp/e2e-agents/b"
 JOURNALS = "opute-bootstrap-mcp e2e-agent-b e2e-provider-k3s e2e-provider-k3s-b"
 
 FILES = {**base.TOOL_FILES,
-         "providerK3s": inp("${PARITY}/e2e/release/rust/opute-provider-k3s-linux-x64"),
+         "providerK3s": inp("${PARITY}/e2e/release/rust-e2e13a/opute-provider-k3s-linux-x64"),
          # The M9 provider-real.k3s activation recipe, byte for byte: the provider's install manifest pins
         # its sha256 (91f0b596...).
          "activate": inp("${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml")}
@@ -450,8 +451,10 @@ def j4() -> dict:
         *task("recover", K + "recover-quorum", {**CL, "acknowledgeSingleMemberReset": True}, timeout=900),
         call("readRecovered", "get_cluster_resource",
              {"uri": CLUSTER, "kind": "configmap", "namespace": "default", "resourceName": "e2e-before-loss"}),
-        membership("staleGone", 1, timeout=240),
-        *task("removeNode2", K + "remove-node", {**CL, "nodeName": "e2e-k2", "role": "server"}),
+        # D28 (Q17): remove-node itself waits for recovery to settle (no wait here)
+        *task("removeNode2", K + "remove-node", {**CL, "nodeName": "e2e-k2", "role": "server"}, timeout=600),
+        *task("removeNode3", K + "remove-node", {**CL, "nodeName": "e2e-k3", "role": "server"}, timeout=600),
+        call("membersAfter", K + "inspect-membership", {**CL, "requireEmbeddedEtcd": True}),
         *task("remove", K + "remove", CL),
         call("clustersAfter", "list_compute_clusters", {}),
         *[s for name in SERVERS for s in task(f"delete{name[-1]}", "delete_vm", {"uri": f"container:local:{name}"})],
@@ -466,15 +469,20 @@ def j4() -> dict:
             direct("statusNoQuorum", "isError", equals=True),
             scenario="Two of three servers stopped: a typed write and the status read fail closed with an error "
                      "result, never a success"),
-        req(CATALOG, "recover-quorum restores a single-member etcd majority; remove-node retires a dead server",
+        req(CATALOG, "recover-quorum restores a single-member etcd majority",
             res("recover", "isError", equals=False),
             res("recover", "structuredContent.quorumRestored", equals=True),
             direct("readRecovered", "structuredContent.json", matches="before-quorum-loss"),
-            direct("staleGone", "structuredContent.readyServers", equals=1),
+            scenario="After the acknowledged reset the data written before the loss reads back"),
+        req(Q17_SPEC, "Dead servers are retired once quorum recovery settles",
             res("removeNode2", "isError", equals=False),
-            scenario="After the acknowledged reset the stopped servers are observed NotReady and can be retired "
-                     "through the typed path (what recovery and removal must guarantee is Q17)",
-            question="Q17"),
+            res("removeNode2", "structuredContent.removedNodeWasReady", equals=False),
+            res("removeNode3", "isError", equals=False),
+            res("removeNode3", "structuredContent.removedNodeWasReady", equals=False),
+            direct("membersAfter", "structuredContent.serverCount", equals=1),
+            direct("membersAfter", "structuredContent.readyServers", equals=1),
+            scenario="Each stopped server is retired only once it is observed NotReady, and the cluster keeps "
+                     "serving from the survivor (D28)"),
         req(CATALOG, "remove and delete_vm leave no cluster or guest",
             res("remove", "isError", equals=False), res("remove", "structuredContent.removed", equals=True),
             direct("clustersAfter", "structuredContent.total", equals=0),

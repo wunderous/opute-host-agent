@@ -123,8 +123,8 @@
    "scenario": "The plan run reads back by id through get_operation; the operation list answers; an unknown id is an error"
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "Durable and redacted observations (operation status)",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md",
+   "requirement": "An operation record reports its task's terminal status",
    "pass": [
     {
      "step": "operation",
@@ -132,8 +132,7 @@
      "equals": "completed"
     }
    ],
-   "scenario": "The completed plan run's operation row reports completed (Q25: Go writes a live task's row working, and Rust keeps it)",
-   "openQuestion": "Q25"
+   "scenario": "The completed plan run's operation row reports completed (D28)"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",

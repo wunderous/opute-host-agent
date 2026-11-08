@@ -230,8 +230,23 @@ impl Incus {
                 "install_virtualization_stack"
             ));
         }
+        // D28 (Q16): always the `default` project, whatever the client's
+        // current project is. `incus query` refuses --project, so its API
+        // path names the project instead.
         let mut argv = vec![binary.to_string()];
-        argv.extend(args.iter().map(|s| s.to_string()));
+        if args.first() == Some(&"query") {
+            argv.extend(args.iter().map(|arg| {
+                if arg.starts_with("/1.0") {
+                    let sep = if arg.contains('?') { '&' } else { '?' };
+                    format!("{arg}{sep}project=default")
+                } else {
+                    arg.to_string()
+                }
+            }));
+        } else {
+            argv.extend(["--project".to_string(), "default".to_string()]);
+            argv.extend(args.iter().map(|s| s.to_string()));
+        }
         let deadline = (!timeout.is_zero()).then(|| std::time::Instant::now() + timeout);
         Ok(crate::hostobs::run_command_with(
             &self.env, &argv, stdin, deadline, timeout, ctx,
@@ -1003,6 +1018,57 @@ fn pool_enforces_quota(name: &str, driver: &str, source: &str, mounts: &str) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// D28 (Q16): every Incus call addresses the `default` project, whatever
+    /// the client's current project is.
+    #[test]
+    fn every_incus_call_addresses_the_default_project() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("incus");
+        std::fs::write(&fake, "#!/bin/sh\necho \"$@\"\n").unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let incus = Incus {
+            env: Env::from_pairs([("PATH", "/usr/bin:/bin")]),
+            binary: fake.display().to_string(),
+            instance_id: String::new(),
+            ownership_mode: String::new(),
+            agent_id: String::new(),
+            tenant_id: String::new(),
+            network_name: String::new(),
+            network_address: String::new(),
+        };
+        let res = incus
+            .run(&["launch", "images:debian/12", "c1"], Duration::ZERO)
+            .unwrap();
+        assert_eq!(res.stdout, "--project default launch images:debian/12 c1\n");
+        // `incus query` refuses --project: the project goes in the URL.
+        let res = incus
+            .run(&["query", "/1.0/instances/c1/state"], Duration::ZERO)
+            .unwrap();
+        assert_eq!(
+            res.stdout,
+            "query /1.0/instances/c1/state?project=default\n"
+        );
+        let res = incus
+            .run(
+                &[
+                    "query",
+                    "-X",
+                    "PATCH",
+                    "--wait",
+                    "/1.0/instances?recursion=1",
+                    "-d",
+                    "{}",
+                ],
+                Duration::ZERO,
+            )
+            .unwrap();
+        assert_eq!(
+            res.stdout,
+            "query -X PATCH --wait /1.0/instances?recursion=1&project=default -d {}\n"
+        );
+    }
 
     #[test]
     fn capacity_bytes_match_go() {

@@ -1,0 +1,1312 @@
+{
+ "cleanup": [
+  {
+   "guest": "uid=$(id -u opute); runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$uid systemctl --user disable --now e2e-web.service 2>/dev/null; rm -f /home/opute/.config/systemd/user/e2e-web.service; runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$uid systemctl --user daemon-reload; rm -rf /home/opute/e2e /home/opute/evil; DEBIAN_FRONTEND=noninteractive apt-get purge -y -q ninja-build >/dev/null 2>&1; apt-get autoremove -y -q >/dev/null 2>&1; loginctl disable-linger opute; rmdir /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; true",
+   "id": "cleanHost"
+  }
+ ],
+ "description": "Host operations on the dev VM itself through typed calls: a user service's lifecycle (file, enable, start, listener, HTTP, restart, stop, disable, confirmed removal), a refused system unit, bounded host commands, an apt tool, a checksum-verified HTTPS artifact, a tar.zst archive and a traversal archive, the virtualization stack and the bridge control plane. Pass: each effect is observed on the VM and cleanup returns the VM diff to the baseline.",
+ "effects": {
+  "allow": [
+   "files//home/opute/e2e*",
+   "files//home/opute/evil",
+   "files//home/opute/.config/systemd*",
+   "packages/ninja-build*",
+   "files//usr/bin/ninja*",
+   "files//var/lib/dpkg*",
+   "files//var/lib/apt*",
+   "files//var/cache*",
+   "files//var/log*",
+   "files//usr/share/doc/ninja-build*",
+   "files//usr/share/man*",
+   "files//usr/share/bash-completion*",
+   "files//usr/share/zsh*",
+   "files//usr/share/vim*",
+   "files//usr/share/emacs*",
+   "system/units/opute-host-workload-*",
+   "user/units/e2e-web*",
+   "user/unitFiles/e2e-web*",
+   "linger/*",
+   "users/opute/linger*",
+   "system/units/user@*",
+   "system/units/user-runtime-dir@*",
+   "system/units/user-*.slice",
+   "incus/*",
+   "files//var/lib/systemd/linger*",
+   "linger",
+   "system/units/run-user-*",
+   "system/units/packagekit.service",
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus*",
+   "system/units/linstor-satellite.service",
+   "files//var/lib/dpkg/info/incus*"
+  ],
+  "persist": [
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus*",
+   "system/units/linstor-satellite.service",
+   "system/units/packagekit.service",
+   "files//var/lib/dpkg/info/incus*"
+  ]
+ },
+ "gate": "e2e-2",
+ "id": "e2e2.host-ops",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 20,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.linger",
+     "step": "supervisorAgain"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.changed",
+     "step": "unit"
+    },
+    {
+     "equals": "/home/opute/.config/systemd/user/e2e-web.service",
+     "path": "response.body.result.structuredContent.path",
+     "step": "unit"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.status",
+     "step": "enable"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.status",
+     "step": "start"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.active",
+     "step": "inspect"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.enabled",
+     "step": "inspect"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.listenerOwned",
+     "step": "inspect"
+    },
+    {
+     "exists": true,
+     "path": "response.body.result.structuredContent.services",
+     "step": "services"
+    },
+    {
+     "equals": "200",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "curl"
+    },
+    {
+     "in": [
+      "applied",
+      "scheduled"
+     ],
+     "path": "response.body.result.structuredContent.status",
+     "step": "restart"
+    },
+    {
+     "equals": "active",
+     "path": "json.ActiveState",
+     "step": "running"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.status",
+     "step": "stop"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.status",
+     "step": "disable"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "removeUnconfirmed"
+    },
+    {
+     "equals": "invalid_arguments",
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "removeUnconfirmed"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "removeUnit"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "inspectGone"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "systemUnitDenied"
+    }
+   ],
+   "requirement": "ensure_host_service_supervisor, ensure_host_file, set_host_service_state, inspect_host_service, list_host_services, remove_host_file, inspect_host_file",
+   "scenario": "A user service: unit file written, enabled, started, owning its port and serving HTTP, restarted, stopped, disabled and its file removed only with confirmation; a system unit file is refused to the agent's unprivileged user",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "execFails"
+    },
+    {
+     "equals": 3,
+     "path": "response.body.result.result.structuredContent.exitCode",
+     "step": "execFails"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "execTimeout"
+    },
+    {
+     "matches": "Finished with result: timeout",
+     "path": "response.body.result.result.content[0].text",
+     "step": "execTimeout"
+    }
+   ],
+   "requirement": "run_host_command",
+   "scenario": "Bounded host commands: a failing command reports its exit status, a command past its timeout is stopped and reported as failed",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "ninjaTool"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.available",
+     "step": "ninjaTool"
+    },
+    {
+     "equals": "/usr/bin/ninja",
+     "path": "response.body.result.result.structuredContent.path",
+     "step": "ninjaTool"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.alreadyAvailable",
+     "step": "toolAgain"
+    },
+    {
+     "equals": "install ok installed\n",
+     "path": "stdout",
+     "step": "ninja"
+    }
+   ],
+   "requirement": "ensure_host_tool",
+   "scenario": "An allowlisted package installed through apt once, then reported already available",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.changed",
+     "step": "artifact"
+    },
+    {
+     "equals": "sha256:726d24fbdca8e47c01733ad73d1791efcc1ac3e96bb3daf40b17696c28176689",
+     "path": "response.body.result.result.structuredContent.sha256",
+     "step": "artifact"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.structuredContent.changed",
+     "step": "artifactAgain"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "artifactBad"
+    },
+    {
+     "matches": "sha256 mismatch",
+     "path": "response.body.result.result.content[0].text",
+     "step": "artifactBad"
+    },
+    {
+     "equals": "sha256:726d24fbdca8e47c01733ad73d1791efcc1ac3e96bb3daf40b17696c28176689",
+     "path": "response.body.result.structuredContent.sha256",
+     "step": "artifactFile"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "artifactBadFile"
+    }
+   ],
+   "requirement": "ensure_host_artifact",
+   "scenario": "An HTTPS artifact downloaded and verified against its SHA-256; a wrong checksum installs nothing",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.changed",
+     "step": "extract"
+    },
+    {
+     "equals": 2,
+     "path": "response.body.result.structuredContent.entries",
+     "step": "extract"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "extracted"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "extractTraversal"
+    },
+    {
+     "equals": "contained\n",
+     "path": "stdout",
+     "step": "noEscape"
+    }
+   ],
+   "requirement": "extract_host_archive",
+   "scenario": "A tar.zst archive extracted beneath the home directory; a traversal entry is rejected and nothing escapes",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "virt"
+    },
+    {
+     "matches": "Server version",
+     "path": "response.body.result.result.structuredContent.incus",
+     "step": "virt"
+    }
+   ],
+   "requirement": "install_virtualization_stack",
+   "scenario": "The virtualization stack reconciled on a host that has it: Incus reported, nothing broken",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "restartIncus"
+    },
+    {
+     "matches": "missing required property \\\"serviceName\\\"",
+     "path": "response.body.result.content[0].text",
+     "step": "restartIncus"
+    }
+   ],
+   "requirement": "A tool declares every input it reads",
+   "scenario": "restart_host_service publishes serviceName as required; a call with uri only is refused by the published schema before anything runs (D28)",
+   "spec": "openspec/changes/declare-read-inputs/specs/capability-input-schemas/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "restartIncusNamed"
+    },
+    {
+     "matches": "set_host_service_state",
+     "path": "response.body.result.content[0].text",
+     "step": "restartIncusNamed"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "restartIncusSystem"
+    },
+    {
+     "equals": "scheduled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "restartIncusSystem"
+    },
+    {
+     "equals": "active\n",
+     "path": "stdout",
+     "step": "incusActive"
+    }
+   ],
+   "requirement": "restart_host_service restarts Opute user services only",
+   "scenario": "Restarting Incus with restart_host_service is refused before acting and names set_host_service_state; Incus is restarted through it with scope system (D28)",
+   "spec": "openspec/changes/privileged-host-service-restart/specs/host-service-restart/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisor"
+    }
+   ],
+   "requirement": "The first ensure call settles the user service manager",
+   "scenario": "The first ensure call on a host whose user manager is not running yet reports ready once the user bus is up (D28)",
+   "spec": "openspec/changes/settle-user-service-supervisor/specs/host-service-supervisor/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "bridge"
+    },
+    {
+     "equals": "offline",
+     "path": "response.body.result.structuredContent.bridgeStatus",
+     "step": "bridge"
+    },
+    {
+     "equals": null,
+     "path": "response.body.result.structuredContent.lastHeartbeat.at",
+     "step": "bridge"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "recoverBridge"
+    }
+   ],
+   "requirement": "A result the published output schema allows is not refused",
+   "scenario": "Bridge recovery on a standalone host with no bridge: diagnose reports it offline with a null heartbeat (D28: nullable honoured), recover fails closed",
+   "spec": "openspec/changes/nullable-output-schemas/specs/capability-output-schemas/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "catalog",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {},
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up",
+   "id": "userBus"
+  },
+  {
+   "arguments": {},
+   "id": "supervisorAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "arguments": {
+    "content": "[Unit]\nDescription=e2e web\n\n[Service]\nExecStart=/usr/bin/python3 -m http.server 8781 --bind 127.0.0.1 --directory /tmp\n\n[Install]\nWantedBy=default.target\n",
+    "path": "~/.config/systemd/user/e2e-web.service"
+   },
+   "id": "unit",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-web.service",
+    "state": "enable",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "enable",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-web.service",
+    "state": "start",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "start",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "listenPort": 8781,
+    "uri": "host-service:local:user/e2e-web.service"
+   },
+   "id": "inspect",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_host_service"
+  },
+  {
+   "arguments": {},
+   "id": "services",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "list_host_services"
+  },
+  {
+   "arguments": {
+    "command": "curl -s -o /dev/null -w %{http_code} http://127.0.0.1:8781/"
+   },
+   "capture": {
+    "TID_curl": "response.body.result.taskId"
+   },
+   "id": "curlCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "id": "curl",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_curl}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-web.service",
+    "state": "restart",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "restart",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py unit e2e-web.service --user opute",
+   "id": "running"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-web.service",
+    "state": "stop",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "stop",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "serviceName": "e2e-web.service",
+    "state": "disable",
+    "uri": "host-service:local:system/dbus.service"
+   },
+   "id": "disable",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "path": "~/.config/systemd/user/e2e-web.service"
+   },
+   "capture": {
+    "TID_removeUnconfirmed": "response.body.result.taskId"
+   },
+   "id": "removeUnconfirmedCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_host_file"
+  },
+  {
+   "id": "removeUnconfirmed",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_removeUnconfirmed}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "path": "~/.config/systemd/user/e2e-web.service"
+   },
+   "capture": {
+    "TID_removeUnit": "response.body.result.taskId"
+   },
+   "id": "removeUnitCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_host_file"
+  },
+  {
+   "id": "removeUnit",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_removeUnit}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "path": "~/.config/systemd/user/e2e-web.service"
+   },
+   "id": "inspectGone",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_host_file"
+  },
+  {
+   "arguments": {
+    "content": "[Unit]\nDescription=e2e web\n\n[Service]\nExecStart=/usr/bin/python3 -m http.server 8781 --bind 127.0.0.1 --directory /tmp\n\n[Install]\nWantedBy=default.target\n",
+    "path": "/etc/systemd/system/e2e-sys.service",
+    "scope": "system"
+   },
+   "id": "systemUnitDenied",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "uri": "host-service:local:system/incus.service"
+   },
+   "id": "restartIncus",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "restart_host_service"
+  },
+  {
+   "arguments": {
+    "serviceName": "incus.service",
+    "uri": "host-service:local:system/incus.service"
+   },
+   "id": "restartIncusNamed",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "restart_host_service"
+  },
+  {
+   "arguments": {
+    "scope": "system",
+    "serviceName": "incus.service",
+    "state": "restart",
+    "uri": "host-service:local:system/incus.service"
+   },
+   "id": "restartIncusSystem",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "set_host_service_state"
+  },
+  {
+   "guest": "for i in $(seq 60); do systemctl is-active --quiet incus && break; sleep 1; done; systemctl is-active incus",
+   "id": "incusActive"
+  },
+  {
+   "arguments": {
+    "command": "echo err >&2; exit 3"
+   },
+   "capture": {
+    "TID_execFails": "response.body.result.taskId"
+   },
+   "id": "execFailsCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "id": "execFails",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_execFails}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "command": "sleep 30",
+    "timeoutMs": 1500
+   },
+   "capture": {
+    "TID_execTimeout": "response.body.result.taskId"
+   },
+   "id": "execTimeoutCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "id": "execTimeout",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_execTimeout}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "tool": "ninja"
+   },
+   "capture": {
+    "TID_ninjaTool": "response.body.result.taskId"
+   },
+   "id": "ninjaToolCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_tool"
+  },
+  {
+   "id": "ninjaTool",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_ninjaTool}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "tool": "ninja"
+   },
+   "capture": {
+    "TID_toolAgain": "response.body.result.taskId"
+   },
+   "id": "toolAgainCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_tool"
+  },
+  {
+   "id": "toolAgain",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_toolAgain}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "dpkg -s ninja-build | sed -n 's/^Status: //p'",
+   "id": "ninja"
+  },
+  {
+   "arguments": {
+    "destination": "e2e/art/sums.txt",
+    "sha256": "726d24fbdca8e47c01733ad73d1791efcc1ac3e96bb3daf40b17696c28176689",
+    "uri": "https://github.com/k3s-io/k3s/releases/download/v1.31.8%2Bk3s1/sha256sum-amd64.txt"
+   },
+   "capture": {
+    "TID_artifact": "response.body.result.taskId"
+   },
+   "id": "artifactCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_artifact"
+  },
+  {
+   "id": "artifact",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_artifact}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "destination": "e2e/art/sums.txt",
+    "sha256": "726d24fbdca8e47c01733ad73d1791efcc1ac3e96bb3daf40b17696c28176689",
+    "uri": "https://github.com/k3s-io/k3s/releases/download/v1.31.8%2Bk3s1/sha256sum-amd64.txt"
+   },
+   "capture": {
+    "TID_artifactAgain": "response.body.result.taskId"
+   },
+   "id": "artifactAgainCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_artifact"
+  },
+  {
+   "id": "artifactAgain",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_artifactAgain}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "destination": "e2e/art/bad.txt",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "uri": "https://github.com/k3s-io/k3s/releases/download/v1.31.8%2Bk3s1/sha256sum-amd64.txt"
+   },
+   "capture": {
+    "TID_artifactBad": "response.body.result.taskId"
+   },
+   "id": "artifactBadCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_artifact"
+  },
+  {
+   "id": "artifactBad",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_artifactBad}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "path": "e2e/art/sums.txt"
+   },
+   "id": "artifactFile",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_host_file"
+  },
+  {
+   "arguments": {
+    "path": "e2e/art/bad.txt"
+   },
+   "id": "artifactBadFile",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_host_file"
+  },
+  {
+   "arguments": {
+    "command": "mkdir -p $HOME/e2e/src/d && printf hello > $HOME/e2e/src/d/a.txt && tar --zstd -C $HOME/e2e/src -cf $HOME/e2e/in.tar.zst d && echo made"
+   },
+   "capture": {
+    "TID_archive": "response.body.result.taskId"
+   },
+   "id": "archiveCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "id": "archive",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_archive}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "archivePath": "e2e/in.tar.zst",
+    "destination": "e2e/out"
+   },
+   "id": "extract",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "extract_host_archive"
+  },
+  {
+   "arguments": {
+    "path": "e2e/out/d/a.txt"
+   },
+   "id": "extracted",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_host_file"
+  },
+  {
+   "arguments": {
+    "command": "cd $HOME/e2e && printf x > evil && tar --zstd -cf bad.tar.zst --transform 's,^,../,' evil && echo made"
+   },
+   "capture": {
+    "TID_traversal": "response.body.result.taskId"
+   },
+   "id": "traversalCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "run_host_command"
+  },
+  {
+   "id": "traversal",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_traversal}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "archivePath": "e2e/bad.tar.zst",
+    "destination": "e2e/out2"
+   },
+   "id": "extractTraversal",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "extract_host_archive"
+  },
+  {
+   "guest": "test -e /home/opute/evil && echo escaped || echo contained",
+   "id": "noEscape"
+  },
+  {
+   "arguments": {},
+   "capture": {
+    "TID_virt": "response.body.result.taskId"
+   },
+   "id": "virtCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "install_virtualization_stack"
+  },
+  {
+   "id": "virt",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_virt}"
+   },
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {},
+   "id": "bridge",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "diagnose_bridge"
+  },
+  {
+   "arguments": {},
+   "id": "recoverBridge",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "recover_bridge"
+  },
+  {
+   "guest": "ls -la /home/opute/e2e /home/opute/e2e/out/d 2>&1 | wc -l",
+   "id": "after"
+  }
+ ]
+}

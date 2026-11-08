@@ -135,22 +135,11 @@
    "pass": [
     {
      "step": "saturated",
-     "path": "response.body.result.structuredContent.reason",
-     "equals": "declared resource cost exceeds effective host capacity"
-    },
-    {
-     "step": "saturated",
-     "path": "response.body.result.structuredContent.retryAfterMs",
-     "equals": 1000
-    },
-    {
-     "step": "saturated",
      "path": "response.body.result.content[0].text",
      "matches": "^Error: host_capacity_saturated: "
     }
    ],
-   "scenario": "the refusal's exact fields and text (observed; whether they are contract is Q3)",
-   "openQuestion": "Q3"
+   "scenario": "the refusal names its error code; its message text is not contract (D28, Q3)"
   }
  ],
  "effects": {

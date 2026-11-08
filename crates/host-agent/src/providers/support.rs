@@ -463,6 +463,24 @@ pub(crate) fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
     })
 }
 
+/// D28 (Q7): `builder` with the proxy Go's default transport would use for
+/// `url`, if any. ureq picks one proxy per agent, so a redirect to another
+/// host keeps the first host's choice.
+pub(crate) fn env_proxy(builder: ureq::AgentBuilder, url: &str) -> ureq::AgentBuilder {
+    let Some((scheme, authority)) = crate::hostread::http_authority(url) else {
+        return builder;
+    };
+    let address = crate::hostread::dial_address(&scheme, &authority);
+    let (host, port) = address
+        .rsplit_once(':')
+        .map(|(h, p)| (h.to_string(), p.parse::<u16>().unwrap_or(0)))
+        .unwrap_or((address.clone(), 0));
+    match proxy_for(&scheme, &host, port).and_then(|p| ureq::Proxy::new(p).ok()) {
+        Some(proxy) => builder.proxy(proxy),
+        None => builder,
+    }
+}
+
 pub(super) fn in_cidr(ip: std::net::IpAddr, net: std::net::IpAddr, bits: u32) -> bool {
     match (ip, net) {
         (std::net::IpAddr::V4(a), std::net::IpAddr::V4(b)) if bits <= 32 => {

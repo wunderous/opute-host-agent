@@ -195,7 +195,7 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   semantics with schema-derived redaction. Gate: restart and secret-bearing
   fixtures preserve truthful state and leave no credentials in records, logs,
   or client-visible evidence; unknown projection fails closed.
-- [ ] 4.4 Build a versioned, dry-run Go-state conversion and a rollback
+- [x] 4.4 Build a versioned, dry-run Go-state conversion and a rollback
   procedure using read-only copies. Gate: counts, identities, hashes, terminal
   and in-flight state, revisions, permissions, and redaction reconcile; an
   ambiguous record blocks conversion. Never allow two writers on one state
@@ -208,6 +208,20 @@ tree; `make parity-ci` fails on drift; `make parity-verify-m3`).
   - **Still open:** the writer lock. The pinned Go agent takes none, so a
     refusal needs its own OpenSpec change and owner decision. Real-host state
     copies were not used.
+  *e2e-13a note (2026-11-08): closed.*
+  - **The writer lock** was decided under D25: Rust refuses to start on a
+    state directory another agent holds, and D28 confirms it (change
+    `state-directory-writer-lock`, tests in `store.rs`).
+  - **Conversion and rollback, proven again by `e2e4.cutover` on run
+    `e2e-13a-r2`:**
+    - A Go v0.2.4 install with real history is served by Rust unchanged:
+      counts and ids per table reconcile.
+    - The stopped task keeps its terminal state, and Rust-era work comes
+      back on rollback with the status Rust last reported.
+    - Go and Rust each refuse to start while the other holds the directory,
+      and the holder keeps serving.
+  - These are the readiness items `forward-conversion`, `forward-in-flight`,
+    `rollback` and `writer-lock`.
 
 Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native-2026-10-05/README.md), with provenance-bound M5/M6 gates and explicit owner acceptance of M6. Subsequent domain operations remain open under 4.1.
 
@@ -229,6 +243,19 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
     - The arm64 clean-machine run.
     - The published npm path at its owning repository: nothing is
       published before cutover.
+  *e2e-13a note (2026-11-08): arm64 done; WSL2 and npm still open.*
+  - **arm64 clean-machine install** passed under emulation in 76 s
+    (`evidence/cutover/arm64/receipt.json`, readiness item
+    `arm64-clean-install`). It ran on Debian 12 arm64 under
+    qemu-system-aarch64 TCG with `-cpu cortex-a72` (`-cpu max` never got
+    past the firmware). Steps: checksum, install, launch, MCP
+    `tools/list` and `get_host_info` with the exact agent id, SIGTERM
+    stop, relaunch, stop, uninstall.
+  - **Retired harness runs** are under `.parity/retired/arm64-r1..r4`. In
+    r4 the writer lock correctly refused a relaunch while a
+    mis-tracked first agent still ran.
+  - **WSL2** stays blocked on a Windows runner. **npm** stays postponed
+    (D28).
 - [ ] 5.2 Update public tutorial, release catalog, schemas, and website claims
   only when a tested Rust package and catalog revision are ready. Keep public
   image publishing and private site rollout in their current owners. Gate:

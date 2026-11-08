@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first test for the chosen behaviour.
 - [x] 2.2 Implement it, or correct the description.
-- [ ] 2.3 Rerun e2e2.host-ops.
+- [x] 2.3 Rerun e2e2.host-ops. Passed in run `e2e-13a-r6`.

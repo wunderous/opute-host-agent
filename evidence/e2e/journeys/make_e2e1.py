@@ -25,6 +25,8 @@ GATE_SPEC = "openspec/changes/standalone-read-only-gate/specs/standalone-read-on
 OAUTH_SPEC = "openspec/changes/secure-oauth-issuance/specs/oauth-issuance/spec.md"
 REJECT_SPEC = "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
 LOCK_SPEC = "openspec/changes/state-directory-writer-lock/specs/state-directory-writer-lock/spec.md"
+Q14_SPEC = "openspec/changes/ipv4-wildcard-bind/specs/mcp-listener/spec.md"
+Q5_SPEC = "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
 Q15_SPEC = "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md"
 TASKS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}}
 DOCS = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/"
@@ -146,6 +148,7 @@ def j1() -> dict:
                                   f"{WAIT_HEALTH.format(port=3014)} && {T} unit {UNIT}"},
         {"id": "health", "health": True},
         {"id": "listen", "guest": f"{T} listen 3014"},
+        {"id": "ipv6Refused", "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://[::1]:3014/health; true"},
         {"id": "ipv4", "guest": "curl -fsS http://$(hostname -I | awk '{print $1}'):3014/health"},
         mcp("list", "tools/list"),
         call("info", "get_host_info"),
@@ -164,11 +167,11 @@ def j1() -> dict:
             ok("ipv4"), a("ipv4", "json.agentId", equals="e2e-devvm-agent"),
             scenario="install from the release artifact; the configured port applies and the configured bind "
                      "(HOST_MCP_BIND_HOST=0.0.0.0 in the recorded unit) serves the host's own IPv4 address"),
-        req(SPEC, "Compatible modes, configuration, and distribution",
+        req(Q14_SPEC, "An IPv4 wildcard bind listens on IPv4 only",
             a("listen", "json.addresses", equals=["0.0.0.0:3014"]),
-            scenario="whether HOST_MCP_BIND_HOST=0.0.0.0 binds IPv4 only (observed: one dual-stack IPv6 "
-                     "wildcard socket, *:3014); Q14",
-            question="Q14"),
+            a("ipv6Refused", "stdout", equals="000"),
+            scenario="HOST_MCP_BIND_HOST=0.0.0.0 opens one IPv4 socket; an IPv6 loopback connection is refused "
+                     "(D28)"),
         req(DIST, "deployFiles: the installed unit and sudoers are the recorded deploy files",
             a("deployHashes", "stdout",
               contains="02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/"
@@ -480,11 +483,10 @@ def j4() -> dict:
             a("stillServes", "response.status", equals=200),
             a("stillInfo", "response.body.result.structuredContent.uri", matches=":e2e-devvm-agent$")),
         req(SPEC, "Compatible authenticated MCP surface",
-            a("wrong", "response.body.raw", equals="Unauthorized\n"),
+            a("wrong", "response.status", equals=401), a("missing", "response.status", equals=401),
             a("wrong", "response.headers.www-authenticate", matches="^Bearer resource_metadata="),
-            a("missing", "response.body.raw", equals="Unauthorized\n"),
-            scenario="the refusal body and challenge header (observed; whether they are contract is Q1)",
-            question="Q1"),
+            scenario="the refusal's status and the MCP authorization challenge are contract; its body text is "
+                     "not (D28, Q1)"),
     ]
     return journey(
         "e2e1.auth",
@@ -546,12 +548,8 @@ def j5() -> dict:
             a("limitedAfter", "json.counts", equalsStep={"step": "limitedBefore", "path": "json.counts"}),
             scenario="a resource-limit refusal is typed and comes before any side effect or durable row"),
         req(SPEC, "Typed target and effect admission",
-            a("saturated", "response.body.result.structuredContent.reason",
-              equals="declared resource cost exceeds effective host capacity"),
-            a("saturated", "response.body.result.structuredContent.retryAfterMs", equals=1000),
             a("saturated", "response.body.result.content[0].text", matches="^Error: host_capacity_saturated: "),
-            scenario="the refusal's exact fields and text (observed; whether they are contract is Q3)",
-            question="Q3"),
+            scenario="the refusal names its error code; its message text is not contract (D28, Q3)"),
     ]
     return journey(
         "e2e1.admission",
@@ -698,18 +696,16 @@ def j7() -> dict:
             a("killDb", "json.planRunIds[0]", equalsStep={"step": "killRun", "path": "response.body.result.structuredContent.runId"}),
             a("killDb", "json.planRunIds[1]", absent=True),
             scenario="exactly one durable run per interrupted plan: nothing lost or duplicated"),
-        req(SPEC, "One typed plan and recipe execution path",
+        req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
             a("termAfter", "response.body.result.structuredContent.status", equals="cancelled"),
-            a("killAfter", "response.body.result.structuredContent.status", equals="failed"),
-            scenario="Interrupted plan: the post-restart status (observed; what the plan contract specifies "
-                     "after a restart is Q5)",
-            question="Q5"),
+            a("killAfter", "response.body.result.structuredContent.status", equals="unknown"),
+            scenario="A plan in flight reads back cancelled after SIGTERM and unknown after SIGKILL, and neither "
+                     "runs again (D28)"),
         req(Q15_SPEC, "A crashed plan run's orphaned reservation is reclaimed without a task",
-            a("killTask", "response.body.result.status", equals="failed"),
             a("resubmit", "response.body.result.isError", **{"in": [False, "<absent>"]}),
             a("resubmit", "response.body.result.structuredContent.code", absent=True),
-            scenario="Resubmit after a SIGKILL during a plain run_host_plan (proposed; Q15)",
-            question="Q15"),
+            scenario="After a SIGKILL during a plain run_host_plan, whose task was never persisted, the "
+                     "resubmission is admitted (D28)"),
     ]
     return journey(
         "e2e1.restart",
@@ -717,8 +713,7 @@ def j7() -> dict:
         "unit's Restart=on-failure restarts it) each time with a host plan in flight (its first node wrote a file "
         "with write-only content, its second waits on a slow local endpoint). After each restart the run is "
         "served as one durable record, the store passes its integrity check, and the write-only content is in no "
-        "durable row and no journal line. Whether the "
-        "resubmission after the SIGKILL is admitted is Q15.",
+        "durable row and no journal line. The resubmission after the SIGKILL is admitted (D28, Q15).",
         {"agent": AGENT, "files": files, "slow": "a local endpoint answering after 30 s (e2etool slow)"},
         reqs, steps, cleanup, allow=["files//home/opute/.config/opute-e2e*", "system/units/e2e-slow*",
                                      "system/unitFiles/e2e-slow*"], minutes=15)
@@ -727,7 +722,7 @@ def j7() -> dict:
 # --- 8. migrate a Go-installed host, then upgrade -------------------------------------------------------
 
 def j8() -> dict:
-    files = {**TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next/host-agent-linux-x64.gz")}
+    files = {**TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz")}
     done_plan = plan("e2e1-j8-done", "e2e1-j8-done-1", ".config/opute-e2e/j8-done.txt")
     flight_plan = plan("e2e1-j8-flight", "e2e1-j8-flight-1", ".config/opute-e2e/j8-flight.txt", slow=True)
     run_id = lambda step: {"step": step, "path": "response.body.result.structuredContent.runId"}  # noqa: E731
@@ -796,11 +791,11 @@ def j8() -> dict:
             a("goHealth", "response.body.agentId", equals="e2e-devvm-agent"),
             a("rustHealth", "response.body.agentId", equals="e2e-devvm-agent"),
             a("nextHealth", "response.body.agentId", equals="e2e-devvm-agent")),
-        req(SPEC, "One typed plan and recipe execution path",
+        req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
             a("rustFlight", "response.body.result.structuredContent.status", equals="cancelled"),
             a("nextFlight", "response.body.result.structuredContent.status", equals="cancelled"),
-            scenario="the status a run stopped in flight has after the migration (observed; Q5)",
-            question="Q5"),
+            scenario="A run Go stopped gracefully in flight reads back cancelled after the migration and the "
+                     "upgrade, and is not run again (D28)"),
     ]
     return journey(
         "e2e1.migrate-upgrade",

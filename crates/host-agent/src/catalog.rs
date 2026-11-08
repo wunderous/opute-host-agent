@@ -1687,6 +1687,20 @@ mod tests {
 
     /// D28 (Q28): standalone mode publishes the service domain tools with
     /// the cluster `uri` binding their handlers read.
+    /// D28 (Q21, found with Q28): the cluster-bound configure_service_domain
+    /// declares the serviceName its handler requires.
+    #[test]
+    fn standalone_configure_service_domain_declares_service_name() {
+        let d = for_mode(true)
+            .tools
+            .iter()
+            .find(|d| d.name == "configure_service_domain")
+            .unwrap();
+        assert!(d.input_schema["properties"].get("serviceName").is_some());
+        let required = d.input_schema["required"].as_array().unwrap();
+        assert!(required.contains(&J::from("serviceName")), "{required:?}");
+    }
+
     #[test]
     fn standalone_service_domain_tools_bind_their_cluster() {
         for tool in ["configure_service_domain", "remove_service_domain"] {

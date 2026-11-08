@@ -379,10 +379,11 @@ fn fetch_remote(
 /// Go's `http.Client.CheckRedirect` enforces -- a redirect that would leave
 /// `raw.githubusercontent.com` is refused rather than followed.
 fn fetch_with_validated_redirects(start_url: &str) -> Result<Vec<u8>, String> {
-    let agent = ureq::AgentBuilder::new()
+    let builder = ureq::AgentBuilder::new()
         .redirects(0)
-        .timeout(Duration::from_secs(30))
-        .build();
+        .timeout(Duration::from_secs(30));
+    // Every allowed hop stays on raw.githubusercontent.com, so one proxy.
+    let agent = crate::providers::env_proxy(builder, start_url).build();
     let mut url = start_url.to_string();
     for _ in 0..10 {
         let response = match agent.get(&url).call() {

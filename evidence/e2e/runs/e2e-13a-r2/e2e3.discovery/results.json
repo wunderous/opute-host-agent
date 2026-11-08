@@ -1,0 +1,316 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "incus/instances/e2e-k1",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-k1",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "system/unitFiles/e2e-provider-k3s.service",
+   "system/units/e2e-provider-k3s.service",
+   "system/units/sys-devices-virtual-net-vethdec529d5.device",
+   "system/units/sys-subsystem-net-devices-vethdec529d5.device"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-3",
+ "harnessErrors": [],
+ "journey": "e2e3.discovery",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "noProvider"
+    },
+    {
+     "actual": "Error: no active Kubernetes provider is installed",
+     "equals": "Error: no active Kubernetes provider is installed",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "noProvider"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "empty"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "response.body.result.structuredContent.total",
+     "step": "empty"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.total",
+     "step": "healthy"
+    },
+    {
+     "actual": "cluster:local:e2e-k1",
+     "equals": "cluster:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "step": "healthy"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "unreachable"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.total",
+     "step": "recovered"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An empty inventory and a failed inventory probe are different outcomes",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.list_compute_clusters",
+     "step": "names"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "json.list_kubernetes_clusters",
+     "step": "names"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Discovery under the name tools/list resolves",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "namespaces"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "pods"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "services"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "events"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "list_namespaces, list_pods, list_services, list_cluster_events on a discovered cluster",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "stopped",
+     "equals": "stopped",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stop"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "stoppedEvents"
+    },
+    {
+     "actual": "Error: Kubernetes provider \"com.opute.k3s\" operation \"opute.capability.kubernetes.list-events\": MCP error 0: incus K3s command failed: exit status 1: Error: Instance is not running",
+     "matches": "Instance is not running",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "stoppedEvents"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A probe of a stopped cluster fails closed",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "stoppedList"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.total",
+     "step": "stoppedList"
+    },
+    {
+     "actual": "cluster:local:e2e-k1",
+     "equals": "cluster:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "step": "stoppedList"
+    },
+    {
+     "actual": "Stopped",
+     "equals": "Stopped",
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusters[0].status",
+     "step": "stoppedList"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A stopped cluster never reads as an empty inventory",
+   "spec": "openspec/changes/report-stopped-clusters/specs/cluster-discovery/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "not_implemented",
+     "equals": "not_implemented",
+     "ok": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "configmapKeys"
+    },
+    {
+     "actual": "not_implemented",
+     "equals": "not_implemented",
+     "ok": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "secretKeys"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every capability has its three roles",
+   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "tokenLeaks"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "tokenLeaks"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "catalog": 18,
+   "catalogAfterA": 24,
+   "configmapKeys": 18,
+   "empty": 49,
+   "events": 190,
+   "healthy": 257,
+   "info1": 119,
+   "installA": 148,
+   "joinToken": 187,
+   "names": 230,
+   "namespaces": 143,
+   "noProvider": 64,
+   "pods": 156,
+   "providerCopy": 472,
+   "providerDown": 482,
+   "providerToolsA": 239,
+   "providerUp": 160,
+   "provision": 24011,
+   "provisionCall": 11,
+   "ready": 409,
+   "recipeCopy": 427,
+   "recovered": 228,
+   "secretKeys": 18,
+   "services": 179,
+   "setup": 174,
+   "start": 3003,
+   "startCall": 12,
+   "stop": 3002,
+   "stopCall": 14,
+   "stoppedEvents": 40,
+   "stoppedList": 86,
+   "tokenLeaks": 160,
+   "tool": 282,
+   "unreachable": 21,
+   "vm1": 9005,
+   "vm1Call": 12,
+   "wire": 281
+  },
+  "stepsSeconds": 185.8
+ },
+ "unverified": []
+}

@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first test: a Podman `info` report with stderr warnings normalizes to a storage report.
 - [x] 2.2 Separate stdout from stderr in the container runtime commands that return reports.
-- [ ] 2.3 Rerun e2e2.oci with the no-session inspect as a pass condition.
+- [x] 2.3 Rerun e2e2.oci with the no-session inspect as a pass condition. Passed in run `e2e-13a-r6`.

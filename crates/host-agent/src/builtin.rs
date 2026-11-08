@@ -1785,6 +1785,62 @@ pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Re
 
 // --- M8c: the kubernetes and cluster domains ----------------------------------------
 
+/// D28 (Q24): the registered clusters whose Incus instance exists but is not
+/// running, with that instance's type and status.
+fn known_clusters(host: &crate::tools::Host) -> crate::clusterops::KnownClusters {
+    let (state, tenant, incus) = (
+        host.state.clone(),
+        host.tenant_id.clone(),
+        host.incus.clone(),
+    );
+    Arc::new(move || {
+        let registered = match state.lock() {
+            Ok(store) => store.list_resources(tenant.trim()).unwrap_or_default(),
+            Err(_) => return Vec::new(),
+        };
+        let names: std::collections::BTreeSet<String> = registered
+            .iter()
+            .filter(|(uri, _)| uri.starts_with("cluster:"))
+            .filter_map(|(_, coordinates)| {
+                coordinates
+                    .as_ref()?
+                    .get("providerInstanceName")?
+                    .as_str()
+                    .map(str::to_string)
+            })
+            .collect();
+        if names.is_empty() {
+            return Vec::new();
+        }
+        // The provider's own inventory is unfiltered by ownership; so is this.
+        let listed = incus.run(
+            &["list", "--format", "json"],
+            crate::incus::DISCOVERY_TIMEOUT,
+        );
+        let items = match listed {
+            Ok(res) if res.exit_code == 0 => {
+                crate::incus::decode_list(&res.stdout).unwrap_or_default()
+            }
+            _ => Vec::new(),
+        };
+        // A running instance the provider did not list is not a K3s cluster
+        // (or no longer one): only one it cannot probe is kept.
+        items
+            .into_iter()
+            .filter(|item| {
+                names.contains(&item.name) && !item.status.eq_ignore_ascii_case("running")
+            })
+            .map(|item| {
+                (
+                    item.name,
+                    crate::incus::instance_type(&item.kind),
+                    item.status,
+                )
+            })
+            .collect()
+    })
+}
+
 /// The kubernetes domain over its seams: the active Kubernetes provider
 /// (through the late-bound server), resource resolution, the registry, and
 /// the host tool and command runner `helm template` uses.
@@ -1822,6 +1878,7 @@ fn kubernetes(host: &crate::tools::Host, server: &ServerHandle) -> crate::cluste
             crate::hostobs::run_command(&env, argv, timeout)
         }),
         env: host.env.clone(),
+        known_clusters: known_clusters(host),
     }
 }
 

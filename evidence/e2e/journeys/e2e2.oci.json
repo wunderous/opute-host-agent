@@ -15,8 +15,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-e2e4a-2/opute-provider-k3s-linux-x64",
-    "sha256": "94b509bf8cbdc919cf651c4705b32fc2e365a737f7b4bfd58f14ee94fac49dd7"
+    "path": "${PARITY}/e2e/release/rust-e2e13a/opute-provider-k3s-linux-x64",
+    "sha256": "ce25706303f50cfbc3f1e5c1deb984d1d6f940def2b7677240e645fcc18551bb"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
@@ -145,8 +145,8 @@
    "scenario": "The cluster guest pulls the image by its digest from the registry and runs it"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "inspect_container_storage without a user session",
+   "spec": "openspec/changes/container-runtime-stdout/specs/container-storage/spec.md",
+   "requirement": "A runtime warning does not fail a storage report",
    "pass": [
     {
      "step": "inspectNoSession",
@@ -155,10 +155,14 @@
       false,
       "<absent>"
      ]
+    },
+    {
+     "step": "inspectNoSession",
+     "path": "response.body.result.structuredContent.runtime",
+     "equals": "container-engine"
     }
    ],
-   "scenario": "Right after the builder is installed, with no user session, the storage report is read (Q26: Podman's stderr warning fails the combined-output parse, in Go as in Rust)",
-   "openQuestion": "Q26"
+   "scenario": "Right after the builder is installed, with no user session, the storage report is read while Podman warns on stderr (D28)"
   },
   {
    "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",

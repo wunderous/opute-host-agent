@@ -284,11 +284,11 @@ pub(crate) fn ensure_at(
             ))
         }
     }
-    let agent = ureq::AgentBuilder::new()
+    let builder = ureq::AgentBuilder::new()
         .redirects(0)
         .timeout(Duration::from_secs(300))
-        .tls_config(tls_config())
-        .build();
+        .tls_config(tls_config());
+    let agent = crate::providers::env_proxy(builder, uri).build();
     let response = fetch(&agent, uri)?;
     let status = response.status();
     if !(200..300).contains(&status) {

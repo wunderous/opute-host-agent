@@ -1,0 +1,136 @@
+{
+ "schemaVersion": "opute-cutover-readiness.v1",
+ "decision": "D28, owner decisions of 2026-11-07 (Q13: e2e gates, contract suites, conversion and rollback evidence; e2e-5 once Platform staging exists)",
+ "items": [
+  {
+   "id": "e2e-0",
+   "kind": "e2e-gate",
+   "gate": "e2e-0"
+  },
+  {
+   "id": "e2e-1",
+   "kind": "e2e-gate",
+   "gate": "e2e-1"
+  },
+  {
+   "id": "e2e-2",
+   "kind": "e2e-gate",
+   "gate": "e2e-2"
+  },
+  {
+   "id": "e2e-3a",
+   "kind": "e2e-gate",
+   "gate": "e2e-3a"
+  },
+  {
+   "id": "e2e-3",
+   "kind": "e2e-gate",
+   "gate": "e2e-3"
+  },
+  {
+   "id": "e2e-4",
+   "kind": "e2e-gate",
+   "gate": "e2e-4"
+  },
+  {
+   "id": "e2e-5",
+   "kind": "e2e-gate",
+   "gate": "e2e-5",
+   "owner": "Opute Platform owners",
+   "unblocker": "a Platform staging environment with an enrollment identity for the agent (D5)"
+  },
+  {
+   "id": "contract-suites",
+   "kind": "receipt",
+   "receipt": "evidence/cutover/contract-suites.json",
+   "sources": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates",
+    "tools/parity",
+    "parity-manifest.json"
+   ],
+   "sha256": "b9ac59b5097a0bdd28ce21a43c93a0a6f2764dd31b2c83ea5396308d72ffb2ab",
+   "sourceDigest": "e53dcab51dca56464871a2450e53b861c8b91bb1073b6709c741499e580148f4",
+   "summary": "the D8, D10-D13 contract suites against the Rust release binary"
+  },
+  {
+   "id": "seam",
+   "kind": "seam",
+   "stage": "e2e13a",
+   "sources": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates",
+    "baseline",
+    "parity-manifest.json"
+   ],
+   "sourceDigest": "d3cc988bb81e38176def33bfad068a7cde27168ec796c30eb122484435f7c19a"
+  },
+  {
+   "id": "forward-conversion",
+   "kind": "requirement",
+   "gate": "e2e-4",
+   "journey": "e2e4.cutover",
+   "requirement": "Durable and redacted observations: Go's real state is served by Rust unchanged"
+  },
+  {
+   "id": "forward-in-flight",
+   "kind": "requirement",
+   "gate": "e2e-4",
+   "journey": "e2e4.cutover",
+   "requirement": "Forward cutover: the stopped task's terminal state"
+  },
+  {
+   "id": "rollback",
+   "kind": "requirement",
+   "gate": "e2e-4",
+   "journey": "e2e4.cutover",
+   "requirement": "Rollback: Go reports every task, Rust-era work included, with the status Rust last reported"
+  },
+  {
+   "id": "writer-lock",
+   "kind": "requirement",
+   "gate": "e2e-4",
+   "journey": "e2e4.cutover",
+   "requirement": "One running agent per instance state"
+  },
+  {
+   "id": "rollback-window",
+   "kind": "spec-text",
+   "path": "openspec/specs/host-agent-contract/spec.md",
+   "contains": "rollback window of 14 days"
+  },
+  {
+   "id": "first-package",
+   "kind": "spec-text",
+   "path": "openspec/specs/host-agent-contract/spec.md",
+   "contains": "first Rust release package is version 0.3.0"
+  },
+  {
+   "id": "arm64-clean-install",
+   "kind": "receipt",
+   "receipt": "evidence/cutover/arm64/receipt.json",
+   "sources": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates"
+   ],
+   "sha256": "c6daaedf9024889c85e42ea9b3231c01a1ba78cee0e3bb1591c40b8d2df26cc5",
+   "sourceDigest": "3d4754049ae7c166d5adf318936a3f94e45ecfad75bf3ae2413af43ce220cbef",
+   "summary": "one emulated arm64 Debian 12 clean-machine install, launch, MCP, stop, uninstall"
+  },
+  {
+   "id": "wsl2",
+   "kind": "blocked",
+   "owner": "Opute release owners",
+   "unblocker": "a Windows host with WSL2 as a runner (5.1)",
+   "detail": "WSL2 packaging, install and the WSL tools' effects need a Windows runner this environment lacks"
+  },
+  {
+   "id": "questions",
+   "kind": "questions",
+   "path": "openspec/changes/archive/2026-11-07-rust-spec-authority/questions.md"
+  }
+ ]
+}

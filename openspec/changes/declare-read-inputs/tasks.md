@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first catalog test: every input a handler reads is declared.
 - [x] 2.2 Declare serviceName and ipv4Address (or derive serviceName from uri); repin the catalog revision.
-- [ ] 2.3 Rerun e2e2.host-ops and e2e2.incus with declared inputs only.
+- [x] 2.3 Rerun e2e2.host-ops and e2e2.incus with declared inputs only. Passed in run `e2e-13a-r6`.
