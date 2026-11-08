@@ -1,6 +1,6 @@
 ## 1. Decision
 
-- [ ] 1.1 Owner answers Q29.
+- [x] 1.1 Owner answers Q29. Decided 2026-11-08: adopt both parts.
 
 ## 2. Implementation (only after 1.1)
 
