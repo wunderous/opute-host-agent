@@ -1,8 +1,8 @@
-# Retire dead K3s servers after quorum recovery (proposed)
+# Retire dead K3s servers after quorum recovery
 
-Status: proposed. Owner question Q17
+Status: decided (owner, 2026-11-07, D28). Owner question Q17
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented. The K3s provider's behaviour matches Go v0.2.4
+Implemented after the decision; see tasks.md. The K3s provider's behaviour matches Go v0.2.4
 (D26 port).
 
 ## Why
@@ -32,16 +32,23 @@ servers on stale observations or cannot retire them at all.
 
 ## What Changes
 
-If the owner accepts Q17:
+Decided (D28): removal waits for recovery to settle.
 
-- after an acknowledged single-member reset, `remove-node` proves quorum
-  from the etcd membership, not from Node conditions, so the operator can
-  retire servers that are no longer members;
-- `recover-quorum` reports the servers it observes as gone, rather than
-  their stale Ready conditions.
+- After an acknowledged single-member reset, `recover-quorum` records in the
+  surviving server's state directory
+  (`/var/lib/rancher/k3s/server/opute-quorum-recovery.json`) the servers the
+  reset left out of etcd.
+- `remove-node` for a recorded server waits, up to 3 minutes, until that
+  server is observed NotReady; while it still reports Ready, recovery has
+  not settled and the call refuses. Once settled, quorum is proved from the
+  recovered membership (the servers the reset kept), not from all Node
+  objects, and the server is retired. The record drops each retired server
+  and is removed with the last one.
+- Any other removal keeps the strict-majority proof. `recover-quorum`'s own
+  report is unchanged.
 
 ## Impact
 
-- `crates/host-agent/src/providers/k3s/membership.rs`, with Go parity
-  recorded as an intended difference.
+- `crates/host-agent/src/providers/k3s/membership.rs` (`quorum_after_recovery`,
+  the recovery record, `remove_node`), an intended difference from Go.
 - No catalog change.

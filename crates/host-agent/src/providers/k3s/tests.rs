@@ -472,3 +472,39 @@ fn an_aes192_join_key_unseals() {
 }
 
 const AES192_CIPHERTEXT: &str = "9ddb50fefddca47ea45ab3ecadccba5234bd596451cf7bdf1a2c5a01ffb40d7ebd1b9e1f4e33666e9d852b4600a3455a5ca7e1b481d1ac68664bedcb9e9cc895cbfa";
+
+/// D28 (Q17): after an acknowledged reset, a server the reset left out of
+/// etcd is retired once it is observed NotReady; while it still reports
+/// Ready, recovery has not settled and removal refuses.
+#[test]
+fn removal_after_recovery_waits_for_it_to_settle() {
+    let server = |name: &str, ready: bool| json!({"name": name, "ready": ready, "roles": ["control-plane", "etcd"]});
+    let excluded: std::collections::BTreeSet<String> = ["k2".to_string(), "k3".to_string()].into();
+    let settled = observation(
+        3,
+        1,
+        "k1",
+        vec![server("k1", true), server("k2", false), server("k3", false)],
+    );
+    assert_eq!(
+        quorum_after_recovery(&settled, &server("k2", false), &excluded).unwrap(),
+        (2, 1)
+    );
+    let stale = observation(
+        3,
+        3,
+        "k1",
+        vec![server("k1", true), server("k2", true), server("k3", true)],
+    );
+    assert!(
+        quorum_after_recovery(&stale, &server("k2", true), &excluded)
+            .unwrap_err()
+            .contains("has not settled")
+    );
+    // Without a recorded reset the strict-majority proof stands.
+    assert!(
+        quorum_after_recovery(&settled, &server("k2", false), &Default::default())
+            .unwrap_err()
+            .contains("1 ready of 2")
+    );
+}
