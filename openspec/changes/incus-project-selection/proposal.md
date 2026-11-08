@@ -28,8 +28,8 @@ configuration reference or the docs says so. e2e-3a puts its guests in the
 
 Decided (D28): the agent always addresses the `default` project. Every
 Incus call the agent makes, through the core runner (`Incus::run_with`)
-and the K3s provider (`run_program`), passes `--project default`, so the
-client's current project never decides where an instance lands or is read.
+and the K3s provider (`run_program`), passes `--project default` (`incus query`, which refuses that flag, gets
+`project=default` in its API path), so the client's current project never decides where an instance lands or is read.
 No configuration is added.
 
 ## Impact
