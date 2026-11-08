@@ -1263,6 +1263,17 @@ def fail_plan() -> dict:
                                     "assert": [{"op": "eq", "path": "/exists", "value": "never"}]}}]}
 
 
+
+def second_writer(id_: str, gz: str) -> dict:
+    """D25: another release started on the serving agent's instance root, as the unit runs it; it must
+    refuse with the decided line and exit 1 while the first keeps serving."""
+    return {"id": id_, "timeout": 60, "guest": (
+        f"args=$(systemctl show -p ExecStart --value {UNIT} | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' "
+        f"| cut -d' ' -f2-) && gzip -dc {gz} > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && "
+        "systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute "
+        "-p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 "
+        "timeout 30 /tmp/e2e-second $args; echo exit=$?; rm -f /tmp/e2e-second")}
+
 def cutover() -> dict:
     files = {**base.TOOL_FILES}
     steps = base.TOOL_STEPS + [
@@ -1297,6 +1308,8 @@ def cutover() -> dict:
         # forward: the Rust release on the same instance root and identity
         base.swap("rustInstall", f"{base.REL}/host-agent-linux-x64.gz"),
         {"id": "rustHealth", "health": True},
+        second_writer("goSecond", f"{base.GO_REL}/host-agent-linux-x64.gz"),
+        {"id": "rustStillServes", "health": True},
         {"id": "rustList", "mcp": "tools/list"},
         {"id": "rustDb", "guest": f"{T} db {SDB_}"},
         call("rustOps", "list_operations", {"limit": 100}),
@@ -1319,6 +1332,8 @@ def cutover() -> dict:
         # rollback: Go on Rust's state
         base.swap("goBack", f"{base.GO_REL}/host-agent-linux-x64.gz"),
         {"id": "goBackHealth", "health": True},
+        second_writer("rustSecond", f"{base.REL}/host-agent-linux-x64.gz"),
+        {"id": "goStillServes", "health": True},
         call("goBackOps", "list_operations", {"limit": 100}),
         call("goBackRustTask", "get_operation", {"operationId": "${TID_rustTaskNew}"}),
         call("goBackLong", "get_operation", {"operationId": "${LONG}"}),
@@ -1329,7 +1344,17 @@ def cutover() -> dict:
         call("goBackGoPlan", "get_host_plan_run", {"runId": "${GO_RUN}"}),
         {"id": "goBackDb", "guest": f"{T} db {SDB_}"},
     ]
+    lock = "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock " \
+           "is locked by another process\n"
     reqs = [
+        req(base.LOCK_SPEC, "One running agent per instance state",
+            a("goSecond", "stdout", matches="exit=1\n$"), a("goSecond", "stdout", contains=lock),
+            a("rustStillServes", "response.body.agentId", equals="e2e-devvm-agent"),
+            a("rustSecond", "stdout", matches="exit=1\n$"), a("rustSecond", "stdout", contains=lock),
+            a("goStillServes", "response.body.agentId", equals="e2e-devvm-agent"),
+            scenario="Go and Rust never write one instance root together: Go started beside the serving Rust "
+                     "agent, and Rust beside the serving Go agent after rollback, each refuses with the decided "
+                     "line and exit 1 while the first keeps serving"),
         req(CUTOVER, "Durable and redacted observations: Go's real state is served by Rust unchanged",
             ok("aside"), a("goInstall", "stdout", matches="\n0\\.2\\.4\n$"),
             direct("goPlanDone", "structuredContent.status", equals="completed"),

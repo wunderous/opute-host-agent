@@ -19,6 +19,43 @@
  },
  "requirements": [
   {
+   "spec": "openspec/changes/state-directory-writer-lock/specs/state-directory-writer-lock/spec.md",
+   "requirement": "One running agent per instance state",
+   "pass": [
+    {
+     "step": "goSecond",
+     "path": "stdout",
+     "matches": "exit=1\n$"
+    },
+    {
+     "step": "goSecond",
+     "path": "stdout",
+     "contains": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\n"
+    },
+    {
+     "step": "rustStillServes",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    },
+    {
+     "step": "rustSecond",
+     "path": "stdout",
+     "matches": "exit=1\n$"
+    },
+    {
+     "step": "rustSecond",
+     "path": "stdout",
+     "contains": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\n"
+    },
+    {
+     "step": "goStillServes",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    }
+   ],
+   "scenario": "Go and Rust never write one instance root together: Go started beside the serving Rust agent, and Rust beside the serving Go agent after rollback, each refuses with the decided line and exit 1 while the first keeps serving"
+  },
+  {
    "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
    "requirement": "Durable and redacted observations: Go's real state is served by Rust unchanged",
    "pass": [
@@ -621,6 +658,15 @@
    "health": true
   },
   {
+   "id": "goSecond",
+   "timeout": 60,
+   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args; echo exit=$?; rm -f /tmp/e2e-second"
+  },
+  {
+   "id": "rustStillServes",
+   "health": true
+  },
+  {
    "id": "rustList",
    "mcp": "tools/list"
   },
@@ -855,6 +901,15 @@
   },
   {
    "id": "goBackHealth",
+   "health": true
+  },
+  {
+   "id": "rustSecond",
+   "timeout": 60,
+   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args; echo exit=$?; rm -f /tmp/e2e-second"
+  },
+  {
+   "id": "goStillServes",
    "health": true
   },
   {
