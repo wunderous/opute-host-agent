@@ -964,6 +964,45 @@ mod tests {
         assert_eq!(meta.permissions().mode() & 0o777, 0o700);
     }
 
+    /// Every file under `root` with its bytes: what a refused start must not change.
+    fn files(root: &std::path::Path) -> std::collections::BTreeMap<std::path::PathBuf, Vec<u8>> {
+        let mut out = std::collections::BTreeMap::new();
+        let mut dirs = vec![root.to_path_buf()];
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(&dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else {
+                    out.insert(path.clone(), std::fs::read(&path).unwrap());
+                }
+            }
+        }
+        out
+    }
+
+    /// D25, confirmed by D28: a second runtime on state another runtime holds
+    /// is refused with the decided line before it opens a store, and leaves
+    /// every file as it was; once the holder is gone the next start succeeds.
+    #[test]
+    fn a_second_runtime_on_held_state_is_refused_and_writes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let env = env(dir.path(), &[]);
+        let first = new_runtime(&env).unwrap();
+        let before = files(dir.path());
+        assert!(
+            before.keys().any(|p| p.ends_with("state/state.db")),
+            "the holder opened its store"
+        );
+        let err = new_runtime(&env)
+            .err()
+            .expect("the second start is refused");
+        assert_eq!(err.0, refusal(&Config::load(&env).instance_root));
+        assert_eq!(files(dir.path()), before, "the refused start wrote nothing");
+        drop(first);
+        new_runtime(&env).expect("the next start after the holder exits");
+    }
+
     #[test]
     fn instance_lock_releases_earlier_roots_when_a_later_one_is_held() {
         let dir = tempfile::tempdir().unwrap();
