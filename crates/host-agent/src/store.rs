@@ -539,6 +539,24 @@ impl StateStore {
         }
     }
 
+    /// The ids of plan runs no process executes: every run that is not
+    /// `running` or `waiting`. Called at start-up, after the DDL has marked
+    /// the previous process's `running` runs `unknown` (D28, Q15).
+    pub fn stopped_plan_run_ids(
+        &self,
+    ) -> std::result::Result<std::collections::HashSet<String>, String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        let mut stmt = conn
+            .prepare("SELECT run_id FROM plan_runs WHERE status NOT IN ('running', 'waiting')")
+            .map_err(sqlite_err)?;
+        let ids = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(sqlite_err)?
+            .collect::<rusqlite::Result<_>>()
+            .map_err(sqlite_err)?;
+        Ok(ids)
+    }
+
     /// `Store.FindPlan`.
     pub fn find_plan(
         &self,
