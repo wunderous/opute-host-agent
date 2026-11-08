@@ -696,14 +696,13 @@ async fn accept_loop(
 ///
 /// ```text
 ///   pick one address:  bracketed host → first non-IPv4, else first IPv4
-///   wildcard host (empty, 0.0.0.0, ::) and the kernel maps IPv4 into IPv6
+///   wildcard host (empty, ::) and the kernel maps IPv4 into IPv6
 ///       → AF_INET6 bound to [::]:P, IPV6_V6ONLY=0   (one dual-stack socket)
+///   0.0.0.0 → AF_INET only (D28, Q14; Go makes it dual-stack too)
 ///   otherwise → the address's own family; AF_INET6 still gets IPV6_V6ONLY=0
 ///   SO_REUSEADDR, backlog = /proc/sys/net/core/somaxconn
 /// ```
 ///
-/// Binding `0.0.0.0` as plain `AF_INET` would drop IPv6 clients that Go
-/// accepts, and it shows up as a different listener (`tcp` vs `tcp6`).
 pub(crate) fn go_listen(addrs: &[SocketAddr], addr: &str) -> Result<std::net::TcpListener> {
     use socket2::{Domain, Protocol, Socket, Type};
     let chosen = if addr.contains('[') {
@@ -714,7 +713,11 @@ pub(crate) fn go_listen(addrs: &[SocketAddr], addr: &str) -> Result<std::net::Tc
     .or_else(|| addrs.first())
     .copied()
     .ok_or_else(|| go_err!("listen tcp {addr}: no suitable address found"))?;
-    let local = listen_sockaddr(chosen, ipv4_mapped_supported());
+    // D28 (Q14): an explicit `0.0.0.0` binds IPv4 only.
+    let ipv4_wildcard = addr
+        .rsplit_once(':')
+        .is_some_and(|(host, _)| host == "0.0.0.0");
+    let local = listen_sockaddr(chosen, !ipv4_wildcard && ipv4_mapped_supported());
     let fail =
         |op: &str, e: std::io::Error| go_err!("listen tcp {addr}: {op}: {}", goerr::errno_text(&e));
     let domain = if local.is_ipv6() {
@@ -902,6 +905,19 @@ mod tests {
         assert_eq!(listen_sockaddr(loop4, true), loop4);
         let empty = resolve_listen_addr(":3004").unwrap();
         assert_eq!(listen_sockaddr(empty[0], true), wild6);
+    }
+
+    /// D28 (Q14): `0.0.0.0` binds IPv4 only; an empty host and `::` keep
+    /// one dual-stack socket.
+    #[test]
+    fn an_ipv4_wildcard_binds_ipv4_only() {
+        let addrs = resolve_listen_addr("0.0.0.0:0").unwrap();
+        let listener = go_listen(&addrs, "0.0.0.0:0").unwrap();
+        assert!(
+            listener.local_addr().unwrap().is_ipv4(),
+            "{:?}",
+            listener.local_addr()
+        );
     }
 
     #[test]
