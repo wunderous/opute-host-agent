@@ -196,7 +196,7 @@ def host_ops() -> dict:
         req(Q23_SPEC, "restart_host_service restarts Opute user services only",
             direct("restartIncusNamed", "isError", equals=True),
             direct("restartIncusNamed", "content[0].text", matches="set_host_service_state"),
-            direct("restartIncusSystem", "isError", equals=False),
+            direct("restartIncusSystem", "isError", **{"in": [False, "<absent>"]}),
             direct("restartIncusSystem", "structuredContent.status", equals="scheduled"),
             a("incusActive", "stdout", equals="active\n"),
             scenario="Restarting Incus with restart_host_service is refused before acting and names "
@@ -206,7 +206,7 @@ def host_ops() -> dict:
             scenario="The first ensure call on a host whose user manager is not running yet reports ready once "
                      "the user bus is up (D28)"),
         req(Q22_SPEC, "A result the published output schema allows is not refused",
-            direct("bridge", "isError", equals=False),
+            direct("bridge", "isError", **{"in": [False, "<absent>"]}),
             direct("bridge", "structuredContent.bridgeStatus", equals="offline"),
             direct("bridge", "structuredContent.lastHeartbeat.at", equals=None),
             direct("recoverBridge", "isError", equals=True),
@@ -1265,7 +1265,7 @@ def second_writer(id_: str, gz: str) -> dict:
         f"| cut -d' ' -f2-) && gzip -dc {gz} > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && "
         "systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute "
         "-p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 "
-        "timeout 30 /tmp/e2e-second $args; echo exit=$?; rm -f /tmp/e2e-second")}
+        "timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second")}
 
 def cutover() -> dict:
     files = {**base.TOOL_FILES}
