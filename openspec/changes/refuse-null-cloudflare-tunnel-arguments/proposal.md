@@ -20,11 +20,13 @@ with a restart after each exit) shows Go and Rust equal on this step.
 
 ## What Changes
 
-Proposed, pending an owner decision: the host-tunnel operations treat null
-arguments as an empty argument map, so the call is refused with the
+Decided (owner, 2026-11-07, D28, Q7): the host-tunnel operations treat
+null arguments as an empty argument map, so the call is refused with the
 existing `bindingId and localTarget are required` error and the process
 keeps serving. No other operation, argument shape or error text changes.
-Until the decision, Rust keeps Go's exit, and the evidence names it.
+The wire corpus's null-argument steps for these three tools are now a named
+difference from Go (Go exits with status 2, Rust refuses); under the
+2026-11-04 decision to stop Go parity checks the corpus is not rerun.
 
 ## Capabilities
 
