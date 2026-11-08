@@ -267,7 +267,8 @@ def incus() -> dict:
         {"id": "catalogB", "mcp": "tools/list", **B},
         {"id": "foreign", "guest": "incus launch parity-noble e2e-foreign -q && incus list e2e-foreign -c s -f csv"},
         # Q16: agent B's own Incus client (user opute) has another current project
-        {"id": "otherProject", "guest": "incus project create e2e-other -q && runuser -u opute -- incus project "
+        {"id": "otherProject", "guest": "cp -p /home/opute/.config/incus/config.yml /root/e2e-incus-config.yml && "
+                                        "incus project create e2e-other -q && runuser -u opute -- incus project "
                                         "switch e2e-other && runuser -u opute -- incus project list -f csv | "
                                         "grep -c '(current)' && runuser -u opute -- incus project list -f csv | "
                                         "grep '(current)' | cut -d, -f1"},
@@ -329,7 +330,8 @@ def incus() -> dict:
         call("listAfter", "list_vms", {}, B),
         {"id": "left", "guest": "incus list -c n -f csv"},
         {"id": "projectBack", "guest": "runuser -u opute -- incus project switch default && "
-                                       "incus project delete e2e-other && echo restored"},
+                                       "incus project delete e2e-other >/dev/null && cp -p /root/e2e-incus-config.yml "
+                                       "/home/opute/.config/incus/config.yml && rm /root/e2e-incus-config.yml && echo restored"},
     ]
     reqs = [
         req(CATALOG, "provision_container, provision_vm, get_vm_info, list_vms, run_instance_command",
@@ -402,7 +404,8 @@ def incus() -> dict:
     ]
     cleanup = [{"id": "cleanIncus", "guest": (
         f"{T} agent remove b >/dev/null; runuser -u opute -- incus project switch default 2>/dev/null; "
-        "incus project delete e2e-other 2>/dev/null; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
+        "incus project delete e2e-other -q 2>/dev/null; test -f /root/e2e-incus-config.yml && "
+        "cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml && rm -f /root/e2e-incus-config.yml; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
         "done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     allow = ["incus/*", "files//home/opute/.config/incus*", "system/units/e2e-*", "system/unitFiles/e2e-*", "files//opt/incus*",

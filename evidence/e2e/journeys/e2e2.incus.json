@@ -385,7 +385,7 @@
   },
   {
    "id": "otherProject",
-   "guest": "incus project create e2e-other -q && runuser -u opute -- incus project switch e2e-other && runuser -u opute -- incus project list -f csv | grep -c '(current)' && runuser -u opute -- incus project list -f csv | grep '(current)' | cut -d, -f1"
+   "guest": "cp -p /home/opute/.config/incus/config.yml /root/e2e-incus-config.yml && incus project create e2e-other -q && runuser -u opute -- incus project switch e2e-other && runuser -u opute -- incus project list -f csv | grep -c '(current)' && runuser -u opute -- incus project list -f csv | grep '(current)' | cut -d, -f1"
   },
   {
    "id": "listBefore",
@@ -1261,13 +1261,13 @@
   },
   {
    "id": "projectBack",
-   "guest": "runuser -u opute -- incus project switch default && incus project delete e2e-other && echo restored"
+   "guest": "runuser -u opute -- incus project switch default && incus project delete e2e-other >/dev/null && cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml && rm /root/e2e-incus-config.yml && echo restored"
   }
  ],
  "cleanup": [
   {
    "id": "cleanIncus",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other -q 2>/dev/null; test -f /root/e2e-incus-config.yml && cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml && rm -f /root/e2e-incus-config.yml; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 28
