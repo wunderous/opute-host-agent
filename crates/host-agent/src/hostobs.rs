@@ -50,14 +50,20 @@ pub fn look_path(env: &Env, name: &str) -> Option<PathBuf> {
 /// user-scoped systemctl/systemd-run commands. Standalone startup may lack
 /// the login shell's bus variables even when the user's manager is running.
 fn command_environment(env: &Env, argv: &[String]) -> Env {
-    let mut result = env.clone();
     let program = argv.first().map(String::as_str).unwrap_or("");
     let systemd = ["systemctl", "systemd-run"]
         .iter()
         .any(|name| program == *name || program.ends_with(&format!("/{name}")));
     if !systemd || !argv.iter().skip(1).any(|arg| arg == "--user") {
-        return result;
+        return env.clone();
     }
+    user_bus_environment(env)
+}
+
+/// `env` with the user bus named: `XDG_RUNTIME_DIR` and
+/// `DBUS_SESSION_BUS_ADDRESS` default to this user's runtime directory.
+pub(crate) fn user_bus_environment(env: &Env) -> Env {
+    let mut result = env.clone();
     let mut runtime_dir = env.get("XDG_RUNTIME_DIR");
     if runtime_dir.is_empty() {
         runtime_dir = format!("/run/user/{}", nix::unistd::getuid());

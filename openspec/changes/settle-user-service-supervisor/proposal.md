@@ -1,8 +1,8 @@
-# Settle the user service supervisor on its first ensure (proposed)
+# Settle the user service supervisor on its first ensure
 
-Status: proposed. Owner question Q20
+Status: decided (owner, 2026-11-07, D28). Owner question Q20
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -19,7 +19,7 @@ for that reason. No spec says what the first call must return.
 
 ## What Changes
 
-If the owner chooses it, `ensure_host_service_supervisor` waits, within a
+As decided, `ensure_host_service_supervisor` waits, within a
 bound, for the user bus it has just made persistent before it reports, so
 that a single call either reports `ready` or fails with a bounded timeout.
 Until the owner decides, Rust keeps Go's behaviour.

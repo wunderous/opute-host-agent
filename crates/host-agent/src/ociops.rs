@@ -15,9 +15,23 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-/// `exec.CommandContext(...).CombinedOutput()` with an optional deadline.
+/// A container tool run with an optional deadline: its output, and the
+/// result. A successful run's output is its stdout alone (D28, Q26: a
+/// runtime's warnings never reach a parsed report); a failed run's is
+/// stdout and stderr, for the error.
 pub type Command =
     Arc<dyn Fn(&[String], Option<Instant>) -> (Vec<u8>, Result<(), String>) + Send + Sync>;
+
+/// The host's container tool runner, the seam `builtin` gives the domain.
+pub fn host_command(env: crate::config::Env) -> Command {
+    Arc::new(move |argv: &[String], deadline| {
+        let (mut stdout, stderr, result) = crate::hostexec::split_output(&env, argv, deadline);
+        if result.is_err() {
+            stdout.extend_from_slice(&stderr);
+        }
+        (stdout, result)
+    })
+}
 
 /// The oci domain over the seams it declares.
 #[derive(Clone)]
@@ -339,8 +353,8 @@ impl Oci {
         crate::hostobs::look_path(&self.env, name).map(|p| p.display().to_string())
     }
 
-    /// `hostexec.Run`: combined output; a failure folds the output into the
-    /// error when there is any.
+    /// `hostexec.Run`: the run's output; a failure folds it into the error
+    /// when there is any.
     fn run(&self, argv: &[String]) -> Result<Vec<u8>, String> {
         let (output, result) = (self.command)(argv, None);
         match result {
@@ -356,7 +370,7 @@ impl Oci {
         }
     }
 
-    /// `runStreamingCommand`: combined output, folded into the error.
+    /// `runStreamingCommand`: the run's output, folded into the error.
     fn run_streaming(&self, argv: &[String], deadline: Option<Instant>) -> Result<(), String> {
         let (output, result) = (self.command)(argv, deadline);
         let text = String::from_utf8_lossy(&output).trim().to_string();
@@ -1763,6 +1777,23 @@ mod tests {
         assert_eq!(split_image_ref("app@sha256:ab"), ("app".into(), true));
         assert!(safe_image_ref("reg:5000/app:v1"));
         assert!(!safe_image_ref("-app"));
+    }
+
+    /// D28 (Q26): a runtime's warning on stderr does not fail its report.
+    #[test]
+    fn a_runtime_warning_on_stderr_does_not_fail_the_report() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let podman = dir.path().join("podman");
+        std::fs::write(&podman, "#!/bin/sh\necho 'level=warning msg=\"no systemd user session\"' >&2\necho '{\"store\": {\"graphRoot\": \"/var/lib/containers/storage\"}}'\n").unwrap();
+        std::fs::set_permissions(&podman, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let command = host_command(crate::config::Env::from_pairs([("PATH", "/usr/bin:/bin")]));
+        let argv = [podman.display().to_string(), "info".into()];
+        let (info, result) = command(&argv, None);
+        result.unwrap();
+        let report = normalize_report("podman", "podman", &info, b"{}", &[], &Policy::default());
+        let report = report.unwrap();
+        assert_eq!(report.storage_path, "/var/lib/containers/storage");
     }
 
     #[test]

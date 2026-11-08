@@ -1,8 +1,8 @@
-# Bind the standalone service domain tools to their VM (proposed)
+# Bind the standalone service domain tools to their VM
 
-Status: proposed. Owner question Q28
+Status: decided (owner, 2026-11-07, D28). Owner question Q28
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -27,12 +27,9 @@ Ingress through `apply_manifest` instead.
 
 ## What Changes
 
-If the owner chooses it, one of:
-- standalone mode lists the descriptor that declares the cluster `uri`
-  binding, so the schema and the handler agree; or
-- the standalone handler resolves the published `vmName` to its instance.
-
-Until the owner decides, Rust keeps Go's behaviour.
+Decided (D28): standalone mode lists the descriptor that declares the
+cluster `uri` binding (the one the full catalog publishes), so the schema
+and the handler agree. The `vmName` standalone definitions are removed.
 
 ## Impact
 

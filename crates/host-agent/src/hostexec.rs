@@ -60,6 +60,25 @@ pub fn combined_output(
     argv: &[String],
     deadline: Option<Instant>,
 ) -> (Vec<u8>, Result<(), String>) {
+    let (output, _, result) = run_piped(env, argv, deadline, false);
+    (output, result)
+}
+
+/// As `combined_output`, with stderr kept apart: (stdout, stderr, result).
+pub fn split_output(
+    env: &Env,
+    argv: &[String],
+    deadline: Option<Instant>,
+) -> (Vec<u8>, Vec<u8>, Result<(), String>) {
+    run_piped(env, argv, deadline, true)
+}
+
+fn run_piped(
+    env: &Env,
+    argv: &[String],
+    deadline: Option<Instant>,
+    split: bool,
+) -> (Vec<u8>, Vec<u8>, Result<(), String>) {
     let name = &argv[0];
     let program = if name.contains('/') {
         Some(PathBuf::from(name))
@@ -69,6 +88,7 @@ pub fn combined_output(
     let Some(program) = program else {
         return (
             Vec::new(),
+            Vec::new(),
             Err(format!(
                 "exec: {}: executable file not found in $PATH",
                 crate::goerr::quote(name)
@@ -76,15 +96,27 @@ pub fn combined_output(
         );
     };
     if deadline.is_some_and(|d| Instant::now() >= d) {
-        return (Vec::new(), Err("context deadline exceeded".into()));
+        return (
+            Vec::new(),
+            Vec::new(),
+            Err("context deadline exceeded".into()),
+        );
     }
     let (reader, writer) = match nix::unistd::pipe() {
         Ok(pair) => pair,
-        Err(e) => return (Vec::new(), Err(e.desc().to_lowercase())),
+        Err(e) => return (Vec::new(), Vec::new(), Err(e.desc().to_lowercase())),
     };
-    let writer2 = match writer.try_clone() {
-        Ok(w) => w,
-        Err(e) => return (Vec::new(), Err(crate::goerr::errno_text(&e))),
+    // Split: stderr gets a pipe of its own; else it shares stdout's.
+    let (err_reader, writer2) = if split {
+        match nix::unistd::pipe() {
+            Ok((r, w)) => (Some(r), w),
+            Err(e) => return (Vec::new(), Vec::new(), Err(e.desc().to_lowercase())),
+        }
+    } else {
+        match writer.try_clone() {
+            Ok(w) => (None, w),
+            Err(e) => return (Vec::new(), Vec::new(), Err(crate::goerr::errno_text(&e))),
+        }
     };
     let mut cmd = Command::new(&program);
     cmd.args(&argv[1..])
@@ -98,6 +130,7 @@ pub fn combined_output(
         Err(e) => {
             return (
                 Vec::new(),
+                Vec::new(),
                 Err(format!(
                     "fork/exec {}: {}",
                     program.display(),
@@ -108,12 +141,16 @@ pub fn combined_output(
     };
     // Drop the parent's write ends so the reader sees EOF when the child exits.
     drop(cmd);
-    let mut pipe = std::fs::File::from(reader);
-    let collector = std::thread::spawn(move || {
-        let mut out = Vec::new();
-        let _ = pipe.read_to_end(&mut out);
-        out
-    });
+    let collect = |fd: std::os::fd::OwnedFd| {
+        let mut pipe = std::fs::File::from(fd);
+        std::thread::spawn(move || {
+            let mut out = Vec::new();
+            let _ = pipe.read_to_end(&mut out);
+            out
+        })
+    };
+    let collector = collect(reader);
+    let err_collector = err_reader.map(collect);
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Some(status),
@@ -126,12 +163,15 @@ pub fn combined_output(
         }
     };
     let output = collector.join().unwrap_or_default();
+    let errors = err_collector
+        .map(|c| c.join().unwrap_or_default())
+        .unwrap_or_default();
     let result = match status {
         Some(status) if status.success() => Ok(()),
         Some(status) => Err(exit_text(status)),
         None => Err("wait: no child processes".into()),
     };
-    (output, result)
+    (output, errors, result)
 }
 
 /// `hostexec.RunPrivilegedPackage`: `sudo -n <command> <args>`; a failure is

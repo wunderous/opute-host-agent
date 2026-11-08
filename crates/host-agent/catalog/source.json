@@ -4159,6 +4159,10 @@
      "image": {
       "type": "string"
      },
+     "ipv4Address": {
+      "description": "Pin the container to this address on the managed bridge instead of a DHCP lease.",
+      "type": "string"
+     },
      "memory": {
       "default": "2GiB",
       "description": "Memory limit such as 2GiB (default: 2GiB)",
@@ -5383,9 +5387,14 @@
      }
     ]
    },
-   "description": "Restart a host-level service such as Incus and verify it becomes active",
+   "description": "Restart an Opute user service (an opute- systemd user unit) without blocking; system services are restarted with set_host_service_state",
    "inputSchema": {
     "properties": {
+     "serviceName": {
+      "description": "The Opute user unit to restart (opute-...).",
+      "pattern": "^[A-Za-z0-9_.@:-]+$",
+      "type": "string"
+     },
      "uri": {
       "description": "Canonical Host Agent resource URI returned by discovery.",
       "minLength": 1,
@@ -5393,7 +5402,8 @@
      }
     },
     "required": [
-     "uri"
+     "uri",
+     "serviceName"
     ],
     "type": "object"
    },
@@ -5405,7 +5415,7 @@
      },
      "status": {
       "enum": [
-       "active"
+       "scheduled"
       ],
       "type": "string"
      },
@@ -9133,44 +9143,6 @@
    "name": "configure_oci_storage"
   },
   {
-   "description": "Map a configurable DNS hostname to a Kubernetes Service through Ingress.",
-   "inputSchema": {
-    "properties": {
-     "hostname": {
-      "type": "string"
-     },
-     "ingressClass": {
-      "type": "string"
-     },
-     "ingressName": {
-      "type": "string"
-     },
-     "namespace": {
-      "type": "string"
-     },
-     "serviceName": {
-      "type": "string"
-     },
-     "servicePort": {
-      "type": "integer"
-     },
-     "vmName": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "vmName",
-     "namespace",
-     "ingressName",
-     "hostname",
-     "serviceName",
-     "servicePort"
-    ],
-    "type": "object"
-   },
-   "name": "configure_service_domain"
-  },
-  {
    "description": "Delete a generic Kubernetes resource from a canonical cluster target.",
    "inputSchema": {
     "properties": {
@@ -11632,29 +11604,6 @@
     ],
     "type": "object"
    }
-  },
-  {
-   "description": "Remove a configurable Kubernetes service domain mapping.",
-   "inputSchema": {
-    "properties": {
-     "ingressName": {
-      "type": "string"
-     },
-     "namespace": {
-      "type": "string"
-     },
-     "vmName": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "vmName",
-     "namespace",
-     "ingressName"
-    ],
-    "type": "object"
-   },
-   "name": "remove_service_domain"
   },
   {
    "description": "Remove an isolated caller-scoped SQLite database and sidecars after explicit confirmation.",
@@ -15631,6 +15580,10 @@
      "image": {
       "type": "string"
      },
+     "ipv4Address": {
+      "description": "Pin the container to this address on the managed bridge instead of a DHCP lease.",
+      "type": "string"
+     },
      "memory": {
       "default": "2GiB",
       "description": "Memory limit such as 2GiB (default: 2GiB)",
@@ -16605,9 +16558,14 @@
      }
     ]
    },
-   "description": "Restart a host-level service such as Incus and verify it becomes active",
+   "description": "Restart an Opute user service (an opute- systemd user unit) without blocking; system services are restarted with set_host_service_state",
    "inputSchema": {
     "properties": {
+     "serviceName": {
+      "description": "The Opute user unit to restart (opute-...).",
+      "pattern": "^[A-Za-z0-9_.@:-]+$",
+      "type": "string"
+     },
      "uri": {
       "description": "Canonical Host Agent resource URI returned by discovery.",
       "minLength": 1,
@@ -16615,7 +16573,8 @@
      }
     },
     "required": [
-     "uri"
+     "uri",
+     "serviceName"
     ],
     "type": "object"
    },
@@ -16627,7 +16586,7 @@
      },
      "status": {
       "enum": [
-       "active"
+       "scheduled"
       ],
       "type": "string"
      },

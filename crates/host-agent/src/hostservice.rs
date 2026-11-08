@@ -135,8 +135,7 @@ pub fn set_host_service_state(
     Ok(json!({"serviceName": service, "state": state, "scope": scope, "status": status}))
 }
 
-/// `Service.RestartHostService`. Opute-owned units are user units, restarted
-/// without blocking because the target may be this agent.
+/// `Service.RestartHostService`.
 pub fn restart_host_service(env: &Env, owner: &Owner, service: &str) -> Result<J, String> {
     require_shared_host_owner(
         owner.instance_id,
@@ -150,30 +149,25 @@ pub fn restart_host_service(env: &Env, owner: &Owner, service: &str) -> Result<J
     if !safe_unit_name(service) {
         return Err("serviceName contains invalid characters".into());
     }
-    let opute = service.starts_with("opute-");
-    let restart = if opute {
-        argv(&[SYSTEMCTL, "--user", "--no-block", "restart", service])
-    } else {
-        argv(&[SYSTEMCTL, "restart", service])
-    };
-    let res = run(env, restart, Duration::ZERO);
+    // D28 (Q23): Opute user units only, restarted without blocking because
+    // the target may be this agent; a system unit needs privilege this
+    // tool does not take.
+    if !service.starts_with("opute-") {
+        return Err(format!(
+            "restart_host_service restarts Opute user services only; restart system service '{service}' with set_host_service_state (scope: system)"
+        ));
+    }
+    let res = run(
+        env,
+        argv(&[SYSTEMCTL, "--user", "--no-block", "restart", service]),
+        Duration::ZERO,
+    );
     if res.exit_code != 0 {
         return Err(
             first_non_empty(&[&res.stderr, &res.stdout, "failed to restart service"]).to_string(),
         );
     }
-    if opute {
-        return Ok(json!({"serviceName": service, "status": "scheduled"}));
-    }
-    let verify = run(
-        env,
-        argv(&[SYSTEMCTL, "is-active", service]),
-        Duration::ZERO,
-    );
-    if verify.exit_code != 0 || verify.stdout.trim() != "active" {
-        return Err(format!("service '{service}' is not active after restart"));
-    }
-    Ok(json!({"serviceName": service, "status": "active"}))
+    Ok(json!({"serviceName": service, "status": "scheduled"}))
 }
 
 /// `$USER`, else the account name, as the supervisor tools resolve it.
@@ -258,10 +252,16 @@ pub fn ensure_host_service_supervisor(env: &Env, owner: &Owner, scope: &str) -> 
             ])
         ));
     }
-    let bus = run(
-        env,
-        argv(&[SYSTEMCTL, "--user", "show-environment"]),
-        SECONDS_15,
+    let bus = settle_user_bus(
+        || {
+            run(
+                env,
+                argv(&[SYSTEMCTL, "--user", "show-environment"]),
+                SECONDS_15,
+            )
+        },
+        USER_BUS_ATTEMPTS,
+        USER_BUS_INTERVAL,
     );
     if bus.exit_code != 0 {
         return Err(format!(
@@ -273,6 +273,28 @@ pub fn ensure_host_service_supervisor(env: &Env, owner: &Owner, scope: &str) -> 
         json!({"scope": scope, "status": "ready", "persistent": true, "user": user,
               "linger": true, "userBus": true}),
     )
+}
+
+// D28 (Q20): about 10 s for a user manager just made persistent to answer.
+const USER_BUS_ATTEMPTS: u32 = 40;
+const USER_BUS_INTERVAL: Duration = Duration::from_millis(250);
+
+/// Probe the user bus until it answers or the attempts run out; the last
+/// probe's result is returned.
+fn settle_user_bus(
+    mut probe: impl FnMut() -> CommandResult,
+    attempts: u32,
+    interval: Duration,
+) -> CommandResult {
+    let mut res = probe();
+    for _ in 1..attempts {
+        if res.exit_code == 0 {
+            break;
+        }
+        std::thread::sleep(interval);
+        res = probe();
+    }
+    res
 }
 
 fn status_word(ready: bool) -> &'static str {
@@ -544,6 +566,40 @@ pub fn recover_bridge(env: &Env, owner: &Owner) -> Result<J, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// D28 (Q20): a user bus that comes up a moment after lingering is
+    /// enabled is settled by the same ensure call.
+    #[test]
+    fn a_user_bus_that_starts_late_settles_in_one_call() {
+        let mut probes = 0;
+        let res = settle_user_bus(
+            || {
+                probes += 1;
+                CommandResult {
+                    exit_code: if probes < 3 { 1 } else { 0 },
+                    stdout: String::new(),
+                    stderr: String::new(),
+                }
+            },
+            USER_BUS_ATTEMPTS,
+            Duration::ZERO,
+        );
+        assert_eq!(res.exit_code, 0, "after {probes} probes");
+    }
+
+    /// D28 (Q23): only Opute user services are restarted; a system unit
+    /// is refused before anything runs, naming the supported path.
+    #[test]
+    fn a_system_unit_is_refused_before_acting() {
+        let env = crate::config::Env::from_pairs([("PATH", "/nonexistent")]);
+        let owner = crate::hostfiles::Owner {
+            instance_id: "",
+            owner_instance: "",
+        };
+        let e = restart_host_service(&env, &owner, "incus.service").unwrap_err();
+        assert!(e.contains("set_host_service_state"), "{e}");
+        assert!(e.contains("incus.service"), "{e}");
+    }
 
     #[test]
     fn state_commands_follow_go() {

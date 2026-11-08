@@ -1,8 +1,8 @@
-# Validate a nullable output field as the published schema means it (proposed)
+# Validate a nullable output field as the published schema means it
 
-Status: proposed. Owner question Q22
+Status: decided (owner, 2026-11-07, D28). Owner question Q22
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -20,11 +20,9 @@ host without a bridge.
 
 ## What Changes
 
-The owner chooses one:
-
-- the published schema says what it means in JSON Schema
-  (`"type": ["string", "null"]`), a catalog change; or
-- the output check honours `nullable` for the catalog's own schemas.
+Decided (D28): the output check honours `nullable`. A structured result,
+built-in or provider, may be null where its output schema marks the value
+`nullable: true`. Input checks are unchanged.
 
 ## Impact
 
