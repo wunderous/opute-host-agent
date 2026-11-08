@@ -1040,6 +1040,11 @@ through the normal rollout path, with Go kept as the rollback candidate
 throughout the agreed window. Go retirement, and ownership of releases and the
 website, are later decisions that need their own evidence.
 
+*Status (2026-11-08):* D28 fixes the evidence and the window (14 days).
+`make cutover-readiness` passes with only Q4, Q18, Q19, Q29, e2e-5 and
+WSL2 not passed (entry e2e-13a below). The owners' review (6.3) has not
+happened.
+
 ### E2E journeys on the dev VM (after D27)
 
 The spec-based evidence M13 now requires. Harness, rules and resource lease:
@@ -1230,6 +1235,44 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     and a repeat `run_host_plan` returns while its re-run holds the heavy
     reservation. Journeys wait out `host_capacity_saturated` per
     `retryAfterMs` (runner `retryOn`).
+- **e2e-13a (2026-11-08): the owner's decisions of 2026-11-07 (D28)
+  applied, and cutover readiness made checkable.** The answers are in the
+  contract spec (change `owner-decisions-2026-11-07`, archived), and
+  `questions.md` links each one. Every decided fix went through a spec
+  delta, a failing-first test and a fix on the seam, one commit each: Q5,
+  Q15, Q20, Q21 (with `configure_service_domain`'s `serviceName`, which
+  Q28 exposed), Q22, Q23, Q24, Q25, Q26, Q27, Q28, Q14, Q16, Q17, and Q7's
+  three ported defects (Cloudflare null arguments, the K3s AES-192 join
+  key, the proxy environment in the core HTTP clients). The writer lock
+  (D25) is proven again by `e2e4.cutover`: Go and Rust each refuse to start
+  on state the other holds.
+  - **Journeys:** every assertion was moved out of its question and reruns
+    on a release set rebuilt from this branch (`rust-e2e13a`). Gates e2e-1,
+    e2e-3a, e2e-3 and e2e-4 pass on run `e2e-13a-r2`, and e2e-2 passes on
+    `e2e-13a-r6`, with no open question. `e2e2.incus` now provisions with
+    the agent's Incus client switched to another project (Q16).
+  - **Retired runs** (causes under `.parity/retired/`):
+    - r1: `incus query` refuses `--project`, and the journeys pinned stale
+      inputs.
+    - r2's e2e-2 journeys: a journey assertion expected `podman`, not the
+      neutral `container-engine`.
+    - r3: stopped to add the Q16 step.
+    - r4 and r5: that step's own output and the client config it left
+      behind (harness only).
+  - **Contract shims:** the incus shim strips the default project before it
+    matches a fixture, and records it.
+  - **Readiness:** `make cutover-readiness` reads `evidence/cutover/readiness.json`
+    and committed evidence only. It reports each item as passed, unverified
+    (with its question) or blocked (with its owner and unblocker). Missing,
+    stale or tampered evidence fails the item. Items: gates e2e-0 to e2e-4;
+    the contract suites (42/42 scenarios, `contract-suites.json`); seam
+    stage `e2e13a` (133 compliant, 17 unported, no gaps, red canary);
+    conversion, in-flight, rollback and writer-lock requirements; the
+    14-day rollback window and the 0.3.0 first package in the spec; the
+    arm64 clean install; every question. Not passed, by decision: Q4
+    (open), Q18 and Q19 (deferred), e2e-5 (Platform staging), WSL2 (a
+    Windows runner), and Q29, opened during this round (identical tasks
+    share a workload unit).
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1295,6 +1338,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D25 | One writer per instance state | **Decided (owner, 2026-11-01): option A, lock in Go and Rust.** Each agent takes an exclusive, non-blocking lock on its instance state before opening any store or binding its listener; a second agent on the same instance refuses identically on both implementations, including across Go and Rust. The details were confirmed on 2026-11-01 as design.md proposes them. The Go change is merged in wunderous/host-agents#28 (`29103271`) and released in v0.2.4 (`c9f9e775`). **Done:** parity is rebased onto v0.2.4 and Rust takes the same lock; the writer-lock drill (Go/Go, Rust/Rust, Go then Rust, Rust then Go, then a SIGKILL) and the clean-machine user/bootstrap refusal pass, and gates m0–m6, m8a–m8f, m10, m12a, m12b and d25 pass on evidence/d25 ([`state-directory-writer-lock`](../state-directory-writer-lock/design.md)) | M12 validation 4 and task 4.4 ask for the lock, and only a lock on both sides protects Go -> Rust -> Go rollback. |
 | D26 | Provider executables in the Rust release | **Decided (owner, 2026-11-02): port.** hostos, cloudflare, tailscale and k3s become Rust executables matching the pinned Go ones (M9); ollama stays out (D15). Until a provider's m9 gate passes, the release ships the Go executable from the pinned v0.2.4 GitHub release, never a build from the Go tree ([`port-provider-executables`](../port-provider-executables/proposal.md)). |
 | D27 | Authority after the parity record | **Decided (owner, 2026-11-04): the spec.** Rust is developed against the contract spec, the accepted decisions and the frozen v0.2.4 record, not against Go. CI drops the Go/Rust comparison and runs the Rust-only suites; the committed parity evidence is historical; M13 becomes spec-based. Behaviours only Go decided are owner questions ([`rust-spec-authority`](../archive/2026-11-07-rust-spec-authority/questions.md)) | The parity record is complete; comparing with Go would block every improvement on it. |
+| D28 | Answers to the open spec questions and cutover items | **Decided (owner, 2026-11-07).** Cutover evidence is the e2e gates, the contract suites, conversion and rollback evidence, and e2e-5 once Platform staging exists; a 14-day rollback window with Go kept selectable; the first Rust package is 0.3.0 with the Rust catalog, npm postponed; Rust refuses a state directory another agent holds; Q0-Q28 answered ([`owner-decisions-2026-11-07`](../archive/2026-11-07-owner-decisions-2026-11-07/proposal.md)) | Turns the parity record's open questions into spec, fixes or recorded blockers. |
 
 ## 7. Risks this plan specifically mitigates
 

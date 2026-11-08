@@ -6,4 +6,4 @@
 
 - [x] 2.1 Failing-first test: diagnose_bridge with no heartbeat returns a valid result.
 - [x] 2.2 Fix the schema or the output check, as decided.
-- [ ] 2.3 Rerun e2e2.host-ops.
+- [x] 2.3 Rerun e2e2.host-ops. Passed in run `e2e-13a-r6`.
