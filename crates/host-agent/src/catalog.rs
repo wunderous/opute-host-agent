@@ -1664,6 +1664,25 @@ pub fn published_tools(snapshot: &Snapshot, prefix: &str) -> Vec<J> {
 mod tests {
     use super::*;
 
+    /// D28 (Q21): the published descriptor declares every input its handler
+    /// reads, in both modes.
+    #[test]
+    fn published_schemas_declare_the_inputs_their_handlers_read() {
+        for standalone in [false, true] {
+            let snapshot = for_mode(standalone);
+            for (tool, input) in [
+                ("restart_host_service", "serviceName"),
+                ("provision_container", "ipv4Address"),
+            ] {
+                let descriptor = snapshot.tools.iter().find(|d| d.name == tool).unwrap();
+                assert!(
+                    descriptor.input_schema["properties"].get(input).is_some(),
+                    "{tool} (standalone={standalone}) does not declare {input}"
+                );
+            }
+        }
+    }
+
     #[test]
     #[ignore = "requires the pinned provider catalog differential driver"]
     fn provider_catalog_fixture() {
@@ -1758,18 +1777,16 @@ mod tests {
             recorded["platform"]["rust"].as_str(),
             Some(for_mode(false).revision.as_str())
         );
-        // Each Go pair is the revision of the same catalog under Go's names.
+        // Each Go value is Go v0.2.4's own revision. Until D28 the Rust
+        // catalog under Go's names hashed to it; the decided fixes (Q21)
+        // changed descriptors, so the un-renamed catalog no longer does
+        // and the pair only records what each side published.
         let src = source();
         let go_platform = build(&src.provider_id, &canonicalize(&src.go_host));
-        let go_standalone = build(&src.provider_id, &canonicalize(&src.go_definitions));
-        assert_eq!(
-            recorded["platform"]["go"].as_str(),
-            Some(go_platform.revision.as_str())
-        );
-        assert_eq!(
-            recorded["standalone"]["go"].as_str(),
-            Some(go_standalone.revision.as_str())
-        );
+        for pair in [&recorded["platform"], &recorded["standalone"]] {
+            assert!(pair["go"].as_str().is_some_and(|go| go.starts_with("sha256:")));
+        }
+        assert_ne!(recorded["platform"]["go"].as_str(), Some(go_platform.revision.as_str()));
     }
 
     /// D19: neutral names published in every mode, Go names only as

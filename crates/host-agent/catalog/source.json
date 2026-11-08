@@ -4159,6 +4159,10 @@
      "image": {
       "type": "string"
      },
+     "ipv4Address": {
+      "description": "Pin the container to this address on the managed bridge instead of a DHCP lease.",
+      "type": "string"
+     },
      "memory": {
       "default": "2GiB",
       "description": "Memory limit such as 2GiB (default: 2GiB)",
@@ -5386,6 +5390,11 @@
    "description": "Restart a host-level service such as Incus and verify it becomes active",
    "inputSchema": {
     "properties": {
+     "serviceName": {
+      "description": "The systemd unit to restart.",
+      "pattern": "^[A-Za-z0-9_.@:-]+$",
+      "type": "string"
+     },
      "uri": {
       "description": "Canonical Host Agent resource URI returned by discovery.",
       "minLength": 1,
@@ -5393,7 +5402,8 @@
      }
     },
     "required": [
-     "uri"
+     "uri",
+     "serviceName"
     ],
     "type": "object"
    },
@@ -15631,6 +15641,10 @@
      "image": {
       "type": "string"
      },
+     "ipv4Address": {
+      "description": "Pin the container to this address on the managed bridge instead of a DHCP lease.",
+      "type": "string"
+     },
      "memory": {
       "default": "2GiB",
       "description": "Memory limit such as 2GiB (default: 2GiB)",
@@ -16608,6 +16622,11 @@
    "description": "Restart a host-level service such as Incus and verify it becomes active",
    "inputSchema": {
     "properties": {
+     "serviceName": {
+      "description": "The systemd unit to restart.",
+      "pattern": "^[A-Za-z0-9_.@:-]+$",
+      "type": "string"
+     },
      "uri": {
       "description": "Canonical Host Agent resource URI returned by discovery.",
       "minLength": 1,
@@ -16615,7 +16634,8 @@
      }
     },
     "required": [
-     "uri"
+     "uri",
+     "serviceName"
     ],
     "type": "object"
    },

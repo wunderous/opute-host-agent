@@ -1,8 +1,8 @@
-# Declare the inputs a tool reads in its published schema (proposed)
+# Declare the inputs a tool reads in its published schema
 
-Status: proposed. Owner question Q21
+Status: decided (owner, 2026-11-07, D28). Owner question Q21
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -21,7 +21,7 @@ A client that builds calls from the catalog cannot discover either input.
 
 ## What Changes
 
-If the owner chooses it, the catalog declares `serviceName` on
+As decided, the catalog declares `serviceName` on
 `restart_host_service` (or the tool derives it from `uri`) and
 `ipv4Address` on `provision_container`. That changes the published catalog
 and its revision, so it is a contract change, not a migration fix.
