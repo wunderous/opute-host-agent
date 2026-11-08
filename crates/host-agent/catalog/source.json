@@ -9143,44 +9143,6 @@
    "name": "configure_oci_storage"
   },
   {
-   "description": "Map a configurable DNS hostname to a Kubernetes Service through Ingress.",
-   "inputSchema": {
-    "properties": {
-     "hostname": {
-      "type": "string"
-     },
-     "ingressClass": {
-      "type": "string"
-     },
-     "ingressName": {
-      "type": "string"
-     },
-     "namespace": {
-      "type": "string"
-     },
-     "serviceName": {
-      "type": "string"
-     },
-     "servicePort": {
-      "type": "integer"
-     },
-     "vmName": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "vmName",
-     "namespace",
-     "ingressName",
-     "hostname",
-     "serviceName",
-     "servicePort"
-    ],
-    "type": "object"
-   },
-   "name": "configure_service_domain"
-  },
-  {
    "description": "Delete a generic Kubernetes resource from a canonical cluster target.",
    "inputSchema": {
     "properties": {
@@ -11642,29 +11604,6 @@
     ],
     "type": "object"
    }
-  },
-  {
-   "description": "Remove a configurable Kubernetes service domain mapping.",
-   "inputSchema": {
-    "properties": {
-     "ingressName": {
-      "type": "string"
-     },
-     "namespace": {
-      "type": "string"
-     },
-     "vmName": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "vmName",
-     "namespace",
-     "ingressName"
-    ],
-    "type": "object"
-   },
-   "name": "remove_service_domain"
   },
   {
    "description": "Remove an isolated caller-scoped SQLite database and sidecars after explicit confirmation.",

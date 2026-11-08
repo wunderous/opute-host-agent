@@ -1685,6 +1685,25 @@ mod tests {
         }
     }
 
+    /// D28 (Q28): standalone mode publishes the service domain tools with
+    /// the cluster `uri` binding their handlers read.
+    #[test]
+    fn standalone_service_domain_tools_bind_their_cluster() {
+        for tool in ["configure_service_domain", "remove_service_domain"] {
+            let d = for_mode(true)
+                .tools
+                .iter()
+                .find(|d| d.name == tool)
+                .unwrap();
+            let required = d.input_schema["required"].as_array().unwrap();
+            assert!(required.contains(&J::from("uri")), "{tool}: {required:?}");
+            assert!(
+                !required.contains(&J::from("vmName")),
+                "{tool}: {required:?}"
+            );
+        }
+    }
+
     #[test]
     fn published_schemas_declare_the_inputs_their_handlers_read() {
         for standalone in [false, true] {
