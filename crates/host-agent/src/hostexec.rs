@@ -203,6 +203,20 @@ pub fn run_host_until(env: &Env, argv: &[String], deadline: Instant) -> CommandR
 
 const SYSTEMD_RUN: &str = "/usr/bin/systemd-run";
 
+#[cfg(test)]
+thread_local! {
+    /// Tests stand a fake in for systemd-run.
+    static SYSTEMD_RUN_OVERRIDE: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+fn systemd_run() -> String {
+    #[cfg(test)]
+    if let Some(path) = SYSTEMD_RUN_OVERRIDE.with(|o| o.borrow().clone()) {
+        return path;
+    }
+    SYSTEMD_RUN.to_string()
+}
+
 /// `workloadUnitName`: the scope and argv hashed into a unit name.
 fn workload_unit_name(scope: &str, command: &[String]) -> String {
     use sha2::{Digest, Sha256};
@@ -267,7 +281,7 @@ pub fn run_host_workload(
     let seconds = timeout.as_secs() + u64::from(timeout.subsec_nanos() != 0);
     let unit = workload_unit_name(scope, command);
     let mut argv: Vec<String> = vec![
-        SYSTEMD_RUN.into(),
+        systemd_run(),
         format!("--unit={unit}"),
         "--wait".into(),
         "--collect".into(),
@@ -288,14 +302,33 @@ pub fn run_host_workload(
     }
     argv.extend(command.iter().cloned());
     let budget = timeout + Duration::from_secs(30);
-    let result = crate::hostobs::run_command_with(
-        env,
-        &argv,
-        None,
-        Some(Instant::now() + budget),
-        budget,
-        ctx,
-    );
+    // `--pipe` hands the client's output pipes to the unit: killing the client
+    // on a cancel would leave its readers waiting for the unit's command to
+    // end. A cancel stops the unit itself, which closes the pipes (Q29).
+    let finished = std::sync::atomic::AtomicBool::new(false);
+    let result = std::thread::scope(|scope| {
+        if let Some(ctx) = ctx {
+            scope.spawn(|| {
+                while !finished.load(std::sync::atomic::Ordering::SeqCst) {
+                    if ctx.err().is_some() {
+                        stop_workload_unit(env, &unit);
+                        return;
+                    }
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+            });
+        }
+        let result = crate::hostobs::run_command_with(
+            env,
+            &argv,
+            None,
+            Some(Instant::now() + budget),
+            budget,
+            ctx,
+        );
+        finished.store(true, std::sync::atomic::Ordering::SeqCst);
+        result
+    });
     stop_workload_unit(env, &unit);
     Ok(result)
 }
@@ -417,6 +450,73 @@ mod tests {
         assert!(
             calls.lines().any(|l| l.ends_with(&format!("stop {unit}"))),
             "{calls:?}"
+        );
+    }
+
+    /// Q29, e2e-13a-r9: `--pipe` hands the client's output pipes to the unit,
+    /// so killing only the client leaves the readers waiting for the unit's
+    /// command to end. A cancel must stop the unit while the workload runs.
+    #[test]
+    fn a_cancel_stops_the_unit_that_holds_the_pipes() {
+        use crate::plan::runner::RunCtx;
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let pid = dir.path().join("unit.pid");
+        let write = |name: &str, body: String| {
+            let path = dir.path().join(name);
+            std::fs::write(&path, body).unwrap();
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+            path
+        };
+        // The "unit": a sleep in its own session that holds the client's stdout.
+        let fake_run = write(
+            "systemd-run",
+            format!(
+                "#!/bin/sh\nsetsid sleep 30 & echo $! > {}\nwait\n",
+                pid.display()
+            ),
+        );
+        write(
+            "systemctl",
+            format!(
+                "#!/bin/sh\nkill \"$(cat {})\" 2>/dev/null; true\n",
+                pid.display()
+            ),
+        );
+        SYSTEMD_RUN_OVERRIDE.with(|o| *o.borrow_mut() = Some(fake_run.display().to_string()));
+        let path = format!("{}:/usr/bin:/bin", dir.path().display());
+        let env = Env::from_pairs([("PATH", path.as_str())]);
+        let flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let ctx =
+            RunCtx::from_flag(flag.clone()).with_operation_identity("run_host_command", "task-3");
+        let cancel = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(500));
+            flag.store(true, std::sync::atomic::Ordering::SeqCst);
+        });
+        let started = Instant::now();
+        let argv = vec![
+            "bash".to_string(),
+            "-lc".to_string(),
+            "sleep 30".to_string(),
+        ];
+        run_host_workload(
+            &env,
+            &workload_scope(&ctx),
+            &argv,
+            Duration::from_secs(60),
+            Some(&ctx),
+        )
+        .unwrap();
+        cancel.join().unwrap();
+        SYSTEMD_RUN_OVERRIDE.with(|o| *o.borrow_mut() = None);
+        let _ = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(format!("kill $(cat {}) 2>/dev/null", pid.display()))
+            .status();
+        assert!(
+            started.elapsed() < Duration::from_secs(10),
+            "{:?}",
+            started.elapsed()
         );
     }
 

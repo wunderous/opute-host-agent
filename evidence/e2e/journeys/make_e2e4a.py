@@ -1488,10 +1488,13 @@ def restart() -> dict:
         {"id": "killTaskWire", "mcp": "tasks/get", "params": {"taskId": "${KILL_TASK}"}, "meta": TASKS_META},
         call("opsAfterKill", "list_operations", {"limit": 100}),
         call("cancelAfterKill", "cancel_operation", {"operationId": "${KILL_TASK}"}),
+        # SIGKILL leaves its task's unit running by nature; clear it so the upgrade's cancel is observable
+        {"id": "killOrphan", "guest": "pkill -fx 'sleep 120'; sleep 1; pgrep -fx 'sleep 120' | wc -l"},
         # an in-place upgrade with a task in flight
         call("upTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
              capture={"UP_TASK": "response.body.result.taskId"}),
         base.swap("upgrade", NEXT),
+        {"id": "upGone", "guest": "sleep 3; pgrep -fx 'sleep 120' | wc -l"},
         call("upTaskAfter", "get_operation", {"operationId": "${UP_TASK}"}),
         {"id": "upTaskWire", "mcp": "tasks/get", "params": {"taskId": "${UP_TASK}"}, "meta": TASKS_META},
         *task("afterUpgrade", "run_host_command", {"command": "echo upgraded"}),
@@ -1537,6 +1540,8 @@ def restart() -> dict:
         req(Q29_SPEC, "Each task runs in its own workload unit",
             a("termTaskWire", "response.body.result.status", equals="cancelled"),
             a("termGone", "stdout", equals="0\n"),
+            a("killOrphan", "stdout", equals="0\n"),
+            a("upGone", "stdout", equals="0\n"),
             {"step": "killTask", "path": "response.body.result.status", "equals": "working"},
             {"step": "upTask", "path": "response.body.result.status", "equals": "working"},
             {"step": "twinA", "path": "response.body.result.status", "equals": "working"},
@@ -1544,7 +1549,7 @@ def restart() -> dict:
             a("twins", "stdout", matches="^2\n"),
             a("twinADone", "response.body.result.status", equals="completed"),
             a("twinBDone", "response.body.result.status", equals="completed"),
-            scenario="A task cancelled by SIGTERM leaves no process running; the same command runs again after "
+            scenario="A task cancelled by SIGTERM, or by the in-place upgrade's graceful stop, leaves no process running; the same command runs again after "
                      "the restart and after a SIGKILL; two tasks with the same command run side by side and both "
                      "complete (decided 2026-11-08)"),
         req(Q25_SPEC, "An operation record reports its task's terminal status",
