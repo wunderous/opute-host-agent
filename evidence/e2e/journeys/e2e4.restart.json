@@ -441,7 +441,7 @@
   },
   {
    "id": "kill",
-   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service && sleep 1 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up"
+   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service; sleep 1; ! systemctl is-active -q opute-bootstrap-mcp.service && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up"
   },
   {
    "id": "killTaskAfter",

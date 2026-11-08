@@ -1456,7 +1456,10 @@ NEXT = "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
 
 def restart() -> dict:
     files = {**base.TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-q29/host-agent-linux-x64.gz")}
-    kill = f"systemctl kill -s KILL {UNIT} && sleep 1 && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}"
+    # systemctl kill can exit 1 when a process of the unit is already gone (EINVAL on an auxiliary process);
+    # the agent must be dead either way before it is started again.
+    kill = (f"systemctl kill -s KILL {UNIT}; sleep 1; ! systemctl is-active -q {UNIT} && systemctl start {UNIT} "
+            f"&& {base.WAIT_HEALTH.format(port=3014)}")
     steps = base.TOOL_STEPS + [
         {"id": "nextCopy", "copy": "rustNext", "to": NEXT},
         {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 25"},
