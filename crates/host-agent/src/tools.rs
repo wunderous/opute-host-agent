@@ -498,7 +498,8 @@ fn create_async_task(
         .tools
         .iter()
         .any(|d| d.name == name && d.implementation.trim().starts_with("provider:"));
-    let base = if provider {
+    let cancellable = task_cancels_in_flight(&name, provider);
+    let base = if cancellable {
         crate::plan::runner::RunCtx::from_flag(cancelled)
     } else {
         crate::plan::runner::RunCtx::background()
@@ -513,7 +514,7 @@ fn create_async_task(
             &task_id,
             Some(owner),
         )),
-        None => provider.then_some(base),
+        None => cancellable.then_some(base),
     };
     let start = move || {
         let result = dispatch(
@@ -588,6 +589,15 @@ fn create_async_task(
         "content": [{"type": "text", "text": desc}],
         "structuredContent": rec.create_result(),
     })
+}
+
+/// Whether a task runs under its own cancellation, so `tasks/cancel` and
+/// shutdown reach the work in flight. Provider requests do, as in Go; of the
+/// host tools only the shell command does, so that a cancelled task stops
+/// its workload unit (Q29, decided 2026-11-08). Other host tools keep Go's
+/// cooperative path.
+fn task_cancels_in_flight(name: &str, provider: bool) -> bool {
+    provider || matches!(name, "run_host_command" | "agent_shell")
 }
 
 /// `redactTaskArgs`: a persisted task snapshot's `toolArgs` is an echo of
@@ -1677,6 +1687,15 @@ pub(crate) fn snapshot_json(snapshot: &catalog::Snapshot) -> J {
 
 #[cfg(test)]
 mod tests {
+    /// Q29: a shell-command task runs under its task's cancellation.
+    #[test]
+    fn a_shell_command_task_is_cancellable_in_flight() {
+        assert!(task_cancels_in_flight("run_host_command", false));
+        assert!(task_cancels_in_flight("agent_shell", false));
+        assert!(task_cancels_in_flight("anything", true));
+        assert!(!task_cancels_in_flight("ensure_host_file", false));
+    }
+
     use super::*;
 
     #[test]
