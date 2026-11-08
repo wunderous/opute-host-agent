@@ -1,7 +1,7 @@
 # Settle the user service supervisor on its first ensure (proposed)
 
 Status: proposed. Owner question Q20
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented.
 
 ## Why

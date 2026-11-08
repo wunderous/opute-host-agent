@@ -1,7 +1,7 @@
 # Declare the inputs a tool reads in its published schema (proposed)
 
 Status: proposed. Owner question Q21
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented.
 
 ## Why

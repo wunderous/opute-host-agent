@@ -16,7 +16,7 @@ It is planning-only until the OpenSpec change is reviewed. Read
   Since decision D27 (owner, 2026-11-04) Go is not the authority: do not
   capture new Go baselines or compare Rust with Go. A behavior none of these
   sources decides is an owner question
-  (`openspec/changes/rust-spec-authority/questions.md`); never guess it,
+  (`openspec/changes/archive/2026-11-07-rust-spec-authority/questions.md`); never guess it,
   from Go or from a tool name.
 - Go remains the production owner until cutover and the migration source for
   existing hosts' state. The committed parity evidence (m0–m12b, d25, m9) is

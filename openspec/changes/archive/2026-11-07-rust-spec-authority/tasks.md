@@ -13,4 +13,4 @@
 
 ## 3. Archive
 
-- [ ] 3.1 After the owner answers questions.md, archive this change and rewrite the spec's Purpose so it no longer names Go.
+- [x] 3.1 After the owner answers questions.md (D28, 2026-11-07), archive this change and rewrite the spec's Purpose so it no longer names Go.

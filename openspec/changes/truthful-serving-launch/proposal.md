@@ -1,7 +1,7 @@
 # Report a serving launch truthfully (proposed)
 
 Status: proposed. Owner question Q27
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented.
 
 ## Why

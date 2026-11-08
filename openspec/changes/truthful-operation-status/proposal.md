@@ -1,7 +1,7 @@
 # A durable operation's status for a finished task (proposed)
 
 Status: proposed. Owner question Q25
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented.
 
 ## Why

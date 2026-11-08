@@ -173,7 +173,7 @@ It records:
 - the timings.
 
 A requirement whose outcome depends on an open owner question
-(`openspec/changes/rust-spec-authority/questions.md`) names it in
+(`openspec/changes/archive/2026-11-07-rust-spec-authority/questions.md`) names it in
 `openQuestion`. Its assertions are recorded as observations, and its outcome
 is `unverified`, never a pass or a fail. Every journey starts from the
 snapshot, through a checked restore in preflight.

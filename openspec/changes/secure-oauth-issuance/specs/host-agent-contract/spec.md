@@ -30,6 +30,10 @@ divergence.
 - **WHEN** a declared divergence path no longer differs between Go and Rust
 - **THEN** the verifier reports the declaration as stale and the gate fails until it is removed
 
+#### Scenario: A list's order differs
+- **WHEN** a result lists the same items as the record in a different order and no requirement states an order
+- **THEN** the result satisfies the contract
+
 ### Requirement: Compatible authenticated MCP surface
 
 The Host Agent SHALL preserve the pinned Go Streamable HTTP MCP behavior,
@@ -58,3 +62,7 @@ the Go baseline.
 #### Scenario: Issuance follows the Rust contract
 - **WHEN** any caller requests a token from the Rust agent without a client secret or an operator-approved authorization
 - **THEN** no token is issued, and the `oauth-issuance` contract suite records the outcome
+
+#### Scenario: A refusal's message changes
+- **WHEN** a typed refusal keeps its code but its message text differs from the record
+- **THEN** the result satisfies the contract
