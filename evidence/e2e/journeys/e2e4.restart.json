@@ -16,8 +16,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "rustNext": {
-    "path": "${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz",
-    "sha256": "5737bc7a7f7895fba8988e27f0d25ebb4fabfaa41b87a86eef938844626146dd"
+    "path": "${PARITY}/e2e/release/rust-next-q29/host-agent-linux-x64.gz",
+    "sha256": "456581ad7aac047ffdfb1f953e70287c5e1e1da12a213d6bd4c80ccab2a3098f"
    }
   }
  },
@@ -113,6 +113,68 @@
     }
    ],
    "scenario": "A plan running at SIGTERM reads back cancelled; a task killed by SIGKILL reads back failed and cannot be cancelled; a task in flight at the in-place upgrade's graceful stop reads back cancelled (D28)"
+  },
+  {
+   "spec": "openspec/changes/workload-unit-per-task/specs/host-agent-contract/spec.md",
+   "requirement": "Each task runs in its own workload unit",
+   "pass": [
+    {
+     "step": "termTaskWire",
+     "path": "response.body.result.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "termGone",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "killOrphan",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "upGone",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "killTask",
+     "path": "response.body.result.status",
+     "equals": "working"
+    },
+    {
+     "step": "upTask",
+     "path": "response.body.result.status",
+     "equals": "working"
+    },
+    {
+     "step": "twinA",
+     "path": "response.body.result.status",
+     "equals": "working"
+    },
+    {
+     "step": "twinB",
+     "path": "response.body.result.status",
+     "equals": "working"
+    },
+    {
+     "step": "twins",
+     "path": "stdout",
+     "matches": "^2\n"
+    },
+    {
+     "step": "twinADone",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    },
+    {
+     "step": "twinBDone",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    }
+   ],
+   "scenario": "A task cancelled by SIGTERM, or by the in-place upgrade's graceful stop, leaves no process running; the same command runs again after the restart and after a SIGKILL; two tasks with the same command run side by side and both complete (decided 2026-11-08)"
   },
   {
    "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md",
@@ -317,6 +379,10 @@
    "guest": "systemctl restart opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up"
   },
   {
+   "id": "termGone",
+   "guest": "sleep 3; pgrep -fx 'sleep 120' | wc -l"
+  },
+  {
    "id": "termTaskAfter",
    "mcp": "tools/call",
    "tool": "get_operation",
@@ -357,7 +423,7 @@
    "mcp": "tools/call",
    "tool": "run_host_command",
    "arguments": {
-    "command": "sleep 121"
+    "command": "sleep 120"
    },
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {
@@ -375,7 +441,7 @@
   },
   {
    "id": "kill",
-   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service && sleep 1 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up"
+   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service; sleep 1; ! systemctl is-active -q opute-bootstrap-mcp.service && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && echo up"
   },
   {
    "id": "killTaskAfter",
@@ -425,11 +491,15 @@
    ]
   },
   {
+   "id": "killOrphan",
+   "guest": "pkill -fx 'sleep 120'; sleep 1; pgrep -fx 'sleep 120' | wc -l"
+  },
+  {
    "id": "upTask",
    "mcp": "tools/call",
    "tool": "run_host_command",
    "arguments": {
-    "command": "sleep 122"
+    "command": "sleep 120"
    },
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {
@@ -448,6 +518,10 @@
   {
    "id": "upgrade",
    "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+  },
+  {
+   "id": "upGone",
+   "guest": "sleep 3; pgrep -fx 'sleep 120' | wc -l"
   },
   {
    "id": "upTaskAfter",
@@ -520,6 +594,96 @@
    "interval": 3
   },
   {
+   "id": "twinA",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "sleep 20"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [],
+   "capture": {
+    "TWIN_A": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "twinB",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "sleep 20"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [],
+   "capture": {
+    "TWIN_B": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "twins",
+   "guest": "sleep 3; pgrep -fx 'sleep 20' | wc -l; systemctl --user -M opute@ list-units 'opute-host-workload-*' --state=active --no-legend 2>/dev/null | wc -l"
+  },
+  {
+   "id": "twinADone",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TWIN_A}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 90,
+   "interval": 3
+  },
+  {
+   "id": "twinBDone",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TWIN_B}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 90,
+   "interval": 3
+  },
+  {
    "id": "db",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
   }
@@ -527,7 +691,7 @@
  "cleanup": [
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; pkill -fx 'sleep 120'; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 20

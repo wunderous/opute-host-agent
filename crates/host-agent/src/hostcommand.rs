@@ -120,7 +120,7 @@ pub fn exec_command(
 }
 
 /// The `run_host_command` / `agent_shell` handler: one opaque shell command
-/// in the operation's workload unit, answered with its exit status.
+/// in the task's own workload unit (Q29), answered with its exit status.
 pub fn run_host_command(
     env: &Env,
     ctx: &RunCtx,
@@ -137,15 +137,9 @@ pub fn run_host_command(
     if timeout_ms > 2 * 60 * 60 * 1000 {
         return Err("timeoutMs exceeds the two-hour maximum".into());
     }
-    let (operation, task) = ctx.operation_identity();
-    let scope = if operation.is_empty() {
-        task
-    } else {
-        operation
-    };
     let res = crate::hostexec::run_host_workload(
         env,
-        &scope,
+        &crate::hostexec::workload_scope(ctx),
         &["bash".into(), "-lc".into(), command.into()],
         Duration::from_millis(timeout_ms as u64),
         Some(ctx),
