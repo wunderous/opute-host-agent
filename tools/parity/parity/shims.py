@@ -209,7 +209,7 @@ def run_shim(name: str, fixture_path: str, log_path: str) -> int:
     def on_signal(signum, _frame):
         # The agent's cancellation reached the child: record which signal,
         # then exit as an uncaught signal would (128 + signum).
-        _append(log_path, {"cmd": name, "argv": sys.argv[1:], "signal": signal.Signals(signum).name})
+        _append(log_path, {"cmd": name, "argv": _project(name, sys.argv[1:])[0], "signal": signal.Signals(signum).name})
         pid_file.unlink(missing_ok=True)
         os._exit(128 + signum)
 
@@ -221,10 +221,27 @@ def run_shim(name: str, fixture_path: str, log_path: str) -> int:
         pid_file.unlink(missing_ok=True)
 
 
+def _project(name: str, argv: list[str]) -> tuple[list[str], str | None]:
+    """Rust addresses every Incus call to the default project (D28, Q16):
+    `--project default` before the verb, or `project=default` in a `query`
+    path. Fixtures are written without it, so the shim matches and records
+    the call without it and records the project separately."""
+    if name != "incus":
+        return argv, None
+    if argv[:2] == ["--project", "default"]:
+        return argv[2:], "default"
+    if argv[:1] == ["query"]:
+        out = [a.replace("?project=default&", "?").replace("&project=default", "").replace("?project=default", "")
+               if a.startswith("/1.0") else a for a in argv]
+        if out != argv:
+            return out, "default"
+    return argv, None
+
+
 def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
     import hashlib
 
-    argv = sys.argv[1:]
+    argv, project = _project(name, sys.argv[1:])
     stdin_digest = None
     if not sys.stdin.isatty():
         try:
@@ -240,7 +257,7 @@ def _run_shim(name: str, fixture_path: str, log_path: str, root: Path) -> int:
         if _match(rule, argv) and _holds(rule, root):
             chosen, index = rule, i
             break
-    entry = {"cmd": name, "argv": argv, "rule": index}
+    entry = {"cmd": name, "argv": argv, "rule": index, **({"project": project} if project else {})}
     if chosen.get("hashFiles"):
         # Files passed by path (a generated temp file, say) are recorded by
         # content, so their names may differ while their bytes are compared.
