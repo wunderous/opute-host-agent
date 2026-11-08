@@ -1608,4 +1608,41 @@ mod tests {
         );
         assert_eq!(row["structuredContent"]["status"], "failed", "{row}");
     }
+
+    /// D28 (Q25): Go v0.2.4 writes a live row `working` even when the
+    /// task's snapshot is terminal; after a restart get_operation reports
+    /// the snapshot's terminal status, as tasks/get does.
+    #[test]
+    fn a_go_written_working_row_reads_back_its_tasks_terminal_status() {
+        let dir = tempfile::tempdir().unwrap();
+        let server = test_server(dir.path());
+        {
+            let state = server.host.state.lock().unwrap();
+            state
+                .save_snapshot_with_status(
+                    "task-go",
+                    "run_host_command",
+                    "Executing run_host_command...",
+                    &json!({"taskId": "task-go", "status": "cancelled",
+                            "statusMessage": "The Host Agent shut down before the task completed.",
+                            "toolName": "run_host_command", "toolArgs": {"command": "sleep 120"},
+                            "createdAt": "2026-11-07T00:00:00Z", "lastUpdatedAt": "2026-11-07T00:00:00Z",
+                            "ttlMs": 3600000, "pollIntervalMs": 3000}),
+                    "working",
+                )
+                .unwrap();
+        }
+        drop(server);
+
+        let restarted = test_server(dir.path());
+        assert_eq!(restarted.tasks.get("task-go").unwrap().status, "cancelled");
+        let row = crate::tools::dispatch(
+            &restarted,
+            "get_operation",
+            json!({"operationId": "task-go"}).as_object().unwrap(),
+            None,
+            None,
+        );
+        assert_eq!(row["structuredContent"]["status"], "cancelled", "{row}");
+    }
 }

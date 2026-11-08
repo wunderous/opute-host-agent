@@ -413,7 +413,7 @@ impl StateStore {
         self.save_task_snapshot(task_id, tool_name, description, snapshot)
     }
 
-    fn save_snapshot_with_status(
+    pub(crate) fn save_snapshot_with_status(
         &self,
         task_id: &str,
         tool_name: &str,

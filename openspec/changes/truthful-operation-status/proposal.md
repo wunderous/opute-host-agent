@@ -38,3 +38,11 @@ differently, so it needs a decision.
 Q9 (a bridged operation's terminal status) is answered by the same row: the
 bridge is keyed on the task id, so its row now carries the task's terminal
 status too.
+
+## Found later (D28 round)
+
+e2e-4a's cutover journey showed the same mismatch on Go-written state: Go's
+graceful stop persists a `cancelled` snapshot but leaves the row `working`,
+so Rust read it as `unknown`. At start-up Rust now writes back every
+restored terminal task whose row disagrees
+(`plan_mcp::tests::a_go_written_working_row_reads_back_its_tasks_terminal_status`).

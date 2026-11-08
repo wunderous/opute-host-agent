@@ -445,21 +445,31 @@ pub(crate) fn compose(
     for snapshot in &snapshots {
         tasks.restore_snapshot(snapshot);
     }
-    // A task snapshotted mid-flight comes back failed; its operation row
-    // says so too, rather than `unknown` (D28, Q5 and Q25).
+    // Every restored terminal task's operation row reports its status: a
+    // task snapshotted mid-flight comes back failed, and a row Go v0.2.4
+    // left `working` beside a terminal snapshot is corrected, rather than
+    // read as `unknown` (D28, Q5 and Q25).
     {
         let store = state
             .lock()
             .map_err(|_| go_err!("restore MCP tasks: state store lock poisoned"))?;
         for snapshot in &snapshots {
-            if snapshot.get("status").and_then(serde_json::Value::as_str) != Some("working") {
-                continue;
-            }
             let id = snapshot
                 .get("taskId")
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or("");
-            if let Some(task) = tasks.get(id).filter(|t| t.status == "failed") {
+            let Some(task) = tasks
+                .get(id)
+                .filter(|t| matches!(t.status, "completed" | "failed" | "cancelled"))
+            else {
+                continue;
+            };
+            let row = store.get_operation(id).ok().flatten();
+            let recorded = row
+                .as_ref()
+                .and_then(|r| r.get("status"))
+                .and_then(serde_json::Value::as_str);
+            if recorded != Some(task.status) {
                 let _ = store.save_registry_task_snapshot(
                     id,
                     &task.tool_name,
