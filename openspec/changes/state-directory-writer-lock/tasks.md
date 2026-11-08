@@ -12,7 +12,7 @@
 ## 3. Parity rebase, then Rust
 
 - [x] 3.1 Rebase the parity inventory onto the Go release (source lock, Go reference, catalogs, reruns of the affected milestones), as AGENTS.md requires for a newer Go release. Pinned to v0.2.4; every suite the gates re-derive was rerun in [`evidence/d25`](../../../evidence/d25/run.sh) (T2 Go/Go in seven shards under the 30-minute limit, the 15-minute soak included), and gates m0–m6, m8a–m8f, m10, m12a, m12b and d25 pass.
-- [x] 3.2 Change Rust to take the same lock at the same point in start-up, with the same file, line and exit code, and the same tests. Done in `032fe6cd8`; Go's own lock tests run as owner tests in the round (`go-owner-lock`).
+- [x] 3.2 Change Rust to take the same lock at the same point in start-up, with the same file, line and exit code, and the same tests. Done in `032fe6cd8`; Go's own lock tests run as owner tests in the round (`go-owner-lock`). D28 (2026-11-08): `a_second_runtime_on_held_state_is_refused_and_writes_nothing` adds the runtime-level check, a refused second start leaving every file under the root byte-identical (shown red by moving the lock after the store open).
 
 ## 4. Evidence
 
