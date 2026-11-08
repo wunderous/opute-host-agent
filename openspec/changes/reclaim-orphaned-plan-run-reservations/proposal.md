@@ -1,7 +1,7 @@
 # Reclaim a crashed plan run's orphaned reservation without a task snapshot (proposed)
 
 Status: proposed. Owner question Q15
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented. Current behaviour matches Go v0.2.4.
 
 ## Why

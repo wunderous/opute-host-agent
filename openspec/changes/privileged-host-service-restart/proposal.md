@@ -1,7 +1,7 @@
 # Restart a system service from the production install (proposed)
 
 Status: proposed. Owner question Q23
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented.
 
 ## Why

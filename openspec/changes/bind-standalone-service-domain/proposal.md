@@ -1,7 +1,7 @@
 # Bind the standalone service domain tools to their VM (proposed)
 
 Status: proposed. Owner question Q28
-([rust-spec-authority/questions.md](../rust-spec-authority/questions.md)).
+([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
 Nothing here is implemented.
 
 ## Why

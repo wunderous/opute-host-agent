@@ -29,3 +29,7 @@ verified by its own contract suite. `oauth-issuance` (decision D8) and
 #### Scenario: Stale divergence
 - **WHEN** a declared divergence path no longer differs between Go and Rust
 - **THEN** the verifier reports the declaration as stale and the gate fails until it is removed
+
+#### Scenario: A list's order differs
+- **WHEN** a result lists the same items as the record in a different order and no requirement states an order
+- **THEN** the result satisfies the contract
