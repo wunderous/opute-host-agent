@@ -666,7 +666,7 @@
   {
    "id": "goSecond",
    "timeout": 60,
-   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args; echo exit=$?; rm -f /tmp/e2e-second"
+   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second"
   },
   {
    "id": "rustStillServes",
@@ -912,7 +912,7 @@
   {
    "id": "rustSecond",
    "timeout": 60,
-   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args; echo exit=$?; rm -f /tmp/e2e-second"
+   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second"
   },
   {
    "id": "goStillServes",
