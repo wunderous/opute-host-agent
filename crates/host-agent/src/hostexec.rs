@@ -227,12 +227,11 @@ pub fn workload_scope(ctx: &crate::plan::runner::RunCtx) -> String {
         .join("/")
 }
 
-/// Q29: a cancelled or timed-out workload stops its unit. Killing the
-/// `systemd-run --wait` client alone leaves the unit and its command running.
-fn stop_workload_unit_if_interrupted(env: &Env, unit: &str, interrupted: bool, exit_code: i32) {
-    if !interrupted && exit_code != 124 {
-        return;
-    }
+/// Q29: the workload's unit is stopped once its `systemd-run --wait` client
+/// returns. A completed unit is already gone (`--collect`), so the stop is a
+/// no-op; a cancel, a timeout, or the agent's own stop signalling the client
+/// (e2e-13a-r7) would otherwise leave the unit and its command running.
+fn stop_workload_unit(env: &Env, unit: &str) {
     let mut argv = vec!["systemctl".to_string()];
     if !nix::unistd::geteuid().is_root() {
         argv.push("--user".into());
@@ -297,8 +296,7 @@ pub fn run_host_workload(
         budget,
         ctx,
     );
-    let interrupted = ctx.is_some_and(|c| c.err().is_some());
-    stop_workload_unit_if_interrupted(env, &unit, interrupted, result.exit_code);
+    stop_workload_unit(env, &unit);
     Ok(result)
 }
 
@@ -384,10 +382,16 @@ mod tests {
         );
     }
 
-    /// A workload that completes leaves its unit to systemd (--collect).
+    /// Q29, e2e-13a-r7: when the agent's own unit stops, systemd signals the
+    /// systemd-run client too, which then returns before the agent sees its
+    /// cancel. Whatever ends the client, the workload's unit is stopped.
     #[test]
-    fn a_completed_workload_is_not_stopped() {
+    fn a_workload_stops_its_unit_however_the_client_ends() {
+        use crate::plan::runner::RunCtx;
         use std::os::unix::fs::PermissionsExt;
+        if !std::path::Path::new(SYSTEMD_RUN).exists() {
+            return;
+        }
         let dir = tempfile::tempdir().unwrap();
         let log = dir.path().join("systemctl.log");
         let fake = dir.path().join("systemctl");
@@ -398,8 +402,22 @@ mod tests {
         .unwrap();
         std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
         let env = Env::from_pairs([("PATH", dir.path().to_str().unwrap())]);
-        stop_workload_unit_if_interrupted(&env, "opute-host-workload-x", false, 0);
-        assert!(!log.exists());
+        let ctx = RunCtx::background().with_operation_identity("run_host_command", "task-2");
+        let argv = vec!["true".to_string()];
+        let unit = workload_unit_name(&workload_scope(&ctx), &argv);
+        run_host_workload(
+            &env,
+            &workload_scope(&ctx),
+            &argv,
+            Duration::from_secs(60),
+            Some(&ctx),
+        )
+        .unwrap();
+        let calls = std::fs::read_to_string(&log).unwrap_or_default();
+        assert!(
+            calls.lines().any(|l| l.ends_with(&format!("stop {unit}"))),
+            "{calls:?}"
+        );
     }
 
     #[test]
