@@ -1,8 +1,8 @@
-# Report a serving launch truthfully (proposed)
+# Report a serving launch truthfully
 
-Status: proposed. Owner question Q27
+Status: decided (owner, 2026-11-07, D28). Owner question Q27
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -28,13 +28,15 @@ when its supervisor did not start the process.
 
 ## What Changes
 
-If the owner chooses it:
+Decided (D28):
 - the serving launch runs with the user-bus environment, as the other user
   service operations do;
-- a launch that exposes no main PID fails the call with the launch output,
-  instead of reporting `started: true`.
+- a launch that exposes no main PID fails the call with the launch output
+  ("serving launch did not start: ..."), instead of reporting
+  `started: true`.
 
-Until the owner decides, Rust keeps Go's behaviour.
+A pre-start command keeps its current handling; the decision did not
+cover it.
 
 ## Impact
 

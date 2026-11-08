@@ -514,7 +514,7 @@ impl Serving {
                         }
                         let launch =
                             launch_command(&pid, &args.assignment_id, &command, &restart_policy);
-                        if let Err(err) = self.run_agent_shell(&launch) {
+                        if let Err(err) = run_launch(&self.env, &launch) {
                             Self::release_launch(args);
                             return Err(err);
                         }
@@ -721,5 +721,40 @@ fn probe_endpoint(protocol: &str, port: i64, path: &str) -> (bool, String) {
                 crate::hostartifact::transport_cause(&url, &t)
             ),
         ),
+    }
+}
+
+/// The serving launch (D28, Q27): the launch script under bash with the
+/// user bus named, as the other user service operations run; a script that
+/// exits non-zero (no live main PID) fails with its output.
+fn run_launch(env: &Env, command: &str) -> Result<(), String> {
+    let res = crate::hostobs::run_command(
+        &crate::hostobs::user_bus_environment(env),
+        &["bash".into(), "-lc".into(), command.into()],
+        Duration::ZERO,
+    );
+    if res.exit_code == 0 {
+        return Ok(());
+    }
+    let output = format!("{}\n{}", res.stdout.trim(), res.stderr.trim());
+    Err(format!("serving launch did not start: {}", output.trim()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// D28 (Q27): the launch runs with the user bus, and a launch that
+    /// does not start fails with its output.
+    #[test]
+    fn a_launch_that_does_not_start_fails_with_its_output() {
+        let env = Env::from_pairs([("PATH", "/usr/bin:/bin")]);
+        let e = run_launch(
+            &env,
+            "printf 'bus=%s' \"$DBUS_SESSION_BUS_ADDRESS\"; exit 1",
+        )
+        .unwrap_err();
+        assert!(e.contains("bus=unix:path=/run/user/"), "{e}");
+        assert!(run_launch(&env, "true").is_ok());
     }
 }
