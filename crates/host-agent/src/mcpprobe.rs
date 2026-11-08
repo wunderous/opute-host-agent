@@ -333,11 +333,11 @@ fn query_escape(s: &str) -> String {
     out
 }
 
-fn agent() -> ureq::Agent {
-    ureq::AgentBuilder::new()
+fn agent(url: &str) -> ureq::Agent {
+    let builder = ureq::AgentBuilder::new()
         .timeout(Duration::from_secs(15))
-        .tls_config(crate::hostartifact::tls_config())
-        .build()
+        .tls_config(crate::hostartifact::tls_config());
+    crate::providers::env_proxy(builder, url).build()
 }
 
 fn post_error(what: &str, url: &str, err: &ureq::Transport) -> String {
@@ -361,7 +361,7 @@ fn mint_token(token_url: &str, resource: &str) -> Result<String, String> {
         "client_id=opute-mcp-host&grant_type=client_credentials&resource={}",
         query_escape(resource)
     );
-    let response = match agent()
+    let response = match agent(token_url)
         .post(token_url)
         .set("Content-Type", "application/x-www-form-urlencoded")
         .send_string(&form)
@@ -520,7 +520,7 @@ pub fn probe_authenticated(endpoint: &str, bearer: &str) -> Result<J, String> {
     let body = format!(
         r#"{{"id":"host-agent-mcp-probe","jsonrpc":"2.0","method":"tools/list","params":{{"_meta":{{"io.modelcontextprotocol/clientCapabilities":{{}},"io.modelcontextprotocol/clientInfo":{{"name":"opute-host-agent-mcp-probe","version":"1.0.0"}},"io.modelcontextprotocol/protocolVersion":"{PROTOCOL_VERSION}"}}}}}}"#
     );
-    let response = match agent()
+    let response = match agent(&resource)
         .post(&resource)
         .set("Authorization", &format!("Bearer {token}"))
         .set("Content-Type", "application/json")

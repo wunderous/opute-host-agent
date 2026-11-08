@@ -285,12 +285,12 @@ fn http_request(
     timeout: Duration,
     limit: u64,
 ) -> Result<Reply, String> {
-    let agent = ureq::AgentBuilder::new()
+    let builder = ureq::AgentBuilder::new()
         .timeout(timeout)
         .redirects(10)
         .user_agent("Go-http-client/1.1")
-        .tls_config(crate::hostartifact::tls_config())
-        .build();
+        .tls_config(crate::hostartifact::tls_config());
+    let agent = crate::providers::env_proxy(builder, url).build();
     let mut request = agent.request(method, url);
     let mut gzip = true;
     for (name, value) in headers {
@@ -4543,14 +4543,15 @@ fn probe_streaming_chat(base: &str, model: &str, token: &str, timeout: Duration)
         ("stream", J::Bool(true)),
         ("temperature", J::from(0)),
     ]);
-    let agent = ureq::AgentBuilder::new()
+    let url = format!("{base}/chat/completions");
+    let builder = ureq::AgentBuilder::new()
         .timeout(timeout)
         .redirects(10)
         .user_agent("Go-http-client/1.1")
-        .tls_config(crate::hostartifact::tls_config())
-        .build();
+        .tls_config(crate::hostartifact::tls_config());
+    let agent = crate::providers::env_proxy(builder, &url).build();
     let mut request = agent
-        .post(&format!("{base}/chat/completions"))
+        .post(&url)
         .set("Content-Type", "application/json")
         // Go's transport asks for gzip and decodes it transparently.
         .set("Accept-Encoding", "gzip");

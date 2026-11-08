@@ -490,7 +490,8 @@ fn probe_bridge_health(env: &Env) -> J {
     } else if scheme != "http" && scheme != "https" {
         db_error = format!("Get \"{url}\": unsupported protocol scheme \"{scheme}\"");
     } else {
-        let agent = ureq::AgentBuilder::new().redirects(10).build();
+        let builder = ureq::AgentBuilder::new().redirects(10);
+        let agent = crate::providers::env_proxy(builder, &url).build();
         match agent.get(&url).call() {
             Ok(response) => {
                 let mut body = Vec::new();

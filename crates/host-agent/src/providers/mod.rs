@@ -22,7 +22,7 @@ pub mod k3s;
 mod support;
 pub mod tailscale;
 
-pub(crate) use support::proxy_for;
+pub(crate) use support::{env_proxy, proxy_for};
 pub use support::{go_any, go_panic, Args, HostAgent};
 
 use crate::gojson::Node;
