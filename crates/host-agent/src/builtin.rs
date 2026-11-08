@@ -1785,8 +1785,8 @@ pub fn invoke(server: &Server, name: &str, invocation: &Invocation) -> Option<Re
 
 // --- M8c: the kubernetes and cluster domains ----------------------------------------
 
-/// D28 (Q24): the registered clusters whose Incus instance still exists,
-/// with that instance's type and status.
+/// D28 (Q24): the registered clusters whose Incus instance exists but is not
+/// running, with that instance's type and status.
 fn known_clusters(host: &crate::tools::Host) -> crate::clusterops::KnownClusters {
     let (state, tenant, incus) = (
         host.state.clone(),
@@ -1823,9 +1823,13 @@ fn known_clusters(host: &crate::tools::Host) -> crate::clusterops::KnownClusters
             }
             _ => Vec::new(),
         };
+        // A running instance the provider did not list is not a K3s cluster
+        // (or no longer one): only one it cannot probe is kept.
         items
             .into_iter()
-            .filter(|item| names.contains(&item.name))
+            .filter(|item| {
+                names.contains(&item.name) && !item.status.eq_ignore_ascii_case("running")
+            })
             .map(|item| {
                 (
                     item.name,

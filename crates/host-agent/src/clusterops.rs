@@ -48,8 +48,8 @@ pub const TRIM_GUEST_STORAGE: &str = "opute.capability.kubernetes.trim-guest-sto
 /// The Kubernetes provider's capability id (`capabilitycontract.Kubernetes`).
 pub const CAPABILITY: &str = "opute.capability.kubernetes.v1";
 
-/// D28 (Q24): the clusters this agent registered whose Incus instance still
-/// exists, as (instance name, instance type, Incus status).
+/// D28 (Q24): the clusters this agent registered whose Incus instance exists
+/// but is not running, as (instance name, instance type, Incus status).
 pub type KnownClusters = Arc<dyn Fn() -> Vec<(String, String, String)> + Send + Sync>;
 
 /// The kubernetes domain over the seams it declares.

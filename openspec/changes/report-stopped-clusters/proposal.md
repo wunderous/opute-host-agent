@@ -26,8 +26,8 @@ clusters" from "my cluster is down".
 Decided (D28): list it as stopped. The provider cannot probe a stopped
 instance, and nothing on the instance marks it as K3s, so the Host Agent's
 discovery, not the provider, keeps it listed: every cluster it registered
-(from an earlier discovery) whose Incus instance still exists, and that the
-provider did not return, is listed with its Incus status (for example
+(from an earlier discovery) whose Incus instance exists but is not running,
+and that the provider did not return, is listed with its Incus status (for example
 `Stopped`), its instance type and canonical URI, and no node data. A
 registered cluster whose instance was deleted is not listed. `total`
 counts these entries.
