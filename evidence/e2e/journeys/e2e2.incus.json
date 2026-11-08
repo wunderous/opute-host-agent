@@ -104,8 +104,8 @@
    "scenario": "A container and a virtual machine provisioned in the default project; both boot and answer at their addresses (ping and a TCP service)"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "provision_container pins a caller-declared bridge address (ipv4Address)",
+   "spec": "openspec/changes/declare-read-inputs/specs/capability-input-schemas/spec.md",
+   "requirement": "A tool's published input schema declares every input it reads",
    "pass": [
     {
      "step": "infoC",
@@ -118,8 +118,7 @@
      "equals": "10.0.100.50"
     }
    ],
-   "scenario": "The container keeps its static address across stop, start and restart; ipv4Address is read by the tool but not declared in its published inputSchema",
-   "openQuestion": "Q21"
+   "scenario": "provision_container's declared ipv4Address pins the container's bridge address across stop, start and restart (D28)"
   },
   {
    "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",

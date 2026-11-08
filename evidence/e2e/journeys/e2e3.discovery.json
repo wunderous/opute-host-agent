@@ -154,9 +154,17 @@
    "scenario": "With its server stopped, reading the cluster's events fails closed with an error result"
   },
   {
-   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")",
-   "requirement": "A stopped cluster in the inventory",
+   "spec": "openspec/changes/report-stopped-clusters/specs/cluster-discovery/spec.md",
+   "requirement": "A stopped cluster never reads as an empty inventory",
    "pass": [
+    {
+     "step": "stoppedList",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
     {
      "step": "stoppedList",
      "path": "response.body.result.structuredContent.total",
@@ -166,10 +174,14 @@
      "step": "stoppedList",
      "path": "response.body.result.structuredContent.clusters[0].uri",
      "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "stoppedList",
+     "path": "response.body.result.structuredContent.clusters[0].status",
+     "equals": "Stopped"
     }
    ],
-   "scenario": "With its only server stopped, is the cluster listed (with its status), or dropped so that the inventory reads as empty? The k3s provider skips an instance whose k3s --version fails, in Go v0.2.4 as in Rust",
-   "openQuestion": "Q24"
+   "scenario": "With its only server stopped, the registered cluster is listed with its instance status and no node data (D28)"
   },
   {
    "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md",

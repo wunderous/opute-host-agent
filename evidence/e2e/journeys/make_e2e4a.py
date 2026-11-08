@@ -22,7 +22,18 @@ import make_e2e3a as ha
 from make_e2e1 import HERE, SPEC, T, TASKS_META, a, inp, ok, req
 from make_e2e3a import call, direct, res, task
 
-QUESTIONS = "openspec/changes/rust-spec-authority/questions.md"
+QUESTIONS = "openspec/changes/archive/2026-11-07-rust-spec-authority/questions.md"
+CH = "openspec/changes/"
+Q20_SPEC = CH + "settle-user-service-supervisor/specs/host-service-supervisor/spec.md"
+Q21_SPEC = CH + "declare-read-inputs/specs/capability-input-schemas/spec.md"
+Q22_SPEC = CH + "nullable-output-schemas/specs/capability-output-schemas/spec.md"
+Q23_SPEC = CH + "privileged-host-service-restart/specs/host-service-restart/spec.md"
+Q24_SPEC = CH + "report-stopped-clusters/specs/cluster-discovery/spec.md"
+Q25_SPEC = CH + "truthful-operation-status/specs/operation-records/spec.md"
+Q26_SPEC = CH + "container-runtime-stdout/specs/container-storage/spec.md"
+Q27_SPEC = CH + "truthful-serving-launch/specs/serving-assignment/spec.md"
+Q28_SPEC = CH + "bind-standalone-service-domain/specs/service-exposure/spec.md"
+Q5_SPEC = CH + "truthful-interrupted-plan/specs/host-agent-contract/spec.md"
 SEAM_SPEC = ha.SEAM_SPEC
 CATALOG = "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
 E2E2_GOAL = ".agents/goals/e2e-2-host-workloads.md (flows 4, 5, 7, 8)"
@@ -76,6 +87,12 @@ def host_ops() -> dict:
         call("restartIncus", "restart_host_service", {"uri": "host-service:local:system/incus.service"}),
         call("restartIncusNamed", "restart_host_service",
              {"uri": "host-service:local:system/incus.service", "serviceName": "incus.service"}),
+        # D28 (Q23): a system service is restarted through set_host_service_state, scope system
+        call("restartIncusSystem", "set_host_service_state",
+             {"uri": "host-service:local:system/incus.service", "serviceName": "incus.service", "state": "restart",
+              "scope": "system"}),
+        {"id": "incusActive", "guest": "for i in $(seq 60); do systemctl is-active --quiet incus && break; sleep 1; "
+                                       "done; systemctl is-active incus"},
         # exec of workloads
         *task("execFails", "run_host_command", {"command": "echo err >&2; exit 3"}),
         *task("execTimeout", "run_host_command", {"command": "sleep 30", "timeoutMs": 1500}),
@@ -171,29 +188,30 @@ def host_ops() -> dict:
             res("virt", "isError", equals=False),
             res("virt", "structuredContent.incus", matches="Server version"),
             scenario="The virtualization stack reconciled on a host that has it: Incus reported, nothing broken"),
-        req(CATALOG, "restart_host_service (inputSchema: uri only)",
+        req(Q21_SPEC, "A tool declares every input it reads",
             direct("restartIncus", "isError", equals=True),
-            direct("restartIncus", "content[0].text", equals="Error: serviceName is required"),
-            scenario="Restarting Incus with the schema's only required input (uri) is refused for a serviceName "
-                     "the schema does not declare (Go v0.2.4 reads the same undeclared input)",
-            question="Q21"),
-        req(CATALOG, "restart_host_service: \"Restart a host-level service such as Incus\"",
-            direct("restartIncusNamed", "isError", equals=False),
-            scenario="With serviceName, the production-style agent's unprivileged systemctl is refused by polkit "
-                     "(\"Interactive authentication required\"); Go v0.2.4 builds the same command",
-            question="Q23"),
-        req(CATALOG, "ensure_host_service_supervisor",
+            direct("restartIncus", "content[0].text", matches='missing required property \\"serviceName\\"'),
+            scenario="restart_host_service publishes serviceName as required; a call with uri only is refused "
+                     "by the published schema before anything runs (D28)"),
+        req(Q23_SPEC, "restart_host_service restarts Opute user services only",
+            direct("restartIncusNamed", "isError", equals=True),
+            direct("restartIncusNamed", "content[0].text", matches="set_host_service_state"),
+            direct("restartIncusSystem", "isError", equals=False),
+            direct("restartIncusSystem", "structuredContent.status", equals="scheduled"),
+            a("incusActive", "stdout", equals="active\n"),
+            scenario="Restarting Incus with restart_host_service is refused before acting and names "
+                     "set_host_service_state; Incus is restarted through it with scope system (D28)"),
+        req(Q20_SPEC, "The first ensure call settles the user service manager",
             direct("supervisor", "structuredContent.status", equals="ready"),
-            scenario="The first ensure call on a host whose user manager is not running yet: does it report "
-                     "ready once lingering is enabled, or fail while the user bus starts?",
-            question="Q20"),
-        req(CATALOG, "diagnose_bridge and recover_bridge",
+            scenario="The first ensure call on a host whose user manager is not running yet reports ready once "
+                     "the user bus is up (D28)"),
+        req(Q22_SPEC, "A result the published output schema allows is not refused",
             direct("bridge", "isError", equals=False),
             direct("bridge", "structuredContent.bridgeStatus", equals="offline"),
+            direct("bridge", "structuredContent.lastHeartbeat.at", equals=None),
             direct("recoverBridge", "isError", equals=True),
-            scenario="Bridge recovery on a standalone host with no bridge: diagnose reports it offline with no "
-                     "heartbeat (the schema marks lastHeartbeat.at nullable), recover fails closed",
-            question="Q22"),
+            scenario="Bridge recovery on a standalone host with no bridge: diagnose reports it offline with a "
+                     "null heartbeat (D28: nullable honoured), recover fails closed"),
     ]
     cleanup = [{"id": "cleanHost", "guest": (
         "uid=$(id -u opute); runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$uid systemctl --user disable "
@@ -320,12 +338,11 @@ def incus() -> dict:
             a("reachV", "stdout", matches="^ping-ok\n"),
             scenario="A container and a virtual machine provisioned in the default project; both boot and answer "
                      "at their addresses (ping and a TCP service)"),
-        req(CATALOG, "provision_container pins a caller-declared bridge address (ipv4Address)",
+        req(Q21_SPEC, "A tool's published input schema declares every input it reads",
             direct("infoC", "structuredContent.ipv4[0]", equals=STATIC_IP),
             direct("infoAfter", "structuredContent.ipv4[0]", equals=STATIC_IP),
-            scenario="The container keeps its static address across stop, start and restart; ipv4Address is "
-                     "read by the tool but not declared in its published inputSchema",
-            question="Q21"),
+            scenario="provision_container's declared ipv4Address pins the container's bridge address across "
+                     "stop, start and restart (D28)"),
         req(CATALOG, "stop_vm, start_vm, restart_vm, update_vm_resources",
             res("stopC", "structuredContent.status", equals="stopped"),
             res("startC", "structuredContent.status", equals="running"),
@@ -536,11 +553,9 @@ def plans() -> dict:
             direct("unknown", "content[0].text", equals="Error: operation not found: no-such-operation"),
             scenario="The plan run reads back by id through get_operation; the operation list answers; an "
                      "unknown id is an error"),
-        req(SPEC, "Durable and redacted observations (operation status)",
+        req(Q25_SPEC, "An operation record reports its task's terminal status",
             direct("operation", "structuredContent.status", equals="completed"),
-            scenario="The completed plan run's operation row reports completed (Q25: Go writes a live task's row "
-                     "working, and Rust keeps it)",
-            question="Q25"),
+            scenario="The completed plan run's operation row reports completed (D28)"),
         req(SPEC, "One typed plan and recipe execution path (Interrupted plan)",
             ok("slow"),
             direct("waiting", "structuredContent.nodes.file.status", equals="applied"),
@@ -699,8 +714,8 @@ def oci() -> dict:
              until={"path": "response.body.result.structuredContent.status", "in": ["ready"]}, timeout=300,
              interval=5),
         call("logs", "exec_cluster_command", {"uri": CLUSTER, "command": "logs", "args": ["e2e-pull", "-n", "default"]}),
-        # storage policy and cleanup. Without a user session Podman warns on stderr, which the combined-output
-        # parse rejects (Q26, in Go as in Rust); the user service supervisor provides the session
+        # storage policy and cleanup. Without a user session Podman warns on stderr; the report is parsed from
+        # stdout alone (D28, Q26). The user service supervisor then provides the session
         call("inspectNoSession", "inspect_container_storage", {}),
         call("supervisor", "ensure_host_service_supervisor", {}),
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
@@ -731,11 +746,11 @@ def oci() -> dict:
             direct("pulled", "structuredContent.status", equals="ready"),
             direct("logs", "structuredContent.stdout", matches="hello from the e2e registry"),
             scenario="The cluster guest pulls the image by its digest from the registry and runs it"),
-        req(CATALOG, "inspect_container_storage without a user session",
+        req(Q26_SPEC, "A runtime warning does not fail a storage report",
             direct("inspectNoSession", "isError", **{"in": [False, "<absent>"]}),
-            scenario="Right after the builder is installed, with no user session, the storage report is read (Q26: "
-                     "Podman's stderr warning fails the combined-output parse, in Go as in Rust)",
-            question="Q26"),
+            direct("inspectNoSession", "structuredContent.runtime", equals="podman"),
+            scenario="Right after the builder is installed, with no user session, the storage report is read "
+                     "while Podman warns on stderr (D28)"),
         req(CATALOG, "configure_oci_storage, inspect_container_storage, cleanup_container_storage",
             direct("supervisorAgain", "structuredContent.status", equals="ready"),
             direct("inspect", "isError", **{"in": [False, "<absent>"]}),
@@ -934,13 +949,13 @@ def discovery() -> dict:
             direct("stoppedEvents", "isError", equals=True),
             direct("stoppedEvents", "content[0].text", matches="Instance is not running"),
             scenario="With its server stopped, reading the cluster's events fails closed with an error result"),
-        req(USE_CASES, "A stopped cluster in the inventory",
+        req(Q24_SPEC, "A stopped cluster never reads as an empty inventory",
+            direct("stoppedList", "isError", **{"in": [False, "<absent>"]}),
             direct("stoppedList", "structuredContent.total", equals=1),
             direct("stoppedList", "structuredContent.clusters[0].uri", equals=CLUSTER),
-            scenario="With its only server stopped, is the cluster listed (with its status), or dropped so that "
-                     "the inventory reads as empty? The k3s provider skips an instance whose k3s --version fails, "
-                     "in Go v0.2.4 as in Rust",
-            question="Q24"),
+            direct("stoppedList", "structuredContent.clusters[0].status", equals="Stopped"),
+            scenario="With its only server stopped, the registered cluster is listed with its instance status "
+                     "and no node data (D28)"),
         req(SEAM_SPEC, "Every capability has its three roles",
             direct("configmapKeys", "structuredContent.code", equals="not_implemented"),
             direct("secretKeys", "structuredContent.code", equals="not_implemented"),
@@ -970,12 +985,6 @@ SITE_CTX = f"{HOME}/.opute/build-contexts/e2e-site"
 SITE_RECIPE = f"{HOME}/e2e/www.yaml"
 SITE_TEARDOWN = f"{HOME}/e2e/www-teardown.yaml"
 SITE_HOST = "www.e2e.test"
-
-
-SITE_INGRESS = ("apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: e2e-www\n  namespace: "
-                "host-agent-site\nspec:\n  rules:\n  - host: " + "www.e2e.test" + "\n    http:\n      paths:\n      - path: /\n"
-                "        pathType: Prefix\n        backend:\n          service:\n            name: host-agent-www\n"
-                "            port:\n              number: 80\n")
 
 
 def site() -> dict:
@@ -1031,15 +1040,10 @@ def site() -> dict:
         call("deploy", "run_host_local_recipe", {"source": SITE_RECIPE, "inputs": inputs},
              capture={"RUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("deployed", "RUN", timeout=900),
-        call("domain", "configure_service_domain",
-             {"vmName": "e2e-k1", "namespace": "host-agent-site", "ingressName": "e2e-www", "hostname": SITE_HOST,
-              "serviceName": "host-agent-www", "servicePort": 80}, meta=TASKS_META,
-             capture={"TID_domain": "response.body.result.taskId"}),
-        {"id": "domainDone", "mcp": "tasks/get", "params": {"taskId": "${TID_domain}"}, "meta": TASKS_META,
-         "until": {"path": "response.body.result.status", "in": ha.DONE}, "timeout": 300, "interval": 3},
-        # configure_service_domain cannot bind its VM in standalone mode (Q28, in Go as in Rust): the Ingress it
-        # would create is applied as a typed manifest instead
-        *task("ingress", "apply_manifest", {"uri": CLUSTER, "manifest": SITE_INGRESS}),
+        # D28 (Q28): the hostname is mapped through configure_service_domain, bound to the cluster by uri
+        *task("domain", "configure_service_domain",
+              {"uri": CLUSTER, "namespace": "host-agent-site", "ingressName": "e2e-www", "hostname": SITE_HOST,
+               "serviceName": "host-agent-www", "servicePort": 80}),
         {"id": "serve", "guest": (
             f"for i in $(seq 60); do code=$(curl -s -o /tmp/e2e-site.html -w '%{{http_code}}' --max-time 5 -H "
             f"'Host: {SITE_HOST}' http://${{K1_IP}}/); [ \"$code\" = 200 ] && break; sleep 2; done; echo $code; "
@@ -1053,13 +1057,13 @@ def site() -> dict:
              {"uri": CLUSTER, "resourceKind": "Deployment", "namespace": "host-agent-site",
               "resourceName": "host-agent-www"}),
         {"id": "released", "guest": "sleep 5"},
-        # removal: the teardown recipe's workload node, and the domain mapping
+        # removal: the domain mapping, then the teardown recipe's workload node
+        *task("unmap", "remove_service_domain",
+              {"uri": CLUSTER, "namespace": "host-agent-site", "ingressName": "e2e-www"}),
         call("teardown", "run_host_local_recipe", {"source": SITE_TEARDOWN,
                                                    "inputs": {"host": "e2e-devvm-agent", "clusterUri": CLUSTER}},
              capture={"TRUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("tornDown", "TRUN", timeout=600),
-        call("unmap", "remove_service_domain",
-             {"vmName": "e2e-k1", "namespace": "host-agent-site", "ingressName": "e2e-www"}, meta=TASKS_META),
         call("gone", "get_cluster_resource_status",
              {"uri": CLUSTER, "resourceKind": "Deployment", "namespace": "host-agent-site",
               "resourceName": "host-agent-www"},
@@ -1075,7 +1079,7 @@ def site() -> dict:
             res("trust", "isError", equals=False),
             direct("validate", "structuredContent.valid", equals=True),
             direct("deployed", "structuredContent.status", equals="completed"),
-            res("ingress", "isError", equals=False),
+            res("domain", "isError", equals=False),
             a("serve", "stdout", matches="^200\n[1-9]"),
             direct("image", "structuredContent.resource.spec.template.spec.containers[0].image",
                    matches=r"@sha256:[0-9a-f]{64}$"),
@@ -1090,13 +1094,11 @@ def site() -> dict:
                                                         "generation"}),
             scenario="The same recipe and inputs re-run the same run, which revalidates and completes without "
                      "changing the Deployment (its generation is unchanged)"),
-        req(CATALOG, "configure_service_domain, remove_service_domain (standalone)",
-            res("domainDone", "isError", equals=False),
-            direct("unmap", "isError", **{"in": [False, "<absent>"]}),
-            scenario="The published standalone descriptors take vmName but declare no resource binding, and the "
-                     "handlers read the VM from the binding, so both fail with 'vmName ... are required' (Q28, in Go "
-                     "as in Rust)",
-            question="Q28"),
+        req(Q28_SPEC, "A published service domain call can succeed",
+            res("domain", "isError", equals=False),
+            res("unmap", "isError", equals=False),
+            scenario="Standalone mode publishes the cluster-bound descriptors: the hostname is mapped and unmapped "
+                     "through configure_service_domain and remove_service_domain with their listed inputs (D28)"),
         req(SITE_DEPLOY, "Removal leaves nothing behind",
             direct("tornDown", "structuredContent.status", equals="completed"),
             direct("gone", "structuredContent.status", equals="missing"),
@@ -1122,7 +1124,6 @@ def site() -> dict:
 SERVE_GOAL = (".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request "
               "through the gateway)")
 FIXTURE = f"{HOME}/e2e/model/serve.py"
-MODEL_UNIT = (f"[Unit]\nDescription=e2e model fixture\n\n[Service]\nExecStart=/usr/bin/python3 {FIXTURE} 18091\n")
 
 
 def assignment(generation: int, key: str, state: str = "start") -> dict:
@@ -1163,11 +1164,7 @@ def serving() -> dict:
         {"id": "assignLog", "guest": ("sleep 3; tail -n 20 /tmp/serving-assignment-*-supervisor.log 2>/dev/null; "
                                       "journalctl _UID=$(id -u opute) --no-pager -n 40 -o cat; "
                                       "ss -ltnH 'sport = :18091' | wc -l")},
-        # the assignment's launch did not start the process on this system-unit agent (Q27); the runtime is
-        # brought up as a typed user service instead, so the gateway path is exercised end to end
-        call("modelUnit", "ensure_host_file", {"path": "~/.config/systemd/user/e2e-model.service",
-                                               "content": MODEL_UNIT}),
-        svc("modelStart", "start", "e2e-model.service"),
+        # D28 (Q27): the assignment's own process is the runtime the gateway reaches
         {"id": "modelUp", "guest": "for i in $(seq 50); do ss -ltnH 'sport = :18091' | grep -q . && break; sleep 0.2; "
                                    "done; ss -ltnH 'sport = :18091' | wc -l"},
         call("gateway", "ensure_local_llm_relay", relay),
@@ -1180,31 +1177,27 @@ def serving() -> dict:
         {"id": "gatewayGone", "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 "
                                        "http://127.0.0.1:18434/v1/models || true"},
         call("units", "list_host_services", {}),
-        svc("modelStop", "stop", "e2e-model.service"),
     ]
     reqs = [
         req(SERVE_GOAL, "A prompt returns a completion through the gateway",
             direct("supervisorAgain", "structuredContent.status", equals="ready"),
-            direct("modelStart", "isError", **{"in": [False, "<absent>"]}),
             a("modelUp", "stdout", equals="1\n"),
             direct("gateway", "isError", **{"in": [False, "<absent>"]}),
             a("chat", "json.status", equals=200),
             a("chat", "json.content", equals="e2e fixture completion"),
             a("chatNoToken", "json.status", equals=401),
             direct("probe", "structuredContent.ready", equals=True),
-            scenario="An OpenAI-compatible runtime runs on the host as a user service, the gateway admits a "
+            scenario="The serving assignment's OpenAI-compatible runtime runs on the host, the gateway admits a "
                      "request with its token and refuses one without, and a chat completion comes back. The "
                      "runtime is a test fixture: a real model runtime and its weights need downloads beyond test "
                      "fixtures and are recorded blocked"),
-        req(SERVE_GOAL, "A serving assignment starts its runtime",
+        req(Q27_SPEC, "A serving launch is reported only when it started",
             direct("assign", "isError", **{"in": [False, "<absent>"]}),
             direct("assign", "structuredContent.started", equals=True),
             direct("assignAgain", "isError", **{"in": [False, "<absent>"]}),
             a("assignLog", "stdout", matches="\n1\n$"),
-            scenario="reconcile_serving_assignment launches the process under the user service manager and it "
-                     "listens (Q27: on a system-unit agent the launch lacks the user bus and reports started "
-                     "anyway, in Go as in Rust)",
-            question="Q27"),
+            scenario="On a system-unit agent, reconcile_serving_assignment launches the process under the user "
+                     "service manager with the user bus, reports it started, and it listens (D28)"),
         req(SPEC, "Durable and redacted observations",
             a("tokenRows", "json.rows", equals=0),
             scenario="Secret-bearing input: the gateway's incoming token is in no durable row"),
@@ -1385,10 +1378,11 @@ def cutover() -> dict:
             a("syncAnswer", "json.status", equals=200),
             a("syncAnswer", "json.result.ready", exists=True),
             {"step": "goLong", "path": "response.body.result.status", "equals": "working"},
-            direct("rustLong", "structuredContent.status", equals="cancelled"),
             scenario="Go stopped with a working task and an open synchronous call: the call is answered before "
-                     "Go exits; the operation row Rust reads for the task (Q25: Go writes its live rows working)",
-            question="Q25"),
+                     "Go exits"),
+        req(Q25_SPEC, "An operation record reports its task's terminal status",
+            direct("rustLong", "structuredContent.status", equals="cancelled"),
+            scenario="The row Go left working beside its cancelled snapshot reads back cancelled in Rust (D28)"),
         req(CUTOVER, "Forward cutover: the stopped task's terminal state",
             {"step": "rustLongWire", "path": "response.body.result.status", "equals": "cancelled"},
             {"step": "rustLongWire", "path": "response.body.result.statusMessage",
@@ -1462,7 +1456,8 @@ def restart() -> dict:
         {"id": "termTaskWire", "mcp": "tasks/get", "params": {"taskId": "${TERM_TASK}"}, "meta": TASKS_META},
         call("termPlanAfter", "get_host_plan_run", {"runId": "${TERM_RUN}"}),
         # SIGKILL with a task in flight
-        call("killTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
+        # distinct commands: identical run_host_command tasks share one workload unit (Q29)
+        call("killTask", "run_host_command", {"command": "sleep 121"}, meta=TASKS_META,
              capture={"KILL_TASK": "response.body.result.taskId"}),
         {"id": "kill", "guest": kill + " && echo up"},
         call("killTaskAfter", "get_operation", {"operationId": "${KILL_TASK}"}),
@@ -1470,7 +1465,7 @@ def restart() -> dict:
         call("opsAfterKill", "list_operations", {"limit": 100}),
         call("cancelAfterKill", "cancel_operation", {"operationId": "${KILL_TASK}"}),
         # an in-place upgrade with a task in flight
-        call("upTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
+        call("upTask", "run_host_command", {"command": "sleep 122"}, meta=TASKS_META,
              capture={"UP_TASK": "response.body.result.taskId"}),
         base.swap("upgrade", NEXT),
         call("upTaskAfter", "get_operation", {"operationId": "${UP_TASK}"}),
@@ -1493,21 +1488,20 @@ def restart() -> dict:
             a("db", "json.integrity", equals="ok"),
             scenario="A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation "
                      "and tasks/get; the agent restarts after SIGKILL and an in-place upgrade and keeps serving"),
-        req(SPEC, "One typed plan and recipe execution path (Interrupted plan)",
+        req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
             direct("termPlanAfter", "structuredContent.status", equals="cancelled"),
-            {"step": "killTaskWire", "path": "response.body.result.status", "equals": "cancelled"},
+            {"step": "killTaskWire", "path": "response.body.result.status", "equals": "failed"},
             {"step": "upTaskWire", "path": "response.body.result.status", "equals": "cancelled"},
             direct("cancelAfterKill", "isError", equals=True),
-            scenario="What a running plan reports after SIGTERM, and a task after SIGKILL or an in-place upgrade "
-                     "(no shutdown ran to persist it)",
-            question="Q5"),
-        req(SPEC, "Durable and redacted observations (operation records)",
+            scenario="A plan running at SIGTERM reads back cancelled; a task killed by SIGKILL reads back failed "
+                     "and cannot be cancelled; a task in flight at the in-place upgrade's graceful stop reads back "
+                     "cancelled (D28)"),
+        req(Q25_SPEC, "An operation record reports its task's terminal status",
             direct("termTaskAfter", "structuredContent.status", equals="cancelled"),
-            direct("killTaskAfter", "structuredContent.status", equals="cancelled"),
+            direct("killTaskAfter", "structuredContent.status", equals="failed"),
             direct("upTaskAfter", "structuredContent.status", equals="cancelled"),
             direct("opsAfterKill", "structuredContent.operations", exists=True),
-            scenario="The operation rows get_operation and list_operations read for those tasks",
-            question="Q25"),
+            scenario="get_operation reads each task's terminal status, as tasks/get does (D28)"),
     ]
     cleanup = [{"id": "restoreRust", "guest": (
         f"systemctl stop {UNIT}; {T} slow stop >/dev/null; {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} "

@@ -145,8 +145,8 @@
    "scenario": "The cluster guest pulls the image by its digest from the registry and runs it"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "inspect_container_storage without a user session",
+   "spec": "openspec/changes/container-runtime-stdout/specs/container-storage/spec.md",
+   "requirement": "A runtime warning does not fail a storage report",
    "pass": [
     {
      "step": "inspectNoSession",
@@ -155,10 +155,14 @@
       false,
       "<absent>"
      ]
+    },
+    {
+     "step": "inspectNoSession",
+     "path": "response.body.result.structuredContent.runtime",
+     "equals": "podman"
     }
    ],
-   "scenario": "Right after the builder is installed, with no user session, the storage report is read (Q26: Podman's stderr warning fails the combined-output parse, in Go as in Rust)",
-   "openQuestion": "Q26"
+   "scenario": "Right after the builder is installed, with no user session, the storage report is read while Podman warns on stderr (D28)"
   },
   {
    "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",

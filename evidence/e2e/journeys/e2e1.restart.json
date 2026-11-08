@@ -1,7 +1,7 @@
 {
  "id": "e2e1.restart",
  "gate": "e2e-1",
- "description": "Flow 14, restart and recovery: the system agent is stopped with SIGTERM, then killed with SIGKILL (the unit's Restart=on-failure restarts it) each time with a host plan in flight (its first node wrote a file with write-only content, its second waits on a slow local endpoint). After each restart the run is served as one durable record, the store passes its integrity check, and the write-only content is in no durable row and no journal line. Whether the resubmission after the SIGKILL is admitted is Q15.",
+ "description": "Flow 14, restart and recovery: the system agent is stopped with SIGTERM, then killed with SIGKILL (the unit's Restart=on-failure restarts it) each time with a host plan in flight (its first node wrote a file with write-only content, its second waits on a slow local endpoint). After each restart the run is served as one durable record, the store passes its integrity check, and the write-only content is in no durable row and no journal line. The resubmission after the SIGKILL is admitted (D28, Q15).",
  "inputs": {
   "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
   "files": {
@@ -149,8 +149,8 @@
    "scenario": "exactly one durable run per interrupted plan: nothing lost or duplicated"
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md",
+   "requirement": "An interrupted plan or task reads back truthfully",
    "pass": [
     {
      "step": "termAfter",
@@ -160,21 +160,15 @@
     {
      "step": "killAfter",
      "path": "response.body.result.structuredContent.status",
-     "equals": "failed"
+     "equals": "unknown"
     }
    ],
-   "scenario": "Interrupted plan: the post-restart status (observed; what the plan contract specifies after a restart is Q5)",
-   "openQuestion": "Q5"
+   "scenario": "A plan in flight reads back cancelled after SIGTERM and unknown after SIGKILL, and neither runs again (D28)"
   },
   {
    "spec": "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md",
    "requirement": "A crashed plan run's orphaned reservation is reclaimed without a task",
    "pass": [
-    {
-     "step": "killTask",
-     "path": "response.body.result.status",
-     "equals": "failed"
-    },
     {
      "step": "resubmit",
      "path": "response.body.result.isError",
@@ -189,8 +183,7 @@
      "absent": true
     }
    ],
-   "scenario": "Resubmit after a SIGKILL during a plain run_host_plan (proposed; Q15)",
-   "openQuestion": "Q15"
+   "scenario": "After a SIGKILL during a plain run_host_plan, whose task was never persisted, the resubmission is admitted (D28)"
   }
  ],
  "effects": {

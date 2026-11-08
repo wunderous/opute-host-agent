@@ -118,7 +118,7 @@
      "equals": "completed"
     },
     {
-     "step": "ingress",
+     "step": "domain",
      "path": "response.body.result.result.isError",
      "equals": false
     },
@@ -164,25 +164,21 @@
    "scenario": "The same recipe and inputs re-run the same run, which revalidates and completes without changing the Deployment (its generation is unchanged)"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "configure_service_domain, remove_service_domain (standalone)",
+   "spec": "openspec/changes/bind-standalone-service-domain/specs/service-exposure/spec.md",
+   "requirement": "A published service domain call can succeed",
    "pass": [
     {
-     "step": "domainDone",
+     "step": "domain",
      "path": "response.body.result.result.isError",
      "equals": false
     },
     {
      "step": "unmap",
-     "path": "response.body.result.isError",
-     "in": [
-      false,
-      "<absent>"
-     ]
+     "path": "response.body.result.result.isError",
+     "equals": false
     }
    ],
-   "scenario": "The published standalone descriptors take vmName but declare no resource binding, and the handlers read the VM from the binding, so both fail with 'vmName ... are required' (Q28, in Go as in Rust)",
-   "openQuestion": "Q28"
+   "scenario": "Standalone mode publishes the cluster-bound descriptors: the hostname is mapped and unmapped through configure_service_domain and remove_service_domain with their listed inputs (D28)"
   },
   {
    "spec": "wunderous/opute-site-deploy 9cdd932 site/recipes/www-opute-io.yaml (recipe 1.1.6) and scripts/deploy_site.py, as the e2e-3 goal adapts them: local image by digest, local test hostname, no tunnel",
@@ -879,11 +875,11 @@
    ]
   },
   {
-   "id": "domain",
+   "id": "domainCall",
    "mcp": "tools/call",
    "tool": "configure_service_domain",
    "arguments": {
-    "vmName": "e2e-k1",
+    "uri": "cluster:local:e2e-k1",
     "namespace": "host-agent-site",
     "ingressName": "e2e-www",
     "hostname": "www.e2e.test",
@@ -905,56 +901,10 @@
    ]
   },
   {
-   "id": "domainDone",
+   "id": "domain",
    "mcp": "tasks/get",
    "params": {
     "taskId": "${TID_domain}"
-   },
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "until": {
-    "path": "response.body.result.status",
-    "in": [
-     "completed",
-     "failed",
-     "cancelled"
-    ]
-   },
-   "timeout": 300,
-   "interval": 3
-  },
-  {
-   "id": "ingressCall",
-   "mcp": "tools/call",
-   "tool": "apply_manifest",
-   "arguments": {
-    "uri": "cluster:local:e2e-k1",
-    "manifest": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: e2e-www\n  namespace: host-agent-site\nspec:\n  rules:\n  - host: www.e2e.test\n    http:\n      paths:\n      - path: /\n        pathType: Prefix\n        backend:\n          service:\n            name: host-agent-www\n            port:\n              number: 80\n"
-   },
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
-   "capture": {
-    "TID_ingress": "response.body.result.taskId"
-   },
-   "retryOn": [
-    "host_capacity_saturated"
-   ]
-  },
-  {
-   "id": "ingress",
-   "mcp": "tasks/get",
-   "params": {
-    "taskId": "${TID_ingress}"
    },
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {
@@ -1048,6 +998,53 @@
    "guest": "sleep 5"
   },
   {
+   "id": "unmapCall",
+   "mcp": "tools/call",
+   "tool": "remove_service_domain",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "host-agent-site",
+    "ingressName": "e2e-www"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_unmap": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "unmap",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_unmap}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
    "id": "teardown",
    "mcp": "tools/call",
    "tool": "run_host_local_recipe",
@@ -1081,26 +1078,6 @@
     ]
    },
    "timeout": 600,
-   "retryOn": [
-    "host_capacity_saturated"
-   ]
-  },
-  {
-   "id": "unmap",
-   "mcp": "tools/call",
-   "tool": "remove_service_domain",
-   "arguments": {
-    "vmName": "e2e-k1",
-    "namespace": "host-agent-site",
-    "ingressName": "e2e-www"
-   },
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   },
    "retryOn": [
     "host_capacity_saturated"
    ]

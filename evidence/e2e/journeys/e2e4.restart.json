@@ -88,8 +88,8 @@
    "scenario": "A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation and tasks/get; the agent restarts after SIGKILL and an in-place upgrade and keeps serving"
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "One typed plan and recipe execution path (Interrupted plan)",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md",
+   "requirement": "An interrupted plan or task reads back truthfully",
    "pass": [
     {
      "step": "termPlanAfter",
@@ -99,7 +99,7 @@
     {
      "step": "killTaskWire",
      "path": "response.body.result.status",
-     "equals": "cancelled"
+     "equals": "failed"
     },
     {
      "step": "upTaskWire",
@@ -112,12 +112,11 @@
      "equals": true
     }
    ],
-   "scenario": "What a running plan reports after SIGTERM, and a task after SIGKILL or an in-place upgrade (no shutdown ran to persist it)",
-   "openQuestion": "Q5"
+   "scenario": "A plan running at SIGTERM reads back cancelled; a task killed by SIGKILL reads back failed and cannot be cancelled; a task in flight at the in-place upgrade's graceful stop reads back cancelled (D28)"
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "Durable and redacted observations (operation records)",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md",
+   "requirement": "An operation record reports its task's terminal status",
    "pass": [
     {
      "step": "termTaskAfter",
@@ -127,7 +126,7 @@
     {
      "step": "killTaskAfter",
      "path": "response.body.result.structuredContent.status",
-     "equals": "cancelled"
+     "equals": "failed"
     },
     {
      "step": "upTaskAfter",
@@ -140,8 +139,7 @@
      "exists": true
     }
    ],
-   "scenario": "The operation rows get_operation and list_operations read for those tasks",
-   "openQuestion": "Q25"
+   "scenario": "get_operation reads each task's terminal status, as tasks/get does (D28)"
   }
  ],
  "effects": {
@@ -359,7 +357,7 @@
    "mcp": "tools/call",
    "tool": "run_host_command",
    "arguments": {
-    "command": "sleep 120"
+    "command": "sleep 121"
    },
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {
@@ -431,7 +429,7 @@
    "mcp": "tools/call",
    "tool": "run_host_command",
    "arguments": {
-    "command": "sleep 120"
+    "command": "sleep 122"
    },
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {

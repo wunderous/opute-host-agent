@@ -277,8 +277,8 @@
    "scenario": "The virtualization stack reconciled on a host that has it: Incus reported, nothing broken"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "restart_host_service (inputSchema: uri only)",
+   "spec": "openspec/changes/declare-read-inputs/specs/capability-input-schemas/spec.md",
+   "requirement": "A tool declares every input it reads",
    "pass": [
     {
      "step": "restartIncus",
@@ -288,28 +288,46 @@
     {
      "step": "restartIncus",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: serviceName is required"
+     "matches": "missing required property \\\"serviceName\\\""
     }
    ],
-   "scenario": "Restarting Incus with the schema's only required input (uri) is refused for a serviceName the schema does not declare (Go v0.2.4 reads the same undeclared input)",
-   "openQuestion": "Q21"
+   "scenario": "restart_host_service publishes serviceName as required; a call with uri only is refused by the published schema before anything runs (D28)"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "restart_host_service: \"Restart a host-level service such as Incus\"",
+   "spec": "openspec/changes/privileged-host-service-restart/specs/host-service-restart/spec.md",
+   "requirement": "restart_host_service restarts Opute user services only",
    "pass": [
     {
      "step": "restartIncusNamed",
      "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "restartIncusNamed",
+     "path": "response.body.result.content[0].text",
+     "matches": "set_host_service_state"
+    },
+    {
+     "step": "restartIncusSystem",
+     "path": "response.body.result.isError",
      "equals": false
+    },
+    {
+     "step": "restartIncusSystem",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "scheduled"
+    },
+    {
+     "step": "incusActive",
+     "path": "stdout",
+     "equals": "active\n"
     }
    ],
-   "scenario": "With serviceName, the production-style agent's unprivileged systemctl is refused by polkit (\"Interactive authentication required\"); Go v0.2.4 builds the same command",
-   "openQuestion": "Q23"
+   "scenario": "Restarting Incus with restart_host_service is refused before acting and names set_host_service_state; Incus is restarted through it with scope system (D28)"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "ensure_host_service_supervisor",
+   "spec": "openspec/changes/settle-user-service-supervisor/specs/host-service-supervisor/spec.md",
+   "requirement": "The first ensure call settles the user service manager",
    "pass": [
     {
      "step": "supervisor",
@@ -317,12 +335,11 @@
      "equals": "ready"
     }
    ],
-   "scenario": "The first ensure call on a host whose user manager is not running yet: does it report ready once lingering is enabled, or fail while the user bus starts?",
-   "openQuestion": "Q20"
+   "scenario": "The first ensure call on a host whose user manager is not running yet reports ready once the user bus is up (D28)"
   },
   {
-   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named",
-   "requirement": "diagnose_bridge and recover_bridge",
+   "spec": "openspec/changes/nullable-output-schemas/specs/capability-output-schemas/spec.md",
+   "requirement": "A result the published output schema allows is not refused",
    "pass": [
     {
      "step": "bridge",
@@ -335,13 +352,17 @@
      "equals": "offline"
     },
     {
+     "step": "bridge",
+     "path": "response.body.result.structuredContent.lastHeartbeat.at",
+     "equals": null
+    },
+    {
      "step": "recoverBridge",
      "path": "response.body.result.isError",
      "equals": true
     }
    ],
-   "scenario": "Bridge recovery on a standalone host with no bridge: diagnose reports it offline with no heartbeat (the schema marks lastHeartbeat.at nullable), recover fails closed",
-   "openQuestion": "Q22"
+   "scenario": "Bridge recovery on a standalone host with no bridge: diagnose reports it offline with a null heartbeat (D28: nullable honoured), recover fails closed"
   }
  ],
  "effects": {
@@ -713,6 +734,24 @@
    "retryOn": [
     "host_capacity_saturated"
    ]
+  },
+  {
+   "id": "restartIncusSystem",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state",
+   "arguments": {
+    "uri": "host-service:local:system/incus.service",
+    "serviceName": "incus.service",
+    "state": "restart",
+    "scope": "system"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "incusActive",
+   "guest": "for i in $(seq 60); do systemctl is-active --quiet incus && break; sleep 1; done; systemctl is-active incus"
   },
   {
    "id": "execFailsCall",

@@ -220,8 +220,8 @@
    ]
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md",
+   "requirement": "An interrupted plan or task reads back truthfully",
    "pass": [
     {
      "step": "rustFlight",
@@ -234,8 +234,7 @@
      "equals": "cancelled"
     }
    ],
-   "scenario": "the status a run stopped in flight has after the migration (observed; Q5)",
-   "openQuestion": "Q5"
+   "scenario": "A run Go stopped gracefully in flight reads back cancelled after the migration and the upgrade, and is not run again (D28)"
   }
  ],
  "effects": {

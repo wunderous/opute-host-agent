@@ -113,8 +113,8 @@
    "scenario": "install from the release artifact; the configured port applies and the configured bind (HOST_MCP_BIND_HOST=0.0.0.0 in the recorded unit) serves the host's own IPv4 address"
   },
   {
-   "spec": "openspec/specs/host-agent-contract/spec.md",
-   "requirement": "Compatible modes, configuration, and distribution",
+   "spec": "openspec/changes/ipv4-wildcard-bind/specs/mcp-listener/spec.md",
+   "requirement": "An IPv4 wildcard bind listens on IPv4 only",
    "pass": [
     {
      "step": "listen",
@@ -122,10 +122,14 @@
      "equals": [
       "0.0.0.0:3014"
      ]
+    },
+    {
+     "step": "ipv6Refused",
+     "path": "stdout",
+     "equals": "000"
     }
    ],
-   "scenario": "whether HOST_MCP_BIND_HOST=0.0.0.0 binds IPv4 only (observed: one dual-stack IPv6 wildcard socket, *:3014); Q14",
-   "openQuestion": "Q14"
+   "scenario": "HOST_MCP_BIND_HOST=0.0.0.0 opens one IPv4 socket; an IPv6 loopback connection is refused (D28)"
   },
   {
    "spec": "baseline/inventory/distribution.json",
@@ -252,6 +256,10 @@
   {
    "id": "listen",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3014"
+  },
+  {
+   "id": "ipv6Refused",
+   "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://[::1]:3014/health; true"
   },
   {
    "id": "ipv4",

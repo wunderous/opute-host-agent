@@ -31,14 +31,6 @@
      "equals": "ready"
     },
     {
-     "step": "modelStart",
-     "path": "response.body.result.isError",
-     "in": [
-      false,
-      "<absent>"
-     ]
-    },
-    {
      "step": "modelUp",
      "path": "stdout",
      "equals": "1\n"
@@ -72,11 +64,11 @@
      "equals": true
     }
    ],
-   "scenario": "An OpenAI-compatible runtime runs on the host as a user service, the gateway admits a request with its token and refuses one without, and a chat completion comes back. The runtime is a test fixture: a real model runtime and its weights need downloads beyond test fixtures and are recorded blocked"
+   "scenario": "The serving assignment's OpenAI-compatible runtime runs on the host, the gateway admits a request with its token and refuses one without, and a chat completion comes back. The runtime is a test fixture: a real model runtime and its weights need downloads beyond test fixtures and are recorded blocked"
   },
   {
-   "spec": ".agents/goals/e2e-3-k3s-deploy-serving.md journey 4 (a serving assignment, then a request through the gateway)",
-   "requirement": "A serving assignment starts its runtime",
+   "spec": "openspec/changes/truthful-serving-launch/specs/serving-assignment/spec.md",
+   "requirement": "A serving launch is reported only when it started",
    "pass": [
     {
      "step": "assign",
@@ -105,8 +97,7 @@
      "matches": "\n1\n$"
     }
    ],
-   "scenario": "reconcile_serving_assignment launches the process under the user service manager and it listens (Q27: on a system-unit agent the launch lacks the user bus and reports started anyway, in Go as in Rust)",
-   "openQuestion": "Q27"
+   "scenario": "On a system-unit agent, reconcile_serving_assignment launches the process under the user service manager with the user bus, reports it started, and it listens (D28)"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",
@@ -312,32 +303,6 @@
    "guest": "sleep 3; tail -n 20 /tmp/serving-assignment-*-supervisor.log 2>/dev/null; journalctl _UID=$(id -u opute) --no-pager -n 40 -o cat; ss -ltnH 'sport = :18091' | wc -l"
   },
   {
-   "id": "modelUnit",
-   "mcp": "tools/call",
-   "tool": "ensure_host_file",
-   "arguments": {
-    "path": "~/.config/systemd/user/e2e-model.service",
-    "content": "[Unit]\nDescription=e2e model fixture\n\n[Service]\nExecStart=/usr/bin/python3 /home/opute/e2e/model/serve.py 18091\n"
-   },
-   "retryOn": [
-    "host_capacity_saturated"
-   ]
-  },
-  {
-   "id": "modelStart",
-   "mcp": "tools/call",
-   "tool": "set_host_service_state",
-   "arguments": {
-    "uri": "host-service:local:system/dbus.service",
-    "serviceName": "e2e-model.service",
-    "state": "start",
-    "scope": "user"
-   },
-   "retryOn": [
-    "host_capacity_saturated"
-   ]
-  },
-  {
    "id": "modelUp",
    "guest": "for i in $(seq 50); do ss -ltnH 'sport = :18091' | grep -q . && break; sleep 0.2; done; ss -ltnH 'sport = :18091' | wc -l"
   },
@@ -406,20 +371,6 @@
    "mcp": "tools/call",
    "tool": "list_host_services",
    "arguments": {},
-   "retryOn": [
-    "host_capacity_saturated"
-   ]
-  },
-  {
-   "id": "modelStop",
-   "mcp": "tools/call",
-   "tool": "set_host_service_state",
-   "arguments": {
-    "uri": "host-service:local:system/dbus.service",
-    "serviceName": "e2e-model.service",
-    "state": "stop",
-    "scope": "user"
-   },
    "retryOn": [
     "host_capacity_saturated"
    ]

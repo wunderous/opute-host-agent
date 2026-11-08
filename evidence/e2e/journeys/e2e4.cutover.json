@@ -208,15 +208,21 @@
      "step": "goLong",
      "path": "response.body.result.status",
      "equals": "working"
-    },
+    }
+   ],
+   "scenario": "Go stopped with a working task and an open synchronous call: the call is answered before Go exits"
+  },
+  {
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md",
+   "requirement": "An operation record reports its task's terminal status",
+   "pass": [
     {
      "step": "rustLong",
      "path": "response.body.result.structuredContent.status",
      "equals": "cancelled"
     }
    ],
-   "scenario": "Go stopped with a working task and an open synchronous call: the call is answered before Go exits; the operation row Rust reads for the task (Q25: Go writes its live rows working)",
-   "openQuestion": "Q25"
+   "scenario": "The row Go left working beside its cancelled snapshot reads back cancelled in Rust (D28)"
   },
   {
    "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
