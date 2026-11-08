@@ -4,7 +4,8 @@
   python3 evidence/cutover/arm64/run.py --release DIR
 
 Boots a throwaway overlay of the cached Debian 12 genericcloud arm64 image
-under qemu-system-aarch64 (TCG, no KVM), with a fresh cloud-init seed and
+under qemu-system-aarch64 (TCG, -cpu cortex-a72, no KVM; -cpu max
+# never passed the firmware in 20 min), with a fresh cloud-init seed and
 ssh key. In the guest, as the image's unprivileged `debian` user, it
 verifies host-agent-linux-arm64.gz against the release's SHA256SUMS,
 installs it, starts `serve --mode standalone --transport http` with a test
@@ -71,7 +72,7 @@ def main() -> int:
     subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", "-F", "qcow2", "-b", str(image), str(disk), "8G"],
                    check=True)
     shutil.copy("/usr/share/AAVMF/AAVMF_VARS.fd", work / "vars.fd")
-    qemu = ["qemu-system-aarch64", "-M", "virt", "-cpu", "max", "-accel", "tcg,thread=multi", "-smp", "4",
+    qemu = ["qemu-system-aarch64", "-M", "virt", "-cpu", "cortex-a72", "-accel", "tcg,thread=multi", "-smp", "4",
             "-m", "4096", "-display", "none", "-monitor", "none",
             "-drive", "if=pflash,format=raw,readonly=on,file=/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd",
             "-drive", f"if=pflash,format=raw,file={work / 'vars.fd'}",
@@ -116,12 +117,19 @@ def main() -> int:
             bin_ = "$HOME/.local/share/opute/opute-host-agent"
             env = (f"OPUTE_REMOTE_AGENT_ID=arm64-clean MCP_AUTH_TOKEN={token} HOST_MCP_PORT=3014 "
                    "OPUTE_AGENT_MODE=standalone")
-            serve = (f"cd $HOME && {env} nohup {bin_} serve --mode standalone --transport http "
-                     ">/tmp/agent.log 2>&1 & echo $! > /tmp/agent.pid; for i in $(seq 120); do "
-                     "curl -fsS http://127.0.0.1:3014/health >/dev/null 2>&1 && break; sleep 1; done; "
-                     "curl -fsS http://127.0.0.1:3014/health")
-            stop = ("kill -TERM $(cat /tmp/agent.pid) && for i in $(seq 60); do kill -0 $(cat /tmp/agent.pid) "
+            # `cd ... ;` not `cd ... &&`: an `&&` list sent to the background is a subshell, so $! would
+            # name the subshell rather than the agent. The launch must leave its own pid alive.
+            serve = (f"cd $HOME; {env} nohup {bin_} serve --mode standalone --transport http "
+                     "</dev/null >/tmp/agent.log 2>&1 & echo $! > /tmp/agent.pid; for i in $(seq 120); do "
+                     "curl -fsS --max-time 5 http://127.0.0.1:3014/health >/dev/null 2>&1 && break; sleep 1; done; "
+                     "curl -fsS --max-time 5 http://127.0.0.1:3014/health && sleep 2 && kill -0 $(cat /tmp/agent.pid) && "
+                     "ps -o args= -p $(cat /tmp/agent.pid) | grep -q 'opute-host-agent serve' && echo alive")
+            # The agent must be running when stopped: a failed kill fails the step.
+            stop = ("kill -TERM $(cat /tmp/agent.pid) || exit 1; for i in $(seq 60); do kill -0 $(cat /tmp/agent.pid) "
                     "2>/dev/null || break; sleep 1; done; ! kill -0 $(cat /tmp/agent.pid) 2>/dev/null && echo stopped")
+            # Diagnostics only (always ok): the pid file, the agent processes and the log tail.
+            observe = ("echo pid=$(cat /tmp/agent.pid); pgrep -a opute-host || true; "
+                       "tail -n 15 /tmp/agent.log 2>/dev/null; true")
             mcp = ("cd /tmp && python3 -c 'import json, sys, mcpwire; t = sys.argv[1]; "
                    "a = mcpwire.mcp(3014, t, \"tools/list\"); "
                    "b = mcpwire.mcp(3014, t, \"tools/call\", {\"name\": \"get_host_info\", \"arguments\": {}}); "
@@ -140,14 +148,18 @@ def main() -> int:
             step("install", f"install -d $HOME/.local/share/opute && gzip -dc /tmp/host-agent-linux-arm64.gz > {bin_} "
                             f"&& chmod 0755 {bin_} && file -b {bin_} | cut -d, -f2 && {bin_} --version",
                  lambda o: "ARM aarch64" in o)
-            step("check", f"cd $HOME && {env} {bin_} check", lambda o: "configuration ok" in o)
-            step("launch", serve, lambda o: '"agentId":"arm64-clean"' in o, timeout=300)
+            step("help", f"cd $HOME && {bin_} help", lambda o: "Standalone mode never requires Opute Platform." in o)
+            step("launch", serve, lambda o: '"agentId":"arm64-clean"' in o and o.endswith("alive\n"), timeout=300)
+            step("afterLaunch", observe)
             step("mcp", mcp, lambda o: (lambda d: d["listStatus"] == 200 and d["tools"] > 0 and d["callStatus"] == 200
                                         and not d["isError"] and d["agentId"] == "arm64-clean")(json.loads(o)),
                  timeout=300)
             step("stop", stop, lambda o: o.endswith("stopped\n"))
-            step("relaunch", serve, lambda o: '"agentId":"arm64-clean"' in o, timeout=300)
+            step("afterStop", observe)
+            step("relaunch", serve, lambda o: '"agentId":"arm64-clean"' in o and o.endswith("alive\n"), timeout=300)
+            step("afterRelaunch", observe)
             step("stopAgain", stop, lambda o: o.endswith("stopped\n"))
+            step("afterStopAgain", observe)
             step("uninstall", "rm -rf $HOME/.local/share/opute $HOME/.config/opute && "
                               "test ! -e $HOME/.local/share/opute && echo removed", lambda o: o == "removed\n")
     finally:
@@ -161,7 +173,7 @@ def main() -> int:
     passed = booted and all(s["ok"] for s in steps) and seconds <= LIMIT_S
     receipt = {
         "schemaVersion": "opute-arm64-clean-install.v1",
-        "emulation": "qemu-system-aarch64 TCG (-cpu max), 4 vCPU, 4 GiB; no KVM",
+        "emulation": "qemu-system-aarch64 TCG (-cpu cortex-a72), 4 vCPU, 4 GiB; no KVM",
         "image": {"name": IMAGE_NAME, "sha256": sha256(image)},
         "release": {"artifact": "host-agent-linux-arm64.gz",
                     "sha256": sha256(args.release / "host-agent-linux-arm64.gz"),

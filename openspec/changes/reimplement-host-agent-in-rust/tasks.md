@@ -243,6 +243,19 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
     - The arm64 clean-machine run.
     - The published npm path at its owning repository: nothing is
       published before cutover.
+  *e2e-13a note (2026-11-08): arm64 done; WSL2 and npm still open.*
+  - **arm64 clean-machine install** passed under emulation in 76 s
+    (`evidence/cutover/arm64/receipt.json`, readiness item
+    `arm64-clean-install`). It ran on Debian 12 arm64 under
+    qemu-system-aarch64 TCG with `-cpu cortex-a72` (`-cpu max` never got
+    past the firmware). Steps: checksum, install, launch, MCP
+    `tools/list` and `get_host_info` with the exact agent id, SIGTERM
+    stop, relaunch, stop, uninstall.
+  - **Retired harness runs** are under `.parity/retired/arm64-r1..r4`. In
+    r4 the writer lock correctly refused a relaunch while a
+    mis-tracked first agent still ran.
+  - **WSL2** stays blocked on a Windows runner. **npm** stays postponed
+    (D28).
 - [ ] 5.2 Update public tutorial, release catalog, schemas, and website claims
   only when a tested Rust package and catalog revision are ready. Keep public
   image publishing and private site rollout in their current owners. Gate:
