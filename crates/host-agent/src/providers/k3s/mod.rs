@@ -1248,6 +1248,10 @@ fn spawn_and_wait(
     combined: bool,
 ) -> Result<(Vec<u8>, Vec<u8>), (String, String)> {
     let mut command = Command::new(program);
+    // D28 (Q16): Incus calls always address the `default` project.
+    if program == "incus" {
+        command.args(["--project", "default"]);
+    }
     command.args(args).stdin(if input.is_some() {
         Stdio::piped()
     } else {

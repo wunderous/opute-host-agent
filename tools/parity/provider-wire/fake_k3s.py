@@ -311,7 +311,11 @@ def serve():
                 if request["tool"] == "sudo":
                     answer = ok("/: 1 GiB (1073741824 bytes) trimmed on /dev/sda2\n")
                 else:
-                    answer = incus(state, request["argv"], request["stdin"])
+                    argv = request["argv"]
+                    # D28 (Q16): the Rust provider names the default project.
+                    if argv[:2] == ["--project", "default"]:
+                        argv = argv[2:]
+                    answer = incus(state, argv, request["stdin"])
             self.reply(200, json.dumps(answer))
 
         def do_GET(self):

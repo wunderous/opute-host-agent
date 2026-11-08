@@ -1,8 +1,8 @@
-# Address one Incus project consistently (proposed)
+# Address one Incus project consistently
 
-Status: proposed. Owner question Q16
+Status: decided (owner, 2026-11-07, D28). Owner question Q16
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented. Current behaviour matches Go v0.2.4.
+Implemented after the decision; see tasks.md.
 
 ## Why
 
@@ -26,15 +26,14 @@ configuration reference or the docs says so. e2e-3a puts its guests in the
 
 ## What Changes
 
-If the owner accepts Q16, one of these:
-
-- the agent addresses `default` explicitly in every Incus call, and
-  documents it; or
-- the agent takes one configured project and passes it to every call,
-  including `incus query` (`?project=`).
+Decided (D28): the agent always addresses the `default` project. Every
+Incus call the agent makes, through the core runner (`Incus::run_with`)
+and the K3s provider (`run_program`), passes `--project default`, so the
+client's current project never decides where an instance lands or is read.
+No configuration is added.
 
 ## Impact
 
-- `crates/host-agent/src/incus.rs` and `incusops.rs`; the configuration
-  reference.
+- `crates/host-agent/src/incus.rs` and `providers/k3s/mod.rs`; the k3s
+  wire fake (`tools/parity/provider-wire/fake_k3s.py`) strips the prefix.
 - A failing-first test reproduces the mismatch before the fix.

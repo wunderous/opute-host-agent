@@ -230,7 +230,9 @@ impl Incus {
                 "install_virtualization_stack"
             ));
         }
-        let mut argv = vec![binary.to_string()];
+        // D28 (Q16): always the `default` project, whatever the client's
+        // current project is (`incus query` reads `default` regardless).
+        let mut argv = vec![binary.to_string(), "--project".into(), "default".into()];
         argv.extend(args.iter().map(|s| s.to_string()));
         let deadline = (!timeout.is_zero()).then(|| std::time::Instant::now() + timeout);
         Ok(crate::hostobs::run_command_with(
@@ -1003,6 +1005,38 @@ fn pool_enforces_quota(name: &str, driver: &str, source: &str, mounts: &str) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// D28 (Q16): every Incus call addresses the `default` project, whatever
+    /// the client's current project is.
+    #[test]
+    fn every_incus_call_addresses_the_default_project() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("incus");
+        std::fs::write(&fake, "#!/bin/sh\necho \"$@\"\n").unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let incus = Incus {
+            env: Env::from_pairs([("PATH", "/usr/bin:/bin")]),
+            binary: fake.display().to_string(),
+            instance_id: String::new(),
+            ownership_mode: String::new(),
+            agent_id: String::new(),
+            tenant_id: String::new(),
+            network_name: String::new(),
+            network_address: String::new(),
+        };
+        for args in [
+            &["launch", "images:debian/12", "c1"][..],
+            &["query", "/1.0/instances/c1/state"],
+        ] {
+            let res = incus.run(args, Duration::ZERO).unwrap();
+            assert!(
+                res.stdout.starts_with("--project default "),
+                "{args:?}: {}",
+                res.stdout
+            );
+        }
+    }
 
     #[test]
     fn capacity_bytes_match_go() {
