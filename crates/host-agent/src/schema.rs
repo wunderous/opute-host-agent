@@ -108,8 +108,21 @@ fn number(v: Option<&J>) -> Option<f64> {
     v?.as_f64()
 }
 
+/// A structured result against its output schema: as `validate`, and a
+/// null is accepted where the schema marks the value `nullable` (Q22, D28).
+pub fn validate_output(schema: &Map<String, J>, value: &J) -> Result<(), String> {
+    check_value(schema, value, true)
+}
+
 pub fn validate(schema: &Map<String, J>, value: &J) -> Result<(), String> {
+    check_value(schema, value, false)
+}
+
+fn check_value(schema: &Map<String, J>, value: &J, nullable: bool) -> Result<(), String> {
     if schema.is_empty() || whole_reference(value) {
+        return Ok(());
+    }
+    if nullable && value.is_null() && schema.get("nullable") == Some(&J::Bool(true)) {
         return Ok(());
     }
     if let Some(choices) = string_list(schema.get("enum")) {
@@ -138,7 +151,7 @@ pub fn validate(schema: &Map<String, J>, value: &J) -> Result<(), String> {
         for kind in &kinds {
             let mut candidate = schema.clone();
             candidate.insert("type".into(), J::from(kind.clone()));
-            match validate(&candidate, value) {
+            match check_value(&candidate, value, nullable) {
                 Ok(()) => return Ok(()),
                 Err(e) => last = Err(e),
             }
@@ -163,7 +176,7 @@ pub fn validate(schema: &Map<String, J>, value: &J) -> Result<(), String> {
             let properties = schema.get("properties").and_then(J::as_object);
             for (key, child) in object {
                 match properties.and_then(|p| p.get(key)).and_then(J::as_object) {
-                    Some(property) => validate(property, child)
+                    Some(property) => check_value(property, child, nullable)
                         .map_err(|e| format!("property {}: {e}", crate::goerr::quote(key)))?,
                     None => {
                         if schema.get("additionalProperties") == Some(&J::Bool(false)) {
@@ -188,7 +201,7 @@ pub fn validate(schema: &Map<String, J>, value: &J) -> Result<(), String> {
             }
             if let Some(items) = schema.get("items").and_then(J::as_object) {
                 for (index, item) in array.iter().enumerate() {
-                    validate(items, item).map_err(|e| format!("item {index}: {e}"))?;
+                    check_value(items, item, nullable).map_err(|e| format!("item {index}: {e}"))?;
                 }
             }
         }
@@ -304,6 +317,18 @@ mod tests {
         );
         assert!(check(json!({"type": "string"}), json!("${node.out}")).is_ok());
         assert!(check(json!({"type": ["string", "null"]}), json!(null)).is_ok());
+    }
+
+    /// Q22 (D28): the output check honours `nullable`; the input check
+    /// is unchanged.
+    #[test]
+    fn output_check_honours_nullable() {
+        let s = json!({"type": "object", "properties": {"lastHeartbeat": {"type": "object",
+            "properties": {"at": {"type": "string", "nullable": true}}}}});
+        let value = json!({"lastHeartbeat": {"at": null}});
+        assert!(validate_output(s.as_object().unwrap(), &value).is_ok());
+        assert!(validate_output(s.as_object().unwrap(), &json!({"lastHeartbeat": {"at": 3}})).is_err());
+        assert!(check(s, value).is_err());
     }
 
     #[test]

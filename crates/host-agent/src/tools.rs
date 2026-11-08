@@ -1338,7 +1338,7 @@ pub(crate) fn invoke(
         .unwrap_or_default();
     if result.get("isError") != Some(&J::Bool(true)) {
         let structured = result.get("structuredContent").cloned().unwrap_or(J::Null);
-        if let Err(e) = crate::schema::validate(&output, &structured) {
+        if let Err(e) = crate::schema::validate_output(&output, &structured) {
             let message = format!(
                 "capability {} returned invalid result: structured result does not match output schema: {e}",
                 crate::goerr::quote(name)

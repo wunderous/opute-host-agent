@@ -55,7 +55,7 @@ pub fn validate(
         .filter(|value| !value.is_null());
     let empty_schema = Map::new();
     if !is_error {
-        crate::schema::validate(
+        crate::schema::validate_output(
             descriptor
                 .output_schema
                 .as_ref()
