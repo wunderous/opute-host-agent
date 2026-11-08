@@ -17,7 +17,7 @@
    },
    "rustNext": {
     "path": "${PARITY}/e2e/release/rust-next-q29/host-agent-linux-x64.gz",
-    "sha256": "7056f03603686bbf714d748d5d3bcfb366a799a2bf2cec328d43f4fe6d67a8c1"
+    "sha256": "456581ad7aac047ffdfb1f953e70287c5e1e1da12a213d6bd4c80ccab2a3098f"
    }
   }
  },
@@ -129,6 +129,16 @@
      "equals": "0\n"
     },
     {
+     "step": "killOrphan",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "upGone",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
      "step": "killTask",
      "path": "response.body.result.status",
      "equals": "working"
@@ -164,7 +174,7 @@
      "equals": "completed"
     }
    ],
-   "scenario": "A task cancelled by SIGTERM leaves no process running; the same command runs again after the restart and after a SIGKILL; two tasks with the same command run side by side and both complete (decided 2026-11-08)"
+   "scenario": "A task cancelled by SIGTERM, or by the in-place upgrade's graceful stop, leaves no process running; the same command runs again after the restart and after a SIGKILL; two tasks with the same command run side by side and both complete (decided 2026-11-08)"
   },
   {
    "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md",
@@ -481,6 +491,10 @@
    ]
   },
   {
+   "id": "killOrphan",
+   "guest": "pkill -fx 'sleep 120'; sleep 1; pgrep -fx 'sleep 120' | wc -l"
+  },
+  {
    "id": "upTask",
    "mcp": "tools/call",
    "tool": "run_host_command",
@@ -504,6 +518,10 @@
   {
    "id": "upgrade",
    "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+  },
+  {
+   "id": "upGone",
+   "guest": "sleep 3; pgrep -fx 'sleep 120' | wc -l"
   },
   {
    "id": "upTaskAfter",
