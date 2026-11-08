@@ -25,6 +25,7 @@ from make_e2e3a import call, direct, res, task
 QUESTIONS = "openspec/changes/archive/2026-11-07-rust-spec-authority/questions.md"
 CH = "openspec/changes/"
 Q20_SPEC = CH + "settle-user-service-supervisor/specs/host-service-supervisor/spec.md"
+Q16_SPEC = CH + "incus-project-selection/specs/incus-project-selection/spec.md"
 Q21_SPEC = CH + "declare-read-inputs/specs/capability-input-schemas/spec.md"
 Q22_SPEC = CH + "nullable-output-schemas/specs/capability-output-schemas/spec.md"
 Q23_SPEC = CH + "privileged-host-service-restart/specs/host-service-restart/spec.md"
@@ -265,6 +266,11 @@ def incus() -> dict:
             "&& echo started")},
         {"id": "catalogB", "mcp": "tools/list", **B},
         {"id": "foreign", "guest": "incus launch parity-noble e2e-foreign -q && incus list e2e-foreign -c s -f csv"},
+        # Q16: agent B's own Incus client (user opute) has another current project
+        {"id": "otherProject", "guest": "incus project create e2e-other -q && runuser -u opute -- incus project "
+                                        "switch e2e-other && runuser -u opute -- incus project list -f csv | "
+                                        "grep -c '(current)' && runuser -u opute -- incus project list -f csv | "
+                                        "grep '(current)' | cut -d, -f1"},
         call("listBefore", "list_vms", {}, B),
         *task("container", "provision_container",
               {"containerName": "e2e-c1", "image": "parity-noble", "disk": "4GiB", "cpus": 1, "memory": "1GiB",
@@ -272,6 +278,8 @@ def incus() -> dict:
         *task("vm", "provision_vm", {"name": "e2e-v1", "instanceType": "virtual-machine", "image": "parity-noble-vm",
                                      "cpus": 1, "memory": "1GiB", "disk": "10GiB"}, B, timeout=900),
         call("infoC", "get_vm_info", {"uri": C1}, B),
+        {"id": "inDefault", "guest": "incus list e2e-c1 --project default -c n -f csv; "
+                                     "incus list --project e2e-other -c n -f csv | wc -l"},
         {"id": "vmAddress", "guest": "for i in $(seq 150); do incus list e2e-v1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' "
                                      "&& break; sleep 2; done; incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'"},
         call("infoV", "get_vm_info", {"uri": V1}, B,
@@ -320,6 +328,8 @@ def incus() -> dict:
         *task("deleteAgain", "delete_vm", {"uri": V1}, B),
         call("listAfter", "list_vms", {}, B),
         {"id": "left", "guest": "incus list -c n -f csv"},
+        {"id": "projectBack", "guest": "runuser -u opute -- incus project switch default && "
+                                       "incus project delete e2e-other && echo restored"},
     ]
     reqs = [
         req(CATALOG, "provision_container, provision_vm, get_vm_info, list_vms, run_instance_command",
@@ -338,6 +348,14 @@ def incus() -> dict:
             a("reachV", "stdout", matches="^ping-ok\n"),
             scenario="A container and a virtual machine provisioned in the default project; both boot and answer "
                      "at their addresses (ping and a TCP service)"),
+        req(Q16_SPEC, "One Incus project per agent",
+            a("otherProject", "stdout", equals="1\ne2e-other (current)\n"),
+            res("container", "isError", equals=False),
+            direct("infoC", "structuredContent.status", equals="running"),
+            a("inDefault", "stdout", equals="e2e-c1\n0\n"),
+            a("projectBack", "stdout", equals="restored\n"),
+            scenario="With agent B's Incus client switched to project e2e-other, the container it provisions is "
+                     "created and observed in default, and e2e-other stays empty (D28)"),
         req(Q21_SPEC, "A tool's published input schema declares every input it reads",
             direct("infoC", "structuredContent.ipv4[0]", equals=STATIC_IP),
             direct("infoAfter", "structuredContent.ipv4[0]", equals=STATIC_IP),
@@ -383,10 +401,11 @@ def incus() -> dict:
             scenario="Every owned guest is gone after delete; only the foreign instance remains"),
     ]
     cleanup = [{"id": "cleanIncus", "guest": (
-        f"{T} agent remove b >/dev/null; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
+        f"{T} agent remove b >/dev/null; runuser -u opute -- incus project switch default 2>/dev/null; "
+        "incus project delete e2e-other 2>/dev/null; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
         "done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
-    allow = ["incus/*", "system/units/e2e-*", "system/unitFiles/e2e-*", "files//opt/incus*",
+    allow = ["incus/*", "files//home/opute/.config/incus*", "system/units/e2e-*", "system/unitFiles/e2e-*", "files//opt/incus*",
              "files//usr/lib/systemd/system/incus*", "system/units/linstor-satellite.service",
              "system/units/packagekit.service", "files//var/lib/dpkg*", "files//var/lib/apt*", "files//var/cache*",
              "files//var/log*", "system/units/sys-devices-virtual-net-veth*",

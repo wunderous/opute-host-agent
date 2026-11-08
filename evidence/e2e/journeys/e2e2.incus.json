@@ -104,6 +104,38 @@
    "scenario": "A container and a virtual machine provisioned in the default project; both boot and answer at their addresses (ping and a TCP service)"
   },
   {
+   "spec": "openspec/changes/incus-project-selection/specs/incus-project-selection/spec.md",
+   "requirement": "One Incus project per agent",
+   "pass": [
+    {
+     "step": "otherProject",
+     "path": "stdout",
+     "equals": "1\ne2e-other (current)\n"
+    },
+    {
+     "step": "container",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "infoC",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "running"
+    },
+    {
+     "step": "inDefault",
+     "path": "stdout",
+     "equals": "e2e-c1\n0\n"
+    },
+    {
+     "step": "projectBack",
+     "path": "stdout",
+     "equals": "restored\n"
+    }
+   ],
+   "scenario": "With agent B's Incus client switched to project e2e-other, the container it provisions is created and observed in default, and e2e-other stays empty (D28)"
+  },
+  {
    "spec": "openspec/changes/declare-read-inputs/specs/capability-input-schemas/spec.md",
    "requirement": "A tool's published input schema declares every input it reads",
    "pass": [
@@ -299,6 +331,7 @@
  "effects": {
   "allow": [
    "incus/*",
+   "files//home/opute/.config/incus*",
    "system/units/e2e-*",
    "system/unitFiles/e2e-*",
    "files//opt/incus*",
@@ -349,6 +382,10 @@
   {
    "id": "foreign",
    "guest": "incus launch parity-noble e2e-foreign -q && incus list e2e-foreign -c s -f csv"
+  },
+  {
+   "id": "otherProject",
+   "guest": "incus project create e2e-other -q && runuser -u opute -- incus project switch e2e-other && runuser -u opute -- incus project list -f csv | grep -c '(current)' && runuser -u opute -- incus project list -f csv | grep '(current)' | cut -d, -f1"
   },
   {
    "id": "listBefore",
@@ -481,6 +518,10 @@
    "retryOn": [
     "host_capacity_saturated"
    ]
+  },
+  {
+   "id": "inDefault",
+   "guest": "incus list e2e-c1 --project default -c n -f csv; incus list --project e2e-other -c n -f csv | wc -l"
   },
   {
    "id": "vmAddress",
@@ -1217,12 +1258,16 @@
   {
    "id": "left",
    "guest": "incus list -c n -f csv"
+  },
+  {
+   "id": "projectBack",
+   "guest": "runuser -u opute -- incus project switch default && incus project delete e2e-other && echo restored"
   }
  ],
  "cleanup": [
   {
    "id": "cleanIncus",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 28
