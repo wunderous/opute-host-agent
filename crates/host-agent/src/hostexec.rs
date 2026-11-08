@@ -215,6 +215,40 @@ fn workload_unit_name(scope: &str, command: &[String]) -> String {
     format!("opute-host-workload-{}", &digest[..24])
 }
 
+/// The workload scope of a call: its operation and its task, so two tasks
+/// never share a unit (Q29, decided 2026-11-08). A call with neither gets a
+/// unit of its own from the clock (`workload_unit_name`).
+pub fn workload_scope(ctx: &crate::plan::runner::RunCtx) -> String {
+    let (operation, task) = ctx.operation_identity();
+    [operation, task]
+        .into_iter()
+        .filter(|part| !part.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+/// Q29: a cancelled or timed-out workload stops its unit. Killing the
+/// `systemd-run --wait` client alone leaves the unit and its command running.
+fn stop_workload_unit_if_interrupted(env: &Env, unit: &str, interrupted: bool, exit_code: i32) {
+    if !interrupted && exit_code != 124 {
+        return;
+    }
+    let mut argv = vec!["systemctl".to_string()];
+    if !nix::unistd::geteuid().is_root() {
+        argv.push("--user".into());
+    }
+    argv.extend(["stop".into(), unit.to_string()]);
+    let budget = Duration::from_secs(40);
+    let _ = crate::hostobs::run_command_with(
+        env,
+        &argv,
+        None,
+        Some(Instant::now() + budget),
+        budget,
+        None,
+    );
+}
+
 /// `Runtime.RunHostWorkloadContext`: one bounded, killable systemd unit.
 pub fn run_host_workload(
     env: &Env,
@@ -232,9 +266,10 @@ pub fn run_host_workload(
         timeout
     };
     let seconds = timeout.as_secs() + u64::from(timeout.subsec_nanos() != 0);
+    let unit = workload_unit_name(scope, command);
     let mut argv: Vec<String> = vec![
         SYSTEMD_RUN.into(),
-        format!("--unit={}", workload_unit_name(scope, command)),
+        format!("--unit={unit}"),
         "--wait".into(),
         "--collect".into(),
         "--pipe".into(),
@@ -254,14 +289,17 @@ pub fn run_host_workload(
     }
     argv.extend(command.iter().cloned());
     let budget = timeout + Duration::from_secs(30);
-    Ok(crate::hostobs::run_command_with(
+    let result = crate::hostobs::run_command_with(
         env,
         &argv,
         None,
         Some(Instant::now() + budget),
         budget,
         ctx,
-    ))
+    );
+    let interrupted = ctx.is_some_and(|c| c.err().is_some());
+    stop_workload_unit_if_interrupted(env, &unit, interrupted, result.exit_code);
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -286,6 +324,82 @@ mod tests {
         assert_eq!(go_duration(Duration::from_secs(90)), "1m30s");
         assert_eq!(go_duration(Duration::from_secs(7230)), "2h0m30s");
         assert_eq!(go_duration(ms(60_500)), "1m0.5s");
+    }
+
+    /// Q29: two tasks running the same command get units of their own.
+    #[test]
+    fn two_tasks_with_the_same_command_get_their_own_units() {
+        use crate::plan::runner::RunCtx;
+        let argv = vec![
+            "bash".to_string(),
+            "-lc".to_string(),
+            "sleep 120".to_string(),
+        ];
+        let first = RunCtx::background().with_operation_identity("run_host_command", "task-1");
+        let second = RunCtx::background().with_operation_identity("run_host_command", "task-2");
+        assert_ne!(
+            workload_unit_name(&workload_scope(&first), &argv),
+            workload_unit_name(&workload_scope(&second), &argv)
+        );
+    }
+
+    /// Q29: a cancelled workload stops its unit, not only the systemd-run client.
+    #[test]
+    fn a_cancelled_workload_stops_its_unit() {
+        use crate::plan::runner::RunCtx;
+        use std::os::unix::fs::PermissionsExt;
+        if !std::path::Path::new(SYSTEMD_RUN).exists() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let log = dir.path().join("systemctl.log");
+        let fake = dir.path().join("systemctl");
+        std::fs::write(
+            &fake,
+            format!("#!/bin/sh\necho \"$@\" >> {}\n", log.display()),
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let env = Env::from_pairs([("PATH", dir.path().to_str().unwrap())]);
+        let flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let ctx = RunCtx::from_flag(flag).with_operation_identity("run_host_command", "task-1");
+        let argv = vec![
+            "bash".to_string(),
+            "-lc".to_string(),
+            "sleep 120".to_string(),
+        ];
+        let unit = workload_unit_name(&workload_scope(&ctx), &argv);
+        run_host_workload(
+            &env,
+            &workload_scope(&ctx),
+            &argv,
+            Duration::from_secs(60),
+            Some(&ctx),
+        )
+        .unwrap();
+        let calls = std::fs::read_to_string(&log).unwrap_or_default();
+        assert!(
+            calls.lines().any(|l| l.ends_with(&format!("stop {unit}"))),
+            "{calls:?}"
+        );
+    }
+
+    /// A workload that completes leaves its unit to systemd (--collect).
+    #[test]
+    fn a_completed_workload_is_not_stopped() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let log = dir.path().join("systemctl.log");
+        let fake = dir.path().join("systemctl");
+        std::fs::write(
+            &fake,
+            format!("#!/bin/sh\necho \"$@\" >> {}\n", log.display()),
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let env = Env::from_pairs([("PATH", dir.path().to_str().unwrap())]);
+        stop_workload_unit_if_interrupted(&env, "opute-host-workload-x", false, 0);
+        assert!(!log.exists());
     }
 
     #[test]
