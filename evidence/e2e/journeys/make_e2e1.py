@@ -722,7 +722,7 @@ def j7() -> dict:
 # --- 8. migrate a Go-installed host, then upgrade -------------------------------------------------------
 
 def j8() -> dict:
-    files = {**TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next/host-agent-linux-x64.gz")}
+    files = {**TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz")}
     done_plan = plan("e2e1-j8-done", "e2e1-j8-done-1", ".config/opute-e2e/j8-done.txt")
     flight_plan = plan("e2e1-j8-flight", "e2e1-j8-flight-1", ".config/opute-e2e/j8-flight.txt", slow=True)
     run_id = lambda step: {"step": step, "path": "response.body.result.structuredContent.runId"}  # noqa: E731

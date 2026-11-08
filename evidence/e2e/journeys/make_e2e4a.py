@@ -595,7 +595,7 @@ K = ha.K
 CLUSTER = ha.CLUSTER
 CL = ha.CL
 K1 = "container:local:e2e-k1"
-RELEASE = "${PARITY}/e2e/release/rust-e2e4a-2"  # the release the dev VM was rebuilt on (this branch)
+RELEASE = "${PARITY}/e2e/release/rust-e2e13a"  # the release the dev VM was rebuilt on (this branch)
 CLUSTER_FILES = {**base.TOOL_FILES, "providerK3s": inp(f"{RELEASE}/opute-provider-k3s-linux-x64"),
                  "activate": ha.FILES["activate"]}
 
@@ -1432,7 +1432,7 @@ NEXT = "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
 
 
 def restart() -> dict:
-    files = {**base.TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-e2e4a-2/host-agent-linux-x64.gz")}
+    files = {**base.TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz")}
     kill = f"systemctl kill -s KILL {UNIT} && sleep 1 && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}"
     steps = base.TOOL_STEPS + [
         {"id": "nextCopy", "copy": "rustNext", "to": NEXT},

@@ -16,8 +16,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust/opute-provider-k3s-linux-x64",
-    "sha256": "852e352f72e8db5574ed05b8297991927832e238122f0c618292a81bbf7f8dae"
+    "path": "${PARITY}/e2e/release/rust-e2e13a/opute-provider-k3s-linux-x64",
+    "sha256": "8dc855f4694d687dcedb264be43942db5f681ed34d3ccc19cf8f11f6255b52e1"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
@@ -353,7 +353,7 @@
   },
   {
    "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)",
-   "requirement": "recover-quorum restores a single-member etcd majority; remove-node retires a dead server",
+   "requirement": "recover-quorum restores a single-member etcd majority",
    "pass": [
     {
      "step": "recover",
@@ -369,20 +369,46 @@
      "step": "readRecovered",
      "path": "response.body.result.structuredContent.json",
      "matches": "before-quorum-loss"
-    },
-    {
-     "step": "staleGone",
-     "path": "response.body.result.structuredContent.readyServers",
-     "equals": 1
-    },
+    }
+   ],
+   "scenario": "After the acknowledged reset the data written before the loss reads back"
+  },
+  {
+   "spec": "openspec/changes/k3s-quorum-recovery-retirement/specs/k3s-membership/spec.md",
+   "requirement": "Dead servers are retired once quorum recovery settles",
+   "pass": [
     {
      "step": "removeNode2",
      "path": "response.body.result.result.isError",
      "equals": false
+    },
+    {
+     "step": "removeNode2",
+     "path": "response.body.result.result.structuredContent.removedNodeWasReady",
+     "equals": false
+    },
+    {
+     "step": "removeNode3",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "removeNode3",
+     "path": "response.body.result.result.structuredContent.removedNodeWasReady",
+     "equals": false
+    },
+    {
+     "step": "membersAfter",
+     "path": "response.body.result.structuredContent.serverCount",
+     "equals": 1
+    },
+    {
+     "step": "membersAfter",
+     "path": "response.body.result.structuredContent.readyServers",
+     "equals": 1
     }
    ],
-   "scenario": "After the acknowledged reset the stopped servers are observed NotReady and can be retired through the typed path (what recovery and removal must guarantee is Q17)",
-   "openQuestion": "Q17"
+   "scenario": "Each stopped server is retired only once it is observed NotReady, and the cluster keeps serving from the survivor (D28)"
   },
   {
    "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)",
@@ -1444,26 +1470,6 @@
    }
   },
   {
-   "id": "staleGone",
-   "mcp": "tools/call",
-   "tool": "opute.capability.kubernetes.inspect-membership",
-   "arguments": {
-    "targetUri": "cluster:local:e2e-k1",
-    "providerInstanceName": "e2e-k1",
-    "instanceType": "container",
-    "expectedServers": 3,
-    "requireEmbeddedEtcd": true
-   },
-   "until": {
-    "path": "response.body.result.structuredContent.readyServers",
-    "in": [
-     1
-    ]
-   },
-   "timeout": 240,
-   "interval": 5
-  },
-  {
    "id": "removeNode2Call",
    "mcp": "tools/call",
    "tool": "opute.capability.kubernetes.remove-node",
@@ -1508,6 +1514,63 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "removeNode3Call",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.remove-node",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container",
+    "nodeName": "e2e-k3",
+    "role": "server"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_removeNode3": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "removeNode3",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_removeNode3}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "membersAfter",
+   "mcp": "tools/call",
+   "tool": "opute.capability.kubernetes.inspect-membership",
+   "arguments": {
+    "targetUri": "cluster:local:e2e-k1",
+    "providerInstanceName": "e2e-k1",
+    "instanceType": "container",
+    "requireEmbeddedEtcd": true
+   }
   },
   {
    "id": "removeCall",
