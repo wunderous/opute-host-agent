@@ -29,6 +29,8 @@ GATE = "e2e-3a"
 PAGE = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
 CATALOG = "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
 Q17_SPEC = "openspec/changes/k3s-quorum-recovery-retirement/specs/k3s-membership/spec.md"
+ENDPOINT_SPEC = "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
+HOST = "k3s.e2e.test"
 SEAM_SPEC = "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
 K = "opute.capability.kubernetes."
 VERSION = "v1.31.8+k3s1"  # the page's test record
@@ -44,7 +46,7 @@ ADB_B = "/tmp/e2e-agents/b"
 JOURNALS = "opute-bootstrap-mcp e2e-agent-b e2e-provider-k3s e2e-provider-k3s-b"
 
 FILES = {**base.TOOL_FILES,
-         "providerK3s": inp("${PARITY}/e2e/release/rust-e2e13a/opute-provider-k3s-linux-x64"),
+         "providerK3s": inp("${PARITY}/e2e/release/rust-endpoint/opute-provider-k3s-linux-x64"),
          # The M9 provider-real.k3s activation recipe, byte for byte: the provider's install manifest pins
         # its sha256 (91f0b596...).
          "activate": inp("${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml")}
@@ -110,7 +112,9 @@ def wait_tool(port: int, token: str) -> str:
 
 # --- the build (journey 1's steps, reused by 2-4) -------------------------------------------------------
 
-def build_steps() -> list[dict]:
+def build_steps(endpoint: bool = False) -> list[dict]:
+    """`endpoint`: host A's provider runs with the cluster endpoint enabled (Q19); host B's never does."""
+    enable = ("$( [ ${p%%:*} = 4320 ] && echo --setenv=OPUTE_K3S_CLUSTER_ENDPOINT=enabled ) " if endpoint else "")
     steps = base.TOOL_STEPS + [
         {"id": "providerCopy", "copy": "providerK3s", "to": PROVIDER, "mode": "0755"},
         {"id": "recipeCopy", "copy": "activate", "to": RECIPE, "mode": "0644"},
@@ -118,7 +122,7 @@ def build_steps() -> list[dict]:
             f"chown -R opute /home/opute/.config/opute-e2e && "
             f"for p in 4320:e2e-provider-k3s 4321:e2e-provider-k3s-b; do systemd-run --collect "
             f"--unit=${{p#*:}} --uid=opute --gid=opute --setenv=HOME=/home/opute "
-            f"--setenv=OPUTE_PROVIDER_PORT=${{p%%:*}} --property=Restart=no {PROVIDER} || exit 1; done && "
+            f"--setenv=OPUTE_PROVIDER_PORT=${{p%%:*}} {enable}--property=Restart=no {PROVIDER} || exit 1; done && "
             f"{T} agent start b --port {B_PORT} --id e2e-ha-b --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
             "--env MCP_AUTH_TOKEN='${SECRET:tokenB}' >/dev/null && "
             "for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && ss -ltnH 'sport = :4321' | grep -q . "
@@ -501,7 +505,148 @@ def j4() -> dict:
         reqs, steps, cleanup_steps(typed=False), minutes=28)
 
 
-JOURNEYS = [j1, j2, j3, j4]
+# --- 5. the optional cluster endpoint (Q19) ----------------------------------------------------------------
+
+EP = {"endpoint": f"https://{HOST}:6443", "caBundleRef": "${CAREF}"}
+
+
+def count(step: str, path: str, n: int) -> list[dict]:
+    """Exactly n items in a task result's list."""
+    return [res(step, f"{path}[{n - 1}]", exists=True), res(step, f"{path}[{n}]", absent=True)]
+
+
+def sans(names: tuple[str, ...]) -> str:
+    """Per server: 1 when its serving certificate (at its own address, SNI the hostname) lists the hostname."""
+    return " ".join(
+        f"ip=$(incus list {n} -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 "
+        f"-servername {HOST} 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | "
+        f"grep -c 'DNS:{HOST}';" for n in names)
+
+
+def resolved() -> str:
+    """The hostname as a client on the bridge resolves it, and the bridge's host-record lines."""
+    return (f"incus exec e2e-k1 -- getent ahostsv4 {HOST} | awk '{{print $1}}' | sort -u | tr '\\n' ' '; echo; "
+            f"incus network get incusbr0 raw.dnsmasq | grep -c 'host-record={HOST},'")
+
+
+def listed(port: int, token: str, name: str) -> str:
+    return ("python3 -c 'import sys, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\n"
+            f"r = mcpwire.mcp({port}, sys.argv[1], \"tools/list\")\n"
+            "names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n"
+            f"print(json.dumps({{\"listed\": \"{name}\" in names}}))' '{token}'")
+
+
+THROUGH = (f"incus exec e2e-k1 -- sh -c 'sed \"s#https://127.0.0.1:6443#https://{HOST}:6443#\" "
+           "/etc/rancher/k3s/k3s.yaml > /tmp/ep.yaml; start=$(date +%s); for i in $(seq 60); do "
+           "k3s kubectl --kubeconfig /tmp/ep.yaml get --raw /version >/dev/null 2>&1 && "
+           "k3s kubectl --kubeconfig /tmp/ep.yaml create configmap e2e-through-endpoint -n default "
+           "--from-literal=via=endpoint >/dev/null 2>&1 && break; sleep 2; done; "
+           "echo seconds=$(( $(date +%s) - start )); k3s kubectl --kubeconfig /tmp/ep.yaml get configmap "
+           "e2e-through-endpoint -n default -o jsonpath={.data.via}; rm -f /tmp/ep.yaml'")
+
+
+def j5() -> dict:
+    ensure = K + "ensure-cluster-endpoint"
+    steps = build_steps(endpoint=True) + [
+        {"id": "listedA", "guest": listed(3014, "${TOKEN}", ensure)},
+        {"id": "listedB", "guest": listed(B_PORT, "${SECRET:tokenB}", ensure)},
+        {"id": "untouched", "guest": sans(SERVERS) + " " + resolved()},
+        call("info3", "get_vm_info", {"uri": "container:local:e2e-k3"},
+             capture={"K3_IP": "response.body.result.structuredContent.ipv4[0]"}),
+        # opt in
+        *task("optIn", ensure, {**CL, "hostname": HOST}, timeout=900,
+              capture={"CAREF": "response.body.result.result.structuredContent.caBundleRef"}),
+        {"id": "sansIn", "guest": sans(SERVERS)},
+        {"id": "resolvesIn", "guest": resolved()},
+        *task("verifyIn", K + "ensure-ha-endpoint", {**CL, **EP}),
+        *task("optInAgain", ensure, {**CL, "hostname": HOST}, timeout=900),
+        # lose one server
+        *task("stop3", "stop_vm", {"uri": "container:local:e2e-k3"}),
+        membership("degraded", 2),
+        {"id": "through", "guest": THROUGH, "timeout": 200},
+        *task("verifyDegraded", K + "ensure-ha-endpoint", {**CL, **EP}),
+        # retire it
+        *task("retire", K + "remove-node", {**CL, "nodeName": "e2e-k3", "role": "server"}, timeout=600),
+        {"id": "resolvesRetired", "guest": resolved() + "; incus exec e2e-k1 -- getent ahostsv4 " + HOST +
+                                           " | grep -c -F '${K3_IP}'"},
+        *task("verifyRetired", K + "ensure-ha-endpoint", {**CL, **EP}),
+        # opt out
+        *task("optOut", K + "remove-cluster-endpoint", CL, timeout=900),
+        {"id": "sansOut", "guest": sans(SERVERS[:2])},
+        {"id": "resolvesOut", "guest": f"incus exec e2e-k1 -- getent ahostsv4 {HOST} | wc -l; "
+                                       f"incus network get incusbr0 raw.dnsmasq | grep -c '{HOST}'"},
+        {"id": "recordOut", "guest": "incus exec e2e-k1 -- k3s kubectl -n kube-system get configmap "
+                                     "opute-cluster-endpoint 2>&1 | grep -c NotFound"},
+        {"id": "directOut", "guest": "incus exec e2e-k1 -- k3s kubectl get nodes -o name | wc -l"},
+        *task("verifyOut", K + "ensure-ha-endpoint", {**CL, **EP}),
+        *task("optOutAgain", K + "remove-cluster-endpoint", CL),
+    ]
+    reqs = build_requirements() + [
+        req(ENDPOINT_SPEC, "The HA registration endpoint is optional and off by default",
+            a("listedA", "json.listed", equals=True),
+            a("listedB", "json.listed", equals=False),
+            a("untouched", "stdout", equals="0\n0\n0\n\n0\n"),
+            scenario="The capability is listed only on the host whose provider enables it; the cluster built "
+                     "without opting in has no certificate name, resolver entry or record for the hostname"),
+        req(ENDPOINT_SPEC, "An opted-in endpoint is stable across server loss",
+            res("optIn", "isError", equals=False),
+            res("optIn", "structuredContent.endpoint", equals=f"https://{HOST}:6443"),
+            res("optIn", "structuredContent.caBundleRef", equals="cluster-endpoint:local:e2e-k1"),
+            res("optIn", "structuredContent.restartedServers", equals=list(SERVERS)),
+            *count("optIn", "structuredContent.resolvesTo", 3),
+            a("sansIn", "stdout", equals="1\n1\n1\n"),
+            a("resolvesIn", "stdout", matches="^(\\S+ ){3}\n3\n$"),
+            res("verifyIn", "isError", equals=False),
+            res("verifyIn", "structuredContent.endpointAvailable", equals=True),
+            *count("verifyIn", "structuredContent.resolvedAddresses", 3),
+            res("optInAgain", "structuredContent.changed", equals=False),
+            res("optInAgain", "structuredContent.restartedServers", equals=[]),
+            res("stop3", "structuredContent.status", equals="stopped"),
+            direct("degraded", "structuredContent.readyServers", equals=2),
+            a("through", "stdout", matches="^seconds=\\d+\nendpoint$"),
+            res("verifyDegraded", "structuredContent.endpointAvailable", equals=True),
+            scenario="Opting in at k3s.e2e.test: every server's certificate lists it, it resolves on the bridge to "
+                     "the three servers, ensure-ha-endpoint verifies it with the CA reference (no UnknownIssuer), "
+                     "a repeat restarts nothing; with e2e-k3 stopped a read and a typed write through the hostname "
+                     "succeed and the endpoint still verifies"),
+        req(ENDPOINT_SPEC, "An opted-in endpoint follows membership",
+            res("retire", "isError", equals=False),
+            *count("retire", "structuredContent.endpointResolvesTo", 2),
+            a("resolvesRetired", "stdout", matches="^(\\S+ ){2}\n2\n0\n$"),
+            res("verifyRetired", "structuredContent.endpointAvailable", equals=True),
+            scenario="Retiring the dead e2e-k3 removes it from resolution in the same operation, and the endpoint "
+                     "still verifies"),
+        req(ENDPOINT_SPEC, "Opting out is a typed operation",
+            res("optOut", "isError", equals=False),
+            res("optOut", "structuredContent.removed", equals=True),
+            res("optOut", "structuredContent.restartedServers", equals=list(SERVERS[:2])),
+            a("sansOut", "stdout", equals="0\n0\n"),
+            a("resolvesOut", "stdout", equals="0\n0\n"),
+            a("recordOut", "stdout", equals="1\n"),
+            a("directOut", "stdout", equals="2\n"),
+            res("verifyOut", "isError", equals=True),
+            res("optOutAgain", "structuredContent.changed", equals=False),
+            scenario="After opting out no certificate, resolver entry or record names the hostname, the CA "
+                     "reference resolves to nothing, a client addressing a server directly still works, and a "
+                     "repeat reports unchanged"),
+        req(ENDPOINT_SPEC, "Changing TLS names is an explicit, bounded effect",
+            res("optIn", "structuredContent.restartedServers", equals=list(SERVERS)),
+            res("optOut", "structuredContent.restartedServers", equals=list(SERVERS[:2])),
+            scenario="Opting in and out restarted the Ready servers one at a time, each Ready again before the "
+                     "next (the operation's own order); a server that does not return is covered by the unit test"),
+    ]
+    cleanup = cleanup_steps() + [{"id": "cleanDns", "guest": (
+        "incus network get incusbr0 raw.dnsmasq | grep -q opute-cluster-endpoint && "
+        "incus network unset incusbr0 raw.dnsmasq; true")}]
+    return journey(
+        "e2e3a.endpoint",
+        "The optional cluster endpoint (Q19) on the HA cluster built as in e2e3a.build, with host A's provider "
+        "enabled for it and host B's not: opt in at k3s.e2e.test, verify certificates, bridge resolution and "
+        "ensure-ha-endpoint with the CA reference; stop e2e-k3 and use the hostname; retire e2e-k3; opt out.",
+        reqs, steps, cleanup, allow=["incus/networks/incusbr0*"], minutes=29)
+
+
+JOURNEYS = [j1, j2, j3, j4, j5]
 
 
 def render() -> dict[str, str]:
