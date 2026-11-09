@@ -22,7 +22,10 @@ the behaviour it guards (noted per task), not by history.
 
 ## 3. Journeys
 
-- [ ] 3.1 The existing e2e-3a journeys rerun unchanged against the rebuilt
-  provider (the endpoint is optional).
-- [ ] 3.2 A new journey `e2e3a.endpoint` opts in, loses a server, retires it
-  and opts out.
+- [x] 3.1 The existing e2e-3a journeys rerun unchanged against the rebuilt
+  provider (the endpoint is optional). Run e2e-13a-r19.
+- [x] 3.2 A new journey `e2e3a.endpoint` opts in, loses a server, retires it
+  and opts out. Run e2e-13a-r19. The runs before it found two Rust defects:
+  a bridged eth0 (r13) and the stale Ready rollout (r15). They also found
+  two harness defects (r14), and GitHub download 504s spoiled four rounds
+  (r12, r16-r18). All are retired with their causes.

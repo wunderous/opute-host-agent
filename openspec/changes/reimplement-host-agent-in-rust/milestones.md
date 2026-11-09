@@ -1041,8 +1041,8 @@ throughout the agreed window. Go retirement, and ownership of releases and the
 website, are later decisions that need their own evidence.
 
 *Status (2026-11-08):* D28 fixes the evidence and the window (14 days).
-`make cutover-readiness` passes with only Q4, Q18, Q19, e2e-5 and WSL2
-not passed (Q29 answered and fixed, 2026-11-08) (entry e2e-13a below). The owners' review (6.3) has not
+`make cutover-readiness` passes with only Q4, Q18, e2e-5 and WSL2
+not passed (Q29 and Q19 answered and done, 2026-11-08/09) (entry e2e-13a below). The owners' review (6.3) has not
 happened.
 
 ### E2E journeys on the dev VM (after D27)
@@ -1290,6 +1290,22 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   - **Result:** gate e2e-4 passes on run `e2e-13a-r11`. Each cancelled
     task leaves no process, and the restart and the upgrade stop in under
     a second.
+- **Q19 (2026-11-08): typed-ha-endpoint.** The owner chose Incus bridge DNS,
+  off unless `OPUTE_K3S_CLUSTER_ENDPOINT=enabled`, and a record with a
+  `caBundleRef`.
+  - **What changed:** the K3s provider gained
+    `ensure-cluster-endpoint` and `remove-cluster-endpoint`, published
+    only when enabled. Membership hooks keep resolution on the Ready
+    servers. `ensure-ha-endpoint` verifies with the CA reference.
+  - **What the e2e runs found:**
+    - r13: eth0 attached as a bridged NIC was not recognised.
+    - r15: a stale Ready condition let the rollout move on before a server
+      served the name. A server now counts once a TLS handshake for the
+      hostname succeeds.
+    - r14: two harness defects.
+    - r12, r16, r17 and r18: GitHub download 504s.
+  - **Result:** gate e2e-3a passes on run `e2e-13a-r19`, with the new
+    journey `e2e3a.endpoint`.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
