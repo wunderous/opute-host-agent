@@ -42,17 +42,32 @@ pub(super) const TYPED: &str = "\u{1}opute-typed-error\u{1}";
 /// One `incus <args>` call: stdout, or the failure text.
 pub(super) type Incus<'a> = &'a mut dyn FnMut(&[&str], Option<&[u8]>) -> Result<Vec<u8>, String>;
 
-/// How long a restarted server may take to be Ready again.
+/// How long a restarted server may take to be Ready again, and how a
+/// rollout sees that it serves the TLS name.
 #[derive(Clone, Copy)]
 pub(super) struct Rollout {
     pub attempts: u32,
     pub poll: Duration,
+    /// Whether the server at `address` presents a certificate the cluster CA
+    /// signs for `hostname`.
+    pub serves: fn(hostname: &str, address: &str, ca: &[u8]) -> bool,
 }
 
 pub(super) const ROLLOUT: Rollout = Rollout {
     attempts: 60,
     poll: Duration::from_secs(3),
+    serves: serves_name,
 };
+
+/// A TLS handshake with the server's own address under `hostname`, trusting
+/// only the cluster CA: it succeeds only for a certificate listing the name.
+fn serves_name(hostname: &str, address: &str, ca: &[u8]) -> bool {
+    probe(hostname, &[address.to_string()], ca).is_ok()
+}
+
+/// What a restart must show besides a Ready Node: the hostname a server must
+/// serve, its address, and the cluster CA.
+type Serving<'a> = Option<(&'a str, &'a str, &'a [u8])>;
 
 #[cfg(test)]
 thread_local! {
@@ -380,7 +395,10 @@ fn read_file(incus: Incus, instance: &str, path: &str) -> Result<String, String>
 }
 
 /// Restart K3s on one server and wait until its own API reports it Ready.
-fn restart(incus: Incus, server: &str, rollout: Rollout) -> Result<(), String> {
+/// Restart K3s on `server` and wait until its Node is Ready and, when
+/// `serving` is given, it serves the hostname: right after a restart the Node
+/// can still carry its earlier Ready condition.
+fn restart(incus: Incus, server: &str, rollout: Rollout, serving: Serving) -> Result<(), String> {
     incus(&["exec", server, "--", "systemctl", "restart", "k3s"], None)
         .map_err(|e| format!("restart K3s on {server}: {e}"))?;
     for attempt in 0..rollout.attempts {
@@ -402,13 +420,16 @@ fn restart(incus: Incus, server: &str, rollout: Rollout) -> Result<(), String> {
             ],
             None,
         );
-        if status.is_ok_and(|s| String::from_utf8_lossy(&s).trim() == "True") {
+        let ready = status.is_ok_and(|s| String::from_utf8_lossy(&s).trim() == "True");
+        if ready && serving.is_none_or(|(name, address, ca)| (rollout.serves)(name, address, ca)) {
             return Ok(());
         }
     }
     Err(typed(
         "rollout_incomplete",
-        &format!("K3s server {server} did not return to Ready after its restart for TLS names"),
+        &format!(
+            "K3s server {server} did not return to Ready serving its TLS names after its restart"
+        ),
         json!({"server": server}),
     ))
 }
@@ -455,6 +476,7 @@ pub(super) fn ensure(args: &Args, incus: Incus, rollout: Rollout) -> Result<J, S
     let mut restarted = Vec::new();
     let wanted = drop_in(&hostname);
     let ready: Vec<&Server> = servers.iter().filter(|s| s.ready).collect();
+    let ca = cluster_ca(incus, &ready)?;
     for server in &ready {
         if read_file(incus, &server.name, DROP_IN)? == wanted {
             continue;
@@ -471,7 +493,8 @@ pub(super) fn ensure(args: &Args, incus: Incus, rollout: Rollout) -> Result<J, S
             Some(wanted.as_bytes()),
         )
         .map_err(|e| format!("write the TLS names on {}: {e}", server.name))?;
-        if let Err(error) = restart(incus, &server.name, rollout) {
+        let serving = Some((hostname.as_str(), server.address.as_str(), ca.as_slice()));
+        if let Err(error) = restart(incus, &server.name, rollout, serving) {
             // An endpoint that already resolves keeps resolving only to
             // servers known Ready, never the one that did not return; a first
             // opt-in creates no resolution.
@@ -564,7 +587,7 @@ pub(super) fn remove(args: &Args, incus: Incus, rollout: Rollout) -> Result<J, S
         )
         .map_err(|e| format!("drop the serving certificate: {e}"))?;
         for name in &carrying {
-            restart(incus, name, rollout)?;
+            restart(incus, name, rollout, None)?;
             restarted.push(name.clone());
         }
     }
@@ -629,9 +652,35 @@ pub(super) fn follow_join(
             Some(wanted.as_bytes()),
         )
         .map_err(|e| format!("write the TLS names on {joined}: {e}"))?;
-        restart(incus, joined, rollout)?;
+        let servers = servers(incus, joined)?;
+        let ready: Vec<&Server> = servers.iter().filter(|s| s.ready).collect();
+        let ca = cluster_ca(incus, &ready)?;
+        let address = servers
+            .iter()
+            .find(|s| s.name == joined)
+            .map(|s| s.address.clone())
+            .unwrap_or_default();
+        restart(
+            incus,
+            joined,
+            rollout,
+            Some((found.hostname.as_str(), address.as_str(), ca.as_slice())),
+        )?;
     }
     follow(incus, joined, &Default::default())
+}
+
+/// The cluster CA, read from the first Ready server that has it.
+fn cluster_ca(incus: Incus, ready: &[&Server]) -> Result<Vec<u8>, String> {
+    let mut last = String::from("no Ready server");
+    for server in ready {
+        match incus(&["exec", &server.name, "--", "cat", SERVER_CA], None) {
+            Ok(pem) if !pem.is_empty() => return Ok(pem),
+            Ok(_) => last = format!("{} has an empty CA", server.name),
+            Err(e) => last = e,
+        }
+    }
+    Err(format!("read the cluster CA: {last}"))
 }
 
 /// The CA a `caBundleRef` names, read from a Ready member; never returned.
@@ -873,7 +922,27 @@ mod tests {
     const FAST: Rollout = Rollout {
         attempts: 2,
         poll: Duration::from_millis(1),
+        serves: serves_scripted,
     };
+
+    thread_local! {
+        /// Per server address: how many more TLS checks see the old
+        /// certificate (`u32::MAX`: never the new one).
+        static OLD_CERT: std::cell::RefCell<BTreeMap<String, u32>> = Default::default();
+        static CHECKS: std::cell::RefCell<Vec<String>> = Default::default();
+    }
+
+    fn serves_scripted(hostname: &str, address: &str, ca: &[u8]) -> bool {
+        assert_eq!((hostname, ca), ("k3s.e2e.test", CA.as_bytes()));
+        CHECKS.with(|c| c.borrow_mut().push(address.to_string()));
+        OLD_CERT.with(|m| match m.borrow_mut().get_mut(address) {
+            Some(0) | None => true,
+            Some(n) => {
+                *n = n.saturating_sub(if *n == u32::MAX { 0 } else { 1 });
+                false
+            }
+        })
+    }
 
     fn args(extra: J) -> Args {
         let mut value =
@@ -1170,5 +1239,30 @@ mod tests {
                 "{error}"
             );
         }
+    }
+
+    /// A stale Ready condition right after a restart is not a rollout: a
+    /// server counts once it serves a certificate for the hostname.
+    #[test]
+    fn a_server_counts_as_rolled_out_once_it_serves_the_name() {
+        let mut c = Cluster::new();
+        OLD_CERT.with(|m| m.borrow_mut().insert("10.0.100.12".into(), 1));
+        CHECKS.with(|c| c.borrow_mut().clear());
+        ensure_on(&mut c).unwrap();
+        let k2 = CHECKS.with(|c| c.borrow().iter().filter(|a| *a == "10.0.100.12").count());
+        assert_eq!(k2, 2, "e2e-k2 was checked until it served the name");
+
+        let mut c = Cluster::new();
+        OLD_CERT.with(|m| m.borrow_mut().insert("10.0.100.12".into(), u32::MAX));
+        let err = ensure_on(&mut c).unwrap_err();
+        let typed: J = serde_json::from_str(err.strip_prefix(TYPED).expect("typed")).unwrap();
+        assert_eq!(typed["code"], "rollout_incomplete");
+        assert_eq!(typed["server"], "e2e-k2");
+        assert!(
+            !c.calls.iter().any(|x| x.starts_with("exec e2e-k3")),
+            "{:?}",
+            c.calls
+        );
+        OLD_CERT.with(|m| m.borrow_mut().clear());
     }
 }

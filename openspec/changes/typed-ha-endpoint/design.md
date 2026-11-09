@@ -59,3 +59,13 @@ address in turn with only the cluster CA trusted.
 - On a cluster that has not opted in, none of these touch TLS names, the
   DNS block or the record; where the capability is disabled they make no
   extra call at all.
+
+## Rollout readiness
+
+Right after `systemctl restart k3s` a Node can still carry its earlier
+`Ready=True` condition. A restarted server counts as rolled out only when
+its Node is Ready and a TLS handshake with its own address, under the
+hostname and trusting only the cluster CA, succeeds. That proves it serves
+the new name. Found in run e2e-13a-r15: one server did not yet serve the
+name when `ensure-cluster-endpoint` returned.
+
