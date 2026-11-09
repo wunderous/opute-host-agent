@@ -242,7 +242,6 @@ mod tests {
             ("HOME", dir.join("home").to_str().unwrap()),
             ("XDG_CONFIG_HOME", dir.join("xdg").to_str().unwrap()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-test"),
-            ("OPUTE_AGENT_MODE", "standalone"),
             (
                 "OPUTE_STANDALONE_STATE_DIR",
                 dir.join("state").to_str().unwrap(),

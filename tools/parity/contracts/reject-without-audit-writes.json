@@ -277,7 +277,7 @@
      "expect": {
       "status": 200,
       "body.result.isError": true,
-      "body.result.content.0.text": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "body.result.content.0.text": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      }
     },
     {
@@ -421,7 +421,7 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
       }
      },
      "expect": {
@@ -453,7 +453,7 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
       }
      },
      "expect": {
@@ -760,7 +760,7 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
       }
      },
      "expect": {

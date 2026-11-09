@@ -6,14 +6,17 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 
 - [x] 1.1 Record the owner decision (Host Agent owner, 2026-11-08).
 - [ ] 1.2 Record the Platform, release and deployment owners' sign-off.
-- [ ] 1.3 Owner answers N1-N7 (design.md).
+- [x] 1.3 Owner answers N1-N7 (design.md): every recommendation adopted
+  (2026-11-08).
 
 ## 2. Failing-first tests
 
-- [ ] 2.1 One serving profile: defaults, an exposed host, the effective
+- [x] 2.1 One serving profile: defaults, an exposed host, the effective
   configuration logged once.
-- [ ] 2.2 The old variable has no effect: `OPUTE_AGENT_MODE=platform` alone
-  starts on the defaults, and nothing printed mentions it.
+- [x] 2.2 The old variable has no effect: `OPUTE_AGENT_MODE=platform` alone
+  starts on the defaults, and nothing printed mentions it. Tests
+  (`config.rs`, `app.rs`) were red first: missing field, then a missing
+  profile log line.
 - [ ] 2.3 OAuth clients from `OPUTE_OAUTH_CLIENTS` only; none provisioned by
   default; bearer works.
 - [x] 2.4 Reserved names from `OPUTE_RESERVED_HOSTNAMES` only; refused with
@@ -24,8 +27,10 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 
 ## 3. Implementation (one concern per commit)
 
-- [ ] 3.1 The single profile.
-- [ ] 3.2 Remove mode reading and all its branches.
+- [x] 3.1 The single profile.
+- [x] 3.2 Remove mode reading and all its branches (one commit with 3.1:
+  the contract suites cannot pass between them). `--mode` is gone (N5): the
+  launcher must stop passing it before 0.4.0 ships.
 - [ ] 3.3 OAuth clients from configuration (after N4).
 - [x] 3.4 Reserved names from configuration.
 - [ ] 3.5 Remove Platform names from CLI, help and catalog descriptions.

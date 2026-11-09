@@ -23,6 +23,18 @@ mode selects:
 
 ## Decisions in this change
 
+- The D10 gate (`standalone-read-only-gate`) keeps its classification and
+  position. It is keyed on `OPUTE_HOST_ALLOW_MUTATIONS` and refuses with
+  `mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true`. Its
+  "Platform mode" scenario no longer exists. That change is not archived, so
+  its spec text is amended when it is archived (task 5.2); the contract
+  suite already follows this change (`gate.platform-unaffected` removed).
+- `OPUTE_MCP_URL` and `OPUTE_MCP_HEALTH_URL` were refused only in
+  standalone mode, as Platform settings (legacy inventory K-4). Like the
+  mode variables, they now have no effect.
+- The parity runner's `platform` profile, used by contract cases that need
+  mutations, is now the one profile with `OPUTE_HOST_ALLOW_MUTATIONS=true`.
+
 - The single profile takes the defaults the proposal lists, which are the
   standalone ones. Admission follows the D10 gate keyed on
   `OPUTE_HOST_ALLOW_MUTATIONS`.
@@ -45,12 +57,13 @@ mode selects:
   environment, and the CLI help text. A finding names the file or surface and
   the identifier.
 
-## Open questions (owner)
+## Questions the proposal left open
 
-The proposal leaves these unstated. Each changes durable state, identity or
-the published catalog, so none is guessed. Each lists a recommendation.
+The proposal left these unstated. Each changes durable state, identity or
+the published catalog, so none was guessed. The owner adopted every
+recommendation (2026-11-08); the last column is now the decision.
 
-| # | Question | Why it matters | Recommendation |
+| # | Question | Why it matters | Decision |
 | --- | --- | --- | --- |
 | N1 | Which catalog does the single profile publish? | Today platform publishes the host definitions only, and standalone adds its own. One profile can publish only one catalog. | Today's standalone catalog, which every CLI host without a mode already publishes, with the D10 gate on `OPUTE_HOST_ALLOW_MUTATIONS`. Platform-mode hosts gain the standalone tools and a new revision. |
 | N2 | Where does a host's state live by default? | The default instance id is `platform` or `standalone`, so a Platform host's state is under `instances/platform`. A 0.4.0 default of `standalone` would start such a host on empty state. | Keep `standalone` as an opaque default id (it is a directory name, not a mode). The migration adds `OPUTE_HOST_AGENT_INSTANCE=platform` to the explicit settings of every Platform-managed host. |

@@ -58,10 +58,8 @@ pub fn check(env: &Env) -> Result<()> {
     validate(&cfg)?;
     // state.Open creates tables, so check refuses next to a live agent too.
     let _lock = acquire_instance_lock(&cfg)?;
-    if cfg.agent_mode == "standalone" {
-        let mut store = StateStore::open(&cfg.standalone_state_dir)?;
-        store.close();
-    }
+    let mut store = StateStore::open(&cfg.standalone_state_dir)?;
+    store.close();
     Ok(())
 }
 
@@ -343,6 +341,19 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
         ));
     }
     let server = http_server(&cfg, authz, runtime.state.clone())?;
+    // The effective profile, once, from the agent's own settings only.
+    log_info(
+        stderr,
+        "serving profile",
+        &[
+            ("bind", &cfg.host_mcp_bind_host),
+            ("port", &cfg.host_mcp_port.to_string()),
+            (
+                "mutations",
+                if cfg.allow_mutations { "true" } else { "false" },
+            ),
+        ],
+    );
     log_info(stderr, "HTTP transport listening", &[("addr", &addr)]);
     inject_fault(fault, "listener")?;
     let result = serve(&addr, server.clone());
@@ -422,8 +433,7 @@ pub(crate) fn compose(
         format!("host-agent-{prefix}")
     };
     let identity = cfg.identity.as_ref().ok();
-    let standalone = cfg.agent_mode == "standalone";
-    let catalog = crate::catalog::for_mode(standalone);
+    let catalog = crate::catalog::served();
     let publication = publication.unwrap_or_else(|| {
         std::sync::Arc::new(crate::provider::publication::Publication::new(
             std::sync::Arc::new(crate::catalog::registry::Registry::native(
@@ -583,11 +593,7 @@ pub(crate) fn compose(
         .map_err(|e| go_err!("restore provider generations: {e}"))?;
     let server = std::sync::Arc::new(crate::transport::Server {
         instance_id: cfg.instance_id.clone(),
-        local_instance_id: if cfg.agent_mode == "standalone" {
-            cfg.standalone_instance_id.clone()
-        } else {
-            String::new()
-        },
+        local_instance_id: cfg.standalone_instance_id.clone(),
         agent_id: cfg.remote_agent_id.clone(),
         tool_prefix: prefix,
         implementation_name,
@@ -613,8 +619,7 @@ pub(crate) fn compose(
         grant_backoff: crate::oauth::Backoff::default(),
         catalog: publication,
         providers,
-        standalone,
-        allow_mutations: cfg.standalone_allow_mutations,
+        allow_mutations: cfg.allow_mutations,
         host,
         tasks,
         task_workers: std::sync::Mutex::new(Vec::new()),
@@ -794,7 +799,6 @@ mod tests {
             ("HOME", dir.join("home").to_str().unwrap()),
             ("XDG_CONFIG_HOME", dir.join("xdg").to_str().unwrap()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-test"),
-            ("OPUTE_AGENT_MODE", "standalone"),
             (
                 "OPUTE_STANDALONE_STATE_DIR",
                 dir.join("state").to_str().unwrap(),
@@ -883,6 +887,9 @@ mod tests {
             log.contains(" level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:1\n"),
             "{log}"
         );
+        // The effective profile, once, from the agent's own settings.
+        let profile = " level=INFO msg=\"serving profile\" bind=127.0.0.1 port=1 mutations=false\n";
+        assert_eq!(log.matches(profile).count(), 1, "{log}");
         let files = listing(dir.path());
         assert!(files.contains(&"state/authz.sqlite".to_string()));
         assert!(
@@ -931,13 +938,10 @@ mod tests {
     }
 
     #[test]
-    fn check_opens_state_only_in_standalone() {
+    fn check_opens_state() {
         let dir = tempfile::tempdir().unwrap();
         check(&env(dir.path(), &[])).unwrap();
         assert!(dir.path().join("state/state.db").exists());
-        let dir = tempfile::tempdir().unwrap();
-        check(&env(dir.path(), &[("OPUTE_AGENT_MODE", "platform")])).unwrap();
-        assert!(!dir.path().join("state/state.db").exists());
     }
 
     fn refusal(root: &std::path::Path) -> String {

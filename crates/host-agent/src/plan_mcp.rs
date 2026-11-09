@@ -1005,13 +1005,6 @@ pub fn handle_operation(server: &Server, name: &str, args: &Map<String, J>) -> J
             return result;
         }
     }
-    if !server.standalone {
-        return crate::tools::capability_error(
-            "capability",
-            "not_implemented",
-            &format!("{name} is not implemented by this Host Agent build"),
-        );
-    }
     let state = match server.host.state.lock() {
         Ok(state) => state,
         Err(_) => return crate::tools::error_result("durable operation state is unavailable"),
@@ -1083,7 +1076,7 @@ mod tests {
 
     #[test]
     fn validate_reports_levels_and_hash_for_a_valid_plan() {
-        let snapshot = crate::catalog::for_mode(true);
+        let snapshot = crate::catalog::served();
         let doc = sample_plan();
         let result = validate_host_plan_with_snapshot(&doc, snapshot).unwrap();
         assert_eq!(result["valid"], J::Bool(true));
@@ -1101,7 +1094,7 @@ mod tests {
 
     #[test]
     fn capabilities_carry_d19_aliases_with_go_descriptors() {
-        let snapshot = crate::catalog::for_mode(true);
+        let snapshot = crate::catalog::served();
         let capabilities = capabilities_from_snapshot(snapshot);
         let alias = &capabilities["put_k8s_secret"];
         assert_eq!(alias.name, "put_k8s_secret");
@@ -1128,7 +1121,7 @@ mod tests {
 
     #[test]
     fn validate_rejects_a_cycle_before_hashing() {
-        let snapshot = crate::catalog::for_mode(true);
+        let snapshot = crate::catalog::served();
         let mut doc = sample_plan();
         doc.nodes[0].depends_on.push("n1".to_string());
         assert!(validate_host_plan_with_snapshot(&doc, snapshot).is_err());
@@ -1136,7 +1129,7 @@ mod tests {
 
     #[test]
     fn handle_validate_host_plan_requires_a_plan_argument() {
-        let snapshot = crate::catalog::for_mode(true);
+        let snapshot = crate::catalog::served();
         let result = handle_validate_host_plan(&Map::new(), snapshot);
         assert_eq!(result["isError"], J::Bool(true));
     }
@@ -1159,7 +1152,6 @@ mod tests {
             ("HOME", home.as_str()),
             ("XDG_CONFIG_HOME", xdg.as_str()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-test"),
-            ("OPUTE_AGENT_MODE", "standalone"),
             ("OPUTE_STANDALONE_STATE_DIR", state.as_str()),
             ("HOST_MCP_BIND_HOST", "127.0.0.1"),
             ("HOST_MCP_PORT", "1"),

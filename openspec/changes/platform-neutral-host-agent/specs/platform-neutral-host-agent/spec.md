@@ -17,6 +17,10 @@ its effective bind, port and mutation policy once, from its own settings only.
 - **WHEN** the operator sets bind `0.0.0.0`, port `3004` and mutations `true`
 - **THEN** the agent serves there with mutations admitted, and behaves like any other host configured the same way
 
+#### Scenario: Mutations not enabled
+- **WHEN** a client calls a tool whose effect is not `read` and `OPUTE_HOST_ALLOW_MUTATIONS` is not `true`
+- **THEN** the call returns the error result `mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true` before any effect
+
 #### Scenario: The effective configuration is visible
 - **WHEN** the agent starts
 - **THEN** it logs its effective bind, port and mutation policy once, from its own settings only

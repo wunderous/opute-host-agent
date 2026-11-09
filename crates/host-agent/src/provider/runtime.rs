@@ -1028,10 +1028,8 @@ mod tests {
             time::Duration,
         };
         let directory = tempfile::tempdir().unwrap();
-        let environment = crate::config::Env::from_pairs([
-            ("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner"),
-            ("OPUTE_AGENT_MODE", "standalone"),
-        ]);
+        let environment =
+            crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
         let config = crate::config::Config::load(&environment);
         let state = Arc::new(Mutex::new(StateStore::open(directory.path()).unwrap()));
         let auth = crate::store::AuthzStore::open(directory.path(), "fixture-secret").unwrap();
@@ -1140,20 +1138,11 @@ mod tests {
         for row in rows.as_array().unwrap() {
             let input = &row["runtime"];
             let directory = tempfile::tempdir().unwrap();
-            let environment = crate::config::Env::from_pairs([
-                ("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner"),
-                (
-                    "OPUTE_AGENT_MODE",
-                    if input["standalone"].as_bool().unwrap() {
-                        "standalone"
-                    } else {
-                        "platform"
-                    },
-                ),
-            ]);
+            let environment =
+                crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
             let mut config = crate::config::Config::load(&environment);
             config.prefix_tool_names = false;
-            config.standalone_allow_mutations = true;
+            config.allow_mutations = true;
             config.mcp_auth_token = "provider-runtime-bearer".into();
             config.host_resource_lock_dir = directory.path().join("locks");
             config.host_resource_disk_paths = vec![directory.path().to_string_lossy().into_owned()];
