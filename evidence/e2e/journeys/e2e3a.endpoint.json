@@ -17,7 +17,7 @@
    },
    "providerK3s": {
     "path": "${PARITY}/e2e/release/rust-endpoint/opute-provider-k3s-linux-x64",
-    "sha256": "8a024c6aac681a108396d331ae2cd02f3377c51e6ea89f2039c46ede9e617e87"
+    "sha256": "51c5a28292063387c0608e6c25a7ed5b44e1c46007fc885fc588093519abe48e"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
@@ -1338,7 +1338,7 @@
   },
   {
    "id": "untouched",
-   "guest": "ip=$(incus list e2e-k1 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k3 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk '{print $1}' | sort -u | tr '\\n' ' '; echo; incus network get incusbr0 raw.dnsmasq | grep -c 'host-record=k3s.e2e.test,'"
+   "guest": "ip=$(incus list e2e-k1 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k3 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk '{print $1}' | sort -u | tr '\\n' ' '; echo; incus network get incusbr0 raw.dnsmasq | grep -c 'host-record=k3s.e2e.test,'"
   },
   {
    "id": "info3",
@@ -1401,7 +1401,7 @@
   },
   {
    "id": "sansIn",
-   "guest": "ip=$(incus list e2e-k1 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k3 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test';"
+   "guest": "ip=$(incus list e2e-k1 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k3 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test';"
   },
   {
    "id": "resolvesIn",
@@ -1659,7 +1659,7 @@
   },
   {
    "id": "resolvesRetired",
-   "guest": "incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk '{print $1}' | sort -u | tr '\\n' ' '; echo; incus network get incusbr0 raw.dnsmasq | grep -c 'host-record=k3s.e2e.test,'; incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | grep -c -F '${K3_IP}'"
+   "guest": "incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk '{print $1}' | sort -u | tr '\\n' ' '; echo; incus network get incusbr0 raw.dnsmasq | grep -c 'host-record=k3s.e2e.test,'; incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk -v ip='${K3_IP}' '$1 == ip' | wc -l"
   },
   {
    "id": "verifyRetiredCall",
@@ -1753,7 +1753,7 @@
   },
   {
    "id": "sansOut",
-   "guest": "ip=$(incus list e2e-k1 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test';"
+   "guest": "ip=$(incus list e2e-k1 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test';"
   },
   {
    "id": "resolvesOut",

@@ -518,7 +518,10 @@ def count(step: str, path: str, n: int) -> list[dict]:
 def sans(names: tuple[str, ...]) -> str:
     """Per server: 1 when its serving certificate (at its own address, SNI the hostname) lists the hostname."""
     return " ".join(
-        f"ip=$(incus list {n} -c 4 -f csv | cut -d' ' -f1); echo | timeout 10 openssl s_client -connect $ip:6443 "
+        # eth0's IPv4 only: a K3s server's address column also lists its CNI interfaces.
+        f"ip=$(incus list {n} -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; "
+        f"print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); "
+        f"echo | timeout 10 openssl s_client -connect $ip:6443 "
         f"-servername {HOST} 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | "
         f"grep -c 'DNS:{HOST}';" for n in names)
 
@@ -568,7 +571,7 @@ def j5() -> dict:
         # retire it
         *task("retire", K + "remove-node", {**CL, "nodeName": "e2e-k3", "role": "server"}, timeout=600),
         {"id": "resolvesRetired", "guest": resolved() + "; incus exec e2e-k1 -- getent ahostsv4 " + HOST +
-                                           " | grep -c -F '${K3_IP}'"},
+                                           " | awk -v ip='${K3_IP}' '$1 == ip' | wc -l"},
         *task("verifyRetired", K + "ensure-ha-endpoint", {**CL, **EP}),
         # opt out
         *task("optOut", K + "remove-cluster-endpoint", CL, timeout=900),
