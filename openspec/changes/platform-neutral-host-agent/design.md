@@ -48,6 +48,16 @@ mode selects:
   probe sends nothing and its observation is `verified: false`,
   `authorizationMode: "unverified"`. An origin probe does not fail on that.
   The provider's callback over a public route still needs a client.
+- N5 applies equally to the recorded deploy unit
+  (`deploy/opute-bootstrap-mcp.service`, pinned by the distribution
+  contract). It runs `--mode standalone` and enables mutations with
+  `OPUTE_STANDALONE_ALLOW_MUTATIONS=true`. On 0.4.0 it would fail to start
+  (unknown flag) and, once fixed, would lose mutations. Before 0.4.0
+  ships, both the npm launcher and the deploy unit drop `--mode`, and the
+  unit sets `OPUTE_HOST_ALLOW_MUTATIONS=true` next to the old variable
+  (both settings sets, as for rollback). Those files belong to their own
+  repositories and change at an explicit cutover. This change records the
+  prerequisite and does not edit them.
 - The parity runner's `platform` profile, used by contract cases that need
   mutations, is now the one profile with `OPUTE_HOST_ALLOW_MUTATIONS=true`.
 

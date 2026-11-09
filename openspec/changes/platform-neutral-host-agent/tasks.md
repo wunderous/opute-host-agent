@@ -42,6 +42,11 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 
 ## 4. Journeys
 
+- [ ] 4.0 Prerequisites outside this repository (owned by the release
+  owners): the npm launcher and the recorded deploy unit drop `--mode`; the
+  unit adds `OPUTE_HOST_ALLOW_MUTATIONS=true`. The e2e harness's guest tool
+  stops passing `--mode` (old binaries default to the same profile).
+
 - [ ] 4.1 e2e-1 runs the single profile only.
 - [ ] 4.2 A step proves the old variable has no effect.
 - [ ] 4.3 e2e4.cutover rolls back across 0.4.0 and 0.3.x with both settings
