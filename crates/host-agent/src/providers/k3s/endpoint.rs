@@ -236,24 +236,43 @@ fn delete_record(incus: Incus, via: &str) -> Result<(), String> {
 }
 
 /// The Incus network the instance's `eth0` is attached to.
+/// The Incus managed network an instance's eth0 is on: the device's
+/// `network`, or the `parent` of a bridged NIC when that bridge is a managed
+/// network (the default profile attaches eth0 that way). Only a managed
+/// network takes `raw.dnsmasq`.
 pub(super) fn network_of(incus: Incus, instance: &str) -> Result<String, String> {
     let raw = incus(&["list", instance, "--format", "json"], None)
         .map_err(|e| format!("inspect {instance}'s network: {e}"))?;
     let doc: J = serde_json::from_slice(&raw).map_err(|e| format!("decode {instance}: {e}"))?;
-    let found = doc
+    let eth0 = doc
         .as_array()
         .into_iter()
         .flatten()
         .find(|i| i["name"] == instance)
-        .and_then(|i| i["expanded_devices"]["eth0"]["network"].as_str())
-        .unwrap_or("")
-        .to_string();
-    if found.is_empty() {
-        return Err(format!(
-            "{instance} has no eth0 on an Incus managed network"
-        ));
+        .map(|i| i["expanded_devices"]["eth0"].clone())
+        .unwrap_or(J::Null);
+    let refused = || format!("{instance} has no eth0 on an Incus managed network");
+    if let Some(network) = eth0["network"].as_str().filter(|n| !n.is_empty()) {
+        return Ok(network.to_string());
     }
-    Ok(found)
+    let parent = match (eth0["nictype"].as_str(), eth0["parent"].as_str()) {
+        (Some("bridged"), Some(parent)) if !parent.is_empty() => parent.to_string(),
+        _ => return Err(refused()),
+    };
+    let raw = incus(&["network", "list", "--format", "json"], None)
+        .map_err(|e| format!("list Incus networks: {e}"))?;
+    let networks: J =
+        serde_json::from_slice(&raw).map_err(|e| format!("decode Incus networks: {e}"))?;
+    let managed = networks
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|n| n["name"] == parent.as_str() && n["managed"] == true);
+    if managed {
+        Ok(parent)
+    } else {
+        Err(refused())
+    }
 }
 
 fn begin(cluster: &str) -> String {
@@ -732,6 +751,8 @@ mod tests {
         ready: BTreeMap<String, bool>,
         /// Servers that never come back after a restart.
         stuck: Vec<String>,
+        /// Every instance's eth0 device.
+        eth0: J,
     }
 
     impl Cluster {
@@ -741,6 +762,9 @@ mod tests {
                 c.ready.insert(name.into(), true);
             }
             c.dnsmasq = "dhcp-option=6,1.1.1.1".into();
+            // As Incus's default profile attaches it.
+            c.eth0 =
+                json!({"name": "eth0", "nictype": "bridged", "parent": "incusbr0", "type": "nic"});
             c
         }
 
@@ -776,8 +800,11 @@ mod tests {
                     text("deleted")
                 }
                 ["list", name, "--format", "json"] => text(
-                    &json!([{"name": name,
-                    "expanded_devices": {"eth0": {"network": "incusbr0"}}}])
+                    &json!([{"name": name, "expanded_devices": {"eth0": self.eth0}}]).to_string(),
+                ),
+                ["network", "list", "--format", "json"] => text(
+                    &json!([{"name": "incusbr0", "managed": true},
+                            {"name": "br-host", "managed": false}])
                     .to_string(),
                 ),
                 ["network", "get", "incusbr0", "raw.dnsmasq"] => {
@@ -1115,5 +1142,33 @@ mod tests {
         assert_eq!(merge_dnsmasq(&merged, "c", "h.test", None), "a=1\nb=2");
         let other = merge_dnsmasq(&merged, "d", "i.test", Some(&["10.0.0.2".to_string()]));
         assert!(merge_dnsmasq(&other, "c", "h.test", None).contains("host-record=i.test,10.0.0.2"));
+    }
+
+    #[test]
+    fn the_network_is_the_nics_managed_network_or_bridge() {
+        let mut cluster = Cluster::new();
+        let mut incus = |a: &[&str], i: Option<&[u8]>| cluster.run(a, i);
+        assert_eq!(network_of(&mut incus, "e2e-k1").unwrap(), "incusbr0");
+
+        let mut cluster = Cluster::new();
+        cluster.eth0 = json!({"network": "incusbr0", "type": "nic"});
+        let mut incus = |a: &[&str], i: Option<&[u8]>| cluster.run(a, i);
+        assert_eq!(network_of(&mut incus, "e2e-k1").unwrap(), "incusbr0");
+
+        // A host bridge Incus does not manage has no dnsmasq to configure.
+        for eth0 in [
+            json!({"nictype": "bridged", "parent": "br-host", "type": "nic"}),
+            json!({"nictype": "macvlan", "parent": "incusbr0", "type": "nic"}),
+            J::Null,
+        ] {
+            let mut cluster = Cluster::new();
+            cluster.eth0 = eth0;
+            let mut incus = |a: &[&str], i: Option<&[u8]>| cluster.run(a, i);
+            let error = network_of(&mut incus, "e2e-k1").unwrap_err();
+            assert!(
+                error.contains("no eth0 on an Incus managed network"),
+                "{error}"
+            );
+        }
     }
 }
