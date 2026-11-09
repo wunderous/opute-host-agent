@@ -831,6 +831,11 @@ fn probe_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
         let public_url = format!("https://{hostname}/mcp");
         match authenticated_public_tools_list(&public_url) {
             Ok(listed) => probes.push(listed),
+            // N4: with no machine client the route is reported unverified.
+            Err(e) if e == NO_PROBE_CLIENT => {
+                ready = false;
+                probes.push(crate::mcpprobe::unverified(&public_url));
+            }
             Err(e) => {
                 ready = false;
                 probes.push(json!({"endpoint": public_url, "ready": false, "error": e}));
@@ -890,15 +895,26 @@ fn authenticated_public_tools_list(resource_url: &str) -> Result<J, String> {
     Ok(json!({"endpoint": resource_url, "ready": true, "tools": tools}))
 }
 
-/// The audience-bound credential an HTTPS Host Agent endpoint requires; a
-/// local MCP_AUTH_TOKEN is never sent to a public route.
+/// The error when no machine client is configured to mint with.
+const NO_PROBE_CLIENT: &str = "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)";
+
+/// The audience-bound credential an HTTPS Host Agent endpoint requires,
+/// minted as the first configured machine client; a local MCP_AUTH_TOKEN is
+/// never sent to a public route.
 fn mint_public_host_agent_token(resource_url: &str) -> Result<String, String> {
+    let Some((client_id, client_secret)) =
+        crate::oauth::probe_credential(&crate::config::Env::from_process())
+    else {
+        return Err(NO_PROBE_CLIENT.into());
+    };
     let token_url = format!(
         "{}/oauth/token",
         resource_url.strip_suffix("/mcp").unwrap_or(resource_url)
     );
     let form = format!(
-        "grant_type=client_credentials&client_id=opute-mcp-host&resource={}",
+        "grant_type=client_credentials&client_id={}&client_secret={}&resource={}",
+        query_escape(&client_id),
+        query_escape(&client_secret),
         query_escape(resource_url)
     );
     let response = super::support::http_do(HttpRequest {

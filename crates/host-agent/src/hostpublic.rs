@@ -16,7 +16,9 @@ use crate::config::Env;
 use crate::goerr::{errno_text, path_error, shell_quote};
 use crate::hostfiles::{ensure_host_file, require_shared_host_owner, Owner};
 use crate::hostread::{clean, home_dir, host_owned_path, sha256_label};
-use crate::mcpprobe::{is_loopback_ip, probe_authenticated, validate_endpoint, GoUrl};
+use crate::mcpprobe::{
+    is_loopback_ip, is_unverified, probe_authenticated, validate_endpoint, GoUrl,
+};
 use crate::plan::runner::RunCtx;
 
 const DEFAULT_ARTIFACT_URI: &str =
@@ -332,10 +334,11 @@ fn sleep_or_cancel(ctx: &RunCtx, delay: Duration) -> Result<(), String> {
 
 /// `probePublicMCPWithRetry`: bounded retries across the DNS publication
 /// race, keeping the final typed error.
-fn probe_with_retry(ctx: &RunCtx, endpoint: &str) -> Result<J, String> {
+fn probe_with_retry(env: &Env, ctx: &RunCtx, endpoint: &str) -> Result<J, String> {
     let deadline = Instant::now() + PROBE_RETRY_WINDOW;
+    let client = crate::oauth::probe_credential(env);
     loop {
-        let last = match probe_authenticated(endpoint, "") {
+        let last = match probe_authenticated(endpoint, "", client.as_ref()) {
             Ok(result) => return Ok(result),
             Err(e) => e,
         };
@@ -353,10 +356,12 @@ fn probe_with_retry(ctx: &RunCtx, endpoint: &str) -> Result<J, String> {
 }
 
 /// The origin probe both tunnel kinds run once the service is started.
-fn probe_origin(local_target: &str, what: &str) -> Result<J, String> {
-    let origin = probe_authenticated(local_target, "")
+/// An origin the agent cannot authenticate to is reported unverified (N4).
+fn probe_origin(env: &Env, local_target: &str, what: &str) -> Result<J, String> {
+    let client = crate::oauth::probe_credential(env);
+    let origin = probe_authenticated(local_target, "", client.as_ref())
         .map_err(|e| format!("probe public MCP {what}origin: {e}"))?;
-    if origin.get("ready") != Some(&J::Bool(true)) {
+    if origin.get("ready") != Some(&J::Bool(true)) && !is_unverified(&origin) {
         return Err(format!("public MCP {what}origin is not ready"));
     }
     Ok(origin)
@@ -566,8 +571,8 @@ pub fn ensure_public_mcp_tunnel(
     }
     // An MCP resource answers GET with 405, so the origin gets the same
     // authenticated tools/list probe as the public endpoint.
-    let origin = probe_origin(&local_target, "")?;
-    let public = probe_with_retry(ctx, &endpoint)
+    let origin = probe_origin(env, &local_target, "")?;
+    let public = probe_with_retry(env, ctx, &endpoint)
         .map_err(|e| format!("probe authenticated public MCP endpoint: {e}"))?;
     Ok(json!({
         "contractVersion": CONTRACT_VERSION,
@@ -982,13 +987,14 @@ pub fn ensure_public_mcp_quick_tunnel(
     };
     set_host_service_state(env, owner, &paths.service_name, state, &paths.scope)
         .map_err(|e| format!("start public MCP quick connector service: {e}"))?;
-    let origin = probe_origin(&local_target, "quick ")?;
+    let origin = probe_origin(env, &local_target, "quick ")?;
 
     let mut endpoint = String::new();
     if !unit_changed && active {
         endpoint = read_quick_state(&paths, binding_id, &local_target);
         if !endpoint.is_empty() {
-            if let Ok(public) = probe_authenticated(&endpoint, "") {
+            let client = crate::oauth::probe_credential(env);
+            if let Ok(public) = probe_authenticated(&endpoint, "", client.as_ref()) {
                 return Ok(quick_observation(
                     &paths,
                     &local_target,
@@ -1015,7 +1021,7 @@ pub fn ensure_public_mcp_quick_tunnel(
         }
         endpoint = wait_for_quick_endpoint(ctx, &paths.log_file)?;
     }
-    let public = probe_with_retry(ctx, &endpoint)
+    let public = probe_with_retry(env, ctx, &endpoint)
         .map_err(|e| format!("probe authenticated public MCP quick endpoint: {e}"))?;
     write_quick_state(owner, &paths, binding_id, &local_target, &endpoint)
         .map_err(|e| format!("record public MCP quick tunnel endpoint: {e}"))?;

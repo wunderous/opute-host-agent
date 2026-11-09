@@ -1032,7 +1032,7 @@ mod tests {
             crate::config::Env::from_pairs([("OPUTE_REMOTE_AGENT_ID", "parity.runtime.owner")]);
         let config = crate::config::Config::load(&environment);
         let state = Arc::new(Mutex::new(StateStore::open(directory.path()).unwrap()));
-        let auth = crate::store::AuthzStore::open(directory.path(), "fixture-secret").unwrap();
+        let auth = crate::store::AuthzStore::open(directory.path(), &[]).unwrap();
         let server = crate::app::http_server(&config, auth, state).unwrap();
         server.providers.bind(&server);
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -1148,8 +1148,7 @@ mod tests {
             config.host_resource_disk_paths = vec![directory.path().to_string_lossy().into_owned()];
             config.host_resource_memory_capacity = 64 * 1024 * 1024 * 1024;
             let state = Arc::new(Mutex::new(StateStore::open(directory.path()).unwrap()));
-            let auth = crate::store::AuthzStore::open(directory.path(), "provider-runtime-secret")
-                .unwrap();
+            let auth = crate::store::AuthzStore::open(directory.path(), &[]).unwrap();
             let server = crate::app::http_server(&config, auth, state).unwrap();
             server.providers.bind(&server);
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

@@ -1161,8 +1161,7 @@ mod tests {
         let runtime = crate::app::new_runtime(&env).unwrap();
         let cfg = runtime.config.clone();
         let authz =
-            crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.opute_client_secret)
-                .unwrap();
+            crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.oauth_clients).unwrap();
         crate::app::http_server(&cfg, authz, runtime.state.clone()).unwrap()
     }
 

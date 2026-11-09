@@ -158,7 +158,8 @@ pub struct Config {
     pub remote_agent_id: String,
     pub identity: std::result::Result<Identity, String>,
     pub mcp_auth_token: String,
-    pub opute_client_secret: String,
+    /// `OPUTE_OAUTH_CLIENTS`: configured machine client ids.
+    pub oauth_clients: Vec<String>,
     pub provider_id: String,
     pub host_resource_lock_dir: PathBuf,
     pub host_resource_max_normal: i64,
@@ -313,10 +314,8 @@ impl Config {
             remote_agent_id: env.value("OPUTE_REMOTE_AGENT_ID").trim().to_string(),
             identity: identity::read_identity(env),
             mcp_auth_token: env.value("MCP_AUTH_TOKEN").trim().to_string(),
-            opute_client_secret: env
-                .value("OPUTE_HOST_OAUTH_CLIENT_SECRET")
-                .trim()
-                .to_string(),
+            oauth_clients: crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+                .unwrap_or_default(),
             provider_id: "incus".into(),
             host_resource_lock_dir: PathBuf::from(
                 env.value_or(
@@ -426,6 +425,8 @@ impl Config {
                 quote(&self.ownership_mode)
             ));
         }
+        crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+            .map_err(|e| go_err!("{e}"))?;
         if self.remote_agent_id.trim().is_empty() {
             return Err(go_err!(
                 "OPUTE_REMOTE_AGENT_ID is required; the host agent must be onboarded with one canonical id"

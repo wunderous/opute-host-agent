@@ -32,6 +32,22 @@ mode selects:
 - `OPUTE_MCP_URL` and `OPUTE_MCP_HEALTH_URL` were refused only in
   standalone mode, as Platform settings (legacy inventory K-4). Like the
   mode variables, they now have no effect.
+- `OPUTE_OAUTH_CLIENTS` is comma-separated `id` or `id:scopes`; `mcp` is
+  the only scope the issuer has, so another scope, a duplicate, an empty
+  entry or a built-in id fails the start. Each listed client gets a
+  generated secret in the credentials directory, as provisioning already
+  did, and `oauth rotate-secret` accepts it. A machine client no longer
+  listed is deprovisioned at start (tokens revoked, row and credential
+  removed), which also removes the earlier default client from upgraded
+  hosts. `OPUTE_HOST_OAUTH_CLIENT_SECRET` (that client's operator secret)
+  has no effect.
+- The agent's probes (`ensure_public_mcp_tunnel`, the quick tunnel, the
+  Cloudflare provider's public check) mint as the first listed client with
+  its secret. Before this change they sent the old client id without a
+  secret, which the issuance contract refuses. With no client listed, a
+  probe sends nothing and its observation is `verified: false`,
+  `authorizationMode: "unverified"`. An origin probe does not fail on that.
+  The provider's callback over a public route still needs a client.
 - The parity runner's `platform` profile, used by contract cases that need
   mutations, is now the one profile with `OPUTE_HOST_ALLOW_MUTATIONS=true`.
 

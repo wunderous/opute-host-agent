@@ -1025,7 +1025,7 @@ pub struct AuthzStore {
 
 impl AuthzStore {
     /// `authz.Open`: open `authz.sqlite` and register the two built-in clients.
-    pub fn open(dir: &Path, opute_secret: &str) -> Result<AuthzStore> {
+    pub fn open(dir: &Path, clients: &[String]) -> Result<AuthzStore> {
         let dir = if dir.as_os_str().to_string_lossy().trim().is_empty() {
             std::env::temp_dir()
         } else {
@@ -1048,7 +1048,7 @@ impl AuthzStore {
         // provisioned secrets, and the one-time revocation of earlier tokens.
         // Go re-registers the built-ins on every open; here `prepare` owns
         // them so a restart never resets a provisioned secret.
-        crate::oauth::prepare(store.conn(), &dir, opute_secret)
+        crate::oauth::prepare(store.conn(), &dir, clients)
             .map_err(|e| go_err!("prepare oauth issuance: {e}"))?;
         Ok(store)
     }
@@ -1576,39 +1576,30 @@ mod tests {
     #[test]
     fn authz_restart_keeps_provisioned_secrets() {
         let dir = tempfile::tempdir().unwrap();
-        AuthzStore::open(dir.path(), "").unwrap().close();
+        let clients = ["ci-runner".to_string()];
+        AuthzStore::open(dir.path(), &clients).unwrap().close();
         let read = || {
-            ["opute-mcp-host", "host-agent-provider"].map(|c| {
+            ["ci-runner", "host-agent-provider"].map(|c| {
                 std::fs::read_to_string(dir.path().join("credentials").join(format!("{c}.json")))
                     .unwrap()
             })
         };
         let before = read();
-        AuthzStore::open(dir.path(), "").unwrap().close();
+        AuthzStore::open(dir.path(), &clients).unwrap().close();
         assert_eq!(read(), before);
     }
 
     #[test]
     fn authz_open_registers_builtin_clients_once() {
         let dir = tempfile::tempdir().unwrap();
-        AuthzStore::open(dir.path(), "").unwrap().close();
-        AuthzStore::open(dir.path(), "secret").unwrap().close();
+        AuthzStore::open(dir.path(), &[]).unwrap().close();
+        AuthzStore::open(dir.path(), &[]).unwrap().close();
         let conn = Connection::open(dir.path().join("authz.sqlite")).unwrap();
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM clients", [], |r| r.get(0))
             .unwrap();
-        // Go's two built-ins plus host-agent-provider (oauth-issuance, D8).
-        assert_eq!(count, 3);
-        let hash: String = conn
-            .query_row(
-                "SELECT secret_hash FROM clients WHERE client_id='opute-mcp-host'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(
-            hash,
-            hex::encode(<sha2::Sha256 as sha2::Digest>::digest("secret"))
-        );
+        // The bootstrap client and host-agent-provider (oauth-issuance, D8);
+        // no machine client unless OPUTE_OAUTH_CLIENTS lists one.
+        assert_eq!(count, 2);
     }
 }

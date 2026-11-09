@@ -15,7 +15,7 @@ fn durable_projection() {
     let cfg = crate::config::Config::load(&env);
     let directory = std::env::var("OPUTE_STANDALONE_STATE_DIR").unwrap();
     let state = Arc::new(Mutex::new(StateStore::open(Path::new(&directory)).unwrap()));
-    let authz = AuthzStore::open(Path::new(&directory), "fixture-auth-secret").unwrap();
+    let authz = AuthzStore::open(Path::new(&directory), &[]).unwrap();
     let server = crate::app::http_server(&cfg, authz, state).unwrap();
     let catalog_snapshot = server.catalog.snapshot();
     let mut projected = Map::new();

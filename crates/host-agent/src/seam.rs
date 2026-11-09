@@ -58,7 +58,7 @@ fn server(dir: &std::path::Path) -> Arc<Server> {
         cfg.standalone_state_dir.clone()
     };
     std::fs::create_dir_all(&authz_dir).unwrap();
-    let authz = crate::store::AuthzStore::open(&authz_dir, &cfg.opute_client_secret).unwrap();
+    let authz = crate::store::AuthzStore::open(&authz_dir, &cfg.oauth_clients).unwrap();
     crate::app::compose(&cfg, authz, runtime.state.clone(), None).unwrap()
 }
 

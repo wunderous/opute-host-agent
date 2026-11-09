@@ -296,9 +296,7 @@ mod tests {
                 let store = Arc::new(Mutex::new(
                     crate::store::StateStore::open(directory.path()).unwrap(),
                 ));
-                let auth =
-                    crate::store::AuthzStore::open(directory.path(), "publication-fixture-secret")
-                        .unwrap();
+                let auth = crate::store::AuthzStore::open(directory.path(), &[]).unwrap();
                 let server =
                     crate::app::compose(&config, auth, store, Some(owner.clone())).unwrap();
                 let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

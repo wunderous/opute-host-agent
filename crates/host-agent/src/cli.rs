@@ -288,8 +288,8 @@ boundary. Start the agent once before using it.
   consents                         list remembered approvals
   revoke-consent CLIENT RESOURCE   forget an approval and revoke the client's tokens for it
   revoke-client CLIENT             revoke every token issued to a client
-  rotate-secret CLIENT             new secret for host-agent-provider or opute-mcp-host;
-                                   revokes the client's tokens
+  rotate-secret CLIENT             new secret for host-agent-provider or a client in
+                                   OPUTE_OAUTH_CLIENTS; revokes the client's tokens
 ";
 
 /// `opute-host-agent oauth ...`: the operator's approval channel.
@@ -437,10 +437,12 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
         "rotate-secret" => {
             need(1)?;
             let client = pos[0].as_str();
-            if client != crate::oauth::PROVIDER_CLIENT_ID && client != crate::oauth::OPUTE_CLIENT_ID
+            let configured = crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+                .map_err(goerr::Error)?;
+            if client != crate::oauth::PROVIDER_CLIENT_ID && !configured.iter().any(|c| c == client)
             {
                 return Err(go_err!(
-                    "rotate-secret applies to host-agent-provider and opute-mcp-host"
+                    "rotate-secret applies to host-agent-provider and the clients in OPUTE_OAUTH_CLIENTS"
                 ));
             }
             crate::oauth::rotate_secret(&conn, &dir, client, "rotate-secret")
@@ -449,14 +451,6 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
                 "rotated {client}; new secret in {}\n",
                 crate::oauth::credential_path(&dir, client).display()
             ));
-            if client == crate::oauth::OPUTE_CLIENT_ID
-                && !env
-                    .value("OPUTE_HOST_OAUTH_CLIENT_SECRET")
-                    .trim()
-                    .is_empty()
-            {
-                out.push_str("note: OPUTE_HOST_OAUTH_CLIENT_SECRET is set; the agent re-applies it on its next start\n");
-            }
         }
         other => {
             return Err(go_err!(

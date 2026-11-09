@@ -34,7 +34,9 @@ use serde_json::{json, Value as J};
 use sha2::{Digest, Sha256};
 
 pub const PROVIDER_CLIENT_ID: &str = "host-agent-provider";
-pub const OPUTE_CLIENT_ID: &str = "opute-mcp-host";
+/// Operator setting: the machine clients this host provisions, comma-separated
+/// `id` or `id:scopes` (space-separated; only `mcp` exists). Empty by default.
+pub const CLIENTS_ENV: &str = "OPUTE_OAUTH_CLIENTS";
 pub const BOOTSTRAP_CLIENT_ID: &str = "host-agent-bootstrap";
 const MIGRATION_ID: &str = "oauth-issuance.v1";
 pub const ACCESS_TOKEN_TTL: i64 = 3600;
@@ -247,13 +249,83 @@ fn provision(conn: &Connection, state_dir: &Path, client_id: &str) -> Result<(),
     )
 }
 
-/// Redirect URIs Go registers for a built-in confidential client.
-fn builtin_redirects(client_id: &str) -> &'static str {
-    if client_id == OPUTE_CLIENT_ID {
-        r#"["https://127.0.0.1/oauth/callback"]"#
-    } else {
-        "[]"
+/// A machine client uses `client_credentials` only: it has no redirects.
+fn builtin_redirects(_client_id: &str) -> &'static str {
+    "[]"
+}
+
+/// `OPUTE_OAUTH_CLIENTS`: the configured machine client ids, in order. An
+/// unknown scope, a duplicate, an empty entry, a malformed id or a built-in
+/// id is refused, so a typo fails the start instead of provisioning nothing.
+pub fn parse_clients(raw: &str) -> Result<Vec<String>, String> {
+    if raw.trim().is_empty() {
+        return Ok(Vec::new());
     }
+    let mut ids: Vec<String> = Vec::new();
+    for entry in raw.split(',') {
+        let (id, scopes) = entry.split_once(':').unwrap_or((entry, "mcp"));
+        let id = id.trim();
+        let valid = !id.is_empty()
+            && id.len() <= 64
+            && id
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b));
+        if !valid {
+            return Err(format!(
+                "{CLIENTS_ENV}: invalid client id {}",
+                crate::goerr::quote(id)
+            ));
+        }
+        if id == PROVIDER_CLIENT_ID || id == BOOTSTRAP_CLIENT_ID {
+            return Err(format!("{CLIENTS_ENV}: {id} is a built-in client"));
+        }
+        if let Some(scope) = scopes.split_whitespace().find(|s| *s != "mcp") {
+            return Err(format!(
+                "{CLIENTS_ENV}: client {id} asks for unknown scope {} (only mcp exists)",
+                crate::goerr::quote(scope)
+            ));
+        }
+        if ids.iter().any(|known| known == id) {
+            return Err(format!("{CLIENTS_ENV}: client {id} is listed twice"));
+        }
+        ids.push(id.to_string());
+    }
+    Ok(ids)
+}
+
+/// The credential this host's own probes mint with: the first configured
+/// machine client and the secret in its credential file. None when no client
+/// is configured (N4: the probe then reports the route unverified).
+pub fn probe_credential(env: &crate::config::Env) -> Option<(String, String)> {
+    let id = parse_clients(&env.get(CLIENTS_ENV))
+        .ok()?
+        .into_iter()
+        .next()?;
+    let cfg = crate::config::Config::load(env);
+    let dir = if cfg.standalone_state_dir.as_os_str().is_empty() {
+        cfg.instance_root
+    } else {
+        cfg.standalone_state_dir
+    };
+    let file = read_credential(&credential_path(&dir, &id))?;
+    Some((id, file.client_secret))
+}
+
+/// Drop a machine client this host provisioned that is no longer
+/// configured: its tokens, its row and its credential file.
+fn deprovision(conn: &Connection, state_dir: &Path, client_id: &str) -> Result<(), String> {
+    let revoked = revoke_client_tokens(conn, client_id).map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM clients WHERE client_id=?", [client_id])
+        .map_err(|e| e.to_string())?;
+    let _ = std::fs::remove_file(credential_path(state_dir, client_id));
+    audit(
+        "deprovision",
+        &[
+            ("client_id", client_id),
+            ("revoked_tokens", &revoked.to_string()),
+        ],
+    );
+    Ok(())
 }
 
 /// Write a fresh secret for a provisioned client and revoke its tokens.
@@ -289,7 +361,7 @@ pub fn rotate_secret(
 /// Bring an `authz.sqlite` opened with the Go-compatible schema up to the
 /// issuance contract: tables, client types, provisioned secrets, and the
 /// one-time revocation of tokens written before this contract.
-pub fn prepare(conn: &Connection, state_dir: &Path, opute_secret: &str) -> Result<(), String> {
+pub fn prepare(conn: &Connection, state_dir: &Path, clients: &[String]) -> Result<(), String> {
     conn.execute_batch(ISSUANCE_DDL)
         .map_err(|e| e.to_string())?;
     let migrated: bool = conn
@@ -329,30 +401,28 @@ pub fn prepare(conn: &Connection, state_dir: &Path, opute_secret: &str) -> Resul
         r#"["http://127.0.0.1/callback","http://localhost/callback"]"#,
     )
     .map_err(|e| e.to_string())?;
-    let opute_secret = opute_secret.trim();
-    if opute_secret.is_empty() {
-        provision(conn, state_dir, OPUTE_CLIENT_ID)?;
-    } else {
-        let hash = sha256_hex(opute_secret);
-        let stored = client_secret_hash(conn, OPUTE_CLIENT_ID)
-            .map_err(|e| e.to_string())?
-            .unwrap_or_default();
-        // A generated secret is superseded by the operator's; drop its file.
-        let _ = std::fs::remove_file(credential_path(state_dir, OPUTE_CLIENT_ID));
-        if stored != hash {
-            set_client(
-                conn,
-                OPUTE_CLIENT_ID,
-                &hash,
-                "confidential",
-                true,
-                builtin_redirects(OPUTE_CLIENT_ID),
-            )
-            .map_err(|e| e.to_string())?;
-            revoke_client_tokens(conn, OPUTE_CLIENT_ID).map_err(|e| e.to_string())?;
-        }
+    for client in clients {
+        provision(conn, state_dir, client)?;
     }
     provision(conn, state_dir, PROVIDER_CLIENT_ID)?;
+    // A machine client no longer configured, including one an earlier
+    // release provisioned by default, keeps no way in.
+    let stale: Vec<String> = {
+        let mut stmt = conn
+            .prepare("SELECT client_id FROM clients WHERE confidential=1")
+            .map_err(|e| e.to_string())?;
+        let ids = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(|e| e.to_string())?
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
+        ids.into_iter()
+            .filter(|id| id != PROVIDER_CLIENT_ID && !clients.contains(id))
+            .collect()
+    };
+    for client in stale {
+        deprovision(conn, state_dir, &client)?;
+    }
     Ok(())
 }
 
@@ -1157,7 +1227,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let conn = Connection::open(dir.path().join("authz.sqlite")).unwrap();
         conn.execute_batch(crate::ddl::AUTHZ_INIT).unwrap();
-        prepare(&conn, dir.path(), "").unwrap();
+        prepare(&conn, dir.path(), &[]).unwrap();
         (dir, conn)
     }
 
@@ -1252,17 +1322,74 @@ mod tests {
         assert!(!stored.contains(&cred.client_secret));
     }
 
+    fn confidential_ids(conn: &Connection) -> Vec<String> {
+        let mut stmt = conn
+            .prepare("SELECT client_id FROM clients WHERE confidential=1 ORDER BY client_id")
+            .unwrap();
+        stmt.query_map([], |r| r.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    }
+
     #[test]
-    fn operator_secret_wins_and_writes_no_file() {
-        let dir = tempfile::tempdir().unwrap();
-        let conn = Connection::open(dir.path().join("authz.sqlite")).unwrap();
-        conn.execute_batch(crate::ddl::AUTHZ_INIT).unwrap();
-        prepare(&conn, dir.path(), "platform-secret").unwrap();
-        assert!(!credential_path(dir.path(), OPUTE_CLIENT_ID).exists());
-        assert!(matches!(
-            client_credentials(&conn, OPUTE_CLIENT_ID, "platform-secret", RES, &served),
-            Grant::Issued { .. }
-        ));
+    fn no_machine_client_is_provisioned_by_default() {
+        let (dir, conn) = store();
+        assert_eq!(
+            confidential_ids(&conn),
+            vec![PROVIDER_CLIENT_ID.to_string()]
+        );
+        let files: Vec<_> = std::fs::read_dir(credentials_dir(dir.path()))
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        assert_eq!(files, vec![format!("{PROVIDER_CLIENT_ID}.json")]);
+    }
+
+    #[test]
+    fn configured_machine_clients_are_provisioned_and_dropped_when_unlisted() {
+        let (dir, conn) = store();
+        prepare(&conn, dir.path(), &["ci-runner".into()]).unwrap();
+        let cred = read_credential(&credential_path(dir.path(), "ci-runner")).unwrap();
+        let Grant::Issued { token, .. } =
+            client_credentials(&conn, "ci-runner", &cred.client_secret, RES, &served)
+        else {
+            panic!("a configured client gets a token");
+        };
+        // Unlisted on the next start: its row, tokens and credential go.
+        prepare(&conn, dir.path(), &[]).unwrap();
+        assert_eq!(
+            confidential_ids(&conn),
+            vec![PROVIDER_CLIENT_ID.to_string()]
+        );
+        assert!(!credential_path(dir.path(), "ci-runner").exists());
+        let revoked: i64 = conn
+            .query_row(
+                "SELECT revoked FROM tokens WHERE token_hash=?",
+                [sha256_hex(&token)],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(revoked, 1);
+    }
+
+    #[test]
+    fn oauth_clients_setting_is_parsed_strictly() {
+        assert_eq!(parse_clients(""), Ok(vec![]));
+        assert_eq!(
+            parse_clients(" ci-runner , deploy.bot:mcp "),
+            Ok(vec!["ci-runner".to_string(), "deploy.bot".to_string()])
+        );
+        for bad in [
+            "a:admin",
+            "a,a",
+            "bad id",
+            PROVIDER_CLIENT_ID,
+            BOOTSTRAP_CLIENT_ID,
+            "a,",
+        ] {
+            assert!(parse_clients(bad).is_err(), "{bad}");
+        }
     }
 
     #[test]
@@ -1275,7 +1402,7 @@ mod tests {
             [],
         )
         .unwrap();
-        prepare(&conn, dir.path(), "").unwrap();
+        prepare(&conn, dir.path(), &[]).unwrap();
         let revoked: i64 = conn
             .query_row("SELECT revoked FROM tokens WHERE token_hash='h'", [], |r| {
                 r.get(0)
@@ -1288,7 +1415,7 @@ mod tests {
         else {
             panic!()
         };
-        prepare(&conn, dir.path(), "").unwrap();
+        prepare(&conn, dir.path(), &[]).unwrap();
         let still: i64 = conn
             .query_row(
                 "SELECT revoked FROM tokens WHERE token_hash=?",

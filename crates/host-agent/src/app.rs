@@ -332,7 +332,7 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
         cfg.standalone_state_dir.clone()
     };
     inject_fault(fault, "authz")?;
-    let authz = AuthzStore::open(&authz_dir, &cfg.opute_client_secret)?;
+    let authz = AuthzStore::open(&authz_dir, &cfg.oauth_clients)?;
 
     let addr = format!("{}:{}", cfg.host_mcp_bind_host, cfg.host_mcp_port);
     if addr.ends_with(":0") {
