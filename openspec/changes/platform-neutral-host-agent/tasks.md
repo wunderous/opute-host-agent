@@ -17,13 +17,15 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
   starts on the defaults, and nothing printed mentions it. Tests
   (`config.rs`, `app.rs`) were red first: missing field, then a missing
   profile log line.
-- [ ] 2.3 OAuth clients from `OPUTE_OAUTH_CLIENTS` only; none provisioned by
-  default; bearer works.
+- [x] 2.3 OAuth clients from `OPUTE_OAUTH_CLIENTS` only; none provisioned by
+  default; bearer works; an unlisted client is deprovisioned; a probe with
+  no client reports unverified (deprovision shown red by mutation).
 - [x] 2.4 Reserved names from `OPUTE_RESERVED_HOSTNAMES` only; refused with
   `reserved_hostname` before any Cloudflare call. Shown red by breaking
   the suffix match (2 of the 4 tests fail).
-- [ ] 2.5 The boundary test in `make rust-check` (`boundary.rs`). Written
-  and red (it lists every leak); ignored until 3.1-3.3 land, then enabled.
+- [x] 2.5 The boundary test in `make rust-check` (`boundary.rs`). Red
+  first (28 findings), enabled once 3.1-3.3 landed; a Platform hostname put
+  in a provider fails it with file, line and identifier.
 
 ## 3. Implementation (one concern per commit)
 
@@ -31,11 +33,10 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 - [x] 3.2 Remove mode reading and all its branches (one commit with 3.1:
   the contract suites cannot pass between them). `--mode` is gone (N5): the
   launcher must stop passing it before 0.4.0 ships.
-- [ ] 3.3 OAuth clients from configuration (after N4).
+- [x] 3.3 OAuth clients from configuration (N4).
 - [x] 3.4 Reserved names from configuration.
-- [ ] 3.5 Remove Platform names from CLI, help and catalog descriptions.
-  Done for comments, result text, the host-recipe refusal, help and the
-  `run_host_local_recipe` description; the mode flag waits for N5.
+- [x] 3.5 Remove Platform names from CLI, help and catalog descriptions,
+  with the N6 refusal text and the N7 relay device default.
 - [ ] 3.6 Repin the catalog revisions in the manifest (repinned for 3.5;
   again after 3.1).
 

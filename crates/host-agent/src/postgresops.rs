@@ -2568,14 +2568,17 @@ impl Postgres {
         if cluster_ip.is_empty() {
             return Err("PostgreSQL service read/write Service has no clusterIP".into());
         }
-        let device = if spec.relay_device_name.is_empty() {
-            "opute-platform-postgres-rw".to_string()
-        } else {
-            spec.relay_device_name.clone()
-        };
         let incus =
             |args: &[&str], timeout: u64| self.incus.run(args, Duration::from_secs(timeout));
-        if let Ok(existing) = incus(&["config", "device", "show", &spec.vm_name], 30) {
+        let shown = incus(&["config", "device", "show", &spec.vm_name], 30).ok();
+        let device = relay_device(
+            &spec.relay_device_name,
+            shown
+                .as_ref()
+                .filter(|s| s.exit_code == 0)
+                .map_or("", |s| s.stdout.as_str()),
+        );
+        if let Some(existing) = shown {
             if existing.exit_code == 0
                 && existing
                     .stdout
@@ -2983,5 +2986,44 @@ impl Postgres {
             return Err("CloudNativePG application Secret is incomplete".into());
         }
         Ok((pod, credentials))
+    }
+}
+
+/// The default name of the host forward's Incus proxy device.
+const RELAY_DEVICE: &str = "opute-postgres-rw";
+/// The default before platform-neutral-host-agent. A VM that already carries
+/// a device by this name keeps it, so a re-forward replaces it rather than
+/// leaving it behind next to a new one (N7).
+const LEGACY_RELAY_DEVICE: &str = "opute-platform-postgres-rw";
+
+/// The proxy device to (re)create: the caller's name, else an existing
+/// device under the old default, else the default. `shown` is the VM's
+/// `incus config device show` YAML, whose top-level keys are device names.
+fn relay_device(requested: &str, shown: &str) -> String {
+    if !requested.is_empty() {
+        return requested.to_string();
+    }
+    let legacy = format!("{LEGACY_RELAY_DEVICE}:");
+    if shown.lines().any(|line| line.trim_end() == legacy) {
+        LEGACY_RELAY_DEVICE.to_string()
+    } else {
+        RELAY_DEVICE.to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_relay_device_keeps_an_existing_legacy_name() {
+        let legacy = "eth0:\n  type: nic\nopute-platform-postgres-rw:\n  type: proxy\n";
+        assert_eq!(relay_device("", legacy), "opute-platform-postgres-rw");
+        assert_eq!(
+            relay_device("", "eth0:\n  type: nic\n"),
+            "opute-postgres-rw"
+        );
+        assert_eq!(relay_device("", ""), "opute-postgres-rw");
+        assert_eq!(relay_device("mine", legacy), "mine");
     }
 }

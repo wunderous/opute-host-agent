@@ -30,11 +30,23 @@ const FORBIDDEN: &[&str] = &[
 ];
 
 /// Recorded exceptions: (file, identifier, why it is not a Platform switch).
-const ALLOWED: &[(&str, &str, &str)] = &[(
-    "src/providers/hostos.rs",
-    "== \"platform\"",
-    "the host's OS platform field of detect_host_platform",
-)];
+const ALLOWED: &[(&str, &str, &str)] = &[
+    (
+        "src/providers/hostos.rs",
+        "== \"platform\"",
+        "the host's OS platform field of detect_host_platform",
+    ),
+    (
+        "src/recipe/host_recipe.rs",
+        "= \"platform\";",
+        "N6: the host-recipe.v1 document value coordinator: platform, which this agent refuses",
+    ),
+    (
+        "src/postgresops.rs",
+        "opute-platform",
+        "N7: an existing PostgreSQL relay device keeps its old default name",
+    ),
+];
 
 /// The forbidden identifiers in `text`, ignoring a capitalised `Platform`
 /// that is part of a longer word (`HostPlatform`).
@@ -93,7 +105,6 @@ fn non_test(path: &Path, test_only: &[String]) -> Option<String> {
 }
 
 #[test]
-#[ignore = "red until the single profile, mode removal and OAuth clients land (tasks 3.1-3.3, owner questions N1-N7)"]
 fn no_platform_identifier_crosses_the_boundary() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut report = Vec::new();
