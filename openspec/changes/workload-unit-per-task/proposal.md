@@ -1,8 +1,9 @@
-# One workload unit per task (proposed)
+# One workload unit per task
 
-Status: proposed. Owner question Q29
-([questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented. Current behaviour matches Go v0.2.4.
+Status: decided by the owner on 2026-11-08: adopt both parts (answer to
+owner question Q29,
+[questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
+Go v0.2.4 shares the unit and leaves it running; Rust changes both.
 
 ## Why
 
@@ -22,7 +23,7 @@ process runs on. Go v0.2.4 behaves the same. D28 did not decide this.
 
 ## What Changes
 
-If the owner chooses it:
+The owner chose both parts:
 - the workload unit is named from the task id, so concurrent identical
   commands run side by side;
 - a task cancelled by shutdown stops its workload unit before the agent
