@@ -508,3 +508,75 @@ fn removal_after_recovery_waits_for_it_to_settle() {
             .contains("1 ready of 2")
     );
 }
+
+fn operation_ids(manifest: &J) -> Vec<String> {
+    manifest["services"][0]["operations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|o| o["id"].as_str().unwrap().to_string())
+        .collect()
+}
+
+fn ha_endpoint_inputs(manifest: &J) -> J {
+    manifest["services"][0]["operations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["id"] == op::ENSURE_HA_ENDPOINT)
+        .unwrap()["inputSchema"]["properties"]
+        .clone()
+}
+
+/// Q19: not configured means not published, the catalog unchanged, and a
+/// direct call refused with capability_unavailable before any effect.
+#[test]
+fn an_unconfigured_endpoint_is_not_published_and_is_refused() {
+    endpoint::ENABLED_OVERRIDE.with(|o| o.set(Some(false)));
+    let manifest = serde_json::to_value(manifest()).unwrap();
+    let ids = operation_ids(&manifest);
+    assert!(
+        !ids.iter().any(|id| id.ends_with("-cluster-endpoint")),
+        "{ids:?}"
+    );
+    assert!(ha_endpoint_inputs(&manifest).get("caBundleRef").is_none());
+    for operation in [op::ENSURE_CLUSTER_ENDPOINT, op::REMOVE_CLUSTER_ENDPOINT] {
+        // No targetUri at all: the refusal comes before the target check and
+        // before any Incus call.
+        let ToolCallOutcome::Result(result) = respond(dispatch(
+            operation,
+            &args(json!({"hostname": "k3s.e2e.test"})),
+        )) else {
+            panic!("{operation}: not a typed error result");
+        };
+        assert_eq!(result["isError"], true);
+        assert_eq!(
+            result["structuredContent"]["code"],
+            "capability_unavailable"
+        );
+    }
+    endpoint::ENABLED_OVERRIDE.with(|o| o.set(None));
+}
+
+/// Q19: where the deployment enables it, the operations and the CA input are published.
+#[test]
+fn a_configured_endpoint_is_published() {
+    endpoint::ENABLED_OVERRIDE.with(|o| o.set(Some(true)));
+    let manifest = serde_json::to_value(manifest()).unwrap();
+    let ids = operation_ids(&manifest);
+    assert!(ids.contains(&op::ENSURE_CLUSTER_ENDPOINT.to_string()));
+    assert!(ids.contains(&op::REMOVE_CLUSTER_ENDPOINT.to_string()));
+    assert!(ha_endpoint_inputs(&manifest).get("caBundleRef").is_some());
+    let ensure = manifest["services"][0]["operations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["id"] == op::ENSURE_CLUSTER_ENDPOINT)
+        .unwrap()
+        .clone();
+    assert!(ensure["description"]
+        .as_str()
+        .unwrap()
+        .contains("Restarts each K3s server, one at a time"));
+    endpoint::ENABLED_OVERRIDE.with(|o| o.set(None));
+}
