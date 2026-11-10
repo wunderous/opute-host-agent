@@ -36,6 +36,10 @@ does, through one helper (`providers::env_proxy`). ureq chooses one proxy
 per agent, so a redirect to another host keeps the first host's choice;
 the recipe source's hops all stay on one host.
 
+`NO_PROXY` entries are matched as Go's `httpproxy` matches them
+(`providers::support::select_proxy`). The provider clients share that
+selection, so the same correction applies to them.
+
 ## Impact
 
 - `crates/host-agent/src/providers/support.rs` (`env_proxy`), `hostread.rs`,
