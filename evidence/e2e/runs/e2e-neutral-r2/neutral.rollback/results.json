@@ -1,0 +1,249 @@
+{
+ "effects": {
+  "changed": [
+   "files//opt/opute-e2e/releases/rust-0.4.0",
+   "files//opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/releases/rust-0.4.0/opute-host-agent"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-neutral",
+ "harnessErrors": [],
+ "journey": "neutral.rollback",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "old"
+    },
+    {
+     "actual": [
+      "0.0.0.0:3004"
+     ],
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "oldListen"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write1"
+    },
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "new"
+    },
+    {
+     "actual": [
+      "0.0.0.0:3004"
+     ],
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "newListen"
+    },
+    {
+     "actual": [
+      "bind=0.0.0.0 port=3004 mutations=true"
+     ],
+     "equals": [
+      "bind=0.0.0.0 port=3004 mutations=true"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "newSummary"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "newRead1"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write2"
+    },
+    {
+     "actual": "platform\n",
+     "equals": "platform\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "newState"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "newDb"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "back"
+    },
+    {
+     "actual": [
+      "0.0.0.0:3004"
+     ],
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "backListen"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "backRead2"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write3"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "backDb"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "No mode setting exists",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "oldMint"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "newMint"
+    },
+    {
+     "actual": "8110b07f02616f566c94f878cc7375f293160ca52ac5b029820ab63169469d4f",
+     "equalsStep": {
+      "path": "json.credSha256",
+      "step": "oldMint"
+     },
+     "ok": true,
+     "other": "8110b07f02616f566c94f878cc7375f293160ca52ac5b029820ab63169469d4f",
+     "path": "json.credSha256",
+     "step": "newMint"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "backMint"
+    },
+    {
+     "actual": "8110b07f02616f566c94f878cc7375f293160ca52ac5b029820ab63169469d4f",
+     "equalsStep": {
+      "path": "json.credSha256",
+      "step": "oldMint"
+     },
+     "ok": true,
+     "other": "8110b07f02616f566c94f878cc7375f293160ca52ac5b029820ab63169469d4f",
+     "path": "json.credSha256",
+     "step": "backMint"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every orchestrator is an ordinary client",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "back": 731,
+   "backDb": 189,
+   "backList": 254,
+   "backListen": 198,
+   "backMint": 253,
+   "backRead2": 347,
+   "backStop": 222,
+   "copy04": 371,
+   "new": 711,
+   "newDb": 194,
+   "newList": 246,
+   "newListen": 194,
+   "newMint": 285,
+   "newRead1": 295,
+   "newState": 142,
+   "newStop": 267,
+   "newSummary": 258,
+   "old": 739,
+   "oldList": 541,
+   "oldListen": 210,
+   "oldMint": 248,
+   "oldStop": 218,
+   "probeCopy": 289,
+   "tool": 286,
+   "unpack04": 237,
+   "wire": 284,
+   "write1": 241,
+   "write2": 242,
+   "write3": 227
+  },
+  "stepsSeconds": 53.5
+ },
+ "unverified": []
+}

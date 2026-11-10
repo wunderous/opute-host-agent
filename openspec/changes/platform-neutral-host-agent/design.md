@@ -98,3 +98,20 @@ recommendation (2026-11-08); the last column is now the decision.
 | N5 | What happens to `--mode` and the `standalone` command? | The published npm launcher passes `--mode=standalone`, and the launcher is a compatibility surface owned until an explicit cutover. Removing the flag makes `flag provided but not defined` fail every launcher start; keeping it reads a mode setting, which the proposal forbids. | Ship the launcher change first (serve with no `--mode`), then remove `--mode` in 0.4.0. Keep `standalone` as a plain alias of `serve` (O-14 already names one spelling as the goal), and add no mode behind it. Until the launcher change ships, 0.4.0 stays held. |
 | N6 | What happens to the host recipe value `coordinator: platform`? | `host-recipe.v1` documents name their coordinator. A Host Agent runs `coordinator: host-agent` / `mode: local` and refuses `coordinator: platform` / `mode: distributed`, telling the author to submit it to the Platform coordinator. The value is part of the recipe format, and recipe files in the field use it. | Keep the document value (it names who coordinates, not how this agent behaves). Make the refusal text neutral ("submit it to its distributed coordinator"), and exempt the constant from the boundary test with a recorded reason. Renaming it is a recipe-format change for its own proposal. |
 | N7 | Does the PostgreSQL relay's default Incus device name change? | `opute-platform-postgres-rw` is the default device name for the host forward. Existing VMs carry that device; a new default would add a second device next to it and leave the old one behind. | Keep the name for existing devices: adopt a device with the old name when present, and use a neutral default (`opute-postgres-rw`) only when none exists. |
+
+## Found by the journeys (for the Platform owners)
+
+- **A machine client's secret.** 0.3.x accepts an operator-supplied
+  secret for `opute-mcp-host` (`OPUTE_HOST_OAUTH_CLIENT_SECRET`) and then
+  writes no credential file. 0.4.0 ignores that variable. A host that lists
+  the client in `OPUTE_OAUTH_CLIENTS` keeps a *generated* credential across
+  upgrade and rollback (`neutral.rollback`), but a host that relied on the
+  operator-supplied secret gets a newly generated one at its first 0.4.0
+  start, and its orchestrator must read the new credential file. The
+  migration notes need this step; whether 0.4.0 should accept
+  operator-supplied secrets is a question for the owners.
+- **A host that lists no client** loses `opute-mcp-host` at its first
+  0.4.0 start; 0.3.x provisions it again, with a new secret, on rollback.
+- **Catalog size.** A host that ran in platform mode publishes 130 tools
+  on 0.3.x and 142 on 0.4.0 (N1), and 130 again after rollback.
+

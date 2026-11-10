@@ -44,19 +44,41 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 
 - [ ] 4.0 Prerequisites outside this repository (owned by the release
   owners): the npm launcher and the recorded deploy unit drop `--mode`; the
-  unit adds `OPUTE_HOST_ALLOW_MUTATIONS=true`. The e2e harness's guest tool
-  stops passing `--mode` (old binaries default to the same profile).
+  unit adds `OPUTE_HOST_ALLOW_MUTATIONS=true`. The journeys below do not
+  wait on them: they start their own 0.4.0 agents with `serve` and
+  explicit settings, and leave the harness's guest tool unchanged.
 
-- [ ] 4.1 e2e-1 runs the single profile only.
-- [ ] 4.2 A step proves the old variable has no effect.
-- [ ] 4.3 e2e4.cutover rolls back across 0.4.0 and 0.3.x with both settings
-  sets.
-- [ ] 4.4 The Cloudflare journey proves the reserved-name guard.
-- [ ] 4.5 e2e-5 is redefined in the cutover gate.
+Gate `e2e-neutral` passes on run `e2e-neutral-r2` (2026-11-10), on a
+0.4.0 release set built from this branch. r1 is retired: the journeys had
+no tools/list step for their own agents.
+
+- [ ] 4.1 e2e-1 runs the single profile only. Partly: `neutral.profile`
+  proves the profile's scenarios on 0.4.0 (defaults, a host exposed on
+  purpose, the profile log line, the mutation refusal, OAuth clients). The
+  e2e-1 to e2e-4 gates still rest on 0.3.x runs. Rerunning them on 0.4.0
+  needs the dev VM rebuilt with a deploy unit that has no `--mode` (4.0),
+  and is due when this change merges.
+- [x] 4.2 A step proves the old variable has no effect (`neutral.profile`:
+  with `OPUTE_AGENT_MODE=platform` alone the listen address, the profile
+  line, the catalog and the state location equal a plain start, and
+  nothing printed names the variable; `OPUTE_STANDALONE_ALLOW_MUTATIONS`
+  admits nothing).
+- [x] 4.3 Upgrade and rollback across 0.3.x and 0.4.0 with both settings
+  sets (`neutral.rollback`, between the two Rust releases; the Go to Rust
+  cutover stays in `e2e4.cutover`). Same address, same state, the machine
+  client's credential unchanged, 130 then 142 then 130 tools.
+- [x] 4.4 The Cloudflare journey proves the reserved-name guard
+  (`neutral.reserved`: `reserved_hostname` through the agent; unreserved
+  names reach the missing-credentials error).
+- [x] 4.5 e2e-5 is redefined in the cutover gate (`gates.json` and the
+  contract spec delta); it stays blocked on Platform staging.
 
 ## 5. Close
 
-- [ ] 5.1 `make rust-check`, `rust-suites`, `spec-validate` and
-  `cutover-readiness` pass.
+- [x] 5.1 `make rust-check`, `rust-suites`, `spec-validate` and
+  `cutover-readiness` pass on this branch (2026-11-10), with the contract,
+  seam and arm64 receipts recaptured on the 0.4.0 build. Readiness here
+  still counts the e2e-1 to e2e-4 gates from their 0.3.x runs (see 4.1), so
+  it does not yet prove those gates for 0.4.0.
 - [ ] 5.2 Archive the spec delta into the contract spec.
 - [ ] 5.3 PRs merge with CI green, after the 0.3.0 window.
