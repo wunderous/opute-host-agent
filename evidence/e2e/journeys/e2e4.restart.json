@@ -3,8 +3,8 @@
  "gate": "e2e-4",
  "description": "Kill, restart and upgrade mid-work on the Rust system unit: SIGTERM with a task and a plan in flight, SIGKILL with a task in flight, then an in-place upgrade to a newer local Rust build with a task in flight; each item's durable state is read back through get_operation, tasks/get and get_host_plan_run.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
-  "next": "Rust release set built locally from this branch with VERSION=0.2.5-e2e (no tag, no publish)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "next": "Rust release set built locally from this branch with VERSION=0.3.1-e2e (no tag, no publish)",
   "slow": "a local endpoint answering after 25 s (e2etool slow)",
   "files": {
    "e2etool": {
@@ -16,8 +16,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "rustNext": {
-    "path": "${PARITY}/e2e/release/rust-next-q29/host-agent-linux-x64.gz",
-    "sha256": "456581ad7aac047ffdfb1f953e70287c5e1e1da12a213d6bd4c80ccab2a3098f"
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc1-next/host-agent-linux-x64.gz",
+    "sha256": "6dc1b56eee789b04c5f7876541eca89baab934f8b750a34d271499804dd5fbc5"
    }
   }
  },
@@ -72,7 +72,7 @@
     {
      "step": "upgrade",
      "path": "stdout",
-     "matches": "\n0\\.2\\.5-e2e\n$"
+     "matches": "\n0\\.3\\.1-e2e\n$"
     },
     {
      "step": "afterUpgrade",
@@ -691,7 +691,7 @@
  "cleanup": [
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; pkill -fx 'sleep 120'; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.3.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; pkill -fx 'sleep 120'; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 20

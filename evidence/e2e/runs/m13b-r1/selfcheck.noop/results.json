@@ -1,0 +1,433 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.noop",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "discover"
+    },
+    {
+     "actual": {
+      "_meta": {
+       "io.modelcontextprotocol/serverInfo": {
+        "name": "host-agent",
+        "version": "0.3.0"
+       }
+      },
+      "capabilities": {
+       "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+       },
+       "tools": {}
+      },
+      "resultType": "complete",
+      "supportedVersions": [
+       "2026-07-28"
+      ]
+     },
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result",
+     "step": "discover"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "list"
+    },
+    {
+     "actual": "apply_manifest",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.tools[0].name",
+     "step": "list"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "info"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      null,
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "info"
+    },
+    {
+     "actual": {
+      "agent": {
+       "agentId": "e2e-devvm-agent",
+       "homeDir": "/home/opute",
+       "instanceId": "standalone",
+       "instanceRoot": "/home/opute/.config/opute/instances/standalone",
+       "mcpEndpoint": "http://127.0.0.1:3014/mcp",
+       "providerRoot": "/home/opute/.local/share/opute/providers",
+       "serviceScope": "user",
+       "serviceUnitDir": "/home/opute/.config/systemd/user",
+       "serviceWantedBy": "default.target"
+      },
+      "capacity": {
+       "runningContainerCount": 0,
+       "runningQemuCount": 0,
+       "runningVmCount": 0,
+       "runningVmCpuLimitCores": 0,
+       "runningVmDiskLimitBytes": 0,
+       "runningVmMemoryLimitBytes": 0,
+       "totalContainerCount": 0,
+       "totalQemuCount": 0,
+       "totalVmCount": 0,
+       "totalVmCpuLimitCores": 0,
+       "totalVmDiskLimitBytes": 0,
+       "totalVmMemoryLimitBytes": 0
+      },
+      "hostName": "opute-parity-t2",
+      "lxcBinaryPath": "/usr/bin/incus",
+      "providerId": "incus",
+      "rootDiskQuota": {
+       "driver": "btrfs",
+       "enforced": true,
+       "pool": "default"
+      },
+      "supportedTools": [
+       "apply_manifest",
+       "build_and_push_oci_image",
+       "check_local_llm_prerequisites",
+       "cleanup_container_storage",
+       "compact_host_vm_disk",
+       "configure_agent_connection",
+       "configure_local_llm_model",
+       "configure_local_llm_runtime",
+       "configure_network",
+       "configure_oci_storage",
+       "create_vm",
+       "delete_cluster_resource",
+       "delete_oci_registry",
+       "delete_vm",
+       "detect_host_platform",
+       "diagnose_bridge",
+       "discover_service_ingress",
+       "ensure_container_engine",
+       "ensure_host_artifact",
+       "ensure_host_file",
+       "ensure_host_service_supervisor",
+       "ensure_host_tool",
+       "ensure_local_llm_k3s_proxy",
+       "ensure_local_llm_relay",
+       "ensure_local_llm_server_binary",
+       "ensure_oci_builder",
+       "ensure_public_mcp_quick_tunnel",
+       "ensure_public_mcp_tunnel",
+       "ensure_sqlite_database",
+       "exec_cluster_command",
+       "extract_host_archive",
+       "garbage_collect_cluster_registry",
+       "get_capability_catalog",
+       "get_host_capacity",
+       "get_host_info",
+       "get_host_plan_run",
+       "get_cluster_resource",
+       "get_cluster_resource_status",
+       "get_oci_registry_status",
+       "get_postgresql_service_status",
+       "get_runtime_recipe_run",
+       "get_sqlite_database_status",
+       "get_tunnel_run",
+       "get_vm_info",
+       "inspect_container_storage",
+       "inspect_guest_storage",
+       "inspect_host_file",
+       "inspect_host_service",
+       "inspect_host_service_supervisor",
+       "inspect_workload",
+       "install_cluster_agent",
+       "install_cluster_package",
+       "install_virtualization_stack",
+       "install_local_llm_model",
+       "install_oci_registry",
+       "install_provider_tools",
+       "list_agents",
+       "list_certificate_issuers",
+       "list_configmap_keys",
+       "list_deployments",
+       "list_host_services",
+       "list_ingress_classes",
+       "list_cluster_events",
+       "list_compute_clusters",
+       "list_local_llm_models",
+       "list_namespaces",
+       "list_pods",
+       "list_secret_keys",
+       "list_services",
+       "list_storage_classes",
+       "list_vms",
+       "open_assistant_session",
+       "opute.provider.install",
+       "opute.provider.reload",
+       "opute.provider.status",
+       "opute.provider.teardown",
+       "opute.provider.validate",
+       "prepare_host_agent_artifacts",
+       "probe_gpu_container",
+       "probe_http_endpoint",
+       "probe_virtualization_gpu",
+       "probe_local_llm",
+       "probe_openai_compatible_server",
+       "provision_container",
+       "provision_vm",
+       "prune_unused_cluster_images",
+       "put_cluster_secret",
+       "reconcile_host_resource_policy",
+       "reconcile_postgresql_service",
+       "reconcile_serving_assignment",
+       "recover_bridge",
+       "register_kubernetes_cluster",
+       "release_postgresql_service_relay",
+       "remove_host_file",
+       "remove_local_llm_k3s_proxy",
+       "remove_local_llm_model",
+       "remove_local_llm_relay",
+       "remove_postgresql_service",
+       "remove_public_mcp_quick_tunnel",
+       "remove_sqlite_database",
+       "remove_vm_network_device",
+       "render_cluster_package",
+       "reset_virtualization_stack",
+       "resize_console",
+       "restart_host_service",
+       "restart_vm",
+       "run_host_command",
+       "run_host_local_recipe",
+       "run_host_plan",
+       "run_instance_command",
+       "run_runtime_recipe",
+       "run_tunnel_recipe",
+       "send_console_input",
+       "set_host_service_state",
+       "shutdown_host_vm_subsystem",
+       "stage_build_context",
+       "start_local_llm_runtime",
+       "start_vm",
+       "stop_local_llm_runtime",
+       "stop_vm",
+       "stream_vm_console",
+       "terminate_host_vm_distribution",
+       "trim_guest_storage",
+       "uninstall_virtualization_stack",
+       "uninstall_provider_tools",
+       "update_vm_resources",
+       "validate_host_local_recipe",
+       "validate_host_plan",
+       "validate_runtime_recipe",
+       "validate_tunnel_recipe"
+      ],
+      "system": {
+       "cgroupControllers": [
+        "cpuset",
+        "cpu",
+        "io",
+        "memory",
+        "pids"
+       ],
+       "cgroupMemory": {
+        "limitBytes": 0,
+        "usageBytes": 54423552
+       },
+       "cpuCount": 8,
+       "cpuLoad15m": 0.01,
+       "cpuLoad1m": 0.08,
+       "cpuLoad5m": 0.02,
+       "diskAvailableBytes": 99087286272,
+       "diskFilesystems": [
+        {
+         "availableBytes": 99087286272,
+         "mount": "/",
+         "pressure": "normal",
+         "totalBytes": 102888095744
+        },
+        {
+         "availableBytes": 99087286272,
+         "mount": "/home/opute",
+         "pressure": "normal",
+         "totalBytes": 102888095744
+        }
+       ],
+       "diskMount": "/",
+       "diskPressure": "normal",
+       "diskTotalBytes": 102888095744,
+       "enforcement": "enforced",
+       "memoryAvailableBytes": 16128024576,
+       "memoryEvents": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0
+       },
+       "memoryFreeBytes": 16128024576,
+       "memoryPressure": "normal",
+       "memoryTotalBytes": 16768634880,
+       "memoryUsageBytes": 54423552,
+       "memoryUsedBytes": 640610304,
+       "psi": {
+        "cpu": {
+         "someAvg10": 0.18,
+         "someAvg300": 0.1,
+         "someAvg60": 0.32,
+         "someTotalUsec": 420437
+        },
+        "io": {
+         "fullAvg10": 3.68,
+         "fullAvg300": 0.31,
+         "fullAvg60": 1.22,
+         "fullTotalUsec": 1013241,
+         "someAvg10": 3.7,
+         "someAvg300": 0.33,
+         "someAvg60": 1.28,
+         "someTotalUsec": 1064485
+        },
+        "memory": {
+         "fullTotalUsec": 641,
+         "someTotalUsec": 663
+        }
+       },
+       "resourceAdmission": {
+        "checkedAt": "2026-11-10T17:10:32Z",
+        "currentUsage": {
+         "diskAvailableBytes": 99087286272,
+         "diskBytes": 3800809472,
+         "memoryAvailableBytes": 16128024576,
+         "memoryBytes": 640610304,
+         "tasks": 3
+        },
+        "diskAvailableBytes": 99087286272,
+        "diskPressure": "normal",
+        "effectiveLimits": {
+         "cpuCores": 6,
+         "diskBytes": 102888095744,
+         "memoryBytes": 11811160064,
+         "tasks": 4096
+        },
+        "enforcement": "enforced",
+        "heavyInFlight": 0,
+        "memoryAvailableBytes": 16128024576,
+        "memoryEvents": {
+         "high": 0,
+         "low": 0,
+         "max": 0,
+         "oom": 0,
+         "oom_group_kill": 0,
+         "oom_kill": 0
+        },
+        "normalInFlight": 0,
+        "policyRevision": "opute-host-resource-policy.v2",
+        "pressure": "normal",
+        "psi": {
+         "cpu": {
+          "someAvg10": 0.18,
+          "someAvg300": 0.1,
+          "someAvg60": 0.32,
+          "someTotalUsec": 420437
+         },
+         "io": {
+          "fullAvg10": 3.68,
+          "fullAvg300": 0.31,
+          "fullAvg60": 1.22,
+          "fullTotalUsec": 1013241,
+          "someAvg10": 3.7,
+          "someAvg300": 0.33,
+          "someAvg60": 1.28,
+          "someTotalUsec": 1064485
+         },
+         "memory": {
+          "fullTotalUsec": 641,
+          "someTotalUsec": 663
+         }
+        },
+        "queue": {
+         "heavyActive": 0,
+         "heavyQueued": 0,
+         "normalActive": 0,
+         "queued": 0
+        },
+        "queued": 0,
+        "reason": "",
+        "reservations": {
+         "count": 0
+        }
+       },
+       "tasks": {
+        "current": 3,
+        "limit": 19144
+       }
+      },
+      "systemctlPath": "/usr/bin/systemctl",
+      "uri": "host:local:e2e-devvm-agent"
+     },
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent",
+     "step": "info"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible authenticated MCP surface",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "health"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "health"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "discover": 1,
+   "health": 22,
+   "info": 89,
+   "list": 18
+  },
+  "stepsSeconds": 44.3
+ },
+ "unverified": []
+}

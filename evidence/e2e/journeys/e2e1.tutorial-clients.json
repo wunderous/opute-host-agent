@@ -3,7 +3,7 @@
  "gate": "e2e-1",
  "description": "Flow 1 and 3, tutorial first success with scripted clients, each from a clean connection: a 2026-07-28 MCP client; a legacy-handshake client (an agent started with OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true, ADR 0011); the published Go client library pkg/hostagentclient (v0.2.4, built offline); and the VS Code configuration the tutorial documents, used exactly as written. Each follows the published steps (tools/list, catalog, get_host_info, a read-only call), then, with mutations enabled, one approved mutation as a host plan polled to completion. The published tutorial is read-only and documents no mutation step, so the mutation is judged against the spec only.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",

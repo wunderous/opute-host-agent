@@ -3,7 +3,7 @@
  "gate": "e2e-2",
  "description": "Incus containers and VMs through typed calls on a second agent with ownership enforced: a container with a pinned address and a VM, both reachable; lifecycle; a VM resize; root disk growth and its quota; refusals on an instance the agent does not own; reset of an owned container; delete. Guests live in the default project (Q16).",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "agentB": "a transient Rust agent e2e-incus-b on port 3032 (e2etool agent start) with Incus ownership enforced and itself as the shared host owner",
   "images": "the snapshot's local Incus images parity-noble (container) and parity-noble-vm",
   "files": {

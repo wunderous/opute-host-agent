@@ -1,0 +1,48 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [
+  "schema"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.schema-violation",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "call"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: schema violations fail",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [
+  {
+   "errors": [
+    "$.result.structuredContent.count: expected integer, got str"
+   ],
+   "phase": "step",
+   "step": "call"
+  }
+ ],
+ "timings": {
+  "steps": {
+   "call": 1,
+   "list": 1
+  },
+  "stepsSeconds": 45.1
+ },
+ "unverified": []
+}

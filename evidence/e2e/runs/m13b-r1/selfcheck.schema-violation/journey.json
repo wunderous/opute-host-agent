@@ -1,0 +1,76 @@
+{
+ "cleanup": [],
+ "description": "Negative control: a tools/call result that violates the outputSchema its own tools/list published fails (schema). The endpoint is a loopback stub declared as this journey's input.",
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.schema-violation",
+ "inputs": {
+  "stub": {
+   "results": {
+    "e2e_probe": {
+     "content": [
+      {
+       "text": "{}",
+       "type": "text"
+      }
+     ],
+     "structuredContent": {
+      "count": "three"
+     }
+    }
+   },
+   "tools": [
+    {
+     "description": "harness self-check",
+     "inputSchema": {
+      "type": "object"
+     },
+     "name": "e2e_probe",
+     "outputSchema": {
+      "properties": {
+       "count": {
+        "minimum": 0,
+        "type": "integer"
+       }
+      },
+      "required": [
+       "count"
+      ],
+      "type": "object"
+     }
+    }
+   ]
+  }
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "call"
+    }
+   ],
+   "requirement": "Harness: schema violations fail",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "target": "stub"
+  },
+  {
+   "arguments": {},
+   "id": "call",
+   "mcp": "tools/call",
+   "target": "stub",
+   "tool": "e2e_probe"
+  }
+ ]
+}

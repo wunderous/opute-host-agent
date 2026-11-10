@@ -38,6 +38,8 @@ RUST_VERSION = "0.3.0"
 CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc1"
 CANDIDATE_NEXT = CANDIDATE + "-next"
 NEXT_VERSION = "0.3.1-e2e"
+# What the installed candidate prints after its hash line.
+RUST_MATCH = "\n" + RUST_VERSION.replace(".", "\\.") + "\n$"
 LAUNCHER = f"opute-host-agent-{RUST_VERSION}.tgz"
 
 BIN = "/home/opute/.local/share/opute/opute-host-agent"
@@ -776,7 +778,7 @@ def j8() -> dict:
             a("goDoneWait", "response.body.result.structuredContent.status", equals="completed"),
             a("goInFlight", "response.body.result.structuredContent.nodes.n2.attempts", equals=1),
             ok("goStop"), a("goStop", "json.integrity", equals="ok"),
-            ok("rustInstall"), a("rustInstall", "stdout", matches="\n0\\.2\\.4\n$"),
+            ok("rustInstall"), a("rustInstall", "stdout", matches=RUST_MATCH),
             a("rustList", "response.status", equals=200),
             a("rustDb", "json.integrity", equals="ok"),
             a("rustDb", "json.planRunIds", equalsStep={"step": "goStop", "path": "json.planRunIds"}),

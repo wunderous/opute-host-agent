@@ -1378,7 +1378,7 @@ def cutover() -> dict:
             direct("goSupervisorAgain", "structuredContent.status", equals="ready"),
             res("goTask", "structuredContent.stdout", equals="go-era\n"),
             ok("goStop"), a("goStop", "json.integrity", equals="ok"),
-            a("rustInstall", "stdout", matches="\n0\\.2\\.4\n$"),
+            a("rustInstall", "stdout", matches=base.RUST_MATCH),
             a("rustDb", "json.integrity", equals="ok"),
             a("rustDb", "json.counts", equalsStep={"step": "goStop", "path": "json.counts"}),
             a("rustDb", "json.operationIds", equalsStep={"step": "goStop", "path": "json.operationIds"}),
