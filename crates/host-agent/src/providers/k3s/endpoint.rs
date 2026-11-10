@@ -36,8 +36,8 @@ const DYNAMIC_CERT: &str = "/var/lib/rancher/k3s/server/tls/dynamic-cert.json";
 const API_PORT: u16 = 6443;
 const PROBE_TIMEOUT: Duration = Duration::from_secs(20);
 
-/// A marker on a handler error that `respond` turns into a typed error result.
-pub(super) const TYPED: &str = "\u{1}opute-typed-error\u{1}";
+#[cfg(test)]
+use super::super::TYPED;
 
 /// One `incus <args>` call: stdout, or the failure text.
 pub(super) type Incus<'a> = &'a mut dyn FnMut(&[&str], Option<&[u8]>) -> Result<Vec<u8>, String>;
@@ -86,11 +86,7 @@ pub(super) fn enabled() -> bool {
 /// A typed error: `structuredContent.code` and its fields, before any effect
 /// when the caller says so.
 pub(super) fn typed(code: &str, message: &str, fields: J) -> String {
-    let mut value = json!({"code": code, "message": message});
-    if let (Some(target), J::Object(extra)) = (value.as_object_mut(), fields) {
-        target.extend(extra);
-    }
-    format!("{TYPED}{value}")
+    super::super::typed_error(code, message, fields)
 }
 
 pub(super) fn unavailable(operation: &str) -> String {
