@@ -100,7 +100,7 @@ def disk_full() -> dict:
     reqs = [
         req(FAULTS, "A full state directory refuses writes and recovers",
             ok("mount"), ok("fullAgent"), not_error("writeBefore"),
-            a("fill", "stdout", matches="^[0-9]+\n$"),
+            a("fill", "stdout", matches="^ *[0-9]+\n$"),
             is_error("writeFull"), is_error("taskFull"), is_error("planFull"),
             a("noHalfWrite", "stdout", matches="none\n$"),
             not_error("readFull"),

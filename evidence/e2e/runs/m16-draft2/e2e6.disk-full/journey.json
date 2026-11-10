@@ -1,0 +1,326 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove full >/dev/null ; true",
+   "id": "remove"
+  },
+  {
+   "guest": "umount /tmp/e2e-agents/full/state 2>/dev/null; rm -rf /tmp/e2e-agents/full; rmdir /tmp/e2e-agents 2>/dev/null; true",
+   "id": "unmount"
+  }
+ ],
+ "description": "D31: an agent whose state directory is a 24 MiB tmpfs; the directory is filled, durable calls are refused with typed errors and leave no file or row, reads answer, and once space is freed the same calls succeed without a restart.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.disk-full",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "eacd10b6b645c41e5feb1d4050ce6a80e32644caeee093db88838a052e7fd535"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "mount"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "fullAgent"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "writeBefore"
+    },
+    {
+     "matches": "^[0-9]+\n$",
+     "path": "stdout",
+     "step": "fill"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "writeFull"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "taskFull"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "planFull"
+    },
+    {
+     "matches": "none\n$",
+     "path": "stdout",
+     "step": "noHalfWrite"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "readFull"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "dbFull"
+    },
+    {
+     "equals": 0,
+     "path": "json.unfinished",
+     "step": "dbFull"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "writeAfter"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "dbAfter"
+    }
+   ],
+   "requirement": "A full state directory refuses writes and recovers",
+   "scenario": "Disk full during a write (D31)",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "exists": true,
+     "path": "json.invocations.ensure_host_file",
+     "step": "dbAfter"
+    },
+    {
+     "equalsStep": {
+      "path": "json.invocations",
+      "step": "dbBefore"
+     },
+     "path": "json.invocations",
+     "step": "dbFull"
+    }
+   ],
+   "requirement": "A full state directory refuses writes and recovers",
+   "scenario": "no audit gap: a refused write leaves no audit row, and nothing ran unrecorded",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "mkdir -p /tmp/e2e-agents/full/state && mount -t tmpfs -o size=24m,mode=0700 e2e-full /tmp/e2e-agents/full/state && echo mounted",
+   "id": "mount"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start full --port 3040 --id e2e-full-agent --env MCP_AUTH_TOKEN=${SECRET:full} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+   "id": "fullAgent"
+  },
+  {
+   "auth": "secret:full",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3040
+  },
+  {
+   "arguments": {
+    "content": "e2e 1\n",
+    "path": ".config/opute-e2e/full-1.txt",
+    "scope": "user"
+   },
+   "auth": "secret:full",
+   "id": "writeBefore",
+   "mcp": "tools/call",
+   "port": 3040,
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "command": "echo before"
+   },
+   "auth": "secret:full",
+   "id": "taskBefore",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3040,
+   "tool": "run_host_command"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/full/state/state.db",
+   "id": "dbBefore"
+  },
+  {
+   "guest": "fallocate -l $(df --output=avail -B1 /tmp/e2e-agents/full/state | tail -1) /tmp/e2e-agents/full/state/filler 2>/dev/null; dd if=/dev/zero of=/tmp/e2e-agents/full/state/filler2 bs=4k 2>/dev/null; df --output=avail -B1 /tmp/e2e-agents/full/state | tail -1",
+   "id": "fill"
+  },
+  {
+   "arguments": {
+    "content": "e2e 2\n",
+    "path": ".config/opute-e2e/full-2.txt",
+    "scope": "user"
+   },
+   "auth": "secret:full",
+   "id": "writeFull",
+   "mcp": "tools/call",
+   "port": 3040,
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "command": "echo full"
+   },
+   "auth": "secret:full",
+   "id": "taskFull",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3040,
+   "tool": "run_host_command"
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e6-full-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "e2e\n",
+         "path": ".config/opute-e2e/full-p.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/full-p.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      }
+     ],
+     "planId": "e2e6.full"
+    }
+   },
+   "auth": "secret:full",
+   "id": "planFull",
+   "mcp": "tools/call",
+   "port": 3040,
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:full",
+   "id": "readFull",
+   "mcp": "tools/call",
+   "port": 3040,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "ls /tmp/e2e-agents/full/home/.config/opute-e2e; test ! -e /tmp/e2e-agents/full/home/.config/opute-e2e/full-2.txt && test ! -e /tmp/e2e-agents/full/home/.config/opute-e2e/full-p.txt && echo none",
+   "id": "noHalfWrite"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/full/state/state.db",
+   "id": "dbFull"
+  },
+  {
+   "guest": "rm -f /tmp/e2e-agents/full/state/filler /tmp/e2e-agents/full/state/filler2 && echo freed",
+   "id": "free"
+  },
+  {
+   "arguments": {
+    "content": "e2e 3\n",
+    "path": ".config/opute-e2e/full-3.txt",
+    "scope": "user"
+   },
+   "auth": "secret:full",
+   "id": "writeAfter",
+   "mcp": "tools/call",
+   "port": 3040,
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "command": "echo after"
+   },
+   "auth": "secret:full",
+   "id": "taskAfter",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3040,
+   "tool": "run_host_command"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/full/state/state.db",
+   "id": "dbAfter"
+  }
+ ]
+}

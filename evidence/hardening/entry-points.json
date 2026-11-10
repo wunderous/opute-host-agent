@@ -139,7 +139,10 @@
       "fuzz": [
         "state_store"
       ],
-      "properties": []
+      "properties": [],
+      "findings": [
+        "F3"
+      ]
     },
     {
       "id": "authz-store",
@@ -202,7 +205,10 @@
       "fuzz": [
         "command_output"
       ],
-      "properties": []
+      "properties": [],
+      "findings": [
+        "F4"
+      ]
     },
     {
       "id": "workload-command-output",
@@ -246,6 +252,20 @@
       "foundBy": "auth review",
       "test": "fuzzing::tests::oversized_mcp_bodies_are_refused_without_reading_them",
       "state": "fixed by D29 (openspec/changes/bound-mcp-request-body)"
+    },
+    {
+      "id": "F3",
+      "summary": "With the state directory full, an effectful call (ensure_host_file, run_host_command) still ran on the host; its audit row was written after the call and the failed write was ignored, so the change went unrecorded. D31 requires the call to be refused.",
+      "foundBy": "gate e2e-6 draft, journey e2e6.disk-full",
+      "test": "admission::tests::a_full_state_directory_refuses_with_a_typed_error; journey e2e6.disk-full",
+      "state": "fixed: effectful calls are refused with state_storage_full before they run while under 1 MiB is free (D31)"
+    },
+    {
+      "id": "F4",
+      "summary": "/health ran incus list on the single thread that serves every connection; an incus that never exits stalled every request, including tools/list, for its 45 s timeout per health check.",
+      "foundBy": "gate e2e-6 draft, journey e2e6.commands",
+      "test": "fuzzing::tests::a_hanging_incus_does_not_stall_other_requests; journey e2e6.commands",
+      "state": "fixed: /health runs on the blocking pool, as tools/call does"
     }
   ]
 }

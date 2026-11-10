@@ -137,6 +137,32 @@ impl Refusal {
     }
 }
 
+/// D31: below this many free bytes the state directory counts as full. One
+/// call's operation, invocation and task rows, with their WAL frames, fit in
+/// far less; the margin keeps a write that starts from failing halfway.
+pub const STATE_HEADROOM_BYTES: u64 = 1 << 20;
+
+/// D31 (host-fault-outcomes): a call that writes durable state is refused
+/// while the state directory is full, before it runs, so nothing it does on
+/// the host goes unrecorded. Reads are not checked.
+pub fn state_writable(host: &Host) -> Result<(), Refusal> {
+    let free = host.state.lock().ok().and_then(|s| s.free_bytes());
+    refuse_when_full(free)
+}
+
+fn refuse_when_full(free: Option<u64>) -> Result<(), Refusal> {
+    match free {
+        Some(free) if free < STATE_HEADROOM_BYTES => Err(Refusal::Capability {
+            owner: "admission",
+            code: "state_storage_full",
+            message: format!(
+                "state directory has {free} bytes free; a call that writes durable state needs {STATE_HEADROOM_BYTES}"
+            ),
+        }),
+        _ => Ok(()),
+    }
+}
+
 /// `argumentValue`: a dotted path through nested objects.
 fn argument_value<'a>(args: &'a Map<String, J>, path: &str) -> Option<&'a J> {
     if path.trim().is_empty() {
@@ -474,6 +500,24 @@ pub fn release(server: &Server, reservation: &Reservation) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_full_state_directory_refuses_with_a_typed_error() {
+        let refused = refuse_when_full(Some(4096)).unwrap_err().render();
+        assert_eq!(refused["isError"], true);
+        assert_eq!(refused["structuredContent"]["code"], "state_storage_full");
+        assert_eq!(refused["structuredContent"]["owner"], "admission");
+        assert!(refuse_when_full(Some(STATE_HEADROOM_BYTES)).is_ok());
+        // An unmeasurable filesystem is not a full one.
+        assert!(refuse_when_full(None).is_ok());
+    }
+
+    #[test]
+    fn the_store_measures_its_own_filesystem() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = crate::store::StateStore::open(dir.path()).unwrap();
+        assert!(store.free_bytes().is_some_and(|b| b > 0));
+    }
 
     #[test]
     fn coordinates_skip_blank_values() {

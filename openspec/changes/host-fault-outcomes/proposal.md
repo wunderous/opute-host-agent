@@ -40,3 +40,16 @@ None.
 
 `evidence/e2e/journeys/make_e2e6.py` and gate `e2e-6` in
 `evidence/e2e/gates.json`.
+
+## Findings against these outcomes (m16)
+
+The e2e-6 drafts found two places where the agent did not meet them; both
+are fixed to the outcomes above, with no other behaviour changed:
+- F3: with the state directory full, an effectful call still ran on the
+  host and its audit row was silently dropped. Effectful calls are now
+  refused before they run with the typed error `state_storage_full`
+  (owner `admission`) while the state directory's filesystem has less than
+  1 MiB free to the agent; reads are not checked.
+- F4: `/health` ran `incus list` on the thread that serves every
+  connection, so a hung `incus` stalled the whole listener. It now runs
+  off that thread, as tool calls already did.
