@@ -53,7 +53,8 @@ VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
 SSH_PORT, MCP_PORT = 42222, 43014
 AGENT_ID = "e2e-devvm-agent"
 UNIT = "opute-bootstrap-mcp.service"
-VERSION = "0.2.4"
+# The Rust release the VM is built from (m13b: the 0.3.0 candidate); Go stays v0.2.4.
+VERSION = "0.3.0"
 POOL, BRIDGE, PROJECT = "opute-e2e", "opute-e2e0", "opute-e2e"
 HOST_KEY_ALIAS = "opute-parity-t2-golden"
 
@@ -73,7 +74,7 @@ PROVISION = [
     f"incus profile device add default eth0 nic network={BRIDGE} name=eth0 --project {PROJECT}",
     # The release sets: Rust is installed; Go is present only as the
     # migration source for e2e-1 journey 8 and e2e-4.
-    "cd /opt/opute-e2e/releases/rust/v0.2.4 && sha256sum -c --quiet SHA256SUMS",
+    f"cd /opt/opute-e2e/releases/rust/v{VERSION} && sha256sum -c --quiet SHA256SUMS",
     "cd /opt/opute-e2e/releases/go/v0.2.4 && sha256sum -c --quiet SHA256SUMS",
     # The production-style system install (Go's deploy files, unchanged):
     # the opute user, the release binary, the system unit, the sudoers file,
@@ -81,7 +82,7 @@ PROVISION = [
     "id opute >/dev/null 2>&1 || useradd -m -s /bin/bash opute",
     "usermod -aG incus-admin opute",
     "install -d -o opute -g opute -m 0755 /home/opute/.local /home/opute/.local/share /home/opute/.local/share/opute",
-    "gzip -dc /opt/opute-e2e/releases/rust/v0.2.4/host-agent-linux-x64.gz > /tmp/opute-host-agent && "
+    f"gzip -dc /opt/opute-e2e/releases/rust/v{VERSION}/host-agent-linux-x64.gz > /tmp/opute-host-agent && "
     "install -o opute -g opute -m 0755 /tmp/opute-host-agent /home/opute/.local/share/opute/opute-host-agent && "
     "rm /tmp/opute-host-agent",
     f"install -m 0644 /opt/opute-e2e/deploy/opute-bootstrap-mcp.service /etc/systemd/system/{UNIT}",
@@ -93,6 +94,8 @@ PROVISION = [
     f"> /etc/systemd/system/{UNIT}.d/e2e.conf",
     f"systemctl daemon-reload && systemctl enable --now {UNIT}",
     "for i in $(seq 60); do curl -fsS http://127.0.0.1:3014/health >/dev/null && exit 0; sleep 1; done; exit 1",
+    # The installed binary is the release this VM is named for.
+    f'test "$(/home/opute/.local/share/opute/opute-host-agent --version)" = "{VERSION}"',
     "sync",
 ]
 
@@ -242,11 +245,12 @@ def build(rust_release: Path) -> dict:
     log = []
     try:
         boot(base)
-        guest("install -d /opt/opute-e2e/releases/rust/v0.2.4 /opt/opute-e2e/releases/go/v0.2.4 "
+        guest(f"install -d /opt/opute-e2e/releases/rust/v{VERSION} /opt/opute-e2e/releases/go/v0.2.4 "
               "/opt/opute-e2e/deploy", check=True)
         for side, files in (("rust", releases["rust"]), ("go", releases["go"])):
             directory = Path(files["dir"])
-            scp(sorted(p for p in directory.iterdir() if p.is_file()), f"/opt/opute-e2e/releases/{side}/v0.2.4/")
+            scp(sorted(p for p in directory.iterdir() if p.is_file()),
+                f"/opt/opute-e2e/releases/{side}/v{VERSION if side == 'rust' else '0.2.4'}/")
         scp([GO_DEPLOY / n for n in deploy], "/opt/opute-e2e/deploy/")
         scp([env_file], "/opt/opute-e2e/host-agent.env")
         for command in PROVISION:

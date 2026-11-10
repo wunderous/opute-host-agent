@@ -32,9 +32,17 @@ TASKS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.
 DOCS = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/"
 DIST = "baseline/inventory/distribution.json"
 
+# The Rust release under test (m13b): one candidate for every gate, and a newer local build of the same
+# sources as the in-place upgrade target. Go stays the published v0.2.4.
+RUST_VERSION = "0.3.0"
+CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc1"
+CANDIDATE_NEXT = CANDIDATE + "-next"
+NEXT_VERSION = "0.3.1-e2e"
+LAUNCHER = f"opute-host-agent-{RUST_VERSION}.tgz"
+
 BIN = "/home/opute/.local/share/opute/opute-host-agent"
 UNIT = "opute-bootstrap-mcp.service"
-REL = "/opt/opute-e2e/releases/rust/v0.2.4"
+REL = f"/opt/opute-e2e/releases/rust/v{RUST_VERSION}"
 GO_REL = "/opt/opute-e2e/releases/go/v0.2.4"
 SDB = "/home/opute/.config/opute/instances/standalone/state/state.db"
 ADB = "/home/opute/.config/opute/instances/standalone/state/authz.sqlite"
@@ -42,7 +50,8 @@ CRED = "/home/opute/.config/opute/instances/standalone/state/credentials/host-ag
 T = "python3 /opt/opute-e2e/guest/e2etool.py"
 GATE_TEXT = "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
 WAIT_HEALTH = "for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:{port}/health && break; sleep 0.5; done"
-AGENT = ("the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, "
+AGENT = (f"the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust {RUST_VERSION} release candidate "
+         "binary, "
          "test identity e2e-devvm-agent, test token)")
 
 
@@ -195,7 +204,7 @@ def j1() -> dict:
         "--check, enable, and serve. The published docs route a production host's install through Platform's "
         "Connect Remote Host flow (docs/install), so the recorded deploy files and distribution contract are the "
         "reference; reinstalling must reproduce the snapshot exactly (no declared effect).",
-        {"agent": AGENT, "files": TOOL_FILES, "release": f"{REL} (local Rust v0.2.4 release set)"},
+        {"agent": AGENT, "files": TOOL_FILES, "release": f"{REL} (local Rust {RUST_VERSION} release candidate set)"},
         reqs, steps, [])
 
 
@@ -209,11 +218,11 @@ def j2() -> dict:
            "NPM_CONFIG_OFFLINE=true NPM_CONFIG_UPDATE_NOTIFIER=false "
            "OPUTE_HOST_AGENT_RELEASE_BASE_URL=http://127.0.0.1:8765 OPUTE_REMOTE_AGENT_ID=e2e-npm-agent "
            "MCP_AUTH_TOKEN=${SECRET:npm} HOST_MCP_PORT=3016 npm exec --yes --offline "
-           "--package=/opt/opute-e2e/opute-host-agent-0.2.4.tgz -- opute-host-agent")
+           f"--package=/opt/opute-e2e/{LAUNCHER} -- opute-host-agent")
     files = {**TOOL_FILES,
              "userUnit": inp("${PARITY}/e2e/go-src-v0.2.4/deploy/opute-host-agent.service"),
              "node": inp("${PARITY}/setup/node-v22.14.0-linux-x64.tar.xz"),
-             "launcher": inp("${PARITY}/e2e/inputs/opute-host-agent-0.2.4.tgz")}
+             "launcher": inp("${PARITY}/e2e/inputs/" + LAUNCHER)}
     steps = TOOL_STEPS + [
         {"id": "unitFile", "copy": "userUnit", "to": "/opt/opute-e2e/deploy-user/opute-host-agent.service"},
         {"id": "linger", "guest": f"loginctl enable-linger {user} && for i in $(seq 60); do test -S "
@@ -239,14 +248,14 @@ def j2() -> dict:
         call("userInfo", "get_host_info", port=3015, auth="secret:user"),
         {"id": "userStop", "guest": f"{run} disable --now opute-host-agent.service"},
         {"id": "nodeCopy", "copy": "node", "to": "/opt/opute-e2e/node.tar.xz"},
-        {"id": "launcherCopy", "copy": "launcher", "to": "/opt/opute-e2e/opute-host-agent-0.2.4.tgz",
+        {"id": "launcherCopy", "copy": "launcher", "to": f"/opt/opute-e2e/{LAUNCHER}",
          "mode": "0644"},
         {"id": "node", "guest": "mkdir -p /opt/opute-e2e/node && tar -xJf /opt/opute-e2e/node.tar.xz -C "
                                 "/opt/opute-e2e/node --strip-components=1 && /opt/opute-e2e/node/bin/node --version"},
         {"id": "releaseBase", "guest": "systemd-run --unit=e2e-release --collect python3 -m http.server 8765 "
                                        "--bind 127.0.0.1 --directory /opt/opute-e2e/releases/rust && "
                                        "for i in $(seq 40); do curl -fsS -o /dev/null "
-                                       "http://127.0.0.1:8765/v0.2.4/SHA256SUMS && break; sleep 0.25; done"},
+                                       f"http://127.0.0.1:8765/v{RUST_VERSION}/SHA256SUMS && break; sleep 0.25; done"},
         {"id": "start", "guest": f"{npm} start --background", "timeout": 300},
         {"id": "url", "guest": f"{npm} url"},
         {"id": "status", "guest": f"{npm} status"},
@@ -265,7 +274,7 @@ def j2() -> dict:
     # incus client writes .config/incus (e2e-1-r1, retired).
     cleanup = [{"id": "remove", "guest": f"rm -rf {home}/.local {home}/.config {home}/.cache {home}/.npm "
                                          "/opt/opute-e2e/node /opt/opute-e2e/node.tar.xz "
-                                         "/opt/opute-e2e/opute-host-agent-0.2.4.tgz /opt/opute-e2e/deploy-user"}]
+                                         f"/opt/opute-e2e/{LAUNCHER} /opt/opute-e2e/deploy-user"}]
     reqs = [
         req(SPEC, "Compatible modes, configuration, and distribution",
             ok("install"), a("install", "stdout", equalsStep={"step": "pinned", "path": "stdout"}),
@@ -283,8 +292,9 @@ def j2() -> dict:
             a("npmListen", "json.addresses", equals=["127.0.0.1:3016"]),
             a("npmBinary", "stdout", equalsStep={"step": "pinned", "path": "stdout"}),
             ok("stop"), a("npmGone", "stdout", equals="000"),
-            scenario="the locally packed @opute/host-agent@0.2.4 (the docs' current source candidate) with a "
-                     "local release base; the launcher runs the pinned release binary"),
+            scenario=f"@opute/host-agent@{RUST_VERSION} packed locally from the pinned launcher tree with only "
+                     "its version changed (never published), with a local release base; the launcher runs the "
+                     "pinned release binary"),
         req(SPEC, "One exact Host Agent identity",
             a("userHealth", "response.body.agentId", equals="e2e-user-agent"),
             a("npmHealth", "response.body.agentId", equals="e2e-npm-agent"),
@@ -297,7 +307,7 @@ def j2() -> dict:
             scenario="Read-only authenticated first call"),
     ]
     allow = ["files//home/ubuntu/.local*", "files//home/ubuntu/.config*", "files//home/ubuntu/.cache*",
-             "files//home/ubuntu/.npm*", "files//opt/opute-e2e/node*", "files//opt/opute-e2e/opute-host-agent-0.2.4.tgz",
+             "files//home/ubuntu/.npm*", "files//opt/opute-e2e/node*", f"files//opt/opute-e2e/{LAUNCHER}",
              "files//opt/opute-e2e/deploy-user*", "linger*", "user/*", "system/units/user*",
              "system/units/run-user-1000.mount*", "system/units/e2e-release*", "system/unitFiles/e2e-release*"]
     return journey(
@@ -307,8 +317,9 @@ def j2() -> dict:
         "locally from the pinned tree (never published), started as the docs show against a local release base, "
         "with url, status and stop. The user unit is stopped first: both are the user's default instance, and "
         "under D25 they would refuse each other.",
-        {"agent": "Rust v0.2.4 release binary as ubuntu (user unit) and as the launcher's cached binary",
-         "files": files, "release": f"{REL} served at http://127.0.0.1:8765/v0.2.4/"},
+        {"agent": f"Rust {RUST_VERSION} release candidate binary as ubuntu (user unit) and as the launcher's "
+                  "cached binary",
+         "files": files, "release": f"{REL} served at http://127.0.0.1:8765/v{RUST_VERSION}/"},
         reqs, steps, cleanup, allow=allow, minutes=20)
 
 
@@ -722,7 +733,7 @@ def j7() -> dict:
 # --- 8. migrate a Go-installed host, then upgrade -------------------------------------------------------
 
 def j8() -> dict:
-    files = {**TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-e2e13a/host-agent-linux-x64.gz")}
+    files = {**TOOL_FILES, "rustNext": inp(CANDIDATE_NEXT + "/host-agent-linux-x64.gz")}
     done_plan = plan("e2e1-j8-done", "e2e1-j8-done-1", ".config/opute-e2e/j8-done.txt")
     flight_plan = plan("e2e1-j8-flight", "e2e1-j8-flight-1", ".config/opute-e2e/j8-flight.txt", slow=True)
     run_id = lambda step: {"step": step, "path": "response.body.result.structuredContent.runId"}  # noqa: E731
@@ -779,7 +790,7 @@ def j8() -> dict:
                      "instance root: every operation and run is there once, unchanged (D1: the schema is "
                      "bit-compatible, so conversion is the identity)"),
         req(SPEC, "Compatible modes, configuration, and distribution",
-            ok("upgrade"), a("upgrade", "stdout", matches="\n0\\.2\\.5-e2e\n$"),
+            ok("upgrade"), a("upgrade", "stdout", matches="\n0\\.3\\.1-e2e\n$"),
             a("nextList", "response.status", equals=200), a("nextDb", "json.integrity", equals="ok"),
             a("nextDb", "json.planRunIds", equalsStep={"step": "goStop", "path": "json.planRunIds"}),
             a("nextDb", "json.operationIds", equalsStep={"step": "goStop", "path": "json.operationIds"}),
@@ -801,10 +812,11 @@ def j8() -> dict:
         "e2e1.migrate-upgrade",
         "Flow 14, migration and upgrade: the host is reinstalled as a Go v0.2.4 install (the published release, "
         "the same unit, path, instance root and agent ID) and does work, one run completed and one stopped in "
-        "flight; the binary is then replaced by the Rust v0.2.4 release, and then upgraded in place to a newer "
-        "local Rust build (0.2.5-e2e, built locally; no tag, no publish). Go is the source install, not an oracle.",
+        f"flight; the binary is then replaced by the Rust {RUST_VERSION} release candidate, and then upgraded in place to "
+        f"a newer local Rust build ({NEXT_VERSION}, built locally; no tag, no publish). Go is the source install, "
+        "not an oracle.",
         {"agent": AGENT, "files": files, "go": f"{GO_REL} (published Go v0.2.4 release, SHA256SUMS pinned)",
-         "next": "Rust release set built locally with VERSION=0.2.5-e2e"},
+         "next": f"Rust release set built locally with VERSION={NEXT_VERSION}"},
         reqs, steps, cleanup,
         allow=["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/.config/opute-e2e*",
                "files//opt/opute-e2e/releases/rust-next*", "system/units/e2e-slow*", "system/unitFiles/e2e-slow*"],

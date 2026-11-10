@@ -40,6 +40,26 @@
    "unblocker": "a Platform staging environment with an enrollment identity for the agent (D5)"
   },
   {
+   "id": "candidate",
+   "kind": "candidate",
+   "record": "evidence/cutover/candidate.json",
+   "gates": [
+    "e2e-0",
+    "e2e-1",
+    "e2e-2",
+    "e2e-3a",
+    "e2e-3",
+    "e2e-4"
+   ],
+   "contracts": "evidence/cutover/contract-suites.json",
+   "arm64": "evidence/cutover/arm64/receipt.json",
+   "sources": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates"
+   ]
+  },
+  {
    "id": "contract-suites",
    "kind": "receipt",
    "receipt": "evidence/cutover/contract-suites.json",
