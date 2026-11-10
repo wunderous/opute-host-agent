@@ -117,7 +117,7 @@ class Format(unittest.TestCase):
     def test_e2e1_journeys_are_the_generator_output(self):
         sys.path.insert(0, str(E2E / "journeys"))
         import make_e2e1
-        if not (make_e2e1.PARITY / "e2e" / "go-src-v0.2.4").exists():
+        if not Path(make_e2e1.CANDIDATE.replace("${PARITY}", str(make_e2e1.PARITY))).exists():
             self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
         for name, text in make_e2e1.render().items():
             self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_e2e1.py")
@@ -125,7 +125,7 @@ class Format(unittest.TestCase):
     def test_e2e3a_journeys_are_the_generator_output(self):
         sys.path.insert(0, str(E2E / "journeys"))
         import make_e2e1
-        if not (make_e2e1.PARITY / "e2e" / "release" / "rust").exists():
+        if not Path(make_e2e1.CANDIDATE.replace("${PARITY}", str(make_e2e1.PARITY))).exists():
             self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
         import make_e2e3a  # hashes its inputs on import
         for name, text in make_e2e3a.render().items():
@@ -134,7 +134,7 @@ class Format(unittest.TestCase):
     def test_e2e4a_journeys_are_the_generator_output(self):
         sys.path.insert(0, str(E2E / "journeys"))
         import make_e2e1
-        if not (make_e2e1.PARITY / "e2e" / "release" / "rust-e2e4a-2").exists():
+        if not Path(make_e2e1.CANDIDATE_NEXT.replace("${PARITY}", str(make_e2e1.PARITY))).exists():
             self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
         import make_e2e4a  # hashes its inputs on import
         for name, text in make_e2e4a.render().items():

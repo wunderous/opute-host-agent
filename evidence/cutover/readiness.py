@@ -16,6 +16,11 @@ what unblocks it) or `failed`:
                stale), and its own verdict passed.
   seam         a seam stage: report and verifier log hash to its validation
                receipt, its canary was red, and its sources are current.
+  candidate    one release set (candidate.json) is the build every listed
+               gate ran, the contract suites ran and the arm64 install ran;
+               journey inputs taken from a release set are its artifacts
+               (or its recorded upgrade target); and the sources are still
+               the ones it was built from.
   spec-text    the normative spec states the decided value.
   questions    every row of the questions table: answered rows need each
                carrier change's tasks done; open and deferred rows are
@@ -139,6 +144,48 @@ def check_seam(root: Path, item: dict) -> dict:
     return {"status": "passed", "detail": f"stage {item['stage']}: {report.get('counts')}"}
 
 
+def check_candidate(root: Path, item: dict) -> dict:
+    """Every gate and receipt names the one release set in the candidate record."""
+    path = root / item["record"]
+    if not path.exists():
+        return {"status": "failed", "detail": f"{item['record']} is missing"}
+    candidate = json.loads(path.read_text())
+    artifacts = candidate["artifacts"]
+    allowed = set(artifacts.values()) | set(candidate.get("upgradeTarget", {}).get("artifacts", {}).values())
+    problems = []
+    gates = json.loads((root / "evidence/e2e/gates.json").read_text())
+    for gate in item["gates"]:
+        spec = gates.get(gate) or {}
+        if not spec.get("run") or not spec.get("journeys"):
+            problems.append(f"gate {gate} has no run")
+            continue
+        for journey in spec["journeys"]:
+            directory = root / "evidence/e2e/runs" / spec["run"] / journey
+            ran = json.loads((directory / "receipt.json").read_text())["devvm"]["rustRelease"]
+            other = sorted(name for name, digest in ran.items() if artifacts.get(name) != digest)
+            if other:
+                problems.append(f"gate {gate} ({spec['run']}, {journey}) ran another build of {other}")
+            files = json.loads((directory / "journey.json").read_text())["inputs"].get("files", {})
+            foreign = sorted(name for name, f in files.items()
+                             if "/e2e/release/" in f.get("path", "") and f.get("sha256") not in allowed)
+            if foreign:
+                problems.append(f"gate {gate} ({journey}) took {foreign} from another release set")
+    contracts = json.loads((root / item["contracts"]).read_text())
+    if contracts.get("binarySha256") != artifacts["host-agent-linux-x64"]:
+        problems.append("the contract suites ran another binary")
+    arm64 = json.loads((root / item["arm64"]).read_text())["release"]
+    if arm64.get("sha256") != artifacts["host-agent-linux-arm64.gz"] or \
+            arm64.get("sha256sums") != candidate.get("sha256sums"):
+        problems.append("the arm64 install ran another release set")
+    if source_digest(root, item["sources"]) != candidate.get("sourceDigest"):
+        problems.append("the sources changed since the candidate was built")
+    if problems:
+        return {"status": "failed", "detail": "; ".join(problems[:6]) +
+                (f"; and {len(problems) - 6} more" if len(problems) > 6 else "")}
+    return {"status": "passed", "detail": f"{candidate['name']} ({candidate['version']}, commit "
+                                          f"{candidate['commit'][:9]}): {len(item['gates'])} gates and the receipts"}
+
+
 def check_spec_text(root: Path, item: dict) -> dict:
     path = root / item["path"]
     if not path.exists():
@@ -199,7 +246,7 @@ def check_questions(root: Path, item: dict) -> list[dict]:
 
 
 CHECKS = {"e2e-gate": check_gate, "requirement": check_requirement, "receipt": check_receipt,
-          "seam": check_seam, "spec-text": check_spec_text}
+          "seam": check_seam, "candidate": check_candidate, "spec-text": check_spec_text}
 
 
 def evaluate(root: Path = ROOT) -> dict:

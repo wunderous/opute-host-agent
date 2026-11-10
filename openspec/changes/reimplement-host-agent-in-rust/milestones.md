@@ -1040,10 +1040,12 @@ through the normal rollout path, with Go kept as the rollback candidate
 throughout the agreed window. Go retirement, and ownership of releases and the
 website, are later decisions that need their own evidence.
 
-*Status (2026-11-08):* D28 fixes the evidence and the window (14 days).
-`make cutover-readiness` passes with only Q4, Q18, e2e-5 and WSL2
-not passed (Q29 and Q19 answered and done, 2026-11-08/09) (entry e2e-13a below). The owners' review (6.3) has not
-happened.
+*Status (2026-11-10):* D28 fixes the evidence and the window (14 days).
+One release candidate, `rust-0.3.0-rc1`, carries every gate and receipt
+(entry m13b below). `make cutover-readiness` passes with only Q4, Q18,
+e2e-5 and WSL2 not passed. The review packet is
+[cutover-review-packet.md](cutover-review-packet.md); the owners' review
+(6.3) has not happened.
 
 ### E2E journeys on the dev VM (after D27)
 
@@ -1306,6 +1308,29 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     - r12, r16, r17 and r18: GitHub download 504s.
   - **Result:** gate e2e-3a passes on run `e2e-13a-r19`, with the new
     journey `e2e3a.endpoint`.
+- **m13b (2026-11-10): one release candidate.** `rust-0.3.0-rc1` was
+  built locally from main at `74b3d2e82` with `VERSION=0.3.0`; no tag, no
+  publish ([`candidate.json`](../../../evidence/cutover/candidate.json)).
+  - **Gates:** e2e-0, e2e-1, e2e-2, e2e-3a, e2e-3 and e2e-4 ran on the
+    candidate under one run, `m13b-r1`; the dev VM was rebuilt from it and
+    refuses unless the installed binary reports `0.3.0`. Go stays v0.2.4.
+  - **What the run found:** two journeys still expected the installed Rust
+    binary to print `0.2.4`. A harness pin, not a product defect; both
+    reran green under `m13b-r1` (retired with their cause).
+  - **Receipts on the candidate:** the contract suites (all green), seam
+    stage `m13b` (133 compliant, 17 unported, no gap), the arm64 clean
+    install, and the local distribution checks
+    ([`distribution.json`](../../../evidence/cutover/distribution.json)):
+    the read-only canary on a locally packed 0.3.0 launcher, and the site
+    preview from the candidate's catalog. The preview differs from Go's
+    after the D19–D24 renames in exactly the four tools D28 changed.
+  - **Harness:** the `reject-without-audit-writes` contract pinned the
+    release number in `serverInfo.version`; it now accepts any release
+    version. Readiness gains the `candidate` item: it fails unless every
+    gate, the contract receipt and the arm64 receipt ran this one set and
+    the sources are unchanged since.
+  - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
+    and Q18 not passed. Tasks 6.3 and 6.4 stay open.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 

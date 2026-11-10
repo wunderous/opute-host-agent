@@ -3,7 +3,7 @@
  "gate": "e2e-3",
  "description": "Site deploy through the opute-site-deploy recipe on a single-node K3s cluster: the site image built locally from the published source and pushed to an e2e registry, the recipe's own nodes run with the image pinned by digest, the page served at a local test hostname (no tunnel, no public host), a rerun, and removal through the teardown recipe.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries",
   "source": "https://codeload.github.com/wunderous/host-agents/tar.gz/c9f9e775d8648a54ebaccc052c840cc1dcbdc42e (sha256 d995d8410af9219d38d8b5f3aa792669c27ca0f3916953e1a541f0fb4404b930)",
   "files": {
@@ -16,8 +16,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-e2e13a/opute-provider-k3s-linux-x64",
-    "sha256": "ce25706303f50cfbc3f1e5c1deb984d1d6f940def2b7677240e645fcc18551bb"
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc1/opute-provider-k3s-linux-x64",
+    "sha256": "cdf421a137cbb772d0c39117c8a263dc67ff64c5685b96e862cb2d2c95b6cfad"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",

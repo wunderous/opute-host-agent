@@ -3,7 +3,7 @@
  "gate": "e2e-3a",
  "description": "The optional cluster endpoint (Q19) on the HA cluster built as in e2e3a.build, with host A's provider enabled for it and host B's not: opt in at k3s.e2e.test, verify certificates, bridge resolution and ensure-ha-endpoint with the CA reference; stop e2e-k3 and use the hostname; retire e2e-k3; opt out.",
  "inputs": {
-  "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "agentB": "a transient Rust agent e2e-ha-b on port 3031 (e2etool agent start), with its own Rust k3s provider (e2e-provider-k3s-b, port 4321)",
   "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries",
   "files": {
@@ -16,8 +16,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-endpoint/opute-provider-k3s-linux-x64",
-    "sha256": "51c5a28292063387c0608e6c25a7ed5b44e1c46007fc885fc588093519abe48e"
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc1/opute-provider-k3s-linux-x64",
+    "sha256": "cdf421a137cbb772d0c39117c8a263dc67ff64c5685b96e862cb2d2c95b6cfad"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",

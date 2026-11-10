@@ -1,0 +1,61 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.restore",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "touch"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.equal",
+     "step": "restore"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "gone"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "health"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: restore returns the baseline",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "gone": 146,
+   "health": 17,
+   "restore": 44219,
+   "touch": 221
+  },
+  "stepsSeconds": 88.8
+ },
+ "unverified": []
+}

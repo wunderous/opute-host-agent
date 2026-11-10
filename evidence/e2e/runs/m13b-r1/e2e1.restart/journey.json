@@ -1,0 +1,486 @@
+{
+ "cleanup": [
+  {
+   "guest": "rm -rf /home/opute/.config/opute-e2e",
+   "id": "remove"
+  }
+ ],
+ "description": "Flow 14, restart and recovery: the system agent is stopped with SIGTERM, then killed with SIGKILL (the unit's Restart=on-failure restarts it) each time with a host plan in flight (its first node wrote a file with write-only content, its second waits on a slow local endpoint). After each restart the run is served as one durable record, the store passes its integrity check, and the write-only content is in no durable row and no journal line. The resubmission after the SIGKILL is admitted (D28, Q15).",
+ "effects": {
+  "allow": [
+   "files//home/opute/.config/opute-e2e*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-1",
+ "id": "e2e1.restart",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "074214c3b4ca317c3b9c11335908f346f27e6278f50095f0eb6a290bbd399826"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  },
+  "slow": "a local endpoint answering after 30 s (e2etool slow)"
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "slow"
+    },
+    {
+     "gte": 1,
+     "path": "attempts",
+     "step": "termInFlight"
+    },
+    {
+     "equals": 1,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "termInFlight"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "term"
+    },
+    {
+     "equals": "active",
+     "path": "json.ActiveState",
+     "step": "termStart"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "termList"
+    },
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "path": "response.body.result.structuredContent.runId",
+     "step": "termAfter"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "termDb"
+    },
+    {
+     "equals": 1,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "killInFlight"
+    },
+    {
+     "equals": "active",
+     "path": "json.ActiveState",
+     "step": "kill"
+    },
+    {
+     "matches": "^[1-9][0-9]*$",
+     "path": "json.NRestarts",
+     "step": "kill"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "killList"
+    },
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "path": "response.body.result.structuredContent.runId",
+     "step": "killAfter"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "killDb"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "integrity"
+    },
+    {
+     "equals": 0,
+     "path": "json.rows",
+     "step": "secretInDb"
+    },
+    {
+     "equals": "0\n",
+     "path": "stdout",
+     "step": "secretInJournal"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "a run in flight survives SIGTERM and SIGKILL restarts as one durable record; the store stays consistent and the write-only file content reaches no durable row or log",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "path": "json.planRunIds[0]",
+     "step": "termDb"
+    },
+    {
+     "absent": true,
+     "path": "json.planRunIds[1]",
+     "step": "termDb"
+    },
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "path": "json.planRunIds[0]",
+     "step": "killDb"
+    },
+    {
+     "absent": true,
+     "path": "json.planRunIds[1]",
+     "step": "killDb"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "exactly one durable run per interrupted plan: nothing lost or duplicated",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "termAfter"
+    },
+    {
+     "equals": "unknown",
+     "path": "response.body.result.structuredContent.status",
+     "step": "killAfter"
+    }
+   ],
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "scenario": "A plan in flight reads back cancelled after SIGTERM and unknown after SIGKILL, and neither runs again (D28)",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "resubmit"
+    },
+    {
+     "absent": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "resubmit"
+    }
+   ],
+   "requirement": "A crashed plan run's orphaned reservation is reclaimed without a task",
+   "scenario": "After a SIGKILL during a plain run_host_plan, whose task was never persisted, the resubmission is admitted (D28)",
+   "spec": "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 30",
+   "id": "slow"
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j7-term-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "${SECRET:j7content}",
+         "path": ".config/opute-e2e/j7-term.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/j7-term.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      },
+      {
+       "action": {
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        },
+        "tool": "probe_http_endpoint"
+       },
+       "dependsOn": [
+        "n1"
+       ],
+       "id": "n2"
+      }
+     ],
+     "planId": "e2e1-j7-term"
+    }
+   },
+   "capture": {
+    "TERM_RUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "termRun",
+   "mcp": "tools/call",
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {
+    "runId": "${TERM_RUN}"
+   },
+   "id": "termInFlight",
+   "mcp": "tools/call",
+   "timeout": 30,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.nodes.n2.attempts"
+   }
+  },
+  {
+   "guest": "systemctl kill -s TERM opute-bootstrap-mcp.service && for i in $(seq 60); do systemctl is-active -q opute-bootstrap-mcp.service || break; sleep 0.5; done; python3 /opt/opute-e2e/guest/e2etool.py unit opute-bootstrap-mcp.service",
+   "id": "term"
+  },
+  {
+   "guest": "systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && python3 /opt/opute-e2e/guest/e2etool.py unit opute-bootstrap-mcp.service",
+   "id": "termStart"
+  },
+  {
+   "id": "termList",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {
+    "runId": "${TERM_RUN}"
+   },
+   "id": "termAfter",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-term",
+   "id": "termDb"
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j7-kill-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "${SECRET:j7content}",
+         "path": ".config/opute-e2e/j7-kill.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/j7-kill.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      },
+      {
+       "action": {
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        },
+        "tool": "probe_http_endpoint"
+       },
+       "dependsOn": [
+        "n1"
+       ],
+       "id": "n2"
+      }
+     ],
+     "planId": "e2e1-j7-kill"
+    }
+   },
+   "capture": {
+    "KILL_RUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "killRun",
+   "mcp": "tools/call",
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {
+    "runId": "${KILL_RUN}"
+   },
+   "id": "killInFlight",
+   "mcp": "tools/call",
+   "timeout": 30,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.nodes.n2.attempts"
+   }
+  },
+  {
+   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service && sleep 1 && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && python3 /opt/opute-e2e/guest/e2etool.py unit opute-bootstrap-mcp.service",
+   "id": "kill"
+  },
+  {
+   "id": "killList",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {
+    "runId": "${KILL_RUN}"
+   },
+   "id": "killAfter",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-kill",
+   "id": "killDb"
+  },
+  {
+   "id": "killTask",
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${KILL_RUN}"
+   }
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j7-kill-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "${SECRET:j7content}",
+         "path": ".config/opute-e2e/j7-kill.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/j7-kill.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      },
+      {
+       "action": {
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        },
+        "tool": "probe_http_endpoint"
+       },
+       "dependsOn": [
+        "n1"
+       ],
+       "id": "n2"
+      }
+     ],
+     "planId": "e2e1-j7-kill"
+    }
+   },
+   "id": "resubmit",
+   "mcp": "tools/call",
+   "tool": "run_host_plan"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "integrity"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py contains /home/opute/.config/opute/instances/standalone/state/state.db '${SECRET:j7content}'",
+   "id": "secretInDb"
+  },
+  {
+   "guest": "journalctl -u opute-bootstrap-mcp.service --no-pager -o cat | grep -c -F '${SECRET:j7content}'; true",
+   "id": "secretInJournal"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop",
+   "id": "slowStop"
+  }
+ ]
+}

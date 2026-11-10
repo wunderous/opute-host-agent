@@ -3,7 +3,7 @@
  "gate": "e2e-3",
  "description": "Local model serving through the Host Agent's serving path: a serving assignment runs an OpenAI-compatible runtime (a test fixture), the gateway (ensure_local_llm_relay) admits a token-bearing request and returns a completion, the probe reports it ready, and removal leaves nothing behind. A real runtime and weights are blocked: they need downloads beyond test fixtures.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust v0.2.4 release binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "runtime": "evidence/e2e/journeys/inputs/e2e-openai-fixture.py (a fixture, not a model)",
   "files": {
    "e2etool": {

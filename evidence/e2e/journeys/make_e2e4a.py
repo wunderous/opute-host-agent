@@ -618,7 +618,7 @@ K = ha.K
 CLUSTER = ha.CLUSTER
 CL = ha.CL
 K1 = "container:local:e2e-k1"
-RELEASE = "${PARITY}/e2e/release/rust-e2e13a"  # the release the dev VM was rebuilt on (this branch)
+RELEASE = base.CANDIDATE  # the release the dev VM is built on
 CLUSTER_FILES = {**base.TOOL_FILES, "providerK3s": inp(f"{RELEASE}/opute-provider-k3s-linux-x64"),
                  "activate": ha.FILES["activate"]}
 
@@ -1378,7 +1378,7 @@ def cutover() -> dict:
             direct("goSupervisorAgain", "structuredContent.status", equals="ready"),
             res("goTask", "structuredContent.stdout", equals="go-era\n"),
             ok("goStop"), a("goStop", "json.integrity", equals="ok"),
-            a("rustInstall", "stdout", matches="\n0\\.2\\.4\n$"),
+            a("rustInstall", "stdout", matches=base.RUST_MATCH),
             a("rustDb", "json.integrity", equals="ok"),
             a("rustDb", "json.counts", equalsStep={"step": "goStop", "path": "json.counts"}),
             a("rustDb", "json.operationIds", equalsStep={"step": "goStop", "path": "json.operationIds"}),
@@ -1455,7 +1455,7 @@ NEXT = "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
 
 
 def restart() -> dict:
-    files = {**base.TOOL_FILES, "rustNext": inp("${PARITY}/e2e/release/rust-next-q29/host-agent-linux-x64.gz")}
+    files = {**base.TOOL_FILES, "rustNext": inp(base.CANDIDATE_NEXT + "/host-agent-linux-x64.gz")}
     # systemctl kill can exit 1 when a process of the unit is already gone (EINVAL on an auxiliary process);
     # the agent must be dead either way before it is started again.
     kill = (f"systemctl kill -s KILL {UNIT}; sleep 1; ! systemctl is-active -q {UNIT} && systemctl start {UNIT} "
@@ -1527,7 +1527,7 @@ def restart() -> dict:
               equals="The Host Agent shut down before the task completed."),
             a("kill", "stdout", equals="up\n"),
             direct("opsAfterKill", "isError", **{"in": [False, "<absent>"]}),
-            a("upgrade", "stdout", matches="\n0\\.2\\.5-e2e\n$"),
+            a("upgrade", "stdout", matches="\n0\\.3\\.1-e2e\n$"),
             res("afterUpgrade", "structuredContent.stdout", equals="upgraded\n"),
             a("db", "json.integrity", equals="ok"),
             scenario="A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation "
@@ -1580,7 +1580,7 @@ def restart() -> dict:
         "flight; each item's durable state is read back through get_operation, tasks/get and get_host_plan_run.",
         reqs, steps, cleanup, allow=allow, persist=["files//home/opute/.opute*"], minutes=20,
         inputs={"agent": base.AGENT, "next": "Rust release set built locally from this branch with "
-                                             "VERSION=0.2.5-e2e (no tag, no publish)",
+                                             f"VERSION={base.NEXT_VERSION} (no tag, no publish)",
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
 

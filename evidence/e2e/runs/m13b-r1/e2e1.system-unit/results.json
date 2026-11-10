@@ -1,0 +1,275 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.system-unit",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "uninstall"
+    },
+    {
+     "actual": "000",
+     "equals": "000",
+     "ok": true,
+     "path": "stdout",
+     "step": "gone"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "verify"
+    },
+    {
+     "actual": "host-agent-linux-x64: OK\nhost-agent-linux-x64.gz: OK\nhost-agent-linux-arm64.gz: OK\nopute-provider-k3s-linux-x64: OK\nopute-provider-cloudflare-linux-x64: OK\nopute-provider-tailscale-linux-x64: OK\n",
+     "contains": "host-agent-linux-x64.gz: OK",
+     "ok": true,
+     "path": "stdout",
+     "step": "verify"
+    },
+    {
+     "actual": "304013dfde432e89a414622f62991b11596ef8a5b2872c639a6835da9a374828\n",
+     "equalsStep": {
+      "path": "stdout",
+      "step": "pinned"
+     },
+     "ok": true,
+     "other": "304013dfde432e89a414622f62991b11596ef8a5b2872c639a6835da9a374828\n",
+     "path": "stdout",
+     "step": "binary"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "deploy"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "envfile"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "check"
+    },
+    {
+     "actual": "configuration ok\n",
+     "equals": "configuration ok\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "check"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "enable"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "enable"
+    },
+    {
+     "actual": "running",
+     "equals": "running",
+     "ok": true,
+     "path": "json.SubState",
+     "step": "enable"
+    },
+    {
+     "actual": "opute",
+     "equals": "opute",
+     "ok": true,
+     "path": "json.User",
+     "step": "enable"
+    },
+    {
+     "actual": "enabled",
+     "equals": "enabled",
+     "ok": true,
+     "path": "json.UnitFileState",
+     "step": "enable"
+    },
+    {
+     "actual": "/etc/opute/host-agent.env",
+     "equals": "/etc/opute/host-agent.env",
+     "ok": true,
+     "path": "json.EnvironmentFiles",
+     "step": "enable"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "ipv4"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "ipv4"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible modes, configuration, and distribution",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": [
+      "0.0.0.0:3014"
+     ],
+     "equals": [
+      "0.0.0.0:3014"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "listen"
+    },
+    {
+     "actual": "000",
+     "equals": "000",
+     "ok": true,
+     "path": "stdout",
+     "step": "ipv6Refused"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An IPv4 wildcard bind listens on IPv4 only",
+   "spec": "openspec/changes/ipv4-wildcard-bind/specs/mcp-listener/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/opute-bootstrap-mcp.service\n38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/opute-host-agent\n",
+     "contains": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/opute-bootstrap-mcp.service",
+     "ok": true,
+     "path": "stdout",
+     "step": "deployHashes"
+    },
+    {
+     "actual": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/opute-bootstrap-mcp.service\n38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/opute-host-agent\n",
+     "contains": "38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/opute-host-agent",
+     "ok": true,
+     "path": "stdout",
+     "step": "deployHashes"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "deployFiles: the installed unit and sudoers are the recorded deploy files",
+   "spec": "baseline/inventory/distribution.json"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "health"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "health"
+    },
+    {
+     "actual": "host:local:e2e-devvm-agent",
+     "matches": ":e2e-devvm-agent$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "info"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "list"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "info"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "info"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible authenticated MCP surface",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "binary": 265,
+   "check": 154,
+   "deploy": 151,
+   "deployHashes": 148,
+   "enable": 1127,
+   "envfile": 148,
+   "gone": 160,
+   "health": 16,
+   "info": 90,
+   "ipv4": 180,
+   "ipv6Refused": 154,
+   "list": 32,
+   "listen": 207,
+   "pinned": 145,
+   "tool": 294,
+   "uninstall": 538,
+   "verify": 175,
+   "wire": 293
+  },
+  "stepsSeconds": 48.4
+ },
+ "unverified": []
+}
