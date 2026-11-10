@@ -1,0 +1,858 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "incus/instances/e2e-k1",
+   "incus/instances/e2e-k2",
+   "incus/instances/e2e-k3",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-k1",
+   "incus/volumes/default/container/e2e-k2",
+   "incus/volumes/default/container/e2e-k3",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "system/unitFiles/e2e-agent-b.service",
+   "system/unitFiles/e2e-provider-k3s-b.service",
+   "system/unitFiles/e2e-provider-k3s.service",
+   "system/units/e2e-agent-b.service",
+   "system/units/e2e-provider-k3s-b.service",
+   "system/units/e2e-provider-k3s.service",
+   "system/units/sys-devices-virtual-net-veth21ae978a.device",
+   "system/units/sys-devices-virtual-net-veth5fe23d8b.device",
+   "system/units/sys-subsystem-net-devices-veth21ae978a.device",
+   "system/units/sys-subsystem-net-devices-veth5fe23d8b.device"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-3a",
+ "harnessErrors": [],
+ "journey": "e2e3a.endpoint",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "actual": "2\n",
+     "equals": "2\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installB"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsB"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "catalogA"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "actual": "container:local:e2e-k1",
+     "equals": "container:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm1"
+    },
+    {
+     "actual": "container:local:e2e-k2",
+     "equals": "container:local:e2e-k2",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm2"
+    },
+    {
+     "actual": "container:local:e2e-k3",
+     "equals": "container:local:e2e-k3",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "provision"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.version",
+     "step": "provision"
+    },
+    {
+     "actual": "cluster:local:e2e-k1",
+     "equals": "cluster:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "step": "listClusters"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.readyForServerPromotion",
+     "step": "prepareHa"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "prepareHa"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "redeem2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "join2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join2"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "redeem3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "join3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join3"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join3"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.serverCount",
+     "step": "members"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "members"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.datastoreMode",
+     "step": "members"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusterIdentityKnown",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k1",
+     "equals": "e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].version",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k2",
+     "equals": "e2e-k2",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].version",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k3",
+     "equals": "e2e-k3",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].version",
+     "step": "members"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "status"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Three Incus server containers provisioned and configured through typed Host Agent operations as a K3s cluster with embedded-etcd",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare2"
+    },
+    {
+     "actual": "host-agent-handshake",
+     "equals": "host-agent-handshake",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.secretDelivery",
+     "step": "prepare2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare3"
+    },
+    {
+     "actual": "RSA-OAEP-SHA256",
+     "equals": "RSA-OAEP-SHA256",
+     "ok": true,
+     "path": "response.body.result.structuredContent.keyAlgorithm",
+     "step": "key2"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "joinToken"
+    },
+    {
+     "actual": "<secret:K3S_TOKEN>",
+     "equals": "<secret:K3S_TOKEN>",
+     "ok": true,
+     "path": "stdout",
+     "step": "joinToken"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "tokenLeaks"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "tokenLeaks"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "listedA"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "json.listed",
+     "step": "listedB"
+    },
+    {
+     "actual": "0\n0\n0\n\n0\n",
+     "equals": "0\n0\n0\n\n0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "untouched"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "The HA registration endpoint is optional and off by default",
+   "spec": "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "optIn"
+    },
+    {
+     "actual": "https://k3s.e2e.test:6443",
+     "equals": "https://k3s.e2e.test:6443",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.endpoint",
+     "step": "optIn"
+    },
+    {
+     "actual": "cluster-endpoint:local:e2e-k1",
+     "equals": "cluster-endpoint:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.caBundleRef",
+     "step": "optIn"
+    },
+    {
+     "actual": [
+      "e2e-k1",
+      "e2e-k2",
+      "e2e-k3"
+     ],
+     "equals": [
+      "e2e-k1",
+      "e2e-k2",
+      "e2e-k3"
+     ],
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.restartedServers",
+     "step": "optIn"
+    },
+    {
+     "actual": "10.0.100.34",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.resolvesTo[2]",
+     "step": "optIn"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.resolvesTo[3]",
+     "step": "optIn"
+    },
+    {
+     "actual": "1\n1\n1\n",
+     "equals": "1\n1\n1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "sansIn"
+    },
+    {
+     "actual": "10.0.100.19 10.0.100.241 10.0.100.34 \n3\n",
+     "matches": "^(\\S+ ){3}\n3\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "resolvesIn"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "verifyIn"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.endpointAvailable",
+     "step": "verifyIn"
+    },
+    {
+     "actual": "10.0.100.34",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.resolvedAddresses[2]",
+     "step": "verifyIn"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.resolvedAddresses[3]",
+     "step": "verifyIn"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.changed",
+     "step": "optInAgain"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.restartedServers",
+     "step": "optInAgain"
+    },
+    {
+     "actual": "stopped",
+     "equals": "stopped",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stop3"
+    },
+    {
+     "actual": 2,
+     "equals": 2,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "degraded"
+    },
+    {
+     "actual": "seconds=0\nendpoint",
+     "matches": "^seconds=\\d+\nendpoint$",
+     "ok": true,
+     "path": "stdout",
+     "step": "through"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.endpointAvailable",
+     "step": "verifyDegraded"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An opted-in endpoint is stable across server loss",
+   "spec": "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "retire"
+    },
+    {
+     "actual": "10.0.100.34",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.endpointResolvesTo[1]",
+     "step": "retire"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.endpointResolvesTo[2]",
+     "step": "retire"
+    },
+    {
+     "actual": "10.0.100.241 10.0.100.34 \n2\n0\n",
+     "matches": "^(\\S+ ){2}\n2\n0\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "resolvesRetired"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.endpointAvailable",
+     "step": "verifyRetired"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An opted-in endpoint follows membership",
+   "spec": "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "optOut"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.removed",
+     "step": "optOut"
+    },
+    {
+     "actual": [
+      "e2e-k1",
+      "e2e-k2"
+     ],
+     "equals": [
+      "e2e-k1",
+      "e2e-k2"
+     ],
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.restartedServers",
+     "step": "optOut"
+    },
+    {
+     "actual": "0\n0\n",
+     "equals": "0\n0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "sansOut"
+    },
+    {
+     "actual": "0\n0\n",
+     "equals": "0\n0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "resolvesOut"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "recordOut"
+    },
+    {
+     "actual": "2\n",
+     "equals": "2\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "directOut"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "verifyOut"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.changed",
+     "step": "optOutAgain"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Opting out is a typed operation",
+   "spec": "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": [
+      "e2e-k1",
+      "e2e-k2",
+      "e2e-k3"
+     ],
+     "equals": [
+      "e2e-k1",
+      "e2e-k2",
+      "e2e-k3"
+     ],
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.restartedServers",
+     "step": "optIn"
+    },
+    {
+     "actual": [
+      "e2e-k1",
+      "e2e-k2"
+     ],
+     "equals": [
+      "e2e-k1",
+      "e2e-k2"
+     ],
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.restartedServers",
+     "step": "optOut"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Changing TLS names is an explicit, bounded effect",
+   "spec": "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "catalogA": 38,
+   "catalogAfterA": 24,
+   "catalogAfterB": 250,
+   "catalogB": 531,
+   "degraded": 33109,
+   "directOut": 275,
+   "info1": 115,
+   "info3": 257,
+   "installA": 216,
+   "installB": 408,
+   "join2": 51710,
+   "join2Call": 216,
+   "join3": 48342,
+   "join3Call": 225,
+   "joinToken": 422,
+   "key2": 466,
+   "key3": 222,
+   "listClusters": 244,
+   "listedA": 230,
+   "listedB": 229,
+   "members": 486,
+   "optIn": 54020,
+   "optInAgain": 3002,
+   "optInAgainCall": 12,
+   "optInCall": 14,
+   "optOut": 93041,
+   "optOutAgain": 3002,
+   "optOutAgainCall": 12,
+   "optOutCall": 12,
+   "prepare2": 3002,
+   "prepare2Call": 13,
+   "prepare3": 3002,
+   "prepare3Call": 13,
+   "prepareHa": 3002,
+   "prepareHaCall": 12,
+   "providerCopy": 470,
+   "providerToolsA": 240,
+   "providerToolsB": 241,
+   "provision": 33015,
+   "provisionCall": 11,
+   "recipeCopy": 421,
+   "recordOut": 255,
+   "redeem2": 204,
+   "redeem2Call": 217,
+   "redeem3": 206,
+   "redeem3Call": 214,
+   "resolvesIn": 225,
+   "resolvesOut": 301,
+   "resolvesRetired": 410,
+   "retire": 6003,
+   "retireCall": 12,
+   "sansIn": 426,
+   "sansOut": 566,
+   "setup": 909,
+   "status": 455,
+   "stop3": 3002,
+   "stop3Call": 13,
+   "through": 10868,
+   "tokenLeaks": 263,
+   "tool": 286,
+   "untouched": 456,
+   "verifyDegraded": 18009,
+   "verifyDegradedCall": 13,
+   "verifyIn": 3002,
+   "verifyInCall": 13,
+   "verifyOut": 3002,
+   "verifyOutCall": 12,
+   "verifyRetired": 3002,
+   "verifyRetiredCall": 12,
+   "vm1": 9005,
+   "vm1Call": 12,
+   "vm2": 6610,
+   "vm2Call": 548,
+   "vm3": 6627,
+   "vm3Call": 230,
+   "wire": 279
+  },
+  "stepsSeconds": 466.7
+ },
+ "unverified": []
+}

@@ -1,0 +1,294 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "incus/instances/e2e-k1",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-k1",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "system/unitFiles/e2e-provider-k3s.service",
+   "system/units/e2e-provider-k3s.service",
+   "system/units/sys-devices-virtual-net-veth581b2b7e.device",
+   "system/units/sys-subsystem-net-devices-veth581b2b7e.device"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-2",
+ "harnessErrors": [],
+ "journey": "e2e2.data",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "ready"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A K3s server provisioned through typed Host Agent operations",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "reconcile"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "relay"
+    },
+    {
+     "actual": "S\n",
+     "in": [
+      "S\n",
+      "N\n"
+     ],
+     "ok": true,
+     "path": "stdout",
+     "step": "relayClient"
+    },
+    {
+     "actual": "closed\n",
+     "equals": "closed\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "relayWrongToken"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "write"
+    },
+    {
+     "actual": "written\n",
+     "equals": "written\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "read"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "reconcile_postgresql_service, get_postgresql_service_status (localRelay)",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.rows",
+     "step": "tokenRows"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "releaseWrong"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "release"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "remove"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "gone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "release_postgresql_service_relay, remove_postgresql_service",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "sqlite"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "sqliteAgain"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "sqliteStatus"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "sqliteUnconfirmed"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "sqliteRemove"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "sqliteGone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "ensure_sqlite_database, get_sqlite_database_status, remove_sqlite_database",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "catalogAfterA": 23,
+   "gone": 409,
+   "info1": 115,
+   "installA": 202,
+   "providerCopy": 473,
+   "providerToolsA": 232,
+   "provision": 36016,
+   "provisionCall": 11,
+   "read": 343,
+   "ready": 420,
+   "recipeCopy": 427,
+   "reconcile": 180072,
+   "reconcileCall": 13,
+   "relay": 3023,
+   "relayClient": 534,
+   "relayWrongToken": 173,
+   "release": 30,
+   "releaseWrong": 34,
+   "remove": 12005,
+   "removeCall": 12,
+   "setup": 185,
+   "sqlite": 76,
+   "sqliteAgain": 34,
+   "sqliteGone": 140,
+   "sqliteRemove": 34,
+   "sqliteStatus": 24,
+   "sqliteUnconfirmed": 26,
+   "tokenRows": 190,
+   "tool": 286,
+   "vm1": 9005,
+   "vm1Call": 12,
+   "wire": 279,
+   "write": 427
+  },
+  "stepsSeconds": 295.1
+ },
+ "unverified": []
+}

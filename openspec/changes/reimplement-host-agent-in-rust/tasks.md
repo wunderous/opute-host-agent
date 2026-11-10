@@ -256,6 +256,11 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
     mis-tracked first agent still ran.
   - **WSL2** stays blocked on a Windows runner. **npm** stays postponed
     (D28).
+  *m13b note (2026-11-10): on the 0.3.0 candidate, still open for WSL2
+  and npm.* Clean install, upgrade from Go v0.2.4, rollback and the npm
+  launch path from a locally packed tarball all ran on `rust-0.3.0-rc1`
+  (run `m13b-r1`, the arm64 receipt); see the
+  [review packet](cutover-review-packet.md).
 - [ ] 5.2 Update public tutorial, release catalog, schemas, and website claims
   only when a tested Rust package and catalog revision are ready. Keep public
   image publishing and private site rollout in their current owners. Gate:
@@ -269,6 +274,11 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   - **Blocking:** Go's release policy refuses to publish the Rust catalog
     under the stable `0.2.3` package, so a tested Rust package needs a new
     version and catalog decision first.
+  *m13b note (2026-11-10): 0.3.0 tested, nothing published.* D28 made
+  0.3.0 the first Rust package. On the candidate, the read-only canary
+  passes and the site preview differs from Go's only in the declared
+  tools (`evidence/cutover/distribution.json`). Re-anchoring the public
+  release catalog is the publication step and stays with its owners.
 - [ ] 5.3 Exercise Platform registration, routing, authorization boundary,
   exact agent ID, task correlation, and semantic-outcome separation using a
   dedicated Rust validation identity. Gate: an actual client and Platform
@@ -307,6 +317,10 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   and deployment owners before any production selection. Gate: Go remains the
   production owner until the whole-agent gate passes and the responsible owner
   explicitly authorizes cutover through its normal rollout path.
+  *m13b note (2026-11-10): ready for review, not reviewed.* The packet is
+  [cutover-review-packet.md](cutover-review-packet.md): one candidate,
+  `rust-0.3.0-rc1`, named by every gate and receipt; its sign-off table is
+  empty.
 - [ ] 6.4 After the rollback window, make a separate, evidenced retirement
   decision for Go and a separate ownership decision for releases and the
   website. Gate: no Go artifact or registration is removed by this spec alone.

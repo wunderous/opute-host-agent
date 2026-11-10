@@ -46,7 +46,7 @@ ADB_B = "/tmp/e2e-agents/b"
 JOURNALS = "opute-bootstrap-mcp e2e-agent-b e2e-provider-k3s e2e-provider-k3s-b"
 
 FILES = {**base.TOOL_FILES,
-         "providerK3s": inp("${PARITY}/e2e/release/rust-endpoint/opute-provider-k3s-linux-x64"),
+         "providerK3s": inp(base.CANDIDATE + "/opute-provider-k3s-linux-x64"),
          # The M9 provider-real.k3s activation recipe, byte for byte: the provider's install manifest pins
         # its sha256 (91f0b596...).
          "activate": inp("${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml")}

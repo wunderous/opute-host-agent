@@ -183,6 +183,85 @@ class QuestionsTest(unittest.TestCase):
     def test_an_answered_question_whose_fix_is_unfinished_fails(self):
         self.assertEqual(self.statuses("- [x] 1.1 done\n- [ ] 2.3 rerun\n")["Q2"], "failed")
 
+class CandidateTest(unittest.TestCase):
+    """m13b: every gate and receipt names one release set."""
+
+    def tree(self) -> tuple[Root, dict]:
+        root = Root()
+        root.gate()
+        receipt = json.loads((root.path / "evidence/e2e/runs" / RUN / JOURNEY / "receipt.json").read_text())
+        x64 = receipt["devvm"]["rustRelease"]
+        artifacts = {**x64, "host-agent-linux-arm64.gz": "a" * 64, "opute-provider-k3s-linux-x64": "b" * 64}
+        root.write("crates/x/src/lib.rs", "fn main() {}\n")
+        root.write("evidence/cutover/contract-suites.json", json.dumps(
+            {"pass": True, "binarySha256": x64["host-agent-linux-x64"]}))
+        root.write("evidence/cutover/arm64/receipt.json", json.dumps(
+            {"pass": True, "release": {"sha256": "a" * 64, "sha256sums": "c" * 64}}))
+        candidate = {"name": "rc", "version": "0.3.0", "commit": "0" * 40, "sha256sums": "c" * 64,
+                     "artifacts": artifacts, "upgradeTarget": {"artifacts": {"host-agent-linux-x64.gz": "d" * 64}},
+                     "sourceDigest": readiness.source_digest(root.path, ["crates"])}
+        root.write("evidence/cutover/candidate.json", json.dumps(candidate))
+        root.manifest({"id": "candidate", "kind": "candidate", "record": "evidence/cutover/candidate.json",
+                       "gates": ["e2e-0"], "contracts": "evidence/cutover/contract-suites.json",
+                       "arm64": "evidence/cutover/arm64/receipt.json", "sources": ["crates"]})
+        return root, candidate
+
+    def result(self, root: Root) -> dict:
+        return next(i for i in readiness.evaluate(root.path)["items"] if i["id"] == "candidate")
+
+    def rewrite(self, root: Root, rel: str, change) -> None:
+        path = root.path / rel
+        doc = json.loads(path.read_text())
+        change(doc)
+        path.write_text(json.dumps(doc))
+
+    def test_one_release_set_everywhere_passes(self):
+        root, _ = self.tree()
+        self.assertEqual(self.result(root)["status"], "passed", self.result(root))
+
+    def test_a_gate_on_another_build_fails(self):
+        root, _ = self.tree()
+        self.rewrite(root, "evidence/cutover/candidate.json",
+                     lambda c: c["artifacts"].update({"host-agent-linux-x64": "e" * 64}))
+        self.rewrite(root, "evidence/cutover/contract-suites.json", lambda c: c.update(binarySha256="e" * 64))
+        result = self.result(root)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("e2e-0", result["detail"])
+
+    def test_a_contract_receipt_on_another_build_fails(self):
+        root, _ = self.tree()
+        self.rewrite(root, "evidence/cutover/contract-suites.json", lambda c: c.update(binarySha256="e" * 64))
+        result = self.result(root)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("contract", result["detail"])
+
+    def test_an_arm64_receipt_on_another_build_fails(self):
+        root, _ = self.tree()
+        self.rewrite(root, "evidence/cutover/arm64/receipt.json", lambda c: c["release"].update(sha256sums="e" * 64))
+        result = self.result(root)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("arm64", result["detail"])
+
+    def test_sources_changed_since_the_candidate_fail(self):
+        root, _ = self.tree()
+        root.write("crates/x/src/lib.rs", "fn main() { changed(); }\n")
+        self.assertEqual(self.result(root)["status"], "failed")
+
+    def test_a_journey_input_from_another_release_fails(self):
+        root, _ = self.tree()
+        self.rewrite(root, f"evidence/e2e/runs/{RUN}/{JOURNEY}/journey.json", lambda j: j["inputs"].setdefault(
+            "files", {}).update(provider={"path": "${PARITY}/e2e/release/other/opute-provider-k3s-linux-x64",
+                                          "sha256": "f" * 64}))
+        result = self.result(root)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("provider", result["detail"])
+
+    def test_a_missing_candidate_record_fails(self):
+        root, _ = self.tree()
+        (root.path / "evidence/cutover/candidate.json").unlink()
+        self.assertEqual(self.result(root)["status"], "failed")
+
+
 
 if __name__ == "__main__":
     unittest.main()
