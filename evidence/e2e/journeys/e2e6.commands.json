@@ -36,9 +36,9 @@
      "equals": 200
     },
     {
-     "step": "t1",
-     "path": "stdout",
-     "gte": 0
+     "step": "hangCall",
+     "path": "ms",
+     "lte": 60000
     },
     {
      "step": "hangNext",
@@ -78,7 +78,10 @@
   }
  ],
  "effects": {
-  "allow": [],
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*"
+  ],
   "persist": []
  },
  "steps": [
@@ -117,20 +120,12 @@
    "auth": "secret:junk"
   },
   {
-   "id": "t0",
-   "guest": "date +%s"
-  },
-  {
    "id": "hangCall",
    "mcp": "tools/call",
    "tool": "list_vms",
    "arguments": {},
    "port": 3043,
    "auth": "secret:hang"
-  },
-  {
-   "id": "t1",
-   "guest": "date +%s"
   },
   {
    "id": "hangNext",

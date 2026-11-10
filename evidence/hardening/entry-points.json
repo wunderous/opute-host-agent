@@ -6,164 +6,246 @@
       "id": "http-head",
       "source": "any process that can reach the listener (loopback in standalone, the bound address in platform mode)",
       "code": "http1::read_request (request line, URI, MIME headers, Host checks)",
-      "fuzz": ["http_wire"],
+      "fuzz": [
+        "http_wire"
+      ],
       "properties": []
     },
     {
       "id": "http-body-framing",
       "source": "the same peer",
       "code": "http1::Body (Content-Length, chunked, Expect: 100-continue, post-handler discard)",
-      "fuzz": ["http_wire"],
+      "fuzz": [
+        "http_wire"
+      ],
       "properties": []
     },
     {
       "id": "mcp-json-rpc",
       "source": "an MCP client, authenticated or not",
       "code": "transport::route -> mcp; gojson::parse, first_value, syntax_error; mcpsdk::serve",
-      "fuzz": ["http_wire", "json_document"],
-      "properties": []
+      "fuzz": [
+        "http_wire",
+        "json_document"
+      ],
+      "properties": [],
+      "findings": [
+        "A1"
+      ]
     },
     {
       "id": "bearer-and-session-headers",
       "source": "an MCP client",
       "code": "transport (Authorization bearer lookup, protocol and session headers, Origin and Host checks)",
-      "fuzz": ["http_wire"],
+      "fuzz": [
+        "http_wire"
+      ],
       "properties": []
     },
     {
       "id": "oauth-endpoints",
       "source": "any peer: /oauth/authorize, /oauth/authorize/status, /oauth/token, /oauth/revoke, the well-known metadata",
       "code": "transport::authorize_endpoint, token_endpoint, revoke; http1::form_get; oauth::redirect_allowed, redeem_code, client_credentials",
-      "fuzz": ["http_wire"],
-      "properties": []
+      "fuzz": [
+        "http_wire"
+      ],
+      "properties": [],
+      "findings": [
+        "F2"
+      ]
     },
     {
       "id": "tool-arguments",
       "source": "an authenticated MCP client (tools/call arguments)",
       "code": "tools::call -> schema::arguments_for_validation, schema::validate (catalog/schema.rs keywords and regexp)",
-      "fuzz": ["tool_arguments"],
-      "properties": ["conforming_arguments_are_accepted", "a_missing_required_field_is_refused", "validation_is_total"]
+      "fuzz": [
+        "tool_arguments"
+      ],
+      "properties": [
+        "conforming_arguments_are_accepted",
+        "a_missing_required_field_is_refused",
+        "validation_is_total"
+      ]
     },
     {
       "id": "plan-documents",
       "source": "an authenticated MCP client (plan tools), or a recipe's embedded plan",
       "code": "plan::schema::decode_bytes, decode_value, validate; plan::interpolate",
-      "fuzz": ["plan_document"],
+      "fuzz": [
+        "plan_document"
+      ],
       "properties": []
     },
     {
       "id": "host-recipes",
       "source": "an authenticated MCP client, or a recipe fetched from the source it names",
       "code": "recipe::host_recipe::decode_host, validate_host_envelope; recipe::source::parse_raw_github_url",
-      "fuzz": ["host_recipe", "command_output"],
+      "fuzz": [
+        "host_recipe",
+        "command_output"
+      ],
       "properties": []
     },
     {
       "id": "host-archives",
       "source": "a file under the host owner's home that a client names (extract_host_archive)",
       "code": "hostarchive::extract_zstd_tar (zstd frames, gotar::Reader, entry names, symlink targets)",
-      "fuzz": ["host_archive", "tar_stream"],
+      "fuzz": [
+        "host_archive",
+        "tar_stream"
+      ],
       "properties": []
     },
     {
       "id": "resource-identity",
       "source": "tool arguments and provider-reported names that become canonical URIs",
       "code": "resource::Uri::new, Uri::parse, parse_byte_capacity; incus::parse_capacity_bytes",
-      "fuzz": ["resource_identity"],
-      "properties": ["accepted_resource_uris_round_trip", "parsed_resource_uris_are_canonical"],
-      "findings": ["F1"]
+      "fuzz": [
+        "resource_identity"
+      ],
+      "properties": [
+        "accepted_resource_uris_round_trip",
+        "parsed_resource_uris_are_canonical"
+      ],
+      "findings": [
+        "F1"
+      ]
     },
     {
       "id": "durable-redaction",
       "source": "results and arguments of any capability on their way to a caller or to durable storage",
       "code": "evidence::redact_for_delivery, redact_for_storage (D13)",
       "fuzz": [],
-      "properties": ["delivery_hides_exactly_write_only", "storage_hides_write_only_and_unnamed", "storage_is_never_less_strict_than_delivery", "redaction_is_idempotent"]
+      "properties": [
+        "delivery_hides_exactly_write_only",
+        "storage_hides_write_only_and_unnamed",
+        "storage_is_never_less_strict_than_delivery",
+        "redaction_is_idempotent"
+      ]
     },
     {
       "id": "env-file",
       "source": "the operator's env file the service unit names",
       "code": "config::Env::load_env_file, Config::load, Config::validate",
-      "fuzz": ["env_file"],
+      "fuzz": [
+        "env_file"
+      ],
       "properties": []
     },
     {
       "id": "state-store",
       "source": "state.db on disk: a crash, a full disk, or another process",
       "code": "store::StateStore::open (schema init, migrations, interrupted-work marking)",
-      "fuzz": ["state_store"],
+      "fuzz": [
+        "state_store"
+      ],
       "properties": []
     },
     {
       "id": "authz-store",
       "source": "authz.sqlite on disk",
       "code": "store::AuthzStore::open (built-in client registration, OAuth migration)",
-      "fuzz": ["authz_store"],
+      "fuzz": [
+        "authz_store"
+      ],
       "properties": []
     },
     {
       "id": "host-reservations",
       "source": "reservations.json in the shared host resource lock directory, written by any agent on the host",
       "code": "resource::Coordinator::read_records",
-      "fuzz": ["reservation_file"],
+      "fuzz": [
+        "reservation_file"
+      ],
       "properties": []
     },
     {
       "id": "client-credentials",
       "source": "credentials/<client>.json in the state directory",
       "code": "oauth::read_credential",
-      "fuzz": ["credential_file"],
+      "fuzz": [
+        "credential_file"
+      ],
       "properties": []
     },
     {
       "id": "provider-descriptors",
       "source": "an external provider executable's descriptor and install manifest",
       "code": "provider::definition::decode_descriptor, validate_descriptor, decode_manifest",
-      "fuzz": ["provider_descriptor"],
+      "fuzz": [
+        "provider_descriptor"
+      ],
       "properties": []
     },
     {
       "id": "provider-results",
       "source": "an external provider's MCP tool result",
       "code": "provider::result::project",
-      "fuzz": ["provider_result"],
+      "fuzz": [
+        "provider_result"
+      ],
       "properties": []
     },
     {
       "id": "incus-output",
       "source": "incus list --format json",
       "code": "incus::decode_list, ListItem::config_value",
-      "fuzz": ["incus_output"],
+      "fuzz": [
+        "incus_output"
+      ],
       "properties": []
     },
     {
       "id": "host-command-output",
       "source": "systemctl, /etc/os-release, /proc/cpuinfo, systemd-detect-virt, service health endpoints, wsl.exe and powershell.exe",
       "code": "hostobs::parse_systemd_properties, parse_os_release, parse_cpuinfo; hostvirt::candidate_from; hostservice::scan_port, decode_health; hostwsl::decode_windows_cli, distribution_state, vhdx_path, parse_int",
-      "fuzz": ["command_output"],
+      "fuzz": [
+        "command_output"
+      ],
       "properties": []
     },
     {
       "id": "workload-command-output",
       "source": "incus exec and incus errors, nvidia-smi, podman, buildah, psql and the Postgres proxy, ollama and LLM runtimes",
       "code": "incus::parse_mounts; incusops::decode_error, parse_instance_type, evaluate_gpu_probe, guest_address, guest_gateway; ociops::parse_json_map, parse_storage_entries, parse_build_cache, parse_images; postgresops::unmarshal, unmarshal_map, unmarshal_struct, proxy_listen_port; llmops::decode_object, decode_first",
-      "fuzz": ["command_output"],
+      "fuzz": [
+        "command_output"
+      ],
       "properties": []
     },
     {
       "id": "provider-command-output",
       "source": "k3s, kubectl and crictl inside guests; cloudflared and warp-cli; remote MCP endpoints the agent probes",
       "code": "providers::k3s::membership::parse_native_membership, parse_cluster_node_snapshot, raw_url_decode; providers::k3s::storage::keep_set_from_pod_json, parse_cri_images, parse_cri_containers, parse_df_bytes, parse_du_line; providers::cloudflare::api::decode_first; providers::cloudflare::mesh::find_mesh_ip, find_mesh_interface; mcpprobe::decode; clusterops::privileged",
-      "fuzz": ["command_output"],
-      "properties": ["diagnostics_never_show_the_secret"]
+      "fuzz": [
+        "command_output"
+      ],
+      "properties": [
+        "diagnostics_never_show_the_secret"
+      ]
     }
   ],
   "findings": [
     {
       "id": "F1",
-      "summary": "Uri::new accepts a resource id ending in Unicode whitespace other than space, tab, CR or LF (U+000B, U+000C, U+0085, U+2003, ...); Uri::parse of the printed URI trims it, so the identity changes. The spec says IDs are not rewritten.",
-      "test": "properties::resource_ids_with_unicode_whitespace_round_trip (ignored until decided)",
-      "state": "open: the fix changes which ids are accepted; owner question Q31"
+      "summary": "Uri::new accepted a resource id with Unicode whitespace other than space, tab, CR or LF (U+000B, U+000C, U+0085, U+2003, ...); Uri::parse of the printed URI trimmed it, so the identity changed. The spec says IDs are not rewritten.",
+      "foundBy": "property accepted_resource_uris_round_trip (proptest)",
+      "test": "properties::resource_ids_with_unicode_whitespace_are_refused",
+      "state": "fixed by D30 (openspec/changes/resource-id-unicode-whitespace)"
+    },
+    {
+      "id": "F2",
+      "summary": "transport::basic_auth sliced the Authorization header at byte 6; a header with a multi-byte character there panicked the connection's task on /oauth/token (no reply; the agent kept serving).",
+      "foundBy": "fuzz target http_wire, 30 s",
+      "test": "fuzz/regressions/http_wire/basic-auth-split-char (fuzzing::tests::replay)",
+      "state": "fixed: the prefix is compared as bytes"
+    },
+    {
+      "id": "A1",
+      "summary": "/mcp read an authenticated request's whole body into memory before the 4 MiB limit.",
+      "foundBy": "auth review",
+      "test": "fuzzing::tests::oversized_mcp_bodies_are_refused_without_reading_them",
+      "state": "fixed by D29 (openspec/changes/bound-mcp-request-body)"
     }
   ]
 }

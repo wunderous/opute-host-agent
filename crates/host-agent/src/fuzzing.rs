@@ -114,10 +114,10 @@ struct Wire {
 /// fuzzed agent has no bootstrap token, so no input reaches a tool.
 fn wire() -> &'static Wire {
     static WIRE: OnceLock<Wire> = OnceLock::new();
-    WIRE.get_or_init(|| compose_wire("wire", None))
+    WIRE.get_or_init(|| compose_wire("wire", &[]))
 }
 
-fn compose_wire(name: &str, token: Option<&str>) -> Wire {
+fn compose_wire(name: &str, extra: &[(&str, &str)]) -> Wire {
     {
         let home = root().join(name);
         let empty_path = home.join("empty-path");
@@ -134,8 +134,8 @@ fn compose_wire(name: &str, token: Option<&str>) -> Wire {
             ("HOST_MCP_PORT", "1".into()),
         ]);
         let mut env = env;
-        if let Some(token) = token {
-            env.set("MCP_AUTH_TOKEN", token);
+        for (k, v) in extra {
+            env.set(k, v);
         }
         let runtime = crate::app::new_runtime(&env).expect("fuzz runtime");
         let cfg = runtime.config.clone();
@@ -589,7 +589,7 @@ mod tests {
     fn oversized_mcp_bodies_are_refused_without_reading_them() {
         static TOKEN_WIRE: OnceLock<Wire> = OnceLock::new();
         let wire =
-            TOKEN_WIRE.get_or_init(|| compose_wire("wire-token", Some("test-bootstrap-token")));
+            TOKEN_WIRE.get_or_init(|| compose_wire("wire-token", &[("MCP_AUTH_TOKEN", "test-bootstrap-token")]));
         let send = |declared: usize, sent: usize| {
             let mut s = std::net::TcpStream::connect(wire.addr).unwrap();
             s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
@@ -617,6 +617,36 @@ mod tests {
         let at_limit = send(4 << 20, 4 << 20);
         assert!(at_limit.starts_with("HTTP/1.1 "), "{at_limit:?}");
         assert!(!at_limit.starts_with("HTTP/1.1 413"), "{at_limit}");
+    }
+
+    /// F4 (m16, gate e2e-6 draft): `/health` runs `incus list`; with an
+    /// `incus` that never exits, it must not stall other connections.
+    #[test]
+    fn a_hanging_incus_does_not_stall_other_requests() {
+        use std::os::unix::fs::PermissionsExt;
+        let stub = root().join("incus-hang");
+        std::fs::write(&stub, "#!/bin/sh\nexec /bin/sleep 60\n").unwrap();
+        std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755)).unwrap();
+        static HANG_WIRE: OnceLock<Wire> = OnceLock::new();
+        let wire = HANG_WIRE.get_or_init(|| {
+            compose_wire("wire-hang", &[("OPUTE_INCUS_BINARY_PATH", stub.to_str().unwrap())])
+        });
+        let addr = wire.addr;
+        // A health check that waits on the hanging command.
+        std::thread::spawn(move || {
+            if let Ok(mut s) = std::net::TcpStream::connect(addr) {
+                let _ = s.write_all(b"GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
+                let _ = s.read(&mut [0u8; 64]);
+            }
+        });
+        std::thread::sleep(Duration::from_millis(300));
+        let mut s = std::net::TcpStream::connect(addr).unwrap();
+        s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        s.write_all(b"POST /mcp HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 2\r\n\r\n{}").unwrap();
+        let mut reply = [0u8; 64];
+        let n = s.read(&mut reply).unwrap_or(0);
+        let reply = String::from_utf8_lossy(&reply[..n]);
+        assert!(reply.starts_with("HTTP/1.1 401"), "no answer while /health waited: {reply:?}");
     }
 
     /// evidence/hardening/entry-points.json names every target, and every

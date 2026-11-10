@@ -16,8 +16,9 @@ unmaintained = "all"
 ignore = [
     # serde_yaml (deprecated) links unsafe-libyaml, which has no maintained
     # release. serde_yaml parses recipe and plan YAML, so replacing it
-    # changes a contract surface: owner question Q30 (m16).
-    { id = "RUSTSEC-2024-0449", reason = "unmaintained, no known vulnerability; replacement awaits Q30" },
+    # changes a contract surface. Accepted by the owner on 2026-11-10 (m16,
+    # Q30); the replacement is its own later change.
+    { id = "RUSTSEC-2024-0449", reason = "unmaintained, no known vulnerability; exception accepted (Q30)" },
 ]
 
 [licenses]

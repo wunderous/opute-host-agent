@@ -28,6 +28,9 @@ TASKS_META = base.TASKS_META
 BUDGET = json.loads((base.REPO / "evidence/hardening/resource-budget.json").read_text())
 ROOT = "/tmp/e2e-agents"
 MUT = "--env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+# The transient agents' systemd units exist only while a journey runs; cleanup
+# removes them, so the residue check still holds.
+AGENT_UNITS = ("system/units/e2e-agent-*", "system/unitFiles/e2e-agent-*")
 
 
 def agent(name: str, port: int, *env: str) -> dict:
@@ -48,7 +51,7 @@ def journey(id_, description, requirements, steps, cleanup, minutes=20, files=No
     return base.journey(id_, description, {"agent": f"transient Rust agents of the installed release candidate "
                                                     f"({base.RUST_VERSION}) under {ROOT}",
                                            "files": files or base.TOOL_FILES},
-                        requirements, steps, cleanup, minutes=minutes, gate="e2e-6")
+                        requirements, steps, cleanup, allow=AGENT_UNITS, minutes=minutes, gate="e2e-6")
 
 
 def remove(*names: str) -> list[dict]:
@@ -240,9 +243,7 @@ def commands() -> dict:
         agent("junk", 3044, f"OPUTE_INCUS_BINARY_PATH={stub}/incus-junk"),
         mcp("listHang", "tools/list", **o_h),
         mcp("listJunk", "tools/list", **o_g),
-        {"id": "t0", "guest": "date +%s"},
         call("hangCall", "list_vms", **o_h),
-        {"id": "t1", "guest": "date +%s"},
         call("hangNext", "get_host_info", **o_h),
         call("junkCall", "list_vms", **o_g),
         call("junkInfo", "get_vm_info", {"name": "e2e-none"}, **o_g),
@@ -252,7 +253,7 @@ def commands() -> dict:
     reqs = [
         req(FAULTS, "A failing provider command ends the call, not the agent",
             ok("stubs"), is_error("hangCall"), a("hangCall", "response.status", equals=200),
-            a("t1", "stdout", gte=0), not_error("hangNext"),
+            a("hangCall", "ms", lte=60000), not_error("hangNext"),
             scenario="Hanging command: list_vms ends in a typed error within the 45 s discovery timeout, and the "
                      "next call is served (D31)"),
         req(FAULTS, "A failing provider command ends the call, not the agent",

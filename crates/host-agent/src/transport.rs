@@ -111,7 +111,14 @@ pub async fn route(server: Arc<Server>, req: Request, mut body: Body) -> (Respon
         return (redirect(&req, &target, 301), body);
     }
     let response = match matched {
-        Some("/health") => health(&server),
+        // The observer runs `incus list`; keep it off the connection-serving
+        // thread so a slow or hung host command stalls only this request.
+        Some("/health") => {
+            let server = Arc::clone(&server);
+            tokio::task::spawn_blocking(move || health(&server))
+                .await
+                .unwrap_or_else(|_| Response::error("internal error", 500))
+        }
         Some("/mcp") => mcp(&server, &req, &mut body).await,
         Some("/.well-known/oauth-protected-resource")
         | Some("/.well-known/oauth-protected-resource/mcp") => prm(&req),
