@@ -400,23 +400,40 @@ pub(crate) fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
             v
         }
     };
+    select_proxy(
+        scheme,
+        host,
+        port,
+        &pick("HTTP_PROXY", "http_proxy"),
+        &pick("HTTPS_PROXY", "https_proxy"),
+        &pick("NO_PROXY", "no_proxy"),
+    )
+}
+
+/// `proxy_for` over explicit settings.
+fn select_proxy(
+    scheme: &str,
+    host: &str,
+    port: u16,
+    http_proxy: &str,
+    https_proxy: &str,
+    no_proxy: &str,
+) -> Option<String> {
     let proxy = if scheme == "https" {
-        pick("HTTPS_PROXY", "https_proxy")
+        https_proxy.to_string()
     } else {
-        pick("HTTP_PROXY", "http_proxy")
+        http_proxy.to_string()
     };
     if proxy.is_empty() {
         return None;
     }
     let bare = host.trim_start_matches('[').trim_end_matches(']');
-    if bare.eq_ignore_ascii_case("localhost")
-        || bare
-            .parse::<std::net::IpAddr>()
-            .is_ok_and(|ip| ip.is_loopback())
-    {
+    let ip = bare.parse::<std::net::IpAddr>().ok();
+    if bare.eq_ignore_ascii_case("localhost") || ip.is_some_and(|ip| ip.is_loopback()) {
         return None;
     }
-    let no_proxy = pick("NO_PROXY", "no_proxy");
+    let host = bare.trim().to_ascii_lowercase();
+    let port = port.to_string();
     for entry in no_proxy.split(',') {
         let entry = entry.trim().to_ascii_lowercase();
         if entry.is_empty() {
@@ -425,34 +442,42 @@ pub(crate) fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
         if entry == "*" {
             return None;
         }
+        // IPv4/CIDR, IPv6/CIDR: for an IP host only.
         if let Some((net, bits)) = entry.split_once('/') {
-            if let (Ok(net), Ok(ip), Ok(bits)) = (
-                net.parse::<std::net::IpAddr>(),
-                bare.parse::<std::net::IpAddr>(),
-                bits.parse::<u32>(),
-            ) {
-                if crate::providers::support::in_cidr(ip, net, bits) {
+            if let (Ok(net), Ok(bits)) = (net.parse::<std::net::IpAddr>(), bits.parse::<u32>()) {
+                if ip.is_some_and(|ip| in_cidr(ip, net, bits)) {
                     return None;
                 }
+                continue;
             }
+        }
+        // `host:port`, `[v6]:port`, or the whole entry (`net.SplitHostPort`).
+        let (name, entry_port) = split_host_port(&entry);
+        if name.is_empty() {
             continue;
         }
-        let (name, entry_port) = match entry.rsplit_once(':') {
-            Some((n, p)) if p.parse::<u16>().is_ok() && !n.contains(':') => {
-                (n.to_string(), p.parse::<u16>().ok())
-            }
-            _ => (entry.clone(), None),
-        };
-        if entry_port.is_some_and(|p| p != port) {
-            continue;
-        }
-        let host = bare.to_ascii_lowercase();
-        let name = name.trim_start_matches('*');
-        if let Some(suffix) = name.strip_prefix('.') {
-            if host == suffix || host.ends_with(name) {
+        let port_matches = entry_port.is_none_or(|p| p == port);
+        // An IP entry matches an IP host by value.
+        if let Ok(entry_ip) = name.parse::<std::net::IpAddr>() {
+            if ip.is_some_and(|ip| same_ip(ip, entry_ip)) && port_matches {
                 return None;
             }
-        } else if host == name || host.ends_with(&format!(".{name}")) {
+            continue;
+        }
+        // A name never matches an IP host.
+        if ip.is_some() {
+            continue;
+        }
+        // `*.name` and `.name` match subdomains only; `name` also itself.
+        let name = name
+            .strip_prefix('*')
+            .filter(|n| n.starts_with('.'))
+            .unwrap_or(name);
+        let (suffix, match_host) = match name.strip_prefix('.') {
+            Some(_) => (name.to_string(), false),
+            None => (format!(".{name}"), true),
+        };
+        if (host.ends_with(&suffix) || (match_host && host == suffix[1..])) && port_matches {
             return None;
         }
     }
@@ -461,6 +486,26 @@ pub(crate) fn proxy_for(scheme: &str, host: &str, port: u16) -> Option<String> {
     } else {
         format!("http://{proxy}")
     })
+}
+
+/// Go's `net.SplitHostPort` as `config.init` uses it on a NO_PROXY entry:
+/// `host:port` or `[v6]:port`, else the whole entry as the host.
+fn split_host_port(entry: &str) -> (&str, Option<&str>) {
+    if let Some(rest) = entry.strip_prefix('[') {
+        if let Some((host, port)) = rest.split_once("]:") {
+            return (host, Some(port));
+        }
+        return (entry, None);
+    }
+    match entry.split_once(':') {
+        Some((host, port)) if !port.contains(':') => (host, Some(port)),
+        _ => (entry, None),
+    }
+}
+
+/// `net.IP.Equal`: an IPv4 address equals its IPv4-mapped IPv6 form.
+fn same_ip(a: std::net::IpAddr, b: std::net::IpAddr) -> bool {
+    a.to_canonical() == b.to_canonical()
 }
 
 /// D28 (Q7): `builder` with the proxy Go's default transport would use for
@@ -686,5 +731,60 @@ mod tests {
     fn go_names_its_operations() {
         assert_eq!(op_name("POST"), "Post");
         assert_eq!(op_name("DELETE"), "Delete");
+    }
+
+    /// Go's `httpproxy` rules (`config.init`, `useProxy`, `domainMatch`,
+    /// `ipMatch`), one row each: (NO_PROXY, scheme, host, port, proxied).
+    #[test]
+    fn no_proxy_follows_gos_rules() {
+        let rows: &[(&str, &str, &str, u16, bool)] = &[
+            ("", "http", "example.com", 80, true),
+            // HTTPS uses HTTPS_PROXY only.
+            ("", "https", "example.com", 443, false),
+            // A name matches itself and its subdomains, not a longer name.
+            ("example.com", "http", "example.com", 80, false),
+            ("example.com", "http", "a.example.com", 80, false),
+            ("example.com", "http", "notexample.com", 80, true),
+            ("Example.COM", "http", "EXAMPLE.com", 80, false),
+            // A leading dot or `*.` matches subdomains only.
+            (".example.com", "http", "a.example.com", 80, false),
+            (".example.com", "http", "example.com", 80, true),
+            ("*.example.com", "http", "a.example.com", 80, false),
+            ("*.example.com", "http", "example.com", 80, true),
+            // Only a leading `*.` is a wildcard.
+            ("*example.com", "http", "example.com", 80, true),
+            // An entry's port must be the request's.
+            ("example.com:8080", "http", "example.com", 80, true),
+            ("example.com:8080", "http", "example.com", 8080, false),
+            // An IP host matches IP and CIDR entries by value, never a name.
+            ("0.0.5", "http", "10.0.0.5", 80, true),
+            ("10.0.0.5", "http", "10.0.0.5", 80, false),
+            ("10.0.0.5:81", "http", "10.0.0.5", 80, true),
+            ("10.0.0.0/8", "http", "10.1.2.3", 80, false),
+            ("10.0.0.0/8", "http", "11.0.0.1", 80, true),
+            ("2001:DB8:0::1", "http", "2001:db8::1", 80, false),
+            ("[2001:db8::1]:8080", "http", "[2001:db8::1]", 8080, false),
+            ("[2001:db8::1]:8080", "http", "2001:db8::1", 80, true),
+            // `*` alone, malformed entries, blanks.
+            ("a.test, * ", "http", "example.com", 80, false),
+            (":80,,  ", "http", "example.com", 80, true),
+            // Never localhost or a loopback address.
+            ("", "http", "localhost", 80, false),
+            ("", "http", "127.0.0.1", 80, false),
+            ("", "http", "[::1]", 80, false),
+        ];
+        for (no_proxy, scheme, host, port, proxied) in rows {
+            let chosen = select_proxy(scheme, host, *port, "http://proxy.test:3128", "", no_proxy);
+            assert_eq!(
+                chosen.is_some(),
+                *proxied,
+                "NO_PROXY={no_proxy:?} {scheme}://{host}:{port}"
+            );
+        }
+        // HTTPS_PROXY for https; a bare host:port proxy gets a scheme.
+        assert_eq!(
+            select_proxy("https", "example.com", 443, "", "proxy.test:3128", ""),
+            Some("http://proxy.test:3128".to_string())
+        );
     }
 }
