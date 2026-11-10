@@ -14,6 +14,8 @@ mod clusterops;
 pub mod config;
 mod ddl;
 mod evidence;
+#[cfg(any(fuzzing, test))]
+pub mod fuzzing;
 mod goflag;
 mod gojson;
 mod gotar;
@@ -45,6 +47,8 @@ mod plan;
 mod plan_evidence;
 mod plan_mcp;
 mod postgresops;
+#[cfg(test)]
+mod properties;
 mod servingops;
 // M7 core; public provider dispatch stays closed until its adapter is wired.
 #[allow(dead_code)]

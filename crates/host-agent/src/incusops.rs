@@ -135,7 +135,7 @@ fn exists(path: &str) -> bool {
 }
 
 /// `json.Unmarshal`'s error for a document that does not fit `target`.
-fn decode_error(data: &str, target: &str) -> String {
+pub(crate) fn decode_error(data: &str, target: &str) -> String {
     if let Some(e) = gojson::syntax_error(data.as_bytes()) {
         return e;
     }
@@ -245,7 +245,7 @@ fn runtime_kind_error(
 }
 
 /// `parseProvisionInstanceType`: the kind and whether it was explicit.
-fn parse_instance_type(raw: &str) -> R<(&'static str, bool)> {
+pub(crate) fn parse_instance_type(raw: &str) -> R<(&'static str, bool)> {
     match raw.trim().to_lowercase().as_str() {
         "" => Ok(("container", false)),
         "container" | "system-container" => Ok(("container", true)),
@@ -1175,7 +1175,7 @@ fi
 "#;
 
 /// `evaluateSystemContainerGPUProbe`.
-fn evaluate_gpu_probe(stdout: &str) -> (bool, &'static str, Vec<&'static str>) {
+pub(crate) fn evaluate_gpu_probe(stdout: &str) -> (bool, &'static str, Vec<&'static str>) {
     let has = |s: &str| stdout.contains(s);
     let (dxg, libcuda) = (has("dxg=present"), has("libcuda=present"));
     if dxg && libcuda && (has("cuda_init=ok") || has("nvidia_smi=ok")) {
@@ -1203,7 +1203,7 @@ fn evaluate_gpu_probe(stdout: &str) -> (bool, &'static str, Vec<&'static str>) {
 }
 
 /// `parseGuestIPv4Address`: the address and prefix (default 24).
-fn guest_address(output: &str) -> (String, String) {
+pub(crate) fn guest_address(output: &str) -> (String, String) {
     let fields: Vec<&str> = output.split_whitespace().collect();
     for (i, field) in fields.iter().enumerate() {
         if *field != "inet" || i + 1 >= fields.len() {
@@ -1218,7 +1218,7 @@ fn guest_address(output: &str) -> (String, String) {
 }
 
 /// `parseGuestIPv4Gateway`.
-fn guest_gateway(output: &str) -> String {
+pub(crate) fn guest_gateway(output: &str) -> String {
     let fields: Vec<&str> = output.split_whitespace().collect();
     fields
         .iter()

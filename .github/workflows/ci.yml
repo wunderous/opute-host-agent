@@ -40,3 +40,43 @@ jobs:
       # D27: the Rust-only suites. Rust is no longer compared with Go.
       - name: Harness tests and the Rust contract suites
         run: make rust-suites
+
+  # m16: advisories, licences, sources and duplicate versions (deny.toml),
+  # then two clean offline, locked builds that must be byte-identical.
+  supply-chain:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny@0.20.2
+      - run: make supply-chain
+      - run: make reproducible-build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reproducible-build
+          path: target/reproducible/receipt.json
+
+  # m16: every fuzz target for a bounded time on the stable toolchain. A crash
+  # is uploaded; its input then becomes a file under fuzz/regressions/.
+  fuzz:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz@0.12.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+      - run: make fuzz FUZZ_SECONDS=20
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fuzz-artifacts
+          path: fuzz/artifacts/

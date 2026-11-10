@@ -29,7 +29,7 @@ use crate::http1::{Request, Response};
 use crate::transport::{go_marshal, parse_media_type};
 
 pub const MODERN_VERSION: &str = "2026-07-28";
-const MAX_BODY: u64 = 4 << 20;
+pub(crate) const MAX_BODY: u64 = 4 << 20;
 pub const SUPPORTED_VERSIONS: [&str; 5] = [
     "2026-07-28",
     "2025-11-25",

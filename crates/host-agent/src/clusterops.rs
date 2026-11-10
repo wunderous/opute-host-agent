@@ -1687,7 +1687,7 @@ fn agent_install_script(bridge_url: &str, arch: &str, config: &str) -> String {
 }
 
 /// `wrapHostPrivilegedShellBody`.
-fn privileged(body: &str) -> String {
+pub(crate) fn privileged(body: &str) -> String {
     let escaped = body.replace('\'', "'\"'\"'");
     [
         "set -euo pipefail".to_string(),

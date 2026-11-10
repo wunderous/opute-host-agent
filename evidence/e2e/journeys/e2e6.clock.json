@@ -1,0 +1,228 @@
+{
+ "id": "e2e6.clock",
+ "gate": "e2e-6",
+ "description": "D31: the guest clock stepped back one hour while an agent holds a reservation for a running task; tokens still authenticate, the reservation is kept and new work is admitted.",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "eacd10b6b645c41e5feb1d4050ce6a80e32644caeee093db88838a052e7fd535"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md",
+   "requirement": "A clock stepped back does not break the agent",
+   "pass": [
+    {
+     "step": "stepBack",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "bootstrapAfter",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "issuedAfter",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "capAfter",
+     "path": "response.body.result.structuredContent.reservations",
+     "equalsStep": {
+      "step": "capBefore",
+      "path": "response.body.result.structuredContent.reservations"
+     }
+    },
+    {
+     "step": "heldDone",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    }
+   ],
+   "scenario": "Clock steps back an hour: bootstrap and issued tokens still authenticate, the running task's reservation is kept, and new work is admitted (D31)"
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "clkAgent",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start clk --port 3045 --id e2e-clk-agent --env MCP_AUTH_TOKEN=${SECRET:clk} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+  },
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3045,
+   "auth": "secret:clk"
+  },
+  {
+   "id": "cred",
+   "guest": "cat /tmp/e2e-agents/clk/state/credentials/host-agent-provider.json",
+   "capture": {
+    "CRED_ID": "json.client_id",
+    "CRED_SECRET": {
+     "path": "json.client_secret",
+     "secret": true
+    }
+   }
+  },
+  {
+   "id": "token",
+   "http": "POST",
+   "port": 3045,
+   "path": "/oauth/token",
+   "form": {
+    "grant_type": "client_credentials",
+    "resource": "http://127.0.0.1:3045/mcp"
+   },
+   "basic": [
+    "${CRED_ID}",
+    "${CRED_SECRET}"
+   ],
+   "capture": {
+    "ISSUED": {
+     "path": "response.body.access_token",
+     "secret": true
+    }
+   }
+  },
+  {
+   "id": "held",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "sleep 40"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3045,
+   "auth": "secret:clk",
+   "capture": {
+    "HELD": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "capBefore",
+   "mcp": "tools/call",
+   "tool": "get_host_capacity",
+   "arguments": {},
+   "port": 3045,
+   "auth": "secret:clk"
+  },
+  {
+   "id": "stepBack",
+   "guest": "timedatectl set-ntp false; date -s '-1 hour' >/dev/null && date -u +%FT%T"
+  },
+  {
+   "id": "bootstrapAfter",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3045,
+   "auth": "secret:clk"
+  },
+  {
+   "id": "issuedAfter",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3045,
+   "auth": "var:ISSUED"
+  },
+  {
+   "id": "capAfter",
+   "mcp": "tools/call",
+   "tool": "get_host_capacity",
+   "arguments": {},
+   "port": 3045,
+   "auth": "secret:clk"
+  },
+  {
+   "id": "newWork",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "echo after step"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3045,
+   "auth": "secret:clk"
+  },
+  {
+   "id": "heldDone",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${HELD}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3045,
+   "auth": "secret:clk",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 90,
+   "interval": 3
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "clockBack",
+   "guest": "date -s '+1 hour' >/dev/null; timedatectl set-ntp true; true"
+  },
+  {
+   "id": "remove",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove clk >/dev/null ; true"
+  }
+ ],
+ "maxMinutes": 10
+}

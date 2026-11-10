@@ -1,0 +1,252 @@
+{
+ "id": "e2e6.kill",
+ "gate": "e2e-6",
+ "description": "An agent killed with SIGKILL during a plan's slow step, then twelve times with task calls in flight; the plan reads back unknown and stays so, and the store stays whole.",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "eacd10b6b645c41e5feb1d4050ce6a80e32644caeee093db88838a052e7fd535"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "pass": [
+    {
+     "step": "kill",
+     "path": "stdout",
+     "matches": "killed\n$"
+    },
+    {
+     "step": "restart",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "runAfter",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "unknown"
+    },
+    {
+     "step": "runLater",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "unknown"
+    }
+   ],
+   "scenario": "A plan killed with SIGKILL during its slow step reads back unknown and is not run again"
+  },
+  {
+   "spec": "openspec/specs/host-agent-contract/spec.md",
+   "requirement": "Durable and redacted observations",
+   "pass": [
+    {
+     "step": "loop",
+     "path": "json.restarts",
+     "equals": 12
+    },
+    {
+     "step": "loop",
+     "path": "json.acceptedTotal",
+     "gte": 1
+    },
+    {
+     "step": "afterLoop",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "audit",
+     "path": "json.integrity",
+     "equals": "ok"
+    },
+    {
+     "step": "audit",
+     "path": "json.unfinished",
+     "equals": 0
+    }
+   ],
+   "scenario": "Twelve SIGKILLs with tasks in flight: the store passes its integrity check, every operation row is terminal, and the agent serves after each restart"
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "tool",
+   "copy": "e2etool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "id": "wire",
+   "copy": "mcpwire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "slow",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 40"
+  },
+  {
+   "id": "kpAgent",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+  },
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3042,
+   "auth": "secret:kp"
+  },
+  {
+   "id": "plan",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e6.kill",
+     "generation": 1,
+     "idempotencyKey": "e2e6-kill-1",
+     "nodes": [
+      {
+       "id": "n1",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": ".config/opute-e2e/kill.txt",
+         "content": "e2e\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": ".config/opute-e2e/kill.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      },
+      {
+       "id": "n2",
+       "dependsOn": [
+        "n1"
+       ],
+       "action": {
+        "tool": "probe_http_endpoint",
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        }
+       }
+      }
+     ]
+    }
+   },
+   "port": 3042,
+   "auth": "secret:kp",
+   "capture": {
+    "RUN": "response.body.result.structuredContent.runId"
+   }
+  },
+  {
+   "id": "running",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "running",
+     "working"
+    ]
+   },
+   "timeout": 60,
+   "port": 3042,
+   "auth": "secret:kp"
+  },
+  {
+   "id": "kill",
+   "guest": "sleep 3; systemctl kill -s KILL e2e-agent-kp.service; sleep 1; ! systemctl is-active -q e2e-agent-kp.service && echo killed"
+  },
+  {
+   "id": "restart",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+  },
+  {
+   "id": "listAgain",
+   "mcp": "tools/list",
+   "port": 3042,
+   "auth": "secret:kp"
+  },
+  {
+   "id": "runAfter",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "port": 3042,
+   "auth": "secret:kp"
+  },
+  {
+   "id": "settle",
+   "guest": "sleep 45; echo waited"
+  },
+  {
+   "id": "runLater",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "port": 3042,
+   "auth": "secret:kp"
+  },
+  {
+   "id": "loop",
+   "guest": "E2E_TOKEN=${SECRET:kp} python3 /opt/opute-e2e/guest/e2etool.py killloop kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --rounds 12 --calls 4"
+  },
+  {
+   "id": "afterLoop",
+   "mcp": "tools/call",
+   "tool": "get_host_info",
+   "arguments": {},
+   "port": 3042,
+   "auth": "secret:kp"
+  },
+  {
+   "id": "audit",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/kp/state/state.db"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "slowStop",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; true"
+  },
+  {
+   "id": "remove",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove kp >/dev/null ; true"
+  }
+ ],
+ "maxMinutes": 20
+}

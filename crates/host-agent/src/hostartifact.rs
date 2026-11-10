@@ -97,6 +97,26 @@ pub(crate) fn normalize_sha256(raw: &str) -> Result<String, String> {
     Ok(format!("sha256:{}", value.to_ascii_lowercase()))
 }
 
+/// `io.Copy` into a hash: sha2 0.11 digests are not `io::Write`.
+pub(crate) fn copy_into_digest(
+    reader: &mut impl io::Read,
+    digest: &mut impl sha2::Digest,
+) -> io::Result<u64> {
+    let mut buf = [0u8; 32 * 1024];
+    let mut total = 0u64;
+    loop {
+        match reader.read(&mut buf) {
+            Ok(0) => return Ok(total),
+            Ok(n) => {
+                digest.update(&buf[..n]);
+                total += n as u64;
+            }
+            Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
+        }
+    }
+}
+
 pub(crate) fn file_sha256(path: &str) -> Result<String, String> {
     let mut file = std::fs::File::open(path).map_err(|e| {
         format!(
@@ -105,7 +125,7 @@ pub(crate) fn file_sha256(path: &str) -> Result<String, String> {
         )
     })?;
     let mut hasher = Sha256::new();
-    io::copy(&mut file, &mut hasher).map_err(|e| {
+    copy_into_digest(&mut file, &mut hasher).map_err(|e| {
         format!(
             "hash host artifact: {}",
             path_error("read", Path::new(path), &e).0

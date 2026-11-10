@@ -9,6 +9,8 @@ publish = false
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+# `fuzzing` is set by cargo-fuzz for the targets under fuzz/.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
 
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }

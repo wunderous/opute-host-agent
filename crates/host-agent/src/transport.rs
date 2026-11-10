@@ -545,7 +545,9 @@ fn oauth_error(status: u16, code: &str, description: &str) -> Response {
 fn basic_auth(req: &Request) -> Option<(String, String)> {
     use base64::Engine;
     let auth = req.headers.get("Authorization");
-    if auth.len() < 6 || !auth[..6].eq_ignore_ascii_case("basic ") {
+    // Compared as bytes: a header with a multi-byte character in its first
+    // six bytes is not Basic, and must not split that character (m16).
+    if auth.len() < 6 || !auth.as_bytes()[..6].eq_ignore_ascii_case(b"basic ") {
         return None;
     }
     let raw = base64::engine::general_purpose::STANDARD
@@ -1248,8 +1250,15 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         }
         return r;
     }
-    let raw = match body.read_all(None).await {
+    // D29: at most the SDK's 4 MiB is read; a larger body gets its 413 here,
+    // before the envelope is parsed, so no request can make the agent hold an
+    // unbounded body in memory.
+    let max = crate::mcpsdk::MAX_BODY;
+    let raw = match body.read_all(Some(max)).await {
         Ok(b) => b,
+        Err(http1::BodyError::TooLarge) => {
+            return Response::error(&format!("request body exceeds {max} bytes"), 413)
+        }
         Err(e) => return Response::error(&e.to_string(), 400),
     };
     if raw.is_empty() {

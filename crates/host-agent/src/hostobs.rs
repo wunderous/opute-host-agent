@@ -1266,7 +1266,7 @@ fn go_arch() -> &'static str {
     }
 }
 
-fn parse_os_release(text: &str) -> std::collections::BTreeMap<String, String> {
+pub(crate) fn parse_os_release(text: &str) -> std::collections::BTreeMap<String, String> {
     let mut values = std::collections::BTreeMap::new();
     for line in text.lines() {
         let Some((key, value)) = line.trim().split_once('=') else {
@@ -1281,7 +1281,7 @@ fn parse_os_release(text: &str) -> std::collections::BTreeMap<String, String> {
     values
 }
 
-fn parse_cpuinfo(text: &str) -> (String, String) {
+pub(crate) fn parse_cpuinfo(text: &str) -> (String, String) {
     let (mut vendor, mut model, mut implementer, mut part) =
         (String::new(), String::new(), String::new(), String::new());
     for line in text.lines() {

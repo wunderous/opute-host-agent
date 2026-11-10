@@ -28,7 +28,7 @@ impl Env {
         Env { vars }
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, fuzzing))]
     pub fn from_pairs<I, K, V>(pairs: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,

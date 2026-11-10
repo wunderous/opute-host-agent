@@ -190,7 +190,7 @@ fn bool_member(object: &Map<String, J>, name: &str) -> Result<bool, ()> {
 
 /// `json.Unmarshal(data, &v)` where `v` is a struct: `null` leaves it zero,
 /// any other non-object kind fails.
-fn decode_object(data: &[u8]) -> Result<Map<String, J>, ()> {
+pub(crate) fn decode_object(data: &[u8]) -> Result<Map<String, J>, ()> {
     if crate::gojson::syntax_error(data).is_some() {
         return Err(());
     }
@@ -203,7 +203,7 @@ fn decode_object(data: &[u8]) -> Result<Map<String, J>, ()> {
 
 /// `json.NewDecoder(body).Decode(&v)`: the first value only; its framing
 /// error (`EOF`, `unexpected EOF`, a syntax error) is the decode error.
-fn decode_first(body: &[u8]) -> Result<J, String> {
+pub(crate) fn decode_first(body: &[u8]) -> Result<J, String> {
     let end = crate::gojson::first_value(body)?;
     serde_json::from_slice::<J>(&body[..end]).map_err(|e| e.to_string())
 }
@@ -780,7 +780,7 @@ fn file_sha256(path: &str) -> Result<String, String> {
     let mut file = std::fs::File::open(path)
         .map_err(|e| crate::goerr::path_error("open", Path::new(path), &e).0)?;
     let mut hash = Sha256::new();
-    std::io::copy(&mut file, &mut hash)
+    crate::hostartifact::copy_into_digest(&mut file, &mut hash)
         .map_err(|e| crate::goerr::path_error("read", Path::new(path), &e).0)?;
     Ok(hex::encode(hash.finalize()))
 }

@@ -15,8 +15,8 @@
 //!  callbacks -> OPUTE_HOST_AGENT_ENDPOINT (+ bearer) -> host tools
 //! ```
 
-mod api;
-mod mesh;
+pub(crate) mod api;
+pub(crate) mod mesh;
 
 use super::support::{first_non_empty, string_input, Args, HostAgent, HttpRequest};
 use super::{Call, Server, Tool};
