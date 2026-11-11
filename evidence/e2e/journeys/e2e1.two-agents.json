@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -224,7 +224,7 @@
   },
   {
    "id": "third",
-   "guest": "runuser -u opute -- env OPUTE_REMOTE_AGENT_ID=e2e-ws-a MCP_AUTH_TOKEN=${SECRET:wsa} HOST_MCP_PORT=3023 OPUTE_MCP_PREFIX_TOOL_NAMES=true OPUTE_HOST_AGENT_INSTANCE_ROOT=/tmp/e2e-agents/ws-a/instance OPUTE_STANDALONE_STATE_DIR=/tmp/e2e-agents/ws-a/state HOME=/tmp/e2e-agents/ws-a/home timeout 30 /home/opute/.local/share/opute/opute-host-agent serve --mode standalone --transport http; echo exit=$?",
+   "guest": "runuser -u opute -- env OPUTE_REMOTE_AGENT_ID=e2e-ws-a MCP_AUTH_TOKEN=${SECRET:wsa} HOST_MCP_PORT=3023 OPUTE_MCP_PREFIX_TOOL_NAMES=true OPUTE_HOST_AGENT_INSTANCE_ROOT=/tmp/e2e-agents/ws-a/instance OPUTE_STANDALONE_STATE_DIR=/tmp/e2e-agents/ws-a/state HOME=/tmp/e2e-agents/ws-a/home timeout 30 /home/opute/.local/share/opute/opute-host-agent serve --transport http; echo exit=$?",
    "timeout": 60
   },
   {

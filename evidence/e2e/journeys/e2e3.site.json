@@ -3,21 +3,21 @@
  "gate": "e2e-3",
  "description": "Site deploy through the opute-site-deploy recipe on a single-node K3s cluster: the site image built locally from the published source and pushed to an e2e registry, the recipe's own nodes run with the image pinned by digest, the page served at a local test hostname (no tunnel, no public host), a rerun, and removal through the teardown recipe.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries",
   "source": "https://codeload.github.com/wunderous/host-agents/tar.gz/c9f9e775d8648a54ebaccc052c840cc1dcbdc42e (sha256 d995d8410af9219d38d8b5f3aa792669c27ca0f3916953e1a541f0fb4404b930)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-0.3.0-rc4/opute-provider-k3s-linux-x64",
-    "sha256": "78090752df867a2b3342d291c6e5a91b5dbc34e07ccf9c33ec4c9472a77ec950"
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc1/opute-provider-k3s-linux-x64",
+    "sha256": "29bb3447fa29c7fea475f47cadabe33bc4bfeaeb88ed7a73aaed05de7d44a3e7"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",

@@ -3,18 +3,18 @@
  "gate": "e2e-1",
  "description": "Flow 2, system unit: uninstall the agent, verify the release artifact against SHA256SUMS, reinstall the binary, Go's recorded deploy/opute-bootstrap-mcp.service and sudoers, the env file and drop-in, pass --check, enable, and serve. The published docs route a production host's install through Platform's Connect Remote Host flow (docs/install), so the recorded deploy files and distribution contract are the reference; reinstalling must reproduce the snapshot exactly (no declared effect).",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    }
   },
-  "release": "/opt/opute-e2e/releases/rust/v0.3.0 (local Rust 0.3.0 release candidate set)"
+  "release": "/opt/opute-e2e/releases/rust/v0.4.0 (local Rust 0.4.0 release candidate set)"
  },
  "requirements": [
   {
@@ -133,19 +133,26 @@
   },
   {
    "spec": "baseline/inventory/distribution.json",
-   "requirement": "deployFiles: the installed unit and sudoers are the recorded deploy files",
+   "requirement": "deployFiles: the installed sudoers is the recorded deploy file",
    "pass": [
-    {
-     "step": "deployHashes",
-     "path": "stdout",
-     "contains": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/opute-bootstrap-mcp.service"
-    },
     {
      "step": "deployHashes",
      "path": "stdout",
      "contains": "38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/opute-host-agent"
     }
    ]
+  },
+  {
+   "spec": "evidence/cutover/proposed-0.4.0/README.md",
+   "requirement": "The proposed 0.4.0 unit",
+   "pass": [
+    {
+     "step": "deployHashes",
+     "path": "stdout",
+     "contains": "8ade0e7e59673216ba4e5f283dacbe707a30075b32ee5b6127fb590281622a3f  /etc/systemd/system/opute-bootstrap-mcp.service"
+    }
+   ],
+   "scenario": "The recorded unit (deployFiles 02246cf6...) passes --mode, which 0.4.0 rejects; the VM installs the proposed unit, without --mode and with both mutation settings (owner decision 2026-11-11)"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",
@@ -219,15 +226,15 @@
   },
   {
    "id": "verify",
-   "guest": "cd /opt/opute-e2e/releases/rust/v0.3.0 && sha256sum -c SHA256SUMS"
+   "guest": "cd /opt/opute-e2e/releases/rust/v0.4.0 && sha256sum -c SHA256SUMS"
   },
   {
    "id": "pinned",
-   "guest": "awk '$2==\"host-agent-linux-x64\"{print $1}' /opt/opute-e2e/releases/rust/v0.3.0/SHA256SUMS"
+   "guest": "awk '$2==\"host-agent-linux-x64\"{print $1}' /opt/opute-e2e/releases/rust/v0.4.0/SHA256SUMS"
   },
   {
    "id": "binary",
-   "guest": "gzip -dc /opt/opute-e2e/releases/rust/v0.3.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64"
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64"
   },
   {
    "id": "deploy",

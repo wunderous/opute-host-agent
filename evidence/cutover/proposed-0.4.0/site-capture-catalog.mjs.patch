@@ -1,0 +1,11 @@
+--- a/site/scripts/capture-catalog.mjs
++++ b/site/scripts/capture-catalog.mjs
+@@ -117,7 +117,7 @@
+     HOST_MCP_PORT: String(port),
+     MCP_AUTH_TOKEN: token,
+   }
+-  const child = spawn(binary, ['--mode=standalone', '--transport=http'], {
++  const child = spawn(binary, ['--transport=http'], {
+     cwd: runtimeDir,
+     env,
+     stdio: ['ignore', 'ignore', 'pipe'],
