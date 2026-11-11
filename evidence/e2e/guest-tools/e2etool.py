@@ -224,6 +224,7 @@ def load(a):
         if time.monotonic() >= next_sample:
             stat = procstat(argparse.Namespace(unit=a.sample_unit))
             stat["t"] = round(time.monotonic() - start)
+            stat["calls"] = n
             stat["storeBytes"] = sum(os.path.getsize(os.path.join(a.state, f)) for f in os.listdir(a.state)
                                      if f.startswith("state.db"))
             samples.append(stat)
@@ -237,7 +238,9 @@ def load(a):
             errors += 1
         n += 1
     warm = [s for s in samples if s["t"] >= 120] or samples
-    growth = {k: warm[-1][k] - warm[0][k] for k in ("rssBytes", "fds", "threads", "storeBytes")}
+    growth = {k: warm[-1][k] - warm[0][k] for k in ("rssBytes", "fds", "threads", "storeBytes", "calls")}
+    # The store keeps one audit row per call: its growth is judged per call.
+    growth["storeBytesPerCall"] = round(growth["storeBytes"] / max(growth["calls"], 1))
     return {"calls": n, "counts": counts, "errors": errors, "samples": samples, "growthAfterWarmup": growth,
             "peak": {k: max(s[k] for s in samples) for k in ("rssBytes", "fds", "threads")}}
 

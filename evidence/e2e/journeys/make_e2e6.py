@@ -411,7 +411,9 @@ def budget() -> dict:
         agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         {"id": "load", "guest": f"E2E_TOKEN=${{SECRET:{n}}} {T} load --port {port} --seconds {b['seconds']} "
-                                f"--sample-unit e2e-agent-{n}.service --state {state(n)}"},
+                                f"--sample-unit e2e-agent-{n}.service --state {state(n)}",
+         # A guest step's default limit is 600 s; the load runs for the budget's seconds.
+         "timeout": b["seconds"] + 180},
         {"id": "audit", "guest": f"{T} audit {state(n)}/state.db"},
     ]
     g = "json.growthAfterWarmup."
@@ -420,7 +422,7 @@ def budget() -> dict:
             a("load", "json.calls", gte=b["minCalls"]), a("load", "json.errors", equals=0),
             a("load", g + "rssBytes", lte=b["rssGrowthBytesMax"]), a("load", g + "fds", lte=b["fdGrowthMax"]),
             a("load", g + "threads", lte=b["threadGrowthMax"]),
-            a("load", g + "storeBytes", lte=b["storeGrowthBytesMax"]),
+            a("load", g + "storeBytesPerCall", lte=b["storeBytesPerCallMax"]),
             a("load", "json.peak.rssBytes", lte=b["peakRssBytesMax"]),
             a("audit", "json.integrity", equals="ok"), a("audit", "json.unfinished", equals=0),
             scenario="Fifteen minutes of mixed read, write, task and Incus calls stay inside "

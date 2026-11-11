@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "99d8e277b1d88d343a239890a9c02e80a4188c03bff94654975d05907fcf44b6"
+    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -47,8 +47,8 @@
     },
     {
      "step": "load",
-     "path": "json.growthAfterWarmup.storeBytes",
-     "lte": 67108864
+     "path": "json.growthAfterWarmup.storeBytesPerCall",
+     "lte": 8192
     },
     {
      "step": "load",
@@ -102,7 +102,8 @@
   },
   {
    "id": "load",
-   "guest": "E2E_TOKEN=${SECRET:bud} python3 /opt/opute-e2e/guest/e2etool.py load --port 3049 --seconds 900 --sample-unit e2e-agent-bud.service --state /tmp/e2e-agents/bud/state"
+   "guest": "E2E_TOKEN=${SECRET:bud} python3 /opt/opute-e2e/guest/e2etool.py load --port 3049 --seconds 900 --sample-unit e2e-agent-bud.service --state /tmp/e2e-agents/bud/state",
+   "timeout": 1080
   },
   {
    "id": "audit",

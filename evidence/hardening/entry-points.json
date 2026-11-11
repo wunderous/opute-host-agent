@@ -141,7 +141,8 @@
       ],
       "properties": [],
       "findings": [
-        "F3"
+        "F3",
+        "O1"
       ]
     },
     {
@@ -266,6 +267,13 @@
       "foundBy": "gate e2e-6 draft, journey e2e6.commands",
       "test": "fuzzing::tests::a_hanging_incus_does_not_stall_other_requests; journey e2e6.commands",
       "state": "fixed: /health runs on the blocking pool, as tools/call does"
+    },
+    {
+      "id": "O1",
+      "summary": "The state store keeps one capability-invocation row per call (about 3.5 KB each for the e2e6.budget mix) and never prunes them; under 28,144 calls in 15 minutes it grew 81.5 MB. The spec states durable audit but no retention, so this is growth by contract, not a leak.",
+      "foundBy": "gate e2e-6 draft, journey e2e6.budget",
+      "test": "journey e2e6.budget (storeBytesPerCall)",
+      "state": "open observation for the owners: audit retention is not specified; not changed in m16"
     }
   ]
 }

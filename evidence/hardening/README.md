@@ -25,3 +25,16 @@ Fuzz passes are local runs: their logs stay under `fuzz/artifacts/`
 |---|---|---|
 | 1 | before the dependency upgrades | retired: the workspace was edited during the run, and `cargo fuzz run` rebuilt each target before running it, so the targets after the edit failed to build. `fuzz/run.sh` now builds once and runs the built binaries. |
 | 2 | the working tree with the dependency upgrades, before the F2, D29 and D30 fixes | 60 s per target. `http_wire` found F2 in 30 s; `host_archive` found a harness defect in 1 s (an archive directory with mode 0377 that the containment check could not list; the agent applies the mode as Go does). The others ran 60 s with no finding. |
+
+The e2e-6 journeys were drafted on dev VMs built from local drafts of the
+candidate (no gate run; receipts kept outside the repository under
+`.parity/e2e/drafts-m16/`). What the drafts showed:
+
+| Draft | Finding or harness change |
+|---|---|
+| commands | F4: `/health` ran `incus list` on the thread serving every connection; with a hung `incus`, no request was answered. Fixed in the agent. `get_host_info` runs three `incus` commands of 45 s each and answers after about 135 s with a hung `incus`, bounded by those timeouts as the contract has it; the journey's "next call" is `detect_host_platform`, which does not wait on `incus`. |
+| disk-full | F3: with the state directory full, `ensure_host_file` wrote its file and the task ran, and neither left an audit row. Fixed in the agent (D31). |
+| clock, pressure, kill | The dev VM's `opute` user has no user manager (no linger), so an agent running as `opute` fails every `run_host_command` workload at once ("Failed to connect to bus"), and a held task held nothing. Journeys whose tasks must run start their transient agent as root, whose workloads go to the system manager. |
+| pressure | A task's admission runs inside the task: its refusal is the task's result, read with `tasks/get`. |
+| all | The transient agents' units, the slow-endpoint helper, the disk-full tmpfs and the clock journey's NTP switch are declared effects; cleanup removes or restores each, and the residue check holds. |
+| budget | The load ran into the 600 s guest-step limit (harness); the step now has its own limit. On the next draft RSS grew 16 MB after warm-up, FDs and threads not at all, 28,144 calls with no error; the store grew 81.5 MB, one audit row per call by contract (O1). The budget's absolute store limit had no measured basis and is now per call; see `resource-budget.json`. |
