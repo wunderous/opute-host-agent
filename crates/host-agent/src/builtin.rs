@@ -1490,6 +1490,12 @@ fn with_uri(mut out: Map<String, J>, binding: &Binding) -> Map<String, J> {
     out
 }
 
+/// D39: the keystrokes to send, exactly as given: a lone CR or newline is
+/// input, never padding to trim.
+fn console_input(args: &Map<String, J>) -> &str {
+    raw_text(args, "data")
+}
+
 /// D38, D39: instance console sessions, read by pull.
 fn instance_console(host: &crate::tools::Host) -> Service {
     use crate::tools::structured_result;
@@ -1542,7 +1548,7 @@ fn instance_console(host: &crate::tools::Host) -> Service {
                 "send_console_input",
                 op(move |call| {
                     let id = operation_id(call.args)?;
-                    let (output, closed) = input.send(&id, text(call.args, "data"))?;
+                    let (output, closed) = input.send(&id, console_input(call.args))?;
                     Ok(structured_result(
                         serde_json::json!({
                             "status": "sent", "operationId": id,
@@ -3733,6 +3739,15 @@ fn service_ingress(serving: &crate::servingops::Serving) -> Service {
 
 #[cfg(test)]
 mod tests {
+
+    /// D39: console input reaches the terminal untrimmed.
+    #[test]
+    fn console_input_is_verbatim() {
+        for data in ["\r", "\n", " ", "abc\r", "\u{1}"] {
+            let args = serde_json::json!({"operationId": "o", "data": data});
+            assert_eq!(console_input(args.as_object().unwrap()), data);
+        }
+    }
     use super::*;
     use crate::provider::{DrainPolicy, Lifecycle};
 

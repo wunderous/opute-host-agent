@@ -3,9 +3,10 @@
 
   python3 evidence/e2e/journeys/make_neutral.py
 
-The dev VM keeps its 0.3.x install. Each journey copies the 0.4.0 release
-binary in and starts its own agents from it with `serve` and explicit
-settings only (no `--mode`), under /tmp/e2e-agents. An agent that must
+The dev VM runs the 0.4.0 candidate. Each journey copies the candidate's
+release binary in (and, for the rollback, the previous 0.3.x release) and
+starts its own agents from it with `serve` and explicit settings only (no
+`--mode`), under /tmp/e2e-agents. An agent that must
 listen on the profile's default 127.0.0.1:3014, which the VM's own agent
 holds, runs in a private network namespace and is reached with nsenter.
 """
@@ -21,22 +22,25 @@ GATE = "e2e-neutral"
 NSPEC = "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
 REL4 = "/opt/opute-e2e/releases/rust-0.4.0"
 BIN4 = f"{REL4}/opute-host-agent"
+REL3 = "/opt/opute-e2e/releases/rust-0.3.x"
+BIN3 = f"{REL3}/opute-host-agent"
 P = "python3 /opt/opute-e2e/guest/neutralprobe.py"
 GATE4 = "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
 ROOT = "/tmp/e2e-agents"
 
 FILES = {**base.TOOL_FILES,
          "probe": inp("${REPO}/evidence/e2e/guest-tools/neutralprobe.py"),
-         "rust04": inp("${PARITY}/e2e/release/rust-neutral/host-agent-linux-x64.gz")}
+         "rust04": inp(base.CANDIDATE + "/host-agent-linux-x64.gz")}
 SETUP = base.TOOL_STEPS + [
     {"id": "probeCopy", "copy": "probe", "to": "/opt/opute-e2e/guest/neutralprobe.py"},
     {"id": "copy04", "copy": "rust04", "to": f"{REL4}/host-agent-linux-x64.gz"},
     {"id": "unpack04", "guest": f"gzip -dc {REL4}/host-agent-linux-x64.gz > {BIN4} && chmod 0755 {BIN4} && "
                                 f"{BIN4} --version"},
 ]
-EFFECTS = ["files//opt/opute-e2e/releases/rust-0.4.0*", "system/units/e2e-*", "system/unitFiles/e2e-*"]
-AGENT04 = ("the 0.4.0 release binary built locally from this branch (VERSION=0.4.0-e2e, no tag, no publish), "
-           "started by the journey with `serve` and explicit settings")
+EFFECTS = ["files//opt/opute-e2e/releases/rust-0.4.0*", "files//opt/opute-e2e/releases/rust-0.3.x*",
+           "system/units/e2e-*", "system/unitFiles/e2e-*"]
+AGENT04 = ("the 0.4.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` "
+           "and explicit settings")
 
 
 def pid(name: str) -> str:
@@ -89,7 +93,7 @@ def journey(id_, description, requirements, steps, cleanup, files=FILES, allow=(
 
 def clean(*names: str, more: str = "") -> list[dict]:
     removes = "; ".join(f"{T} agent remove {n} >/dev/null" for n in names)
-    return [{"id": "clean", "guest": f"{removes}; {more}rm -rf {REL4} /opt/opute-e2e/guest/neutralprobe.py; true"}]
+    return [{"id": "clean", "guest": f"{removes}; {more}rm -rf {REL4} {REL3} /opt/opute-e2e/guest/neutralprobe.py; true"}]
 
 
 # --- 1. the single profile, the old variables, ordinary clients -------------------------------------------
@@ -153,7 +157,7 @@ def profile() -> dict:
                          a(s, "json.body.result.content[0].text", equals=GATE4)]
     reqs = [
         req(NSPEC, "One serving profile",
-            a("unpack04", "stdout", equals="0.4.0-e2e\n"),
+            a("unpack04", "stdout", equals="0.4.0\n"),
             a("plain", "json.agentId", equals="e2e-plain"),
             a("plainListen", "stdout", equals="127.0.0.1:3014\n"),
             *refused("plainMutation"), ok("plainNoFile"),
@@ -342,7 +346,10 @@ def rollback() -> dict:
         return base.call(id_, "inspect_host_file", {"path": f".config/opute-e2e/r{n}.txt", "scope": "user"}, **host)
 
     steps = SETUP + [
-        {"id": "old", "guest": start("roll", env, port=3004, binary=base.BIN)},
+        {"id": "copy03", "copy": "rust03", "to": f"{REL3}/host-agent-linux-x64.gz"},
+        {"id": "unpack03", "guest": f"gzip -dc {REL3}/host-agent-linux-x64.gz > {BIN3} && chmod 0755 {BIN3} && "
+                                    f"{BIN3} --version"},
+        {"id": "old", "guest": start("roll", env, port=3004, binary=BIN3)},
         {"id": "oldListen", "guest": f"{T} listen 3004"},
         base.mcp("oldList", "tools/list", **host),
         write(1),
@@ -360,7 +367,7 @@ def rollback() -> dict:
         {"id": "newStop", "guest": stop("roll")},
         {"id": "newDb", "guest": f"{T} db {sdb}"},
         # rollback: the same environment, the 0.3.x binary
-        {"id": "back", "guest": start("roll", env, port=3004, binary=base.BIN)},
+        {"id": "back", "guest": start("roll", env, port=3004, binary=BIN3)},
         {"id": "backListen", "guest": f"{T} listen 3004"},
         base.mcp("backList", "tools/list", **host),
         read("backRead2", 2),
@@ -375,6 +382,7 @@ def rollback() -> dict:
     same_cred = {"step": "oldMint", "path": "json.credSha256"}
     reqs = [
         req(NSPEC, "One serving profile",
+            a("unpack03", "stdout", equals="0.3.0\n"),
             *served("old"), a("oldListen", "json.addresses", equals=["0.0.0.0:3004"]), wrote("write1"),
             *served("new"), a("newListen", "json.addresses", equals=["0.0.0.0:3004"]),
             a("newSummary", "json.profileLines", equals=["bind=0.0.0.0 port=3004 mutations=true"]),
@@ -398,11 +406,12 @@ def rollback() -> dict:
     ]
     return journey(
         "neutral.rollback",
-        "Upgrade a Platform-style host from the VM's 0.3.x binary to 0.4.0 and roll it back, with one environment "
+        "Upgrade a Platform-style host from the previous 0.3.x release to 0.4.0 and roll it back, with one environment "
         "holding both settings sets (OPUTE_AGENT_MODE=platform next to the explicit bind, port, mutation, "
         "instance and OAuth client settings).",
         reqs, steps, clean("roll"),
-        previous="the dev VM's installed 0.3.x Rust release binary (" + base.BIN + ")")
+        files={**FILES, "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")},
+        previous="the previous Rust release, 0.3.0-rc4 (" + base.PREVIOUS + "), copied in")
 
 
 JOURNEYS = [profile, reserved, rollback]

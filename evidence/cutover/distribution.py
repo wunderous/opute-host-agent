@@ -38,12 +38,17 @@ sys.path.insert(0, str(ROOT / "tools/parity"))
 from parity import dist  # noqa: E402
 
 RECEIPT = HERE / "distribution.json"
-# Catalog changes decided after M10's D19-D24 rename rule (D28): the only tools
+# Catalog changes decided after M10's D19-D24 rename rule (D28, D37, D39): the only tools
 # the candidate's preview may still publish differently from Go's.
 DECLARED = {"configure_service_domain": "D28 (Q28): bind-standalone-service-domain",
             "remove_service_domain": "D28 (Q28): bind-standalone-service-domain",
             "restart_host_service": "D28 (Q23): privileged-host-service-restart",
-            "provision_container": "D28 (Q21): declare-read-inputs"}
+            "provision_container": "D28 (Q21): declare-read-inputs",
+            "send_console_input": "D39: vm-console-session (output and closed)",
+            "register_kubernetes_cluster": "D37: withdraw-platform-and-legacy-provider-tools",
+            "list_agents": "D37: withdraw-platform-and-legacy-provider-tools",
+            "install_provider_tools": "D37: withdraw-platform-and-legacy-provider-tools",
+            "uninstall_provider_tools": "D37: withdraw-platform-and-legacy-provider-tools"}
 # The generated files that render the catalog; any other difference fails.
 CATALOG_FILES = {"context/release-catalog.json", "public/search-index.json",
                  "public/docs/previews/v0.2.4/capabilities/catalog.json",

@@ -143,7 +143,8 @@ class Format(unittest.TestCase):
     def test_neutral_journeys_are_the_generator_output(self):
         sys.path.insert(0, str(E2E / "journeys"))
         import make_e2e1
-        if not (make_e2e1.PARITY / "e2e" / "release" / "rust-neutral").exists():
+        if not all(Path(r.replace("${PARITY}", str(make_e2e1.PARITY))).exists()
+                   for r in (make_e2e1.CANDIDATE, make_e2e1.PREVIOUS)):
             self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
         import make_neutral  # hashes its inputs on import
         for name, text in make_neutral.render().items():
@@ -302,3 +303,16 @@ class GuestState(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Until(unittest.TestCase):
+    def test_until_takes_a_list_or_a_pattern(self):
+        sys.path.insert(0, str(E2E))
+        import run
+        record = {"response": {"body": {"result": {"structuredContent": {"output": "\r\ne2e-v1 login: ", "closed": False}}}}}
+        path = "response.body.result.structuredContent."
+        self.assertTrue(run.until_met({"path": path + "closed", "in": [False]}, record))
+        self.assertTrue(run.until_met({"path": path + "output", "matches": "login:"}, record))
+        self.assertFalse(run.until_met({"path": path + "output", "matches": "Password"}, record))
+        self.assertFalse(run.until_met({"path": path + "closed", "matches": "x"}, record))
+        self.assertFalse(run.until_met({"path": path + "absent", "in": ["<absent>"]}, record))

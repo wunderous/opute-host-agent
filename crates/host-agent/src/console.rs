@@ -25,6 +25,9 @@ const SETTLE: Duration = Duration::from_millis(150);
 #[derive(Default)]
 pub(crate) struct Output {
     pub(crate) pending: Vec<u8>,
+    /// Every byte the console has written, so a read can tell output that
+    /// answers its write from output that was already waiting.
+    pub(crate) received: u64,
     /// The console process has exited (and is about to be, or has been,
     /// reaped): it must not be signalled any more.
     pub(crate) exited: bool,
@@ -218,7 +221,9 @@ impl Consoles {
                     let mut chunk = [0u8; 4096];
                     // EIO once every slave side is closed: the console ended.
                     while let Ok(n @ 1..) = master.read(&mut chunk) {
-                        append(&mut output.lock().unwrap().pending, &chunk[..n]);
+                        let mut output = output.lock().unwrap();
+                        output.received += n as u64;
+                        append(&mut output.pending, &chunk[..n]);
                     }
                     use nix::sys::wait::{waitid, Id, WaitPidFlag};
                     let _ = waitid(
@@ -267,6 +272,7 @@ impl Consoles {
     pub fn send(&self, operation_id: &str, data: &str) -> Result<(String, bool), String> {
         let session = self.get(operation_id)?;
         if !data.is_empty() && !session.exited() {
+            let before = session.output.lock().unwrap().received;
             session
                 .master
                 .lock()
@@ -276,7 +282,7 @@ impl Consoles {
             let started = Instant::now();
             let answered = || {
                 let output = session.output.lock().unwrap();
-                !output.pending.is_empty() || output.exited
+                output.received > before || output.exited
             };
             while started.elapsed() < ANSWER_WAIT && !answered() {
                 std::thread::sleep(Duration::from_millis(20));
@@ -400,6 +406,30 @@ mod tests {
         let pid = consoles.get("console-v2").unwrap().pid;
         consoles.close_all();
         assert!(nix::sys::signal::kill(nix::unistd::Pid::from_raw(pid), None).is_err());
+    }
+
+    /// A write's answer is waited for even when earlier output is still
+    /// unread: the console answers late, as a guest's login prompt does.
+    #[test]
+    fn a_write_waits_for_its_own_answer() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("incus");
+        std::fs::write(
+            &fake,
+            "#!/bin/sh\nstty -echo\necho banner\nwhile read line; do sleep 0.4; echo \"late:$line\"; done\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::os::unix::fs::PermissionsExt::from_mode(0o755))
+            .unwrap();
+        let env = Env::from_pairs([("PATH", "/usr/bin:/bin")]);
+        let consoles = Consoles::default();
+        consoles
+            .start(&env, fake.to_str().unwrap(), "v1", "console-v1", None)
+            .unwrap();
+        let (text, _) = consoles.send("console-v1", "x\n").unwrap();
+        assert!(text.contains("banner"), "{text:?}");
+        assert!(text.contains("late:x"), "{text:?}");
+        consoles.close_all();
     }
 
     /// A console that exits at once could not start, and leaves nothing.

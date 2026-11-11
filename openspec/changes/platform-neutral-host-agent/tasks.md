@@ -47,6 +47,12 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
   unit adds `OPUTE_HOST_ALLOW_MUTATIONS=true`. The journeys below do not
   wait on them: they start their own 0.4.0 agents with `serve` and
   explicit settings, and leave the harness's guest tool unchanged.
+  Owner decision (2026-11-11, goal m15): the 0.4.0 gates run on proposed
+  files, `evidence/cutover/proposed-0.4.0/` (the unit without `--mode`
+  and with both settings sets; the launcher patch). The dev VM installs
+  that unit, the journeys' launcher is the patched tree, and the guest
+  tool passes `--mode` only to Go and 0.3.x. The release owners still
+  ship both files; this task stays open until they do.
 
 Gate `e2e-neutral` passes on run `e2e-neutral-r2` (2026-11-10), on a
 0.4.0 release set built from this branch. r1 is retired: the journeys had
