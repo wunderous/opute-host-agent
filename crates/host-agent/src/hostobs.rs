@@ -161,7 +161,7 @@ pub fn run_command_raw(
     let mut cmd = Command::new(&program);
     cmd.args(&argv[1..])
         .env_clear()
-        .envs(command_env.pairs())
+        .envs(command_env.for_child().pairs())
         .stdin(if stdin.is_some() {
             Stdio::piped()
         } else {
@@ -1547,6 +1547,41 @@ pub fn agent_installation(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A4 (D40): a child sees the variables its tool needs, never the
+    /// agent's bearer, OAuth clients or a provider's credentials.
+    #[test]
+    fn a_child_never_sees_the_agents_secrets() {
+        let env = Env::from_pairs([
+            ("PATH", "/usr/bin:/bin"),
+            ("HOME", "/home/test"),
+            ("LANG", "C.UTF-8"),
+            ("HTTPS_PROXY", "http://proxy.test:3128"),
+            ("KUBECONFIG", "/home/test/.kube/config"),
+            ("MCP_AUTH_TOKEN", "test-secret-bearer"),
+            ("OPUTE_OAUTH_CLIENTS", "test-secret-clients"),
+            ("CLOUDFLARE_API_TOKEN", "test-secret-cloudflare"),
+            ("TAILSCALE_AUTH_KEY", "test-secret-tailscale"),
+            ("OPUTE_REMOTE_AGENT_ID", "test-agent-id"),
+        ]);
+        let out = run_command(&env, &["env".to_string()], Duration::from_secs(10));
+        assert_eq!(out.exit_code, 0, "{}", out.stderr);
+        assert!(!out.stdout.contains("test-secret"), "{}", out.stdout);
+        assert!(!out.stdout.contains("OPUTE_"), "{}", out.stdout);
+        for kept in [
+            "PATH=/usr/bin:/bin",
+            "HOME=/home/test",
+            "LANG=C.UTF-8",
+            "HTTPS_PROXY=http://proxy.test:3128",
+            "KUBECONFIG=/home/test/.kube/config",
+        ] {
+            assert!(
+                out.stdout.lines().any(|l| l == kept),
+                "{kept}: {}",
+                out.stdout
+            );
+        }
+    }
 
     #[test]
     fn platform_classification_matches_hostplatform() {

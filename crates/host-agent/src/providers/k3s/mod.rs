@@ -1293,6 +1293,10 @@ fn spawn_and_wait(
     combined: bool,
 ) -> Result<(Vec<u8>, Vec<u8>), (String, String)> {
     let mut command = Command::new(program);
+    // D40: the provider's credentials stay out of its children.
+    command
+        .env_clear()
+        .envs(crate::config::Env::from_process().for_child().pairs());
     // D28 (Q16): Incus calls always address the `default` project.
     if program == "incus" {
         command.args(["--project", "default"]);

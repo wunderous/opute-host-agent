@@ -14,11 +14,13 @@
     {
       "id": "http-body-framing",
       "source": "the same peer",
-      "code": "http1::Body (Content-Length, chunked, Expect: 100-continue, post-handler discard)",
+      "code": "http1::Body (Content-Length, chunked, Expect: 100-continue, post-handler discard; read_all's bound, D29 and D41)",
       "fuzz": [
         "http_wire"
       ],
-      "properties": []
+      "properties": [
+        "bounded_reads_return_the_body_or_refuse_it"
+      ]
     },
     {
       "id": "mcp-json-rpc",
@@ -136,7 +138,7 @@
     {
       "id": "state-store",
       "source": "state.db on disk: a crash, a full disk, or another process",
-      "code": "store::StateStore::open (schema init, migrations, interrupted-work marking)",
+      "code": "store::StateStore::open (schema init, migrations, interrupted-work marking); prune_audit (D42 retention)",
       "fuzz": [
         "state_store"
       ],
@@ -243,6 +245,42 @@
       "properties": [
         "console_reads_lose_nothing_within_the_bound"
       ]
+    },
+    {
+      "id": "serving-relay",
+      "source": "a peer inside the relay's source CIDRs, holding or guessing the relay's bearer",
+      "code": "llmops::relay_handle (source CIDR, unescape_path, constant-time bearer, the 32 MiB body bound, D41)",
+      "fuzz": [],
+      "properties": [
+        "bounded_reads_return_the_body_or_refuse_it"
+      ],
+      "findings": [
+        "A2"
+      ]
+    },
+    {
+      "id": "provider-mcp",
+      "source": "a peer reaching a provider executable's port",
+      "code": "providers::handle (the SDK's 4 MiB body bound, D41) -> mcpsdk serve",
+      "fuzz": [],
+      "properties": [
+        "bounded_reads_return_the_body_or_refuse_it"
+      ],
+      "findings": [
+        "A5"
+      ]
+    },
+    {
+      "id": "child-environment",
+      "source": "the agent's or a provider's process environment and env file, which hold secrets",
+      "code": "config::Env::for_child, passed at every place a process starts (D40; config::tests::every_spawn_site_passes_the_child_environment)",
+      "fuzz": [],
+      "properties": [
+        "child_environment_never_carries_a_secret"
+      ],
+      "findings": [
+        "A4"
+      ]
     }
   ],
   "findings": [
@@ -292,8 +330,29 @@
       "id": "O1",
       "summary": "The state store keeps one capability-invocation row per call (about 3.5 KB each for the e2e6.budget mix) and never prunes them; under 28,144 calls in 15 minutes it grew 81.5 MB. The spec states durable audit but no retention, so this is growth by contract, not a leak.",
       "foundBy": "gate e2e-6 draft, journey e2e6.budget",
-      "test": "journey e2e6.budget (storeBytesPerCall)",
-      "state": "open observation for the owners: audit retention is not specified; not changed in m16"
+      "test": "store::tests::audit_rows_are_pruned_by_age_and_count_but_never_while_referenced",
+      "state": "fixed by D42 (openspec/changes/audit-retention): 30 days and 50,000 rows by default, pruned in the background"
+    },
+    {
+      "id": "A2",
+      "summary": "The model-serving relay read an inference request's whole body before forwarding it, with no bound.",
+      "foundBy": "auth review (m16)",
+      "test": "llmops::tests::oversized_relay_bodies_are_refused_without_reading_them",
+      "state": "fixed by D41 (openspec/changes/bound-relay-request-body): 32 MiB, 413 beyond"
+    },
+    {
+      "id": "A4",
+      "summary": "Every child process inherited the agent's whole environment, MCP_AUTH_TOKEN, OPUTE_OAUTH_CLIENTS and provider credentials included; run_host_command's `env` returned them.",
+      "foundBy": "m15 review of the console spawn",
+      "test": "hostobs::tests::a_child_never_sees_the_agents_secrets; config::tests::every_spawn_site_passes_the_child_environment",
+      "state": "fixed by D40 (openspec/changes/child-process-environment): an allowlist at every spawn site"
+    },
+    {
+      "id": "A5",
+      "summary": "A provider executable's /mcp read a request's whole body before the SDK's 4 MiB limit, as /mcp did before D29.",
+      "foundBy": "m17, measuring A2",
+      "test": "providers::tests::oversized_provider_bodies_are_refused_without_reading_them",
+      "state": "fixed by D41 (openspec/changes/bound-relay-request-body): the SDK's 4 MiB, 413 beyond"
     }
   ]
 }

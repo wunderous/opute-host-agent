@@ -332,9 +332,18 @@ async fn handle(server: Arc<Server>, req: Request, mut body: Body) -> (Response,
         r.headers.set("Content-Length", "0");
         return (r, body);
     }
+    // D41 (applying D29): at most the SDK's 4 MiB is read; a larger body gets
+    // the SDK's 413 before it is held.
     let raw = if req.method == "POST" {
-        match body.read_all(None).await {
+        let max = crate::mcpsdk::MAX_BODY;
+        match body.read_all(Some(max)).await {
             Ok(b) => b,
+            Err(crate::http1::BodyError::TooLarge) => {
+                return (
+                    Response::error(&format!("request body exceeds {max} bytes"), 413),
+                    body,
+                )
+            }
             Err(e) => return (Response::error(&e.to_string(), 400), body),
         }
     } else {
@@ -350,6 +359,57 @@ async fn handle(server: Arc<Server>, req: Request, mut body: Body) -> (Response,
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A5 (D41): a provider's `/mcp` reads at most the SDK's 4 MiB, as the
+    /// agent does (D29); a larger body is refused 413 before the rest.
+    #[test]
+    fn oversized_provider_bodies_are_refused_without_reading_them() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = Arc::new(Server {
+            name: "test-provider",
+            version: "0",
+            capabilities: J::Object(Default::default()),
+            tools: Vec::new(),
+            wrap: None,
+        });
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_io()
+                .enable_time()
+                .build()
+                .unwrap();
+            rt.block_on(accept(listener, server));
+        });
+        let send = |declared: usize, sent: usize| {
+            let mut s = std::net::TcpStream::connect(addr).unwrap();
+            s.set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                .unwrap();
+            let head = format!(
+                "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n\
+                 Accept: application/json, text/event-stream\r\nContent-Length: {declared}\r\n\r\n"
+            );
+            s.write_all(head.as_bytes()).unwrap();
+            let _ = s.write_all(&vec![b' '; sent]);
+            let mut reply = vec![0u8; 4096];
+            let n = s.read(&mut reply).unwrap_or(0);
+            String::from_utf8_lossy(&reply[..n]).into_owned()
+        };
+        let over = send(64 << 20, 5 << 20);
+        assert!(
+            over.starts_with("HTTP/1.1 413"),
+            "no 413 before the body ended: {over:?}"
+        );
+        assert!(
+            over.contains("request body exceeds 4194304 bytes"),
+            "{over}"
+        );
+        let at_limit = send(4 << 20, 4 << 20);
+        assert!(at_limit.starts_with("HTTP/1.1 "), "{at_limit:?}");
+        assert!(!at_limit.starts_with("HTTP/1.1 413"), "{at_limit}");
+    }
 
     #[test]
     fn ports_follow_go() {

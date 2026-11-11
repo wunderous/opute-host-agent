@@ -866,6 +866,52 @@ impl StateStore {
         Ok(())
     }
 
+    /// D42: prune audit rows older than the retention age, then the oldest
+    /// beyond the row bound. A row whose operation is still working stays.
+    /// Returns the number of rows removed.
+    pub fn prune_audit(
+        &self,
+        retention: &AuditRetention,
+        now: std::time::SystemTime,
+    ) -> std::result::Result<u64, String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        // Whole seconds: RFC 3339 with a fraction sorts after the same second
+        // without one, so the cutoff is exact to within a second.
+        let cutoff = now
+            .checked_sub(retention.max_age)
+            .unwrap_or(std::time::UNIX_EPOCH);
+        let cutoff = crate::hostobs::rfc3339_nano(
+            std::time::UNIX_EPOCH
+                + std::time::Duration::from_secs(
+                    cutoff
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                ),
+        );
+        const UNREFERENCED: &str = "operation_id NOT IN \
+             (SELECT operation_id FROM operations WHERE status = 'working')";
+        let aged = conn
+            .execute(
+                &format!(
+                    "DELETE FROM capability_invocations WHERE created_at < ? AND {UNREFERENCED}"
+                ),
+                [&cutoff],
+            )
+            .map_err(sqlite_err)?;
+        let over = conn
+            .execute(
+                &format!(
+                    "DELETE FROM capability_invocations WHERE rowid IN (
+                     SELECT rowid FROM capability_invocations WHERE {UNREFERENCED}
+                     ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET ?)"
+                ),
+                [retention.max_rows as i64],
+            )
+            .map_err(sqlite_err)?;
+        Ok((aged + over) as u64)
+    }
+
     /// Close explicitly so the WAL is checkpointed and removed, as Go's
     /// `db.Close` does; a leftover `-wal` file would be an observable diff.
     pub fn close(&mut self) {
@@ -977,6 +1023,38 @@ pub struct ProviderGenerationRecord {
     pub status: String,
     pub created_at: String,
     pub active_at: String,
+}
+
+/// How long and how many audit rows (`capability_invocations`) are kept
+/// (D42).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AuditRetention {
+    pub max_age: std::time::Duration,
+    pub max_rows: u64,
+}
+
+impl AuditRetention {
+    pub const DEFAULT_DAYS: u64 = 30;
+    pub const DEFAULT_ROWS: u64 = 50_000;
+
+    /// `OPUTE_AUDIT_RETENTION_DAYS` and `OPUTE_AUDIT_RETENTION_ROWS`; a value
+    /// that is not a positive integer means the default.
+    pub fn from_env(env: &crate::config::Env) -> Self {
+        let positive = |name: &str, default: u64| {
+            env.get(name)
+                .trim()
+                .parse::<u64>()
+                .ok()
+                .filter(|v| *v > 0)
+                .unwrap_or(default)
+        };
+        AuditRetention {
+            max_age: std::time::Duration::from_secs(
+                86_400 * positive("OPUTE_AUDIT_RETENTION_DAYS", Self::DEFAULT_DAYS),
+            ),
+            max_rows: positive("OPUTE_AUDIT_RETENTION_ROWS", Self::DEFAULT_ROWS),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -1132,6 +1210,62 @@ mod tests {
             .unwrap()
             .map(|r| r.unwrap())
             .collect()
+    }
+
+    /// O1 (D42): audit rows older than the retention age, or beyond the row
+    /// limit (oldest first), are pruned; a row whose operation is still
+    /// working is kept whatever its age.
+    #[test]
+    fn audit_rows_are_pruned_by_age_and_count_but_never_while_referenced() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = StateStore::open(&dir.path().join("state")).unwrap();
+        let day = std::time::Duration::from_secs(86_400);
+        let now = std::time::SystemTime::now();
+        let at = |age: std::time::Duration| crate::hostobs::rfc3339_nano(now - age);
+        store
+            .create_operation("op-live", "provision_vm", "")
+            .unwrap();
+        let insert = |id: String, operation: &str, created_at: String| {
+            store
+                .record_capability_invocation(&CapabilityInvocationRecord {
+                    invocation_id: id,
+                    operation_id: operation.into(),
+                    capability_version: 1,
+                    created_at,
+                    ..Default::default()
+                })
+                .unwrap();
+        };
+        for i in 0..10 {
+            insert(format!("old-{i}"), &format!("op-old-{i}"), at(day * 40));
+        }
+        insert("old-live".into(), "op-live", at(day * 40));
+        for i in 0..20 {
+            insert(
+                format!("new-{i:02}"),
+                &format!("op-new-{i}"),
+                at(day - std::time::Duration::from_secs(i)),
+            );
+        }
+        let retention = AuditRetention {
+            max_age: day * 30,
+            max_rows: 15,
+        };
+        let pruned = store.prune_audit(&retention, now).unwrap();
+        let conn = store.conn.as_ref().unwrap();
+        let mut kept: Vec<String> = conn
+            .prepare("SELECT invocation_id FROM capability_invocations ORDER BY invocation_id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        kept.sort();
+        let mut want: Vec<String> = (5..20).map(|i| format!("new-{i:02}")).collect();
+        want.push("old-live".into());
+        want.sort();
+        assert_eq!(kept, want);
+        assert_eq!(pruned, 15);
     }
 
     #[test]
