@@ -1,0 +1,258 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; true",
+   "id": "slowStop"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove kp >/dev/null ; true",
+   "id": "remove"
+  }
+ ],
+ "description": "An agent killed with SIGKILL during a plan's slow step, then twelve times with task calls in flight; the plan reads back unknown and stays so, and the store stays whole.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.kill",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 20,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "matches": "killed\n$",
+     "path": "stdout",
+     "step": "kill"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "restart"
+    },
+    {
+     "equals": "unknown",
+     "path": "response.body.result.structuredContent.status",
+     "step": "runAfter"
+    },
+    {
+     "equals": "unknown",
+     "path": "response.body.result.structuredContent.status",
+     "step": "runLater"
+    }
+   ],
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "scenario": "A plan killed with SIGKILL during its slow step reads back unknown and is not run again",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 12,
+     "path": "json.restarts",
+     "step": "loop"
+    },
+    {
+     "gte": 1,
+     "path": "json.acceptedTotal",
+     "step": "loop"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "afterLoop"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "equals": 0,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Twelve SIGKILLs with tasks in flight: the store passes its integrity check, every operation row is terminal, and the agent serves after each restart",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 40",
+   "id": "slow"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root",
+   "id": "kpAgent"
+  },
+  {
+   "auth": "secret:kp",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3042
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e6-kill-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "e2e\n",
+         "path": ".config/opute-e2e/kill.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/kill.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      },
+      {
+       "action": {
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        },
+        "tool": "probe_http_endpoint"
+       },
+       "dependsOn": [
+        "n1"
+       ],
+       "id": "n2"
+      }
+     ],
+     "planId": "e2e6.kill"
+    }
+   },
+   "auth": "secret:kp",
+   "capture": {
+    "RUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "plan",
+   "mcp": "tools/call",
+   "port": 3042,
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "auth": "secret:kp",
+   "id": "running",
+   "mcp": "tools/call",
+   "port": 3042,
+   "timeout": 60,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "running",
+     "working"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "guest": "sleep 3; systemctl kill -s KILL e2e-agent-kp.service; sleep 1; ! systemctl is-active -q e2e-agent-kp.service && echo killed",
+   "id": "kill"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root",
+   "id": "restart"
+  },
+  {
+   "auth": "secret:kp",
+   "id": "listAgain",
+   "mcp": "tools/list",
+   "port": 3042
+  },
+  {
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "auth": "secret:kp",
+   "id": "runAfter",
+   "mcp": "tools/call",
+   "port": 3042,
+   "tool": "get_host_plan_run"
+  },
+  {
+   "guest": "sleep 45; echo waited",
+   "id": "settle"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN}"
+   },
+   "auth": "secret:kp",
+   "id": "runLater",
+   "mcp": "tools/call",
+   "port": 3042,
+   "tool": "get_host_plan_run"
+  },
+  {
+   "guest": "E2E_TOKEN=${SECRET:kp} python3 /opt/opute-e2e/guest/e2etool.py killloop kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --rounds 12 --calls 4 --user root",
+   "id": "loop"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:kp",
+   "id": "afterLoop",
+   "mcp": "tools/call",
+   "port": 3042,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/kp/state/state.db",
+   "id": "audit"
+  }
+ ]
+}

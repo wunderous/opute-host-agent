@@ -1331,6 +1331,43 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     the sources are unchanged since.
   - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
     and Q18 not passed. Tasks 6.3 and 6.4 stay open.
+- **m16 (2026-11-11): hardening.** The agent was attacked with hostile
+  input, host faults and supply-chain drift; every attack is a repeatable
+  check ([`evidence/hardening`](../../../evidence/hardening/README.md)).
+  - **Inventory and fuzzing:** 22 untrusted entry points, each covered by
+    one of 17 cargo-fuzz targets (stable toolchain, `--sanitizer none`) or
+    a proptest property (D13 redaction, schema validation, canonical
+    resource identity, connector diagnostics). CI fuzzes each target for
+    20 s; three local passes ran 60 s per target (a first was retired). Every crash is a
+    committed regression input replayed by `cargo test`.
+  - **Findings fixed:** F1 (Unicode whitespace in resource ids, D30), F2
+    (a panic on a multi-byte `Authorization` header), A1 (`/mcp` body read
+    before its limit, D29), F3 (a full state directory let an effectful
+    call run with no audit row; now refused with `state_storage_full`,
+    D31), F4 (`/health` stalled every connection behind a hung `incus`),
+    F5 (signed `\u` and percent escapes accepted). Open observations: A2
+    (relay body unbounded), A3 (bootstrap `Host` rule, as specified), O1
+    (audit rows never pruned; retention is not specified).
+  - **Gate e2e-6:** seven fault journeys on transient agents in the dev VM
+    (D31): full state directory, truncated store, SIGKILL during a plan
+    and during task writes, hung and garbage `incus`, clock stepped back,
+    admission under pressure and the D29 body bound, and a 15-minute
+    resource budget (`resource-budget.json`: RSS +15.9 MB, FDs and threads
+    flat, store 3,455 bytes per call, 27,390 calls with no error). The
+    budget's first absolute store limit had no measured basis and is now
+    per call.
+  - **Supply chain:** dependency upgrades for the cargo-deny advisories
+    (rustls, rustls-webpki, tokio, ruzstd, rsa, sha1/sha2, aes-gcm,
+    rusqlite); `deny.toml` with one accepted advisory (unsafe-libyaml, Q30);
+    `make supply-chain` and `make reproducible-build` (two offline locked
+    builds, byte-identical) in CI; a CycloneDX SBOM in the release set.
+  - **Candidate:** `rust-0.3.0-rc4` (9c8ff2d4c). Runs `m16-r1` (rc2, F5
+    found) and `m16-r2` (rc3, a `cargo fmt` change to the sources) were
+    retired with their cause; all gates pass on `m16-r3`, with the contract
+    suites, seam stage `m16`, the arm64 install and the distribution
+    checks recaptured on rc4.
+  - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
+    and Q18 not passed. Tasks 6.3 and 6.4 stay open.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 

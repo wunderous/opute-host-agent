@@ -12,24 +12,28 @@ items in `evidence/cutover/readiness.json`). Its `candidate` item fails
 unless every gate below, the contract receipt and the arm64 receipt ran this
 one release set and the Rust sources are unchanged since it was built.
 
+m16 (hardening) replaced the m13b candidate `rust-0.3.0-rc1` with
+`rust-0.3.0-rc4`: five defects found by fuzzing, the fault journeys and the
+auth review were fixed (section 2a), and every gate reran on the new set.
+
 ## 1. The candidate
 
 | Field | Value |
 |---|---|
-| Name | `rust-0.3.0-rc1` ([`evidence/cutover/candidate.json`](../../../evidence/cutover/candidate.json)) |
+| Name | `rust-0.3.0-rc4` ([`evidence/cutover/candidate.json`](../../../evidence/cutover/candidate.json)) |
 | Version | `0.3.0` (the binary's `--version`; D28 makes 0.3.0 the first Rust package) |
-| Commit | `74b3d2e827f335b9e7bf58c27f92f8f5f5857c94` (main after PR #45) |
-| Built | locally with `tools/release/build-artifacts.sh`, `VERSION=0.3.0`; no tag, no publish |
-| `SHA256SUMS` | `sha256:07f35fb61b4f4ab1189b545f73d6e585fee2145bf5feff7924daad3ccf257e63` |
-| `host-agent-linux-x64` | `304013dfde432e89a414622f62991b11596ef8a5b2872c639a6835da9a374828` |
-| `host-agent-linux-x64.gz` | `d3edf9eaf4dcc0d9c9456abcb97246e8054adcfd5e29e4e612e11b5593035abe` |
-| `host-agent-linux-arm64.gz` | `3cec9874e4ec795fae53a2c85a7e4f40d60e3cfdd65a74300db087b5cc414530` |
-| `opute-provider-k3s-linux-x64` | `cdf421a137cbb772d0c39117c8a263dc67ff64c5685b96e862cb2d2c95b6cfad` |
-| `opute-provider-cloudflare-linux-x64` | `9ab3dfd41a0342ba95951b100611cba4d62f0d66407c10835909f38b5af5e038` |
-| `opute-provider-tailscale-linux-x64` | `6113fa62b4ae0dd4c47fc85d1480654901e5c899366bb8e793e112c099eea2e6` |
+| Commit | `9c8ff2d4c90215b48e15149d2bcf64238b558d9d` (branch `claude/m16-hardening`, PR #47) |
+| Built | locally with `tools/release/build-artifacts.sh`, `VERSION=0.3.0`; no tag, no publish. The set carries a CycloneDX SBOM, `sbom.cdx.json`, with its own checksum |
+| `SHA256SUMS` | `sha256:82f21b9acaf5d6afa36bed445fa8b08d623d2068953736bacb5fc5ec8d0eb915` |
+| `host-agent-linux-x64` | `994f06d4acc9e4dde989f790e1d6f6e113738efb5c5e053fc8fa4c037e1dc837` |
+| `host-agent-linux-x64.gz` | `03645a70b8df8d3d99f679228a1ad0f5866c573a2a56ceb5441020ecdc553973` |
+| `host-agent-linux-arm64.gz` | `fef25445cc428ff66e7db5f4bd2c8be2010b4cd4d60fbf7704ef8b3c9f019781` |
+| `opute-provider-k3s-linux-x64` | `78090752df867a2b3342d291c6e5a91b5dbc34e07ccf9c33ec4c9472a77ec950` |
+| `opute-provider-cloudflare-linux-x64` | `c4a5c7b306324763a7d81b11dbc65d8191832f16d64b9c6b5e54593ee692a98f` |
+| `opute-provider-tailscale-linux-x64` | `324fecb075ad5ba8b1b2d3a02e2ca74c505464fe94a7c6680847a37c700668af` |
 | Catalog revision, standalone | `sha256:90679cf13dc4434c27c9da3f9b681abc2dbf8d916af80b1d22fe42b8d62709bb` (142 public tools; the site capture from the binary reports the same revision) |
 | Catalog revision, platform | `sha256:3629012092dd06e499ff59ee968006f075de9e0513fa7e7d571828f57df4f54e` |
-| Upgrade target | `rust-0.3.0-rc1-next`, `0.3.1-e2e`, the same commit, used only by the in-place upgrade journeys |
+| Upgrade target | `rust-0.3.0-rc4-next`, `0.3.1-e2e`, the same commit, used only by the in-place upgrade journeys |
 
 The dev VM was rebuilt from this set; its build refuses unless the installed
 binary reports `0.3.0`. Go stays the published v0.2.4 release
@@ -37,8 +41,8 @@ binary reports `0.3.0`. Go stays the published v0.2.4 release
 
 ## 2. Gates and receipts
 
-Every gate ran on the candidate under one run id, `m13b-r1`
-(`evidence/e2e/runs/m13b-r1/`), and `evidence/e2e/verify.py --gate` passes
+Every gate ran on the candidate under one run id, `m16-r3`
+(`evidence/e2e/runs/m16-r3/`), and `evidence/e2e/verify.py --gate` passes
 each. Each journey names the spec requirements it proves in its
 `results.json`.
 
@@ -50,26 +54,29 @@ each. Each journey names the spec requirements it proves in its
 | e2e-3a | 5 | 17 | A three-server HA K3s cluster built only through typed calls: workload, losing one server, quorum loss with fail-closed calls and recovery, and the optional cluster endpoint (Q19) |
 | e2e-3 | 3 | 15 | Use cases: cluster discovery through the neutral name, the site deploy recipe, local model serving through the gateway (a test runtime) |
 | e2e-4 | 2 | 10 | Cutover: Rust on Go v0.2.4's real state with work in flight, Rust's new work, rollback to Go on Rust's state; SIGTERM, SIGKILL and an in-place upgrade mid-work |
+| e2e-6 | 7 | 8 | Host faults and pressure (m16, D31): a full state directory refuses effectful calls and recovers without a restart; a truncated store stops startup and the restored store starts intact; SIGKILL during a plan step and twelve SIGKILLs with tasks in flight leave a whole store; a hung or garbage-printing `incus` ends the call typed and the agent serves on; a clock stepped back an hour keeps tokens and reservations; admission refuses beyond the operation limit and below the floors; a 1 GiB declared body is answered 413 (D29); the 15-minute resource budget holds |
 
-Two journeys of the first pass (`e2e1.migrate-upgrade`, `e2e4.cutover`)
-failed one harness assertion each: they expected the installed Rust binary
-to print `0.2.4`. The generators now take the version from the candidate,
-and both reran green under the same run id. No product change; the failed
-results and their cause are retired under
-`.parity/retired/m13b-r1-version-pin/`.
+Two earlier runs were retired with their cause: `m16-r1` (rc2) when fuzzing
+found F5, and `m16-r2` (rc3) when CI's `cargo fmt` check failed and formatting
+changed the candidate's source digest (`.parity/retired/m16-r1/`, `m16-r2/`).
+In `m16-r3`, the first attempt of `e2e3a.lose-one` was killed by the round's
+own 1780 s runner limit before writing any record, and the journey reran once
+under the same run id (`.parity/retired/m16-r3-lose-one-timeout/`).
 
 | Receipt | Where | What it proves |
 |---|---|---|
-| Contract suites | [`contract-suites.json`](../../../evidence/cutover/contract-suites.json), binary `304013df…` | D8 OAuth issuance 24/24, D10 standalone read-only gate 8/8, D11 rejected calls leave no audit writes 3/3, D12 refusal before an operation record 3/3, D13 evidence redaction 4/4 |
-| Seam report | [`evidence/seam/m13b`](../../../evidence/seam/m13b) and its validation | D14: 133 compliant capabilities, 17 unported, no gap; the dispatch canary turns the verifier red |
-| arm64 clean install | [`arm64/receipt.json`](../../../evidence/cutover/arm64/receipt.json), `host-agent-linux-arm64.gz` `3cec9874…` | Debian 12 arm64 under emulation: checksum, install, launch, MCP `tools/list` and `get_host_info` with the exact agent id, SIGTERM stop, relaunch, stop, uninstall |
+| Contract suites | [`contract-suites.json`](../../../evidence/cutover/contract-suites.json), binary `994f06d4…` | D8 OAuth issuance 24/24, D10 standalone read-only gate 8/8, D11 rejected calls leave no audit writes 3/3, D12 refusal before an operation record 3/3, D13 evidence redaction 4/4 |
+| Seam report | [`evidence/seam/m16`](../../../evidence/seam/m16) and its validation | D14: 133 compliant capabilities, 17 unported, no gap; the dispatch canary turns the verifier red |
+| arm64 clean install | [`arm64/receipt.json`](../../../evidence/cutover/arm64/receipt.json), `host-agent-linux-arm64.gz` `fef25445…` | Debian 12 arm64 under emulation: checksum, install, launch, MCP `tools/list` and `get_host_info` with the exact agent id, SIGTERM stop, relaunch, stop, uninstall |
+| Reproducible build | `make reproducible-build` (CI job `supply-chain`) | Two clean, offline, `--locked` builds of the agent and the four provider executables are byte-identical |
+| Supply chain | `deny.toml`, `make supply-chain` (CI) | cargo-deny: advisories, licences, sources (crates.io only), duplicate versions; exceptions carry their reason (one accepted advisory, Q30) |
 | Distribution | [`distribution.json`](../../../evidence/cutover/distribution.json) | Go's published-package read-only canary passes (1/1) on the locally packed 0.3.0 launcher starting the candidate; the site preview from the candidate's catalog equals Go's after the declared renames except in exactly the four tools D28 changed (below); Go's own `check-site` passes from Go v0.2.4 |
 
 The distribution checks map onto tasks 5.1 and 5.2 as follows. All are local.
 
 | Check | Evidence |
 |---|---|
-| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m13b-r1) |
+| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m16-r3) |
 | Clean-machine install (arm64) | the arm64 receipt |
 | Upgrade from Go v0.2.4 | `e2e1.migrate-upgrade` and `e2e4.cutover` |
 | Rollback to Go v0.2.4 | `e2e4.cutover` |
@@ -89,6 +96,38 @@ decided by the owner:
 | `configure_service_domain`, `remove_service_domain` | D28 (Q28): publish the `uri` descriptor ([bind-standalone-service-domain](../bind-standalone-service-domain/proposal.md)) |
 | `restart_host_service` | D28 (Q23): describe user services only ([privileged-host-service-restart](../privileged-host-service-restart/proposal.md)) |
 | `provision_container` | D28 (Q21): declare the inputs it reads ([declare-read-inputs](../declare-read-inputs/proposal.md)) |
+
+## 2a. Hardening (m16)
+
+The evidence is under [`evidence/hardening/`](../../../evidence/hardening/README.md).
+The inventory lists 22 entry points where untrusted bytes enter the agent;
+each is covered by fuzz targets (17, cargo-fuzz on the stable toolchain) or
+property tests (proptest), and a unit test fails if an entry loses its
+coverage. CI fuzzes every target for 20 s; three local passes ran 60 s per
+target, after a first was retired (results in the README, including the
+targets that found nothing).
+
+| Id | Found by | What | State |
+|---|---|---|---|
+| F1 | property test | A resource id with Unicode whitespace changed identity on a round trip | fixed, D30 |
+| F2 | fuzz `http_wire` | An `Authorization` header with a multi-byte character panicked `/oauth/token`'s connection | fixed |
+| A1 | auth review | `/mcp` read the whole body before the 4 MiB check | fixed, D29 |
+| F3 | e2e-6 draft | With the state directory full, an effectful call ran and its audit row was silently lost | fixed under D31: refused with `state_storage_full` below 1 MiB free |
+| F4 | e2e-6 draft | `/health` ran `incus list` on the thread serving every connection; a hung `incus` stalled the agent | fixed |
+| F5 | fuzz `json_document` | A `\u` escape with a sign was accepted (`from_str_radix`); three more decodes had the same defect | fixed |
+| A2 | auth review | The model-serving relay forwards a request body without a bound | open observation |
+| A3 | auth review | The bootstrap bearer's local-`Host` rule limits audience, not which peer may use it | as specified |
+| O1 | e2e-6 budget | Audit rows are never pruned: about 3.5 KB per call, 78 MB in 15 minutes of heavy load | open: retention is not specified |
+
+The full auth walk is [`auth-review.md`](../../../evidence/hardening/auth-review.md).
+
+Resource budget (`resource-budget.json`), on the candidate in `e2e6.budget`:
+27,390 calls in 15 minutes with no error; after a two-minute warm-up RSS
+grew 15.9 MB (budget 48 MiB), open FDs and threads did not grow, and the
+store grew 3,455 bytes per call (budget 8 KiB; the first budget's absolute
+64 MiB store limit had no measured basis and was replaced). Peak RSS 95 MB
+(budget 256 MiB). The D29 check: a 1 GiB declared body was answered 413
+at once, with RSS 43 MB afterwards.
 
 ## 3. Declared divergences from Go
 
@@ -117,6 +156,9 @@ linked changes.
 | D27 | The spec, not Go, is the authority after the parity record | owner, 2026-11-04 |
 | D28 | Q0–Q28 answered: the fixes in Q5, Q7, Q9, Q14–Q17, Q20–Q28; the 14-day rollback window; 0.3.0 as the first Rust package; npm postponed | owner, 2026-11-07 |
 | D28 follow-ups | Q19 (optional HA endpoint, off by default) and Q29 (one workload unit per task) | owner, 2026-11-08 |
+| D29 | `/mcp` reads at most 4 MiB of a request body and answers 413 beyond it | owner, 2026-11-10 |
+| D30 | A resource id containing any Unicode whitespace is refused | owner, 2026-11-10 |
+| D31 | The outcomes of host faults (full state directory, damaged store, failing command, clock step) | owner, 2026-11-10 |
 
 D1 (bit-compatible SQLite), D4–D7, D14 and D15 constrain how the migration
 was done or scoped; they change no observable behaviour against Go.
@@ -131,13 +173,14 @@ was done or scoped; they change no observable behaviour against Go.
 | Q18 | unverified (deferred) | Host Agent owner | D28 defers it as a new capability; not a cutover blocker |
 | npm | postponed | release owners | D28: publishing 0.3.0, including to npm, is a separate rollout step; nothing here was published |
 | Public site and catalog claims (5.2) | not started | release and website owners | re-anchoring `site/context/release-catalog.json` on the candidate's catalog at publication |
+| O1 audit retention, A2 relay body | open observations | Host Agent owner | a decision on audit retention and on a relay body bound; neither is a cutover blocker by the spec |
 
 `make cutover-readiness` lists exactly e2e-5, WSL2, Q4 and Q18 as not passed.
 
 ## 5. Cutover and rollback runbook
 
 For the deployment owner, after sign-off. Each step names the journey that
-rehearsed it on the dev VM with the candidate (run `m13b-r1`). Production
+rehearsed it on the dev VM with the candidate (run `m16-r3`). Production
 hosts, Platform registration, tunnels and DNS were never touched.
 
 | # | Step | Rehearsed by |
