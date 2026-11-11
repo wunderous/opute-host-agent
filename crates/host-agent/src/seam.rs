@@ -281,3 +281,56 @@ fn seam_verifier() {
         "seam gaps differ from seam-gaps.json: a capability is reached outside the service context, or a revised one is still listed"
     );
 }
+
+/// `recorded-session-and-llm-tools`: the three tools answer as recorded,
+/// through the same dispatch a `tools/call` reaches.
+#[test]
+fn recorded_tools_answer_as_recorded() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = server(dir.path(), "standalone");
+    let revision = server.catalog.snapshot().revision.clone();
+    let call = |name: &str, args: J| {
+        crate::tools::invoke(
+            &server,
+            &RunCtx::background(),
+            name,
+            args.as_object().unwrap(),
+            &Binding::default(),
+        )
+    };
+    let opened = call(
+        "open_assistant_session",
+        json!({"sessionId": "s1", "supportedContractVersions": ["x", "assistant-session.v1"],
+               "catalogRevision": revision}),
+    );
+    let opened = &opened["structuredContent"];
+    assert_eq!(opened["contractVersion"], "assistant-session.v1");
+    assert_eq!(opened["sessionId"], "s1");
+    assert_eq!(opened["catalogRevision"], J::from(revision.clone()));
+    let error = |result: J| {
+        assert_eq!(result["isError"], true, "{result}");
+        result["content"][0]["text"].as_str().unwrap().to_string()
+    };
+    assert!(error(call(
+        "open_assistant_session",
+        json!({"sessionId": "s1", "supportedContractVersions": ["assistant-session.v1"],
+               "catalogRevision": "stale"}),
+    ))
+    .contains(&format!("requested=stale current={revision}")));
+    assert!(error(call(
+        "open_assistant_session",
+        json!({"sessionId": "s1", "supportedContractVersions": ["v0"]}),
+    ))
+    .contains("no compatible assistant session contract"));
+    let removed = call("remove_local_llm_model", json!({"modelRef": "qwen3:0.6b"}));
+    assert_eq!(
+        removed["structuredContent"],
+        json!({"removed": false, "purged": false, "shared": true,
+               "reason": "Ollama model artifacts are shared host state; use the host Ollama lifecycle for explicit garbage collection"})
+    );
+    assert!(error(call(
+        "configure_local_llm_runtime",
+        json!({"numParallel": 4})
+    ))
+    .contains("host-wide and pinned"));
+}

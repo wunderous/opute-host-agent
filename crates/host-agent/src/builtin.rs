@@ -257,6 +257,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
     };
     vec![
         host_info(host),
+        assistant_session(host),
         incus_inventory(host),
         host_observation(host),
         host_files(host),
@@ -2157,6 +2158,60 @@ fn cluster_listings(k8s: &crate::clusterops::Kubernetes) -> Service {
     }
 }
 
+/// `open_assistant_session`: the client binds to the `assistant-session.v1`
+/// contract, the current catalog revision and the active tenant. It writes
+/// nothing.
+fn assistant_session(host: &crate::tools::Host) -> Service {
+    const CONTRACT: &str = "assistant-session.v1";
+    let tenant = host.tenant_id.clone();
+    Service {
+        id: "assistant-session",
+        dependencies: &[],
+        operations: vec![(
+            "open_assistant_session",
+            op(move |call| {
+                let session_id = text(call.args, "sessionId");
+                if session_id.trim().is_empty() {
+                    return Err("sessionId is required".into());
+                }
+                let compatible = call
+                    .args
+                    .get("supportedContractVersions")
+                    .and_then(J::as_array)
+                    .is_some_and(|versions| versions.iter().any(|v| v == CONTRACT));
+                if !compatible {
+                    return Err(format!(
+                        "no compatible assistant session contract; current={CONTRACT}"
+                    ));
+                }
+                let revision = &call.snapshot.revision;
+                let requested = text(call.args, "catalogRevision");
+                if !requested.trim().is_empty() && requested != revision {
+                    return Err(format!(
+                        "catalog revision mismatch: requested={requested} current={revision}"
+                    ));
+                }
+                let requested = text(call.args, "tenantId");
+                if !requested.trim().is_empty() && requested != tenant {
+                    return Err(format!(
+                        "tenant mismatch: requested={requested} active={tenant}"
+                    ));
+                }
+                Ok(crate::tools::structured_result(
+                    serde_json::json!({
+                        "contractVersion": CONTRACT,
+                        "sessionId": session_id,
+                        "catalogRevision": revision,
+                        "providerId": call.snapshot.provider_id,
+                        "tenantId": tenant,
+                    }),
+                    None,
+                ))
+            }),
+        )],
+    }
+}
+
 /// D32-D34: reads of one object on the bound cluster that never return a
 /// stored value.
 fn cluster_inspection(k8s: &crate::clusterops::Kubernetes) -> Service {
@@ -3148,6 +3203,26 @@ fn local_llm_runtime(llm: &crate::llmops::Llm, host: &crate::tools::Host) -> Ser
                 }),
             ),
             ("list_local_llm_models", list_handler),
+            // No `runtime` input is published, so both wrappers act on the
+            // shared Ollama runtime, as v0.2.4 did.
+            (
+                "remove_local_llm_model",
+                op(|_| {
+                    Ok(crate::tools::structured_result(
+                        serde_json::json!({
+                            "removed": false, "purged": false, "shared": true,
+                            "reason": "Ollama model artifacts are shared host state; use the host Ollama lifecycle for explicit garbage collection",
+                        }),
+                        Some("shared Ollama model retained"),
+                    ))
+                }),
+            ),
+            (
+                "configure_local_llm_runtime",
+                op(|_| {
+                    Err("the Ollama runtime configuration is host-wide and pinned to one process, two resident models, and one request at a time".into())
+                }),
+            ),
             ("probe_local_llm", probe_handler),
             (
                 "install_local_llm_model",
