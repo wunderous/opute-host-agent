@@ -1487,6 +1487,7 @@ fn instance_lifecycle(host: &crate::tools::Host) -> Service {
         instances(host),
     );
     let (restart, update, delete) = (instances(host), instances(host), instances(host));
+    let (attach, detach) = (instances(host), instances(host));
     let named = |out: &J, verb: &str| format!("{verb} '{}'.", out["vmName"].as_str().unwrap_or(""));
     Service {
         id: "instance-lifecycle",
@@ -1559,6 +1560,52 @@ fn instance_lifecycle(host: &crate::tools::Host) -> Service {
                             .restart_vm(&call.binding.provider_instance_name())
                             .map(|out| {
                                 let text = named(&out, "Restarted VM");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "configure_network",
+                op(move |call| {
+                    settled(
+                        attach
+                            .configure_network(
+                                &call.binding.provider_instance_name(),
+                                text(call.args, "deviceName"),
+                                text(call.args, "parent"),
+                            )
+                            .map(|out| {
+                                let text = format!(
+                                    "Attached bridged NIC '{}' to '{}'.",
+                                    out["deviceName"].as_str().unwrap_or(""),
+                                    out["vmName"].as_str().unwrap_or("")
+                                );
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "remove_vm_network_device",
+                op(move |call| {
+                    settled(
+                        detach
+                            .remove_vm_network_device(
+                                &call.binding.provider_instance_name(),
+                                text(call.args, "deviceName"),
+                            )
+                            .map(|out| {
+                                let verb = if out["removed"] == J::Bool(true) {
+                                    "Removed"
+                                } else {
+                                    "No"
+                                };
+                                let text = format!(
+                                    "{verb} network device '{}' on '{}'.",
+                                    out["deviceName"].as_str().unwrap_or(""),
+                                    out["vmName"].as_str().unwrap_or("")
+                                );
                                 structured_result(out, Some(&text))
                             }),
                     )
