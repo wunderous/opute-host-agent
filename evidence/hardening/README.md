@@ -25,6 +25,7 @@ Fuzz passes are local runs: their logs stay under `fuzz/artifacts/`
 |---|---|---|
 | 1 | before the dependency upgrades | retired: the workspace was edited during the run, and `cargo fuzz run` rebuilt each target before running it, so the targets after the edit failed to build. `fuzz/run.sh` now builds once and runs the built binaries. |
 | 2 | the working tree with the dependency upgrades, before the F2, D29 and D30 fixes | 60 s per target. `http_wire` found F2 in 30 s; `host_archive` found a harness defect in 1 s (an archive directory with mode 0377 that the containment check could not list; the agent applies the mode as Go does). The others ran 60 s with no finding. |
+| 3 | rc2 sources (all F2-F4, D29, D30 fixes) | 60 s per target. `json_document` found F5 in 23 s (a `\u` escape with a sign was accepted); the other 16 ran 60 s with no finding. F5 made rc3 and retired gate run `m16-r1`. |
 
 The e2e-6 journeys were drafted on dev VMs built from local drafts of the
 candidate (no gate run; receipts kept outside the repository under

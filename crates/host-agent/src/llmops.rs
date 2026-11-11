@@ -3636,7 +3636,10 @@ fn unescape_path(escaped: &str) -> String {
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
-        if bytes[i] == b'%' && i + 2 < bytes.len() {
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && bytes[i + 1..i + 3].iter().all(u8::is_ascii_hexdigit)
+        {
             if let Ok(v) = u8::from_str_radix(&escaped[i + 1..i + 3], 16) {
                 out.push(v);
                 i += 3;
@@ -3997,6 +4000,10 @@ async fn proxy(
                     .unwrap_or("")
                     .trim()
                     .to_string();
+                // A chunk size is hex digits only; `from_str_radix` takes a sign.
+                if size.is_empty() || !size.bytes().all(|b| b.is_ascii_hexdigit()) {
+                    return abort(&tx);
+                }
                 let Ok(n) = usize::from_str_radix(&size, 16) else {
                     return abort(&tx);
                 };

@@ -251,6 +251,10 @@ impl Parser<'_> {
 
     fn hex4(&mut self) -> Result<u32, SyntaxError> {
         let s = self.b.get(self.i..self.i + 4).ok_or(SyntaxError)?;
+        // `from_str_radix` would accept a sign; JSON takes four hex digits.
+        if !s.iter().all(u8::is_ascii_hexdigit) {
+            return Err(SyntaxError);
+        }
         let text = std::str::from_utf8(s).map_err(|_| SyntaxError)?;
         let v = u32::from_str_radix(text, 16).map_err(|_| SyntaxError)?;
         self.i += 4;
@@ -1038,6 +1042,18 @@ pub fn unmarshal_names(data: &[u8]) -> Result<Vec<String>, String> {
 
 #[cfg(test)]
 mod tests {
+
+    /// F5 (m16, fuzz target json_document): `from_str_radix` takes a sign,
+    /// so `\u+019` decoded; Go's scanner rejects any non-hex digit.
+    #[test]
+    fn a_signed_unicode_escape_is_a_syntax_error() {
+        for doc in [&br#""\u+019""#[..], br#""\u-019""#] {
+            assert!(parse(doc).is_err(), "{}", String::from_utf8_lossy(doc));
+            assert!(syntax_error(doc).is_some());
+        }
+        assert!(parse(br#""\u0019""#).is_ok());
+    }
+
     use super::*;
 
     #[test]

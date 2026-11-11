@@ -30,7 +30,8 @@
       ],
       "properties": [],
       "findings": [
-        "A1"
+        "A1",
+        "F5"
       ]
     },
     {
@@ -253,6 +254,13 @@
       "foundBy": "auth review",
       "test": "fuzzing::tests::oversized_mcp_bodies_are_refused_without_reading_them",
       "state": "fixed by D29 (openspec/changes/bound-mcp-request-body)"
+    },
+    {
+      "id": "F5",
+      "summary": "gojson decoded a \\u escape with u32::from_str_radix, which accepts a leading sign, so \"\\u+019\" parsed while Go's scanner (and RFC 8259) reject it: a tools/call body Go refuses as invalid JSON was accepted. The same sign-accepting decode was fixed in transport's =XX decode, the llmops relay's %XX path decode and its chunk-size parse.",
+      "foundBy": "fuzz target json_document (parser/scanner oracle), pass 3, 23 s",
+      "test": "gojson::tests::a_signed_unicode_escape_is_a_syntax_error; fuzz/regressions/json_document/unicode-escape-plus-sign",
+      "state": "fixed: four hex digits are required before decoding (no D-number: the contract and Go already reject)"
     },
     {
       "id": "F3",

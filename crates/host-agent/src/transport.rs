@@ -1006,6 +1006,9 @@ fn decode_q(value: &str) -> Option<String> {
                 if i + 2 >= b.len() {
                     return None;
                 }
+                if !b[i + 1..i + 3].iter().all(u8::is_ascii_hexdigit) {
+                    return None;
+                }
                 let hex = std::str::from_utf8(&b[i + 1..i + 3]).ok()?;
                 out.push(u8::from_str_radix(hex, 16).ok()?);
                 i += 2;
