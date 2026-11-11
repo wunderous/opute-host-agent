@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -31,13 +32,17 @@ Q15_SPEC = "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-r
 TASKS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}}
 DOCS = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/"
 DIST = "baseline/inventory/distribution.json"
+PROPOSED = "evidence/cutover/proposed-0.4.0/README.md"
 
-# The Rust release under test (m13b): one candidate for every gate, and a newer local build of the same
-# sources as the in-place upgrade target. Go stays the published v0.2.4.
-RUST_VERSION = "0.3.0"
-CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc4"
+# The Rust release under test (m15): one candidate for every gate, and a newer local build of the same
+# sources as the in-place upgrade target. Go stays the published v0.2.4. E2E_CANDIDATE points draft
+# journeys (never committed) at a draft release set.
+RUST_VERSION = "0.4.0"
+CANDIDATE = os.environ.get("E2E_CANDIDATE", "${PARITY}/e2e/release/rust-0.4.0-rc1")
 CANDIDATE_NEXT = CANDIDATE + "-next"
-NEXT_VERSION = "0.3.1-e2e"
+NEXT_VERSION = "0.4.1-e2e"
+# The previous Rust release (0.3.x), for the platform-neutral upgrade and rollback.
+PREVIOUS = "${PARITY}/e2e/release/rust-0.3.0-rc4"
 # What the installed candidate prints after its hash line.
 RUST_MATCH = "\n" + RUST_VERSION.replace(".", "\\.") + "\n$"
 LAUNCHER = f"opute-host-agent-{RUST_VERSION}.tgz"
@@ -50,7 +55,7 @@ SDB = "/home/opute/.config/opute/instances/standalone/state/state.db"
 ADB = "/home/opute/.config/opute/instances/standalone/state/authz.sqlite"
 CRED = "/home/opute/.config/opute/instances/standalone/state/credentials/host-agent-provider.json"
 T = "python3 /opt/opute-e2e/guest/e2etool.py"
-GATE_TEXT = "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+GATE_TEXT = "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"  # platform-neutral-host-agent
 WAIT_HEALTH = "for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:{port}/health && break; sleep 0.5; done"
 AGENT = (f"the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust {RUST_VERSION} release candidate "
          "binary, "
@@ -183,13 +188,17 @@ def j1() -> dict:
             a("ipv6Refused", "stdout", equals="000"),
             scenario="HOST_MCP_BIND_HOST=0.0.0.0 opens one IPv4 socket; an IPv6 loopback connection is refused "
                      "(D28)"),
-        req(DIST, "deployFiles: the installed unit and sudoers are the recorded deploy files",
-            a("deployHashes", "stdout",
-              contains="02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5  /etc/systemd/system/"
-                       "opute-bootstrap-mcp.service"),
+        req(DIST, "deployFiles: the installed sudoers is the recorded deploy file",
             a("deployHashes", "stdout",
               contains="38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/"
                        "opute-host-agent")),
+        req(PROPOSED, "The proposed 0.4.0 unit",
+            a("deployHashes", "stdout",
+              contains=f"{sha(REPO / 'evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service')}  "
+                       "/etc/systemd/system/opute-bootstrap-mcp.service"),
+            scenario="The recorded unit (deployFiles 02246cf6...) passes --mode, which 0.4.0 rejects; the VM "
+                     "installs the proposed unit, without --mode and with both mutation settings (owner "
+                     "decision 2026-11-11)"),
         req(SPEC, "One exact Host Agent identity",
             a("health", "response.status", equals=200),
             a("health", "response.body.agentId", equals="e2e-devvm-agent"),
@@ -583,7 +592,7 @@ def j6() -> dict:
     third = ("runuser -u opute -- env OPUTE_REMOTE_AGENT_ID=e2e-ws-a MCP_AUTH_TOKEN=${SECRET:wsa} HOST_MCP_PORT=3023 "
              "OPUTE_MCP_PREFIX_TOOL_NAMES=true OPUTE_HOST_AGENT_INSTANCE_ROOT=/tmp/e2e-agents/ws-a/instance "
              "OPUTE_STANDALONE_STATE_DIR=/tmp/e2e-agents/ws-a/state HOME=/tmp/e2e-agents/ws-a/home timeout 30 "
-             f"{BIN} serve --mode standalone --transport http")
+             f"{BIN} serve --transport http")
     steps = TOOL_STEPS + [
         {"id": "agentA", "guest": f"{T} agent start ws-a --port 3021 --id e2e-ws-a --env MCP_AUTH_TOKEN=${{SECRET:wsa}} "
                                   "--env OPUTE_MCP_PREFIX_TOOL_NAMES=true"},

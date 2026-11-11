@@ -78,9 +78,16 @@ def agent_start(a):
     env = {"OPUTE_REMOTE_AGENT_ID": a.id, "HOST_MCP_PORT": str(a.port), "HOME": f"{root}/home",
            "OPUTE_HOST_AGENT_INSTANCE_ROOT": f"{root}/instance", "OPUTE_STANDALONE_STATE_DIR": f"{root}/state"}
     env.update(dict(kv.split("=", 1) for kv in a.env))
+    # Both settings sets, as the proposed 0.4.0 unit carries them
+    # (evidence/cutover/proposed-0.4.0): 0.4.0 reads only the new one.
+    if env.get("OPUTE_STANDALONE_ALLOW_MUTATIONS") == "true":
+        env.setdefault("OPUTE_HOST_ALLOW_MUTATIONS", "true")
+    # 0.4.0 has no `--mode` (platform-neutral-host-agent, N5); Go and 0.3.x take it.
+    version = sh([a.binary, "--version"], check=False).stdout.strip()
+    mode = ["--mode", a.mode] if version.startswith(("0.2.", "0.3.")) else []
     argv = ["systemd-run", f"--unit=e2e-agent-{a.name}", f"--uid={a.user}", f"--gid={a.user}",
             "--property=Restart=no", "--collect"] + [f"--setenv={k}={v}" for k, v in env.items()] + \
-        [a.binary, "serve", "--mode", a.mode, "--transport", "http"]
+        [a.binary, "serve", *mode, "--transport", "http"]
     sh(argv)
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:

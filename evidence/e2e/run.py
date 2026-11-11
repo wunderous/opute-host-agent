@@ -417,13 +417,22 @@ def run_mcp(step: dict, ctx: dict) -> dict:
         until = step.get("until")
         if not until:
             return record
-        found, value = dig(record, until["path"])
-        if found and value in until["in"]:
+        if until_met(until, record):
             return record
         if time.monotonic() >= deadline:
             record["untilTimedOut"] = True
             return record
         time.sleep(step.get("interval", 1))
+
+
+def until_met(until: dict, record: dict) -> bool:
+    """An `until` holds when its path's value is one of `in`, or a string `matches` searches."""
+    found, value = dig(record, until["path"])
+    if not found:
+        return False
+    if "matches" in until:
+        return isinstance(value, str) and re.search(until["matches"], value) is not None
+    return value in until["in"]
 
 
 def run_step(step: dict, phase: str, ctx: dict) -> dict:

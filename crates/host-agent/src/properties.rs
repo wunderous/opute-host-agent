@@ -349,3 +349,60 @@ proptest! {
         prop_assert!(!shown.contains(&secret), "{:?}", shown);
     }
 }
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
+
+    /// D34: no literal environment value, wherever it sits in a container,
+    /// reaches the workload projection.
+    #[test]
+    fn workload_projection_never_shows_a_value(
+        values in prop::collection::vec("zv[A-Za-z0-9]{6,20}", 1..4),
+        names in prop::collection::vec("[A-Z_]{1,8}", 1..4),
+        containers in 1usize..3,
+    ) {
+        let env: Vec<J> = names
+            .iter()
+            .zip(values.iter().cycle())
+            .map(|(name, value)| json!({"name": name, "value": value}))
+            .collect();
+        let container = |i: usize| json!({"name": format!("c{i}"), "image": "r/i:1", "env": env});
+        let deployment = json!({
+            "metadata": {"name": "w", "namespace": "n"},
+            "spec": {"replicas": 1, "template": {"spec": {
+                "containers": (0..containers).map(container).collect::<Vec<_>>(),
+            }}},
+        });
+        let shown = crate::clusterops::project_deployment(&deployment).to_string();
+        for value in &values {
+            prop_assert!(!shown.contains(value.as_str()), "{} in {}", value, shown);
+        }
+    }
+
+    /// D39: while less than the bound has arrived, the reads of a console,
+    /// however its output is cut, return exactly that output.
+    #[test]
+    fn console_reads_lose_nothing_within_the_bound(
+        text in "\\PC{0,400}",
+        cuts in prop::collection::vec(0usize..64, 0..12),
+        reads in prop::collection::vec(any::<bool>(), 0..12),
+    ) {
+        use crate::console::{append, drain, Output};
+        let bytes = text.as_bytes();
+        let mut output = Output::default();
+        let mut seen = String::new();
+        let mut at = 0;
+        for (i, cut) in cuts.iter().enumerate() {
+            let end = (at + cut).min(bytes.len());
+            append(&mut output.pending, &bytes[at..end]);
+            at = end;
+            if reads.get(i).copied().unwrap_or(false) {
+                seen.push_str(&drain(&mut output).0);
+            }
+        }
+        append(&mut output.pending, &bytes[at..]);
+        output.exited = true;
+        seen.push_str(&drain(&mut output).0);
+        prop_assert_eq!(seen, text);
+    }
+}

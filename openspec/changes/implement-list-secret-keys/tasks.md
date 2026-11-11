@@ -1,9 +1,14 @@
 ## 1. Decision
 
-- [ ] 1.1 Owner answers Q18 (rust-spec-authority/questions.md).
+- [x] 1.1 Owner decision: implement. Decided 2026-11-11 as D32.
+- [x] 1.2 Add D32 to the migration's owner decision table.
 
-## 2. Implementation (only after 1.1)
+## 2. Implementation
 
-- [ ] 2.1 Failing-first test: a Secret's keys are returned and its values never are.
-- [ ] 2.2 Built-in Service Provider for list_secret_keys; seam verifier reports it compliant.
-- [ ] 2.3 Rerun e2e3a.workload with list_secret_keys as the pass condition.
+- [x] 2.1 A built-in Service Provider on the D14 seam; the seam verifier reports the tool compliant.
+- [x] 2.2 Unit tests for the outcomes below, failing first.
+- [x] 2.3 Its entry point in `evidence/hardening/entry-points.json` with a fuzz target or property.
+
+## 3. Evidence
+
+- [ ] 3.1 `e2e3a.workload` reads the key through `list_secret_keys` (its `exec_cluster_command` workaround dropped), run on the 0.4.0 candidate.

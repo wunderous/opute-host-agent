@@ -5765,10 +5765,18 @@
    "name": "send_console_input",
    "outputSchema": {
     "properties": {
+     "closed": {
+      "description": "True once the console process has exited; this is the session's last read",
+      "type": "boolean"
+     },
      "error": {
       "type": "string"
      },
      "operationId": {
+      "type": "string"
+     },
+     "output": {
+      "description": "Console output since the previous read, at most 64 KiB; older output is dropped",
       "type": "string"
      },
      "status": {

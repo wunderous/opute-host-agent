@@ -34,6 +34,7 @@ Q29_SPEC = CH + "workload-unit-per-task/specs/host-agent-contract/spec.md"
 Q25_SPEC = CH + "truthful-operation-status/specs/operation-records/spec.md"
 Q26_SPEC = CH + "container-runtime-stdout/specs/container-storage/spec.md"
 Q27_SPEC = CH + "truthful-serving-launch/specs/serving-assignment/spec.md"
+LLM_SPEC = CH + "recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
 Q28_SPEC = CH + "bind-standalone-service-domain/specs/service-exposure/spec.md"
 Q5_SPEC = CH + "truthful-interrupted-plan/specs/host-agent-contract/spec.md"
 SEAM_SPEC = ha.SEAM_SPEC
@@ -257,14 +258,137 @@ V1 = "vm:local:e2e-v1"
 FOREIGN = "container:local:e2e-foreign"
 
 
+START_B = (f"{T} agent start b --port {B_PORT} --id {B_ID} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+           f"--env OPUTE_HOST_AGENT_INSTANCE={B_ID} --env OPUTE_INCUS_OWNERSHIP_MODE=enforce "
+           f"--env OPUTE_SHARED_HOST_OWNER_INSTANCE={B_ID} --env MCP_AUTH_TOKEN='${{SECRET:tokenB}}' >/dev/null "
+           "&& echo started")
+CONSOLE_SPEC = CH + "vm-console-session/specs/vm-console-session/spec.md"
+NIC_SPEC = CH + "vm-bridged-nic/specs/vm-bridged-nic/spec.md"
+RM_NIC_SPEC = CH + "remove-vm-network-device/specs/remove-vm-network-device/spec.md"
+PROMPT = "(login|Password): $"  # the guest getty's answer to Enter
+CONSOLES = "pgrep -fc 'console e2e-v1$' || true"  # the agent's `incus ... console e2e-v1` processes
+
+
+def console_steps() -> list[dict]:
+    """D38, D39: the VM's console, opened twice, typed into, resized, detached; then held open while the
+    agent stops."""
+    return [
+        call("console", "stream_vm_console", {"uri": V1, "width": 100, "height": 30}, B),
+        call("consoleAgain", "stream_vm_console", {"uri": V1}, B),
+        {"id": "consoleProcs", "guest": CONSOLES},
+        # type Enter until the guest's getty answers with a prompt (login: or Password:, by its state)
+        call("consoleRead", "send_console_input", {"operationId": "console-e2e-v1", "data": "\r"}, B,
+             until={"path": "response.body.result.structuredContent.output", "matches": PROMPT}, timeout=60,
+             interval=2),
+        call("consoleResize", "resize_console", {"operationId": "console-e2e-v1", "width": 120, "height": 40}, B),
+        call("consoleResizeBad", "resize_console", {"operationId": "console-e2e-v1", "width": 0, "height": 40}, B),
+        # ctrl+a, then q, as two keystrokes: incus reads the detach sequence one key at a time
+        call("consoleCtrlA", "send_console_input", {"operationId": "console-e2e-v1", "data": "\u0001"}, B),
+        call("consoleDetach", "send_console_input", {"operationId": "console-e2e-v1", "data": "q"}, B),
+        call("consoleAfter", "send_console_input", {"operationId": "console-e2e-v1", "data": ""}, B),
+        {"id": "consoleGone", "guest": CONSOLES},
+        call("consoleHeld", "stream_vm_console", {"uri": V1}, B),
+        {"id": "consoleHeldProcs", "guest": CONSOLES},
+        {"id": "stopB", "guest": f"{T} agent stop b >/dev/null; sleep 1; {CONSOLES}"},
+        {"id": "restartB", "guest": START_B},
+    ]
+
+
+def nic_steps() -> list[dict]:
+    """D35, D36: a bridged NIC on the VM, attached twice, refused on conflict and a missing parent, then
+    removed twice; the profile's eth0 is refused."""
+    return [
+        {"id": "bridge", "guest": "ip link add e2e-br0 type bridge && ip link set e2e-br0 up && echo up"},
+        *task("nic", "configure_network", {"uri": V1, "parent": "e2e-br0"}, B),
+        *task("nicAgain", "configure_network", {"uri": V1, "deviceName": "eth1", "parent": "e2e-br0"}, B),
+        *task("nicConflict", "configure_network", {"uri": V1, "parent": "lo"}, B),
+        *task("nicNoParent", "configure_network", {"uri": V1, "deviceName": "eth2", "parent": "e2e-nope"}, B),
+        {"id": "nicDevices", "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0'; "
+                                      "incus config device get e2e-v1 eth1 nictype; "
+                                      "incus config device show e2e-v1 | grep -c '^eth2:' || true"},
+        call("nicGuest", "run_instance_command",
+             {"uri": V1, "command": "sh", "args": ["-c", "ls /sys/class/net | grep -vc '^lo$'"]}, B,
+             until={"path": "response.body.result.structuredContent.stdout", "in": ["2\n"]}, timeout=60,
+             interval=3),
+        *task("nicProfile", "remove_vm_network_device", {"uri": V1, "deviceName": "eth0"}, B),
+        *task("nicRemove", "remove_vm_network_device", {"uri": V1, "deviceName": "eth1"}, B),
+        *task("nicRemoveAgain", "remove_vm_network_device", {"uri": V1, "deviceName": "eth1"}, B),
+        {"id": "nicAfter", "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0' || true; "
+                                    "incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'; "
+                                    "ip link del e2e-br0 && echo gone"},
+    ]
+
+
+def console_requirements() -> list[dict]:
+    return [
+        req(CONSOLE_SPEC, "A console session runs the instance's console",
+            direct("console", "structuredContent.status", equals="started"),
+            direct("console", "structuredContent.operationId", equals="console-e2e-v1"),
+            direct("console", "structuredContent.uri", equals=V1),
+            direct("consoleAgain", "structuredContent.status", equals="started"),
+            a("consoleProcs", "stdout", equals="1\n"),
+            scenario="One session per instance: a second start replaces the first, and one console process "
+                     "runs"),
+        req(CONSOLE_SPEC, "Console output is read by pull from a bounded buffer",
+            direct("consoleRead", "structuredContent.status", equals="sent"),
+            direct("consoleRead", "structuredContent.output", matches=PROMPT),
+            direct("consoleRead", "structuredContent.closed", equals=False),
+            direct("consoleCtrlA", "structuredContent.closed", equals=False),
+            direct("consoleDetach", "structuredContent.closed", equals=True),
+            direct("consoleAfter", "isError", equals=True),
+            direct("consoleAfter", "content[0].text", matches="console-e2e-v1"),
+            a("consoleGone", "stdout", equals="0\n"),
+            scenario="Enter typed on the console brings the guest's getty prompt back; ctrl+a then q "
+                     "ends the session, "
+                     "the read that reports it is the last, and no console process is left"),
+        req(CONSOLE_SPEC, "A console's size can be changed",
+            direct("consoleResize", "structuredContent.status", equals="resized"),
+            direct("consoleResizeBad", "isError", equals=True),
+            direct("consoleResizeBad", "content[0].text", matches="console size must be positive"),
+            scenario="Resize to 120 by 40; a zero width is refused"),
+        req(CONSOLE_SPEC, "Sessions end with the agent",
+            direct("consoleHeld", "structuredContent.status", equals="started"),
+            a("consoleHeldProcs", "stdout", equals="1\n"),
+            a("stopB", "stdout", equals="0\n"),
+            a("restartB", "stdout", equals="started\n"),
+            scenario="With a session open, agent B is stopped (SIGTERM from its systemd unit) and no console "
+                     "process remains; B starts again on the same state. The unit's cgroup stop would also end "
+                     "it, so the agent's own close on shutdown is shown by the console unit test"),
+    ]
+
+
+def nic_requirements() -> list[dict]:
+    return [
+        req(NIC_SPEC, "configure_network attaches one bridged NIC",
+            a("bridge", "stdout", equals="up\n"),
+            res("nic", "structuredContent.status", equals="attached"),
+            res("nic", "structuredContent.deviceName", equals="eth1"),
+            res("nic", "structuredContent.parent", equals="e2e-br0"),
+            res("nic", "structuredContent.uri", equals=V1),
+            res("nicAgain", "structuredContent.status", equals="attached"),
+            res("nicConflict", "isError", equals=True),
+            res("nicConflict", "content[0].text", matches="different configuration"),
+            res("nicNoParent", "isError", equals=True),
+            res("nicNoParent", "content[0].text", matches="e2e-nope"),
+            a("nicDevices", "stdout", equals="1\nbridged\n0\n"),
+            direct("nicGuest", "structuredContent.stdout", equals="2\n"),
+            scenario="Attach and attach again: one bridged eth1 on e2e-br0, seen by the guest as a second "
+                     "interface; a conflicting eth1 and a missing parent are refused and add nothing"),
+        req(RM_NIC_SPEC, "remove_vm_network_device removes one NIC from an instance's own configuration",
+            res("nicProfile", "isError", equals=True),
+            res("nicProfile", "content[0].text", matches="profile"),
+            res("nicRemove", "structuredContent.removed", equals=True),
+            res("nicRemoveAgain", "structuredContent.removed", equals=False),
+            a("nicAfter", "stdout", equals="0\n1\ngone\n"),
+            scenario="The profile's eth0 is refused and the VM keeps its address; eth1 is removed, then "
+                     "removing it again changes nothing"),
+    ]
+
+
 def incus() -> dict:
     steps = base.TOOL_STEPS + [
         # host B: a second agent on the VM with Incus ownership enforced; it owns what it creates
-        {"id": "agentB", "guest": (
-            f"{T} agent start b --port {B_PORT} --id {B_ID} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
-            f"--env OPUTE_HOST_AGENT_INSTANCE={B_ID} --env OPUTE_INCUS_OWNERSHIP_MODE=enforce "
-            f"--env OPUTE_SHARED_HOST_OWNER_INSTANCE={B_ID} --env MCP_AUTH_TOKEN='${{SECRET:tokenB}}' >/dev/null "
-            "&& echo started")},
+        {"id": "agentB", "guest": START_B},
         {"id": "catalogB", "mcp": "tools/list", **B},
         {"id": "foreign", "guest": "incus launch parity-noble e2e-foreign -q && incus list e2e-foreign -c s -f csv"},
         # Q16: agent B's own Incus client (user opute) has another current project
@@ -296,6 +420,8 @@ def incus() -> dict:
         call("runV", "run_instance_command", {"uri": V1, "command": "sh", "args": ["-c", "nproc; uname -s"]}, B),
         {"id": "reachV", "guest": "ping -c1 -W5 ${V1_IP} >/dev/null && echo ping-ok; "
                                   "timeout 5 bash -c 'echo > /dev/tcp/${V1_IP}/22' 2>/dev/null && echo ssh-port"},
+        *console_steps(),
+        *nic_steps(),
         # lifecycle
         *task("stopC", "stop_vm", {"uri": C1}, B), *task("startC", "start_vm", {"uri": C1}, B),
         *task("restartC", "restart_vm", {"uri": C1}, B),
@@ -403,8 +529,9 @@ def incus() -> dict:
             a("left", "stdout", equals="e2e-foreign\n"),
             scenario="Every owned guest is gone after delete; only the foreign instance remains"),
     ]
+    reqs += console_requirements() + nic_requirements()
     cleanup = [{"id": "cleanIncus", "guest": (
-        f"{T} agent remove b >/dev/null; if test -f /root/e2e-incus-config.yml; then "
+        f"{T} agent remove b >/dev/null; ip link del e2e-br0 2>/dev/null; if test -f /root/e2e-incus-config.yml; then "
         "runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; "
         "cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml; rm -f /root/e2e-incus-config.yml; fi; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
         "done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
@@ -414,7 +541,8 @@ def incus() -> dict:
              "system/units/packagekit.service", "files//var/lib/dpkg*", "files//var/lib/apt*", "files//var/cache*",
              "files//var/log*", "system/units/sys-devices-virtual-net-veth*",
              "system/units/sys-subsystem-net-devices-veth*", "system/units/sys-devices-virtual-net-tap*",
-             "system/units/sys-subsystem-net-devices-tap*"]
+             "system/units/sys-subsystem-net-devices-tap*", "system/units/sys-devices-virtual-net-e2e*",
+             "system/units/sys-subsystem-net-devices-e2e*"]
     persist = ["files//opt/incus*", "files//usr/lib/systemd/system/incus*", "system/units/linstor-satellite.service",
                "system/units/packagekit.service", "files//var/lib/dpkg*", "files//var/lib/apt*", "files//var/cache*",
                "files//var/log*"]
@@ -425,7 +553,8 @@ def incus() -> dict:
     return journey(
         "e2e2.incus", "e2e-2",
         "Incus containers and VMs through typed calls on a second agent with ownership enforced: a container with "
-        "a pinned address and a VM, both reachable; lifecycle; a VM resize; root disk growth and its quota; "
+        "a pinned address and a VM, both reachable; the VM's console (open, type, resize, detach, end with the "
+        "agent) and a bridged NIC attached and removed; lifecycle; a VM resize; root disk growth and its quota; "
         "refusals on an instance the agent does not own; reset of an owned container; delete. Guests live in the "
         "default project (Q16).",
         reqs, steps, cleanup, allow=allow, persist=persist, minutes=28, inputs=inputs)
@@ -1196,6 +1325,11 @@ def serving() -> dict:
         call("probe", "probe_openai_compatible_server",
              {"endpoint": "http://127.0.0.1:18434", "bearerToken": "${SECRET:gatewayToken}", "includeChat": True}),
         {"id": "tokenRows", "guest": f"{T} contains {SDB} '${{SECRET:gatewayToken}}'"},
+        # the two legacy wrappers act on the shared Ollama runtime, as recorded
+        *task("removeModel", "remove_local_llm_model", {"modelRef": "e2e-model", "purge": True}),
+        *task("configureRuntime", "configure_local_llm_runtime", {"numParallel": 4, "maxLoadedModels": 1}),
+        {"id": "ollamaUntouched", "guest": "systemctl list-units --all --plain --no-legend 'ollama*' | wc -l; "
+                                           "ss -ltnH 'sport = :11434' | wc -l"},
         call("removeGateway", "remove_local_llm_relay", {"sessionId": "e2e-gateway"}),
         {"id": "gatewayGone", "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 "
                                        "http://127.0.0.1:18434/v1/models || true"},
@@ -1221,6 +1355,20 @@ def serving() -> dict:
             a("assignLog", "stdout", matches="\n1\n$"),
             scenario="On a system-unit agent, reconcile_serving_assignment launches the process under the user "
                      "service manager with the user bus, reports it started, and it listens (D28)"),
+        req(LLM_SPEC, "The legacy LLM wrappers act on the shared Ollama runtime",
+            res("removeModel", "isError", **{"in": [False, "<absent>"]}),
+            res("removeModel", "structuredContent.removed", equals=False),
+            res("removeModel", "structuredContent.purged", equals=False),
+            res("removeModel", "structuredContent.shared", equals=True),
+            res("removeModel", "structuredContent.reason", matches="shared host state"),
+            res("configureRuntime", "isError", equals=True),
+            res("configureRuntime", "content[0].text", matches="host-wide and pinned"),
+            a("ollamaUntouched", "stdout", equals="0\n0\n"),
+            a("modelUp", "stdout", equals="1\n"),
+            scenario="remove_local_llm_model removes nothing and reports the shared model retained; "
+                     "configure_local_llm_runtime refuses with the typed error; neither starts, stops or "
+                     "configures a runtime (no Ollama unit or listener appears). The dev VM has no Ollama, so "
+                     "the 'still listed' half of the scenario is not observed here"),
         req(SPEC, "Durable and redacted observations",
             a("tokenRows", "json.rows", equals=0),
             scenario="Secret-bearing input: the gateway's incoming token is in no durable row"),

@@ -132,6 +132,8 @@ fn go_published(mode: &str) -> BTreeSet<String> {
         .unwrap()
         .iter()
         .map(|tool| tool["name"].as_str().unwrap())
+        // D37: withdrawn, published by no Host Agent build.
+        .filter(|name| !crate::catalog::WITHDRAWN.contains(name))
         // D19: Rust publishes the neutral name in place of each mapped Go name.
         .map(|name| {
             crate::catalog::neutral_name(name)
@@ -281,4 +283,90 @@ fn seam_verifier() {
         computed, expected,
         "seam gaps differ from seam-gaps.json: a capability is reached outside the service context, or a revised one is still listed"
     );
+}
+
+/// `recorded-session-and-llm-tools`: the three tools answer as recorded,
+/// through the same dispatch a `tools/call` reaches.
+#[test]
+fn recorded_tools_answer_as_recorded() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = server(dir.path());
+    let revision = server.catalog.snapshot().revision.clone();
+    let call = |name: &str, args: J| {
+        crate::tools::invoke(
+            &server,
+            &RunCtx::background(),
+            name,
+            args.as_object().unwrap(),
+            &Binding::default(),
+        )
+    };
+    let opened = call(
+        "open_assistant_session",
+        json!({"sessionId": "s1", "supportedContractVersions": ["x", "assistant-session.v1"],
+               "catalogRevision": revision}),
+    );
+    let opened = &opened["structuredContent"];
+    assert_eq!(opened["contractVersion"], "assistant-session.v1");
+    assert_eq!(opened["sessionId"], "s1");
+    assert_eq!(opened["catalogRevision"], J::from(revision.clone()));
+    let error = |result: J| {
+        assert_eq!(result["isError"], true, "{result}");
+        result["content"][0]["text"].as_str().unwrap().to_string()
+    };
+    assert!(error(call(
+        "open_assistant_session",
+        json!({"sessionId": "s1", "supportedContractVersions": ["assistant-session.v1"],
+               "catalogRevision": "stale"}),
+    ))
+    .contains(&format!("requested=stale current={revision}")));
+    assert!(error(call(
+        "open_assistant_session",
+        json!({"sessionId": "s1", "supportedContractVersions": ["v0"]}),
+    ))
+    .contains("no compatible assistant session contract"));
+    let removed = call("remove_local_llm_model", json!({"modelRef": "qwen3:0.6b"}));
+    assert_eq!(
+        removed["structuredContent"],
+        json!({"removed": false, "purged": false, "shared": true,
+               "reason": "Ollama model artifacts are shared host state; use the host Ollama lifecycle for explicit garbage collection"})
+    );
+    assert!(error(call(
+        "configure_local_llm_runtime",
+        json!({"numParallel": 4})
+    ))
+    .contains("host-wide and pinned"));
+}
+
+/// D37: the four withdrawn tools are not listed, and a call naming one is
+/// answered exactly as a call naming a tool that never existed.
+#[test]
+fn withdrawn_tools_are_unknown() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = server(dir.path());
+    let listed: Vec<String> = server
+        .catalog
+        .snapshot()
+        .tools
+        .iter()
+        .map(|d| d.name.clone())
+        .collect();
+    let call = |name: &str| {
+        crate::tools::invoke(
+            &server,
+            &RunCtx::background(),
+            name,
+            &Map::new(),
+            &Binding::default(),
+        )
+    };
+    let unknown = call("e2e_never_a_tool").to_string();
+    for name in crate::catalog::WITHDRAWN {
+        assert!(!listed.iter().any(|n| n == name), "{name} is listed");
+        assert_eq!(
+            call(name).to_string().replace(name, "e2e_never_a_tool"),
+            unknown,
+            "{name} is not answered as an unknown tool"
+        );
+    }
 }

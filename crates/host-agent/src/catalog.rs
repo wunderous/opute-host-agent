@@ -1552,6 +1552,17 @@ impl Descriptor {
 
 /// The one served catalog (`platform-neutral-host-agent`, N1): the host
 /// definitions plus the profile definitions (Go's standalone sets).
+/// D37: tools the descriptor source still defines, as Go v0.2.4 published
+/// them, that no Host Agent build publishes: they have no owner on the host
+/// (`withdraw-platform-and-legacy-provider-tools`). A call naming one is an
+/// unknown tool.
+pub const WITHDRAWN: &[&str] = &[
+    "register_kubernetes_cluster",
+    "list_agents",
+    "install_provider_tools",
+    "uninstall_provider_tools",
+];
+
 pub fn served() -> &'static Snapshot {
     static SERVED: OnceLock<Snapshot> = OnceLock::new();
     SERVED.get_or_init(|| {
@@ -1559,6 +1570,7 @@ pub fn served() -> &'static Snapshot {
         let mut defs = src.host.clone();
         defs.extend(src.standalone.iter().cloned());
         defs.extend(src.standalone_from_all.iter().cloned());
+        defs.retain(|d| !WITHDRAWN.contains(&d.name.as_str()));
         build(&src.provider_id, &canonicalize(&defs))
     })
 }
@@ -1801,7 +1813,7 @@ mod tests {
 
     #[test]
     fn catalog_sizes_match_go() {
-        assert_eq!(served().tools.len(), 142);
+        assert_eq!(served().tools.len(), 142 - WITHDRAWN.len());
         assert!(served().revision.starts_with("sha256:"));
     }
 
