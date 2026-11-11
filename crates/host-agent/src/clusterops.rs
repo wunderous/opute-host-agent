@@ -959,6 +959,159 @@ impl Kubernetes {
     }
 }
 
+/// D32, D33: kubectl prints a Secret's or ConfigMap's key names through
+/// this template, so no value ever leaves the cluster.
+const KEY_NAMES: &str = "go-template={{range $k, $v := .data}}{{$k}}{{\"\\n\"}}{{end}}\
+{{range $k, $v := .binaryData}}{{$k}}{{\"\\n\"}}{{end}}";
+
+fn namespace_or_default(namespace: &str) -> Result<&str, String> {
+    match namespace.trim() {
+        "" => Ok("default"),
+        namespace => validate_name(namespace, "namespace").map(|()| namespace),
+    }
+}
+
+/// kubectl's NotFound becomes an error naming the object.
+fn not_found(error: String, kind: &str, namespace: &str, object: &str) -> String {
+    if error.contains("NotFound") || error.contains("not found") {
+        format!("{kind} {namespace}/{object} not found")
+    } else {
+        error
+    }
+}
+
+impl Kubernetes {
+    /// D32 (`list_secret_keys`), D33 (`list_configmap_keys`): one object's
+    /// key names, sorted, never a value.
+    pub fn object_keys(
+        &self,
+        name: &str,
+        kind: &str,
+        object: &str,
+        namespace: &str,
+    ) -> Result<Vec<String>, String> {
+        let object = object.trim();
+        validate_name(object, &format!("{kind} name"))?;
+        let namespace = namespace_or_default(namespace)?;
+        let argv: Vec<String> = ["get", kind, object, "-n", namespace, "-o", KEY_NAMES]
+            .map(String::from)
+            .into();
+        let out = self
+            .run_kubectl(name, &argv, &format!("read {kind} {object}"))
+            .map_err(|e| not_found(e, kind, namespace, object))?;
+        let mut keys: Vec<String> = out
+            .lines()
+            .map(str::trim)
+            .filter(|key| !key.is_empty())
+            .map(String::from)
+            .collect();
+        keys.sort();
+        keys.dedup();
+        Ok(keys)
+    }
+
+    /// D34 (`inspect_workload`): one Deployment, projected without any
+    /// literal environment value.
+    pub fn inspect_workload(
+        &self,
+        name: &str,
+        workload: &str,
+        namespace: &str,
+    ) -> Result<J, String> {
+        let workload = workload.trim();
+        validate_name(workload, "workloadName")?;
+        let namespace = namespace_or_default(namespace)?;
+        let argv: Vec<String> = ["get", "deployment", workload, "-n", namespace, "-o", "json"]
+            .map(String::from)
+            .into();
+        let stdout = self
+            .run_kubectl(name, &argv, &format!("read deployment {workload}"))
+            .map_err(|e| not_found(e, "deployment", namespace, workload))?;
+        let raw: J = serde_json::from_str(&stdout)
+            .map_err(|_| format!("invalid Kubernetes deployment response for {workload}"))?;
+        Ok(project_deployment(&raw))
+    }
+}
+
+/// The D34 projection of a Deployment.
+fn project_deployment(raw: &J) -> J {
+    let at = |path: &[&str]| path.iter().try_fold(raw, |v, k| v.get(*k));
+    let object = |path: &[&str]| {
+        at(path)
+            .filter(|v| v.is_object())
+            .cloned()
+            .unwrap_or(json!({}))
+    };
+    let text = |v: Option<&J>| v.and_then(J::as_str).unwrap_or("").to_string();
+    let count = |path: &[&str], absent: i64| at(path).and_then(J::as_i64).unwrap_or(absent);
+    let pick = |v: &J, keys: &[&str]| {
+        let mut out = Map::new();
+        for key in keys {
+            if let Some(value) = v.get(*key).filter(|x| !x.is_null()) {
+                out.insert((*key).into(), value.clone());
+            }
+        }
+        J::Object(out)
+    };
+    let containers: Vec<J> = at(&["spec", "template", "spec", "containers"])
+        .and_then(J::as_array)
+        .into_iter()
+        .flatten()
+        .map(|c| {
+            let ports: Vec<J> = c.get("ports").and_then(J::as_array).into_iter().flatten()
+                .map(|p| pick(p, &["containerPort", "protocol", "name"]))
+                .collect();
+            // A variable's name and, for a reference, where it comes from:
+            // never a literal `value`.
+            let env: Vec<J> = c.get("env").and_then(J::as_array).into_iter().flatten()
+                .map(|e| {
+                    let mut out = Map::new();
+                    out.insert("name".into(), J::from(text(e.get("name"))));
+                    if let Some((kind, source)) = e
+                        .get("valueFrom")
+                        .and_then(J::as_object)
+                        .and_then(|from| from.iter().next())
+                    {
+                        let mut from = pick(source, &["name", "key", "fieldPath", "resource", "containerName"]);
+                        from["kind"] = J::from(kind.clone());
+                        out.insert("valueFrom".into(), from);
+                    }
+                    J::Object(out)
+                })
+                .collect();
+            let env_from: Vec<J> = c.get("envFrom").and_then(J::as_array).into_iter().flatten()
+                .filter_map(|e| {
+                    let (kind, source) = ["configMapRef", "secretRef"]
+                        .into_iter()
+                        .find_map(|kind| e.get(kind).map(|source| (kind, source)))?;
+                    let mut out = pick(e, &["prefix"]);
+                    out["kind"] = J::from(kind);
+                    out["name"] = J::from(text(source.get("name")));
+                    Some(out)
+                })
+                .collect();
+            json!({
+                "name": text(c.get("name")),
+                "image": text(c.get("image")),
+                "ports": ports,
+                "env": env,
+                "envFrom": env_from,
+                "resources": c.get("resources").map_or(json!({}), |r| pick(r, &["requests", "limits"])),
+            })
+        })
+        .collect();
+    json!({
+        "name": text(at(&["metadata", "name"])),
+        "namespace": text(at(&["metadata", "namespace"])),
+        "replicas": count(&["spec", "replicas"], 1),
+        "readyReplicas": count(&["status", "readyReplicas"], 0),
+        "availableReplicas": count(&["status", "availableReplicas"], 0),
+        "labels": object(&["metadata", "labels"]),
+        "selector": object(&["spec", "selector", "matchLabels"]),
+        "containers": containers,
+    })
+}
+
 /// `isMissingResourceType`.
 fn missing_resource_type(error: &str) -> bool {
     let text = error.to_lowercase();
@@ -2273,6 +2426,108 @@ impl ClusterAgent {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A Kubernetes service whose provider answers every kubectl call with
+    /// `reply` (or fails with it) and records the argv it was asked to run.
+    fn kubectl_fake(
+        reply: Result<&'static str, &'static str>,
+    ) -> (Kubernetes, Arc<std::sync::Mutex<Vec<J>>>) {
+        let calls = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let seen = calls.clone();
+        let k8s = Kubernetes {
+            execute: Arc::new(move |_: &str, args: Map<String, J>| {
+                seen.lock().unwrap().push(args["kubectlArgs"].clone());
+                reply
+                    .map(|stdout| json!({"stdout": stdout}).as_object().cloned().unwrap())
+                    .map_err(String::from)
+            }),
+            resolve: Arc::new(|uri: &str, _| {
+                let parsed = Uri::parse(uri).map_err(|e| e.to_string())?;
+                let mut coordinates = Map::new();
+                coordinates.insert(
+                    "providerInstanceName".into(),
+                    J::from(parsed.resource_id.clone()),
+                );
+                Ok((parsed, coordinates))
+            }),
+            tenant_id: String::new(),
+            register: Arc::new(|_: &str, _| Ok(())),
+            ensure_tool: Arc::new(|_: &str| Err("unused".into())),
+            run_host: Arc::new(|_: &[String], _| unreachable!()),
+            env: crate::config::Env::from_pairs(std::iter::empty::<(String, String)>()),
+            known_clusters: Arc::new(Vec::new),
+        };
+        (k8s, calls)
+    }
+
+    /// D32: key names come back sorted, and the template asked kubectl for
+    /// names only, so no value reached the agent.
+    #[test]
+    fn secret_keys_are_names_only() {
+        let (k8s, calls) = kubectl_fake(Ok("user\npassword\nuser\n"));
+        let keys = k8s.object_keys("k1", "secret", "db", "").unwrap();
+        assert_eq!(keys, ["password", "user"]);
+        let argv = calls.lock().unwrap()[0].clone();
+        assert_eq!(
+            argv.as_array().unwrap()[0..5],
+            json!(["get", "secret", "db", "-n", "default"])
+                .as_array()
+                .unwrap()[..]
+        );
+        assert!(argv[6]
+            .as_str()
+            .unwrap()
+            .starts_with("go-template={{range $k, $v := .data}}{{$k}}"));
+        assert!(!argv.to_string().contains("-o\",\"json"));
+    }
+
+    /// D32, D33: a missing object is a typed error naming it; a bad name is
+    /// refused before kubectl runs.
+    #[test]
+    fn missing_and_invalid_objects_are_refused() {
+        let (k8s, _) = kubectl_fake(Err(
+            "Error from server (NotFound): configmaps \"app\" not found",
+        ));
+        assert_eq!(
+            k8s.object_keys("k1", "configmap", "app", "web")
+                .unwrap_err(),
+            "configmap web/app not found"
+        );
+        let (k8s, calls) = kubectl_fake(Ok(""));
+        assert!(k8s.object_keys("k1", "secret", "-o", "").is_err());
+        assert!(k8s.object_keys("k1", "secret", "db", "bad ns").is_err());
+        assert!(calls.lock().unwrap().is_empty());
+    }
+
+    /// D34: the projection carries the declared fields and no literal value.
+    #[test]
+    fn a_workload_is_projected_without_values() {
+        let deployment = r#"{"metadata":{"name":"web","namespace":"apps","labels":{"app":"web"}},
+          "spec":{"replicas":3,"selector":{"matchLabels":{"app":"web"}},"template":{"spec":{"containers":[
+            {"name":"api","image":"r/api:1","ports":[{"containerPort":8080,"protocol":"TCP"}],
+             "env":[{"name":"MODE","value":"prod-secret-literal"},
+                    {"name":"TOKEN","valueFrom":{"secretKeyRef":{"name":"api","key":"token"}}}],
+             "envFrom":[{"secretRef":{"name":"bulk"}}],
+             "resources":{"limits":{"memory":"256Mi"}}}]}}},
+          "status":{"readyReplicas":2,"availableReplicas":2}}"#;
+        let (k8s, _) = kubectl_fake(Ok(deployment));
+        let out = k8s.inspect_workload("k1", "web", "apps").unwrap();
+        assert_eq!(out["replicas"], 3);
+        assert_eq!(out["readyReplicas"], 2);
+        assert_eq!(out["selector"], json!({"app": "web"}));
+        let api = &out["containers"][0];
+        assert_eq!(api["image"], "r/api:1");
+        assert_eq!(api["env"][0], json!({"name": "MODE"}));
+        assert_eq!(
+            api["env"][1]["valueFrom"],
+            json!({"kind": "secretKeyRef", "name": "api", "key": "token"})
+        );
+        assert_eq!(
+            api["envFrom"][0],
+            json!({"kind": "secretRef", "name": "bulk"})
+        );
+        assert!(!out.to_string().contains("prod-secret-literal"));
+    }
 
     /// D28 (Q24): a registered cluster whose instance is stopped is listed
     /// as stopped, not dropped from discovery.

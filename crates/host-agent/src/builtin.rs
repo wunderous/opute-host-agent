@@ -276,6 +276,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         cluster_discovery(&k8s),
         cluster_resources(&k8s),
         cluster_listings(&k8s),
+        cluster_inspection(&k8s),
         cluster_packages(&k8s),
         service_exposure(&k8s),
         guest_storage(&k8s),
@@ -2104,6 +2105,53 @@ fn cluster_listings(k8s: &crate::clusterops::Kubernetes) -> Service {
             (
                 "list_deployments",
                 rows(k8s, "deployments", K::list_deployments),
+            ),
+        ],
+    }
+}
+
+/// D32-D34: reads of one object on the bound cluster that never return a
+/// stored value.
+fn cluster_inspection(k8s: &crate::clusterops::Kubernetes) -> Service {
+    let keys = |k8s: &crate::clusterops::Kubernetes, kind: &'static str, arg: &'static str| {
+        let k8s = k8s.clone();
+        op(move |call| {
+            let keys = k8s.object_keys(
+                &call.binding.provider_instance_name(),
+                kind,
+                text(call.args, arg),
+                text(call.args, "namespace"),
+            )?;
+            let mut out = Map::new();
+            out.insert(
+                "keys".into(),
+                J::Array(keys.into_iter().map(J::from).collect()),
+            );
+            Ok(map_result(with_cluster_uri(out, call.binding)))
+        })
+    };
+    let workload = k8s.clone();
+    Service {
+        id: "cluster-inspection",
+        dependencies: &["cluster-discovery"],
+        operations: vec![
+            ("list_secret_keys", keys(k8s, "secret", "secretName")),
+            (
+                "list_configmap_keys",
+                keys(k8s, "configmap", "configMapName"),
+            ),
+            (
+                "inspect_workload",
+                op(move |call| {
+                    let projected = workload.inspect_workload(
+                        &call.binding.provider_instance_name(),
+                        text(call.args, "workloadName"),
+                        text(call.args, "namespace"),
+                    )?;
+                    let mut out = Map::new();
+                    out.insert("workload".into(), projected);
+                    Ok(map_result(with_cluster_uri(out, call.binding)))
+                }),
             ),
         ],
     }
