@@ -1,4 +1,4 @@
-.PHONY: spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci rust-suites e2e-test cutover-readiness e2e-devvm-build e2e-verify parity-contracts parity-rust-canaries catalog-source
+.PHONY: supply-chain fuzz fuzz-seeds reproducible-build spec-validate spec-list rust-check rust-build release-toolchain artifacts parity-test go-reference go-providers parity-capture parity-go-vs-go parity-go-vs-rust parity-canaries parity-oracles parity-manifest parity-verify parity-verify-m1 parity-verify-m2 parity-verify-m3 parity-verify-m4 parity-verify-cutover parity-m0 parity-m1 parity-m2 parity-m3 parity-m4 parity-m6 parity-corpus parity-ci rust-suites e2e-test cutover-readiness e2e-devvm-build e2e-verify parity-contracts parity-rust-canaries catalog-source
 
 OPENSPEC := npx --yes @fission-ai/openspec@1.13.2
 .PHONY: parity-verify-m5 parity-verify-m6
@@ -23,6 +23,26 @@ rust-check:
 
 rust-build:
 	cargo build --release --locked
+
+# --- Hardening (m16; evidence/hardening/README.md).
+# cargo-deny policy (deny.toml); cargo-deny, cargo-fuzz and cargo-cyclonedx
+# are installed under .parity/tools/cargo-m16 locally, by CI in CI.
+FUZZ_SECONDS ?= 20
+
+supply-chain:
+	cargo deny check
+
+# Every fuzz target for FUZZ_SECONDS each on the stable toolchain; the stable
+# replay of seeds and regressions runs in `cargo test` (fuzzing::tests).
+fuzz:
+	fuzz/run.sh $(FUZZ_SECONDS)
+
+fuzz-seeds:
+	python3 fuzz/make_seeds.py
+
+# Two clean, offline, locked builds of the release binary must be equal.
+reproducible-build:
+	tools/release/reproducible-build.sh
 
 # --- Release set (M10): Go's names, gzip and SHA256SUMS; see tools/release.
 VERSION ?= 0.2.4

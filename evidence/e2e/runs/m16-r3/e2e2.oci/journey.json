@@ -1,0 +1,1150 @@
+{
+ "cleanup": [
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_cleanRemove": "response.body.result.taskId"
+   },
+   "id": "cleanRemoveCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.capability.kubernetes.remove"
+  },
+  {
+   "id": "cleanRemove",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanRemove}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "TID_cleanDelete1": "response.body.result.taskId"
+   },
+   "id": "cleanDelete1Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "delete_vm"
+  },
+  {
+   "id": "cleanDelete1",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanDelete1}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "rm -rf /home/opute/.opute/build-contexts/e2e-app; loginctl disable-linger opute; rm -rf /home/opute/.local/share/containers /home/opute/.config/containers /home/opute/.config/cni /home/opute/.opute/build-contexts; rmdir /home/opute/.opute 2>/dev/null; if [ -f /tmp/e2e-pkgs-before ]; then dpkg -l | awk '/^ii/{print $2}' | sort > /tmp/e2e-pkgs-after; comm -13 /tmp/e2e-pkgs-before /tmp/e2e-pkgs-after | DEBIAN_FRONTEND=noninteractive xargs -r apt-get purge -y -q >/dev/null 2>&1; fi; rm -f /tmp/e2e-pkgs-before /tmp/e2e-pkgs-after; rm -rf /etc/containers; mkdir -p -m 0755 /etc/apparmor.d/disable; systemctl daemon-reload; systemctl stop packagekit.service boot-complete.target 2>/dev/null; systemctl reset-failed podman-restart.service 2>/dev/null; systemctl stop e2e-provider-k3s 2>/dev/null; incus delete -f e2e-k1 2>/dev/null; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true",
+   "id": "cleanSetup"
+  }
+ ],
+ "description": "OCI build, push and pull on a single-node K3s cluster built through typed calls: ensure a builder, stage a context, install a registry in the cluster, build and push an image, trust the registry in K3s and run the image by digest in a pod; then apply the storage policy, inspect and clean up.",
+ "effects": {
+  "allow": [
+   "incus/*",
+   "files//home/opute/.config/opute-e2e*",
+   "files//home/opute/.config/incus*",
+   "files//opt/opute-e2e/providers*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*",
+   "files//home/opute/.opute*",
+   "files//home/opute/.local/share/containers*",
+   "files//home/opute/.config/containers*",
+   "files//home/opute/.config/cni*",
+   "files//usr*",
+   "files//etc*",
+   "files//var*",
+   "files//opt/cni*",
+   "system/*",
+   "packages/*",
+   "users/*",
+   "groups/*",
+   "user/*",
+   "linger*",
+   "files//var/lib/systemd/linger*",
+   "files//home/opute/.config/systemd*",
+   "files//var/lib/dpkg*",
+   "files//var/log*",
+   "files//var/cache*"
+  ],
+  "persist": [
+   "files//var/lib/dpkg*",
+   "files//var/log*",
+   "files//var/cache*"
+  ]
+ },
+ "gate": "e2e-2",
+ "id": "e2e2.oci",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "files": {
+   "activate": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
+    "sha256": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788"
+   },
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "providerK3s": {
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc4/opute-provider-k3s-linux-x64",
+    "sha256": "78090752df867a2b3342d291c6e5a91b5dbc34e07ccf9c33ec4c9472a77ec950"
+   }
+  },
+  "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries"
+ },
+ "maxMinutes": 28,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "equals": 1,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "ready"
+    }
+   ],
+   "requirement": "A K3s server provisioned through typed Host Agent operations",
+   "scenario": "The single-node cluster the journey runs on",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "builder"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "stage"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "registry"
+    },
+    {
+     "equals": "installed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "registryStatus"
+    },
+    {
+     "equals": 1,
+     "path": "response.body.result.structuredContent.deployment.status.readyReplicas",
+     "step": "registryStatus"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "push"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.pushed",
+     "step": "push"
+    },
+    {
+     "matches": "^sha256:[0-9a-f]{64}$",
+     "path": "stdout",
+     "step": "digest"
+    }
+   ],
+   "requirement": "ensure_oci_builder, stage_build_context, install_oci_registry, build_and_push_oci_image",
+   "scenario": "An image built on the host from a staged context and pushed to a registry running in an e2e- guest's cluster",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "trust"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "pull"
+    },
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "pulled"
+    },
+    {
+     "matches": "hello from the e2e registry",
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "logs"
+    }
+   ],
+   "requirement": "The pushed image is pulled by digest and runs",
+   "scenario": "The cluster guest pulls the image by its digest from the registry and runs it",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "inspectNoSession"
+    },
+    {
+     "equals": "container-engine",
+     "path": "response.body.result.structuredContent.runtime",
+     "step": "inspectNoSession"
+    }
+   ],
+   "requirement": "A runtime warning does not fail a storage report",
+   "scenario": "Right after the builder is installed, with no user session, the storage report is read while Podman warns on stderr (D28)",
+   "spec": "openspec/changes/container-runtime-stdout/specs/container-storage/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "inspect"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "policy"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "dryRun"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "cleanup"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "inspectAfter"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "deleteRegistry"
+    }
+   ],
+   "requirement": "configure_oci_storage, inspect_container_storage, cleanup_container_storage",
+   "scenario": "With the user service supervisor ready: the storage policy applied, a dry run, a cleanup with the shortest allowed age, and the registry deleted",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "providerK3s",
+   "id": "providerCopy",
+   "mode": "0755",
+   "to": "/opt/opute-e2e/providers/opute-provider-k3s"
+  },
+  {
+   "copy": "activate",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+  },
+  {
+   "guest": "chown -R opute /home/opute/.config/opute-e2e && systemd-run --collect --unit=e2e-provider-k3s --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=4320 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | wc -l",
+   "id": "setup"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4320/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+   },
+   "id": "installA",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.provider.install"
+  },
+  {
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "id": "providerToolsA"
+  },
+  {
+   "id": "catalogAfterA",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {
+    "cpus": 3,
+    "disk": "20GiB",
+    "image": "parity-noble",
+    "instanceType": "container",
+    "memory": "4GiB",
+    "name": "e2e-k1"
+   },
+   "capture": {
+    "TID_vm1": "response.body.result.taskId"
+   },
+   "id": "vm1Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "provision_vm"
+  },
+  {
+   "id": "vm1",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_vm1}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "K1_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info1",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_vm_info"
+  },
+  {
+   "arguments": {
+    "clusterInit": true,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "container:local:e2e-k1",
+    "version": "v1.31.8+k3s1"
+   },
+   "capture": {
+    "TID_provision": "response.body.result.taskId"
+   },
+   "id": "provisionCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.capability.kubernetes.provision"
+  },
+  {
+   "id": "provision",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_provision}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "ready",
+   "interval": 5,
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 300,
+   "tool": "opute.capability.kubernetes.status",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.readyNodeCount"
+   }
+  },
+  {
+   "guest": "dpkg -l | awk '/^ii/{print $2}' | sort > /tmp/e2e-pkgs-before && echo recorded",
+   "id": "pkgsBefore"
+  },
+  {
+   "arguments": {},
+   "capture": {
+    "TID_builder": "response.body.result.taskId"
+   },
+   "id": "builderCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_oci_builder"
+  },
+  {
+   "id": "builder",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_builder}"
+   },
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "destDir": "/home/opute/.opute/build-contexts/e2e-app",
+    "files": {
+     "Dockerfile": "FROM docker.io/library/busybox:1.36\nCOPY src/ /app/\nCMD [\"sh\", \"-c\", \"cat /app/main.txt; sleep 3600\"]\n",
+     "src/main.txt": "hello from the e2e registry\n"
+    }
+   },
+   "capture": {
+    "TID_stage": "response.body.result.taskId"
+   },
+   "id": "stageCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "stage_build_context"
+  },
+  {
+   "id": "stage",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_stage}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "image": "registry:2.8.3",
+    "storageSize": "1Gi",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_registry": "response.body.result.taskId"
+   },
+   "id": "registryCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "install_oci_registry"
+  },
+  {
+   "id": "registry",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_registry}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "registryStatus",
+   "interval": 5,
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 300,
+   "tool": "get_oci_registry_status",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.deployment.status.readyReplicas"
+   }
+  },
+  {
+   "arguments": {
+    "contextDir": "/home/opute/.opute/build-contexts/e2e-app",
+    "image": "${K1_IP}:30500/e2e/app:1",
+    "insecureRegistry": true
+   },
+   "capture": {
+    "TID_push": "response.body.result.taskId"
+   },
+   "id": "pushCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "build_and_push_oci_image"
+  },
+  {
+   "id": "push",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_push}"
+   },
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "capture": {
+    "DIGEST": "stdout"
+   },
+   "guest": "curl -fsSI -H 'Accept: application/vnd.oci.image.manifest.v1+json' -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' http://${K1_IP}:30500/v2/e2e/app/manifests/1 | tr -d '\\r' | awk 'tolower($1)==\"docker-content-digest:\"{printf \"%s\", $2}'",
+   "id": "digest"
+  },
+  {
+   "arguments": {
+    "endpoint": "http://${K1_IP}:30500",
+    "insecure": true,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "registry": "${K1_IP}:30500",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_trust": "response.body.result.taskId"
+   },
+   "id": "trustCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.capability.kubernetes.configure-registry"
+  },
+  {
+   "id": "trust",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_trust}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "readyAgain",
+   "interval": 5,
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 300,
+   "tool": "opute.capability.kubernetes.status",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.readyNodeCount"
+   }
+  },
+  {
+   "arguments": {
+    "manifest": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: e2e-pull\n  namespace: default\nspec:\n  containers:\n  - name: app\n    image: ${K1_IP}:30500/e2e/app@${DIGEST}\n",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_pull": "response.body.result.taskId"
+   },
+   "id": "pullCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "apply_manifest"
+  },
+  {
+   "id": "pull",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_pull}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "namespace": "default",
+    "resourceKind": "Pod",
+    "resourceName": "e2e-pull",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "pulled",
+   "interval": 5,
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 300,
+   "tool": "get_cluster_resource_status",
+   "until": {
+    "in": [
+     "ready"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "arguments": {
+    "args": [
+     "e2e-pull",
+     "-n",
+     "default"
+    ],
+    "command": "logs",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "logs",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "exec_cluster_command"
+  },
+  {
+   "arguments": {},
+   "id": "inspectNoSession",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_container_storage"
+  },
+  {
+   "arguments": {},
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up",
+   "id": "userBus"
+  },
+  {
+   "arguments": {},
+   "id": "supervisorAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "arguments": {},
+   "id": "inspect",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_container_storage"
+  },
+  {
+   "arguments": {
+    "minAgeSeconds": 3600,
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_policy": "response.body.result.taskId"
+   },
+   "id": "policyCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "configure_oci_storage"
+  },
+  {
+   "id": "policy",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_policy}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "dryRun": true
+   },
+   "capture": {
+    "TID_dryRun": "response.body.result.taskId"
+   },
+   "id": "dryRunCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "cleanup_container_storage"
+  },
+  {
+   "id": "dryRun",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_dryRun}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "minAgeSeconds": 3600
+   },
+   "capture": {
+    "TID_cleanup": "response.body.result.taskId"
+   },
+   "id": "cleanupCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "cleanup_container_storage"
+  },
+  {
+   "id": "cleanup",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanup}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {},
+   "id": "inspectAfter",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "inspect_container_storage"
+  },
+  {
+   "arguments": {
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_deleteRegistry": "response.body.result.taskId"
+   },
+   "id": "deleteRegistryCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "delete_oci_registry"
+  },
+  {
+   "id": "deleteRegistry",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_deleteRegistry}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  }
+ ]
+}

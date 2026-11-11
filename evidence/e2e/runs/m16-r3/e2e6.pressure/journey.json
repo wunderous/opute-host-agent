@@ -1,0 +1,429 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove lim >/dev/null ; python3 /opt/opute-e2e/guest/e2etool.py agent remove low >/dev/null ; python3 /opt/opute-e2e/guest/e2etool.py agent remove big >/dev/null ; true",
+   "id": "remove"
+  }
+ ],
+ "description": "Admission under pressure: an agent with one normal operation slot refuses work beyond it and admits again after; one whose memory and disk floors cannot be met refuses effectful work; one sent a 1 GiB body answers 413 with bounded memory (D29).",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.pressure",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "working",
+     "path": "response.body.result.status",
+     "step": "first"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "secondDone"
+    },
+    {
+     "equals": "admission",
+     "path": "response.body.result.result.structuredContent.owner",
+     "step": "secondDone"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "third"
+    },
+    {
+     "equals": "admission",
+     "path": "response.body.result.structuredContent.owner",
+     "step": "third"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "readWhileFull"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.status",
+     "step": "firstDone"
+    },
+    {
+     "equals": "working",
+     "path": "response.body.result.status",
+     "step": "afterFirst"
+    },
+    {
+     "exists": true,
+     "path": "json.operations.run_host_command",
+     "step": "limOps"
+    }
+   ],
+   "requirement": "Typed target and effect admission",
+   "scenario": "Beyond the operation limit new work is refused with a typed admission error (a task's as its result) and nothing is queued; the running task finishes and new work is admitted after it",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "lowWrite"
+    },
+    {
+     "equals": "admission",
+     "path": "response.body.result.structuredContent.owner",
+     "step": "lowWrite"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "lowTaskDone"
+    },
+    {
+     "equals": "admission",
+     "path": "response.body.result.result.structuredContent.owner",
+     "step": "lowTaskDone"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "lowRead"
+    }
+   ],
+   "requirement": "Typed target and effect admission",
+   "scenario": "Below the memory and disk floors, effectful work is refused with a typed admission error",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 413,
+     "path": "json.status",
+     "step": "bigBody"
+    },
+    {
+     "equals": true,
+     "path": "json.bodyLimitText",
+     "step": "bigBody"
+    },
+    {
+     "lte": 10,
+     "path": "json.seconds",
+     "step": "bigBody"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "bigNext"
+    },
+    {
+     "lte": 134217728,
+     "path": "json.rssBytes",
+     "step": "rssAfter"
+    }
+   ],
+   "requirement": "An MCP request body is read only up to its limit",
+   "scenario": "A 1 GiB declared body is answered 413 after 4 MiB, and the agent's resident memory stays under the budget (D29)",
+   "spec": "openspec/changes/bound-mcp-request-body/specs/bound-mcp-request-body/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start lim --port 3046 --id e2e-lim-agent --env MCP_AUTH_TOKEN=${SECRET:lim} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_MAX_NORMAL_OPERATIONS=1 --user root",
+   "id": "limAgent"
+  },
+  {
+   "auth": "secret:lim",
+   "id": "listLim",
+   "mcp": "tools/list",
+   "port": 3046
+  },
+  {
+   "arguments": {
+    "command": "sleep 20"
+   },
+   "auth": "secret:lim",
+   "capture": {
+    "FIRST": "response.body.result.taskId"
+   },
+   "id": "first",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3046,
+   "retryOn": [],
+   "tool": "run_host_command"
+  },
+  {
+   "arguments": {
+    "command": "echo second"
+   },
+   "auth": "secret:lim",
+   "capture": {
+    "SECOND": "response.body.result.taskId"
+   },
+   "id": "second",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3046,
+   "retryOn": [],
+   "tool": "run_host_command"
+  },
+  {
+   "auth": "secret:lim",
+   "id": "secondDone",
+   "interval": 2,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${SECOND}"
+   },
+   "port": 3046,
+   "timeout": 60,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "content": "x\n",
+    "path": ".config/opute-e2e/p.txt",
+    "scope": "user"
+   },
+   "auth": "secret:lim",
+   "id": "third",
+   "mcp": "tools/call",
+   "port": 3046,
+   "retryOn": [],
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:lim",
+   "id": "readWhileFull",
+   "mcp": "tools/call",
+   "port": 3046,
+   "tool": "get_host_info"
+  },
+  {
+   "auth": "secret:lim",
+   "id": "firstDone",
+   "interval": 2,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${FIRST}"
+   },
+   "port": 3046,
+   "timeout": 60,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "command": "echo after"
+   },
+   "auth": "secret:lim",
+   "id": "afterFirst",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3046,
+   "retryOn": [],
+   "tool": "run_host_command"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/lim/state/state.db",
+   "id": "limOps"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start low --port 3047 --id e2e-low-agent --env MCP_AUTH_TOKEN=${SECRET:low} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES=1125899906842624 --env OPUTE_HOST_MIN_AVAILABLE_DISK_BYTES=1125899906842624",
+   "id": "lowAgent"
+  },
+  {
+   "auth": "secret:low",
+   "id": "listLow",
+   "mcp": "tools/list",
+   "port": 3047
+  },
+  {
+   "arguments": {
+    "content": "x\n",
+    "path": ".config/opute-e2e/q.txt",
+    "scope": "user"
+   },
+   "auth": "secret:low",
+   "id": "lowWrite",
+   "mcp": "tools/call",
+   "port": 3047,
+   "retryOn": [],
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "command": "echo low"
+   },
+   "auth": "secret:low",
+   "capture": {
+    "LOW": "response.body.result.taskId"
+   },
+   "id": "lowTask",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3047,
+   "retryOn": [],
+   "tool": "run_host_command"
+  },
+  {
+   "auth": "secret:low",
+   "id": "lowTaskDone",
+   "interval": 2,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${LOW}"
+   },
+   "port": 3047,
+   "timeout": 60,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {},
+   "auth": "secret:low",
+   "id": "lowRead",
+   "mcp": "tools/call",
+   "port": 3047,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start big --port 3048 --id e2e-big-agent --env MCP_AUTH_TOKEN=${SECRET:big} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+   "id": "bigAgent"
+  },
+  {
+   "auth": "secret:big",
+   "id": "listBig",
+   "mcp": "tools/list",
+   "port": 3048
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py procstat e2e-agent-big.service",
+   "id": "rssBefore"
+  },
+  {
+   "guest": "E2E_TOKEN=${SECRET:big} python3 /opt/opute-e2e/guest/e2etool.py bigbody --port 3048 --declared 1073741824 --send 8388608",
+   "id": "bigBody"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py procstat e2e-agent-big.service",
+   "id": "rssAfter"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:big",
+   "id": "bigNext",
+   "mcp": "tools/call",
+   "port": 3048,
+   "tool": "get_host_info"
+  }
+ ]
+}

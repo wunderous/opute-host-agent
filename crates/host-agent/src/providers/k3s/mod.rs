@@ -20,8 +20,8 @@
 mod bootstrap;
 mod decode;
 mod endpoint;
-mod membership;
-mod storage;
+pub(crate) mod membership;
+pub(crate) mod storage;
 #[cfg(test)]
 mod tests;
 

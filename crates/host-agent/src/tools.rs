@@ -189,6 +189,13 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
             "mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
         ));
     }
+    // D31: with the state directory full, an effectful call is refused before
+    // it runs, so nothing it does on the host goes unrecorded.
+    if !catalog::standalone_read_only(&catalog_snapshot, &name) {
+        if let Err(refusal) = admission::state_writable(&server.host) {
+            return ToolCallOutcome::Result(refusal.render());
+        }
+    }
     // Lifecycle tools are routed before the task boundary. They carry no
     // resource binding but cross the same host admission boundary.
     if LIFECYCLE.contains(&name.as_str()) {

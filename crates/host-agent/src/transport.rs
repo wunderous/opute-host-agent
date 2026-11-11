@@ -110,7 +110,14 @@ pub async fn route(server: Arc<Server>, req: Request, mut body: Body) -> (Respon
         return (redirect(&req, &target, 301), body);
     }
     let response = match matched {
-        Some("/health") => health(&server),
+        // The observer runs `incus list`; keep it off the connection-serving
+        // thread so a slow or hung host command stalls only this request.
+        Some("/health") => {
+            let server = Arc::clone(&server);
+            tokio::task::spawn_blocking(move || health(&server))
+                .await
+                .unwrap_or_else(|_| Response::error("internal error", 500))
+        }
         Some("/mcp") => mcp(&server, &req, &mut body).await,
         Some("/.well-known/oauth-protected-resource")
         | Some("/.well-known/oauth-protected-resource/mcp") => prm(&req),
@@ -544,7 +551,9 @@ fn oauth_error(status: u16, code: &str, description: &str) -> Response {
 fn basic_auth(req: &Request) -> Option<(String, String)> {
     use base64::Engine;
     let auth = req.headers.get("Authorization");
-    if auth.len() < 6 || !auth[..6].eq_ignore_ascii_case("basic ") {
+    // Compared as bytes: a header with a multi-byte character in its first
+    // six bytes is not Basic, and must not split that character (m16).
+    if auth.len() < 6 || !auth.as_bytes()[..6].eq_ignore_ascii_case(b"basic ") {
         return None;
     }
     let raw = base64::engine::general_purpose::STANDARD
@@ -996,6 +1005,9 @@ fn decode_q(value: &str) -> Option<String> {
                 if i + 2 >= b.len() {
                     return None;
                 }
+                if !b[i + 1..i + 3].iter().all(u8::is_ascii_hexdigit) {
+                    return None;
+                }
                 let hex = std::str::from_utf8(&b[i + 1..i + 3]).ok()?;
                 out.push(u8::from_str_radix(hex, 16).ok()?);
                 i += 2;
@@ -1247,8 +1259,15 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         }
         return r;
     }
-    let raw = match body.read_all(None).await {
+    // D29: at most the SDK's 4 MiB is read; a larger body gets its 413 here,
+    // before the envelope is parsed, so no request can make the agent hold an
+    // unbounded body in memory.
+    let max = crate::mcpsdk::MAX_BODY;
+    let raw = match body.read_all(Some(max)).await {
         Ok(b) => b,
+        Err(http1::BodyError::TooLarge) => {
+            return Response::error(&format!("request body exceeds {max} bytes"), 413)
+        }
         Err(e) => return Response::error(&e.to_string(), 400),
     };
     if raw.is_empty() {

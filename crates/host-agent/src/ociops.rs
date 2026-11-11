@@ -1057,7 +1057,7 @@ fn unmarshal(data: &str) -> Result<J, String> {
 }
 
 /// `parseJSONMap`.
-fn parse_json_map(output: &[u8]) -> Result<Map<String, J>, String> {
+pub(crate) fn parse_json_map(output: &[u8]) -> Result<Map<String, J>, String> {
     match unmarshal(String::from_utf8_lossy(output).trim())? {
         J::Object(object) => Ok(object),
         J::Null => Ok(Map::new()),
@@ -1080,7 +1080,7 @@ fn as_entry(value: &J, ty: &str) -> Result<Map<String, J>, String> {
 }
 
 /// `parseStorageEntries`.
-fn parse_storage_entries(output: &[u8]) -> Result<Vec<Map<String, J>>, String> {
+pub(crate) fn parse_storage_entries(output: &[u8]) -> Result<Vec<Map<String, J>>, String> {
     let trimmed = String::from_utf8_lossy(output).trim().to_string();
     if trimmed.is_empty() {
         return Err("empty storage usage output".into());
@@ -1256,7 +1256,7 @@ fn bool_value(value: Option<&J>) -> bool {
 }
 
 /// `parseBuildCacheUsage`.
-fn parse_build_cache(output: &[u8]) -> Result<(i64, i64), String> {
+pub(crate) fn parse_build_cache(output: &[u8]) -> Result<(i64, i64), String> {
     let mut total = 0;
     let mut reclaimable = 0;
     for entry in parse_storage_entries(output)? {
@@ -1384,7 +1384,7 @@ fn normalize_report(
 
 /// `containerImage`.
 #[derive(Clone)]
-struct Image {
+pub(crate) struct Image {
     id: String,
     created: i64,
     containers: i64,
@@ -1425,7 +1425,7 @@ fn parse_image_time(value: &str) -> i64 {
 }
 
 /// `parseContainerImages`.
-fn parse_images(output: &[u8]) -> Result<Vec<Image>, String> {
+pub(crate) fn parse_images(output: &[u8]) -> Result<Vec<Image>, String> {
     Ok(parse_storage_entries(output)?
         .iter()
         .map(|entry| {

@@ -1,0 +1,138 @@
+[package]
+name = "opute-host-agent-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+opute-host-agent = { path = "../crates/host-agent" }
+
+# A separate workspace: the fuzz build never joins the release build.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "http_wire"
+path = "fuzz_targets/http_wire.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "json_document"
+path = "fuzz_targets/json_document.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tool_arguments"
+path = "fuzz_targets/tool_arguments.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "host_archive"
+path = "fuzz_targets/host_archive.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tar_stream"
+path = "fuzz_targets/tar_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "plan_document"
+path = "fuzz_targets/plan_document.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "host_recipe"
+path = "fuzz_targets/host_recipe.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "resource_identity"
+path = "fuzz_targets/resource_identity.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "env_file"
+path = "fuzz_targets/env_file.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "state_store"
+path = "fuzz_targets/state_store.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "reservation_file"
+path = "fuzz_targets/reservation_file.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "credential_file"
+path = "fuzz_targets/credential_file.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "provider_descriptor"
+path = "fuzz_targets/provider_descriptor.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "provider_result"
+path = "fuzz_targets/provider_result.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "incus_output"
+path = "fuzz_targets/incus_output.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "command_output"
+path = "fuzz_targets/command_output.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "authz_store"
+path = "fuzz_targets/authz_store.rs"
+test = false
+doc = false
+bench = false

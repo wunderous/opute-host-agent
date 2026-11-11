@@ -1,0 +1,1 @@
+{"contractVersion": "host-plan.v1", "planId": "p1", "generation": 1, "idempotencyKey": "cancel-mid-node", "nodes": [{"id": "n1", "action": {"tool": "get_host_info", "args": {}}}, {"id": "n2", "dependsOn": ["n1"], "action": {"tool": "probe_http_endpoint", "args": {"endpoint": "http://127.0.0.1:${STUB_PORT}/"}}}]}

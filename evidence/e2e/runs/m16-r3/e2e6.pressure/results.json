@@ -1,0 +1,218 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-big.service",
+   "system/unitFiles/e2e-agent-lim.service",
+   "system/unitFiles/e2e-agent-low.service",
+   "system/units/e2e-agent-big.service",
+   "system/units/e2e-agent-lim.service",
+   "system/units/e2e-agent-low.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.pressure",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "first"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "secondDone"
+    },
+    {
+     "actual": "admission",
+     "equals": "admission",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.owner",
+     "step": "secondDone"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "third"
+    },
+    {
+     "actual": "admission",
+     "equals": "admission",
+     "ok": true,
+     "path": "response.body.result.structuredContent.owner",
+     "step": "third"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "readWhileFull"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "firstDone"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "afterFirst"
+    },
+    {
+     "actual": {
+      "completed": 2
+     },
+     "exists": true,
+     "ok": true,
+     "path": "json.operations.run_host_command",
+     "step": "limOps"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Typed target and effect admission",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "lowWrite"
+    },
+    {
+     "actual": "admission",
+     "equals": "admission",
+     "ok": true,
+     "path": "response.body.result.structuredContent.owner",
+     "step": "lowWrite"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "lowTaskDone"
+    },
+    {
+     "actual": "admission",
+     "equals": "admission",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.owner",
+     "step": "lowTaskDone"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "lowRead"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Typed target and effect admission",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 413,
+     "equals": 413,
+     "ok": true,
+     "path": "json.status",
+     "step": "bigBody"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.bodyLimitText",
+     "step": "bigBody"
+    },
+    {
+     "actual": 0.0,
+     "lte": 10,
+     "ok": true,
+     "path": "json.seconds",
+     "step": "bigBody"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "bigNext"
+    },
+    {
+     "actual": 42627072,
+     "lte": 134217728,
+     "ok": true,
+     "path": "json.rssBytes",
+     "step": "rssAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An MCP request body is read only up to its limit",
+   "spec": "openspec/changes/bound-mcp-request-body/specs/bound-mcp-request-body/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterFirst": 214,
+   "bigAgent": 547,
+   "bigBody": 196,
+   "bigNext": 296,
+   "first": 217,
+   "firstDone": 20058,
+   "limAgent": 553,
+   "limOps": 194,
+   "listBig": 244,
+   "listLim": 538,
+   "listLow": 256,
+   "lowAgent": 551,
+   "lowRead": 280,
+   "lowTask": 210,
+   "lowTaskDone": 207,
+   "lowWrite": 228,
+   "readWhileFull": 277,
+   "rssAfter": 199,
+   "rssBefore": 412,
+   "second": 211,
+   "secondDone": 205,
+   "third": 219,
+   "tool": 285,
+   "wire": 284
+  },
+  "stepsSeconds": 71.3
+ },
+ "unverified": []
+}

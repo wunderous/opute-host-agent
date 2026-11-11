@@ -43,7 +43,7 @@ fn apt_candidate(env: &Env, package: &str) -> String {
     candidate_from(&out)
 }
 
-fn candidate_from(out: &str) -> String {
+pub(crate) fn candidate_from(out: &str) -> String {
     let space = |b: u8| matches!(b, b'\t' | b'\n' | b'\x0c' | b'\r' | b' ');
     let bytes = out.as_bytes();
     let mut from = 0;

@@ -101,8 +101,9 @@ impl Uri {
                 "invalid resource URI: type and tenant must match [a-z][a-z0-9-]{0,31}".into(),
             );
         }
-        if self.resource_id.trim().is_empty() || self.resource_id.contains(['\r', '\n', '\t', ' '])
-        {
+        // D30: any Unicode whitespace (the set `trim` removes), not only
+        // space, tab, CR and LF, so a printed URI parses back to itself.
+        if self.resource_id.is_empty() || self.resource_id.chars().any(char::is_whitespace) {
             return Err("invalid resource URI: resource id is empty or contains whitespace".into());
         }
         Ok(())

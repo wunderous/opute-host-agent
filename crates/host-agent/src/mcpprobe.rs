@@ -422,7 +422,7 @@ fn mint_token(
 }
 
 /// `json.NewDecoder(r).Decode`: the first JSON value of the body.
-fn decode(body: &[u8]) -> Result<Node, String> {
+pub(crate) fn decode(body: &[u8]) -> Result<Node, String> {
     let end = first_value(body)?;
     parse(&body[..end]).map_err(|_| "unexpected EOF".to_string())
 }

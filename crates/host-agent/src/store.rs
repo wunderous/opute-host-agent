@@ -824,6 +824,16 @@ impl StateStore {
             .map_err(sqlite_err)
     }
 
+    /// Bytes this process may still write on the store's filesystem (D31), or
+    /// `None` when there is no store or the filesystem cannot be measured.
+    pub fn free_bytes(&self) -> Option<u64> {
+        let db = Path::new(self.conn.as_ref()?.path()?);
+        let st = nix::sys::statfs::statfs(db.parent()?).ok()?;
+        // f_bsize's type differs between targets (i64 on x86_64 Linux).
+        #[allow(clippy::unnecessary_cast)]
+        Some(st.blocks_available() as u64 * st.block_size() as u64)
+    }
+
     /// The caller owns schema redaction; the store retains its opaque projection.
     pub fn record_capability_invocation(
         &self,

@@ -245,7 +245,7 @@ pub fn load_source(request: &SourceRequest) -> Result<(Vec<u8>, SourceMetadata),
     read_local(source, &request.sha256)
 }
 
-struct GithubReference {
+pub(crate) struct GithubReference {
     url: String,
     revision: String,
 }
@@ -290,7 +290,7 @@ fn parse_github_reference(value: &str, revision: &str) -> Result<GithubReference
     })
 }
 
-fn parse_raw_github_url(raw: &str, revision: &str) -> Result<GithubReference, String> {
+pub(crate) fn parse_raw_github_url(raw: &str, revision: &str) -> Result<GithubReference, String> {
     let url = url::Url::parse(raw)
         .map_err(|_| "recipe URL must be an HTTPS raw.githubusercontent.com URL".to_string())?;
     if url.scheme() != "https" || url.host_str() != Some(GITHUB_RAW_HOST) {

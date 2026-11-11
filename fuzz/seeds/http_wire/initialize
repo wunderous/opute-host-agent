@@ -1,0 +1,8 @@
+POST /mcp HTTP/1.1
+Host: 127.0.0.1
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Authorization: Bearer not-a-token
+Content-Length: 164
+
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2026-07-28", "capabilities": {}, "clientInfo": {"name": "fuzz", "version": "0"}}}

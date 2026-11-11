@@ -38,7 +38,7 @@ pub(super) struct Invitation {
 
 pub(super) static INVITATIONS: LazyLock<Mutex<HashMap<String, Invitation>>> =
     LazyLock::new(Default::default);
-static RECEIVER_KEY: OnceLock<rsa::RsaPrivateKey> = OnceLock::new();
+static RECEIVER_KEY: OnceLock<rsa::PrivateKey> = OnceLock::new();
 
 /// `membershipObservation`.
 #[derive(Default)]
@@ -81,17 +81,19 @@ impl Observation {
     }
 }
 
-pub(super) fn receiver_key() -> &'static rsa::RsaPrivateKey {
-    RECEIVER_KEY.get_or_init(|| {
-        rsa::RsaPrivateKey::new(&mut rand_core::OsRng, 2048).expect("generate RSA key")
-    })
+pub(super) fn receiver_key() -> &'static rsa::PrivateKey {
+    RECEIVER_KEY
+        .get_or_init(|| rsa::PrivateKey::new(&mut sys_rng::SysRng, 2048).expect("generate RSA key"))
 }
 
 pub(super) fn get_join_receiver_key(args: &Args) -> Outcome {
     use rsa::traits::PublicKeyParts as _;
     use sha2::Digest as _;
     let key = receiver_key();
-    let der = pkcs1_public_der(&key.n().to_bytes_be(), &key.e().to_bytes_be());
+    let der = pkcs1_public_der(
+        &key.n().to_be_bytes_trimmed_vartime(),
+        &key.e().to_be_bytes_trimmed_vartime(),
+    );
     Ok(json!({
         "targetUri": s(args, "targetUri"),
         "publicKey": raw_url_encode(&der),
@@ -279,7 +281,7 @@ pub(super) fn raw_url_encode(bytes: &[u8]) -> String {
 
 /// `base64.RawURLEncoding.DecodeString`: CR and LF are skipped, any other
 /// byte outside the alphabet (padding included) is corrupt input.
-fn raw_url_decode(text: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn raw_url_decode(text: &str) -> Result<Vec<u8>, String> {
     let bytes = text.as_bytes();
     let mut kept = Vec::with_capacity(bytes.len());
     let mut in_quantum = 0usize;
@@ -577,15 +579,17 @@ pub(super) fn encrypt_oaep(n: &[u8], e: i64, msg: &[u8]) -> Result<Vec<u8>, Stri
     if e & 1 == 0 {
         return Err("crypto/rsa: public exponent is even".into());
     }
-    let key = rsa::RsaPublicKey::new_with_max_size(
-        rsa::BigUint::from_bytes_be(n),
-        rsa::BigUint::from(e as u64),
-        usize::MAX,
+    // Go's own checks above set the floor (1024 bits); rsa 0.10's default
+    // minimum is not the contract.
+    let key = rsa::PublicKey::new_with_size_limits(
+        rsa::BoxedUint::from_be_slice_vartime(n),
+        rsa::BoxedUint::from(e as u64),
+        1024..=usize::MAX,
     )
     .map_err(|err| format!("crypto/rsa: {err}"))?;
     key.encrypt(
-        &mut rand_core::OsRng,
-        rsa::Oaep::new_with_label::<sha2::Sha256, _>(JOIN_LABEL),
+        &mut sys_rng::SysRng,
+        rsa::Oaep::<sha2::Sha256>::new_with_label(JOIN_LABEL.as_bytes()),
         msg,
     )
     .map_err(|_| "crypto/rsa: message too long for RSA key size".to_string())
@@ -665,11 +669,11 @@ fn open_aes192(data_key: &[u8], nonce: &[u8], ciphertext: &[u8]) -> Result<Vec<u
         super::super::go_panic("crypto/cipher: incorrect nonce length given to GCM");
     }
     let cipher = Aes192Gcm::new_from_slice(data_key).expect("AES-192 key");
-    cipher
-        .decrypt(aes_gcm::Nonce::from_slice(nonce), ciphertext)
-        .map_err(|_| {
-            "decrypt sealed join material: cipher: message authentication failed".to_string()
-        })
+    let nonce =
+        aes_gcm::Nonce::<aes_gcm::aead::consts::U12>::try_from(nonce).expect("12-byte nonce");
+    cipher.decrypt(&nonce, ciphertext).map_err(|_| {
+        "decrypt sealed join material: cipher: message authentication failed".to_string()
+    })
 }
 
 fn string_struct(name: &'static str, fields: &[(&'static str, &'static str)]) -> Shape {
@@ -704,8 +708,8 @@ pub(super) fn unseal_join_material(sealed: &str) -> Result<J, String> {
         .map_err(|e| format!("decode sealed join material ciphertext: {e}"))?;
     let data_key = receiver_key()
         .decrypt_blinded(
-            &mut rand_core::OsRng,
-            rsa::Oaep::new_with_label::<sha2::Sha256, _>(JOIN_LABEL),
+            &mut sys_rng::SysRng,
+            rsa::Oaep::<sha2::Sha256>::new_with_label(JOIN_LABEL.as_bytes()),
             &encrypted_key,
         )
         .map_err(|_| {
@@ -1371,7 +1375,7 @@ fn native_membership_shape() -> Shape {
 
 /// `parseNativeMembership`. Roles come from a Go map's keys, in random
 /// order there; here they are sorted.
-pub(super) fn parse_native_membership(raw: &[u8]) -> Result<Vec<J>, String> {
+pub(crate) fn parse_native_membership(raw: &[u8]) -> Result<Vec<J>, String> {
     let list = unmarshal(raw, &native_membership_shape())
         .map_err(|e| format!("invalid native K3s membership response: {e}"))?;
     let mut nodes = Vec::new();
@@ -1408,7 +1412,7 @@ pub(super) fn parse_native_membership(raw: &[u8]) -> Result<Vec<J>, String> {
 }
 
 /// `parseClusterNodeSnapshot`: the nodes and how many are ready.
-pub(super) fn parse_cluster_node_snapshot(raw: &[u8]) -> Result<(Vec<J>, usize), String> {
+pub(crate) fn parse_cluster_node_snapshot(raw: &[u8]) -> Result<(Vec<J>, usize), String> {
     let nodes = parse_native_membership(raw)?;
     let ready = nodes.iter().filter(|n| is_ready(n)).count();
     Ok((nodes, ready))

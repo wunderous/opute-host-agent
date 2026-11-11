@@ -678,7 +678,7 @@ fn decode_list<T>(
 
 /// `json.NewDecoder(r).Decode(&v)` into a generic value: the first JSON
 /// value, with the decoder's errors.
-pub(super) fn decode_first(body: &[u8]) -> Result<J, String> {
+pub(crate) fn decode_first(body: &[u8]) -> Result<J, String> {
     let end = crate::gojson::first_value(body)?;
     let node = crate::gojson::parse(&body[..end]).map_err(|_| "unexpected EOF".to_string())?;
     Ok(go_any(&node))
