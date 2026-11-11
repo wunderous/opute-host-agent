@@ -32,6 +32,9 @@ Q17_SPEC = "openspec/changes/k3s-quorum-recovery-retirement/specs/k3s-membership
 ENDPOINT_SPEC = "openspec/changes/typed-ha-endpoint/specs/typed-ha-endpoint/spec.md"
 HOST = "k3s.e2e.test"
 SEAM_SPEC = "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
+SECRET_KEYS_SPEC = "openspec/changes/implement-list-secret-keys/specs/list-secret-keys/spec.md"
+CONFIGMAP_KEYS_SPEC = "openspec/changes/list-configmap-keys/specs/list-configmap-keys/spec.md"
+INSPECT_SPEC = "openspec/changes/inspect-workload/specs/inspect-workload/spec.md"
 K = "opute.capability.kubernetes."
 VERSION = "v1.31.8+k3s1"  # the page's test record
 PROVIDER = "/opt/opute-e2e/providers/opute-provider-k3s"
@@ -322,10 +325,26 @@ def workload_steps() -> list[dict]:
              until={"path": "response.body.result.structuredContent.exitCode", "in": [0]}, timeout=480, interval=5),
         *task("secret", "put_cluster_secret",
               {"uri": CLUSTER, "namespace": "e2e-web", "name": "e2e-secret", "data": {"apiKey": "${SECRET:apiValue}"}}),
-        call("secretKeysTool", "list_secret_keys", {"uri": CLUSTER, "namespace": "e2e-web", "secretName": "e2e-secret"}),
-        call("secretKeys", "exec_cluster_command",
-             {"uri": CLUSTER, "command": "get",
-              "args": ["secret", "e2e-secret", "-n", "e2e-web", "-o", "go-template={{range $k, $v := .data}}{{$k}} {{end}}"]}),
+        call("secretKeys", "list_secret_keys", {"uri": CLUSTER, "namespace": "e2e-web", "secretName": "e2e-secret"}),
+        call("secretMissing", "list_secret_keys", {"uri": CLUSTER, "namespace": "e2e-web", "secretName": "e2e-none"}),
+        # D33, D34: a ConfigMap, and env on the Deployment: one literal, one from the secret
+        call("configMap", "exec_cluster_command",
+             {"uri": CLUSTER, "command": "create",
+              "args": ["configmap", "e2e-config", "-n", "e2e-web", "--from-literal=mode=e2e-config-value",
+                       "--from-literal=level=info"]}),
+        call("configKeys", "list_configmap_keys", {"uri": CLUSTER, "namespace": "e2e-web", "configMapName": "e2e-config"}),
+        call("envLiteral", "exec_cluster_command",
+             {"uri": CLUSTER, "command": "set",
+              "args": ["env", "deployment/e2e-web-podinfo", "-n", "e2e-web", "E2E_LITERAL=e2e-literal-value"]}),
+        call("envFromSecret", "exec_cluster_command",
+             {"uri": CLUSTER, "command": "set",
+              "args": ["env", "deployment/e2e-web-podinfo", "-n", "e2e-web", "--from=secret/e2e-secret",
+                       "--prefix=E2E_"]}),
+        call("rolloutEnv", "exec_cluster_command",
+             {"uri": CLUSTER, "command": "rollout",
+              "args": ["status", "deployment/e2e-web-podinfo", "-n", "e2e-web", "--timeout=60s"]},
+             until={"path": "response.body.result.structuredContent.exitCode", "in": [0]}, timeout=480, interval=5),
+        call("inspect", "inspect_workload", {"uri": CLUSTER, "namespace": "e2e-web", "workloadName": "e2e-web-podinfo"}),
         call("pods", "exec_cluster_command",
              {"uri": CLUSTER, "command": "exec",
               "args": ["-n", "e2e-web", "deployment/e2e-web-podinfo", "--", "sh", "-c", "echo e2e-exec-ok"]}),
@@ -346,7 +365,6 @@ def workload_requirements() -> list[dict]:
             direct("chart", "structuredContent.status", equals="installing"),
             direct("rollout", "structuredContent.exitCode", equals=0),
             res("secret", "isError", equals=False), res("secret", "structuredContent.configured", equals=True),
-            direct("secretKeys", "structuredContent.stdout", equals="apiKey "),
             direct("pods", "structuredContent.exitCode", equals=0),
             direct("pods", "structuredContent.stdout", equals="e2e-exec-ok\n"),
             direct("services", "structuredContent.services[0].name", equals="e2e-web-podinfo"),
@@ -357,14 +375,31 @@ def workload_requirements() -> list[dict]:
             res("secret", "content[0].text", equals="Kubernetes Secret configured."),
             res("secret", "structuredContent.data", absent=True),
             scenario="Secret-bearing input: the secret's value is in no result; its key is read back without it"),
-        req(SEAM_SPEC, "Every capability has its three roles",
-            direct("secretKeysTool", "isError", equals=True),
-            direct("secretKeysTool", "structuredContent.code", equals="not_implemented"),
-            direct("secretKeysTool", "structuredContent.owner", equals="capability"),
-            scenario="The goal's pass check (list_secret_keys shows the key) cannot pass: list_secret_keys is a "
-                     "definition without a provider, registered unported in evidence/seam/final/report.json, and "
-                     "fails closed with not_implemented as the spec requires. An owned gap, not added here; the "
-                     "key is read back through exec_cluster_command"),
+        req(SECRET_KEYS_SPEC, "list_secret_keys returns a Secret's key names, never values",
+            direct("secretKeys", "structuredContent.keys", equals=["apiKey"]),
+            direct("secretKeys", "structuredContent.uri", equals=CLUSTER),
+            direct("secretMissing", "isError", equals=True),
+            direct("secretMissing", "content[0].text", matches="e2e-none"),
+            scenario="The goal's pass check (D32, answering Q18): the put secret's key is listed by name, never "
+                     "its value; an unknown Secret is a typed error naming it"),
+        req(CONFIGMAP_KEYS_SPEC, "list_configmap_keys returns a ConfigMap's key names, never values",
+            direct("configMap", "structuredContent.exitCode", equals=0),
+            direct("configKeys", "structuredContent.keys", equals=["level", "mode"]),
+            direct("configKeys", "content[0].text", matches="^(?![\\s\\S]*e2e-config-value)"),
+            scenario="A ConfigMap's keys come back sorted, without its values (D33)"),
+        req(INSPECT_SPEC, "inspect_workload returns a fixed projection of one Deployment",
+            direct("rolloutEnv", "structuredContent.exitCode", equals=0),
+            direct("inspect", "structuredContent.uri", equals=CLUSTER),
+            direct("inspect", "structuredContent.workload.name", equals="e2e-web-podinfo"),
+            direct("inspect", "structuredContent.workload.namespace", equals="e2e-web"),
+            direct("inspect", "structuredContent.workload.replicas", equals=2),
+            direct("inspect", "structuredContent.workload.readyReplicas", equals=2),
+            direct("inspect", "structuredContent.workload.containers[0].name", equals="podinfo"),
+            direct("inspect", "content[0].text", matches="E2E_LITERAL"),
+            direct("inspect", "content[0].text", matches="secretKeyRef"),
+            direct("inspect", "content[0].text", matches="^(?![\\s\\S]*e2e-literal-value)"),
+            scenario="The Deployment's replicas, readiness and containers come back; its env names a literal "
+                     "variable and a secret reference without either value (D34)"),
     ]
 
 
@@ -373,8 +408,8 @@ def j2() -> dict:
         "e2e3a.workload",
         "Workload on the HA cluster built as in e2e3a.build: install the podinfo Helm chart as a NodePort service "
         "(install_cluster_package), put a secret, exec in a pod, list services, and request the service from the VM "
-        "on every server. list_secret_keys is published but unported, so the key is read back with a template "
-        "that prints keys only.",
+        "on every server; then read it back by name only: the secret's and a ConfigMap's keys, and the "
+        "Deployment with env names but no values (D32-D34).",
         build_requirements() + workload_requirements(), build_steps() + workload_steps(), cleanup_steps())
 
 

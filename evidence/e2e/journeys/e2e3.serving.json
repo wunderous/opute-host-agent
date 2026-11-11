@@ -100,6 +100,61 @@
    "scenario": "On a system-unit agent, reconcile_serving_assignment launches the process under the user service manager with the user bus, reports it started, and it listens (D28)"
   },
   {
+   "spec": "openspec/changes/recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md",
+   "requirement": "The legacy LLM wrappers act on the shared Ollama runtime",
+   "pass": [
+    {
+     "step": "removeModel",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.structuredContent.removed",
+     "equals": false
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.structuredContent.purged",
+     "equals": false
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.structuredContent.shared",
+     "equals": true
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.structuredContent.reason",
+     "matches": "shared host state"
+    },
+    {
+     "step": "configureRuntime",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "configureRuntime",
+     "path": "response.body.result.content[0].text",
+     "matches": "host-wide and pinned"
+    },
+    {
+     "step": "ollamaUntouched",
+     "path": "stdout",
+     "equals": "0\n0\n"
+    },
+    {
+     "step": "modelUp",
+     "path": "stdout",
+     "equals": "1\n"
+    }
+   ],
+   "scenario": "remove_local_llm_model removes nothing and reports the shared model retained; configure_local_llm_runtime refuses with the typed error; neither starts, stops or configures a runtime (no Ollama unit or listener appears). The dev VM has no Ollama, so the 'still listed' half of the scenario is not observed here"
+  },
+  {
    "spec": "openspec/specs/host-agent-contract/spec.md",
    "requirement": "Durable and redacted observations",
    "pass": [
@@ -350,6 +405,34 @@
   {
    "id": "tokenRows",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py contains /home/opute/.config/opute/instances/standalone/state/state.db '${SECRET:gatewayToken}'"
+  },
+  {
+   "id": "removeModel",
+   "mcp": "tools/call",
+   "tool": "remove_local_llm_model",
+   "arguments": {
+    "modelRef": "e2e-model",
+    "purge": true
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "configureRuntime",
+   "mcp": "tools/call",
+   "tool": "configure_local_llm_runtime",
+   "arguments": {
+    "numParallel": 4,
+    "maxLoadedModels": 1
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "ollamaUntouched",
+   "guest": "systemctl list-units --all --plain --no-legend 'ollama*' | wc -l; ss -ltnH 'sport = :11434' | wc -l"
   },
   {
    "id": "removeGateway",
