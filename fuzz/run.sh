@@ -15,8 +15,11 @@ fi
 # Build once from the agent's own lock file, then run the built binaries: a
 # workspace change during the run cannot rebuild a target halfway.
 cp Cargo.lock fuzz/Cargo.lock
-cargo fuzz build -s none --release || exit 2
-bin=fuzz/target/x86_64-unknown-linux-gnu/release
+# cargo-fuzz defaults to the triple it was itself built for (a musl build in
+# CI); build for the host toolchain's triple instead.
+host=$(rustc -vV | sed -n 's/^host: //p')
+cargo fuzz build -s none --release --target "$host" || exit 2
+bin=fuzz/target/$host/release
 status=0
 mkdir -p fuzz/artifacts
 for t in "${targets[@]}"; do

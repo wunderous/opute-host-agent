@@ -588,8 +588,9 @@ mod tests {
     #[test]
     fn oversized_mcp_bodies_are_refused_without_reading_them() {
         static TOKEN_WIRE: OnceLock<Wire> = OnceLock::new();
-        let wire =
-            TOKEN_WIRE.get_or_init(|| compose_wire("wire-token", &[("MCP_AUTH_TOKEN", "test-bootstrap-token")]));
+        let wire = TOKEN_WIRE.get_or_init(|| {
+            compose_wire("wire-token", &[("MCP_AUTH_TOKEN", "test-bootstrap-token")])
+        });
         let send = |declared: usize, sent: usize| {
             let mut s = std::net::TcpStream::connect(wire.addr).unwrap();
             s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
@@ -629,7 +630,10 @@ mod tests {
         std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755)).unwrap();
         static HANG_WIRE: OnceLock<Wire> = OnceLock::new();
         let wire = HANG_WIRE.get_or_init(|| {
-            compose_wire("wire-hang", &[("OPUTE_INCUS_BINARY_PATH", stub.to_str().unwrap())])
+            compose_wire(
+                "wire-hang",
+                &[("OPUTE_INCUS_BINARY_PATH", stub.to_str().unwrap())],
+            )
         });
         let addr = wire.addr;
         // A health check that waits on the hanging command.
@@ -642,11 +646,15 @@ mod tests {
         std::thread::sleep(Duration::from_millis(300));
         let mut s = std::net::TcpStream::connect(addr).unwrap();
         s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-        s.write_all(b"POST /mcp HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 2\r\n\r\n{}").unwrap();
+        s.write_all(b"POST /mcp HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 2\r\n\r\n{}")
+            .unwrap();
         let mut reply = [0u8; 64];
         let n = s.read(&mut reply).unwrap_or(0);
         let reply = String::from_utf8_lossy(&reply[..n]);
-        assert!(reply.starts_with("HTTP/1.1 401"), "no answer while /health waited: {reply:?}");
+        assert!(
+            reply.starts_with("HTTP/1.1 401"),
+            "no answer while /health waited: {reply:?}"
+        );
     }
 
     /// evidence/hardening/entry-points.json names every target, and every
