@@ -128,7 +128,6 @@ fn compose_wire(name: &str, extra: &[(&str, &str)]) -> Wire {
             ("XDG_CONFIG_HOME", at("xdg")),
             ("PATH", empty_path.to_string_lossy().into_owned()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-fuzz".into()),
-            ("OPUTE_AGENT_MODE", "standalone".into()),
             ("OPUTE_STANDALONE_STATE_DIR", at("state")),
             ("HOST_MCP_BIND_HOST", "127.0.0.1".into()),
             ("HOST_MCP_PORT", "1".into()),
@@ -139,9 +138,8 @@ fn compose_wire(name: &str, extra: &[(&str, &str)]) -> Wire {
         }
         let runtime = crate::app::new_runtime(&env).expect("fuzz runtime");
         let cfg = runtime.config.clone();
-        let authz =
-            crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.opute_client_secret)
-                .expect("fuzz authz");
+        let authz = crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.oauth_clients)
+            .expect("fuzz authz");
         let server =
             crate::app::http_server(&cfg, authz, runtime.state.clone()).expect("fuzz server");
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind fuzz listener");
@@ -237,7 +235,7 @@ pub fn tool_arguments(data: &[u8]) {
     let Some((&pick, rest)) = data.split_first() else {
         return;
     };
-    let snapshot = crate::catalog::for_mode(pick & 0x80 == 0);
+    let snapshot = crate::catalog::served();
     if snapshot.tools.is_empty() {
         return;
     }
@@ -262,7 +260,7 @@ pub fn plan_document(data: &[u8]) {
     let Ok(doc) = crate::plan::schema::decode_bytes(data) else {
         return;
     };
-    let snapshot = crate::catalog::for_mode(true);
+    let snapshot = crate::catalog::served();
     let capabilities = crate::plan_mcp::capabilities_from_snapshot(snapshot);
     if crate::plan::schema::validate(&doc, &capabilities, &snapshot.revision).is_ok() {
         let _ = crate::plan::schema::document_hash(&doc);
@@ -436,7 +434,8 @@ pub fn command_output(data: &[u8]) {
 pub fn authz_store(data: &[u8]) {
     let scratch = Scratch::new();
     std::fs::write(scratch.0.join("authz.sqlite"), data).expect("write authz.sqlite");
-    if let Ok(mut store) = crate::store::AuthzStore::open(&scratch.0, "fuzz-secret") {
+    if let Ok(mut store) = crate::store::AuthzStore::open(&scratch.0, &["fuzz-client".to_string()])
+    {
         store.close();
     }
 }

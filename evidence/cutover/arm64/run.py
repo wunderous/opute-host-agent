@@ -8,7 +8,7 @@ under qemu-system-aarch64 (TCG, -cpu cortex-a72, no KVM; -cpu max
 # never passed the firmware in 20 min), with a fresh cloud-init seed and
 ssh key. In the guest, as the image's unprivileged `debian` user, it
 verifies host-agent-linux-arm64.gz against the release's SHA256SUMS,
-installs it, starts `serve --mode standalone --transport http` with a test
+installs it, starts `serve --transport http` with a test
 token, answers /health, initialize-free tools/list and get_host_info over
 MCP, stops it with SIGTERM, starts and stops it again, and uninstalls it.
 Nothing outside .parity/ on the host is touched; the VM is discarded.
@@ -115,11 +115,10 @@ def main() -> int:
                             str(args.release / "host-agent-linux-arm64.gz"), str(args.release / "SHA256SUMS"),
                             str(REPO / "evidence/e2e/mcpwire.py"), "debian@127.0.0.1:/tmp/"], check=True)
             bin_ = "$HOME/.local/share/opute/opute-host-agent"
-            env = (f"OPUTE_REMOTE_AGENT_ID=arm64-clean MCP_AUTH_TOKEN={token} HOST_MCP_PORT=3014 "
-                   "OPUTE_AGENT_MODE=standalone")
+            env = (f"OPUTE_REMOTE_AGENT_ID=arm64-clean MCP_AUTH_TOKEN={token} HOST_MCP_PORT=3014")
             # `cd ... ;` not `cd ... &&`: an `&&` list sent to the background is a subshell, so $! would
             # name the subshell rather than the agent. The launch must leave its own pid alive.
-            serve = (f"cd $HOME; {env} nohup {bin_} serve --mode standalone --transport http "
+            serve = (f"cd $HOME; {env} nohup {bin_} serve --transport http "
                      "</dev/null >/tmp/agent.log 2>&1 & echo $! > /tmp/agent.pid; for i in $(seq 120); do "
                      "curl -fsS --max-time 5 http://127.0.0.1:3014/health >/dev/null 2>&1 && break; sleep 1; done; "
                      "curl -fsS --max-time 5 http://127.0.0.1:3014/health && sleep 2 && kill -0 $(cat /tmp/agent.pid) && "
@@ -148,7 +147,7 @@ def main() -> int:
             step("install", f"install -d $HOME/.local/share/opute && gzip -dc /tmp/host-agent-linux-arm64.gz > {bin_} "
                             f"&& chmod 0755 {bin_} && file -b {bin_} | cut -d, -f2 && {bin_} --version",
                  lambda o: "ARM aarch64" in o)
-            step("help", f"cd $HOME && {bin_} help", lambda o: "Standalone mode never requires Opute Platform." in o)
+            step("help", f"cd $HOME && {bin_} help", lambda o: o.startswith("Usage: opute-host-agent"))
             step("launch", serve, lambda o: '"agentId":"arm64-clean"' in o and o.endswith("alive\n"), timeout=300)
             step("afterLaunch", observe)
             step("mcp", mcp, lambda o: (lambda d: d["listStatus"] == 200 and d["tools"] > 0 and d["callStatus"] == 200

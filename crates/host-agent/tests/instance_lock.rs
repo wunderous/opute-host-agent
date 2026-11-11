@@ -28,7 +28,6 @@ impl AgentEnv {
             .env("PATH", std::env::var("PATH").unwrap_or_default())
             .env("HOME", home)
             .env("XDG_CONFIG_HOME", home.join(".config"))
-            .env("OPUTE_AGENT_MODE", "standalone")
             .env("OPUTE_REMOTE_AGENT_ID", "instance-lock-test-agent")
             .env("OPUTE_INFRA_PROVIDER_ID", "incus")
             .env(

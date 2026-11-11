@@ -25,7 +25,7 @@ use std::sync::{atomic::AtomicBool, Arc};
 
 const GAPS: &str = include_str!("../seam-gaps.json");
 
-fn server(dir: &std::path::Path, mode: &str) -> Arc<Server> {
+fn server(dir: &std::path::Path) -> Arc<Server> {
     let empty = dir.join("empty-path");
     std::fs::create_dir_all(&empty).unwrap();
     let env = crate::config::Env::from_pairs([
@@ -34,8 +34,7 @@ fn server(dir: &std::path::Path, mode: &str) -> Arc<Server> {
         ("XDG_RUNTIME_DIR", dir.join("run").to_str().unwrap()),
         ("PATH", empty.to_str().unwrap()),
         ("OPUTE_REMOTE_AGENT_ID", "seam-verifier"),
-        ("OPUTE_AGENT_MODE", mode),
-        ("OPUTE_STANDALONE_ALLOW_MUTATIONS", "true"),
+        ("OPUTE_HOST_ALLOW_MUTATIONS", "true"),
         (
             "OPUTE_STANDALONE_STATE_DIR",
             dir.join("state").to_str().unwrap(),
@@ -59,7 +58,7 @@ fn server(dir: &std::path::Path, mode: &str) -> Arc<Server> {
         cfg.standalone_state_dir.clone()
     };
     std::fs::create_dir_all(&authz_dir).unwrap();
-    let authz = crate::store::AuthzStore::open(&authz_dir, &cfg.opute_client_secret).unwrap();
+    let authz = crate::store::AuthzStore::open(&authz_dir, &cfg.oauth_clients).unwrap();
     crate::app::compose(&cfg, authz, runtime.state.clone(), None).unwrap()
 }
 
@@ -152,9 +151,11 @@ pub(crate) fn report() -> J {
         .map(|d| d.name.clone())
         .collect();
     let mut problems = Vec::new();
-    for mode in ["platform", "standalone"] {
+    // One served profile; the report keeps Go's `standalone` key, whose
+    // captured tools/list it is compared with.
+    for mode in ["standalone"] {
         let dir = tempfile::tempdir().unwrap();
-        let server = server(dir.path(), mode);
+        let server = server(dir.path());
         let published: BTreeSet<String> = server
             .catalog
             .snapshot()
@@ -170,7 +171,7 @@ pub(crate) fn report() -> J {
         let mounts = &server.providers.activation.mounts;
         let mounted =
             mounts.generation_services(&crate::builtin::provider_id(), crate::builtin::GENERATION);
-        if mode == "platform" {
+        {
             for service in &mounted {
                 services.push(json!({
                     "key": service.key,

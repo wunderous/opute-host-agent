@@ -183,13 +183,10 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         Err(e) => return ToolCallOutcome::Result(error_result(e)),
     };
     // Decision D10 (standalone-read-only-gate): with mutations disabled,
-    // standalone runs read tools only.
-    if server.standalone
-        && !server.allow_mutations
-        && !catalog::standalone_read_only(&catalog_snapshot, &name)
-    {
+    // the agent runs read tools only.
+    if !server.allow_mutations && !catalog::standalone_read_only(&catalog_snapshot, &name) {
         return ToolCallOutcome::Result(error_result(
-            "standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+            "mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
         ));
     }
     // D31: with the state directory full, an effectful call is refused before
@@ -1832,8 +1829,8 @@ mod tests {
     #[test]
     fn every_task_aware_tools_write_only_fields_are_redacted() {
         let mut checked = 0;
-        for standalone in [false, true] {
-            let snapshot = catalog::for_mode(standalone);
+        {
+            let snapshot = crate::catalog::served();
             for descriptor in &snapshot.tools {
                 if !catalog::is_task_aware(&descriptor.name) {
                     continue;

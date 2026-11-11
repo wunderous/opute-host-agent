@@ -1,7 +1,7 @@
 //! MCP-layer glue for the `host-recipe.v1` host-local family
 //! (`internal/hostmcp/host_recipe_run.go`): sourcing with a pinned hash,
 //! input resolution, compatibility, and the refusal to execute anything the
-//! contract says belongs to the Platform. Execution itself is the exact
+//! contract says belongs to a distributed coordinator. Execution itself is the exact
 //! same durable `host-plan.v1` runner every other recipe kind uses
 //! (`plan_mcp::handle_run_host_plan_with_metadata`), so idempotency,
 //! readiness, recovery and resume are the existing ones rather than a
@@ -149,7 +149,7 @@ fn load_host_local_recipe(
     let sourced = host_recipe::load_host(&source_request(args, require_hash))?;
     if !sourced.document.execution.is_host_local() {
         return Err(format!(
-            "host recipe \"{}\" declares coordinator={}/mode={}; submit it to the Platform coordinator, which owns the wait fences, resume revisions and cross-host dispatch a Host Agent cannot provide",
+            "host recipe \"{}\" declares coordinator={}/mode={}; submit it to its distributed coordinator, which owns the wait fences, resume revisions and cross-host dispatch a Host Agent cannot provide",
             sourced.document.recipe_id, sourced.document.execution.coordinator, sourced.document.execution.mode
         ));
     }
@@ -242,7 +242,6 @@ mod tests {
             ("HOME", dir.join("home").to_str().unwrap()),
             ("XDG_CONFIG_HOME", dir.join("xdg").to_str().unwrap()),
             ("OPUTE_REMOTE_AGENT_ID", "agent-under-test"),
-            ("OPUTE_AGENT_MODE", "standalone"),
             (
                 "OPUTE_STANDALONE_STATE_DIR",
                 dir.join("state").to_str().unwrap(),
@@ -253,8 +252,7 @@ mod tests {
         let runtime = crate::app::new_runtime(&env).unwrap();
         let cfg = runtime.config.clone();
         let authz =
-            crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.opute_client_secret)
-                .unwrap();
+            crate::store::AuthzStore::open(&cfg.standalone_state_dir, &cfg.oauth_clients).unwrap();
         crate::app::http_server(&cfg, authz, runtime.state.clone()).unwrap()
     }
 

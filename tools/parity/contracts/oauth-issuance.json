@@ -12,7 +12,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -49,7 +52,7 @@
       "form": {
        "grant_type": "client_credentials",
        "resource": "http://127.0.0.1:${PORT}/mcp",
-       "client_id": "opute-mcp-host"
+       "client_id": "contract-client"
       }
      },
      "expect": {
@@ -157,7 +160,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -231,7 +237,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -252,7 +261,10 @@
     {
      "as": "restart",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -353,7 +365,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -374,7 +389,10 @@
     {
      "as": "restart",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -476,7 +494,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -584,7 +605,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -621,11 +645,11 @@
     {
      "as": "platformFile",
      "file": {
-      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+      "path": "${SANDBOX}/state/credentials/contract-client.json"
      },
      "expect": {
       "mode": "0o600",
-      "json.client_id": "opute-mcp-host",
+      "json.client_id": "contract-client",
       "json.client_secret": {
        "$re": "^ohs_[0-9a-f]{64}$"
       }
@@ -650,7 +674,7 @@
     {
      "as": "platformHash",
      "query": {
-      "sql": "SELECT secret_hash FROM clients WHERE client_id='opute-mcp-host'"
+      "sql": "SELECT secret_hash FROM clients WHERE client_id='contract-client'"
      },
      "expect": {
       "value": {
@@ -696,7 +720,7 @@
       "form": {
        "grant_type": "client_credentials",
        "resource": "http://127.0.0.1:${PORT}/mcp",
-       "client_id": "opute-mcp-host",
+       "client_id": "contract-client",
        "client_secret": "${PLATFORM_SECRET}"
       }
      },
@@ -719,87 +743,6 @@
    ]
   },
   {
-   "id": "credentials.operator-secret",
-   "requirement": "Provisioned credentials for built-in machine clients",
-   "specScenario": "Operator-configured Platform secret wins",
-   "steps": [
-    {
-     "as": "start",
-     "serve": {
-      "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_OAUTH_CLIENT_SECRET": "contract-operator-secret"
-      }
-     },
-     "expect": {
-      "ready": true
-     }
-    },
-    {
-     "as": "noPlatformFile",
-     "file": {
-      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
-     },
-     "expect": {
-      "exists": false
-     }
-    },
-    {
-     "as": "providerFile",
-     "file": {
-      "path": "${SANDBOX}/state/credentials/host-agent-provider.json"
-     },
-     "expect": {
-      "mode": "0o600"
-     }
-    },
-    {
-     "as": "operatorSecret",
-     "http": {
-      "method": "POST",
-      "path": "/oauth/token",
-      "form": {
-       "grant_type": "client_credentials",
-       "resource": "http://127.0.0.1:${PORT}/mcp"
-      },
-      "basic": [
-       "opute-mcp-host",
-       "contract-operator-secret"
-      ]
-     },
-     "expect": {
-      "status": 200
-     }
-    },
-    {
-     "as": "otherSecret",
-     "http": {
-      "method": "POST",
-      "path": "/oauth/token",
-      "form": {
-       "grant_type": "client_credentials",
-       "resource": "http://127.0.0.1:${PORT}/mcp"
-      },
-      "basic": [
-       "opute-mcp-host",
-       "contract-operator-secretx"
-      ]
-     },
-     "expect": {
-      "status": 401,
-      "json.error": "invalid_client",
-      "headers.www-authenticate": {
-       "$prefix": "Basic"
-      },
-      "headers.cache-control": "no-store",
-      "json.access_token": {
-       "$absent": true
-      }
-     }
-    }
-   ]
-  },
-  {
    "id": "credentials.rotation",
    "requirement": "Provisioned credentials for built-in machine clients",
    "specScenario": "Rotation revokes outstanding tokens",
@@ -807,7 +750,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -993,7 +939,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -1036,7 +985,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -1088,7 +1040,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -1482,7 +1437,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -1589,7 +1547,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -1717,7 +1678,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -1935,7 +1899,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2156,7 +2123,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2347,7 +2317,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2501,7 +2474,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2680,7 +2656,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2793,7 +2772,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2907,7 +2889,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -2994,7 +2979,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -3178,7 +3166,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -3193,7 +3184,7 @@
      "sql": {
       "statements": [
        "DELETE FROM schema_migrations",
-       "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('a81d61b611027119cbfb4afba49f74acfc20f7d6ba3ace2bb997c2331591f6b3', 'opute-mcp-host', 'http://127.0.0.1:${PORT}/mcp', 'mcp', 4102444800, 0, 1)"
+       "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES('a81d61b611027119cbfb4afba49f74acfc20f7d6ba3ace2bb997c2331591f6b3', 'contract-client', 'http://127.0.0.1:${PORT}/mcp', 'mcp', 4102444800, 0, 1)"
       ]
      }
     },
@@ -3209,7 +3200,10 @@
     {
      "as": "upgrade",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -3286,7 +3280,10 @@
     {
      "as": "start",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -3306,7 +3303,7 @@
     {
      "as": "platformBefore",
      "file": {
-      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+      "path": "${SANDBOX}/state/credentials/contract-client.json"
      },
      "capture": {
       "PBEFORE": {
@@ -3355,7 +3352,10 @@
     {
      "as": "restart",
      "serve": {
-      "profile": "standalone"
+      "profile": "standalone",
+      "env": {
+       "OPUTE_OAUTH_CLIENTS": "contract-client"
+      }
      },
      "expect": {
       "ready": true
@@ -3386,7 +3386,7 @@
     {
      "as": "platformAfter",
      "file": {
-      "path": "${SANDBOX}/state/credentials/opute-mcp-host.json"
+      "path": "${SANDBOX}/state/credentials/contract-client.json"
      },
      "expect": {
       "text": "${PBEFORE}"
