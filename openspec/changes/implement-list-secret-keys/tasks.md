@@ -5,9 +5,9 @@
 
 ## 2. Implementation
 
-- [ ] 2.1 A built-in Service Provider on the D14 seam; the seam verifier reports the tool compliant.
-- [ ] 2.2 Unit tests for the outcomes below, failing first.
-- [ ] 2.3 Its entry point in `evidence/hardening/entry-points.json` with a fuzz target or property.
+- [x] 2.1 A built-in Service Provider on the D14 seam; the seam verifier reports the tool compliant.
+- [x] 2.2 Unit tests for the outcomes below, failing first.
+- [x] 2.3 Its entry point in `evidence/hardening/entry-points.json` with a fuzz target or property.
 
 ## 3. Evidence
 

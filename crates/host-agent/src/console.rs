@@ -23,11 +23,11 @@ const ANSWER_WAIT: Duration = Duration::from_millis(500);
 const SETTLE: Duration = Duration::from_millis(150);
 
 #[derive(Default)]
-struct Output {
-    pending: Vec<u8>,
+pub(crate) struct Output {
+    pub(crate) pending: Vec<u8>,
     /// The console process has exited (and is about to be, or has been,
     /// reaped): it must not be signalled any more.
-    exited: bool,
+    pub(crate) exited: bool,
 }
 
 struct Session {
@@ -59,35 +59,46 @@ impl Session {
         }
     }
 
-    /// The output since the last read, and whether the process has exited.
-    /// An incomplete UTF-8 sequence at the end waits for its remaining bytes
-    /// while the console still runs.
     fn take(&self) -> (String, bool) {
-        let mut output = self.output.lock().unwrap();
-        let keep = if output.exited {
-            0
-        } else {
-            incomplete_tail(&output.pending)
-        };
-        let cut = output.pending.len() - keep;
-        let tail = output.pending.split_off(cut);
-        let text =
-            String::from_utf8_lossy(&std::mem::replace(&mut output.pending, tail)).into_owned();
-        (text, output.exited)
+        drain(&mut self.output.lock().unwrap())
     }
+}
+
+/// The output since the last read, and whether the process has exited. An
+/// incomplete UTF-8 sequence at the end waits for its remaining bytes while
+/// the console still runs.
+pub(crate) fn drain(output: &mut Output) -> (String, bool) {
+    let keep = if output.exited {
+        0
+    } else {
+        incomplete_tail(&output.pending)
+    };
+    let tail = output.pending.split_off(output.pending.len() - keep);
+    let text = String::from_utf8_lossy(&std::mem::replace(&mut output.pending, tail)).into_owned();
+    (text, output.exited)
 }
 
 /// The length of a trailing UTF-8 sequence that more bytes could complete.
 fn incomplete_tail(bytes: &[u8]) -> usize {
-    match std::str::from_utf8(bytes) {
-        Err(e) if e.error_len().is_none() => bytes.len() - e.valid_up_to(),
-        _ => 0,
+    for back in 1..=bytes.len().min(3) {
+        let lead = bytes[bytes.len() - back];
+        if lead & 0xC0 == 0x80 {
+            continue;
+        }
+        let needed = match lead {
+            0xC2..=0xDF => 2,
+            0xE0..=0xEF => 3,
+            0xF0..=0xF4 => 4,
+            _ => 1,
+        };
+        return if needed > back { back } else { 0 };
     }
+    0
 }
 
 /// Appends console output, keeping the newest `BUFFER` bytes, never starting
 /// inside a UTF-8 sequence.
-fn append(pending: &mut Vec<u8>, chunk: &[u8]) {
+pub(crate) fn append(pending: &mut Vec<u8>, chunk: &[u8]) {
     pending.extend_from_slice(chunk);
     if pending.len() > BUFFER {
         let mut drop = pending.len() - BUFFER;
@@ -323,6 +334,8 @@ mod tests {
         );
         assert_eq!(incomplete_tail("ab\u{e9}".as_bytes()), 0);
         assert_eq!(incomplete_tail(&"ab\u{e9}".as_bytes()[..3]), 1);
+        assert_eq!(incomplete_tail(b"\xff ok\xe2\x82"), 2, "an earlier invalid byte does not matter");
+        assert_eq!(incomplete_tail(b"ok\xe2\x82\xac"), 0);
         assert_eq!(cells(0.0), None);
         assert_eq!(cells(-3.0), None);
         assert_eq!(cells(120.0), Some(120));

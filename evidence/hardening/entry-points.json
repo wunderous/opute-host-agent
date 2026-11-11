@@ -194,7 +194,7 @@
     {
       "id": "incus-output",
       "source": "incus list --format json",
-      "code": "incus::decode_list, ListItem::config_value",
+      "code": "incus::decode_list, ListItem::config_value; incusops::instance_devices -> bridged_nic_needed, nic_removal_needed (incus query /1.0/instances/<name>, D35, D36)",
       "fuzz": [
         "incus_output"
       ],
@@ -224,12 +224,24 @@
     {
       "id": "provider-command-output",
       "source": "k3s, kubectl and crictl inside guests; cloudflared and warp-cli; remote MCP endpoints the agent probes",
-      "code": "providers::k3s::membership::parse_native_membership, parse_cluster_node_snapshot, raw_url_decode; providers::k3s::storage::keep_set_from_pod_json, parse_cri_images, parse_cri_containers, parse_df_bytes, parse_du_line; providers::cloudflare::api::decode_first; providers::cloudflare::mesh::find_mesh_ip, find_mesh_interface; mcpprobe::decode; clusterops::privileged",
+      "code": "providers::k3s::membership::parse_native_membership, parse_cluster_node_snapshot, raw_url_decode; providers::k3s::storage::keep_set_from_pod_json, parse_cri_images, parse_cri_containers, parse_df_bytes, parse_du_line; providers::cloudflare::api::decode_first; providers::cloudflare::mesh::find_mesh_ip, find_mesh_interface; mcpprobe::decode; clusterops::privileged; clusterops::object_keys (key names only, D32, D33) and project_deployment (kubectl get deployment -o json, D34)",
       "fuzz": [
         "command_output"
       ],
       "properties": [
-        "diagnostics_never_show_the_secret"
+        "diagnostics_never_show_the_secret",
+        "workload_projection_never_shows_a_value"
+      ]
+    },
+    {
+      "id": "console-output",
+      "source": "the guest behind an instance console: whatever it writes to its serial console, and whoever can log in to it",
+      "code": "console::Consoles reader thread -> console::append (64 KiB bound) and drain (UTF-8 boundaries), returned by send_console_input (D38, D39)",
+      "fuzz": [
+        "console_output"
+      ],
+      "properties": [
+        "console_reads_lose_nothing_within_the_bound"
       ]
     }
   ],

@@ -36,6 +36,7 @@ pub const TARGETS: &[Target] = &[
     ("provider_result", provider_result),
     ("incus_output", incus_output),
     ("command_output", command_output),
+    ("console_output", console_output),
     ("authz_store", authz_store),
 ];
 
@@ -365,13 +366,43 @@ pub fn provider_result(data: &[u8]) {
     }
 }
 
-/// `incus list --format json` output.
+/// `incus list --format json` output, and an instance's devices as
+/// `incus query` returns them (D35, D36).
 pub fn incus_output(data: &[u8]) {
     if let Ok(items) = crate::incus::decode_list(&text(data)) {
         for item in &items {
             let _ = item.config_value("limits.memory");
         }
     }
+    if let Ok(doc) = serde_json::from_slice::<J>(data) {
+        let devices = |key: &str| doc.get(key).and_then(J::as_object).cloned().unwrap_or_default();
+        let (own, expanded) = (devices("devices"), devices("expanded_devices"));
+        for device in expanded.keys().chain(own.keys()) {
+            let _ = crate::incusops::bridged_nic_needed(&expanded, "vm", device, "br0");
+            let _ = crate::incusops::nic_removal_needed(&own, &expanded, "vm", device);
+        }
+    }
+}
+
+/// A guest's console output (D39), cut into reads by the input's own bytes.
+/// Oracle: the buffer never exceeds 64 KiB, and every read is whole UTF-8
+/// once the console has exited.
+pub fn console_output(data: &[u8]) {
+    use crate::console::{append, drain, Output, BUFFER};
+    let mut output = Output::default();
+    let mut rest = data;
+    while let Some((&cut, tail)) = rest.split_first() {
+        let (chunk, next) = tail.split_at((cut as usize).min(tail.len()));
+        append(&mut output.pending, chunk);
+        assert!(output.pending.len() <= BUFFER, "console buffer over its bound");
+        if cut % 3 == 0 {
+            drain(&mut output);
+        }
+        rest = next;
+    }
+    output.exited = true;
+    let (_, closed) = drain(&mut output);
+    assert!(closed && output.pending.is_empty());
 }
 
 /// Output of every other host command, registry or API the agent reads,
@@ -412,7 +443,13 @@ pub fn command_output(data: &[u8]) {
         26 => drop(k3s::membership::parse_native_membership(raw)),
         27 => drop(k3s::membership::parse_cluster_node_snapshot(raw)),
         28 => drop(k3s::membership::raw_url_decode(&s)),
-        29 => drop(k3s::storage::keep_set_from_pod_json(raw)),
+        29 => {
+            drop(k3s::storage::keep_set_from_pod_json(raw));
+            // D34: a Deployment as `kubectl get deployment -o json` prints it.
+            if let Ok(deployment) = serde_json::from_slice::<J>(raw) {
+                drop(crate::clusterops::project_deployment(&deployment));
+            }
+        }
         30 => drop(k3s::storage::parse_cri_images(raw)),
         31 => drop(k3s::storage::parse_cri_containers(raw)),
         32 => {

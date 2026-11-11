@@ -1034,7 +1034,7 @@ impl Kubernetes {
 }
 
 /// The D34 projection of a Deployment.
-fn project_deployment(raw: &J) -> J {
+pub(crate) fn project_deployment(raw: &J) -> J {
     let at = |path: &[&str]| path.iter().try_fold(raw, |v, k| v.get(*k));
     let object = |path: &[&str]| {
         at(path)

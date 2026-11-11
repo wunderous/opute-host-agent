@@ -1,7 +1,7 @@
 ## 1. Implementation
 
-- [ ] 1.1 Built-in services for the three tools on the D14 seam; the seam verifier reports them compliant.
-- [ ] 1.2 Unit tests for each outcome, failing first.
+- [x] 1.1 Built-in services for the three tools on the D14 seam; the seam verifier reports them compliant.
+- [x] 1.2 Unit tests for each outcome, failing first.
 
 ## 2. Evidence
 

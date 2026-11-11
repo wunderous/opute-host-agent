@@ -177,11 +177,19 @@ def main():
         31: '{"containers":[{"id":"c","imageRef":"sha256:1","state":"CONTAINER_RUNNING"}]}',
         32: "Filesystem 1B-blocks Used Available\n/dev/sda 100 40 60\n",
         33: "inet 100.96.0.1/32 scope global CloudflareWARP\n",
+        29: '{"metadata":{"name":"web"},"spec":{"replicas":2,"template":{"spec":{"containers":[{"name":"a",'
+            '"env":[{"name":"K","value":"v"},{"name":"S","valueFrom":{"secretKeyRef":{"name":"s","key":"k"}}}],'
+            '"envFrom":[{"configMapRef":{"name":"c"}}]}]}}}}',
         34: '{"jsonrpc":"2.0","id":1,"result":{}}', 35: "https://raw.githubusercontent.com/o/r/main/x.yaml",
     }
     for sel, sample in samples.items():
         add("command_output", f"{sel:02d}-sample", bytes([sel]) + sample.encode())
 
+    add("incus_output", "instance-devices", b'{"devices":{"eth1":{"type":"nic","nictype":"bridged","parent":"br0"}},'
+        b'"expanded_devices":{"eth0":{"type":"nic","network":"incusbr0"},'
+        b'"eth1":{"type":"nic","nictype":"bridged","parent":"br0"},"root":{"type":"disk","path":"/"}}}')
+    add("console_output", "login", b"\x10" + b"\r\nUbuntu 24.04 e2e-v1 ttyS0\r\n" + b"\x05" + "é-login: ".encode())
+    add("console_output", "split", b"\x01\xe2\x02\x82\xac\x00")
     add("authz_store", "empty", b"")
     add("authz_store", "sqlite-header", b"SQLite format 3\x00" + b"\x10\x00\x01\x01" + b"\x00" * 92)
 
