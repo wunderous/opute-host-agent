@@ -8,9 +8,13 @@ m15 found (A4) that the agent starts every child process with its whole
 environment. The agent's environment holds its bearer (`MCP_AUTH_TOKEN`),
 the OAuth clients (`OPUTE_OAUTH_CLIENTS`) and, when an operator set them,
 provider credentials (`CLOUDFLARE_API_TOKEN`, `TAILSCALE_AUTH_KEY`,
-`TAILSCALE_API_KEY`). `run_host_command` runs any command the caller names,
-so `env` returns those values in the tool result. Any command the agent
-runs, including one under a compromised tool, can read them.
+`TAILSCALE_API_KEY`). Every tool the agent runs got them: incus, kubectl,
+git, curl, the container clients, ollama, and the `systemd-run` client
+that waits on a task's workload. Any of these can log them, pass them on
+to its own children, or read them from `/proc` while it runs. A caller's
+own command under `run_host_command` runs in a systemd unit, which starts
+from the manager's environment, so it never saw them. That is the one
+path the agent relied on, not a guarantee for the rest.
 
 The failing-first test `hostobs::tests::a_child_never_sees_the_agents_secrets`
 showed `CLOUDFLARE_API_TOKEN` in the output of `env` run through
@@ -57,8 +61,9 @@ Every site clears the inherited environment and passes that set. The user
 bus is still added for `systemctl --user` and `systemd-run --user`. A
 source test fails if a new site starts a process without it.
 
-What a caller of `run_host_command` sees changes: `env` no longer lists
-the agent's settings or secrets. Go v0.2.4 passed the whole environment.
+Go v0.2.4 passed the whole environment to every child. A caller sees no
+change in a tool's result. The tools themselves no longer get a variable
+outside the allowlist; none of them reads one.
 
 ## Options rejected
 
@@ -66,8 +71,8 @@ the agent's settings or secrets. Go v0.2.4 passed the whole environment.
   operator names freely, would leak. The allowlist fails closed.
 - **A list per site.** Most of the eight sites run the same client tools.
   One list is easier to audit, and the source test holds every site to it.
-- **Keeping Go's behaviour.** The tool result of `run_host_command` would
-  keep carrying the agent's bearer.
+- **Keeping Go's behaviour.** Every third-party tool would keep receiving
+  the agent's bearer and the providers' credentials.
 
 ## Impact
 

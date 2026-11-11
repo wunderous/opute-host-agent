@@ -867,7 +867,11 @@ impl StateStore {
     }
 
     /// D42: prune audit rows older than the retention age, then the oldest
-    /// beyond the row bound. A row whose operation is still working stays.
+    /// beyond the row bound; then the finished operations older than the age
+    /// or than every audit row kept, once their task's TTL (one hour) has
+    /// passed since their last update. A row whose operation is still working,
+    /// and an operation that is working, interrupted (`unknown`, still
+    /// cancellable) or named by a plan run or an active capability, stays.
     /// Returns the number of rows removed.
     pub fn prune_audit(
         &self,
@@ -889,6 +893,13 @@ impl StateStore {
                         .as_secs(),
                 ),
         );
+        // A finished task stays readable for its TTL after its last update.
+        let task_cutoff = crate::hostobs::rfc3339_nano(
+            now.checked_sub(std::time::Duration::from_millis(
+                crate::tasks::DEFAULT_TTL_MS as u64,
+            ))
+            .unwrap_or(std::time::UNIX_EPOCH),
+        );
         const UNREFERENCED: &str = "operation_id NOT IN \
              (SELECT operation_id FROM operations WHERE status = 'working')";
         let aged = conn
@@ -909,7 +920,21 @@ impl StateStore {
                 [retention.max_rows as i64],
             )
             .map_err(sqlite_err)?;
-        Ok((aged + over) as u64)
+        let operations = conn
+            .execute(
+                "DELETE FROM operations
+                 WHERE status IN ('completed', 'failed', 'cancelled')
+                   AND updated_at < ?2
+                   AND (created_at < ?1
+                        OR created_at < (SELECT MIN(created_at) FROM capability_invocations))
+                   AND operation_id NOT IN (SELECT operation_id FROM capability_invocations)
+                   AND operation_id NOT IN (SELECT run_id FROM plan_runs)
+                   AND operation_id NOT IN (SELECT run_id FROM active_capabilities)
+                   AND operation_id NOT IN (SELECT run_id FROM active_runtimes)",
+                [&cutoff, &task_cutoff],
+            )
+            .map_err(sqlite_err)?;
+        Ok((aged + over + operations) as u64)
     }
 
     /// Close explicitly so the WAL is checkpointed and removed, as Go's
@@ -1247,11 +1272,70 @@ mod tests {
                 at(day - std::time::Duration::from_secs(i)),
             );
         }
+        // Finished operations: one with old rows only, one named by a plan
+        // run, one interrupted; one finished after every kept row.
+        for (id, status) in [
+            ("op-old-0", "completed"),
+            ("op-plan", "completed"),
+            ("op-unknown", "unknown"),
+            ("op-recent", "completed"),
+            ("op-fresh-task", "completed"),
+        ] {
+            store.create_operation(id, "ensure_host_file", "").unwrap();
+            let (created, updated) = match id {
+                "op-recent" => (std::time::Duration::ZERO, std::time::Duration::ZERO),
+                // started two days ago, finished 30 minutes ago: older than
+                // every kept row, but inside its task's one-hour TTL
+                "op-fresh-task" => (day * 2, std::time::Duration::from_secs(1800)),
+                _ => (day * 40, day * 40),
+            };
+            store
+                .conn
+                .as_ref()
+                .unwrap()
+                .execute(
+                    "UPDATE operations SET status = ?1, created_at = ?2, updated_at = ?3 WHERE operation_id = ?4",
+                    rusqlite::params![status, at(created), at(updated), id],
+                )
+                .unwrap();
+        }
+        store
+            .conn
+            .as_ref()
+            .unwrap()
+            .execute(
+                "INSERT INTO plan_runs(run_id, plan_id, generation, idempotency_key, document_hash,
+                 catalog_revision, status, plan_json, state_json, created_at, updated_at)
+                 VALUES ('op-plan', 'p', 1, 'k', 'h', 'r', 'completed', '{}', '{}', ?1, ?1)",
+                [at(day * 40)],
+            )
+            .unwrap();
         let retention = AuditRetention {
             max_age: day * 30,
             max_rows: 15,
         };
         let pruned = store.prune_audit(&retention, now).unwrap();
+        let mut operations: Vec<String> = store
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT operation_id FROM operations")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        operations.sort();
+        assert_eq!(
+            operations,
+            [
+                "op-fresh-task",
+                "op-live",
+                "op-plan",
+                "op-recent",
+                "op-unknown"
+            ]
+        );
         let conn = store.conn.as_ref().unwrap();
         let mut kept: Vec<String> = conn
             .prepare("SELECT invocation_id FROM capability_invocations ORDER BY invocation_id")
@@ -1265,7 +1349,7 @@ mod tests {
         want.push("old-live".into());
         want.sort();
         assert_eq!(kept, want);
-        assert_eq!(pruned, 15);
+        assert_eq!(pruned, 16);
     }
 
     #[test]

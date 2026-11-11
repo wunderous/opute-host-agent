@@ -342,7 +342,7 @@
     },
     {
       "id": "A4",
-      "summary": "Every child process inherited the agent's whole environment, MCP_AUTH_TOKEN, OPUTE_OAUTH_CLIENTS and provider credentials included; run_host_command's `env` returned them.",
+      "summary": "Every process the agent started inherited the agent's whole environment, MCP_AUTH_TOKEN, OPUTE_OAUTH_CLIENTS and provider credentials included: incus, kubectl, git, curl, ollama and the systemd-run client all received them. A caller's own run_host_command ran in a systemd unit and did not.",
       "foundBy": "m15 review of the console spawn",
       "test": "hostobs::tests::a_child_never_sees_the_agents_secrets; config::tests::every_spawn_site_passes_the_child_environment",
       "state": "fixed by D40 (openspec/changes/child-process-environment): an allowlist at every spawn site"

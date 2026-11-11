@@ -23,6 +23,9 @@ T = base.T
 SPEC = base.SPEC
 FAULTS = "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
 BODY = "openspec/changes/bound-mcp-request-body/specs/bound-mcp-request-body/spec.md"
+CHILD_SPEC = "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+RELAY_SPEC = "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md"
+RETENTION_SPEC = "openspec/changes/audit-retention/specs/audit-retention/spec.md"
 Q5_SPEC = "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md"
 TASKS_META = base.TASKS_META
 BUDGET = json.loads((base.REPO / "evidence/hardening/resource-budget.json").read_text())
@@ -370,6 +373,16 @@ def pressure() -> dict:
                                    "--send 8388608"},
         {"id": "rssAfter", "guest": f"{T} procstat e2e-agent-big.service"},
         call("bigNext", "get_host_info", **body),
+        # D41: the serving relay, with nothing upstream, refuses an oversized inference body
+        call("relay", "ensure_local_llm_relay", {
+            "sessionId": "e2e-relay", "listenHost": "127.0.0.1", "listenPort": 3051, "targetHost": "127.0.0.1",
+            "targetPort": 9, "incomingToken": "${SECRET:relayIn}", "allowedSourceCIDRs": ["127.0.0.1/32"]},
+             **body),
+        {"id": "relayRssBefore", "guest": f"{T} procstat e2e-agent-big.service"},
+        {"id": "relayBody", "guest": f"E2E_TOKEN=${{SECRET:relayIn}} {T} bigbody --port 3051 --path "
+                                     "/v1/chat/completions --declared 1073741824 --send 41943040 --limit 33554432"},
+        {"id": "relayRssAfter", "guest": f"{T} procstat e2e-agent-big.service"},
+        call("relayNext", "get_host_info", **body),
     ]
     refused = lambda s: [is_error(s), a(s, "response.body.result.structuredContent.owner", equals="admission")]  # noqa
     # A task's admission runs inside the task: the refusal is its result.
@@ -393,11 +406,18 @@ def pressure() -> dict:
             a("rssAfter", "json.rssBytes", lte=BUDGET["bodyLimitRssBytesMax"]),
             scenario="A 1 GiB declared body is answered 413 after 4 MiB, and the agent's resident memory stays "
                      "under the budget (D29)"),
+        req(RELAY_SPEC, "The serving relay reads a request body only up to 32 MiB",
+            a("relay", "response.body.result.structuredContent.ready", equals=True),
+            a("relayBody", "json.status", equals=413), a("relayBody", "json.bodyLimitText", equals=True),
+            a("relayBody", "json.seconds", lte=10), not_error("relayNext"),
+            a("relayRssAfter", "json.rssBytes", lte=BUDGET["bodyLimitRssBytesMax"]),
+            scenario="A 1 GiB declared inference body is answered 413 after 32 MiB, and the agent's resident "
+                     "memory stays under the budget (D41)"),
     ]
     return journey("e2e6.pressure",
                    "Admission under pressure: an agent with one normal operation slot refuses work beyond it and "
                    "admits again after; one whose memory and disk floors cannot be met refuses effectful work; one "
-                   "sent a 1 GiB body answers 413 with bounded memory (D29).",
+                   "sent a 1 GiB body answers 413 with bounded memory (D29), and so does its serving relay (D41).",
                    reqs, steps, remove("lim", "low", "big"), minutes=10)
 
 
@@ -408,13 +428,15 @@ def budget() -> dict:
     o = on(n, port)
     b = BUDGET
     steps = base.TOOL_STEPS + [
-        agent(n, port, root=True),
+        agent(n, port, f"OPUTE_AUDIT_RETENTION_ROWS={b['auditRetentionRows']}", root=True),
         mcp("list", "tools/list", **o),
         {"id": "load", "guest": f"E2E_TOKEN=${{SECRET:{n}}} {T} load --port {port} --seconds {b['seconds']} "
                                 f"--sample-unit e2e-agent-{n}.service --state {state(n)}",
          # A guest step's default limit is 600 s; the load runs for the budget's seconds.
          "timeout": b["seconds"] + 180},
         {"id": "audit", "guest": f"{T} audit {state(n)}/state.db"},
+        # one prune interval after the load: every audit row beyond the bound is gone
+        {"id": "pruned", "guest": f"sleep 70; {T} audit {state(n)}/state.db"},
     ]
     g = "json.growthAfterWarmup."
     reqs = [
@@ -427,14 +449,85 @@ def budget() -> dict:
             a("audit", "json.integrity", equals="ok"), a("audit", "json.unfinished", equals=0),
             scenario="Fifteen minutes of mixed read, write, task and Incus calls stay inside "
                      "evidence/hardening/resource-budget.json after a two-minute warm-up"),
+        req(RETENTION_SPEC, "Audit rows are kept within an age and a row bound",
+            a("load", "json.calls", gte=b["auditRetentionRows"] * 2),
+            a("load", g + "storeBytesLastFiveMinutes", lte=b["storeLateGrowthBytesMax"]),
+            a("pruned", "json.auditRows", lte=b["auditRetentionRows"]),
+            a("pruned", "json.integrity", equals="ok"),
+            scenario="With a row bound far below the call count, one prune interval after the load the audit "
+                     "holds at most the bound, and the store's growth over the last five minutes stays under the "
+                     "budget (D42)"),
     ]
     return journey("e2e6.budget",
                    "Resource budget (m16): fifteen minutes of mixed calls on one agent; resident memory, open file "
                    "descriptors, threads and store size are sampled every 30 s and their growth after warm-up is "
-                   "held to the committed budget.", reqs, steps, remove(n), minutes=25)
+                   "held to the committed budget; with an audit row bound below the call count, the audit stays "
+                   "within it (D42).", reqs, steps, remove(n), minutes=25)
 
 
-JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget]
+# --- 8. a child's environment (D40) ----------------------------------------------------------------
+
+CHILD_SECRETS = ("MCP_AUTH_TOKEN", "CLOUDFLARE_API_TOKEN", "TAILSCALE_AUTH_KEY", "OPUTE_E2E_MARKER")
+V6 = "vm:local:e2e-v6"
+INCUS_ALLOW = ("incus/*", "files//home/opute/.config/incus*", "system/units/sys-devices-virtual-net-tap*",
+               "system/units/sys-subsystem-net-devices-tap*", "system/units/var-lib-incus-devices-*")
+
+
+def child_env() -> dict:
+    n, port = "cenv", 3050
+    o = on(n, port)
+    recipe = f"{ROOT}/child-env-recipe.yaml"
+    probe = lambda match: (f"{T} childenv e2e-agent-{n}.service '{match}' "  # noqa: E731
+                           + " ".join(f"--expect {s}" for s in CHILD_SECRETS) + " --keep PATH")
+    steps = base.TOOL_STEPS + [
+        agent(n, port, "CLOUDFLARE_API_TOKEN=${SECRET:cfToken}", "TAILSCALE_AUTH_KEY=${SECRET:tsKey}",
+              "OPUTE_E2E_MARKER=e2e-marker", root=True),
+        mcp("list", "tools/list", **o),
+        call("vmCall", "provision_vm", {"name": "e2e-v6", "instanceType": "virtual-machine",
+                                        "image": "parity-noble-vm", "cpus": 1, "memory": "1GiB", "disk": "10GiB"},
+             meta=TASKS_META, **o, capture={"VM": "response.body.result.taskId"}),
+        {**done("vm", "VM", o), "timeout": 900, "interval": 3},
+        call("console", "stream_vm_console", {"uri": V6}, **o),
+        {"id": "consoleEnv", "guest": probe("console e2e-v6")},
+        call("ctrlA", "send_console_input", {"operationId": "console-e2e-v6", "data": "\u0001"}, **o),
+        call("detach", "send_console_input", {"operationId": "console-e2e-v6", "data": "q"}, **o),
+        {"id": "recipeCopy", "copy": "recipe", "to": recipe, "mode": "0644"},
+        call("recipeRun", "run_host_local_recipe", {"source": recipe}, **o,
+             capture={"RRUN": "response.body.result.structuredContent.runId"}),
+        # the step's workload runs 40 s; the agent's systemd-run client waits on it
+        {"id": "recipeEnv", "guest": (f"for i in $(seq 40); do out=$({probe('systemd-run')}); "
+                                      "echo \"$out\" | grep -q '\"found\": [1-9]' && break; sleep 1; done; "
+                                      "echo \"$out\"")},
+        poll_run("recipeDone", "RRUN", timeout=120, **o),
+    ]
+    clean = lambda step: [a(step, "json.agentHasExpected", equals=True), a(step, "json.found", gte=1),  # noqa: E731
+                          a(step, "json.leaked", equals=[]), a(step, "json.childrenKeep", equals=True)]
+    reqs = [
+        req(CHILD_SPEC, "A child process never receives the agent's secrets",
+            a("vm", "response.body.result.status", equals="completed"),
+            a("console", "response.body.result.structuredContent.status", equals="started"),
+            *clean("consoleEnv"),
+            scenario="With the bearer, two provider credentials and an OPUTE_ setting in the agent's environment, "
+                     "its incus console process holds PATH and none of them"),
+        req(CHILD_SPEC, "A child process never receives the agent's secrets",
+            *clean("recipeEnv"),
+            a("recipeDone", "response.body.result.structuredContent.status", equals="completed"),
+            scenario="While a recipe step's run_host_command workload runs, the systemd-run client the agent "
+                     "started for it holds PATH and none of the agent's secrets"),
+    ]
+    files = {**base.TOOL_FILES, "recipe": base.inp("${REPO}/evidence/e2e/journeys/inputs/e2e-child-env-recipe.yaml")}
+    # as e2e2.incus: the VM, then the image volume its launch cached
+    cleanup = [{"id": "cleanVm", "guest": (
+        f"incus delete -f e2e-v6 2>/dev/null; rm -f {recipe}; incus storage volume list default -f csv | "
+        "awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true")}] \
+        + remove(n)
+    return journey("e2e6.child-env",
+                   "A child's environment (D40): an agent holding its bearer, two provider credentials and an "
+                   "OPUTE_ setting opens a VM console and runs a recipe step; /proc shows neither child holds "
+                   "any of them.", reqs, steps, cleanup, minutes=20, files=files, allow=INCUS_ALLOW)
+
+
+JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env]
 
 
 def render() -> dict[str, str]:
