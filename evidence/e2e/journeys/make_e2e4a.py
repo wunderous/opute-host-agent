@@ -16,6 +16,7 @@ by sweeping the catalog.
 from __future__ import annotations
 
 import json
+import re
 
 import make_e2e1 as base
 import make_e2e3a as ha
@@ -37,7 +38,6 @@ Q27_SPEC = CH + "truthful-serving-launch/specs/serving-assignment/spec.md"
 LLM_SPEC = CH + "recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md"
 Q28_SPEC = CH + "bind-standalone-service-domain/specs/service-exposure/spec.md"
 Q5_SPEC = CH + "truthful-interrupted-plan/specs/host-agent-contract/spec.md"
-SEAM_SPEC = ha.SEAM_SPEC
 CATALOG = "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
 E2E2_GOAL = ".agents/goals/e2e-2-host-workloads.md (flows 4, 5, 7, 8)"
 HOME = "/home/opute"
@@ -1108,11 +1108,20 @@ def discovery() -> dict:
             direct("stoppedList", "structuredContent.clusters[0].status", equals="Stopped"),
             scenario="With its only server stopped, the registered cluster is listed with its instance status "
                      "and no node data (D28)"),
-        req(SEAM_SPEC, "Every capability has its three roles",
-            direct("configmapKeys", "structuredContent.code", equals="not_implemented"),
-            direct("secretKeys", "structuredContent.code", equals="not_implemented"),
-            scenario="The e2e-3 goal lists config and secret keys: both tools are published but have no "
-                     "provider in Rust and no handler in Go v0.2.4, so they fail closed (Q18)"),
+        req(ha.CONFIGMAP_KEYS_SPEC, "list_configmap_keys returns a ConfigMap's key names, never values",
+            direct("configmapKeys", "isError", **{"in": [False, "<absent>"]}),
+            direct("configmapKeys", "structuredContent.uri", equals=CLUSTER),
+            direct("configmapKeys", "structuredContent.keys[0]", equals="Corefile"),
+            direct("configmapKeys", "content[0].text", matches="^(?![\\s\\S]*forward \\.)"),
+            scenario="The e2e-3 goal lists config keys: K3s's own coredns ConfigMap is listed by key name, "
+                     "without the Corefile's text (D33)"),
+        req(ha.SECRET_KEYS_SPEC, "list_secret_keys returns a Secret's key names, never values",
+            direct("secretKeys", "isError", **{"in": [False, "<absent>"]}),
+            direct("secretKeys", "structuredContent.uri", equals=CLUSTER),
+            direct("secretKeys", "structuredContent.keys", equals=["tls.crt", "tls.key"]),
+            direct("secretKeys", "content[0].text", matches="^(?![\\s\\S]*BEGIN)"),
+            scenario="The e2e-3 goal lists secret keys: K3s's serving Secret is listed by key name, never "
+                     "the certificate or key (D32, answering Q18)"),
         req(SPEC, "Durable and redacted observations",
             ok("tokenLeaks"), a("tokenLeaks", "stdout", equals="0\n"),
             scenario="No discovery result, state row or journal line carries the cluster's join token"),
@@ -1675,7 +1684,7 @@ def restart() -> dict:
               equals="The Host Agent shut down before the task completed."),
             a("kill", "stdout", equals="up\n"),
             direct("opsAfterKill", "isError", **{"in": [False, "<absent>"]}),
-            a("upgrade", "stdout", matches="\n0\\.3\\.1-e2e\n$"),
+            a("upgrade", "stdout", matches="\n" + re.escape(base.NEXT_VERSION) + "\n$"),
             res("afterUpgrade", "structuredContent.stdout", equals="upgraded\n"),
             a("db", "json.integrity", equals="ok"),
             scenario="A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation "

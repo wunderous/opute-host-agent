@@ -1,0 +1,120 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove bud >/dev/null ; true",
+   "id": "remove"
+  }
+ ],
+ "description": "Resource budget (m16): fifteen minutes of mixed calls on one agent; resident memory, open file descriptors, threads and store size are sampled every 30 s and their growth after warm-up is held to the committed budget.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.budget",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 25,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "gte": 2000,
+     "path": "json.calls",
+     "step": "load"
+    },
+    {
+     "equals": 0,
+     "path": "json.errors",
+     "step": "load"
+    },
+    {
+     "lte": 50331648,
+     "path": "json.growthAfterWarmup.rssBytes",
+     "step": "load"
+    },
+    {
+     "lte": 16,
+     "path": "json.growthAfterWarmup.fds",
+     "step": "load"
+    },
+    {
+     "lte": 8,
+     "path": "json.growthAfterWarmup.threads",
+     "step": "load"
+    },
+    {
+     "lte": 8192,
+     "path": "json.growthAfterWarmup.storeBytesPerCall",
+     "step": "load"
+    },
+    {
+     "lte": 268435456,
+     "path": "json.peak.rssBytes",
+     "step": "load"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "equals": 0,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Fifteen minutes of mixed read, write, task and Incus calls stay inside evidence/hardening/resource-budget.json after a two-minute warm-up",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start bud --port 3049 --id e2e-bud-agent --env MCP_AUTH_TOKEN=${SECRET:bud} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root",
+   "id": "budAgent"
+  },
+  {
+   "auth": "secret:bud",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3049
+  },
+  {
+   "guest": "E2E_TOKEN=${SECRET:bud} python3 /opt/opute-e2e/guest/e2etool.py load --port 3049 --seconds 900 --sample-unit e2e-agent-bud.service --state /tmp/e2e-agents/bud/state",
+   "id": "load",
+   "timeout": 1080
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/bud/state/state.db",
+   "id": "audit"
+  }
+ ]
+}

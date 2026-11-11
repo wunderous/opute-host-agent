@@ -26,16 +26,21 @@ assert report["provider"] == "host-agent:incus" and report["generation"] == "bui
 assert report["problems"] == [], report["problems"]
 capabilities = report["capabilities"]
 assert sum(report["counts"].values()) == len(capabilities) == 150, report["counts"]
-statuses = {name: entry["status"] for name, entry in capabilities.items()}
-assert set(statuses.values()) <= {"compliant", "gap", "unported"}
+# A capability published in no mode (withdrawn by decision, D37) carries no
+# status: no service may offer it and no consumer reaches it.
+statuses = {name: entry.get("status", "unpublished") for name, entry in capabilities.items()}
+assert report["counts"] == {s: list(statuses.values()).count(s) for s in set(statuses.values())}, report["counts"]
+assert set(statuses.values()) <= {"compliant", "gap", "unported", "unpublished"}
 assert report["gaps"] == sorted(n for n, s in statuses.items() if s == "gap")
 offered = {op for service in report["services"] for op in service["operations"]}
 for name, entry in capabilities.items():
-    if entry["status"] == "compliant":
+    if statuses[name] == "unpublished":
+        assert not any(entry["published"].values()) and not entry["internal"], name
+    if statuses[name] == "compliant":
         assert name in offered and entry["service"].startswith("host-agent:incus/") and entry["consumers"], name
     else:
         assert name not in offered, name
-    if entry["status"] == "gap":
+    if statuses[name] == "gap":
         assert entry["reachedBy"], name
 assert "test seam::seam_verifier ... ok" in (STAGE / "verifier.log").read_text()
 

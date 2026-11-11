@@ -12,4 +12,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 A console journey on a dev-VM guest: open, read the prompt, resize, detach, no process left, run on the 0.4.0 candidate.
+- [x] 3.1 A console journey on a dev-VM guest: open, read the prompt, resize, detach, no process left, run on the 0.4.0 candidate. Passed: `e2e2.incus`, run `m15-r1` on `rust-0.4.0-rc1`.

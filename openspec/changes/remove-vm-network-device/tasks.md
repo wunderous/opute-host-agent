@@ -11,4 +11,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 The NIC journey on a dev-VM guest, run on the 0.4.0 candidate.
+- [x] 3.1 The NIC journey on a dev-VM guest, run on the 0.4.0 candidate. Passed: `e2e2.incus`, run `m15-r1` on `rust-0.4.0-rc1`.

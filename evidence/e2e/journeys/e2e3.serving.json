@@ -3,12 +3,12 @@
  "gate": "e2e-3",
  "description": "Local model serving through the Host Agent's serving path: a serving assignment runs an OpenAI-compatible runtime (a test fixture), the gateway (ensure_local_llm_relay) admits a token-bearing request and returns a completion, the probe reports it ready, and removal leaves nothing behind. A real runtime and weights are blocked: they need downloads beyond test fixtures.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "runtime": "evidence/e2e/journeys/inputs/e2e-openai-fixture.py (a fixture, not a model)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -105,7 +105,7 @@
    "pass": [
     {
      "step": "removeModel",
-     "path": "response.body.result.isError",
+     "path": "response.body.result.result.isError",
      "in": [
       false,
       "<absent>"
@@ -113,32 +113,32 @@
     },
     {
      "step": "removeModel",
-     "path": "response.body.result.structuredContent.removed",
+     "path": "response.body.result.result.structuredContent.removed",
      "equals": false
     },
     {
      "step": "removeModel",
-     "path": "response.body.result.structuredContent.purged",
+     "path": "response.body.result.result.structuredContent.purged",
      "equals": false
     },
     {
      "step": "removeModel",
-     "path": "response.body.result.structuredContent.shared",
+     "path": "response.body.result.result.structuredContent.shared",
      "equals": true
     },
     {
      "step": "removeModel",
-     "path": "response.body.result.structuredContent.reason",
+     "path": "response.body.result.result.structuredContent.reason",
      "matches": "shared host state"
     },
     {
      "step": "configureRuntime",
-     "path": "response.body.result.isError",
+     "path": "response.body.result.result.isError",
      "equals": true
     },
     {
      "step": "configureRuntime",
-     "path": "response.body.result.content[0].text",
+     "path": "response.body.result.result.content[0].text",
      "matches": "host-wide and pinned"
     },
     {
@@ -407,12 +407,68 @@
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py contains /home/opute/.config/opute/instances/standalone/state/state.db '${SECRET:gatewayToken}'"
   },
   {
-   "id": "removeModel",
+   "id": "removeModelCall",
    "mcp": "tools/call",
    "tool": "remove_local_llm_model",
    "arguments": {
     "modelRef": "e2e-model",
     "purge": true
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_removeModel": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "removeModel",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_removeModel}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "configureRuntimeCall",
+   "mcp": "tools/call",
+   "tool": "configure_local_llm_runtime",
+   "arguments": {
+    "numParallel": 4,
+    "maxLoadedModels": 1
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_configureRuntime": "response.body.result.taskId"
    },
    "retryOn": [
     "host_capacity_saturated"
@@ -420,15 +476,27 @@
   },
   {
    "id": "configureRuntime",
-   "mcp": "tools/call",
-   "tool": "configure_local_llm_runtime",
-   "arguments": {
-    "numParallel": 4,
-    "maxLoadedModels": 1
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_configureRuntime}"
    },
-   "retryOn": [
-    "host_capacity_saturated"
-   ]
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
   },
   {
    "id": "ollamaUntouched",

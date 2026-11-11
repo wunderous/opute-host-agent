@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -33,7 +33,7 @@
     {
      "step": "mutation",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
     },
     {
      "step": "destructive",
@@ -43,7 +43,7 @@
     {
      "step": "destructive",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
     },
     {
      "step": "planGate",
@@ -53,7 +53,7 @@
     {
      "step": "planGate",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
     },
     {
      "step": "gatedRead",

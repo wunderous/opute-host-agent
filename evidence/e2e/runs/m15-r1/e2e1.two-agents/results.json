@@ -1,0 +1,214 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.two-agents",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "agentA"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "agentB"
+    },
+    {
+     "actual": "a3cace11",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.mcpToolNamePrefix",
+     "step": "healthA"
+    },
+    {
+     "actual": "2a9f1f19",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.mcpToolNamePrefix",
+     "step": "healthB"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "prefixed"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.prefixesDiffer",
+     "step": "prefixed"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.allPrefixedA",
+     "step": "prefixed"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.allPrefixedB",
+     "step": "prefixed"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.overlap",
+     "step": "prefixed"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.unprefixedA",
+     "step": "prefixed"
+    },
+    {
+     "actual": 138,
+     "gte": 1,
+     "ok": true,
+     "path": "json.countA",
+     "step": "prefixed"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "infoA"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "infoB"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "OPUTE_MCP_PREFIX_TOOL_NAMES: prefix wire tool names for multi-agent IDE workspaces",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/configuration/index.html"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-ws-a",
+     "equals": "e2e-ws-a",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "healthA"
+    },
+    {
+     "actual": "e2e-ws-b",
+     "equals": "e2e-ws-b",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "healthB"
+    },
+    {
+     "actual": "host:local:e2e-ws-a",
+     "matches": ":e2e-ws-a$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "infoA"
+    },
+    {
+     "actual": "host:local:e2e-ws-b",
+     "matches": ":e2e-ws-b$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "infoB"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "exit=1\n",
+     "equals": "exit=1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "third"
+    },
+    {
+     "actual": "host agent instance is already in use: /tmp/e2e-agents/ws-a/instance/host-agent.lock is locked by another process\n",
+     "equals": "host agent instance is already in use: /tmp/e2e-agents/ws-a/instance/host-agent.lock is locked by another process\n",
+     "ok": true,
+     "path": "stderr",
+     "step": "third"
+    },
+    {
+     "actual": "e2e-ws-a",
+     "equals": "e2e-ws-a",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "aStillServes"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "aStillCalls"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One running agent per instance state",
+   "spec": "openspec/changes/state-directory-writer-lock/specs/state-directory-writer-lock/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "aStillCalls": 288,
+   "aStillServes": 219,
+   "agentA": 567,
+   "agentB": 567,
+   "healthA": 505,
+   "healthB": 218,
+   "infoA": 285,
+   "infoB": 285,
+   "listA": 242,
+   "listB": 249,
+   "prefixed": 348,
+   "stop": 304,
+   "third": 148,
+   "tool": 284,
+   "wire": 282
+  },
+  "stepsSeconds": 48.8
+ },
+ "unverified": []
+}
