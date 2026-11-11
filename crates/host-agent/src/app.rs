@@ -490,6 +490,7 @@ pub(crate) fn compose(
             .map_err(|e| go_err!("reclaim plan run reservations: {e}"))?,
     );
     let host = crate::tools::Host {
+        consoles: Default::default(),
         env: cfg.env.clone(),
         incus: crate::incus::Incus {
             binary: crate::incus::provider_binary(&cfg.env),
@@ -696,6 +697,7 @@ async fn accept_loop(
                 let _ = connection.await;
             }
             crate::tools::close_task_starts(&server);
+            server.host.consoles.close_all();
             server.providers.close().await;
             Ok(())
         })

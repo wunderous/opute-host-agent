@@ -12,6 +12,7 @@ mod catalog;
 pub mod cli;
 mod clusterops;
 pub mod config;
+mod console;
 mod ddl;
 mod evidence;
 #[cfg(any(fuzzing, test))]

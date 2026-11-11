@@ -272,6 +272,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         virtualization_stack(host),
         system_containers(host),
         instance_lifecycle(host),
+        instance_console(host),
         local_status(host),
         instance_exec(host),
         cluster_discovery(&k8s),
@@ -1471,6 +1472,106 @@ fn system_containers(host: &crate::tools::Host) -> Service {
                             Some("System container GPU capability report generated"),
                         )
                     }))
+                }),
+            ),
+        ],
+    }
+}
+
+/// The bound instance's canonical URI, added when the result has none.
+fn with_uri(mut out: Map<String, J>, binding: &Binding) -> Map<String, J> {
+    let bound = binding.resources.iter().find(|r| {
+        crate::resource::Uri::parse(&r.uri)
+            .is_ok_and(|u| matches!(u.resource_type.as_str(), "vm" | "container"))
+    });
+    if let Some(bound) = bound.filter(|_| !out.contains_key("uri")) {
+        out.insert("uri".into(), J::from(bound.uri.clone()));
+    }
+    out
+}
+
+/// D38, D39: instance console sessions, read by pull.
+fn instance_console(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let (incus, consoles) = (host.incus.clone(), host.consoles.clone());
+    let (input, resize) = (host.consoles.clone(), host.consoles.clone());
+    let operation_id = |args: &Map<String, J>| -> Result<String, String> {
+        match text(args, "operationId").trim() {
+            "" => Err("operationId is required".into()),
+            id => Ok(id.to_string()),
+        }
+    };
+    let number = |args: &Map<String, J>, key: &str| args.get(key).and_then(J::as_f64);
+    Service {
+        id: "instance-console",
+        dependencies: &["instance-lifecycle"],
+        operations: vec![
+            (
+                "stream_vm_console",
+                op(move |call| {
+                    let vm = call.binding.provider_instance_name();
+                    let vm = vm.trim();
+                    if vm.is_empty() {
+                        return Err("vmName is required".into());
+                    }
+                    incus.assert_ownership(vm, "stream_vm_console")?;
+                    let size = match (number(call.args, "width"), number(call.args, "height")) {
+                        (Some(w), Some(h)) => Some(
+                            crate::console::cells(w)
+                                .zip(crate::console::cells(h))
+                                .ok_or("console size must be positive")?,
+                        ),
+                        _ => None,
+                    };
+                    let operation_id = match call.ctx.operation_identity().0 {
+                        id if id.trim().is_empty() => format!("console-{vm}"),
+                        id => id,
+                    };
+                    consoles.start(&incus.env, &incus.binary, vm, &operation_id, size)?;
+                    let mut out = Map::new();
+                    out.insert("vmName".into(), J::from(vm));
+                    out.insert("status".into(), J::from("started"));
+                    out.insert("operationId".into(), J::from(operation_id));
+                    Ok(structured_result(
+                        J::Object(with_uri(out, call.binding)),
+                        Some(&format!("Console started for '{vm}'.")),
+                    ))
+                }),
+            ),
+            (
+                "send_console_input",
+                op(move |call| {
+                    let id = operation_id(call.args)?;
+                    let (output, closed) = input.send(&id, text(call.args, "data"))?;
+                    Ok(structured_result(
+                        serde_json::json!({
+                            "status": "sent", "operationId": id,
+                            "output": output, "closed": closed,
+                        }),
+                        Some(if output.is_empty() {
+                            "sent"
+                        } else {
+                            output.as_str()
+                        }),
+                    ))
+                }),
+            ),
+            (
+                "resize_console",
+                op(move |call| {
+                    let id = operation_id(call.args)?;
+                    let size = number(call.args, "width")
+                        .and_then(crate::console::cells)
+                        .zip(number(call.args, "height").and_then(crate::console::cells))
+                        .ok_or("console size must be positive")?;
+                    resize.resize(&id, size.0, size.1)?;
+                    Ok(structured_result(
+                        serde_json::json!({
+                            "status": "resized", "operationId": id,
+                            "width": size.0, "height": size.1,
+                        }),
+                        None,
+                    ))
                 }),
             ),
         ],

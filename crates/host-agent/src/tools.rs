@@ -42,6 +42,8 @@ pub struct Host {
     /// The in-process relays into guests (`tcprelay`): the cluster agent's
     /// guest bridge forwarders, revoked before a stack reset deletes guests.
     pub relays: Arc<crate::tcprelay::Manager>,
+    /// D38: the instance console sessions, ended when the agent stops.
+    pub consoles: Arc<crate::console::Consoles>,
     /// `filepath.Join(RelayConfigDir, "postgresql-service-relays")`: where a
     /// persistent PostgreSQL service relay is kept (M8e).
     pub postgres_relay_dir: String,
