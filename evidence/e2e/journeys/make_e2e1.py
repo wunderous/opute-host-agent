@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -801,7 +802,7 @@ def j8() -> dict:
                      "instance root: every operation and run is there once, unchanged (D1: the schema is "
                      "bit-compatible, so conversion is the identity)"),
         req(SPEC, "Compatible modes, configuration, and distribution",
-            ok("upgrade"), a("upgrade", "stdout", matches="\n0\\.3\\.1-e2e\n$"),
+            ok("upgrade"), a("upgrade", "stdout", matches="\n" + re.escape(NEXT_VERSION) + "\n$"),
             a("nextList", "response.status", equals=200), a("nextDb", "json.integrity", equals="ok"),
             a("nextDb", "json.planRunIds", equalsStep={"step": "goStop", "path": "json.planRunIds"}),
             a("nextDb", "json.operationIds", equalsStep={"step": "goStop", "path": "json.operationIds"}),

@@ -5,4 +5,4 @@
 
 ## 2. Evidence
 
-- [ ] 2.1 `e2e3.serving` calls both LLM tools, and a contract test covers `open_assistant_session`, on the 0.4.0 candidate.
+- [x] 2.1 `e2e3.serving` calls both LLM tools, and a contract test covers `open_assistant_session`, on the 0.4.0 candidate. Passed: `e2e3.serving`, run `m15-r1` on `rust-0.4.0-rc1`; `seam::tests::recorded_tools_answer_as_recorded` covers `open_assistant_session`.

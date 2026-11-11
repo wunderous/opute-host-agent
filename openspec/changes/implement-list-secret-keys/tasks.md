@@ -11,4 +11,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 `e2e3a.workload` reads the key through `list_secret_keys` (its `exec_cluster_command` workaround dropped), run on the 0.4.0 candidate.
+- [x] 3.1 `e2e3a.workload` reads the key through `list_secret_keys` (its `exec_cluster_command` workaround dropped), run on the 0.4.0 candidate. Passed: `e2e3a.workload` and `e2e3.discovery`, run `m15-r1` on `rust-0.4.0-rc1`.

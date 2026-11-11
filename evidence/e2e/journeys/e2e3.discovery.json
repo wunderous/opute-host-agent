@@ -184,21 +184,67 @@
    "scenario": "With its only server stopped, the registered cluster is listed with its instance status and no node data (D28)"
   },
   {
-   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md",
-   "requirement": "Every capability has its three roles",
+   "spec": "openspec/changes/list-configmap-keys/specs/list-configmap-keys/spec.md",
+   "requirement": "list_configmap_keys returns a ConfigMap's key names, never values",
    "pass": [
     {
      "step": "configmapKeys",
-     "path": "response.body.result.structuredContent.code",
-     "equals": "not_implemented"
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "configmapKeys",
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "configmapKeys",
+     "path": "response.body.result.structuredContent.keys[0]",
+     "equals": "Corefile"
+    },
+    {
+     "step": "configmapKeys",
+     "path": "response.body.result.content[0].text",
+     "matches": "^(?![\\s\\S]*forward \\.)"
+    }
+   ],
+   "scenario": "The e2e-3 goal lists config keys: K3s's own coredns ConfigMap is listed by key name, without the Corefile's text (D33)"
+  },
+  {
+   "spec": "openspec/changes/implement-list-secret-keys/specs/list-secret-keys/spec.md",
+   "requirement": "list_secret_keys returns a Secret's key names, never values",
+   "pass": [
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
     },
     {
      "step": "secretKeys",
-     "path": "response.body.result.structuredContent.code",
-     "equals": "not_implemented"
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.structuredContent.keys",
+     "equals": [
+      "tls.crt",
+      "tls.key"
+     ]
+    },
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.content[0].text",
+     "matches": "^(?![\\s\\S]*BEGIN)"
     }
    ],
-   "scenario": "The e2e-3 goal lists config and secret keys: both tools are published but have no provider in Rust and no handler in Go v0.2.4, so they fail closed (Q18)"
+   "scenario": "The e2e-3 goal lists secret keys: K3s's serving Secret is listed by key name, never the certificate or key (D32, answering Q18)"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",

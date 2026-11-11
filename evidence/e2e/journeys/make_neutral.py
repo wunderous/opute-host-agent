@@ -247,7 +247,7 @@ def wait_tool(port: int, token: str) -> str:
 
 def reserved() -> dict:
     files = {**FILES,
-             "providerCloudflare": inp("${PARITY}/e2e/release/rust-neutral/opute-provider-cloudflare-linux-x64"),
+             "providerCloudflare": inp(base.CANDIDATE + "/opute-provider-cloudflare-linux-x64"),
              # The pinned Go tree's recipe, byte for byte: the provider's install manifest pins its sha256.
              "activate": inp("${REPO}/evidence/e2e/journeys/inputs/cloudflare-activate-tunneling.yaml")}
     r_ = {"port": 3041, "auth": "secret:r"}

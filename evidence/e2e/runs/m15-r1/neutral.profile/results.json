@@ -1,0 +1,486 @@
+{
+ "effects": {
+  "changed": [
+   "files//opt/opute-e2e/releases/rust-0.4.0",
+   "files//opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/releases/rust-0.4.0/opute-host-agent",
+   "system/unitFiles/e2e-agent-exposed.service",
+   "system/unitFiles/e2e-agent-oauth.service",
+   "system/unitFiles/e2e-agent-oldallow.service",
+   "system/unitFiles/e2e-agent-oldmode.service",
+   "system/unitFiles/e2e-agent-plain.service",
+   "system/units/e2e-agent-exposed.service",
+   "system/units/e2e-agent-oauth.service",
+   "system/units/e2e-agent-oldallow.service",
+   "system/units/e2e-agent-oldmode.service",
+   "system/units/e2e-agent-plain.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-neutral",
+ "harnessErrors": [],
+ "journey": "neutral.profile",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "0.4.0\n",
+     "equals": "0.4.0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "unpack04"
+    },
+    {
+     "actual": "e2e-plain",
+     "equals": "e2e-plain",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "plain"
+    },
+    {
+     "actual": "127.0.0.1:3014\n",
+     "equals": "127.0.0.1:3014\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "plainListen"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.body.result.isError",
+     "step": "plainMutation"
+    },
+    {
+     "actual": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "json.body.result.content[0].text",
+     "step": "plainMutation"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "plainNoFile"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "json.body.result.isError",
+     "step": "plainRead"
+    },
+    {
+     "actual": "host:local:e2e-plain",
+     "matches": ":e2e-plain$",
+     "ok": true,
+     "path": "json.body.result.structuredContent.uri",
+     "step": "plainRead"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.hits",
+     "step": "plainSummary"
+    },
+    {
+     "actual": 138,
+     "gte": 100,
+     "ok": true,
+     "path": "json.tools",
+     "step": "plainSummary"
+    },
+    {
+     "actual": 687,
+     "gte": 100,
+     "ok": true,
+     "path": "json.helpBytes",
+     "step": "plainSummary"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-exposed",
+     "equals": "e2e-exposed",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "exposed"
+    },
+    {
+     "actual": [
+      "0.0.0.0:3004"
+     ],
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "exposedListen"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "exposedWrite"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "exposedFile"
+    },
+    {
+     "actual": "c4307b629e262d62d4a3210b1e5e1a570bfd6afab3e08589ad26bb9db0244765",
+     "equalsStep": {
+      "path": "json.catalogSha",
+      "step": "plainSummary"
+     },
+     "ok": true,
+     "other": "c4307b629e262d62d4a3210b1e5e1a570bfd6afab3e08589ad26bb9db0244765",
+     "path": "json.catalogSha",
+     "step": "exposedSummary"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "equals": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "plainSummary"
+    },
+    {
+     "actual": [
+      "bind=0.0.0.0 port=3004 mutations=true"
+     ],
+     "equals": [
+      "bind=0.0.0.0 port=3004 mutations=true"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "exposedSummary"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.body.result.isError",
+     "step": "plainMutation"
+    },
+    {
+     "actual": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "json.body.result.content[0].text",
+     "step": "plainMutation"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-oldmode",
+     "equals": "e2e-oldmode",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "oldMode"
+    },
+    {
+     "actual": "127.0.0.1:3014\n",
+     "equals": "127.0.0.1:3014\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "oldModeListen"
+    },
+    {
+     "actual": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "equals": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "oldModeSummary"
+    },
+    {
+     "actual": "c4307b629e262d62d4a3210b1e5e1a570bfd6afab3e08589ad26bb9db0244765",
+     "equalsStep": {
+      "path": "json.catalogSha",
+      "step": "plainSummary"
+     },
+     "ok": true,
+     "other": "c4307b629e262d62d4a3210b1e5e1a570bfd6afab3e08589ad26bb9db0244765",
+     "path": "json.catalogSha",
+     "step": "oldModeSummary"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.hits",
+     "step": "oldModeSummary"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.body.result.isError",
+     "step": "oldModeMutation"
+    },
+    {
+     "actual": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "json.body.result.content[0].text",
+     "step": "oldModeMutation"
+    },
+    {
+     "actual": "standalone\n",
+     "equalsStep": {
+      "path": "stdout",
+      "step": "plainState"
+     },
+     "ok": true,
+     "other": "standalone\n",
+     "path": "stdout",
+     "step": "oldModeState"
+    },
+    {
+     "actual": "standalone\n",
+     "equals": "standalone\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "plainState"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "No mode setting exists",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.body.result.isError",
+     "step": "oldAllowMutation"
+    },
+    {
+     "actual": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "ok": true,
+     "path": "json.body.result.content[0].text",
+     "step": "oldAllowMutation"
+    },
+    {
+     "actual": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "equals": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "oldAllowSummary"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.hits",
+     "step": "oldAllowSummary"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "No mode setting exists",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "host-agent-provider.json\n",
+     "equals": "host-agent-provider.json\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "plainCreds"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.status",
+     "step": "plainRead"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every orchestrator is an ordinary client",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "ci-runner.json\nhost-agent-provider.json\n",
+     "equals": "ci-runner.json\nhost-agent-provider.json\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "oauthCreds"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.tokenStatus",
+     "step": "oauthMint"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "oauthMint"
+    },
+    {
+     "actual": 138,
+     "equalsStep": {
+      "path": "json.tools",
+      "step": "plainSummary"
+     },
+     "ok": true,
+     "other": 138,
+     "path": "json.tools",
+     "step": "oauthMint"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "json.tokenStatus",
+     "step": "oldClient"
+    },
+    {
+     "actual": "invalid_client",
+     "equals": "invalid_client",
+     "ok": true,
+     "path": "json.error",
+     "step": "oldClient"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "oauthBearer"
+    },
+    {
+     "actual": "host-agent-provider.json\n",
+     "equals": "host-agent-provider.json\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "oauthCredsAfter"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "oauthReuse"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "oauthBearerAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every orchestrator is an ordinary client",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "copy04": 364,
+   "exposed": 724,
+   "exposedFile": 152,
+   "exposedList": 527,
+   "exposedListen": 197,
+   "exposedSummary": 251,
+   "exposedWrite": 250,
+   "oauthAgain": 722,
+   "oauthAgent": 724,
+   "oauthBearer": 237,
+   "oauthBearerAfter": 243,
+   "oauthCreds": 141,
+   "oauthCredsAfter": 139,
+   "oauthMint": 257,
+   "oauthReuse": 210,
+   "oauthStop": 217,
+   "oldAllow": 738,
+   "oldAllowMutation": 225,
+   "oldAllowSummary": 264,
+   "oldClient": 210,
+   "oldMode": 735,
+   "oldModeListen": 150,
+   "oldModeMutation": 221,
+   "oldModeState": 140,
+   "oldModeSummary": 266,
+   "plain": 747,
+   "plainCreds": 136,
+   "plainListen": 157,
+   "plainMutation": 229,
+   "plainNoFile": 142,
+   "plainRead": 292,
+   "plainState": 141,
+   "plainSummary": 273,
+   "probeCopy": 282,
+   "tool": 289,
+   "unpack04": 235,
+   "wire": 288
+  },
+  "stepsSeconds": 56.1
+ },
+ "unverified": []
+}

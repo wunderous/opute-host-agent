@@ -11,4 +11,4 @@
 
 ## 3. Evidence
 
-- [ ] 3.1 The 0.4.0 candidate's `tools/list` in every gate omits them.
+- [x] 3.1 The 0.4.0 candidate's `tools/list` in every gate omits them. Passed: every 0.4.0 `tools/list` in run `m15-r1` on `rust-0.4.0-rc1` omits the four; only `neutral.rollback`'s 0.3.0 lists name them.
