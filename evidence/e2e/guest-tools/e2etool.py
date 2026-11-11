@@ -22,7 +22,7 @@
                                       audit rows by terminal status (read-only)
   e2etool.py procstat UNIT            the unit's main process: RSS, open fds,
                                       threads
-  e2etool.py killloop NAME --port P --rounds N --calls K
+  e2etool.py killloop NAME --port P --rounds N --calls K [--user opute]
                                       N rounds: K task calls in flight, then
                                       SIGKILL the agent and start it again
                                       (token from $E2E_TOKEN)
@@ -203,7 +203,7 @@ def killloop(a):
             time.sleep(0.2)
         rounds.append({"round": r, "accepted": len(accepted)})
         restart = sh([sys.executable, os.path.abspath(__file__), "agent", "start", a.name, "--port", str(a.port),
-                      "--id", a.id] + [x for kv in a.env for x in ("--env", kv)], check=False)
+                      "--id", a.id, "--user", a.user] + [x for kv in a.env for x in ("--env", kv)], check=False)
         if restart.returncode != 0:
             return {"rounds": rounds, "restartFailed": r, "stdout": restart.stdout[-1000:]}
     return {"rounds": rounds, "acceptedTotal": sum(x["accepted"] for x in rounds), "restarts": a.rounds}
@@ -360,6 +360,7 @@ def main():
     kl.add_argument("--env", action="append", default=[])
     kl.add_argument("--rounds", type=int, default=10)
     kl.add_argument("--calls", type=int, default=4)
+    kl.add_argument("--user", default="opute")
     lo = sub.add_parser("load")
     lo.add_argument("--port", type=int, required=True)
     lo.add_argument("--seconds", type=int, required=True)

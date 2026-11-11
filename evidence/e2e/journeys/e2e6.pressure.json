@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "eacd10b6b645c41e5feb1d4050ce6a80e32644caeee093db88838a052e7fd535"
+    "sha256": "99d8e277b1d88d343a239890a9c02e80a4188c03bff94654975d05907fcf44b6"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -26,13 +26,13 @@
      "equals": "working"
     },
     {
-     "step": "second",
-     "path": "response.body.result.isError",
+     "step": "secondDone",
+     "path": "response.body.result.result.isError",
      "equals": true
     },
     {
-     "step": "second",
-     "path": "response.body.result.structuredContent.owner",
+     "step": "secondDone",
+     "path": "response.body.result.result.structuredContent.owner",
      "equals": "admission"
     },
     {
@@ -69,7 +69,7 @@
      "exists": true
     }
    ],
-   "scenario": "Beyond the operation limit new work is refused with a typed admission error and nothing is queued; the running task finishes and new work is admitted after it"
+   "scenario": "Beyond the operation limit new work is refused with a typed admission error (a task's as its result) and nothing is queued; the running task finishes and new work is admitted after it"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",
@@ -86,13 +86,13 @@
      "equals": "admission"
     },
     {
-     "step": "lowTask",
-     "path": "response.body.result.isError",
+     "step": "lowTaskDone",
+     "path": "response.body.result.result.isError",
      "equals": true
     },
     {
-     "step": "lowTask",
-     "path": "response.body.result.structuredContent.owner",
+     "step": "lowTaskDone",
+     "path": "response.body.result.result.structuredContent.owner",
      "equals": "admission"
     },
     {
@@ -145,7 +145,10 @@
  "effects": {
   "allow": [
    "system/units/e2e-agent-*",
-   "system/unitFiles/e2e-agent-*"
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
   ],
   "persist": []
  },
@@ -162,7 +165,7 @@
   },
   {
    "id": "limAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start lim --port 3046 --id e2e-lim-agent --env MCP_AUTH_TOKEN=${SECRET:lim} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_MAX_NORMAL_OPERATIONS=1"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start lim --port 3046 --id e2e-lim-agent --env MCP_AUTH_TOKEN=${SECRET:lim} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_MAX_NORMAL_OPERATIONS=1 --user root"
   },
   {
    "id": "listLim",
@@ -207,7 +210,36 @@
    },
    "port": 3046,
    "auth": "secret:lim",
-   "retryOn": []
+   "retryOn": [],
+   "capture": {
+    "SECOND": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "secondDone",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${SECOND}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3046,
+   "auth": "secret:lim",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 60,
+   "interval": 2
   },
   {
    "id": "third",
@@ -317,7 +349,36 @@
    },
    "port": 3047,
    "auth": "secret:low",
-   "retryOn": []
+   "retryOn": [],
+   "capture": {
+    "LOW": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "lowTaskDone",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${LOW}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3047,
+   "auth": "secret:low",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 60,
+   "interval": 2
   },
   {
    "id": "lowRead",

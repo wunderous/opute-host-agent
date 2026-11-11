@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "eacd10b6b645c41e5feb1d4050ce6a80e32644caeee093db88838a052e7fd535"
+    "sha256": "99d8e277b1d88d343a239890a9c02e80a4188c03bff94654975d05907fcf44b6"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -80,7 +80,10 @@
  "effects": {
   "allow": [
    "system/units/e2e-agent-*",
-   "system/unitFiles/e2e-agent-*"
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
   ],
   "persist": []
  },
@@ -130,7 +133,7 @@
   {
    "id": "hangNext",
    "mcp": "tools/call",
-   "tool": "get_host_info",
+   "tool": "detect_host_platform",
    "arguments": {},
    "port": 3043,
    "auth": "secret:hang"

@@ -28,13 +28,21 @@ TASKS_META = base.TASKS_META
 BUDGET = json.loads((base.REPO / "evidence/hardening/resource-budget.json").read_text())
 ROOT = "/tmp/e2e-agents"
 MUT = "--env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
-# The transient agents' systemd units exist only while a journey runs; cleanup
-# removes them, so the residue check still holds.
-AGENT_UNITS = ("system/units/e2e-agent-*", "system/unitFiles/e2e-agent-*")
+# The transient agents' systemd units, the slow-endpoint helper and the
+# disk-full tmpfs exist only while a journey runs; cleanup removes them, so
+# the residue check still holds.
+AGENT_UNITS = ("system/units/e2e-agent-*", "system/unitFiles/e2e-agent-*",
+               "system/units/e2e-slow*", "system/unitFiles/e2e-slow*",
+               "system/units/tmp-e2e*agents-*.mount")
 
 
-def agent(name: str, port: int, *env: str) -> dict:
-    extra = " ".join(f"--env {e}" for e in env)
+def agent(name: str, port: int, *env: str, root: bool = False) -> dict:
+    """A transient agent. `root` runs it as root: the VM's opute user has no
+    user manager (no linger), so as opute every run_host_command workload
+    fails at once with "Failed to connect to bus"; a journey whose task must
+    hold its reservation runs the agent as root, whose workloads go to the
+    system manager."""
+    extra = " ".join(f"--env {e}" for e in env) + (" --user root" if root else "")
     return {"id": f"{name}Agent", "guest": f"{T} agent start {name} --port {port} --id e2e-{name}-agent "
                                           f"--env MCP_AUTH_TOKEN=${{SECRET:{name}}} {MUT} {extra}".rstrip()}
 
@@ -47,15 +55,22 @@ def state(name: str) -> str:
     return f"{ROOT}/{name}/state"
 
 
-def journey(id_, description, requirements, steps, cleanup, minutes=20, files=None):
+def journey(id_, description, requirements, steps, cleanup, minutes=20, files=None, allow=()):
     return base.journey(id_, description, {"agent": f"transient Rust agents of the installed release candidate "
                                                     f"({base.RUST_VERSION}) under {ROOT}",
                                            "files": files or base.TOOL_FILES},
-                        requirements, steps, cleanup, allow=AGENT_UNITS, minutes=minutes, gate="e2e-6")
+                        requirements, steps, cleanup, allow=AGENT_UNITS + tuple(allow), minutes=minutes, gate="e2e-6")
 
 
 def remove(*names: str) -> list[dict]:
     return [{"id": "remove", "guest": " ; ".join(f"{T} agent remove {n} >/dev/null" for n in names) + " ; true"}]
+
+
+def done(id_: str, var: str, target: dict) -> dict:
+    """Poll a task until it is terminal."""
+    return {"id": id_, "mcp": "tasks/get", "params": {"taskId": "${" + var + "}"}, "meta": TASKS_META, **target,
+            "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
+            "timeout": 60, "interval": 2}
 
 
 def not_error(step: str) -> dict:
@@ -78,7 +93,7 @@ def disk_full() -> dict:
     steps = base.TOOL_STEPS + [
         {"id": "mount", "guest": f"mkdir -p {state(n)} && mount -t tmpfs -o size=24m,mode=0700 e2e-full {state(n)} "
                                  "&& echo mounted"},
-        agent(n, port),
+        agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         call("writeBefore", "ensure_host_file", f(1), **o),
         call("taskBefore", "run_host_command", {"command": "echo before"}, meta=TASKS_META, **o),
@@ -193,21 +208,21 @@ def kill() -> dict:
     rel = ".config/opute-e2e/kill.txt"
     steps = base.TOOL_STEPS + [
         {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 40"},
-        agent(n, port),
+        agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         call("plan", "run_host_plan", {"plan": plan("e2e6.kill", "e2e6-kill-1", rel, slow=True)}, **o,
              capture={"RUN": "response.body.result.structuredContent.runId"}),
         poll_run("running", "RUN", done=("running", "working"), timeout=60, **o),
         {"id": "kill", "guest": f"sleep 3; systemctl kill -s KILL e2e-agent-{n}.service; sleep 1; "
                                 f"! systemctl is-active -q e2e-agent-{n}.service && echo killed"},
-        agent(n, port) | {"id": "restart"},
+        agent(n, port, root=True) | {"id": "restart"},
         mcp("listAgain", "tools/list", **o),
         call("runAfter", "get_host_plan_run", {"runId": "${RUN}"}, **o),
         {"id": "settle", "guest": "sleep 45; echo waited"},
         call("runLater", "get_host_plan_run", {"runId": "${RUN}"}, **o),
         {"id": "loop", "guest": f"E2E_TOKEN=${{SECRET:{n}}} {T} killloop {n} --port {port} --id e2e-{n}-agent "
                                 f"--env MCP_AUTH_TOKEN=${{SECRET:{n}}} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
-                                "--rounds 12 --calls 4"},
+                                "--rounds 12 --calls 4 --user root"},
         call("afterLoop", "get_host_info", **o),
         {"id": "audit", "guest": f"{T} audit {state(n)}/state.db"},
     ]
@@ -244,7 +259,9 @@ def commands() -> dict:
         mcp("listHang", "tools/list", **o_h),
         mcp("listJunk", "tools/list", **o_g),
         call("hangCall", "list_vms", **o_h),
-        call("hangNext", "get_host_info", **o_h),
+        # get_host_info runs three incus commands, 45 s each; the next call
+        # must be one that does not wait on incus.
+        call("hangNext", "detect_host_platform", **o_h),
         call("junkCall", "list_vms", **o_g),
         call("junkInfo", "get_vm_info", {"name": "e2e-none"}, **o_g),
         call("junkNext", "get_host_info", **o_g),
@@ -274,7 +291,7 @@ def clock() -> dict:
     n, port = "clk", 3045
     o = on(n, port)
     steps = base.TOOL_STEPS + [
-        agent(n, port),
+        agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         {"id": "cred", "guest": f"cat {state(n)}/credentials/host-agent-provider.json",
          "capture": {"CRED_ID": "json.client_id", "CRED_SECRET": {"path": "json.client_secret", "secret": True}}},
@@ -303,11 +320,18 @@ def clock() -> dict:
             scenario="Clock steps back an hour: bootstrap and issued tokens still authenticate, the running "
                      "task's reservation is kept, and new work is admitted (D31)"),
     ]
-    cleanup = [{"id": "clockBack", "guest": "date -s '+1 hour' >/dev/null; timedatectl set-ntp true; true"}] + remove(n)
+    cleanup = [{"id": "clockBack", "guest": "date -s '+1 hour' >/dev/null; timedatectl set-ntp true; "
+                                            "systemctl stop systemd-timedated.service; true"}] + remove(n)
     return journey("e2e6.clock",
                    "D31: the guest clock stepped back one hour while an agent holds a reservation for a running "
                    "task; tokens still authenticate, the reservation is kept and new work is admitted.",
-                   reqs, steps, cleanup, minutes=10)
+                   reqs, steps, cleanup, minutes=10,
+                   # Turning NTP off disables timesyncd until cleanup turns it back on.
+                   allow=("files//etc/systemd/system/dbus-org.freedesktop.timesync1.service",
+                          "files//etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service",
+                          "system/unitFiles/dbus-org.freedesktop.timesync1.service",
+                          "system/unitFiles/systemd-timesyncd.service",
+                          "system/units/systemd-timesyncd.service", "system/units/systemd-timedated.service"))
 
 
 # --- 6. admission under pressure, and the body limit -------------------------------------------------
@@ -315,11 +339,13 @@ def clock() -> dict:
 def pressure() -> dict:
     lim, lo, body = on("lim", 3046), on("low", 3047), on("big", 3048)
     steps = base.TOOL_STEPS + [
-        agent("lim", 3046, "OPUTE_HOST_MAX_NORMAL_OPERATIONS=1"),
+        agent("lim", 3046, "OPUTE_HOST_MAX_NORMAL_OPERATIONS=1", root=True),
         mcp("listLim", "tools/list", **lim),
         call("first", "run_host_command", {"command": "sleep 20"}, meta=TASKS_META, **lim, retryOn=[],
              capture={"FIRST": "response.body.result.taskId"}),
-        call("second", "run_host_command", {"command": "echo second"}, meta=TASKS_META, **lim, retryOn=[]),
+        call("second", "run_host_command", {"command": "echo second"}, meta=TASKS_META, **lim, retryOn=[],
+             capture={"SECOND": "response.body.result.taskId"}),
+        done("secondDone", "SECOND", lim),
         call("third", "ensure_host_file", {"path": ".config/opute-e2e/p.txt", "content": "x\n", "scope": "user"},
              **lim, retryOn=[]),
         call("readWhileFull", "get_host_info", **lim),
@@ -333,7 +359,9 @@ def pressure() -> dict:
         mcp("listLow", "tools/list", **lo),
         call("lowWrite", "ensure_host_file", {"path": ".config/opute-e2e/q.txt", "content": "x\n", "scope": "user"},
              **lo, retryOn=[]),
-        call("lowTask", "run_host_command", {"command": "echo low"}, meta=TASKS_META, **lo, retryOn=[]),
+        call("lowTask", "run_host_command", {"command": "echo low"}, meta=TASKS_META, **lo, retryOn=[],
+             capture={"LOW": "response.body.result.taskId"}),
+        done("lowTaskDone", "LOW", lo),
         call("lowRead", "get_host_info", **lo),
         agent("big", 3048),
         mcp("listBig", "tools/list", **body),
@@ -344,17 +372,20 @@ def pressure() -> dict:
         call("bigNext", "get_host_info", **body),
     ]
     refused = lambda s: [is_error(s), a(s, "response.body.result.structuredContent.owner", equals="admission")]  # noqa
+    # A task's admission runs inside the task: the refusal is its result.
+    task_refused = lambda s: [a(s, "response.body.result.result.isError", equals=True),  # noqa
+                              a(s, "response.body.result.result.structuredContent.owner", equals="admission")]
     reqs = [
         req(SPEC, "Typed target and effect admission",
             a("first", "response.body.result.status", equals="working"),
-            *refused("second"), *refused("third"), not_error("readWhileFull"),
+            *task_refused("secondDone"), *refused("third"), not_error("readWhileFull"),
             a("firstDone", "response.body.result.status", equals="completed"),
             a("afterFirst", "response.body.result.status", equals="working"),
             a("limOps", "json.operations.run_host_command", exists=True),
-            scenario="Beyond the operation limit new work is refused with a typed admission error and nothing is "
-                     "queued; the running task finishes and new work is admitted after it"),
+            scenario="Beyond the operation limit new work is refused with a typed admission error (a task's as its "
+                     "result) and nothing is queued; the running task finishes and new work is admitted after it"),
         req(SPEC, "Typed target and effect admission",
-            *refused("lowWrite"), *refused("lowTask"), not_error("lowRead"),
+            *refused("lowWrite"), *task_refused("lowTaskDone"), not_error("lowRead"),
             scenario="Below the memory and disk floors, effectful work is refused with a typed admission error"),
         req(BODY, "An MCP request body is read only up to its limit",
             a("bigBody", "json.status", equals=413), a("bigBody", "json.bodyLimitText", equals=True),
@@ -377,7 +408,7 @@ def budget() -> dict:
     o = on(n, port)
     b = BUDGET
     steps = base.TOOL_STEPS + [
-        agent(n, port),
+        agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         {"id": "load", "guest": f"E2E_TOKEN=${{SECRET:{n}}} {T} load --port {port} --seconds {b['seconds']} "
                                 f"--sample-unit e2e-agent-{n}.service --state {state(n)}"},

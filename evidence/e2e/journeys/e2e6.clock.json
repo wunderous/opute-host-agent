@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "eacd10b6b645c41e5feb1d4050ce6a80e32644caeee093db88838a052e7fd535"
+    "sha256": "99d8e277b1d88d343a239890a9c02e80a4188c03bff94654975d05907fcf44b6"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -61,7 +61,16 @@
  "effects": {
   "allow": [
    "system/units/e2e-agent-*",
-   "system/unitFiles/e2e-agent-*"
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount",
+   "files//etc/systemd/system/dbus-org.freedesktop.timesync1.service",
+   "files//etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service",
+   "system/unitFiles/dbus-org.freedesktop.timesync1.service",
+   "system/unitFiles/systemd-timesyncd.service",
+   "system/units/systemd-timesyncd.service",
+   "system/units/systemd-timedated.service"
   ],
   "persist": []
  },
@@ -78,7 +87,7 @@
   },
   {
    "id": "clkAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start clk --port 3045 --id e2e-clk-agent --env MCP_AUTH_TOKEN=${SECRET:clk} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start clk --port 3045 --id e2e-clk-agent --env MCP_AUTH_TOKEN=${SECRET:clk} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root"
   },
   {
    "id": "list",
@@ -220,7 +229,7 @@
  "cleanup": [
   {
    "id": "clockBack",
-   "guest": "date -s '+1 hour' >/dev/null; timedatectl set-ntp true; true"
+   "guest": "date -s '+1 hour' >/dev/null; timedatectl set-ntp true; systemctl stop systemd-timedated.service; true"
   },
   {
    "id": "remove",
