@@ -41,16 +41,17 @@ OBSERVING_MODULES = ("agent", "canon", "provider_stub", "runner", "shims")
 PROFILES: dict[str, dict[str, str]] = {
     "standalone": {
         "OPUTE_REMOTE_AGENT_ID": "${AGENT_ID}",
-        "OPUTE_AGENT_MODE": "standalone",
         "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/state",
         "OPUTE_HOST_AGENT_INSTANCE_ROOT": "${SANDBOX}/instance",
         "HOST_MCP_BIND_HOST": "127.0.0.1",
         "HOST_MCP_PORT": "${PORT}",
         "MCP_AUTH_TOKEN": "${TOKEN}",
     },
+    # Once Go's platform mode; since platform-neutral-host-agent, the one
+    # profile with mutations admitted, as such a host was.
     "platform": {
         "OPUTE_REMOTE_AGENT_ID": "${AGENT_ID}",
-        "OPUTE_AGENT_MODE": "platform",
+        "OPUTE_HOST_ALLOW_MUTATIONS": "true",
         "OPUTE_STANDALONE_STATE_DIR": "${SANDBOX}/state",
         "OPUTE_HOST_AGENT_INSTANCE_ROOT": "${SANDBOX}/instance",
         "HOST_MCP_BIND_HOST": "127.0.0.1",

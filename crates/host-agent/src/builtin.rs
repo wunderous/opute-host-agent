@@ -3453,7 +3453,7 @@ fn local_llm_runtime(llm: &crate::llmops::Llm, host: &crate::tools::Host) -> Ser
                         serde_json::json!({
                             "stopped": false,
                             "shared": true,
-                            "reason": "shared Ollama runtime remains available to other Platform instances"
+                            "reason": "shared Ollama runtime remains available to other instances"
                         }),
                         Some("shared Ollama runtime left running"),
                     )),

@@ -140,6 +140,35 @@ pub fn structured(text: String, value: J) -> ToolCallOutcome {
     }))
 }
 
+/// Marks a handler error that is a typed refusal: the rest is its JSON body.
+pub const TYPED: &str = "\u{1}opute-typed-error\u{1}";
+
+/// A typed refusal as a handler error: `{code, message, ...fields}`.
+pub fn typed_error(code: &str, message: &str, fields: J) -> String {
+    let mut value = json!({"code": code, "message": message});
+    if let (Some(target), J::Object(extra)) = (value.as_object_mut(), fields) {
+        target.extend(extra);
+    }
+    format!("{TYPED}{value}")
+}
+
+/// A handler error as a tool outcome: a typed refusal is an error result
+/// whose structured content names it, anything else a protocol error.
+pub fn error_outcome(error: String) -> ToolCallOutcome {
+    match error.strip_prefix(TYPED) {
+        Some(typed) => {
+            let value: J = serde_json::from_str(typed).unwrap_or(J::Null);
+            let text = value["message"].as_str().unwrap_or("").to_string();
+            ToolCallOutcome::Result(json!({
+                "content": [{"type": "text", "text": text}],
+                "structuredContent": value,
+                "isError": true,
+            }))
+        }
+        None => ToolCallOutcome::Protocol(0, error, None),
+    }
+}
+
 /// Go's `json.Marshal` of a value whose key order the caller has fixed:
 /// `encoding/json` escapes `<`, `>`, `&`, U+2028 and U+2029.
 pub fn go_text(text: String) -> String {
