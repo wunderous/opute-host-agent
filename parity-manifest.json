@@ -4,7 +4,7 @@
   "results": "evidence/m9/canaries.json"
  },
  "catalogRevisions": {
-  "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). standalone is the one served catalog (crate test catalog::tests::revisions_match_manifest checks the Rust side); platform is historical, the catalog Go's platform mode served, which no build serves since platform-neutral-host-agent ( the Go value is Go v0.2.4's revision, which the un-renamed Rust catalog matched until the D28 fixes (Q21) changed descriptors). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
+  "note": "X5 and D19: each Rust catalog revision pinned with the Go revision it stands for (neutral-host-tool-names). standalone is the one served catalog (crate test catalog::tests::revisions_match_manifest checks the Rust side); platform is historical, the catalog Go's platform mode served, which no build serves since platform-neutral-host-agent ( the Go value is Go v0.2.4's revision, which the un-renamed Rust catalog matched until the D28 fixes (Q21) changed descriptors). 0.4.0 re-pins standalone for D37 (four tools withdrawn) and D39 (send_console_input gains output and closed). providerFixtures are the catalogs the provider-lifecycle fixtures publish, each observed one-to-one in the listed scenarios. The D19 divergence maps only these pinned pairs; any other revision stays a diff.",
   "platform": {
    "go": "sha256:7f300d1de913066fe8812e21f5f926c8548e607ec9d3d65d54300377059c07ec",
    "rust": "sha256:cefdfaf8100463749aaec4a432ed883cfc5f9b5e6a8efb505b129731cd37a5af"
@@ -161,7 +161,7 @@
   ],
   "standalone": {
    "go": "sha256:50b20e5885a225bd45f0a67d2c0327dfa7d096f845c71b81ca689d37c153f6a2",
-   "rust": "sha256:4d87041126337b3bbb3be7cc200e209727a75b0563cbd0492d576196323d8ea2"
+   "rust": "sha256:26a771cc7f2b2a7b9a78ad3e116ac3e44c8a07d1cdc98bec55de02d00202a27a"
   }
  },
  "contracts": {

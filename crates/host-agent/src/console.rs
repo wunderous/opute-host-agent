@@ -126,7 +126,7 @@ fn winsize(width: u16, height: u16) -> rustix::termios::Winsize {
 
 /// A terminal size from a JSON number: a whole number of cells, 1 to 65535.
 pub fn cells(value: f64) -> Option<u16> {
-    (value >= 1.0 && value <= f64::from(u16::MAX)).then(|| value as u16)
+    (1.0..=f64::from(u16::MAX)).contains(&value).then_some(value as u16)
 }
 
 fn open_pty(size: Option<(u16, u16)>) -> Result<(OwnedFd, std::fs::File), String> {
@@ -334,7 +334,11 @@ mod tests {
         );
         assert_eq!(incomplete_tail("ab\u{e9}".as_bytes()), 0);
         assert_eq!(incomplete_tail(&"ab\u{e9}".as_bytes()[..3]), 1);
-        assert_eq!(incomplete_tail(b"\xff ok\xe2\x82"), 2, "an earlier invalid byte does not matter");
+        assert_eq!(
+            incomplete_tail(b"\xff ok\xe2\x82"),
+            2,
+            "an earlier invalid byte does not matter"
+        );
         assert_eq!(incomplete_tail(b"ok\xe2\x82\xac"), 0);
         assert_eq!(cells(0.0), None);
         assert_eq!(cells(-3.0), None);

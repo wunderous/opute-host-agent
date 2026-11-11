@@ -6,7 +6,7 @@
 ## 2. Implementation
 
 - [x] 2.1 A console service on the D14 seam offering the three tools; the seam verifier reports them compliant.
-- [ ] 2.2 `send_console_input`'s output schema gains `output` and `closed`; the catalog revision is re-pinned.
+- [x] 2.2 `send_console_input`'s output schema gains `output` and `closed`; the catalog revision is re-pinned.
 - [x] 2.3 Unit tests against a stand-in console, failing first: one session per instance, pull and the 64 KiB bound, close, resize, shutdown.
 - [x] 2.4 Console output joins `evidence/hardening/entry-points.json`, covered by a fuzz target or property.
 

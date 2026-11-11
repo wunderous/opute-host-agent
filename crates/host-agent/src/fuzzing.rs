@@ -373,7 +373,12 @@ pub fn incus_output(data: &[u8]) {
         }
     }
     if let Ok(doc) = serde_json::from_slice::<J>(data) {
-        let devices = |key: &str| doc.get(key).and_then(J::as_object).cloned().unwrap_or_default();
+        let devices = |key: &str| {
+            doc.get(key)
+                .and_then(J::as_object)
+                .cloned()
+                .unwrap_or_default()
+        };
         let (own, expanded) = (devices("devices"), devices("expanded_devices"));
         for device in expanded.keys().chain(own.keys()) {
             let _ = crate::incusops::bridged_nic_needed(&expanded, "vm", device, "br0");
@@ -392,7 +397,10 @@ pub fn console_output(data: &[u8]) {
     while let Some((&cut, tail)) = rest.split_first() {
         let (chunk, next) = tail.split_at((cut as usize).min(tail.len()));
         append(&mut output.pending, chunk);
-        assert!(output.pending.len() <= BUFFER, "console buffer over its bound");
+        assert!(
+            output.pending.len() <= BUFFER,
+            "console buffer over its bound"
+        );
         if cut % 3 == 0 {
             drain(&mut output);
         }

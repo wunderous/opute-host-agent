@@ -132,6 +132,8 @@ fn go_published(mode: &str) -> BTreeSet<String> {
         .unwrap()
         .iter()
         .map(|tool| tool["name"].as_str().unwrap())
+        // D37: withdrawn, published by no Host Agent build.
+        .filter(|name| !crate::catalog::WITHDRAWN.contains(name))
         // D19: Rust publishes the neutral name in place of each mapped Go name.
         .map(|name| {
             crate::catalog::neutral_name(name)
@@ -288,7 +290,7 @@ fn seam_verifier() {
 #[test]
 fn recorded_tools_answer_as_recorded() {
     let dir = tempfile::tempdir().unwrap();
-    let server = server(dir.path(), "standalone");
+    let server = server(dir.path());
     let revision = server.catalog.snapshot().revision.clone();
     let call = |name: &str, args: J| {
         crate::tools::invoke(
@@ -334,4 +336,37 @@ fn recorded_tools_answer_as_recorded() {
         json!({"numParallel": 4})
     ))
     .contains("host-wide and pinned"));
+}
+
+/// D37: the four withdrawn tools are not listed, and a call naming one is
+/// answered exactly as a call naming a tool that never existed.
+#[test]
+fn withdrawn_tools_are_unknown() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = server(dir.path());
+    let listed: Vec<String> = server
+        .catalog
+        .snapshot()
+        .tools
+        .iter()
+        .map(|d| d.name.clone())
+        .collect();
+    let call = |name: &str| {
+        crate::tools::invoke(
+            &server,
+            &RunCtx::background(),
+            name,
+            &Map::new(),
+            &Binding::default(),
+        )
+    };
+    let unknown = call("e2e_never_a_tool").to_string();
+    for name in crate::catalog::WITHDRAWN {
+        assert!(!listed.iter().any(|n| n == name), "{name} is listed");
+        assert_eq!(
+            call(name).to_string().replace(name, "e2e_never_a_tool"),
+            unknown,
+            "{name} is not answered as an unknown tool"
+        );
+    }
 }

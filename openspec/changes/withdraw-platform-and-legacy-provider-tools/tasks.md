@@ -5,9 +5,9 @@
 
 ## 2. Implementation
 
-- [ ] 2.1 Remove the four from the catalog source; regenerate the derived catalog and pin its revision.
-- [ ] 2.2 Remove their unported seam registrations; the seam verifier reports no gap.
-- [ ] 2.3 A test: none of the four is listed, and a call gets the unknown-tool error.
+- [x] 2.1 Remove the four from the served catalog and pin its revision. Done as `catalog::WITHDRAWN`, filtered out of `served()`; `catalog/source.json` keeps Go v0.2.4's record, and the seam compares Go's captured `tools/list` without them.
+- [x] 2.2 Remove their unported seam registrations; the seam verifier reports no gap. They had no service, so nothing was registered; the report lists them unpublished.
+- [x] 2.3 A test (`seam::withdrawn_tools_are_unknown`): none of the four is listed, and a call gets the unknown-tool error.
 
 ## 3. Evidence
 

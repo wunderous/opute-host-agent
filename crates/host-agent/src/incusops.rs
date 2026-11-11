@@ -2636,7 +2636,12 @@ fn device_field<'a>(device: &'a J, key: &str) -> &'a str {
 
 /// D35: whether the bridged NIC must be added; the same device already
 /// present needs nothing, and any other device of that name is a conflict.
-pub(crate) fn bridged_nic_needed(expanded: &Map<String, J>, vm: &str, device: &str, parent: &str) -> R<bool> {
+pub(crate) fn bridged_nic_needed(
+    expanded: &Map<String, J>,
+    vm: &str,
+    device: &str,
+    parent: &str,
+) -> R<bool> {
     let Some(existing) = expanded.get(device) else {
         return Ok(true);
     };
