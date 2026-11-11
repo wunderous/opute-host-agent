@@ -1,0 +1,390 @@
+{
+ "cleanup": [
+  {
+   "guest": "rm -rf /home/ubuntu/.local /home/ubuntu/.config /home/ubuntu/.cache /home/ubuntu/.npm /opt/opute-e2e/node /opt/opute-e2e/node.tar.xz /opt/opute-e2e/opute-host-agent-0.3.0.tgz /opt/opute-e2e/deploy-user",
+   "id": "remove"
+  }
+ ],
+ "description": "Flow 2, user install: Go's recorded user unit (deploy/opute-host-agent.service) for the existing user ubuntu with its env file, --check, enable and serve on a configured port; then the npm launcher packed locally from the pinned tree (never published), started as the docs show against a local release base, with url, status and stop. The user unit is stopped first: both are the user's default instance, and under D25 they would refuse each other.",
+ "effects": {
+  "allow": [
+   "files//home/ubuntu/.local*",
+   "files//home/ubuntu/.config*",
+   "files//home/ubuntu/.cache*",
+   "files//home/ubuntu/.npm*",
+   "files//opt/opute-e2e/node*",
+   "files//opt/opute-e2e/opute-host-agent-0.3.0.tgz",
+   "files//opt/opute-e2e/deploy-user*",
+   "linger*",
+   "user/*",
+   "system/units/user*",
+   "system/units/run-user-1000.mount*",
+   "system/units/e2e-release*",
+   "system/unitFiles/e2e-release*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-1",
+ "id": "e2e1.user-unit-npm",
+ "inputs": {
+  "agent": "Rust 0.3.0 release candidate binary as ubuntu (user unit) and as the launcher's cached binary",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+   },
+   "launcher": {
+    "path": "${PARITY}/e2e/inputs/opute-host-agent-0.3.0.tgz",
+    "sha256": "6b801017a974786c5f7e4d207db404a5d318379c6ff50fee8b537621c66ca179"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "node": {
+    "path": "${PARITY}/setup/node-v22.14.0-linux-x64.tar.xz",
+    "sha256": "69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec"
+   },
+   "userUnit": {
+    "path": "${PARITY}/e2e/go-src-v0.2.4/deploy/opute-host-agent.service",
+    "sha256": "53961c80896ee755f9dc0b8005edbde159a76b492b1bcf26c8dc7f0e0e30e533"
+   }
+  },
+  "release": "/opt/opute-e2e/releases/rust/v0.3.0 served at http://127.0.0.1:8765/v0.3.0/"
+ },
+ "maxMinutes": 20,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "install"
+    },
+    {
+     "equalsStep": {
+      "path": "stdout",
+      "step": "pinned"
+     },
+     "path": "stdout",
+     "step": "install"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "check"
+    },
+    {
+     "equals": "configuration ok\n",
+     "path": "stdout",
+     "step": "check"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "enable"
+    },
+    {
+     "equals": "active",
+     "path": "json.ActiveState",
+     "step": "enable"
+    },
+    {
+     "equals": "/home/ubuntu/.config/systemd/user/opute-host-agent.service",
+     "path": "json.FragmentPath",
+     "step": "enable"
+    },
+    {
+     "equals": "/home/ubuntu/.config/opute/host-agent.env",
+     "path": "json.EnvironmentFiles",
+     "step": "enable"
+    },
+    {
+     "equals": [
+      "127.0.0.1:3015"
+     ],
+     "path": "json.addresses",
+     "step": "userListen"
+    }
+   ],
+   "requirement": "Compatible modes, configuration, and distribution",
+   "scenario": "user unit: Go's recorded deploy/opute-host-agent.service; standalone loopback bind, configured port",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "node"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "releaseBase"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "start"
+    },
+    {
+     "contains": "http://127.0.0.1:3016/mcp",
+     "path": "stdout",
+     "step": "start"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "url"
+    },
+    {
+     "equals": "http://127.0.0.1:3016/mcp\n",
+     "path": "stdout",
+     "step": "url"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "status"
+    },
+    {
+     "equals": true,
+     "path": "json.running",
+     "step": "status"
+    },
+    {
+     "equals": true,
+     "path": "json.healthy",
+     "step": "status"
+    },
+    {
+     "equals": [
+      "127.0.0.1:3016"
+     ],
+     "path": "json.addresses",
+     "step": "npmListen"
+    },
+    {
+     "equalsStep": {
+      "path": "stdout",
+      "step": "pinned"
+     },
+     "path": "stdout",
+     "step": "npmBinary"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "stop"
+    },
+    {
+     "equals": "000",
+     "path": "stdout",
+     "step": "npmGone"
+    }
+   ],
+   "requirement": "Published npm launcher: start --background, url, status, stop",
+   "scenario": "@opute/host-agent@0.3.0 packed locally from the pinned launcher tree with only its version changed (never published), with a local release base; the launcher runs the pinned release binary",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/install/index.html"
+  },
+  {
+   "pass": [
+    {
+     "equals": "e2e-user-agent",
+     "path": "response.body.agentId",
+     "step": "userHealth"
+    },
+    {
+     "equals": "e2e-npm-agent",
+     "path": "response.body.agentId",
+     "step": "npmHealth"
+    },
+    {
+     "matches": ":e2e-user-agent$",
+     "path": "response.body.result.structuredContent.uri",
+     "step": "userInfo"
+    },
+    {
+     "matches": ":e2e-npm-agent$",
+     "path": "response.body.result.structuredContent.uri",
+     "step": "npmInfo"
+    }
+   ],
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "userList"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "npmList"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "userInfo"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "npmInfo"
+    }
+   ],
+   "requirement": "Compatible authenticated MCP surface",
+   "scenario": "Read-only authenticated first call",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "userUnit",
+   "id": "unitFile",
+   "to": "/opt/opute-e2e/deploy-user/opute-host-agent.service"
+  },
+  {
+   "guest": "loginctl enable-linger ubuntu && for i in $(seq 60); do test -S /run/user/$(id -u ubuntu)/systemd/private && break; sleep 0.5; done",
+   "id": "linger"
+  },
+  {
+   "guest": "U=ubuntu; H=/home/ubuntu; install -d -o $U -g $U $H/.local $H/.local/share $H/.local/share/opute $H/.config $H/.config/opute $H/.config/systemd $H/.config/systemd/user && gzip -dc /opt/opute-e2e/releases/rust/v0.3.0/host-agent-linux-x64.gz > /tmp/oha && install -o ubuntu -g ubuntu -m 0755 /tmp/oha /home/ubuntu/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/ubuntu/.local/share/opute/opute-host-agent | cut -c1-64 && install -o $U -g $U -m 0644 /opt/opute-e2e/deploy-user/opute-host-agent.service $H/.config/systemd/user/opute-host-agent.service && (umask 077 && printf 'OPUTE_REMOTE_AGENT_ID=e2e-user-agent\\nMCP_AUTH_TOKEN=%s\\nHOST_MCP_PORT=3015\\n' '${SECRET:user}' > $H/.config/opute/host-agent.env) && chown $U:$U $H/.config/opute/host-agent.env",
+   "id": "install"
+  },
+  {
+   "guest": "awk '$2==\"host-agent-linux-x64\"{print $1}' /opt/opute-e2e/releases/rust/v0.3.0/SHA256SUMS",
+   "id": "pinned"
+  },
+  {
+   "guest": "runuser -u ubuntu -- /home/ubuntu/.local/share/opute/opute-host-agent --check --env-file /home/ubuntu/.config/opute/host-agent.env",
+   "id": "check"
+  },
+  {
+   "guest": "R=/run/user/$(id -u ubuntu); runuser -u ubuntu -- env XDG_RUNTIME_DIR=$R systemctl --user daemon-reload && R=/run/user/$(id -u ubuntu); runuser -u ubuntu -- env XDG_RUNTIME_DIR=$R systemctl --user enable --now opute-host-agent.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3015/health && break; sleep 0.5; done && python3 /opt/opute-e2e/guest/e2etool.py unit opute-host-agent.service --user ubuntu",
+   "id": "enable"
+  },
+  {
+   "health": true,
+   "id": "userHealth",
+   "port": 3015
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3015",
+   "id": "userListen"
+  },
+  {
+   "auth": "secret:user",
+   "id": "userList",
+   "mcp": "tools/list",
+   "port": 3015
+  },
+  {
+   "arguments": {},
+   "auth": "secret:user",
+   "id": "userInfo",
+   "mcp": "tools/call",
+   "port": 3015,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "R=/run/user/$(id -u ubuntu); runuser -u ubuntu -- env XDG_RUNTIME_DIR=$R systemctl --user disable --now opute-host-agent.service",
+   "id": "userStop"
+  },
+  {
+   "copy": "node",
+   "id": "nodeCopy",
+   "to": "/opt/opute-e2e/node.tar.xz"
+  },
+  {
+   "copy": "launcher",
+   "id": "launcherCopy",
+   "mode": "0644",
+   "to": "/opt/opute-e2e/opute-host-agent-0.3.0.tgz"
+  },
+  {
+   "guest": "mkdir -p /opt/opute-e2e/node && tar -xJf /opt/opute-e2e/node.tar.xz -C /opt/opute-e2e/node --strip-components=1 && /opt/opute-e2e/node/bin/node --version",
+   "id": "node"
+  },
+  {
+   "guest": "systemd-run --unit=e2e-release --collect python3 -m http.server 8765 --bind 127.0.0.1 --directory /opt/opute-e2e/releases/rust && for i in $(seq 40); do curl -fsS -o /dev/null http://127.0.0.1:8765/v0.3.0/SHA256SUMS && break; sleep 0.25; done",
+   "id": "releaseBase"
+  },
+  {
+   "guest": "cd /home/ubuntu && runuser -u ubuntu -- env HOME=/home/ubuntu PATH=/opt/opute-e2e/node/bin:/usr/bin:/bin NPM_CONFIG_OFFLINE=true NPM_CONFIG_UPDATE_NOTIFIER=false OPUTE_HOST_AGENT_RELEASE_BASE_URL=http://127.0.0.1:8765 OPUTE_REMOTE_AGENT_ID=e2e-npm-agent MCP_AUTH_TOKEN=${SECRET:npm} HOST_MCP_PORT=3016 npm exec --yes --offline --package=/opt/opute-e2e/opute-host-agent-0.3.0.tgz -- opute-host-agent start --background",
+   "id": "start",
+   "timeout": 300
+  },
+  {
+   "guest": "cd /home/ubuntu && runuser -u ubuntu -- env HOME=/home/ubuntu PATH=/opt/opute-e2e/node/bin:/usr/bin:/bin NPM_CONFIG_OFFLINE=true NPM_CONFIG_UPDATE_NOTIFIER=false OPUTE_HOST_AGENT_RELEASE_BASE_URL=http://127.0.0.1:8765 OPUTE_REMOTE_AGENT_ID=e2e-npm-agent MCP_AUTH_TOKEN=${SECRET:npm} HOST_MCP_PORT=3016 npm exec --yes --offline --package=/opt/opute-e2e/opute-host-agent-0.3.0.tgz -- opute-host-agent url",
+   "id": "url"
+  },
+  {
+   "guest": "cd /home/ubuntu && runuser -u ubuntu -- env HOME=/home/ubuntu PATH=/opt/opute-e2e/node/bin:/usr/bin:/bin NPM_CONFIG_OFFLINE=true NPM_CONFIG_UPDATE_NOTIFIER=false OPUTE_HOST_AGENT_RELEASE_BASE_URL=http://127.0.0.1:8765 OPUTE_REMOTE_AGENT_ID=e2e-npm-agent MCP_AUTH_TOKEN=${SECRET:npm} HOST_MCP_PORT=3016 npm exec --yes --offline --package=/opt/opute-e2e/opute-host-agent-0.3.0.tgz -- opute-host-agent status",
+   "id": "status"
+  },
+  {
+   "health": true,
+   "id": "npmHealth",
+   "port": 3016
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3016",
+   "id": "npmListen"
+  },
+  {
+   "guest": "pid=$(ss -ltnpH 'sport = :3016' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2); sha256sum /proc/$pid/exe | cut -c1-64",
+   "id": "npmBinary"
+  },
+  {
+   "auth": "secret:npm",
+   "id": "npmList",
+   "mcp": "tools/list",
+   "port": 3016
+  },
+  {
+   "arguments": {},
+   "auth": "secret:npm",
+   "id": "npmInfo",
+   "mcp": "tools/call",
+   "port": 3016,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "cd /home/ubuntu && runuser -u ubuntu -- env HOME=/home/ubuntu PATH=/opt/opute-e2e/node/bin:/usr/bin:/bin NPM_CONFIG_OFFLINE=true NPM_CONFIG_UPDATE_NOTIFIER=false OPUTE_HOST_AGENT_RELEASE_BASE_URL=http://127.0.0.1:8765 OPUTE_REMOTE_AGENT_ID=e2e-npm-agent MCP_AUTH_TOKEN=${SECRET:npm} HOST_MCP_PORT=3016 npm exec --yes --offline --package=/opt/opute-e2e/opute-host-agent-0.3.0.tgz -- opute-host-agent stop",
+   "id": "stop"
+  },
+  {
+   "guest": "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3016/health; true",
+   "id": "npmGone"
+  },
+  {
+   "guest": "systemctl stop e2e-release.service",
+   "id": "releaseStop"
+  },
+  {
+   "guest": "loginctl disable-linger ubuntu && systemctl stop user@$(id -u ubuntu).service",
+   "id": "unlinger"
+  }
+ ]
+}

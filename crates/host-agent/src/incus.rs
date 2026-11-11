@@ -927,13 +927,13 @@ fn driver_enforces_quota(driver: &str) -> bool {
     )
 }
 
-struct MountEntry {
+pub(crate) struct MountEntry {
     mount_point: String,
     fs_type: String,
     options: String,
 }
 
-fn parse_mounts(data: &str) -> Vec<MountEntry> {
+pub(crate) fn parse_mounts(data: &str) -> Vec<MountEntry> {
     let unescape = |f: &str| {
         f.replace("\\040", " ")
             .replace("\\011", "\t")

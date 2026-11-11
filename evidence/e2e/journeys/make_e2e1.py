@@ -35,7 +35,7 @@ DIST = "baseline/inventory/distribution.json"
 # The Rust release under test (m13b): one candidate for every gate, and a newer local build of the same
 # sources as the in-place upgrade target. Go stays the published v0.2.4.
 RUST_VERSION = "0.3.0"
-CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc1"
+CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc4"
 CANDIDATE_NEXT = CANDIDATE + "-next"
 NEXT_VERSION = "0.3.1-e2e"
 # What the installed candidate prints after its hash line.

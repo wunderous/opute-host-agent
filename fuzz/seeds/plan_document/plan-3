@@ -1,0 +1,1 @@
+{"contractVersion": "host-plan.v1", "planId": "p1", "generation": 1, "idempotencyKey": "readiness-never-true-timeout", "nodes": [{"id": "n1", "validate": {"tool": "probe_http_endpoint", "args": {"endpoint": "http://127.0.0.1:${STUB_PORT}/"}, "assert": [{"path": "/ready", "op": "eq", "value": true}], "timeoutMs": 300, "pollIntervalMs": 50}}]}

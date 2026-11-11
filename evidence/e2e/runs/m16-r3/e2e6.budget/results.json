@@ -1,0 +1,101 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-bud.service",
+   "system/units/e2e-agent-bud.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.budget",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 27390,
+     "gte": 2000,
+     "ok": true,
+     "path": "json.calls",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.errors",
+     "step": "load"
+    },
+    {
+     "actual": 15908864,
+     "lte": 50331648,
+     "ok": true,
+     "path": "json.growthAfterWarmup.rssBytes",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "lte": 16,
+     "ok": true,
+     "path": "json.growthAfterWarmup.fds",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "lte": 8,
+     "ok": true,
+     "path": "json.growthAfterWarmup.threads",
+     "step": "load"
+    },
+    {
+     "actual": 3455,
+     "lte": 8192,
+     "ok": true,
+     "path": "json.growthAfterWarmup.storeBytesPerCall",
+     "step": "load"
+    },
+    {
+     "actual": 95485952,
+     "lte": 268435456,
+     "ok": true,
+     "path": "json.peak.rssBytes",
+     "step": "load"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "audit": 524,
+   "budAgent": 554,
+   "list": 535,
+   "load": 900149,
+   "tool": 285,
+   "wire": 295
+  },
+  "stepsSeconds": 946.6
+ },
+ "unverified": []
+}

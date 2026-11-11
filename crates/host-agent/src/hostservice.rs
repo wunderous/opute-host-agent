@@ -358,7 +358,7 @@ fn env_or(env: &Env, key: &str, fallback: &str) -> String {
 
 /// `fmt.Sscanf(p, "%d", &port)`: a leading signed decimal; on failure the
 /// port keeps its default.
-fn scan_port(raw: &str, default: i64) -> i64 {
+pub(crate) fn scan_port(raw: &str, default: i64) -> i64 {
     let bytes = raw.as_bytes();
     let mut end = usize::from(matches!(bytes.first(), Some(b'+' | b'-')));
     let digits_start = end;
@@ -398,13 +398,13 @@ fn probe_tcp_port(port: i64) -> Result<(), String> {
 /// The bridge health body, decoded as Go's `json.Decoder` fills its struct:
 /// keys match case-insensitively, the last match wins, null leaves a field
 /// alone, and any type mismatch fails the decode.
-struct Health {
+pub(crate) struct Health {
     status: String,
     error: String,
     last_heartbeat: Option<String>,
 }
 
-fn decode_health(body: &[u8]) -> Option<Health> {
+pub(crate) fn decode_health(body: &[u8]) -> Option<Health> {
     use crate::gojson::{equal_fold, parse, Node, Value};
     fn string_field(node: &Node, out: &mut String) -> bool {
         match &node.value {

@@ -1331,6 +1331,43 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     the sources are unchanged since.
   - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
     and Q18 not passed. Tasks 6.3 and 6.4 stay open.
+- **m16 (2026-11-11): hardening.** The agent was attacked with hostile
+  input, host faults and supply-chain drift; every attack is a repeatable
+  check ([`evidence/hardening`](../../../evidence/hardening/README.md)).
+  - **Inventory and fuzzing:** 22 untrusted entry points, each covered by
+    one of 17 cargo-fuzz targets (stable toolchain, `--sanitizer none`) or
+    a proptest property (D13 redaction, schema validation, canonical
+    resource identity, connector diagnostics). CI fuzzes each target for
+    20 s; three local passes ran 60 s per target (a first was retired). Every crash is a
+    committed regression input replayed by `cargo test`.
+  - **Findings fixed:** F1 (Unicode whitespace in resource ids, D30), F2
+    (a panic on a multi-byte `Authorization` header), A1 (`/mcp` body read
+    before its limit, D29), F3 (a full state directory let an effectful
+    call run with no audit row; now refused with `state_storage_full`,
+    D31), F4 (`/health` stalled every connection behind a hung `incus`),
+    F5 (signed `\u` and percent escapes accepted). Open observations: A2
+    (relay body unbounded), A3 (bootstrap `Host` rule, as specified), O1
+    (audit rows never pruned; retention is not specified).
+  - **Gate e2e-6:** seven fault journeys on transient agents in the dev VM
+    (D31): full state directory, truncated store, SIGKILL during a plan
+    and during task writes, hung and garbage `incus`, clock stepped back,
+    admission under pressure and the D29 body bound, and a 15-minute
+    resource budget (`resource-budget.json`: RSS +15.9 MB, FDs and threads
+    flat, store 3,455 bytes per call, 27,390 calls with no error). The
+    budget's first absolute store limit had no measured basis and is now
+    per call.
+  - **Supply chain:** dependency upgrades for the cargo-deny advisories
+    (rustls, rustls-webpki, tokio, ruzstd, rsa, sha1/sha2, aes-gcm,
+    rusqlite); `deny.toml` with one accepted advisory (unsafe-libyaml, Q30);
+    `make supply-chain` and `make reproducible-build` (two offline locked
+    builds, byte-identical) in CI; a CycloneDX SBOM in the release set.
+  - **Candidate:** `rust-0.3.0-rc4` (9c8ff2d4c). Runs `m16-r1` (rc2, F5
+    found) and `m16-r2` (rc3, a `cargo fmt` change to the sources) were
+    retired with their cause; all gates pass on `m16-r3`, with the contract
+    suites, seam stage `m16`, the arm64 install and the distribution
+    checks recaptured on rc4.
+  - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
+    and Q18 not passed. Tasks 6.3 and 6.4 stay open.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1397,6 +1434,9 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D26 | Provider executables in the Rust release | **Decided (owner, 2026-11-02): port.** hostos, cloudflare, tailscale and k3s become Rust executables matching the pinned Go ones (M9); ollama stays out (D15). Until a provider's m9 gate passes, the release ships the Go executable from the pinned v0.2.4 GitHub release, never a build from the Go tree ([`port-provider-executables`](../port-provider-executables/proposal.md)). |
 | D27 | Authority after the parity record | **Decided (owner, 2026-11-04): the spec.** Rust is developed against the contract spec, the accepted decisions and the frozen v0.2.4 record, not against Go. CI drops the Go/Rust comparison and runs the Rust-only suites; the committed parity evidence is historical; M13 becomes spec-based. Behaviours only Go decided are owner questions ([`rust-spec-authority`](../archive/2026-11-07-rust-spec-authority/questions.md)) | The parity record is complete; comparing with Go would block every improvement on it. |
 | D28 | Answers to the open spec questions and cutover items | **Decided (owner, 2026-11-07).** Cutover evidence is the e2e gates, the contract suites, conversion and rollback evidence, and e2e-5 once Platform staging exists; a 14-day rollback window with Go kept selectable; the first Rust package is 0.3.0 with the Rust catalog, npm postponed; Rust refuses a state directory another agent holds; Q0-Q28 answered ([`owner-decisions-2026-11-07`](../archive/2026-11-07-owner-decisions-2026-11-07/proposal.md)) | Turns the parity record's open questions into spec, fixes or recorded blockers. |
+| D29 | An authenticated `/mcp` body was read whole before the 4 MiB limit (m16 finding A1) | **Decided (owner, 2026-11-10): bound the read.** At most 4 MiB is read; a larger body gets the SDK's existing 413 before the envelope is parsed ([`bound-mcp-request-body`](../bound-mcp-request-body/proposal.md)) | One request could make the agent hold a body of any size. The only observable change: an oversized malformed body gets 413, not 400. |
+| D30 | A resource id with Unicode whitespace other than space, tab, CR and LF changed identity when its printed URI was parsed (m16 finding F1) | **Decided (owner, 2026-11-10): refuse such ids**, in `Uri::new` and `Uri::parse` ([`resource-id-unicode-whitespace`](../resource-id-unicode-whitespace/proposal.md)) | The spec forbids rewriting IDs; refusing keeps every accepted URI round-trip stable. |
+| D31 | Outcomes of host faults the spec did not state: a full state directory, a damaged store, a hanging or garbage-printing command, a clock stepped back | **Decided (owner, 2026-11-10): the outcomes in [`host-fault-outcomes`](../host-fault-outcomes/proposal.md)**, checked by gate e2e-6 | Journeys must not guess an outcome; these were proposed with the m16 goal's rule (a typed refusal or a clean resume, no half-written state). |
 
 ## 7. Risks this plan specifically mitigates
 

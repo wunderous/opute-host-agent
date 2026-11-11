@@ -1,0 +1,123 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-kp.service",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-agent-kp.service",
+   "system/units/e2e-slow.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.kill",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "killed\n",
+     "matches": "killed\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "kill"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "restart"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "runAfter"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "runLater"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 12,
+     "equals": 12,
+     "ok": true,
+     "path": "json.restarts",
+     "step": "loop"
+    },
+    {
+     "actual": 45,
+     "gte": 1,
+     "ok": true,
+     "path": "json.acceptedTotal",
+     "step": "loop"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "afterLoop"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterLoop": 284,
+   "audit": 192,
+   "kill": 4159,
+   "kpAgent": 549,
+   "list": 531,
+   "listAgain": 245,
+   "loop": 8766,
+   "plan": 266,
+   "restart": 549,
+   "runAfter": 221,
+   "runLater": 441,
+   "running": 209,
+   "settle": 45136,
+   "slow": 210,
+   "tool": 292,
+   "wire": 288
+  },
+  "stepsSeconds": 106.8
+ },
+ "unverified": []
+}

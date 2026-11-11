@@ -246,7 +246,7 @@ fn create_temp(dir: &Path, prefix: &str, suffix: &str) -> Result<(PathBuf, std::
 }
 
 /// `json.Unmarshal` of kubectl output: Go's error text for invalid JSON.
-fn unmarshal(data: &str) -> Result<J, String> {
+pub(crate) fn unmarshal(data: &str) -> Result<J, String> {
     if data.is_empty() {
         return Err("unexpected end of JSON input".into());
     }
@@ -268,7 +268,7 @@ fn kind(value: &J) -> &'static str {
 }
 
 /// `json.Unmarshal` into `map[string]any`.
-fn unmarshal_map(data: &str) -> Result<J, String> {
+pub(crate) fn unmarshal_map(data: &str) -> Result<J, String> {
     match unmarshal(data)? {
         value @ J::Object(_) => Ok(value),
         J::Null => Ok(J::Object(Map::new())),
@@ -281,7 +281,7 @@ fn unmarshal_map(data: &str) -> Result<J, String> {
 
 /// `json.Unmarshal` into a struct the code reads a few fields of: a value
 /// that is not an object reads as empty.
-fn unmarshal_struct(data: &str) -> Result<J, String> {
+pub(crate) fn unmarshal_struct(data: &str) -> Result<J, String> {
     match unmarshal(data)? {
         value @ J::Object(_) => Ok(value),
         _ => Ok(J::Object(Map::new())),
@@ -2642,7 +2642,7 @@ impl Postgres {
 }
 
 /// `extractProxyDeviceListenPort`.
-fn proxy_listen_port(output: &str) -> i64 {
+pub(crate) fn proxy_listen_port(output: &str) -> i64 {
     let marker = "listen: tcp:127.0.0.1:";
     let Some(index) = output.find(marker) else {
         return 0;

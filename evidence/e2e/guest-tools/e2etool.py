@@ -18,6 +18,25 @@
   e2etool.py ideconfig HTML   the VS Code mcp.json the page documents,
                                       and the first calls made exactly with it
                                       (token from $E2E_TOKEN)
+  e2etool.py audit PATH               per tool: operation rows by status and
+                                      audit rows by terminal status (read-only)
+  e2etool.py procstat UNIT            the unit's main process: RSS, open fds,
+                                      threads
+  e2etool.py killloop NAME --port P --rounds N --calls K [--user opute]
+                                      N rounds: K task calls in flight, then
+                                      SIGKILL the agent and start it again
+                                      (token from $E2E_TOKEN)
+  e2etool.py load --port P --seconds S --sample-unit U --state PATH
+                                      mixed calls for S seconds; samples
+                                      procstat and the store size every 30 s
+                                      (token from $E2E_TOKEN)
+  e2etool.py bigbody --port P --declared N --send M
+                                      an authenticated /mcp POST declaring N
+                                      bytes, sending M; the reply's status and
+                                      the seconds it took (token from $E2E_TOKEN)
+  e2etool.py stub PATH MODE           an executable stand-in at PATH: MODE
+                                      hang (sleeps forever) or garbage (prints
+                                      bytes that are not JSON, exits 0)
 
 Each prints one JSON document on stdout.
 """
@@ -132,6 +151,138 @@ def ideconfig(a):
             "callStatus": called.get("status")}
 
 
+def audit(a):
+    con = sqlite3.connect(f"file:{a.path}?mode=ro", uri=True)
+    ops, inv = {}, {}
+    for tool, status, n in con.execute("SELECT tool_name, status, COUNT(*) FROM operations GROUP BY 1, 2"):
+        ops.setdefault(tool, {})[status] = n
+    for op, status, n in con.execute(
+            "SELECT operation_id, terminal_status, COUNT(*) FROM capability_invocations GROUP BY 1, 2"):
+        inv.setdefault(op, {})[status] = n
+    return {"integrity": con.execute("PRAGMA integrity_check").fetchone()[0], "operations": ops, "invocations": inv,
+            "unfinished": sum(n for t in ops.values() for st, n in t.items() if st in ("working", "submitted"))}
+
+
+def procstat(a):
+    pid = sh(["systemctl", "show", "-p", "MainPID", "--value", a.unit]).stdout.strip()
+    if pid in ("", "0"):
+        raise SystemExit(json.dumps({"error": f"{a.unit} has no main process"}))
+    status = open(f"/proc/{pid}/status").read()
+    field = lambda k: int(re.search(rf"^{k}:\s+(\d+)", status, re.M).group(1))  # noqa: E731
+    return {"pid": int(pid), "rssBytes": field("VmRSS") * 1024, "threads": field("Threads"),
+            "fds": len(os.listdir(f"/proc/{pid}/fd"))}
+
+
+def killloop(a):
+    import mcpwire
+    import threading
+    token = os.environ["E2E_TOKEN"]
+    meta = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}}
+    rounds = []
+    for r in range(a.rounds):
+        accepted = []
+
+        def fire(i):
+            out = mcpwire.mcp(a.port, token, "tools/call",
+                              {"name": "run_host_command", "arguments": {"command": f"sleep 0.{i % 9 + 1}"}},
+                              request_id=i, timeout=30, meta=meta)
+            res = ((out.get("body") or {}).get("result") or {})
+            if res.get("taskId"):
+                accepted.append(res["taskId"])
+
+        threads = [threading.Thread(target=fire, args=(i,)) for i in range(a.calls)]
+        for t in threads:
+            t.start()
+        time.sleep(0.05 + 0.03 * (r % 7))
+        sh(["systemctl", "kill", "-s", "KILL", f"e2e-agent-{a.name}.service"], check=False)
+        for t in threads:
+            t.join(timeout=35)
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and sh(["systemctl", "is-active", "-q", f"e2e-agent-{a.name}.service"],
+                                                 check=False).returncode == 0:
+            time.sleep(0.2)
+        rounds.append({"round": r, "accepted": len(accepted)})
+        restart = sh([sys.executable, os.path.abspath(__file__), "agent", "start", a.name, "--port", str(a.port),
+                      "--id", a.id, "--user", a.user] + [x for kv in a.env for x in ("--env", kv)], check=False)
+        if restart.returncode != 0:
+            return {"rounds": rounds, "restartFailed": r, "stdout": restart.stdout[-1000:]}
+    return {"rounds": rounds, "acceptedTotal": sum(x["accepted"] for x in rounds), "restarts": a.rounds}
+
+
+def load(a):
+    import mcpwire
+    token = os.environ["E2E_TOKEN"]
+    meta = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}}
+    calls = [("get_host_info", {}, None), ("get_host_capacity", {}, None), ("list_vms", {}, None),
+             ("ensure_host_file", {"path": ".config/opute-e2e/load.txt", "content": "x\n", "scope": "user"}, None),
+             ("inspect_host_file", {"path": ".config/opute-e2e/load.txt", "scope": "user"}, None),
+             ("run_host_command", {"command": "true"}, meta)]
+    samples, counts, errors, n = [], {}, 0, 0
+    start = time.monotonic()
+    next_sample = start
+    while time.monotonic() - start < a.seconds:
+        if time.monotonic() >= next_sample:
+            stat = procstat(argparse.Namespace(unit=a.sample_unit))
+            stat["t"] = round(time.monotonic() - start)
+            stat["calls"] = n
+            stat["storeBytes"] = sum(os.path.getsize(os.path.join(a.state, f)) for f in os.listdir(a.state)
+                                     if f.startswith("state.db"))
+            samples.append(stat)
+            next_sample += 30
+        name, args, m = calls[n % len(calls)]
+        out = mcpwire.mcp(a.port, token, "tools/call", {"name": name, "arguments": args}, request_id=n, timeout=60,
+                          meta=m)
+        res = ((out.get("body") or {}).get("result") or {})
+        counts[name] = counts.get(name, 0) + 1
+        if out.get("status") != 200 or (res.get("isError") and name != "list_vms"):
+            errors += 1
+        n += 1
+    warm = [s for s in samples if s["t"] >= 120] or samples
+    growth = {k: warm[-1][k] - warm[0][k] for k in ("rssBytes", "fds", "threads", "storeBytes", "calls")}
+    # The store keeps one audit row per call: its growth is judged per call.
+    growth["storeBytesPerCall"] = round(growth["storeBytes"] / max(growth["calls"], 1))
+    return {"calls": n, "counts": counts, "errors": errors, "samples": samples, "growthAfterWarmup": growth,
+            "peak": {k: max(s[k] for s in samples) for k in ("rssBytes", "fds", "threads")}}
+
+
+def bigbody(a):
+    import socket
+    token = os.environ["E2E_TOKEN"]
+    s = socket.create_connection(("127.0.0.1", a.port), timeout=10)
+    head = (f"POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:{a.port}\r\nAuthorization: Bearer {token}\r\n"
+            "Content-Type: application/json\r\nAccept: application/json, text/event-stream\r\n"
+            f"Content-Length: {a.declared}\r\n\r\n").encode()
+    start = time.monotonic()
+    s.sendall(head)
+    chunk = b" " * (1 << 20)
+    sent = 0
+    try:
+        while sent < a.send:
+            n = min(len(chunk), a.send - sent)
+            s.sendall(chunk[:n])
+            sent += n
+    except OSError:
+        pass
+    reply = b""
+    try:
+        reply = s.recv(4096)
+    except OSError:
+        pass
+    line = reply.split(b"\r\n", 1)[0].decode(errors="replace")
+    return {"statusLine": line, "status": int(line.split()[1]) if line.startswith("HTTP/") else 0,
+            "sentBytes": sent, "seconds": round(time.monotonic() - start, 2),
+            "bodyLimitText": b"request body exceeds 4194304 bytes" in reply}
+
+
+def stub(a):
+    body = {"hang": "#!/bin/sh\nexec sleep 100000\n",
+            "garbage": "#!/bin/sh\nprintf '\\x00\\x01not json [{\\n'\nexit 0\n"}[a.mode]
+    with open(a.path, "w") as f:
+        f.write(body)
+    os.chmod(a.path, 0o755)
+    return {"path": a.path, "mode": a.mode}
+
+
 def slow(a):
     if a.action == "serve":
         import http.server
@@ -201,6 +352,30 @@ def main():
     sl.add_argument("action", choices=["start", "stop", "serve"])
     sl.add_argument("--port", type=int, default=8799)
     sl.add_argument("--delay", type=float, default=20)
+    au = sub.add_parser("audit")
+    au.add_argument("path")
+    ps = sub.add_parser("procstat")
+    ps.add_argument("unit")
+    kl = sub.add_parser("killloop")
+    kl.add_argument("name")
+    kl.add_argument("--port", type=int, required=True)
+    kl.add_argument("--id", required=True)
+    kl.add_argument("--env", action="append", default=[])
+    kl.add_argument("--rounds", type=int, default=10)
+    kl.add_argument("--calls", type=int, default=4)
+    kl.add_argument("--user", default="opute")
+    lo = sub.add_parser("load")
+    lo.add_argument("--port", type=int, required=True)
+    lo.add_argument("--seconds", type=int, required=True)
+    lo.add_argument("--sample-unit", required=True)
+    lo.add_argument("--state", required=True)
+    bb = sub.add_parser("bigbody")
+    bb.add_argument("--port", type=int, required=True)
+    bb.add_argument("--declared", type=int, required=True)
+    bb.add_argument("--send", type=int, required=True)
+    st = sub.add_parser("stub")
+    st.add_argument("path")
+    st.add_argument("mode", choices=["hang", "garbage"])
     i = sub.add_parser("ideconfig")
     i.add_argument("html")
     a = p.parse_args()
@@ -208,7 +383,8 @@ def main():
         out = agent_start(a) if a.action == "start" else agent_stop(a)
     else:
         out = {"db": db, "contains": contains, "ideconfig": ideconfig, "slow": slow,
-               "unit": unit, "listen": listen}[a.command](a)
+               "unit": unit, "listen": listen, "audit": audit, "procstat": procstat, "killloop": killloop,
+               "load": load, "bigbody": bigbody, "stub": stub}[a.command](a)
     json.dump(out, sys.stdout, sort_keys=True)
 
 

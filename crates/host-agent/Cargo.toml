@@ -11,32 +11,34 @@ name = "opute-host-agent"
 path = "src/main.rs"
 
 [dependencies]
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
-sha1 = "0.10"
-sha2 = "0.10"
+sha1 = "0.11"
+sha2 = "0.11"
 socket2 = "0.6"
 base64 = "0.22"
 getrandom = "0.2"
 hex = "0.4"
 flate2 = "1"
-ruzstd = "0.7"
+ruzstd = "0.9"
 nix = { version = "0.29", features = ["net", "signal", "process", "sched", "fs", "user", "hostname"] }
 regex = "1"
 ring = "0.17.14"
-rsa = "0.9"
-rand_core = { version = "0.6", features = ["getrandom"] }
+rsa = "0.10"
+# The OS random source as rsa 0.10 takes it (rand_core 0.10).
+sys_rng = { package = "getrandom", version = "0.4", features = ["sys_rng"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots", "gzip", "system-proxy", "http2"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 rustls-native-certs = "0.8"
 ureq = { version = "2", default-features = false, features = ["tls"] }
 url = "2"
 tokio = { version = "1", features = ["rt", "net", "signal", "macros", "io-util", "time"] }
-aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
+aes-gcm = { version = "0.11", default-features = false, features = ["aes", "alloc"] }
 
 [dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
 tempfile = "3"
 
 [lints]

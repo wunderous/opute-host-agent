@@ -125,8 +125,8 @@ fn sealed_join_material_round_trips_only_to_the_receiver_key() {
     use rsa::traits::PublicKeyParts as _;
     let key = receiver_key();
     let public = raw_url_encode(&pkcs1_public_der(
-        &key.n().to_bytes_be(),
-        &key.e().to_bytes_be(),
+        &key.n().to_be_bytes_trimmed_vartime(),
+        &key.e().to_be_bytes_trimmed_vartime(),
     ));
     let sealed = seal_join_material(
         &public,
@@ -443,8 +443,11 @@ fn an_aes192_join_key_unseals() {
     let data_key: Vec<u8> = (0..24).collect();
     let nonce: Vec<u8> = (0..12).collect();
     let encrypted_key = encrypt_oaep(
-        &key.n().to_bytes_be(),
-        crate::goerr::atoi(&key.e().to_string()).0,
+        &key.n().to_be_bytes_trimmed_vartime(),
+        key.e()
+            .to_be_bytes_trimmed_vartime()
+            .iter()
+            .fold(0i64, |e, b| e << 8 | i64::from(*b)),
         &data_key,
     )
     .unwrap();

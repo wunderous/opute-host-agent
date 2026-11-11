@@ -13,6 +13,10 @@
 #
 # Both host-agent binaries are gzipped with `gzip -9 -kf`, as Go's are, and
 # SHA256SUMS lists Go's files in Go's order, without the Windows archive.
+#
+# m16: a CycloneDX SBOM of the agent's dependency graph (Linux targets, no
+# build-only dependencies) is written beside the set as sbom.cdx.json, with
+# its own sbom.cdx.json.sha256; SHA256SUMS keeps Go's file list.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -21,11 +25,13 @@ DIST=${DIST:-$ROOT/dist}
 SETUP=${SETUP:-$ROOT/.parity/setup}
 ZIG_DIR=${ZIG_DIR:-$SETUP/zig-x86_64-linux-0.15.2}
 ZIGBUILD_DIR=${ZIGBUILD_DIR:-$SETUP/cargo-zigbuild/bin}
+CYCLONEDX_DIR=${CYCLONEDX_DIR:-$SETUP/cargo-cyclonedx/bin}
 TARGET_DIR=${CARGO_TARGET_DIR:-$ROOT/target/dist}
 
-export PATH=$ZIG_DIR:$ZIGBUILD_DIR:$PATH
+export PATH=$ZIG_DIR:$ZIGBUILD_DIR:$CYCLONEDX_DIR:$PATH
 command -v zig >/dev/null || { echo "zig not found in $ZIG_DIR (tools/release/setup-toolchain.sh)" >&2; exit 1; }
 command -v cargo-zigbuild >/dev/null || { echo "cargo-zigbuild not found in $ZIGBUILD_DIR" >&2; exit 1; }
+command -v cargo-cyclonedx >/dev/null || { echo "cargo-cyclonedx not found in $CYCLONEDX_DIR" >&2; exit 1; }
 
 mkdir -p "$DIST"
 build_agent() {
@@ -48,4 +54,8 @@ done
 (cd "$DIST" && sha256sum host-agent-linux-x64 host-agent-linux-x64.gz host-agent-linux-arm64.gz \
   opute-provider-k3s-linux-x64 opute-provider-cloudflare-linux-x64 opute-provider-tailscale-linux-x64 > SHA256SUMS)
 (cd "$DIST" && sha256sum -c --quiet SHA256SUMS)
+(cd "$ROOT/crates/host-agent" && cargo cyclonedx -f json --spec-version 1.5 --no-build-deps \
+  --target x86_64-unknown-linux-gnu --override-filename sbom.cdx >/dev/null)
+mv "$ROOT/crates/host-agent/sbom.cdx.json" "$DIST/sbom.cdx.json"
+(cd "$DIST" && sha256sum sbom.cdx.json > sbom.cdx.json.sha256)
 echo "release set $VERSION in $DIST"

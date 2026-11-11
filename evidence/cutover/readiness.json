@@ -40,6 +40,11 @@
    "unblocker": "a Platform staging environment with an enrollment identity for the agent (D5)"
   },
   {
+   "id": "e2e-6",
+   "kind": "e2e-gate",
+   "gate": "e2e-6"
+  },
+  {
    "id": "candidate",
    "kind": "candidate",
    "record": "evidence/cutover/candidate.json",
@@ -49,7 +54,8 @@
     "e2e-2",
     "e2e-3a",
     "e2e-3",
-    "e2e-4"
+    "e2e-4",
+    "e2e-6"
    ],
    "contracts": "evidence/cutover/contract-suites.json",
    "arm64": "evidence/cutover/arm64/receipt.json",
@@ -70,14 +76,14 @@
     "tools/parity",
     "parity-manifest.json"
    ],
-   "sha256": "178c62930e4eb76ea288ca51c04b8621dd7d6f55c1347ec70a855ffb02025f88",
-   "sourceDigest": "a63563709e8cfa331856abea1f069bf8914ee8d8d350a7d7659ee8ba103bbed7",
+   "sha256": "9d5b8f6dc89bd3e9b9f270974aeec08825fd6c3701369d473a9d88e94075b9bd",
+   "sourceDigest": "e19f18cd05db48b9476a1165ad9960d3556df22f480b07f2c85e91d49fdaf325",
    "summary": "the D8, D10-D13 contract suites against the Rust release binary"
   },
   {
    "id": "seam",
    "kind": "seam",
-   "stage": "m13b",
+   "stage": "m16",
    "sources": [
     "Cargo.lock",
     "Cargo.toml",
@@ -85,7 +91,7 @@
     "baseline",
     "parity-manifest.json"
    ],
-   "sourceDigest": "200d93b6c80aec808419a5c707591f4ab8d3f9e93e9020cdf647fa36b140ed3b"
+   "sourceDigest": "16d6dc9f069d79962d46565052d4d4e01b48cda786fe698e23c1f031fb8abfd0"
   },
   {
    "id": "forward-conversion",
@@ -136,8 +142,8 @@
     "Cargo.toml",
     "crates"
    ],
-   "sha256": "70228d70915fa4916b0f020cb2f7ef0af33a366c1a870583b1cc941b3b582d14",
-   "sourceDigest": "209e0b142aa4888eb01ae38281d3dc70c1d021b58b7e66ae09ff952f53d7958a",
+   "sha256": "859127f68e41f154e223dbab944c4131d233312bb8623fd7701d79ac2b9e74dc",
+   "sourceDigest": "e59bbbde2d830122b1ebe83bd1a313c6305dd11ac33fd800eea13869b17cc658",
    "summary": "one emulated arm64 Debian 12 clean-machine install, launch, MCP, stop, uninstall"
   },
   {

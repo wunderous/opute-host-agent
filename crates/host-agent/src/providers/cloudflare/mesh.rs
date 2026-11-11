@@ -1181,7 +1181,7 @@ fn parse_ipv4(text: &str) -> Option<std::net::Ipv4Addr> {
 }
 
 /// `findMeshIP`: the first field that is an address in 100.96.0.0/12.
-pub(super) fn find_mesh_ip(output: &str) -> String {
+pub(crate) fn find_mesh_ip(output: &str) -> String {
     for field in output.split_whitespace() {
         let candidate = field.trim_matches(['(', ')', ',']);
         let address = candidate.split('/').next().unwrap_or("");
@@ -1196,7 +1196,7 @@ pub(super) fn find_mesh_ip(output: &str) -> String {
 }
 
 /// `findMeshInterface`: the `ip -o addr` line that carries the address.
-pub(super) fn find_mesh_interface(output: &str, mesh_ip: &str) -> String {
+pub(crate) fn find_mesh_interface(output: &str, mesh_ip: &str) -> String {
     for line in output.split('\n') {
         let fields: Vec<&str> = line.split_whitespace().collect();
         if fields.len() < 4 || fields[2] != "inet" || !fields[3].starts_with(&format!("{mesh_ip}/"))
@@ -1212,7 +1212,7 @@ const DIAGNOSTIC_LINE_BUDGET: usize = 16;
 
 /// `meshCommandDiagnostics`: the last sixteen telling lines, secret
 /// redacted, each cut at 240 bytes.
-pub(super) fn command_diagnostics(output: &str, secret: &str) -> String {
+pub(crate) fn command_diagnostics(output: &str, secret: &str) -> String {
     const WORDS: [&str; 11] = [
         "status",
         "connected",

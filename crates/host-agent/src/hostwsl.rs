@@ -62,7 +62,7 @@ fn go_lossy(mut bytes: &[u8]) -> String {
 
 /// `decodeWindowsCLI`: UTF-16LE with a BOM, or mostly-NUL output read as
 /// UTF-16LE, else the bytes without NULs.
-fn decode_windows_cli(raw: &[u8]) -> String {
+pub(crate) fn decode_windows_cli(raw: &[u8]) -> String {
     let utf16 = |b: &[u8]| {
         let units: Vec<u16> = b
             .chunks_exact(2)
@@ -164,7 +164,7 @@ fn current_distro(env: &Env) -> String {
 }
 
 /// `parseWSLDistributionState`: the STATE column of `wsl.exe -l -v`.
-fn distribution_state(output: &str, distro: &str) -> Option<String> {
+pub(crate) fn distribution_state(output: &str, distro: &str) -> Option<String> {
     let want = distro.trim().to_lowercase();
     for line in output.split('\n') {
         let line = line.strip_prefix('*').unwrap_or(line).trim();
@@ -191,7 +191,7 @@ fn registry_value(block: &str, name: &str) -> String {
 }
 
 /// `parseWSLVHDXPath`: the distribution's `BasePath`, as its `ext4.vhdx`.
-fn vhdx_path(output: &str, distro: &str) -> Option<String> {
+pub(crate) fn vhdx_path(output: &str, distro: &str) -> Option<String> {
     let want = distro.trim().to_lowercase();
     for block in output.split("HKEY_") {
         let name = registry_value(block, "DistributionName");
@@ -228,7 +228,7 @@ fn powershell_argv(program: String, script: String) -> Vec<String> {
 }
 
 /// `strconv.ParseInt(text, 10, 64)`'s error.
-fn parse_int(text: &str) -> Result<i64, String> {
+pub(crate) fn parse_int(text: &str) -> Result<i64, String> {
     text.parse::<i64>().map_err(|e| {
         use std::num::IntErrorKind::*;
         let reason = match e.kind() {

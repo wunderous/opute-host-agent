@@ -1,0 +1,58 @@
+# cargo-deny policy (m16): advisories, licences, sources and duplicate
+# versions for everything the agent and its provider executables link.
+# Run with `make supply-chain`; CI runs the same check.
+
+[graph]
+# The release set is Linux only (x64 and arm64).
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+all-features = false
+
+[advisories]
+version = 2
+# Kept under the build directory, not in CARGO_HOME.
+db-path = "target/advisory-dbs"
+yanked = "deny"
+unmaintained = "all"
+ignore = [
+    # serde_yaml (deprecated) links unsafe-libyaml, which has no maintained
+    # release. serde_yaml parses recipe and plan YAML, so replacing it
+    # changes a contract surface. Accepted by the owner on 2026-11-10 (m16,
+    # Q30); the replacement is its own later change.
+    { id = "RUSTSEC-2024-0449", reason = "unmaintained, no known vulnerability; exception accepted (Q30)" },
+]
+
+[licenses]
+version = 2
+confidence-threshold = 0.93
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+
+[licenses.private]
+# The agent itself is not published to a registry.
+ignore = true
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+skip = [
+    # ring 0.17 uses getrandom 0.2; rsa 0.10 takes the OS RNG as rand_core
+    # 0.10, which getrandom 0.4 provides.
+    { crate = "getrandom@0.2", reason = "ring 0.17 and the agent's own random ids" },
+    # hyper-util 0.1 moved to base64 0.23; reqwest 0.12 and ureq 2 are on 0.22.
+    { crate = "base64@0.22", reason = "reqwest 0.12 and ureq 2 have not moved to 0.23" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

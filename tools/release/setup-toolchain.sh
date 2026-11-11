@@ -9,6 +9,7 @@ SETUP=${SETUP:-$ROOT/.parity/setup}
 ZIG=zig-x86_64-linux-0.15.2
 ZIG_SHA256=02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239
 ZIGBUILD_VERSION=0.23.4
+CYCLONEDX_VERSION=0.5.7
 
 mkdir -p "$SETUP"
 cd "$SETUP"
@@ -19,5 +20,8 @@ if [ ! -x "$ZIG/zig" ]; then
 fi
 if [ "$("$SETUP/cargo-zigbuild/bin/cargo-zigbuild" --version 2>/dev/null)" != "cargo-zigbuild $ZIGBUILD_VERSION" ]; then
   cargo install --locked --version "$ZIGBUILD_VERSION" --root "$SETUP/cargo-zigbuild" cargo-zigbuild
+fi
+if [ "$("$SETUP/cargo-cyclonedx/bin/cargo-cyclonedx" cyclonedx --version 2>/dev/null)" != "cargo-cyclonedx-cyclonedx $CYCLONEDX_VERSION" ]; then
+  cargo install --locked --version "$CYCLONEDX_VERSION" --root "$SETUP/cargo-cyclonedx" cargo-cyclonedx
 fi
 rustup target add aarch64-unknown-linux-musl x86_64-unknown-linux-musl

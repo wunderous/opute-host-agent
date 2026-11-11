@@ -17,7 +17,10 @@ const MAX_ENTRIES: usize = 100_000;
 const MAX_EXPANDED_BYTES: i64 = 8 * 1024 * 1024 * 1024;
 const ZSTD_MAGIC: u32 = 0xFD2F_B528;
 
-type Frame<R> = ruzstd::StreamingDecoder<io::Chain<io::Cursor<[u8; 4]>, R>, ruzstd::FrameDecoder>;
+type Frame<R> = ruzstd::decoding::StreamingDecoder<
+    io::Chain<io::Cursor<[u8; 4]>, R>,
+    ruzstd::decoding::FrameDecoder,
+>;
 
 /// Where the zstd stream is: between frames (owning the source) or inside
 /// one (the frame decoder owns it until the frame ends).
@@ -104,8 +107,9 @@ impl<R: BufRead> Zstd<R> {
             if value != ZSTD_MAGIC {
                 return Err(magic_mismatch());
             }
-            let decoder = ruzstd::StreamingDecoder::new(io::Cursor::new(magic).chain(source))
-                .map_err(|e| decode_error(&e))?;
+            let decoder =
+                ruzstd::decoding::StreamingDecoder::new(io::Cursor::new(magic).chain(source))
+                    .map_err(|e| decode_error(&e))?;
             self.stream = Stream::Frame(Box::new(decoder));
             return Ok(true);
         }
@@ -450,6 +454,18 @@ fn write_entry<R: Read>(
     }
     drop(output);
     Ok(written)
+}
+
+/// The extraction step alone, for the `host_archive` fuzz target.
+#[cfg(any(fuzzing, test))]
+pub(crate) fn extract_for_fuzzing(
+    archive: &Path,
+    destination: &Path,
+) -> Result<(usize, i64), String> {
+    extract_zstd_tar(
+        &archive.to_string_lossy(),
+        destination.as_os_str().as_bytes(),
+    )
 }
 
 /// `Service.ExtractHostArchive`.

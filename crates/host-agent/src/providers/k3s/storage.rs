@@ -18,7 +18,7 @@ const REGISTRY_POLL: Duration = Duration::from_secs(2);
 const MISSING_CREATED: &str =
     "crictl images did not report createdAt; unused images are treated as age-eligible";
 
-pub(super) struct GuestImage {
+pub(crate) struct GuestImage {
     pub(super) id: String,
     pub(super) tags: Vec<String>,
     pub(super) digests: Vec<String>,
@@ -28,7 +28,7 @@ pub(super) struct GuestImage {
     pub(super) pinned: bool,
 }
 
-struct GuestContainer {
+pub(crate) struct GuestContainer {
     id: String,
     image: String,
     image_id: String,
@@ -287,7 +287,7 @@ fn keep_set_from_running_pods(args: &Args) -> Result<KeepSet, String> {
 }
 
 /// The images every pod names; an unreadable document keeps nothing.
-pub(super) fn keep_set_from_pod_json(raw: &[u8]) -> KeepSet {
+pub(crate) fn keep_set_from_pod_json(raw: &[u8]) -> KeepSet {
     let image = || slice(anon(vec![field("Image", "image", Shape::Str)]));
     let shape = anon(vec![field(
         "Items",
@@ -405,7 +405,7 @@ fn image_matches_keep_set(image: &GuestImage, keep: &KeepSet) -> bool {
         })
 }
 
-fn parse_cri_images(raw: &[u8]) -> Result<Vec<GuestImage>, String> {
+pub(crate) fn parse_cri_images(raw: &[u8]) -> Result<Vec<GuestImage>, String> {
     let shape = anon(vec![field(
         "Images",
         "images",
@@ -432,7 +432,7 @@ fn parse_cri_images(raw: &[u8]) -> Result<Vec<GuestImage>, String> {
         .collect())
 }
 
-fn parse_cri_containers(raw: &[u8]) -> Result<Vec<GuestContainer>, String> {
+pub(crate) fn parse_cri_containers(raw: &[u8]) -> Result<Vec<GuestContainer>, String> {
     let shape = anon(vec![field(
         "Containers",
         "containers",
@@ -514,7 +514,7 @@ pub(super) fn parse_cri_time(value: &J) -> Option<i128> {
     }
 }
 
-pub(super) fn parse_df_bytes(output: &str) -> Result<J, String> {
+pub(crate) fn parse_df_bytes(output: &str) -> Result<J, String> {
     let lines: Vec<&str> = output.trim().split('\n').collect();
     if lines.len() < 2 {
         return Err("df output was empty".into());
@@ -532,7 +532,7 @@ pub(super) fn parse_df_bytes(output: &str) -> Result<J, String> {
     }))
 }
 
-pub(super) fn parse_du_line(line: &str) -> Option<(i64, String)> {
+pub(crate) fn parse_du_line(line: &str) -> Option<(i64, String)> {
     let fields: Vec<&str> = line.split_whitespace().collect();
     if fields.len() < 2 {
         return None;
