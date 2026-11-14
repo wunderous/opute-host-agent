@@ -1,0 +1,368 @@
+{
+ "cleanup": [],
+ "description": "Flow 1, auth: the bootstrap token and an access token issued by the agent (client_credentials with its provisioned credential) are accepted; a wrong token, a missing token, and another instance's bootstrap and access tokens (a second agent started for the journey) are refused with no durable row written, and the agent keeps serving.",
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "gate": "e2e-1",
+ "id": "e2e1.auth",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  },
+  "foreign": "a second Rust agent, /tmp/e2e-agents/foreign, port 3018"
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "bootstrap"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "oauthList"
+    },
+    {
+     "matches": ":e2e-devvm-agent$",
+     "path": "response.body.result.structuredContent.uri",
+     "step": "oauthInfo"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "wrong"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "missing"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "wrongCall"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "foreignBootstrap"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "foreignOauth"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "foreignOauthCall"
+    }
+   ],
+   "requirement": "Compatible authenticated MCP surface",
+   "scenario": "Invalid bearer token: the bootstrap token and an agent-issued access token are accepted; a wrong, a missing, another instance's bootstrap token and another instance's access token are refused with HTTP 401, the status the tutorial and troubleshooting docs state",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "cred"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "issue"
+    },
+    {
+     "equals": "Bearer",
+     "path": "response.body.token_type",
+     "step": "issue"
+    },
+    {
+     "equals": "http://127.0.0.1:3014/mcp",
+     "path": "response.body.resource",
+     "step": "issue"
+    },
+    {
+     "equals": "no-store",
+     "path": "response.headers.cache-control",
+     "step": "issue"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "foreignIssue"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "foreignOwn"
+    }
+   ],
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "spec": "openspec/changes/secure-oauth-issuance/specs/oauth-issuance/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "dbBefore"
+    },
+    {
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "dbBefore"
+     },
+     "path": "json.counts",
+     "step": "dbAfter"
+    },
+    {
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "dbBefore"
+     },
+     "path": "json.operationIds",
+     "step": "dbAfter"
+    },
+    {
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "authzBefore"
+     },
+     "path": "json.counts",
+     "step": "authzAfter"
+    }
+   ],
+   "requirement": "Rejected MCP calls leave no audit writes or execution effects",
+   "scenario": "Authentication rejected: no operation record or other durable row is written",
+   "spec": "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "stillServes"
+    },
+    {
+     "matches": ":e2e-devvm-agent$",
+     "path": "response.body.result.structuredContent.uri",
+     "step": "stillInfo"
+    }
+   ],
+   "requirement": "Rejections preserve subsequent read availability",
+   "spec": "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "wrong"
+    },
+    {
+     "equals": 401,
+     "path": "response.status",
+     "step": "missing"
+    },
+    {
+     "matches": "^Bearer resource_metadata=",
+     "path": "response.headers.www-authenticate",
+     "step": "wrong"
+    }
+   ],
+   "requirement": "Compatible authenticated MCP surface",
+   "scenario": "the refusal's status and the MCP authorization challenge are contract; its body text is not (D28, Q1)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "id": "bootstrap",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "capture": {
+    "PROVIDER_ID": "json.client_id",
+    "PROVIDER_SECRET": {
+     "path": "json.client_secret",
+     "secret": true
+    }
+   },
+   "guest": "python3 -c \"import json,sys; print(json.dumps(json.load(open(sys.argv[1]))))\" /home/opute/.config/opute/instances/standalone/state/credentials/host-agent-provider.json",
+   "id": "cred"
+  },
+  {
+   "basic": [
+    "${PROVIDER_ID}",
+    "${PROVIDER_SECRET}"
+   ],
+   "capture": {
+    "ACCESS": {
+     "path": "response.body.access_token",
+     "secret": true
+    }
+   },
+   "form": {
+    "grant_type": "client_credentials",
+    "resource": "http://127.0.0.1:3014/mcp"
+   },
+   "http": "POST",
+   "id": "issue",
+   "path": "/oauth/token",
+   "port": 3014
+  },
+  {
+   "auth": "var:ACCESS",
+   "id": "oauthList",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "arguments": {},
+   "auth": "var:ACCESS",
+   "id": "oauthInfo",
+   "mcp": "tools/call",
+   "port": 3014,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start foreign --port 3018 --id e2e-foreign-agent --env MCP_AUTH_TOKEN=${SECRET:foreign}",
+   "id": "foreign"
+  },
+  {
+   "capture": {
+    "FOREIGN_SECRET": {
+     "path": "json.client_secret",
+     "secret": true
+    }
+   },
+   "guest": "python3 -c \"import json,sys; print(json.dumps(json.load(open(sys.argv[1]))))\" /tmp/e2e-agents/foreign/state/credentials/host-agent-provider.json",
+   "id": "foreignCred"
+  },
+  {
+   "basic": [
+    "host-agent-provider",
+    "${FOREIGN_SECRET}"
+   ],
+   "capture": {
+    "FOREIGN_ACCESS": {
+     "path": "response.body.access_token",
+     "secret": true
+    }
+   },
+   "form": {
+    "grant_type": "client_credentials",
+    "resource": "http://127.0.0.1:3018/mcp"
+   },
+   "http": "POST",
+   "id": "foreignIssue",
+   "path": "/oauth/token",
+   "port": 3018
+  },
+  {
+   "auth": "var:FOREIGN_ACCESS",
+   "id": "foreignOwn",
+   "mcp": "tools/list",
+   "port": 3018
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "dbBefore"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/authz.sqlite",
+   "id": "authzBefore"
+  },
+  {
+   "auth": "literal:intentionally-wrong",
+   "id": "wrong",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "auth": "none",
+   "id": "missing",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "arguments": {},
+   "auth": "literal:intentionally-wrong",
+   "id": "wrongCall",
+   "mcp": "tools/call",
+   "port": 3014,
+   "tool": "get_host_info"
+  },
+  {
+   "auth": "secret:foreign",
+   "id": "foreignBootstrap",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "auth": "var:FOREIGN_ACCESS",
+   "id": "foreignOauth",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "arguments": {},
+   "auth": "var:FOREIGN_ACCESS",
+   "id": "foreignOauthCall",
+   "mcp": "tools/call",
+   "port": 3014,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "dbAfter"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/authz.sqlite",
+   "id": "authzAfter"
+  },
+  {
+   "id": "stillServes",
+   "mcp": "tools/list",
+   "port": 3014
+  },
+  {
+   "arguments": {},
+   "id": "stillInfo",
+   "mcp": "tools/call",
+   "port": 3014,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove foreign",
+   "id": "foreignStop"
+  }
+ ]
+}

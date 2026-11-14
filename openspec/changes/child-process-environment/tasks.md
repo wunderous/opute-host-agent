@@ -8,4 +8,4 @@
 - [x] 2.1 `Env::for_child`; every site clears the inherited environment and passes it.
 - [x] 2.2 Failing-first tests: the spawn-site source test and the `env` test (both failed on rc1's code, `evidence/m17/before.log`).
 - [x] 2.3 A property: no generated environment's secret-named variable survives `for_child`; the entry joins `evidence/hardening/entry-points.json`.
-- [ ] 2.4 Gate e2e-6 reads a running console's and a recipe step's environment from `/proc` on the release candidate.
+- [x] 2.4 Gate e2e-6 reads a running console's and a recipe step's environment from `/proc` on the release candidate. Passed: `e2e6.child-env`, run `m17-r2` on `rust-0.4.0-rc2`.

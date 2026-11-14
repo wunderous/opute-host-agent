@@ -1,0 +1,249 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove dmg >/dev/null ; true",
+   "id": "remove"
+  }
+ ],
+ "description": "D31: the agent's state.db truncated, its header overwritten, and a middle page overwritten; startup refuses without serving or writing, and the restored store starts with the earlier task's record intact.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.store-damage",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "completed",
+     "path": "response.body.result.status",
+     "step": "taskDone"
+    },
+    {
+     "matches": "^exit=[1-9]",
+     "path": "stdout",
+     "step": "startTruncated"
+    },
+    {
+     "equals": [],
+     "path": "json.addresses",
+     "step": "listenTruncated"
+    },
+    {
+     "equalsStep": {
+      "path": "stdout",
+      "step": "truncate"
+     },
+     "path": "stdout",
+     "step": "afterTruncated"
+    },
+    {
+     "matches": "^exit=[1-9]",
+     "path": "stdout",
+     "step": "startHeader"
+    },
+    {
+     "equalsStep": {
+      "path": "stdout",
+      "step": "header"
+     },
+     "path": "stdout",
+     "step": "afterHeader"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "restoredAgent"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "kept"
+    }
+   ],
+   "requirement": "A damaged state store stops startup",
+   "scenario": "Truncated store, and an overwritten header: startup exits non-zero, binds nothing and writes nothing; the restored store starts with its records intact (D31)",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "matches": "^exit=[0-9]+\n$",
+     "path": "stdout",
+     "step": "startPage"
+    },
+    {
+     "in": [
+      "200\n",
+      "000\n"
+     ],
+     "path": "stdout",
+     "step": "pageRead"
+    }
+   ],
+   "requirement": "A damaged state store stops startup",
+   "scenario": "A page overwritten in the middle: the agent either refuses to start or serves; it does not crash while starting",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+   "id": "dmgAgent"
+  },
+  {
+   "auth": "secret:dmg",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3041
+  },
+  {
+   "arguments": {
+    "command": "echo kept"
+   },
+   "auth": "secret:dmg",
+   "capture": {
+    "KEPT": "response.body.result.taskId"
+   },
+   "id": "task",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3041,
+   "tool": "run_host_command"
+  },
+  {
+   "auth": "secret:dmg",
+   "id": "taskDone",
+   "interval": 2,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${KEPT}"
+   },
+   "port": 3041,
+   "timeout": 60,
+   "until": {
+    "in": [
+     "completed",
+     "failed"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg && cp -a /tmp/e2e-agents/dmg/state/state.db /tmp/e2e-agents/dmg/state.db.bak && echo saved",
+   "id": "stop"
+  },
+  {
+   "guest": "truncate -s 4096 /tmp/e2e-agents/dmg/state/state.db && sha256sum /tmp/e2e-agents/dmg/state/state.db | cut -c1-64; ls /tmp/e2e-agents/dmg/state | tr '\\n' ' '; echo",
+   "id": "truncate"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true >/dev/null 2>&1; echo exit=$?; python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null",
+   "id": "startTruncated"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3041",
+   "id": "listenTruncated"
+  },
+  {
+   "guest": "sha256sum /tmp/e2e-agents/dmg/state/state.db | cut -c1-64; ls /tmp/e2e-agents/dmg/state | tr '\\n' ' '; echo",
+   "id": "afterTruncated"
+  },
+  {
+   "guest": "cp -a /tmp/e2e-agents/dmg/state.db.bak /tmp/e2e-agents/dmg/state/state.db && dd if=/dev/urandom of=/tmp/e2e-agents/dmg/state/state.db bs=100 count=1 conv=notrunc 2>/dev/null && sha256sum /tmp/e2e-agents/dmg/state/state.db | cut -c1-64; ls /tmp/e2e-agents/dmg/state | tr '\\n' ' '; echo",
+   "id": "header"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true >/dev/null 2>&1; echo exit=$?; python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null",
+   "id": "startHeader"
+  },
+  {
+   "guest": "sha256sum /tmp/e2e-agents/dmg/state/state.db | cut -c1-64; ls /tmp/e2e-agents/dmg/state | tr '\\n' ' '; echo",
+   "id": "afterHeader"
+  },
+  {
+   "guest": "cp -a /tmp/e2e-agents/dmg/state.db.bak /tmp/e2e-agents/dmg/state/state.db && dd if=/dev/urandom of=/tmp/e2e-agents/dmg/state/state.db bs=4096 seek=2 count=1 conv=notrunc 2>/dev/null && echo damaged",
+   "id": "page"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true >/dev/null 2>&1; echo exit=$?",
+   "id": "startPage"
+  },
+  {
+   "guest": "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3041/health; echo",
+   "id": "pageRead"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null; echo stopped",
+   "id": "stopPage"
+  },
+  {
+   "guest": "cp -a /tmp/e2e-agents/dmg/state.db.bak /tmp/e2e-agents/dmg/state/state.db && echo restored",
+   "id": "restore"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+   "id": "restoredAgent"
+  },
+  {
+   "auth": "secret:dmg",
+   "id": "listAgain",
+   "mcp": "tools/list",
+   "port": 3041
+  },
+  {
+   "arguments": {
+    "operationId": "${KEPT}"
+   },
+   "auth": "secret:dmg",
+   "id": "kept",
+   "mcp": "tools/call",
+   "port": 3041,
+   "tool": "get_operation"
+  }
+ ]
+}

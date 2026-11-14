@@ -1,0 +1,298 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.auth",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "bootstrap"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "oauthList"
+    },
+    {
+     "actual": "host:local:e2e-devvm-agent",
+     "matches": ":e2e-devvm-agent$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "oauthInfo"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "wrong"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "missing"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "wrongCall"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "foreignBootstrap"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "foreignOauth"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "foreignOauthCall"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible authenticated MCP surface",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "cred"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "issue"
+    },
+    {
+     "actual": "Bearer",
+     "equals": "Bearer",
+     "ok": true,
+     "path": "response.body.token_type",
+     "step": "issue"
+    },
+    {
+     "actual": "http://127.0.0.1:3014/mcp",
+     "equals": "http://127.0.0.1:3014/mcp",
+     "ok": true,
+     "path": "response.body.resource",
+     "step": "issue"
+    },
+    {
+     "actual": "no-store",
+     "equals": "no-store",
+     "ok": true,
+     "path": "response.headers.cache-control",
+     "step": "issue"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "foreignIssue"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "foreignOwn"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Provisioned credentials for built-in machine clients",
+   "spec": "openspec/changes/secure-oauth-issuance/specs/oauth-issuance/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "dbBefore"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 1,
+      "operations": 0,
+      "plan_runs": 0,
+      "provider_generations": 0,
+      "resource_registry": 1
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "dbBefore"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 1,
+      "operations": 0,
+      "plan_runs": 0,
+      "provider_generations": 0,
+      "resource_registry": 1
+     },
+     "path": "json.counts",
+     "step": "dbAfter"
+    },
+    {
+     "actual": [],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "dbBefore"
+     },
+     "ok": true,
+     "other": [],
+     "path": "json.operationIds",
+     "step": "dbAfter"
+    },
+    {
+     "actual": {
+      "clients": 2,
+      "codes": 0,
+      "consents": 0,
+      "pending_authorizations": 0,
+      "schema_migrations": 1,
+      "tokens": 1
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "authzBefore"
+     },
+     "ok": true,
+     "other": {
+      "clients": 2,
+      "codes": 0,
+      "consents": 0,
+      "pending_authorizations": 0,
+      "schema_migrations": 1,
+      "tokens": 1
+     },
+     "path": "json.counts",
+     "step": "authzAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Rejected MCP calls leave no audit writes or execution effects",
+   "spec": "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "stillServes"
+    },
+    {
+     "actual": "host:local:e2e-devvm-agent",
+     "matches": ":e2e-devvm-agent$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "stillInfo"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Rejections preserve subsequent read availability",
+   "spec": "openspec/changes/reject-without-audit-writes/specs/reject-without-audit-writes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "wrong"
+    },
+    {
+     "actual": 401,
+     "equals": 401,
+     "ok": true,
+     "path": "response.status",
+     "step": "missing"
+    },
+    {
+     "actual": "Bearer resource_metadata=\"http://127.0.0.1:3014/.well-known/oauth-protected-resource/mcp\", scope=\"mcp\"",
+     "matches": "^Bearer resource_metadata=",
+     "ok": true,
+     "path": "response.headers.www-authenticate",
+     "step": "wrong"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible authenticated MCP surface",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "authzAfter": 190,
+   "authzBefore": 191,
+   "bootstrap": 515,
+   "cred": 159,
+   "dbAfter": 189,
+   "dbBefore": 191,
+   "foreign": 555,
+   "foreignBootstrap": 207,
+   "foreignCred": 156,
+   "foreignIssue": 210,
+   "foreignOauth": 201,
+   "foreignOauthCall": 208,
+   "foreignOwn": 243,
+   "foreignStop": 224,
+   "issue": 215,
+   "missing": 205,
+   "oauthInfo": 289,
+   "oauthList": 231,
+   "stillInfo": 283,
+   "stillServes": 232,
+   "tool": 296,
+   "wire": 279,
+   "wrong": 204,
+   "wrongCall": 200
+  },
+  "stepsSeconds": 49.9
+ },
+ "unverified": []
+}

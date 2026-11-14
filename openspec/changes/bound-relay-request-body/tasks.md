@@ -8,4 +8,4 @@
 - [x] 2.1 The relay reads at most 32 MiB; a provider's `/mcp` reads at most 4 MiB; each answers 413 beyond.
 - [x] 2.2 Failing-first tests for both (failed on rc1's code, `evidence/m17/before.log`).
 - [x] 2.3 Both reads keep their coverage in `evidence/hardening/entry-points.json`.
-- [ ] 2.4 Gate e2e-6 sends an oversized relay body on the release candidate: 413, with RSS flat.
+- [x] 2.4 Gate e2e-6 sends an oversized relay body on the release candidate: 413, with RSS flat. Passed: `e2e6.pressure`, run `m17-r2` on `rust-0.4.0-rc2`.

@@ -209,7 +209,7 @@ Left empty for the owners (task 6.3).
 | Release | | | | |
 | Deployment | | | | |
 
-## 7. Rust 0.4.0 candidate (goal m15)
+## 7. Rust 0.4.0 candidate (goals m15 and m17)
 
 Sections 1 to 6 are the 0.3.0 candidate, and its sign-off stands alone.
 This section is the next candidate, from the integration branch
@@ -221,7 +221,7 @@ names this set and `make cutover-readiness` checks it.
 
 Every tool the agent publishes now either works or is withdrawn by
 decision. The 0.3.0 seam report listed 17 unported capabilities; the 0.4.0
-report (`evidence/seam/m15`) lists 144 compliant, 2 unported and 4
+report (`evidence/seam/m17`) lists 144 compliant, 2 unported and 4
 unpublished, with no gap. The two unported ones are internal
 (`configure_host_network`, `install_sql_forward_sidecar`) and published in
 no mode. The dispatch canary turns the verifier red.
@@ -241,25 +241,40 @@ no mode. The dispatch canary turns the verifier red.
 The catalog revision for standalone is re-pinned for D37 and D39 to
 `sha256:26a771cc7f2b2a7b9a78ad3e116ac3e44c8a07d1cdc98bec55de02d00202a27a`.
 
+Goal m17 closed the open observations in this candidate. Sections 2a and 4
+list A2 and O1 as open; that is their state in 0.3.0. The decisions were
+delegated by the Host Agent owner on 2026-11-11.
+
+| Id | What | State in 0.4.0 |
+|---|---|---|
+| A4 (found in m15) | Every process the agent started inherited its whole environment, bearer and provider credentials included | Closed by D40, [child-process-environment](../child-process-environment/proposal.md): an allowlist at all eight spawn sites, never a secret-named variable |
+| A2 (m16) | The serving relay read a request body whole | Closed by D41, [bound-relay-request-body](../bound-relay-request-body/proposal.md): 32 MiB, 413 beyond |
+| A5 (found in m17) | The provider executables' `/mcp` read a body whole before the 4 MiB check | Closed by D41: the SDK's 4 MiB, 413 beyond |
+| O1 (m16) | Audit rows were never pruned | Closed by D42, [audit-retention](../audit-retention/proposal.md): 30 days and 50,000 rows by default (`OPUTE_AUDIT_RETENTION_DAYS`, `OPUTE_AUDIT_RETENTION_ROWS`); finished operations follow after their task's one-hour TTL |
+
+Each fix has a test that failed on rc1's code
+([`evidence/m17`](../../../evidence/m17/README.md)).
+
 ### 7.2 The candidate
 
 | Field | Value |
 |---|---|
-| Name | `rust-0.4.0-rc1`, version `0.4.0` |
-| Commit | `3b3b6b7f8b31958a60a440c8f8f2ffb617ca7030` (the merge of PR #48 into `rust-0.4.0`) |
-| `SHA256SUMS` | `sha256:f85bb387a9757b3660a6c9db74350b0d650bbdc4e3e643cd9207df391773468d` |
-| `host-agent-linux-x64` | `3e966602c3de67d909a0f04642a81d4b81392341592ce3ffe28dad944fc93462` |
-| `host-agent-linux-arm64.gz` | `19f5a71296ad8d2a6444238f2d8a1dd01251a88bcd58d6fd2b9108040d6bff38` |
-| Upgrade target | `rust-0.4.0-rc1-next`, `0.4.1-e2e`, the same commit |
+| Name | `rust-0.4.0-rc2`, version `0.4.0`. It replaces `rust-0.4.0-rc1` (m15, run `m15-r1`), which the m17 fixes superseded |
+| Commit | `5d3e55fde7c4e6b19731e21a980f6f79a7df9285` (branch `claude/m17-observations`, PR #51) |
+| `SHA256SUMS` | `sha256:f4a13f4306231e66f734fd9f99ab5bbea4ce74af0cc93838664e6458bd24e9f8` |
+| `host-agent-linux-x64` | `afef1de42d4f51a833e4ad816cb99c3846851895ebcfd05c2111713bdb13396e` |
+| `host-agent-linux-arm64.gz` | `b23f7874f5e889dad3fe1e1dec08013b3ef7d70b930231c8f531621fb266d28f` |
+| Upgrade target | `rust-0.4.0-rc2-next`, `0.4.1-e2e`, the same commit |
 | Rollback target | `rust-0.3.0-rc4` (section 1), used by `neutral.rollback` |
 
 Before the build: `cargo fmt` and clippy were clean, and a 60 s pass over all
-18 fuzz targets found nothing. The 23 hardening entry points include the
-new console-output reader (fuzz target `console_output` and a property test).
+18 fuzz targets found nothing. The 26 hardening entry points include the
+console-output reader (m15) and, from m17, the serving relay, the provider
+`/mcp` and the child environment, each with a property test.
 
 ### 7.3 Gates and receipts
 
-Every gate ran on rc1 under run `m15-r1`, and `evidence/e2e/verify.py --gate`
+Every gate ran on rc2 under run `m17-r2`, and `evidence/e2e/verify.py --gate`
 passes each.
 
 | Gate | Journeys | Spec requirements passed | New in 0.4.0 |
@@ -270,7 +285,7 @@ passes each.
 | e2e-3a | 5 | 33 | `e2e3a.workload`: cluster inspection on the HA cluster through `list_secret_keys`, `list_configmap_keys` and `inspect_workload`; the Q18 workaround is gone |
 | e2e-3 | 3 | 18 | `e2e3.serving` calls both LLM tools; `e2e3.discovery` reads K3s's own keys |
 | e2e-4 | 2 | 11 | — |
-| e2e-6 | 7 | 13 | — |
+| e2e-6 | 8 | 17 | `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 59 MB (D41). `e2e6.budget`: with a 5,000-row bound, 27,529 calls leave exactly 5,000 audit rows, and the store grows 835 bytes per call against 3,455 before (D42) |
 | e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc4 |
 
 Retired, with cause (`.parity/retired/`):
@@ -282,12 +297,19 @@ Retired, with cause (`.parity/retired/`):
   passed on another build's Cloudflare provider.
 
 Each of these journeys reran once under the same run, on the same build.
+Those were rc1's. On rc2:
+- `m17-r1-host-restart`: the host machine restarted three journeys into the
+  round. No verdict; the dev VM was rebuilt from rc2 and the whole round
+  reran as `m17-r2`.
+- `m17-r2-quorum-removal-dns`: the first attempt of `e2e3a.quorum-removal`
+  failed when the third server could not resolve `github.com` to download
+  K3s. Environmental; the journey reran once under `m17-r2` and passed.
 
 | Receipt | What it proves |
 |---|---|
-| Contract suites | Binary `3e966602…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
-| Seam `m15` | The counts above, the red canary, and a rerun that reproduces the report byte for byte |
-| arm64 clean install | `host-agent-linux-arm64.gz` `19f5a712…` |
+| Contract suites | Binary `afef1de4…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
+| Seam `m17` | The counts above, the red canary, and a rerun that reproduces the report byte for byte |
+| arm64 clean install | `host-agent-linux-arm64.gz` `b23f7874…` |
 | Distribution | Go's read-only canary passes on the locally packed 0.4.0 launcher. After the declared renames, the site preview differs from Go's only in the tools D28, D37 and D39 changed and in `run_host_local_recipe`'s description, from which platform-neutral removes the Platform name |
 
 ### 7.4 Prerequisite for shipping 0.4.0: the proposed install surfaces
@@ -311,4 +333,5 @@ reads its old ones (`neutral.rollback`).
 ### 7.5 Not passed
 
 `make cutover-readiness` on `rust-0.4.0` lists e2e-5, WSL2 and Q4, the same
-owners and unblockers as section 4. Q18 is answered by D32 and passes.
+owners and unblockers as section 4. Q18 is answered by D32 and passes. No
+observation from the hardening review is open in 0.4.0.
