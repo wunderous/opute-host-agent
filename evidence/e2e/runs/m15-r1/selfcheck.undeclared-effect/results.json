@@ -1,0 +1,43 @@
+{
+ "effects": {
+  "changed": [
+   "files//etc/opute-e2e-undeclared-probe"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": [
+   "files//etc/opute-e2e-undeclared-probe"
+  ]
+ },
+ "failures": [
+  "undeclared-effect"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.undeclared-effect",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "touch"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: undeclared effects fail",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "touch": 149
+  },
+  "stepsSeconds": 44.3
+ },
+ "unverified": []
+}

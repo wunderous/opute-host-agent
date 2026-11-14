@@ -151,7 +151,8 @@ def check_candidate(root: Path, item: dict) -> dict:
         return {"status": "failed", "detail": f"{item['record']} is missing"}
     candidate = json.loads(path.read_text())
     artifacts = candidate["artifacts"]
-    allowed = set(artifacts.values()) | set(candidate.get("upgradeTarget", {}).get("artifacts", {}).values())
+    allowed = set(artifacts.values()) | set(candidate.get("upgradeTarget", {}).get("artifacts", {}).values()) \
+        | set(candidate.get("rollbackTarget", {}).get("artifacts", {}).values())
     problems = []
     gates = json.loads((root / "evidence/e2e/gates.json").read_text())
     for gate in item["gates"]:

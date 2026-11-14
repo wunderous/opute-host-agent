@@ -1,15 +1,15 @@
 {
  "id": "e2e2.incus",
  "gate": "e2e-2",
- "description": "Incus containers and VMs through typed calls on a second agent with ownership enforced: a container with a pinned address and a VM, both reachable; lifecycle; a VM resize; root disk growth and its quota; refusals on an instance the agent does not own; reset of an owned container; delete. Guests live in the default project (Q16).",
+ "description": "Incus containers and VMs through typed calls on a second agent with ownership enforced: a container with a pinned address and a VM, both reachable; the VM's console (open, type, resize, detach, end with the agent) and a bridged NIC attached and removed; lifecycle; a VM resize; root disk growth and its quota; refusals on an instance the agent does not own; reset of an owned container; delete. Guests live in the default project (Q16).",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "agentB": "a transient Rust agent e2e-incus-b on port 3032 (e2etool agent start) with Incus ownership enforced and itself as the shared host owner",
   "images": "the snapshot's local Incus images parity-noble (container) and parity-noble-vm",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -326,6 +326,233 @@
     }
    ],
    "scenario": "Every owned guest is gone after delete; only the foreign instance remains"
+  },
+  {
+   "spec": "openspec/changes/vm-console-session/specs/vm-console-session/spec.md",
+   "requirement": "A console session runs the instance's console",
+   "pass": [
+    {
+     "step": "console",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "started"
+    },
+    {
+     "step": "console",
+     "path": "response.body.result.structuredContent.operationId",
+     "equals": "console-e2e-v1"
+    },
+    {
+     "step": "console",
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "vm:local:e2e-v1"
+    },
+    {
+     "step": "consoleAgain",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "started"
+    },
+    {
+     "step": "consoleProcs",
+     "path": "stdout",
+     "equals": "1\n"
+    }
+   ],
+   "scenario": "One session per instance: a second start replaces the first, and one console process runs"
+  },
+  {
+   "spec": "openspec/changes/vm-console-session/specs/vm-console-session/spec.md",
+   "requirement": "Console output is read by pull from a bounded buffer",
+   "pass": [
+    {
+     "step": "consoleRead",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "sent"
+    },
+    {
+     "step": "consoleRead",
+     "path": "response.body.result.structuredContent.output",
+     "matches": "(login|Password): $"
+    },
+    {
+     "step": "consoleRead",
+     "path": "response.body.result.structuredContent.closed",
+     "equals": false
+    },
+    {
+     "step": "consoleCtrlA",
+     "path": "response.body.result.structuredContent.closed",
+     "equals": false
+    },
+    {
+     "step": "consoleDetach",
+     "path": "response.body.result.structuredContent.closed",
+     "equals": true
+    },
+    {
+     "step": "consoleAfter",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "consoleAfter",
+     "path": "response.body.result.content[0].text",
+     "matches": "console-e2e-v1"
+    },
+    {
+     "step": "consoleGone",
+     "path": "stdout",
+     "equals": "0\n"
+    }
+   ],
+   "scenario": "Enter typed on the console brings the guest's getty prompt back; ctrl+a then q ends the session, the read that reports it is the last, and no console process is left"
+  },
+  {
+   "spec": "openspec/changes/vm-console-session/specs/vm-console-session/spec.md",
+   "requirement": "A console's size can be changed",
+   "pass": [
+    {
+     "step": "consoleResize",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "resized"
+    },
+    {
+     "step": "consoleResizeBad",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "consoleResizeBad",
+     "path": "response.body.result.content[0].text",
+     "matches": "console size must be positive"
+    }
+   ],
+   "scenario": "Resize to 120 by 40; a zero width is refused"
+  },
+  {
+   "spec": "openspec/changes/vm-console-session/specs/vm-console-session/spec.md",
+   "requirement": "Sessions end with the agent",
+   "pass": [
+    {
+     "step": "consoleHeld",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "started"
+    },
+    {
+     "step": "consoleHeldProcs",
+     "path": "stdout",
+     "equals": "1\n"
+    },
+    {
+     "step": "stopB",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
+     "step": "restartB",
+     "path": "stdout",
+     "equals": "started\n"
+    }
+   ],
+   "scenario": "With a session open, agent B is stopped (SIGTERM from its systemd unit) and no console process remains; B starts again on the same state. The unit's cgroup stop would also end it, so the agent's own close on shutdown is shown by the console unit test"
+  },
+  {
+   "spec": "openspec/changes/vm-bridged-nic/specs/vm-bridged-nic/spec.md",
+   "requirement": "configure_network attaches one bridged NIC",
+   "pass": [
+    {
+     "step": "bridge",
+     "path": "stdout",
+     "equals": "up\n"
+    },
+    {
+     "step": "nic",
+     "path": "response.body.result.result.structuredContent.status",
+     "equals": "attached"
+    },
+    {
+     "step": "nic",
+     "path": "response.body.result.result.structuredContent.deviceName",
+     "equals": "eth1"
+    },
+    {
+     "step": "nic",
+     "path": "response.body.result.result.structuredContent.parent",
+     "equals": "e2e-br0"
+    },
+    {
+     "step": "nic",
+     "path": "response.body.result.result.structuredContent.uri",
+     "equals": "vm:local:e2e-v1"
+    },
+    {
+     "step": "nicAgain",
+     "path": "response.body.result.result.structuredContent.status",
+     "equals": "attached"
+    },
+    {
+     "step": "nicConflict",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "nicConflict",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "different configuration"
+    },
+    {
+     "step": "nicNoParent",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "nicNoParent",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "e2e-nope"
+    },
+    {
+     "step": "nicDevices",
+     "path": "stdout",
+     "equals": "1\nbridged\n0\n"
+    },
+    {
+     "step": "nicGuest",
+     "path": "response.body.result.structuredContent.stdout",
+     "equals": "2\n"
+    }
+   ],
+   "scenario": "Attach and attach again: one bridged eth1 on e2e-br0, seen by the guest as a second interface; a conflicting eth1 and a missing parent are refused and add nothing"
+  },
+  {
+   "spec": "openspec/changes/remove-vm-network-device/specs/remove-vm-network-device/spec.md",
+   "requirement": "remove_vm_network_device removes one NIC from an instance's own configuration",
+   "pass": [
+    {
+     "step": "nicProfile",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "nicProfile",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "profile"
+    },
+    {
+     "step": "nicRemove",
+     "path": "response.body.result.result.structuredContent.removed",
+     "equals": true
+    },
+    {
+     "step": "nicRemoveAgain",
+     "path": "response.body.result.result.structuredContent.removed",
+     "equals": false
+    },
+    {
+     "step": "nicAfter",
+     "path": "stdout",
+     "equals": "0\n1\ngone\n"
+    }
+   ],
+   "scenario": "The profile's eth0 is refused and the VM keeps its address; eth1 is removed, then removing it again changes nothing"
   }
  ],
  "effects": {
@@ -345,7 +572,9 @@
    "system/units/sys-devices-virtual-net-veth*",
    "system/units/sys-subsystem-net-devices-veth*",
    "system/units/sys-devices-virtual-net-tap*",
-   "system/units/sys-subsystem-net-devices-tap*"
+   "system/units/sys-subsystem-net-devices-tap*",
+   "system/units/sys-devices-virtual-net-e2e*",
+   "system/units/sys-subsystem-net-devices-e2e*"
   ],
   "persist": [
    "files//opt/incus*",
@@ -605,6 +834,549 @@
   {
    "id": "reachV",
    "guest": "ping -c1 -W5 ${V1_IP} >/dev/null && echo ping-ok; timeout 5 bash -c 'echo > /dev/tcp/${V1_IP}/22' 2>/dev/null && echo ssh-port"
+  },
+  {
+   "id": "console",
+   "mcp": "tools/call",
+   "tool": "stream_vm_console",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "width": 100,
+    "height": 30
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleAgain",
+   "mcp": "tools/call",
+   "tool": "stream_vm_console",
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleProcs",
+   "guest": "pgrep -fc 'console e2e-v1$' || true"
+  },
+  {
+   "id": "consoleRead",
+   "mcp": "tools/call",
+   "tool": "send_console_input",
+   "arguments": {
+    "operationId": "console-e2e-v1",
+    "data": "\r"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.structuredContent.output",
+    "matches": "(login|Password): $"
+   },
+   "timeout": 60,
+   "interval": 2,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleResize",
+   "mcp": "tools/call",
+   "tool": "resize_console",
+   "arguments": {
+    "operationId": "console-e2e-v1",
+    "width": 120,
+    "height": 40
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleResizeBad",
+   "mcp": "tools/call",
+   "tool": "resize_console",
+   "arguments": {
+    "operationId": "console-e2e-v1",
+    "width": 0,
+    "height": 40
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleCtrlA",
+   "mcp": "tools/call",
+   "tool": "send_console_input",
+   "arguments": {
+    "operationId": "console-e2e-v1",
+    "data": "\u0001"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleDetach",
+   "mcp": "tools/call",
+   "tool": "send_console_input",
+   "arguments": {
+    "operationId": "console-e2e-v1",
+    "data": "q"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleAfter",
+   "mcp": "tools/call",
+   "tool": "send_console_input",
+   "arguments": {
+    "operationId": "console-e2e-v1",
+    "data": ""
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleGone",
+   "guest": "pgrep -fc 'console e2e-v1$' || true"
+  },
+  {
+   "id": "consoleHeld",
+   "mcp": "tools/call",
+   "tool": "stream_vm_console",
+   "arguments": {
+    "uri": "vm:local:e2e-v1"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "consoleHeldProcs",
+   "guest": "pgrep -fc 'console e2e-v1$' || true"
+  },
+  {
+   "id": "stopB",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop b >/dev/null; sleep 1; pgrep -fc 'console e2e-v1$' || true"
+  },
+  {
+   "id": "restartB",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start b --port 3032 --id e2e-incus-b --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_AGENT_INSTANCE=e2e-incus-b --env OPUTE_INCUS_OWNERSHIP_MODE=enforce --env OPUTE_SHARED_HOST_OWNER_INSTANCE=e2e-incus-b --env MCP_AUTH_TOKEN='${SECRET:tokenB}' >/dev/null && echo started"
+  },
+  {
+   "id": "bridge",
+   "guest": "ip link add e2e-br0 type bridge && ip link set e2e-br0 up && echo up"
+  },
+  {
+   "id": "nicCall",
+   "mcp": "tools/call",
+   "tool": "configure_network",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "parent": "e2e-br0"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nic": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nic",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nic}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicAgainCall",
+   "mcp": "tools/call",
+   "tool": "configure_network",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "deviceName": "eth1",
+    "parent": "e2e-br0"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nicAgain": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicAgain",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nicAgain}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicConflictCall",
+   "mcp": "tools/call",
+   "tool": "configure_network",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "parent": "lo"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nicConflict": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicConflict",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nicConflict}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicNoParentCall",
+   "mcp": "tools/call",
+   "tool": "configure_network",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "deviceName": "eth2",
+    "parent": "e2e-nope"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nicNoParent": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicNoParent",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nicNoParent}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicDevices",
+   "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0'; incus config device get e2e-v1 eth1 nictype; incus config device show e2e-v1 | grep -c '^eth2:' || true"
+  },
+  {
+   "id": "nicGuest",
+   "mcp": "tools/call",
+   "tool": "run_instance_command",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "command": "sh",
+    "args": [
+     "-c",
+     "ls /sys/class/net | grep -vc '^lo$'"
+    ]
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.structuredContent.stdout",
+    "in": [
+     "2\n"
+    ]
+   },
+   "timeout": 60,
+   "interval": 3,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicProfileCall",
+   "mcp": "tools/call",
+   "tool": "remove_vm_network_device",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "deviceName": "eth0"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nicProfile": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicProfile",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nicProfile}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicRemoveCall",
+   "mcp": "tools/call",
+   "tool": "remove_vm_network_device",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "deviceName": "eth1"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nicRemove": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicRemove",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nicRemove}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicRemoveAgainCall",
+   "mcp": "tools/call",
+   "tool": "remove_vm_network_device",
+   "arguments": {
+    "uri": "vm:local:e2e-v1",
+    "deviceName": "eth1"
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_nicRemoveAgain": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "nicRemoveAgain",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_nicRemoveAgain}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3032,
+   "auth": "secret:tokenB",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "nicAfter",
+   "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0' || true; incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'; ip link del e2e-br0 && echo gone"
   },
   {
    "id": "stopCCall",
@@ -1267,7 +2039,7 @@
  "cleanup": [
   {
    "id": "cleanIncus",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; if test -f /root/e2e-incus-config.yml; then runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml; rm -f /root/e2e-incus-config.yml; fi; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove b >/dev/null; ip link del e2e-br0 2>/dev/null; if test -f /root/e2e-incus-config.yml; then runuser -u opute -- incus project switch default 2>/dev/null; incus project delete e2e-other 2>/dev/null; cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml; rm -f /root/e2e-incus-config.yml; fi; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 28

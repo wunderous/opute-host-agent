@@ -5521,7 +5521,7 @@
      "tasks": 8
     }
    },
-   "description": "Execute a host-recipe.v1 document that declares coordinator=host-agent/mode=local through the durable host-plan runner, so a first cluster node can be established with no Platform in the loop. Read the run with get_host_plan_run. A distributed recipe is refused.",
+   "description": "Execute a host-recipe.v1 document that declares coordinator=host-agent/mode=local through the durable host-plan runner, so a first cluster node can be established with no orchestrator in the loop. Read the run with get_host_plan_run. A distributed recipe is refused.",
    "inputSchema": {
     "properties": {
      "inputs": {
@@ -5765,10 +5765,18 @@
    "name": "send_console_input",
    "outputSchema": {
     "properties": {
+     "closed": {
+      "description": "True once the console process has exited; this is the session's last read",
+      "type": "boolean"
+     },
      "error": {
       "type": "string"
      },
      "operationId": {
+      "type": "string"
+     },
+     "output": {
+      "description": "Console output since the previous read, at most 64 KiB; older output is dropped",
       "type": "string"
      },
      "status": {
@@ -11783,7 +11791,7 @@
      "tasks": 8
     }
    },
-   "description": "Execute a host-recipe.v1 document that declares coordinator=host-agent/mode=local through the durable host-plan runner, so a first cluster node can be established with no Platform in the loop. Read the run with get_host_plan_run. A distributed recipe is refused.",
+   "description": "Execute a host-recipe.v1 document that declares coordinator=host-agent/mode=local through the durable host-plan runner, so a first cluster node can be established with no orchestrator in the loop. Read the run with get_host_plan_run. A distributed recipe is refused.",
    "inputSchema": {
     "properties": {
      "inputs": {
@@ -16697,7 +16705,7 @@
      "tasks": 8
     }
    },
-   "description": "Execute a host-recipe.v1 document that declares coordinator=host-agent/mode=local through the durable host-plan runner, so a first cluster node can be established with no Platform in the loop. Read the run with get_host_plan_run. A distributed recipe is refused.",
+   "description": "Execute a host-recipe.v1 document that declares coordinator=host-agent/mode=local through the durable host-plan runner, so a first cluster node can be established with no orchestrator in the loop. Read the run with get_host_plan_run. A distributed recipe is refused.",
    "inputSchema": {
     "properties": {
      "inputs": {

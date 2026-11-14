@@ -3,12 +3,12 @@
  "gate": "e2e-2",
  "description": "Plans across domains: one host-plan.v1 run and one host-local recipe, each combining a host file, an Incus container and a SQLite database, using published primitives only, to completion; the run read back as a durable operation; then a running plan cancelled mid-way through cancel_operation.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "slow": "a local endpoint answering after 25 s (e2etool slow)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",

@@ -200,8 +200,8 @@ pub fn validate_host_envelope(document: &HostDocument) -> Result<(), String> {
 }
 
 /// The three restrictions that keep host-local execution from becoming a
-/// second coordinator with none of the durable machinery that makes the
-/// Platform one: a single host, no waits, and no emitted events.
+/// second coordinator with none of the durable machinery a distributed
+/// coordinator has: a single host, no waits, and no emitted events.
 fn validate_host_local_plan(document: &PlanDocument) -> Result<(), String> {
     let mut seen = std::collections::BTreeSet::new();
     let mut ordered = Vec::new();
@@ -292,8 +292,8 @@ pub(crate) fn reject_nested_plan_runs(doc: &PlanDocument) -> Result<(), String> 
     Ok(())
 }
 
-/// A distributed recipe must say which host every action belongs to -- the
-/// Platform is dispatching across several and an unbound node has no
+/// A distributed recipe must say which host every action belongs to -- its
+/// coordinator is dispatching across several and an unbound node has no
 /// answer. A host-local recipe has exactly one host by construction (the
 /// agent executing it), so an action node MAY omit its target there, and
 /// omitting it means this host; a target that IS present is still pinned

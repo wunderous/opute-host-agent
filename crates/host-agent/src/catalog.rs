@@ -1550,19 +1550,27 @@ impl Descriptor {
 
 // --- the published catalogs ----------------------------------------------------------
 
-/// The catalog the Go server builds in `NewServer`: the host definitions,
-/// plus the standalone definitions in standalone mode.
-pub fn for_mode(standalone: bool) -> &'static Snapshot {
-    static STANDALONE: OnceLock<Snapshot> = OnceLock::new();
-    static PLATFORM: OnceLock<Snapshot> = OnceLock::new();
-    let cell = if standalone { &STANDALONE } else { &PLATFORM };
-    cell.get_or_init(|| {
+/// The one served catalog (`platform-neutral-host-agent`, N1): the host
+/// definitions plus the profile definitions (Go's standalone sets).
+/// D37: tools the descriptor source still defines, as Go v0.2.4 published
+/// them, that no Host Agent build publishes: they have no owner on the host
+/// (`withdraw-platform-and-legacy-provider-tools`). A call naming one is an
+/// unknown tool.
+pub const WITHDRAWN: &[&str] = &[
+    "register_kubernetes_cluster",
+    "list_agents",
+    "install_provider_tools",
+    "uninstall_provider_tools",
+];
+
+pub fn served() -> &'static Snapshot {
+    static SERVED: OnceLock<Snapshot> = OnceLock::new();
+    SERVED.get_or_init(|| {
         let src = source();
         let mut defs = src.host.clone();
-        if standalone {
-            defs.extend(src.standalone.iter().cloned());
-            defs.extend(src.standalone_from_all.iter().cloned());
-        }
+        defs.extend(src.standalone.iter().cloned());
+        defs.extend(src.standalone_from_all.iter().cloned());
+        defs.retain(|d| !WITHDRAWN.contains(&d.name.as_str()));
         build(&src.provider_id, &canonicalize(&defs))
     })
 }
@@ -1578,10 +1586,10 @@ pub fn builtin_implementation() -> String {
     format!("host-agent:{}", source().provider_id)
 }
 
-/// A descriptor from the one descriptor source, in either serving mode or
-/// among the host-internal tools: a built-in Service Definition.
+/// A descriptor from the one descriptor source, served or among the
+/// host-internal tools: a built-in Service Definition.
 pub fn source_descriptor(name: &str) -> Option<Descriptor> {
-    [for_mode(false), for_mode(true), internal()]
+    [served(), internal()]
         .into_iter()
         .flat_map(|snapshot| snapshot.tools.iter())
         .find(|descriptor| descriptor.name == name)
@@ -1670,8 +1678,8 @@ mod tests {
     /// its output schema allows the result it returns.
     #[test]
     fn restart_host_service_publishes_what_it_does() {
-        for standalone in [false, true] {
-            let snapshot = for_mode(standalone);
+        {
+            let snapshot = served();
             let d = snapshot
                 .tools
                 .iter()
@@ -1691,7 +1699,7 @@ mod tests {
     /// declares the serviceName its handler requires.
     #[test]
     fn standalone_configure_service_domain_declares_service_name() {
-        let d = for_mode(true)
+        let d = served()
             .tools
             .iter()
             .find(|d| d.name == "configure_service_domain")
@@ -1704,11 +1712,7 @@ mod tests {
     #[test]
     fn standalone_service_domain_tools_bind_their_cluster() {
         for tool in ["configure_service_domain", "remove_service_domain"] {
-            let d = for_mode(true)
-                .tools
-                .iter()
-                .find(|d| d.name == tool)
-                .unwrap();
+            let d = served().tools.iter().find(|d| d.name == tool).unwrap();
             let required = d.input_schema["required"].as_array().unwrap();
             assert!(required.contains(&J::from("uri")), "{tool}: {required:?}");
             assert!(
@@ -1720,8 +1724,8 @@ mod tests {
 
     #[test]
     fn published_schemas_declare_the_inputs_their_handlers_read() {
-        for standalone in [false, true] {
-            let snapshot = for_mode(standalone);
+        {
+            let snapshot = served();
             for (tool, input) in [
                 ("restart_host_service", "serviceName"),
                 ("provision_container", "ipv4Address"),
@@ -1729,7 +1733,7 @@ mod tests {
                 let descriptor = snapshot.tools.iter().find(|d| d.name == tool).unwrap();
                 assert!(
                     descriptor.input_schema["properties"].get(input).is_some(),
-                    "{tool} (standalone={standalone}) does not declare {input}"
+                    "{tool} does not declare {input}"
                 );
             }
         }
@@ -1763,8 +1767,7 @@ mod tests {
                     descriptor.encode(&mut encoded);
                 }
                 encoded.push(']');
-                let standalone = row["standalone"].as_bool().unwrap_or(false);
-                let base = for_mode(standalone);
+                let base = served();
                 let mut active = base.clone();
                 // Replacements compare already-materialized edges with a fresh rebuild.
                 if let Some(old) = row.get("previous").filter(|p| !p.is_null()) {
@@ -1810,9 +1813,8 @@ mod tests {
 
     #[test]
     fn catalog_sizes_match_go() {
-        assert_eq!(for_mode(true).tools.len(), 142);
-        assert_eq!(for_mode(false).tools.len(), 130);
-        assert!(for_mode(true).revision.starts_with("sha256:"));
+        assert_eq!(served().tools.len(), 142 - WITHDRAWN.len());
+        assert!(served().revision.starts_with("sha256:"));
     }
 
     /// X5: a catalog change needs a reviewed manifest update.
@@ -1823,12 +1825,10 @@ mod tests {
         let recorded = &manifest["catalogRevisions"];
         assert_eq!(
             recorded["standalone"]["rust"].as_str(),
-            Some(for_mode(true).revision.as_str())
+            Some(served().revision.as_str())
         );
-        assert_eq!(
-            recorded["platform"]["rust"].as_str(),
-            Some(for_mode(false).revision.as_str())
-        );
+        // `platform` records the catalog Go's platform mode served, which no
+        // build serves since platform-neutral-host-agent.
         // Each Go value is Go v0.2.4's own revision. Until D28 the Rust
         // catalog under Go's names hashed to it; the decided fixes (Q21)
         // changed descriptors, so the un-renamed catalog no longer does
@@ -1850,8 +1850,8 @@ mod tests {
     /// hidden aliases carrying Go's own descriptor.
     #[test]
     fn neutral_names_replace_go_names() {
-        for standalone in [false, true] {
-            let cat = for_mode(standalone);
+        {
+            let cat = served();
             for go in alias_names() {
                 assert!(cat.tools.iter().all(|d| d.name != go), "{go} is listed");
                 let Some(neutral) = neutral_name(&go) else {
@@ -1867,7 +1867,7 @@ mod tests {
                 }
             }
         }
-        let cat = for_mode(false);
+        let cat = served();
         let install = cat.find("install_virtualization_stack").unwrap();
         assert!(install.input_schema["properties"]
             .get("packageName")
@@ -1891,17 +1891,14 @@ mod tests {
     #[test]
     fn d24_marks_the_relay_token_write_only() {
         let token = J::from("relay-token-0123456789abcdef0123456789");
-        for standalone in [false, true] {
-            let cat = for_mode(standalone);
+        {
+            let cat = served();
             for (tool, path) in write_only_fields()
                 .iter()
                 .flat_map(|(tool, paths)| paths.iter().map(move |p| (tool, p)))
             {
                 let Some(d) = cat.find(tool) else {
-                    assert!(
-                        standalone && tool == "remove_postgresql_service",
-                        "{tool} missing"
-                    );
+                    assert!(tool == "remove_postgresql_service", "{tool} missing");
                     continue;
                 };
                 let pointer: String = path.iter().map(|k| format!("/properties/{k}")).collect();
@@ -1937,7 +1934,7 @@ mod tests {
 
     #[test]
     fn d23_publishes_neutral_selector_values() {
-        let snapshot = for_mode(true);
+        let snapshot = served();
         let enum_of = |tool: &str, field: &str| {
             snapshot.find(tool).unwrap().input_schema["properties"][field]["enum"].clone()
         };
@@ -2015,7 +2012,7 @@ mod tests {
         let kept =
             renamed_field_arguments("provision_container", both.as_object().unwrap()).unwrap();
         assert_eq!(J::Object(kept), json!({"hostGpuLibs": true}));
-        let cat = for_mode(false);
+        let cat = served();
         let listed = |name: &str| cat.tools.iter().any(|d| d.name == name);
         assert!(!listed("reset_incus_stack") && listed("reset_virtualization_stack"));
         // Still callable: find resolves the hidden alias.
@@ -2050,7 +2047,7 @@ mod tests {
     /// effect is read, and internal tools only with a declared read effect.
     #[test]
     fn standalone_read_only_gate() {
-        let cat = for_mode(true);
+        let cat = served();
         for d in &cat.tools {
             assert_eq!(
                 standalone_read_only(cat, &d.name),

@@ -3,21 +3,21 @@
  "gate": "e2e-3a",
  "description": "Lose one server on the HA cluster built and loaded as in e2e3a.build and e2e3a.workload: stop e2e-k2 with stop_vm. Pass: 2 of 3 nodes stay Ready, a typed ConfigMap write and read succeed, the service still answers on the surviving servers; after start_vm, e2e-k2 is Ready and an etcd member again.",
  "inputs": {
-  "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "agentA": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
   "agentB": "a transient Rust agent e2e-ha-b on port 3031 (e2etool agent start), with its own Rust k3s provider (e2e-provider-k3s-b, port 4321)",
   "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-0.3.0-rc4/opute-provider-k3s-linux-x64",
-    "sha256": "78090752df867a2b3342d291c6e5a91b5dbc34e07ccf9c33ec4c9472a77ec950"
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc2/opute-provider-k3s-linux-x64",
+    "sha256": "2b785eea87f889dd233ac48b40d83d4f6d2323f1be836479ef670261a108b4bd"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
@@ -344,11 +344,6 @@
      "equals": true
     },
     {
-     "step": "secretKeys",
-     "path": "response.body.result.structuredContent.stdout",
-     "equals": "apiKey "
-    },
-    {
      "step": "pods",
      "path": "response.body.result.structuredContent.exitCode",
      "equals": 0
@@ -389,26 +384,115 @@
    "scenario": "Secret-bearing input: the secret's value is in no result; its key is read back without it"
   },
   {
-   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md",
-   "requirement": "Every capability has its three roles",
+   "spec": "openspec/changes/implement-list-secret-keys/specs/list-secret-keys/spec.md",
+   "requirement": "list_secret_keys returns a Secret's key names, never values",
    "pass": [
     {
-     "step": "secretKeysTool",
+     "step": "secretKeys",
+     "path": "response.body.result.structuredContent.keys",
+     "equals": [
+      "apiKey"
+     ]
+    },
+    {
+     "step": "secretKeys",
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "secretMissing",
      "path": "response.body.result.isError",
      "equals": true
     },
     {
-     "step": "secretKeysTool",
-     "path": "response.body.result.structuredContent.code",
-     "equals": "not_implemented"
-    },
-    {
-     "step": "secretKeysTool",
-     "path": "response.body.result.structuredContent.owner",
-     "equals": "capability"
+     "step": "secretMissing",
+     "path": "response.body.result.content[0].text",
+     "matches": "e2e-none"
     }
    ],
-   "scenario": "The goal's pass check (list_secret_keys shows the key) cannot pass: list_secret_keys is a definition without a provider, registered unported in evidence/seam/final/report.json, and fails closed with not_implemented as the spec requires. An owned gap, not added here; the key is read back through exec_cluster_command"
+   "scenario": "The goal's pass check (D32, answering Q18): the put secret's key is listed by name, never its value; an unknown Secret is a typed error naming it"
+  },
+  {
+   "spec": "openspec/changes/list-configmap-keys/specs/list-configmap-keys/spec.md",
+   "requirement": "list_configmap_keys returns a ConfigMap's key names, never values",
+   "pass": [
+    {
+     "step": "configMap",
+     "path": "response.body.result.structuredContent.exitCode",
+     "equals": 0
+    },
+    {
+     "step": "configKeys",
+     "path": "response.body.result.structuredContent.keys",
+     "equals": [
+      "level",
+      "mode"
+     ]
+    },
+    {
+     "step": "configKeys",
+     "path": "response.body.result.content[0].text",
+     "matches": "^(?![\\s\\S]*e2e-config-value)"
+    }
+   ],
+   "scenario": "A ConfigMap's keys come back sorted, without its values (D33)"
+  },
+  {
+   "spec": "openspec/changes/inspect-workload/specs/inspect-workload/spec.md",
+   "requirement": "inspect_workload returns a fixed projection of one Deployment",
+   "pass": [
+    {
+     "step": "rolloutEnv",
+     "path": "response.body.result.structuredContent.exitCode",
+     "equals": 0
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.structuredContent.uri",
+     "equals": "cluster:local:e2e-k1"
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.structuredContent.workload.name",
+     "equals": "e2e-web-podinfo"
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.structuredContent.workload.namespace",
+     "equals": "e2e-web"
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.structuredContent.workload.replicas",
+     "equals": 2
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.structuredContent.workload.readyReplicas",
+     "equals": 2
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.structuredContent.workload.containers[0].name",
+     "equals": "podinfo"
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.content[0].text",
+     "matches": "E2E_LITERAL"
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.content[0].text",
+     "matches": "secretKeyRef"
+    },
+    {
+     "step": "inspect",
+     "path": "response.body.result.content[0].text",
+     "matches": "^(?![\\s\\S]*e2e-literal-value)"
+    }
+   ],
+   "scenario": "The Deployment's replicas, readiness and containers come back; its env names a literal variable and a secret reference without either value (D34)"
   },
   {
    "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)",
@@ -1380,7 +1464,7 @@
    "interval": 3
   },
   {
-   "id": "secretKeysTool",
+   "id": "secretKeys",
    "mcp": "tools/call",
    "tool": "list_secret_keys",
    "arguments": {
@@ -1390,20 +1474,107 @@
    }
   },
   {
-   "id": "secretKeys",
+   "id": "secretMissing",
+   "mcp": "tools/call",
+   "tool": "list_secret_keys",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "e2e-web",
+    "secretName": "e2e-none"
+   }
+  },
+  {
+   "id": "configMap",
    "mcp": "tools/call",
    "tool": "exec_cluster_command",
    "arguments": {
     "uri": "cluster:local:e2e-k1",
-    "command": "get",
+    "command": "create",
     "args": [
-     "secret",
-     "e2e-secret",
+     "configmap",
+     "e2e-config",
      "-n",
      "e2e-web",
-     "-o",
-     "go-template={{range $k, $v := .data}}{{$k}} {{end}}"
+     "--from-literal=mode=e2e-config-value",
+     "--from-literal=level=info"
     ]
+   }
+  },
+  {
+   "id": "configKeys",
+   "mcp": "tools/call",
+   "tool": "list_configmap_keys",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "e2e-web",
+    "configMapName": "e2e-config"
+   }
+  },
+  {
+   "id": "envLiteral",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "command": "set",
+    "args": [
+     "env",
+     "deployment/e2e-web-podinfo",
+     "-n",
+     "e2e-web",
+     "E2E_LITERAL=e2e-literal-value"
+    ]
+   }
+  },
+  {
+   "id": "envFromSecret",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "command": "set",
+    "args": [
+     "env",
+     "deployment/e2e-web-podinfo",
+     "-n",
+     "e2e-web",
+     "--from=secret/e2e-secret",
+     "--prefix=E2E_"
+    ]
+   }
+  },
+  {
+   "id": "rolloutEnv",
+   "mcp": "tools/call",
+   "tool": "exec_cluster_command",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "command": "rollout",
+    "args": [
+     "status",
+     "deployment/e2e-web-podinfo",
+     "-n",
+     "e2e-web",
+     "--timeout=60s"
+    ]
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.exitCode",
+    "in": [
+     0
+    ]
+   },
+   "timeout": 480,
+   "interval": 5
+  },
+  {
+   "id": "inspect",
+   "mcp": "tools/call",
+   "tool": "inspect_workload",
+   "arguments": {
+    "uri": "cluster:local:e2e-k1",
+    "namespace": "e2e-web",
+    "workloadName": "e2e-web-podinfo"
    }
   },
   {

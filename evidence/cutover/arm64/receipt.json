@@ -7,14 +7,14 @@
  },
  "release": {
   "artifact": "host-agent-linux-arm64.gz",
-  "sha256": "fef25445cc428ff66e7db5f4bd2c8be2010b4cd4d60fbf7704ef8b3c9f019781",
-  "sha256sums": "82f21b9acaf5d6afa36bed445fa8b08d623d2068953736bacb5fc5ec8d0eb915"
+  "sha256": "b23f7874f5e889dad3fe1e1dec08013b3ef7d70b930231c8f531621fb266d28f",
+  "sha256sums": "f4a13f4306231e66f734fd9f99ab5bbea4ce74af0cc93838664e6458bd24e9f8"
  },
  "steps": [
   {
    "step": "boot",
    "ok": true,
-   "seconds": 52.6
+   "seconds": 47.9
   },
   {
    "step": "machine",
@@ -22,7 +22,7 @@
    "stdout": "aarch64\nDebian GNU/Linux 12 (bookworm)\n",
    "stderr": "",
    "ok": true,
-   "seconds": 0.8
+   "seconds": 0.7
   },
   {
    "step": "clean",
@@ -30,7 +30,7 @@
    "stdout": "clean\n",
    "stderr": "",
    "ok": true,
-   "seconds": 0.7
+   "seconds": 0.8
   },
   {
    "step": "verify",
@@ -43,42 +43,42 @@
   {
    "step": "install",
    "exit": 0,
-   "stdout": " ARM aarch64\n0.3.0\n",
+   "stdout": " ARM aarch64\n0.4.0\n",
    "stderr": "",
    "ok": true,
-   "seconds": 1.5
+   "seconds": 1.4
   },
   {
    "step": "help",
    "exit": 0,
-   "stdout": "Usage: opute-host-agent [standalone|serve|public-mcp|recipe|provider|help] [flags]\n\n  opute-host-agent                   server-only standalone MCP profile (HTTP)\n  opute-host-agent serve             MCP server only (HTTP)\n  opute-host-agent recipe validate --source ./recipe.yaml\n  opute-host-agent recipe apply --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M\n  opute-host-agent recipe status --run-id RUN_ID\n  opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]\n  opute-host-agent provider install --source ./plugin.yaml --activate\n\nStandalone mode never requires Opute Platform.\n",
+   "stdout": "Usage: opute-host-agent [standalone|serve|public-mcp|recipe|provider|help] [flags]\n\n  opute-host-agent                   MCP server only (HTTP)\n  opute-host-agent serve             MCP server only (HTTP)\n  opute-host-agent recipe validate --source ./recipe.yaml\n  opute-host-agent recipe apply --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M\n  opute-host-agent recipe status --run-id RUN_ID\n  opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]\n  opute-host-agent provider install --source ./plugin.yaml --activate\n",
    "stderr": "",
    "ok": true,
-   "seconds": 0.8
+   "seconds": 0.7
   },
   {
    "step": "launch",
    "exit": 0,
-   "stdout": "{\"agentId\":\"arm64-clean\",\"capabilities\":{\"host\":{\"canInvokeWindowsInterop\":false,\"canManageWsl\":false,\"canShutdownWsl\":false,\"canTerminateWslDistribution\":false}},\"executionContext\":{\"displayName\":\"Linux\",\"id\":\"native-linux\",\"kind\":\"native-linux\"},\"fingerprint\":\"host:v2:604dae733028c1237ef862076f0460638256d56d4ac51028b4250b6095b19d28\",\"fingerprintSource\":\"linux-machine-id\",\"fingerprintVersion\":\"v2\",\"instanceId\":\"standalone\",\"ok\":true}\nalive\n",
+   "stdout": "{\"agentId\":\"arm64-clean\",\"capabilities\":{\"host\":{\"canInvokeWindowsInterop\":false,\"canManageWsl\":false,\"canShutdownWsl\":false,\"canTerminateWslDistribution\":false}},\"executionContext\":{\"displayName\":\"Linux\",\"id\":\"native-linux\",\"kind\":\"native-linux\"},\"fingerprint\":\"host:v2:4f557e102f5d20bb3770bdfe6bb667919d5a0911fe71ba0dd8df0914d0e7f03c\",\"fingerprintSource\":\"linux-machine-id\",\"fingerprintVersion\":\"v2\",\"instanceId\":\"standalone\",\"ok\":true}\nalive\n",
    "stderr": "",
    "ok": true,
-   "seconds": 5.8
+   "seconds": 6.1
   },
   {
    "step": "afterLaunch",
    "exit": 0,
-   "stdout": "pid=597\n597 /home/debian/.local/share/opute/opute-host-agent serve --mode standalone --transport http\ntime=2026-11-11T01:43:11.552Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-11-11T01:43:11.584Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0\ntime=2026-11-11T01:43:11.601Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-11-11T01:43:12.910Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\n",
+   "stdout": "pid=593\n593 /home/debian/.local/share/opute/opute-host-agent serve --transport http\ntime=2026-11-11T17:21:24.494Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-11-11T17:21:24.566Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-11-11T17:21:25.875Z level=INFO msg=\"serving profile\" bind=127.0.0.1 port=3014 mutations=false\ntime=2026-11-11T17:21:25.876Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\n",
    "stderr": "",
    "ok": true,
-   "seconds": 0.9
+   "seconds": 1.0
   },
   {
    "step": "mcp",
    "exit": 0,
-   "stdout": "{\"listStatus\": 200, \"tools\": 142, \"revision\": {\"io.modelcontextprotocol/serverInfo\": {\"name\": \"host-agent\", \"version\": \"0.3.0\"}}, \"callStatus\": 200, \"isError\": false, \"agentId\": \"arm64-clean\"}\n",
+   "stdout": "{\"listStatus\": 200, \"tools\": 138, \"revision\": {\"io.modelcontextprotocol/serverInfo\": {\"name\": \"host-agent\", \"version\": \"0.4.0\"}}, \"callStatus\": 200, \"isError\": false, \"agentId\": \"arm64-clean\"}\n",
    "stderr": "",
    "ok": true,
-   "seconds": 2.9
+   "seconds": 3.0
   },
   {
    "step": "stop",
@@ -91,7 +91,7 @@
   {
    "step": "afterStop",
    "exit": 0,
-   "stdout": "pid=597\ntime=2026-11-11T01:43:11.552Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-11-11T01:43:11.584Z level=INFO msg=oauth event=provision client_id=opute-mcp-host revoked_tokens=0\ntime=2026-11-11T01:43:11.601Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-11-11T01:43:12.910Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\ntime=2026-11-11T01:43:18.654Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T01:43:18.655Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T01:43:18.658Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-11T01:43:19.063Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-11T01:43:19.367Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T01:43:19.367Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T01:43:19.368Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-11T01:43:19.907Z level=INFO msg=\"server session disconnected\" session_id=\"\"\n",
+   "stdout": "pid=593\ntime=2026-11-11T17:21:24.494Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0\ntime=2026-11-11T17:21:24.566Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0\ntime=2026-11-11T17:21:25.875Z level=INFO msg=\"serving profile\" bind=127.0.0.1 port=3014 mutations=false\ntime=2026-11-11T17:21:25.876Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\ntime=2026-11-11T17:21:31.678Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T17:21:31.679Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T17:21:31.682Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-11T17:21:32.075Z level=INFO msg=\"server session disconnected\" session_id=\"\"\ntime=2026-11-11T17:21:32.378Z level=INFO msg=\"server connecting\"\ntime=2026-11-11T17:21:32.379Z level=INFO msg=\"server session connected\" session_id=\"\"\ntime=2026-11-11T17:21:32.380Z level=INFO msg=\"client log level set\" level=\"\"\ntime=2026-11-11T17:21:32.932Z level=INFO msg=\"server session disconnected\" session_id=\"\"\n",
    "stderr": "",
    "ok": true,
    "seconds": 0.9
@@ -99,7 +99,7 @@
   {
    "step": "relaunch",
    "exit": 0,
-   "stdout": "{\"agentId\":\"arm64-clean\",\"capabilities\":{\"host\":{\"canInvokeWindowsInterop\":false,\"canManageWsl\":false,\"canShutdownWsl\":false,\"canTerminateWslDistribution\":false}},\"executionContext\":{\"displayName\":\"Linux\",\"id\":\"native-linux\",\"kind\":\"native-linux\"},\"fingerprint\":\"host:v2:604dae733028c1237ef862076f0460638256d56d4ac51028b4250b6095b19d28\",\"fingerprintSource\":\"linux-machine-id\",\"fingerprintVersion\":\"v2\",\"instanceId\":\"standalone\",\"ok\":true}\nalive\n",
+   "stdout": "{\"agentId\":\"arm64-clean\",\"capabilities\":{\"host\":{\"canInvokeWindowsInterop\":false,\"canManageWsl\":false,\"canShutdownWsl\":false,\"canTerminateWslDistribution\":false}},\"executionContext\":{\"displayName\":\"Linux\",\"id\":\"native-linux\",\"kind\":\"native-linux\"},\"fingerprint\":\"host:v2:4f557e102f5d20bb3770bdfe6bb667919d5a0911fe71ba0dd8df0914d0e7f03c\",\"fingerprintSource\":\"linux-machine-id\",\"fingerprintVersion\":\"v2\",\"instanceId\":\"standalone\",\"ok\":true}\nalive\n",
    "stderr": "",
    "ok": true,
    "seconds": 4.3
@@ -107,7 +107,7 @@
   {
    "step": "afterRelaunch",
    "exit": 0,
-   "stdout": "pid=675\n675 /home/debian/.local/share/opute/opute-host-agent serve --mode standalone --transport http\ntime=2026-11-11T01:43:24.721Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\n",
+   "stdout": "pid=684\n684 /home/debian/.local/share/opute/opute-host-agent serve --transport http\ntime=2026-11-11T17:21:37.527Z level=INFO msg=\"serving profile\" bind=127.0.0.1 port=3014 mutations=false\ntime=2026-11-11T17:21:37.527Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\n",
    "stderr": "",
    "ok": true,
    "seconds": 0.9
@@ -123,7 +123,7 @@
   {
    "step": "afterStopAgain",
    "exit": 0,
-   "stdout": "pid=675\ntime=2026-11-11T01:43:24.721Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\n",
+   "stdout": "pid=684\ntime=2026-11-11T17:21:37.527Z level=INFO msg=\"serving profile\" bind=127.0.0.1 port=3014 mutations=false\ntime=2026-11-11T17:21:37.527Z level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:3014\n",
    "stderr": "",
    "ok": true,
    "seconds": 0.9
@@ -137,7 +137,7 @@
    "seconds": 0.7
   }
  ],
- "seconds": 81.9,
+ "seconds": 77.4,
  "limitSeconds": 1800,
  "pass": true
 }

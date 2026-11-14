@@ -3,12 +3,12 @@
  "gate": "e2e-3",
  "description": "Local model serving through the Host Agent's serving path: a serving assignment runs an OpenAI-compatible runtime (a test fixture), the gateway (ensure_local_llm_relay) admits a token-bearing request and returns a completion, the probe reports it ready, and removal leaves nothing behind. A real runtime and weights are blocked: they need downloads beyond test fixtures.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.3.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "runtime": "evidence/e2e/journeys/inputs/e2e-openai-fixture.py (a fixture, not a model)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "3df5fb327e6a68431ab37be00488c42b1a41b67dfb2f3b5ac166f50915cdb96f"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -98,6 +98,61 @@
     }
    ],
    "scenario": "On a system-unit agent, reconcile_serving_assignment launches the process under the user service manager with the user bus, reports it started, and it listens (D28)"
+  },
+  {
+   "spec": "openspec/changes/recorded-session-and-llm-tools/specs/recorded-session-and-llm-tools/spec.md",
+   "requirement": "The legacy LLM wrappers act on the shared Ollama runtime",
+   "pass": [
+    {
+     "step": "removeModel",
+     "path": "response.body.result.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.result.structuredContent.removed",
+     "equals": false
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.result.structuredContent.purged",
+     "equals": false
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.result.structuredContent.shared",
+     "equals": true
+    },
+    {
+     "step": "removeModel",
+     "path": "response.body.result.result.structuredContent.reason",
+     "matches": "shared host state"
+    },
+    {
+     "step": "configureRuntime",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "configureRuntime",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "host-wide and pinned"
+    },
+    {
+     "step": "ollamaUntouched",
+     "path": "stdout",
+     "equals": "0\n0\n"
+    },
+    {
+     "step": "modelUp",
+     "path": "stdout",
+     "equals": "1\n"
+    }
+   ],
+   "scenario": "remove_local_llm_model removes nothing and reports the shared model retained; configure_local_llm_runtime refuses with the typed error; neither starts, stops or configures a runtime (no Ollama unit or listener appears). The dev VM has no Ollama, so the 'still listed' half of the scenario is not observed here"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",
@@ -350,6 +405,102 @@
   {
    "id": "tokenRows",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py contains /home/opute/.config/opute/instances/standalone/state/state.db '${SECRET:gatewayToken}'"
+  },
+  {
+   "id": "removeModelCall",
+   "mcp": "tools/call",
+   "tool": "remove_local_llm_model",
+   "arguments": {
+    "modelRef": "e2e-model",
+    "purge": true
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_removeModel": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "removeModel",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_removeModel}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "configureRuntimeCall",
+   "mcp": "tools/call",
+   "tool": "configure_local_llm_runtime",
+   "arguments": {
+    "numParallel": 4,
+    "maxLoadedModels": 1
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_configureRuntime": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "configureRuntime",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_configureRuntime}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3
+  },
+  {
+   "id": "ollamaUntouched",
+   "guest": "systemctl list-units --all --plain --no-legend 'ollama*' | wc -l; ss -ltnH 'sport = :11434' | wc -l"
   },
   {
    "id": "removeGateway",

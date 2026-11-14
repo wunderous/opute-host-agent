@@ -1,0 +1,528 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/fail.txt",
+   "files//home/opute/e2e/g1.txt",
+   "files//home/opute/e2e/n1.txt",
+   "files//var/lib/systemd/linger/opute",
+   "incus/instances/e2e-g1",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-g1",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "linger",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-slow.service",
+   "system/units/run-user-1001.mount",
+   "system/units/sys-devices-virtual-net-veth93ed6f43.device",
+   "system/units/sys-subsystem-net-devices-veth93ed6f43.device",
+   "system/units/user-1001.slice",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user@1001.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-4",
+ "harnessErrors": [],
+ "journey": "e2e4.cutover",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\nexit=1\n",
+     "matches": "exit=1\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "goSecond"
+    },
+    {
+     "actual": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\nexit=1\n",
+     "contains": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "goSecond"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "rustStillServes"
+    },
+    {
+     "actual": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\nexit=1\n",
+     "matches": "exit=1\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "rustSecond"
+    },
+    {
+     "actual": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\nexit=1\n",
+     "contains": "host agent instance is already in use: /home/opute/.config/opute/instances/standalone/host-agent.lock is locked by another process\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "rustSecond"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "goStillServes"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One running agent per instance state",
+   "spec": "openspec/changes/state-directory-writer-lock/specs/state-directory-writer-lock/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "aside"
+    },
+    {
+     "actual": "0cb38a9cb4ee9aba76ea6d9293a8e6cfc158b073e14ccebd1bd41cc9da6e0d46\n0.2.4\n",
+     "matches": "\n0\\.2\\.4\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "goInstall"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goPlanDone"
+    },
+    {
+     "actual": "failed",
+     "equals": "failed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goFailDone"
+    },
+    {
+     "actual": "ready",
+     "equals": "ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goSupervisorAgain"
+    },
+    {
+     "actual": "go-era\n",
+     "equals": "go-era\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "goTask"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "goStop"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "goStop"
+    },
+    {
+     "actual": "afef1de42d4f51a833e4ad816cb99c3846851895ebcfd05c2111713bdb13396e\n0.4.0\n",
+     "matches": "\n0\\.4\\.0\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "rustInstall"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "rustDb"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 14,
+      "operations": 2,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 1
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 14,
+      "operations": 2,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 1
+     },
+     "path": "json.counts",
+     "step": "rustDb"
+    },
+    {
+     "actual": [
+      "1b615071-43cb-4c95-b84b-bb2e6397cac3",
+      "3f1a53ea-ae63-4541-8bc6-2bd4d8549380"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "1b615071-43cb-4c95-b84b-bb2e6397cac3",
+      "3f1a53ea-ae63-4541-8bc6-2bd4d8549380"
+     ],
+     "path": "json.operationIds",
+     "step": "rustDb"
+    },
+    {
+     "actual": [
+      "14846370-a0db-4d41-a734-544feb133ff7",
+      "d9bcae06-e3d7-4c26-b577-d160b587f05d"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "14846370-a0db-4d41-a734-544feb133ff7",
+      "d9bcae06-e3d7-4c26-b577-d160b587f05d"
+     ],
+     "path": "json.planRunIds",
+     "step": "rustDb"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "rustOps"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "rustTaskWire"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustPlan"
+    },
+    {
+     "actual": "failed",
+     "equals": "failed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustFailed"
+    },
+    {
+     "actual": "running",
+     "equals": "running",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustGuest"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "rustSqlite"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations: Go's real state is served by Rust unchanged",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "goHealth"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "rustHealth"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "goBackHealth"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.status",
+     "step": "syncAnswer"
+    },
+    {
+     "actual": false,
+     "exists": true,
+     "ok": true,
+     "path": "json.result.ready",
+     "step": "syncAnswer"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "goLong"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Forward cutover with work in flight",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustLong"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An operation record reports its task's terminal status",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "rustLongWire"
+    },
+    {
+     "actual": "The Host Agent shut down before the task completed.",
+     "equals": "The Host Agent shut down before the task completed.",
+     "ok": true,
+     "path": "response.body.result.statusMessage",
+     "step": "rustLongWire"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Forward cutover: the stopped task's terminal state",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustNewDone"
+    },
+    {
+     "actual": "rust-era\n",
+     "equals": "rust-era\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "rustTaskNew"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "rustStop"
+    },
+    {
+     "actual": "0cb38a9cb4ee9aba76ea6d9293a8e6cfc158b073e14ccebd1bd41cc9da6e0d46\n0.2.4\n",
+     "matches": "\n0\\.2\\.4\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "goBack"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "goBackRustTaskWire"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "goBackLongWire"
+    },
+    {
+     "actual": "f2bc5cb3-5404-4998-85ed-c9316315ecd8",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.operationId",
+     "step": "goBackRustTask"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goBackRustPlan"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goBackGoPlan"
+    },
+    {
+     "actual": [
+      "1b615071-43cb-4c95-b84b-bb2e6397cac3",
+      "3f1a53ea-ae63-4541-8bc6-2bd4d8549380",
+      "f2bc5cb3-5404-4998-85ed-c9316315ecd8"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "rustStop"
+     },
+     "ok": true,
+     "other": [
+      "1b615071-43cb-4c95-b84b-bb2e6397cac3",
+      "3f1a53ea-ae63-4541-8bc6-2bd4d8549380",
+      "f2bc5cb3-5404-4998-85ed-c9316315ecd8"
+     ],
+     "path": "json.operationIds",
+     "step": "goBackDb"
+    },
+    {
+     "actual": [
+      "0c167c87-c811-4dd4-b96e-6d27f47686a3",
+      "14846370-a0db-4d41-a734-544feb133ff7",
+      "d9bcae06-e3d7-4c26-b577-d160b587f05d"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "rustStop"
+     },
+     "ok": true,
+     "other": [
+      "0c167c87-c811-4dd4-b96e-6d27f47686a3",
+      "14846370-a0db-4d41-a734-544feb133ff7",
+      "d9bcae06-e3d7-4c26-b577-d160b587f05d"
+     ],
+     "path": "json.planRunIds",
+     "step": "goBackDb"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Rollback: Go reports every task, Rust-era work included, with the status Rust last reported",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "aside": 148,
+   "goBack": 1339,
+   "goBackDb": 194,
+   "goBackGoPlan": 6,
+   "goBackHealth": 22,
+   "goBackLong": 1,
+   "goBackLongWire": 0,
+   "goBackOps": 2,
+   "goBackRustPlan": 7,
+   "goBackRustTask": 1,
+   "goBackRustTaskWire": 0,
+   "goFail": 24,
+   "goFailDone": 1014,
+   "goHealth": 15,
+   "goInstall": 1340,
+   "goList": 10,
+   "goLong": 8,
+   "goPlan": 39,
+   "goPlanDone": 7069,
+   "goSecond": 273,
+   "goStillServes": 22,
+   "goStop": 90370,
+   "goSupervisor": 88,
+   "goSupervisorAgain": 35,
+   "goSync": 2146,
+   "goTask": 3003,
+   "goTaskCall": 10,
+   "rustDb": 194,
+   "rustFailed": 7,
+   "rustGuest": 142,
+   "rustHealth": 22,
+   "rustInstall": 827,
+   "rustList": 27,
+   "rustLong": 25,
+   "rustLongWire": 1,
+   "rustNew": 86,
+   "rustNewDone": 1020,
+   "rustOps": 60,
+   "rustPlan": 7,
+   "rustSecond": 279,
+   "rustSqlite": 19,
+   "rustStillServes": 27,
+   "rustStop": 297,
+   "rustTask": 29,
+   "rustTaskNew": 3003,
+   "rustTaskNewCall": 8,
+   "rustTaskWire": 1,
+   "settle": 5263,
+   "slow": 218,
+   "syncAnswer": 354,
+   "tool": 283,
+   "userBus": 135,
+   "wire": 283
+  },
+  "stepsSeconds": 166.3
+ },
+ "unverified": []
+}

@@ -349,3 +349,167 @@ proptest! {
         prop_assert!(!shown.contains(&secret), "{:?}", shown);
     }
 }
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
+
+    /// D34: no literal environment value, wherever it sits in a container,
+    /// reaches the workload projection.
+    #[test]
+    fn workload_projection_never_shows_a_value(
+        values in prop::collection::vec("zv[A-Za-z0-9]{6,20}", 1..4),
+        names in prop::collection::vec("[A-Z_]{1,8}", 1..4),
+        containers in 1usize..3,
+    ) {
+        let env: Vec<J> = names
+            .iter()
+            .zip(values.iter().cycle())
+            .map(|(name, value)| json!({"name": name, "value": value}))
+            .collect();
+        let container = |i: usize| json!({"name": format!("c{i}"), "image": "r/i:1", "env": env});
+        let deployment = json!({
+            "metadata": {"name": "w", "namespace": "n"},
+            "spec": {"replicas": 1, "template": {"spec": {
+                "containers": (0..containers).map(container).collect::<Vec<_>>(),
+            }}},
+        });
+        let shown = crate::clusterops::project_deployment(&deployment).to_string();
+        for value in &values {
+            prop_assert!(!shown.contains(value.as_str()), "{} in {}", value, shown);
+        }
+    }
+
+    /// D39: while less than the bound has arrived, the reads of a console,
+    /// however its output is cut, return exactly that output.
+    #[test]
+    fn console_reads_lose_nothing_within_the_bound(
+        text in "\\PC{0,400}",
+        cuts in prop::collection::vec(0usize..64, 0..12),
+        reads in prop::collection::vec(any::<bool>(), 0..12),
+    ) {
+        use crate::console::{append, drain, Output};
+        let bytes = text.as_bytes();
+        let mut output = Output::default();
+        let mut seen = String::new();
+        let mut at = 0;
+        for (i, cut) in cuts.iter().enumerate() {
+            let end = (at + cut).min(bytes.len());
+            append(&mut output.pending, &bytes[at..end]);
+            at = end;
+            if reads.get(i).copied().unwrap_or(false) {
+                seen.push_str(&drain(&mut output).0);
+            }
+        }
+        append(&mut output.pending, &bytes[at..]);
+        output.exited = true;
+        seen.push_str(&drain(&mut output).0);
+        prop_assert_eq!(seen, text);
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
+
+    /// D40: whatever the agent's environment holds, a child gets only
+    /// allowlisted names, never one with a secret-like part, and every
+    /// allowlisted name that is not secret-like.
+    #[test]
+    fn child_environment_never_carries_a_secret(
+        names in prop::collection::vec(
+            (prop::sample::select(vec!["", "LC_", "XDG_", "INCUS_", "OLLAMA_", "OPUTE_", "CLOUDFLARE_", "MCP_"]),
+             prop::collection::vec(
+                 prop::sample::select(vec!["PATH", "HOME", "TOKEN", "API", "KEY", "SECRET", "AUTH", "CONFIG",
+                                           "RUNTIME", "DIR", "PASSWORD", "HTTPS", "PROXY", "MODELS", "ALL"]),
+                 1..4)),
+            0..24),
+        values in prop::collection::vec("[a-z0-9]{0,12}", 24),
+    ) {
+        let pairs: Vec<(String, String)> = names
+            .iter()
+            .zip(values.iter())
+            .map(|((prefix, parts), value)| (format!("{prefix}{}", parts.join("_")), value.clone()))
+            .collect();
+        let env = crate::config::Env::from_pairs(pairs.clone());
+        let child = env.for_child();
+        let secret = |name: &str| {
+            name.split('_').any(|p| {
+                ["TOKEN", "SECRET", "PASSWORD", "PASSWD", "CREDENTIAL", "CREDENTIALS", "AUTH", "KEY"].contains(&p)
+            })
+        };
+        for (name, _) in child.pairs() {
+            prop_assert!(!secret(name), "{} reached a child", name);
+            prop_assert!(env.get(name) == child.get(name));
+        }
+        for (name, value) in &pairs {
+            let listed = ["PATH", "HOME", "HTTPS_PROXY", "ALL_PROXY"].contains(&name.as_str())
+                || ["LC_", "XDG_", "INCUS_", "OLLAMA_"].iter().any(|p| name.starts_with(p));
+            if listed && !secret(name) && env.get(name) == *value {
+                prop_assert_eq!(child.get(name), value.clone());
+            }
+            if name.starts_with("OPUTE_") || name.starts_with("CLOUDFLARE_") || name.starts_with("MCP_") {
+                prop_assert!(child.get(name).is_empty(), "{} reached a child", name);
+            }
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 64, ..ProptestConfig::default() })]
+
+    /// D29 and D41: a bounded read returns a body within its limit whole and
+    /// refuses a larger one, whether it is sent with a length or chunked.
+    #[test]
+    fn bounded_reads_return_the_body_or_refuse_it(
+        limit in 1u64..4096,
+        len in 0usize..8192,
+        chunked in any::<bool>(),
+    ) {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread().enable_io().build().unwrap();
+            rt.block_on(async move {
+                let listener = tokio::net::TcpListener::from_std(listener).unwrap();
+                let (stream, _) = listener.accept().await.unwrap();
+                crate::http1::serve_conn(stream, move |_req, mut body| async move {
+                    let reply = match body.read_all(Some(limit)).await {
+                        Ok(raw) => crate::http1::Response::error(&format!("read {}", raw.len()), 200),
+                        Err(crate::http1::BodyError::TooLarge) => crate::http1::Response::error("too large", 413),
+                        Err(e) => crate::http1::Response::error(&e.to_string(), 400),
+                    };
+                    (reply, body)
+                })
+                .await;
+            });
+        });
+        let mut s = std::net::TcpStream::connect(addr).unwrap();
+        s.set_read_timeout(Some(std::time::Duration::from_secs(10))).unwrap();
+        let payload = vec![b'x'; len];
+        let mut request = b"POST / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n".to_vec();
+        if chunked {
+            request.extend_from_slice(b"Transfer-Encoding: chunked\r\n\r\n");
+            for piece in payload.chunks(1000) {
+                request.extend_from_slice(format!("{:x}\r\n", piece.len()).as_bytes());
+                request.extend_from_slice(piece);
+                request.extend_from_slice(b"\r\n");
+            }
+            request.extend_from_slice(b"0\r\n\r\n");
+        } else {
+            request.extend_from_slice(format!("Content-Length: {len}\r\n\r\n").as_bytes());
+            request.extend_from_slice(&payload);
+        }
+        let _ = s.write_all(&request);
+        let mut reply = String::new();
+        let _ = s.read_to_string(&mut reply);
+        drop(s);
+        let _ = server.join();
+        if len as u64 <= limit {
+            prop_assert!(reply.starts_with("HTTP/1.1 200"), "{}", reply);
+            prop_assert!(reply.contains(&format!("read {len}")), "{}", reply);
+        } else {
+            prop_assert!(reply.starts_with("HTTP/1.1 413"), "{}", reply);
+        }
+    }
+}

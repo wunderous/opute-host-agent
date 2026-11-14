@@ -7,4 +7,4 @@
 
 - [x] 2.1 Read at most 4 MiB in `transport::mcp`; a larger body gets the SDK's 413 before the envelope.
 - [x] 2.2 Failing-first test: a body declared as 64 MiB, of which 5 MiB is sent, is answered 413 without waiting for the rest; a 4 MiB body is read.
-- [ ] 2.3 Gate e2e-6 checks the 413 and the agent's memory on the release candidate.
+- [x] 2.3 Gate e2e-6 checks the 413 and the agent's memory on the release candidate. Passed: `e2e6.pressure`, run `m17-r2` on `rust-0.4.0-rc2` (and on `m16-r3` before it).

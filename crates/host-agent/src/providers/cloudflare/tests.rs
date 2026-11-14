@@ -95,13 +95,70 @@ fn validate_local_target_accepts_host_agent_mcp() {
 }
 
 #[test]
-fn platform_tunnel_and_hostnames_are_refused() {
-    assert!(api::refuse_platform_tunnel_name("OPUTE-platform-opute-io").is_err());
-    assert!(api::refuse_platform_tunnel_name(" ").is_err());
-    assert!(api::refuse_platform_hostname("MCP.opute.io").is_err());
-    assert!(api::refuse_platform_hostname("agent.example.test").is_ok());
+fn tunnel_names_and_identifiers_are_checked() {
+    assert!(api::require_tunnel_name(" ").is_err());
+    assert!(api::require_tunnel_name("any-tunnel").is_ok());
     assert!(api::identifier_ok("abc_-1"));
     assert!(!api::identifier_ok("not valid"));
+}
+
+/// The typed refusal's code, or None when the call was not refused that way.
+fn refusal_code(result: Result<(), String>) -> Option<String> {
+    let error = result.err()?;
+    let typed = error.strip_prefix(crate::providers::TYPED)?;
+    let value: J = serde_json::from_str(typed).ok()?;
+    value["code"].as_str().map(str::to_string)
+}
+
+#[test]
+fn nothing_is_reserved_by_default() {
+    api::with_reserved("", || {
+        assert!(api::refuse_reserved_hostname("mcp.opute.io").is_ok());
+        assert!(api::refuse_reserved_hostname("platform.opute.io").is_ok());
+        assert!(
+            api::refuse_reserved_hostname(" ").is_err(),
+            "a hostname is still required"
+        );
+    });
+}
+
+#[test]
+fn reserved_names_come_from_the_operator() {
+    api::with_reserved("*.opute.io, exact.example.test", || {
+        let code = refusal_code(api::refuse_reserved_hostname("MCP.opute.io"));
+        assert_eq!(code.as_deref(), Some("reserved_hostname"));
+        let code = refusal_code(api::refuse_reserved_hostname("exact.example.test"));
+        assert_eq!(code.as_deref(), Some("reserved_hostname"));
+        // A suffix pattern matches names under it, not the bare suffix.
+        assert!(api::refuse_reserved_hostname("opute.io").is_ok());
+        assert!(api::refuse_reserved_hostname("sub.exact.example.test").is_ok());
+        assert!(api::refuse_reserved_hostname("agent.example.test").is_ok());
+        let rules = [api::IngressRule {
+            hostname: "mcp.opute.io".into(),
+            service: "http://127.0.0.1:1".into(),
+            origin_request: None,
+        }];
+        let code = refusal_code(api::refuse_reserved_ingress(&rules));
+        assert_eq!(code.as_deref(), Some("reserved_hostname"));
+    });
+}
+
+#[test]
+fn a_reserved_name_is_refused_before_the_cloudflare_api() {
+    // No Cloudflare credentials: any call that reached the API would fail
+    // on them instead.
+    api::with_reserved("*.opute.io", || {
+        let args = Args::from_map(
+            json!({"hostname": "mcp.opute.io", "tunnelName": "t", "localTarget": "http://127.0.0.1:3014"})
+                .as_object()
+                .unwrap()
+                .clone(),
+        );
+        let code = refusal_code(api::ensure_dedicated_tunnel(&args).map(|_| ()));
+        assert_eq!(code.as_deref(), Some("reserved_hostname"));
+        let code = refusal_code(api::unpublish_dedicated_tunnel(&args));
+        assert_eq!(code.as_deref(), Some("reserved_hostname"));
+    });
 }
 
 #[test]

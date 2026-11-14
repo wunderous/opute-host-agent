@@ -1,12 +1,12 @@
 {
  "schemaVersion": "opute-cutover-distribution.v1",
  "candidate": {
-  "name": "rust-0.3.0-rc4",
-  "binarySha256": "994f06d4acc9e4dde989f790e1d6f6e113738efb5c5e053fc8fa4c037e1dc837"
+  "name": "rust-0.4.0-rc2",
+  "binarySha256": "afef1de42d4f51a833e4ad816cb99c3846851895ebcfd05c2111713bdb13396e"
  },
  "goSource": "c9f9e775d8648a54ebaccc052c840cc1dcbdc42e",
  "goBinarySha256": "0cb38a9cb4ee9aba76ea6d9293a8e6cfc158b073e14ccebd1bd41cc9da6e0d46",
- "tarballSha256": "6b801017a974786c5f7e4d207db404a5d318379c6ff50fee8b537621c66ca179",
+ "tarballSha256": "ad6e14e46928b6288490ca82efc837c98a33c7e61719cb49d00d5c396ec35656",
  "canary": {
   "exit": 0,
   "counts": {
@@ -21,7 +21,7 @@
    "# Subtest: published npm launcher completes authenticated read-only first success",
    "ok 1 - published npm launcher completes authenticated read-only first success",
    "  ---",
-   "  duration_ms: 1361.251429",
+   "  duration_ms: 1208.667731",
    "  ...",
    "1..1",
    "# tests 1",
@@ -31,7 +31,7 @@
    "# cancelled 0",
    "# skipped 0",
    "# todo 0",
-   "# duration_ms 1403.478258"
+   "# duration_ms 1250.769977"
   ]
  },
  "site": {
@@ -95,9 +95,15 @@
   "catalogAsGoEqual": false,
   "toolsDifferingAfterRenames": {
    "configure_service_domain": "D28 (Q28): bind-standalone-service-domain",
+   "install_provider_tools": "D37: withdraw-platform-and-legacy-provider-tools",
+   "list_agents": "D37: withdraw-platform-and-legacy-provider-tools",
    "provision_container": "D28 (Q21): declare-read-inputs",
+   "register_kubernetes_cluster": "D37: withdraw-platform-and-legacy-provider-tools",
    "remove_service_domain": "D28 (Q28): bind-standalone-service-domain",
-   "restart_host_service": "D28 (Q23): privileged-host-service-restart"
+   "restart_host_service": "D28 (Q23): privileged-host-service-restart",
+   "run_host_local_recipe": "platform-neutral-host-agent 3.5 (owner, 2026-11-08): no Platform name in a description",
+   "send_console_input": "D39: vm-console-session (output and closed)",
+   "uninstall_provider_tools": "D37: withdraw-platform-and-legacy-provider-tools"
   },
   "propertiesSorted": {
    "go": true,

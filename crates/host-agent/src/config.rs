@@ -49,6 +49,65 @@ impl Env {
         self.vars.iter().map(|(k, v)| (k.as_str(), v.as_str()))
     }
 
+    /// The environment a child process gets (D40): the allowlist, and never
+    /// a name with a secret-like part, whatever rule admitted it.
+    pub fn for_child(&self) -> Env {
+        const EXACT: &[&str] = &[
+            "PATH",
+            "HOME",
+            "USER",
+            "LOGNAME",
+            "SHELL",
+            "TERM",
+            "TZ",
+            "TMPDIR",
+            "LANG",
+            "LANGUAGE",
+            "KUBECONFIG",
+            "SSL_CERT_FILE",
+            "SSL_CERT_DIR",
+            "DBUS_SESSION_BUS_ADDRESS",
+            "WSL_DISTRO_NAME",
+            "WSL_INTEROP",
+            "DOCKER_HOST",
+            "DOCKER_CONFIG",
+            "CONTAINER_HOST",
+            "REGISTRY_AUTH_FILE",
+        ];
+        const PROXIES: &[&str] = &["HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY"];
+        const PREFIXES: &[&str] = &["LC_", "XDG_", "INCUS_", "OLLAMA_"];
+        const SECRET_PARTS: &[&str] = &[
+            "TOKEN",
+            "SECRET",
+            "PASSWORD",
+            "PASSWD",
+            "CREDENTIAL",
+            "CREDENTIALS",
+            "AUTH",
+            "KEY",
+        ];
+        let allowed = |name: &str| {
+            EXACT.contains(&name)
+                || PROXIES
+                    .iter()
+                    .any(|p| *p == name || p.to_lowercase() == name)
+                || PREFIXES.iter().any(|p| name.starts_with(p))
+        };
+        let secret = |name: &str| {
+            name.to_uppercase()
+                .split('_')
+                .any(|part| SECRET_PARTS.contains(&part))
+        };
+        Env {
+            vars: self
+                .vars
+                .iter()
+                .filter(|(k, _)| allowed(k) && !secret(k))
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        }
+    }
+
     /// `os.Getenv`.
     pub fn get(&self, key: &str) -> String {
         self.vars.get(key).cloned().unwrap_or_default()
@@ -126,6 +185,12 @@ fn strip_quotes(value: &str) -> Option<&str> {
     }
 }
 
+/// The serving profile's defaults: loopback, its own port, and an instance
+/// id that is a directory name, not a mode.
+pub const DEFAULT_BIND_HOST: &str = "127.0.0.1";
+pub const DEFAULT_PORT: &str = "3014";
+const DEFAULT_INSTANCE_ID: &str = "standalone";
+
 /// Resolved runtime configuration (`config.Config`).
 ///
 /// Every Go field is loaded now so defaults and validation are complete;
@@ -134,7 +199,6 @@ fn strip_quotes(value: &str) -> Option<&str> {
 #[derive(Debug, Clone)]
 pub struct Config {
     pub env: Env,
-    pub agent_mode: String,
     pub tenant_id: String,
     pub instance_id: String,
     pub instance_root: PathBuf,
@@ -142,7 +206,8 @@ pub struct Config {
     pub ownership_mode: String,
     pub standalone_state_dir: PathBuf,
     pub sqlite_database_root: PathBuf,
-    pub standalone_allow_mutations: bool,
+    /// `OPUTE_HOST_ALLOW_MUTATIONS`: admit tools whose effect is not `read`.
+    pub allow_mutations: bool,
     pub standalone_instance_id: String,
     pub shared_host_owner_instance: String,
     pub host_mcp_port: i64,
@@ -152,7 +217,8 @@ pub struct Config {
     pub remote_agent_id: String,
     pub identity: std::result::Result<Identity, String>,
     pub mcp_auth_token: String,
-    pub opute_client_secret: String,
+    /// `OPUTE_OAUTH_CLIENTS`: configured machine client ids.
+    pub oauth_clients: Vec<String>,
     pub provider_id: String,
     pub host_resource_lock_dir: PathBuf,
     pub host_resource_max_normal: i64,
@@ -172,14 +238,6 @@ pub struct Config {
     pub allow_legacy_handshake: bool,
     pub prefix_tool_names: bool,
     pub disable_localhost_protection: bool,
-}
-
-fn normalize_mode(raw: &str) -> String {
-    if raw.trim().eq_ignore_ascii_case("standalone") {
-        "standalone".into()
-    } else {
-        "platform".into()
-    }
 }
 
 fn user_home_dir(env: &Env) -> PathBuf {
@@ -252,15 +310,9 @@ fn parse_go_float(s: &str) -> Option<f64> {
 impl Config {
     /// `config.Load`.
     pub fn load(env: &Env) -> Config {
-        let mode = normalize_mode(&env.get("OPUTE_AGENT_MODE"));
         let mut instance_id = env.value("OPUTE_HOST_AGENT_INSTANCE").trim().to_string();
         if instance_id.is_empty() {
-            instance_id = if mode == "standalone" {
-                "standalone"
-            } else {
-                "platform"
-            }
-            .into();
+            instance_id = DEFAULT_INSTANCE_ID.into();
         }
         let instance_root = match env.value("OPUTE_HOST_AGENT_INSTANCE_ROOT").trim() {
             "" => user_config_dir(env).join("instances").join(&instance_id),
@@ -278,20 +330,12 @@ impl Config {
             "" => instance_root.join("local-llm-relays"),
             v => PathBuf::from(v),
         };
-        // Standalone avoids colliding with the platform dogfood host on 3004.
-        let default_port = if mode == "standalone" { "3014" } else { "3004" };
-        let (port, _) = atoi(&env.value_or("HOST_MCP_PORT", default_port));
+        let (port, _) = atoi(&env.value_or("HOST_MCP_PORT", DEFAULT_PORT));
         let tenant = match env.value("OPUTE_TENANT_ID").trim() {
             "" => "local".to_string(),
             v => v.to_string(),
         };
-        // Platform binds the host bridge because Platform pods cannot reach
-        // host loopback; standalone stays loopback-only.
-        let default_bind = if mode == "platform" {
-            "0.0.0.0"
-        } else {
-            "127.0.0.1"
-        };
+        let default_bind = DEFAULT_BIND_HOST;
         let enforcement = env
             .value_or("OPUTE_HOST_RESOURCE_ENFORCEMENT", "fail-closed")
             .to_lowercase();
@@ -306,7 +350,6 @@ impl Config {
         };
         Config {
             env: env.clone(),
-            agent_mode: mode,
             tenant_id: tenant,
             instance_id,
             instance_root,
@@ -314,7 +357,7 @@ impl Config {
             ownership_mode: ownership.into(),
             standalone_state_dir: state_dir,
             sqlite_database_root: sqlite_root,
-            standalone_allow_mutations: env.get("OPUTE_STANDALONE_ALLOW_MUTATIONS") == "true",
+            allow_mutations: env.get("OPUTE_HOST_ALLOW_MUTATIONS") == "true",
             standalone_instance_id: env
                 .value("OPUTE_LOCAL_HOST_AGENT_INSTANCE_ID")
                 .trim()
@@ -330,10 +373,8 @@ impl Config {
             remote_agent_id: env.value("OPUTE_REMOTE_AGENT_ID").trim().to_string(),
             identity: identity::read_identity(env),
             mcp_auth_token: env.value("MCP_AUTH_TOKEN").trim().to_string(),
-            opute_client_secret: env
-                .value("OPUTE_HOST_OAUTH_CLIENT_SECRET")
-                .trim()
-                .to_string(),
+            oauth_clients: crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+                .unwrap_or_default(),
             provider_id: "incus".into(),
             host_resource_lock_dir: PathBuf::from(
                 env.value_or(
@@ -431,11 +472,7 @@ impl Config {
         }
         let mut instance_id = self.instance_id.trim().to_string();
         if instance_id.is_empty() {
-            instance_id = if self.agent_mode.trim().eq_ignore_ascii_case("standalone") {
-                "standalone".into()
-            } else {
-                "platform".into()
-            };
+            instance_id = DEFAULT_INSTANCE_ID.into();
         }
         validate_instance_id(&instance_id)?;
         if !self.ownership_mode.is_empty()
@@ -447,26 +484,8 @@ impl Config {
                 quote(&self.ownership_mode)
             ));
         }
-        let raw_mode = env.get("OPUTE_AGENT_MODE").trim().to_string();
-        if !raw_mode.is_empty()
-            && !raw_mode.eq_ignore_ascii_case("platform")
-            && !raw_mode.eq_ignore_ascii_case("standalone")
-        {
-            return Err(go_err!(
-                "invalid OPUTE_AGENT_MODE {}: expected platform or standalone",
-                quote(&raw_mode)
-            ));
-        }
-        let mut mode = self.agent_mode.trim().to_lowercase();
-        if mode.is_empty() {
-            mode = normalize_mode(&raw_mode);
-        }
-        if mode != "platform" && mode != "standalone" {
-            return Err(go_err!(
-                "invalid agent mode {}: expected platform or standalone",
-                quote(&self.agent_mode)
-            ));
-        }
+        crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+            .map_err(|e| go_err!("{e}"))?;
         if self.remote_agent_id.trim().is_empty() {
             return Err(go_err!(
                 "OPUTE_REMOTE_AGENT_ID is required; the host agent must be onboarded with one canonical id"
@@ -539,7 +558,7 @@ impl Config {
             .eq_ignore_ascii_case("true")
         {
             return Err(go_err!(
-                "OPUTE_REVERSE_TUNNEL is retired; the kernel serves mode-scoped Streamable HTTP POST /mcp"
+                "OPUTE_REVERSE_TUNNEL is retired; the kernel serves Streamable HTTP POST /mcp"
             ));
         }
         for key in [
@@ -553,13 +572,6 @@ impl Config {
                 return Err(go_err!(
                     "{key} is retired; enroll a host resource URL instead of phone-home credentials"
                 ));
-            }
-        }
-        if mode == "standalone" {
-            for key in ["OPUTE_MCP_URL", "OPUTE_MCP_HEALTH_URL"] {
-                if !env.get(key).trim().is_empty() {
-                    return Err(go_err!("standalone mode cannot use platform setting {key}"));
-                }
             }
         }
         Ok(())
@@ -686,12 +698,44 @@ fn to4(ip: IpAddr) -> Option<Ipv4Addr> {
 mod tests {
     use super::*;
 
+    /// A4 (D40): every place the agent or a provider starts a process clears
+    /// the inherited environment and passes `Env::for_child` instead.
+    #[test]
+    fn every_spawn_site_passes_the_child_environment() {
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = vec![src.clone()];
+        let mut sites = Vec::new();
+        while let Some(path) = files.pop() {
+            if path.is_dir() {
+                files.extend(std::fs::read_dir(&path).unwrap().map(|e| e.unwrap().path()));
+                continue;
+            }
+            if path.extension().is_none_or(|e| e != "rs") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap();
+            // Test modules start their own fakes.
+            let product = text.split("#[cfg(test)]\nmod tests {").next().unwrap();
+            for (at, _) in product.match_indices("Command::new(") {
+                let statement: String = product[at..].chars().take(700).collect();
+                let line = product[..at].lines().count() + 1;
+                sites.push(format!(
+                    "{}:{line}",
+                    path.strip_prefix(&src).unwrap().display()
+                ));
+                assert!(
+                    statement.contains(".env_clear()") && statement.contains("for_child()"),
+                    "{}:{line} starts a process without the child environment",
+                    path.display()
+                );
+            }
+        }
+        // The inventory in the D40 change: a new site must be added there.
+        assert_eq!(sites.len(), 8, "{sites:?}");
+    }
+
     fn base() -> Env {
-        Env::from_pairs([
-            ("HOME", "/home/test"),
-            ("OPUTE_REMOTE_AGENT_ID", "agent-1"),
-            ("OPUTE_AGENT_MODE", "standalone"),
-        ])
+        Env::from_pairs([("HOME", "/home/test"), ("OPUTE_REMOTE_AGENT_ID", "agent-1")])
     }
 
     fn validate_with(extra: &[(&str, &str)]) -> std::result::Result<(), String> {
@@ -705,26 +749,81 @@ mod tests {
     }
 
     #[test]
-    fn defaults_follow_mode() {
-        let s = Config::load(&base());
+    fn one_profile_serves_on_loopback_read_only_by_default() {
+        let env = Env::from_pairs([
+            ("HOME", "/home/test"),
+            ("OPUTE_REMOTE_AGENT_ID", "agent-1"),
+            ("MCP_AUTH_TOKEN", "test-token"),
+        ]);
+        let c = Config::load(&env);
         assert_eq!(
-            (s.host_mcp_port, s.host_mcp_bind_host.as_str()),
-            (3014, "127.0.0.1")
+            (
+                c.host_mcp_port,
+                c.host_mcp_bind_host.as_str(),
+                c.allow_mutations
+            ),
+            (3014, "127.0.0.1", false)
         );
         assert_eq!(
-            s.standalone_state_dir,
+            c.standalone_state_dir,
             PathBuf::from("/home/test/.config/opute/instances/standalone/state")
         );
+    }
+
+    #[test]
+    fn a_host_exposed_on_purpose_is_configured_by_its_settings() {
         let mut env = base();
-        env.set("OPUTE_AGENT_MODE", "platform");
-        let p = Config::load(&env);
+        env.set("HOST_MCP_BIND_HOST", "0.0.0.0");
+        env.set("HOST_MCP_PORT", "3004");
+        env.set("OPUTE_HOST_ALLOW_MUTATIONS", "true");
+        let c = Config::load(&env);
         assert_eq!(
-            (p.host_mcp_port, p.host_mcp_bind_host.as_str()),
-            (3004, "0.0.0.0")
+            (
+                c.host_mcp_port,
+                c.host_mcp_bind_host.as_str(),
+                c.allow_mutations
+            ),
+            (3004, "0.0.0.0", true)
         );
-        assert_eq!(p.instance_id, "platform");
-        env.set("OPUTE_AGENT_MODE", "");
-        assert_eq!(Config::load(&env).agent_mode, "platform");
+    }
+
+    /// The only place the old mode variables may be named: they have no
+    /// effect, like any variable the agent does not define.
+    #[test]
+    fn the_old_mode_variables_have_no_effect() {
+        let without = Config::load(&base());
+        for (key, value) in [
+            ("OPUTE_AGENT_MODE", "platform"),
+            ("OPUTE_AGENT_MODE", "not-a-mode"),
+            ("OPUTE_STANDALONE_ALLOW_MUTATIONS", "true"),
+            ("OPUTE_MCP_URL", "https://orchestrator.example.test/mcp"),
+            (
+                "OPUTE_MCP_HEALTH_URL",
+                "https://orchestrator.example.test/health",
+            ),
+        ] {
+            let mut env = base();
+            env.set(key, value);
+            let with = Config::load(&env);
+            assert_eq!(
+                format!(
+                    "{:?}",
+                    Config {
+                        env: Env::default(),
+                        ..with.clone()
+                    }
+                ),
+                format!(
+                    "{:?}",
+                    Config {
+                        env: Env::default(),
+                        ..without.clone()
+                    }
+                ),
+                "{key}={value}"
+            );
+            assert_eq!(validate_with(&[(key, value)]), Ok(()), "{key}={value}");
+        }
     }
 
     #[test]
@@ -762,10 +861,6 @@ mod tests {
             )
         );
         assert_eq!(
-            validate_with(&[("OPUTE_AGENT_MODE", "standalonee")]),
-            Err("invalid OPUTE_AGENT_MODE \"standalonee\": expected platform or standalone".into())
-        );
-        assert_eq!(
             validate_with(&[("HOST_MCP_PORT", "abc")]),
             Err("HOST_MCP_PORT must be positive".into())
         );
@@ -799,10 +894,6 @@ mod tests {
         assert_eq!(
             validate_with(&[("OPUTE_INFRA_PROVIDER_ID", "'incus'")]),
             Err("unsupported provider \"'incus'\": only incus is supported".into())
-        );
-        assert_eq!(
-            validate_with(&[("OPUTE_MCP_HEALTH_URL", "x")]),
-            Err("standalone mode cannot use platform setting OPUTE_MCP_HEALTH_URL".into())
         );
     }
 

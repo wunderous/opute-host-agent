@@ -257,6 +257,7 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
     };
     vec![
         host_info(host),
+        assistant_session(host),
         incus_inventory(host),
         host_observation(host),
         host_files(host),
@@ -271,11 +272,13 @@ pub fn services(host: &crate::tools::Host, server: &ServerHandle) -> Vec<Service
         virtualization_stack(host),
         system_containers(host),
         instance_lifecycle(host),
+        instance_console(host),
         local_status(host),
         instance_exec(host),
         cluster_discovery(&k8s),
         cluster_resources(&k8s),
         cluster_listings(&k8s),
+        cluster_inspection(&k8s),
         cluster_packages(&k8s),
         service_exposure(&k8s),
         guest_storage(&k8s),
@@ -1475,6 +1478,112 @@ fn system_containers(host: &crate::tools::Host) -> Service {
     }
 }
 
+/// The bound instance's canonical URI, added when the result has none.
+fn with_uri(mut out: Map<String, J>, binding: &Binding) -> Map<String, J> {
+    let bound = binding.resources.iter().find(|r| {
+        crate::resource::Uri::parse(&r.uri)
+            .is_ok_and(|u| matches!(u.resource_type.as_str(), "vm" | "container"))
+    });
+    if let Some(bound) = bound.filter(|_| !out.contains_key("uri")) {
+        out.insert("uri".into(), J::from(bound.uri.clone()));
+    }
+    out
+}
+
+/// D39: the keystrokes to send, exactly as given: a lone CR or newline is
+/// input, never padding to trim.
+fn console_input(args: &Map<String, J>) -> &str {
+    raw_text(args, "data")
+}
+
+/// D38, D39: instance console sessions, read by pull.
+fn instance_console(host: &crate::tools::Host) -> Service {
+    use crate::tools::structured_result;
+    let (incus, consoles) = (host.incus.clone(), host.consoles.clone());
+    let (input, resize) = (host.consoles.clone(), host.consoles.clone());
+    let operation_id = |args: &Map<String, J>| -> Result<String, String> {
+        match text(args, "operationId").trim() {
+            "" => Err("operationId is required".into()),
+            id => Ok(id.to_string()),
+        }
+    };
+    let number = |args: &Map<String, J>, key: &str| args.get(key).and_then(J::as_f64);
+    Service {
+        id: "instance-console",
+        dependencies: &["instance-lifecycle"],
+        operations: vec![
+            (
+                "stream_vm_console",
+                op(move |call| {
+                    let vm = call.binding.provider_instance_name();
+                    let vm = vm.trim();
+                    if vm.is_empty() {
+                        return Err("vmName is required".into());
+                    }
+                    incus.assert_ownership(vm, "stream_vm_console")?;
+                    let size = match (number(call.args, "width"), number(call.args, "height")) {
+                        (Some(w), Some(h)) => Some(
+                            crate::console::cells(w)
+                                .zip(crate::console::cells(h))
+                                .ok_or("console size must be positive")?,
+                        ),
+                        _ => None,
+                    };
+                    let operation_id = match call.ctx.operation_identity().0 {
+                        id if id.trim().is_empty() => format!("console-{vm}"),
+                        id => id,
+                    };
+                    consoles.start(&incus.env, &incus.binary, vm, &operation_id, size)?;
+                    let mut out = Map::new();
+                    out.insert("vmName".into(), J::from(vm));
+                    out.insert("status".into(), J::from("started"));
+                    out.insert("operationId".into(), J::from(operation_id));
+                    Ok(structured_result(
+                        J::Object(with_uri(out, call.binding)),
+                        Some(&format!("Console started for '{vm}'.")),
+                    ))
+                }),
+            ),
+            (
+                "send_console_input",
+                op(move |call| {
+                    let id = operation_id(call.args)?;
+                    let (output, closed) = input.send(&id, console_input(call.args))?;
+                    Ok(structured_result(
+                        serde_json::json!({
+                            "status": "sent", "operationId": id,
+                            "output": output, "closed": closed,
+                        }),
+                        Some(if output.is_empty() {
+                            "sent"
+                        } else {
+                            output.as_str()
+                        }),
+                    ))
+                }),
+            ),
+            (
+                "resize_console",
+                op(move |call| {
+                    let id = operation_id(call.args)?;
+                    let size = number(call.args, "width")
+                        .and_then(crate::console::cells)
+                        .zip(number(call.args, "height").and_then(crate::console::cells))
+                        .ok_or("console size must be positive")?;
+                    resize.resize(&id, size.0, size.1)?;
+                    Ok(structured_result(
+                        serde_json::json!({
+                            "status": "resized", "operationId": id,
+                            "width": size.0, "height": size.1,
+                        }),
+                        None,
+                    ))
+                }),
+            ),
+        ],
+    }
+}
+
 /// M8b: VM and container lifecycle. The instance a scoped operation acts on
 /// comes from the canonical binding, never from a raw argument.
 fn instance_lifecycle(host: &crate::tools::Host) -> Service {
@@ -1486,6 +1595,7 @@ fn instance_lifecycle(host: &crate::tools::Host) -> Service {
         instances(host),
     );
     let (restart, update, delete) = (instances(host), instances(host), instances(host));
+    let (attach, detach) = (instances(host), instances(host));
     let named = |out: &J, verb: &str| format!("{verb} '{}'.", out["vmName"].as_str().unwrap_or(""));
     Service {
         id: "instance-lifecycle",
@@ -1558,6 +1668,52 @@ fn instance_lifecycle(host: &crate::tools::Host) -> Service {
                             .restart_vm(&call.binding.provider_instance_name())
                             .map(|out| {
                                 let text = named(&out, "Restarted VM");
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "configure_network",
+                op(move |call| {
+                    settled(
+                        attach
+                            .configure_network(
+                                &call.binding.provider_instance_name(),
+                                text(call.args, "deviceName"),
+                                text(call.args, "parent"),
+                            )
+                            .map(|out| {
+                                let text = format!(
+                                    "Attached bridged NIC '{}' to '{}'.",
+                                    out["deviceName"].as_str().unwrap_or(""),
+                                    out["vmName"].as_str().unwrap_or("")
+                                );
+                                structured_result(out, Some(&text))
+                            }),
+                    )
+                }),
+            ),
+            (
+                "remove_vm_network_device",
+                op(move |call| {
+                    settled(
+                        detach
+                            .remove_vm_network_device(
+                                &call.binding.provider_instance_name(),
+                                text(call.args, "deviceName"),
+                            )
+                            .map(|out| {
+                                let verb = if out["removed"] == J::Bool(true) {
+                                    "Removed"
+                                } else {
+                                    "No"
+                                };
+                                let text = format!(
+                                    "{verb} network device '{}' on '{}'.",
+                                    out["deviceName"].as_str().unwrap_or(""),
+                                    out["vmName"].as_str().unwrap_or("")
+                                );
                                 structured_result(out, Some(&text))
                             }),
                     )
@@ -2104,6 +2260,107 @@ fn cluster_listings(k8s: &crate::clusterops::Kubernetes) -> Service {
             (
                 "list_deployments",
                 rows(k8s, "deployments", K::list_deployments),
+            ),
+        ],
+    }
+}
+
+/// `open_assistant_session`: the client binds to the `assistant-session.v1`
+/// contract, the current catalog revision and the active tenant. It writes
+/// nothing.
+fn assistant_session(host: &crate::tools::Host) -> Service {
+    const CONTRACT: &str = "assistant-session.v1";
+    let tenant = host.tenant_id.clone();
+    Service {
+        id: "assistant-session",
+        dependencies: &[],
+        operations: vec![(
+            "open_assistant_session",
+            op(move |call| {
+                let session_id = text(call.args, "sessionId");
+                if session_id.trim().is_empty() {
+                    return Err("sessionId is required".into());
+                }
+                let compatible = call
+                    .args
+                    .get("supportedContractVersions")
+                    .and_then(J::as_array)
+                    .is_some_and(|versions| versions.iter().any(|v| v == CONTRACT));
+                if !compatible {
+                    return Err(format!(
+                        "no compatible assistant session contract; current={CONTRACT}"
+                    ));
+                }
+                let revision = &call.snapshot.revision;
+                let requested = text(call.args, "catalogRevision");
+                if !requested.trim().is_empty() && requested != revision {
+                    return Err(format!(
+                        "catalog revision mismatch: requested={requested} current={revision}"
+                    ));
+                }
+                let requested = text(call.args, "tenantId");
+                if !requested.trim().is_empty() && requested != tenant {
+                    return Err(format!(
+                        "tenant mismatch: requested={requested} active={tenant}"
+                    ));
+                }
+                Ok(crate::tools::structured_result(
+                    serde_json::json!({
+                        "contractVersion": CONTRACT,
+                        "sessionId": session_id,
+                        "catalogRevision": revision,
+                        "providerId": call.snapshot.provider_id,
+                        "tenantId": tenant,
+                    }),
+                    None,
+                ))
+            }),
+        )],
+    }
+}
+
+/// D32-D34: reads of one object on the bound cluster that never return a
+/// stored value.
+fn cluster_inspection(k8s: &crate::clusterops::Kubernetes) -> Service {
+    let keys = |k8s: &crate::clusterops::Kubernetes, kind: &'static str, arg: &'static str| {
+        let k8s = k8s.clone();
+        op(move |call| {
+            let keys = k8s.object_keys(
+                &call.binding.provider_instance_name(),
+                kind,
+                text(call.args, arg),
+                text(call.args, "namespace"),
+            )?;
+            let mut out = Map::new();
+            out.insert(
+                "keys".into(),
+                J::Array(keys.into_iter().map(J::from).collect()),
+            );
+            Ok(map_result(with_cluster_uri(out, call.binding)))
+        })
+    };
+    let workload = k8s.clone();
+    Service {
+        id: "cluster-inspection",
+        dependencies: &["cluster-discovery"],
+        operations: vec![
+            ("list_secret_keys", keys(k8s, "secret", "secretName")),
+            (
+                "list_configmap_keys",
+                keys(k8s, "configmap", "configMapName"),
+            ),
+            (
+                "inspect_workload",
+                op(move |call| {
+                    let projected = workload.inspect_workload(
+                        &call.binding.provider_instance_name(),
+                        text(call.args, "workloadName"),
+                        text(call.args, "namespace"),
+                    )?;
+                    let mut out = Map::new();
+                    out.insert("workload".into(), projected);
+                    Ok(map_result(with_cluster_uri(out, call.binding)))
+                }),
             ),
         ],
     }
@@ -3053,6 +3310,26 @@ fn local_llm_runtime(llm: &crate::llmops::Llm, host: &crate::tools::Host) -> Ser
                 }),
             ),
             ("list_local_llm_models", list_handler),
+            // No `runtime` input is published, so both wrappers act on the
+            // shared Ollama runtime, as v0.2.4 did.
+            (
+                "remove_local_llm_model",
+                op(|_| {
+                    Ok(crate::tools::structured_result(
+                        serde_json::json!({
+                            "removed": false, "purged": false, "shared": true,
+                            "reason": "Ollama model artifacts are shared host state; use the host Ollama lifecycle for explicit garbage collection",
+                        }),
+                        Some("shared Ollama model retained"),
+                    ))
+                }),
+            ),
+            (
+                "configure_local_llm_runtime",
+                op(|_| {
+                    Err("the Ollama runtime configuration is host-wide and pinned to one process, two resident models, and one request at a time".into())
+                }),
+            ),
             ("probe_local_llm", probe_handler),
             (
                 "install_local_llm_model",
@@ -3182,7 +3459,7 @@ fn local_llm_runtime(llm: &crate::llmops::Llm, host: &crate::tools::Host) -> Ser
                         serde_json::json!({
                             "stopped": false,
                             "shared": true,
-                            "reason": "shared Ollama runtime remains available to other Platform instances"
+                            "reason": "shared Ollama runtime remains available to other instances"
                         }),
                         Some("shared Ollama runtime left running"),
                     )),
@@ -3462,6 +3739,15 @@ fn service_ingress(serving: &crate::servingops::Serving) -> Service {
 
 #[cfg(test)]
 mod tests {
+
+    /// D39: console input reaches the terminal untrimmed.
+    #[test]
+    fn console_input_is_verbatim() {
+        for data in ["\r", "\n", " ", "abc\r", "\u{1}"] {
+            let args = serde_json::json!({"operationId": "o", "data": data});
+            assert_eq!(console_input(args.as_object().unwrap()), data);
+        }
+    }
     use super::*;
     use crate::provider::{DrainPolicy, Lifecycle};
 

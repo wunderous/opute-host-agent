@@ -1,0 +1,19 @@
+[Unit]
+Description=Opute standalone bootstrap MCP (temporary)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=opute
+Environment=OPUTE_AGENT_MODE=standalone
+Environment=OPUTE_STANDALONE_ALLOW_MUTATIONS=true
+Environment=OPUTE_HOST_ALLOW_MUTATIONS=true
+Environment=HOST_MCP_PORT=3014
+Environment=HOST_MCP_BIND_HOST=0.0.0.0
+ExecStart=/home/opute/.local/share/opute/opute-host-agent --transport http
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

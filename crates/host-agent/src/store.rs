@@ -866,6 +866,77 @@ impl StateStore {
         Ok(())
     }
 
+    /// D42: prune audit rows older than the retention age, then the oldest
+    /// beyond the row bound; then the finished operations older than the age
+    /// or than every audit row kept, once their task's TTL (one hour) has
+    /// passed since their last update. A row whose operation is still working,
+    /// and an operation that is working, interrupted (`unknown`, still
+    /// cancellable) or named by a plan run or an active capability, stays.
+    /// Returns the number of rows removed.
+    pub fn prune_audit(
+        &self,
+        retention: &AuditRetention,
+        now: std::time::SystemTime,
+    ) -> std::result::Result<u64, String> {
+        let conn = self.conn.as_ref().ok_or("state store closed")?;
+        // Whole seconds: RFC 3339 with a fraction sorts after the same second
+        // without one, so the cutoff is exact to within a second.
+        let cutoff = now
+            .checked_sub(retention.max_age)
+            .unwrap_or(std::time::UNIX_EPOCH);
+        let cutoff = crate::hostobs::rfc3339_nano(
+            std::time::UNIX_EPOCH
+                + std::time::Duration::from_secs(
+                    cutoff
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                ),
+        );
+        // A finished task stays readable for its TTL after its last update.
+        let task_cutoff = crate::hostobs::rfc3339_nano(
+            now.checked_sub(std::time::Duration::from_millis(
+                crate::tasks::DEFAULT_TTL_MS as u64,
+            ))
+            .unwrap_or(std::time::UNIX_EPOCH),
+        );
+        const UNREFERENCED: &str = "operation_id NOT IN \
+             (SELECT operation_id FROM operations WHERE status = 'working')";
+        let aged = conn
+            .execute(
+                &format!(
+                    "DELETE FROM capability_invocations WHERE created_at < ? AND {UNREFERENCED}"
+                ),
+                [&cutoff],
+            )
+            .map_err(sqlite_err)?;
+        let over = conn
+            .execute(
+                &format!(
+                    "DELETE FROM capability_invocations WHERE rowid IN (
+                     SELECT rowid FROM capability_invocations WHERE {UNREFERENCED}
+                     ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET ?)"
+                ),
+                [retention.max_rows as i64],
+            )
+            .map_err(sqlite_err)?;
+        let operations = conn
+            .execute(
+                "DELETE FROM operations
+                 WHERE status IN ('completed', 'failed', 'cancelled')
+                   AND updated_at < ?2
+                   AND (created_at < ?1
+                        OR created_at < (SELECT MIN(created_at) FROM capability_invocations))
+                   AND operation_id NOT IN (SELECT operation_id FROM capability_invocations)
+                   AND operation_id NOT IN (SELECT run_id FROM plan_runs)
+                   AND operation_id NOT IN (SELECT run_id FROM active_capabilities)
+                   AND operation_id NOT IN (SELECT run_id FROM active_runtimes)",
+                [&cutoff, &task_cutoff],
+            )
+            .map_err(sqlite_err)?;
+        Ok((aged + over + operations) as u64)
+    }
+
     /// Close explicitly so the WAL is checkpointed and removed, as Go's
     /// `db.Close` does; a leftover `-wal` file would be an observable diff.
     pub fn close(&mut self) {
@@ -979,6 +1050,38 @@ pub struct ProviderGenerationRecord {
     pub active_at: String,
 }
 
+/// How long and how many audit rows (`capability_invocations`) are kept
+/// (D42).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AuditRetention {
+    pub max_age: std::time::Duration,
+    pub max_rows: u64,
+}
+
+impl AuditRetention {
+    pub const DEFAULT_DAYS: u64 = 30;
+    pub const DEFAULT_ROWS: u64 = 50_000;
+
+    /// `OPUTE_AUDIT_RETENTION_DAYS` and `OPUTE_AUDIT_RETENTION_ROWS`; a value
+    /// that is not a positive integer means the default.
+    pub fn from_env(env: &crate::config::Env) -> Self {
+        let positive = |name: &str, default: u64| {
+            env.get(name)
+                .trim()
+                .parse::<u64>()
+                .ok()
+                .filter(|v| *v > 0)
+                .unwrap_or(default)
+        };
+        AuditRetention {
+            max_age: std::time::Duration::from_secs(
+                86_400 * positive("OPUTE_AUDIT_RETENTION_DAYS", Self::DEFAULT_DAYS),
+            ),
+            max_rows: positive("OPUTE_AUDIT_RETENTION_ROWS", Self::DEFAULT_ROWS),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct CapabilityInvocationRecord {
     pub invocation_id: String,
@@ -1035,7 +1138,7 @@ pub struct AuthzStore {
 
 impl AuthzStore {
     /// `authz.Open`: open `authz.sqlite` and register the two built-in clients.
-    pub fn open(dir: &Path, opute_secret: &str) -> Result<AuthzStore> {
+    pub fn open(dir: &Path, clients: &[String]) -> Result<AuthzStore> {
         let dir = if dir.as_os_str().to_string_lossy().trim().is_empty() {
             std::env::temp_dir()
         } else {
@@ -1058,7 +1161,7 @@ impl AuthzStore {
         // provisioned secrets, and the one-time revocation of earlier tokens.
         // Go re-registers the built-ins on every open; here `prepare` owns
         // them so a restart never resets a provisioned secret.
-        crate::oauth::prepare(store.conn(), &dir, opute_secret)
+        crate::oauth::prepare(store.conn(), &dir, clients)
             .map_err(|e| go_err!("prepare oauth issuance: {e}"))?;
         Ok(store)
     }
@@ -1132,6 +1235,121 @@ mod tests {
             .unwrap()
             .map(|r| r.unwrap())
             .collect()
+    }
+
+    /// O1 (D42): audit rows older than the retention age, or beyond the row
+    /// limit (oldest first), are pruned; a row whose operation is still
+    /// working is kept whatever its age.
+    #[test]
+    fn audit_rows_are_pruned_by_age_and_count_but_never_while_referenced() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = StateStore::open(&dir.path().join("state")).unwrap();
+        let day = std::time::Duration::from_secs(86_400);
+        let now = std::time::SystemTime::now();
+        let at = |age: std::time::Duration| crate::hostobs::rfc3339_nano(now - age);
+        store
+            .create_operation("op-live", "provision_vm", "")
+            .unwrap();
+        let insert = |id: String, operation: &str, created_at: String| {
+            store
+                .record_capability_invocation(&CapabilityInvocationRecord {
+                    invocation_id: id,
+                    operation_id: operation.into(),
+                    capability_version: 1,
+                    created_at,
+                    ..Default::default()
+                })
+                .unwrap();
+        };
+        for i in 0..10 {
+            insert(format!("old-{i}"), &format!("op-old-{i}"), at(day * 40));
+        }
+        insert("old-live".into(), "op-live", at(day * 40));
+        for i in 0..20 {
+            insert(
+                format!("new-{i:02}"),
+                &format!("op-new-{i}"),
+                at(day - std::time::Duration::from_secs(i)),
+            );
+        }
+        // Finished operations: one with old rows only, one named by a plan
+        // run, one interrupted; one finished after every kept row.
+        for (id, status) in [
+            ("op-old-0", "completed"),
+            ("op-plan", "completed"),
+            ("op-unknown", "unknown"),
+            ("op-recent", "completed"),
+            ("op-fresh-task", "completed"),
+        ] {
+            store.create_operation(id, "ensure_host_file", "").unwrap();
+            let (created, updated) = match id {
+                "op-recent" => (std::time::Duration::ZERO, std::time::Duration::ZERO),
+                // started two days ago, finished 30 minutes ago: older than
+                // every kept row, but inside its task's one-hour TTL
+                "op-fresh-task" => (day * 2, std::time::Duration::from_secs(1800)),
+                _ => (day * 40, day * 40),
+            };
+            store
+                .conn
+                .as_ref()
+                .unwrap()
+                .execute(
+                    "UPDATE operations SET status = ?1, created_at = ?2, updated_at = ?3 WHERE operation_id = ?4",
+                    rusqlite::params![status, at(created), at(updated), id],
+                )
+                .unwrap();
+        }
+        store
+            .conn
+            .as_ref()
+            .unwrap()
+            .execute(
+                "INSERT INTO plan_runs(run_id, plan_id, generation, idempotency_key, document_hash,
+                 catalog_revision, status, plan_json, state_json, created_at, updated_at)
+                 VALUES ('op-plan', 'p', 1, 'k', 'h', 'r', 'completed', '{}', '{}', ?1, ?1)",
+                [at(day * 40)],
+            )
+            .unwrap();
+        let retention = AuditRetention {
+            max_age: day * 30,
+            max_rows: 15,
+        };
+        let pruned = store.prune_audit(&retention, now).unwrap();
+        let mut operations: Vec<String> = store
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT operation_id FROM operations")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        operations.sort();
+        assert_eq!(
+            operations,
+            [
+                "op-fresh-task",
+                "op-live",
+                "op-plan",
+                "op-recent",
+                "op-unknown"
+            ]
+        );
+        let conn = store.conn.as_ref().unwrap();
+        let mut kept: Vec<String> = conn
+            .prepare("SELECT invocation_id FROM capability_invocations ORDER BY invocation_id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        kept.sort();
+        let mut want: Vec<String> = (5..20).map(|i| format!("new-{i:02}")).collect();
+        want.push("old-live".into());
+        want.sort();
+        assert_eq!(kept, want);
+        assert_eq!(pruned, 16);
     }
 
     #[test]
@@ -1586,39 +1804,30 @@ mod tests {
     #[test]
     fn authz_restart_keeps_provisioned_secrets() {
         let dir = tempfile::tempdir().unwrap();
-        AuthzStore::open(dir.path(), "").unwrap().close();
+        let clients = ["ci-runner".to_string()];
+        AuthzStore::open(dir.path(), &clients).unwrap().close();
         let read = || {
-            ["opute-mcp-host", "host-agent-provider"].map(|c| {
+            ["ci-runner", "host-agent-provider"].map(|c| {
                 std::fs::read_to_string(dir.path().join("credentials").join(format!("{c}.json")))
                     .unwrap()
             })
         };
         let before = read();
-        AuthzStore::open(dir.path(), "").unwrap().close();
+        AuthzStore::open(dir.path(), &clients).unwrap().close();
         assert_eq!(read(), before);
     }
 
     #[test]
     fn authz_open_registers_builtin_clients_once() {
         let dir = tempfile::tempdir().unwrap();
-        AuthzStore::open(dir.path(), "").unwrap().close();
-        AuthzStore::open(dir.path(), "secret").unwrap().close();
+        AuthzStore::open(dir.path(), &[]).unwrap().close();
+        AuthzStore::open(dir.path(), &[]).unwrap().close();
         let conn = Connection::open(dir.path().join("authz.sqlite")).unwrap();
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM clients", [], |r| r.get(0))
             .unwrap();
-        // Go's two built-ins plus host-agent-provider (oauth-issuance, D8).
-        assert_eq!(count, 3);
-        let hash: String = conn
-            .query_row(
-                "SELECT secret_hash FROM clients WHERE client_id='opute-mcp-host'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(
-            hash,
-            hex::encode(<sha2::Sha256 as sha2::Digest>::digest("secret"))
-        );
+        // The bootstrap client and host-agent-provider (oauth-issuance, D8);
+        // no machine client unless OPUTE_OAUTH_CLIENTS lists one.
+        assert_eq!(count, 2);
     }
 }

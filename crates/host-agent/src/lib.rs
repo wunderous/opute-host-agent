@@ -7,11 +7,14 @@
 mod goerr;
 mod admission;
 mod app;
+#[cfg(test)]
+mod boundary;
 mod builtin;
 mod catalog;
 pub mod cli;
 mod clusterops;
 pub mod config;
+mod console;
 mod ddl;
 mod evidence;
 #[cfg(any(fuzzing, test))]
