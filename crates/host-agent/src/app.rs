@@ -679,6 +679,25 @@ async fn accept_loop(
             // in-flight requests), then the deferred closes run.
             let (draining, shutdown) = tokio::sync::watch::channel(false);
             let mut connections: Vec<tokio::task::JoinHandle<()>> = Vec::new();
+            // D42: the audit is pruned at start and every 60 seconds, off the
+            // request path.
+            let pruner = {
+                let retention = crate::store::AuditRetention::from_env(&server.host.env);
+                let state = server.host.state.clone();
+                tokio::task::spawn_local(async move {
+                    let mut tick = tokio::time::interval(std::time::Duration::from_secs(60));
+                    loop {
+                        tick.tick().await;
+                        let (state, retention) = (state.clone(), retention.clone());
+                        let _ = tokio::task::spawn_blocking(move || {
+                            if let Ok(store) = state.lock() {
+                                let _ = store.prune_audit(&retention, std::time::SystemTime::now());
+                            }
+                        })
+                        .await;
+                    }
+                })
+            };
             loop {
                 tokio::select! {
                     _ = sigint.recv() => break,
@@ -697,6 +716,7 @@ async fn accept_loop(
                 }
             }
             drop(listener);
+            pruner.abort();
             let _ = draining.send(true);
             for connection in connections {
                 let _ = connection.await;

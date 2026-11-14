@@ -201,7 +201,7 @@ impl Consoles {
             Command::new(&setsid)
                 .args(["--ctty", binary, "--project", "default", "console", vm])
                 .env_clear()
-                .envs(env.pairs())
+                .envs(env.for_child().pairs())
                 .stdin(stdio()?)
                 .stdout(stdio()?)
                 .stderr(stdio()?)

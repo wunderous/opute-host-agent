@@ -1,0 +1,160 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/cloudflare-activate-tunneling.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-cloudflare",
+   "files//opt/opute-e2e/releases/rust-0.4.0",
+   "files//opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/releases/rust-0.4.0/opute-host-agent",
+   "system/unitFiles/e2e-agent-n.service",
+   "system/unitFiles/e2e-agent-r.service",
+   "system/unitFiles/e2e-provider-cf-n.service",
+   "system/unitFiles/e2e-provider-cf-r.service",
+   "system/units/e2e-agent-n.service",
+   "system/units/e2e-agent-r.service",
+   "system/units/e2e-provider-cf-n.service",
+   "system/units/e2e-provider-cf-r.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-neutral",
+ "harnessErrors": [],
+ "journey": "neutral.reserved",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "2\n",
+     "equals": "2\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "providers"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "toolsR"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "reservedName"
+    },
+    {
+     "actual": "reserved_hostname",
+     "equals": "reserved_hostname",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "reservedName"
+    },
+    {
+     "actual": "mcp.opute.io",
+     "equals": "mcp.opute.io",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.hostname",
+     "step": "reservedName"
+    },
+    {
+     "actual": "*.opute.io",
+     "equals": "*.opute.io",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.pattern",
+     "step": "reservedName"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "otherName"
+    },
+    {
+     "actual": "Error: MCP error 0: dedicated Cloudflare tunnel requires CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_ZONE_ID, and CLOUDFLARE_API_TOKEN",
+     "contains": "CLOUDFLARE_ACCOUNT_ID",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "otherName"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Reserved names are operator configuration",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "toolsN"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "nothingReserved"
+    },
+    {
+     "actual": "Error: MCP error 0: dedicated Cloudflare tunnel requires CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_ZONE_ID, and CLOUDFLARE_API_TOKEN",
+     "contains": "CLOUDFLARE_ACCOUNT_ID",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "nothingReserved"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.code",
+     "step": "nothingReserved"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Reserved names are operator configuration",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "agentN": 715,
+   "agentR": 735,
+   "catalogN": 239,
+   "catalogR": 244,
+   "copy04": 349,
+   "installN": 305,
+   "installR": 312,
+   "listN": 242,
+   "listR": 529,
+   "nothingReserved": 201,
+   "nothingReservedCall": 211,
+   "otherName": 202,
+   "otherNameCall": 216,
+   "probeCopy": 289,
+   "providerCopy": 455,
+   "providers": 183,
+   "recipeCopy": 426,
+   "reservedName": 203,
+   "reservedNameCall": 213,
+   "tool": 288,
+   "toolsN": 232,
+   "toolsR": 236,
+   "unpack04": 233,
+   "wire": 282
+  },
+  "stepsSeconds": 51.8
+ },
+ "unverified": []
+}

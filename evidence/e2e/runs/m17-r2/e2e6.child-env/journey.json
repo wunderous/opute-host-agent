@@ -1,0 +1,270 @@
+{
+ "cleanup": [
+  {
+   "guest": "incus delete -f e2e-v6 2>/dev/null; rm -f /tmp/e2e-agents/child-env-recipe.yaml; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true",
+   "id": "cleanVm"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove cenv >/dev/null ; true",
+   "id": "remove"
+  }
+ ],
+ "description": "A child's environment (D40): an agent holding its bearer, two provider credentials and an OPUTE_ setting opens a VM console and runs a recipe step; /proc shows neither child holds any of them.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount",
+   "incus/*",
+   "files//home/opute/.config/incus*",
+   "system/units/sys-devices-virtual-net-tap*",
+   "system/units/sys-subsystem-net-devices-tap*",
+   "system/units/var-lib-incus-devices-*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.child-env",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "recipe": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/e2e-child-env-recipe.yaml",
+    "sha256": "487b12955bdfdc82edb6855451162dc1273ab254de341cf79ff58e3d1ca3a913"
+   }
+  }
+ },
+ "maxMinutes": 20,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "completed",
+     "path": "response.body.result.status",
+     "step": "vm"
+    },
+    {
+     "equals": "started",
+     "path": "response.body.result.structuredContent.status",
+     "step": "console"
+    },
+    {
+     "equals": true,
+     "path": "json.agentHasExpected",
+     "step": "consoleEnv"
+    },
+    {
+     "gte": 1,
+     "path": "json.found",
+     "step": "consoleEnv"
+    },
+    {
+     "equals": [],
+     "path": "json.leaked",
+     "step": "consoleEnv"
+    },
+    {
+     "equals": true,
+     "path": "json.childrenKeep",
+     "step": "consoleEnv"
+    }
+   ],
+   "requirement": "A child process never receives the agent's secrets",
+   "scenario": "With the bearer, two provider credentials and an OPUTE_ setting in the agent's environment, its incus console process holds PATH and none of them",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "gte": 1,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "equals": [],
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "equals": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    }
+   ],
+   "requirement": "A child process never receives the agent's secrets",
+   "scenario": "While a recipe step's run_host_command workload runs, the systemd-run client the agent started for it holds PATH and none of the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start cenv --port 3050 --id e2e-cenv-agent --env MCP_AUTH_TOKEN=${SECRET:cenv} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env CLOUDFLARE_API_TOKEN=${SECRET:cfToken} --env TAILSCALE_AUTH_KEY=${SECRET:tsKey} --env OPUTE_E2E_MARKER=e2e-marker --user root",
+   "id": "cenvAgent"
+  },
+  {
+   "auth": "secret:cenv",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3050
+  },
+  {
+   "arguments": {
+    "cpus": 1,
+    "disk": "10GiB",
+    "image": "parity-noble-vm",
+    "instanceType": "virtual-machine",
+    "memory": "1GiB",
+    "name": "e2e-v6"
+   },
+   "auth": "secret:cenv",
+   "capture": {
+    "VM": "response.body.result.taskId"
+   },
+   "id": "vmCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3050,
+   "tool": "provision_vm"
+  },
+  {
+   "auth": "secret:cenv",
+   "id": "vm",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${VM}"
+   },
+   "port": 3050,
+   "timeout": 900,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "vm:local:e2e-v6"
+   },
+   "auth": "secret:cenv",
+   "id": "console",
+   "mcp": "tools/call",
+   "port": 3050,
+   "tool": "stream_vm_console"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py childenv e2e-agent-cenv.service 'console e2e-v6' --expect MCP_AUTH_TOKEN --expect CLOUDFLARE_API_TOKEN --expect TAILSCALE_AUTH_KEY --expect OPUTE_E2E_MARKER --keep PATH",
+   "id": "consoleEnv"
+  },
+  {
+   "arguments": {
+    "data": "\u0001",
+    "operationId": "console-e2e-v6"
+   },
+   "auth": "secret:cenv",
+   "id": "ctrlA",
+   "mcp": "tools/call",
+   "port": 3050,
+   "tool": "send_console_input"
+  },
+  {
+   "arguments": {
+    "data": "q",
+    "operationId": "console-e2e-v6"
+   },
+   "auth": "secret:cenv",
+   "id": "detach",
+   "mcp": "tools/call",
+   "port": 3050,
+   "tool": "send_console_input"
+  },
+  {
+   "copy": "recipe",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/tmp/e2e-agents/child-env-recipe.yaml"
+  },
+  {
+   "arguments": {
+    "source": "/tmp/e2e-agents/child-env-recipe.yaml"
+   },
+   "auth": "secret:cenv",
+   "capture": {
+    "RRUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "recipeRun",
+   "mcp": "tools/call",
+   "port": 3050,
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "guest": "for i in $(seq 40); do out=$(python3 /opt/opute-e2e/guest/e2etool.py childenv e2e-agent-cenv.service 'systemd-run' --expect MCP_AUTH_TOKEN --expect CLOUDFLARE_API_TOKEN --expect TAILSCALE_AUTH_KEY --expect OPUTE_E2E_MARKER --keep PATH); echo \"$out\" | grep -q '\"found\": [1-9]' && break; sleep 1; done; echo \"$out\"",
+   "id": "recipeEnv"
+  },
+  {
+   "arguments": {
+    "runId": "${RRUN}"
+   },
+   "auth": "secret:cenv",
+   "id": "recipeDone",
+   "mcp": "tools/call",
+   "port": 3050,
+   "timeout": 120,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  }
+ ]
+}

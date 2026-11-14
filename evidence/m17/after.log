@@ -1,0 +1,35 @@
+warning: variable does not need to be mutable
+    --> crates/host-agent/src/store.rs:1224:13
+     |
+1224 |         let mut insert = |id: String, operation: &str, created_at: String| {
+     |             ----^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: `opute-host-agent` (lib test) generated 1 warning (run `cargo fix --lib -p opute-host-agent --tests` to apply 1 suggestion)
+
+running 5 tests
+test store::tests::audit_rows_are_pruned_by_age_and_count_but_never_while_referenced ... ok
+test hostobs::tests::a_child_never_sees_the_agents_secrets ... ok
+test config::tests::every_spawn_site_passes_the_child_environment ... FAILED
+test providers::tests::oversized_provider_bodies_are_refused_without_reading_them ... ok
+test llmops::tests::oversized_relay_bodies_are_refused_without_reading_them ... ok
+
+failures:
+
+---- config::tests::every_spawn_site_passes_the_child_environment stdout ----
+
+thread 'config::tests::every_spawn_site_passes_the_child_environment' (2750033) panicked at crates/host-agent/src/config.rs:729:9:
+assertion `left == right` failed: ["llmops.rs:3048", "identity.rs:167", "hostvirt.rs:207", "hostexec.rs:122", "servingops.rs:385", "hostobs.rs:162", "console.rs:202"]
+  left: 7
+ right: 8
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    config::tests::every_spawn_site_passes_the_child_environment
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 412 filtered out; finished in 0.10s
+error: test failed, to rerun pass `-p opute-host-agent --lib`

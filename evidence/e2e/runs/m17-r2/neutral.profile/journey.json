@@ -1,0 +1,521 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove plain >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove oldmode >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove oldallow >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove exposed >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove oauth >/dev/null; rm -rf /opt/opute-e2e/releases/rust-0.4.0 /opt/opute-e2e/releases/rust-0.3.x /opt/opute-e2e/guest/neutralprobe.py; true",
+   "id": "clean"
+  }
+ ],
+ "description": "The single serving profile of 0.4.0: an agent with only an id and a token; agents that still carry the old mode and mutation variables; a host exposed on purpose; and OAuth machine clients from operator configuration.",
+ "effects": {
+  "allow": [
+   "files//opt/opute-e2e/releases/rust-0.4.0*",
+   "files//opt/opute-e2e/releases/rust-0.3.x*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-neutral",
+ "id": "neutral.profile",
+ "inputs": {
+  "agent": "the 0.4.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` and explicit settings",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "probe": {
+    "path": "${REPO}/evidence/e2e/guest-tools/neutralprobe.py",
+    "sha256": "1ed02ede839e09d7f4d0bea7779ae9e248951f6deb7c79a015af76cfbadfbdad"
+   },
+   "rust04": {
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc2/host-agent-linux-x64.gz",
+    "sha256": "efa3da904bd1e3ab8908ac2b30716282da81028a1b5f262f4dec9ad229c6f9ff"
+   }
+  }
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "0.4.0\n",
+     "path": "stdout",
+     "step": "unpack04"
+    },
+    {
+     "equals": "e2e-plain",
+     "path": "json.agentId",
+     "step": "plain"
+    },
+    {
+     "equals": "127.0.0.1:3014\n",
+     "path": "stdout",
+     "step": "plainListen"
+    },
+    {
+     "equals": true,
+     "path": "json.body.result.isError",
+     "step": "plainMutation"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "json.body.result.content[0].text",
+     "step": "plainMutation"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "plainNoFile"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "json.body.result.isError",
+     "step": "plainRead"
+    },
+    {
+     "matches": ":e2e-plain$",
+     "path": "json.body.result.structuredContent.uri",
+     "step": "plainRead"
+    },
+    {
+     "equals": [],
+     "path": "json.hits",
+     "step": "plainSummary"
+    },
+    {
+     "gte": 100,
+     "path": "json.tools",
+     "step": "plainSummary"
+    },
+    {
+     "gte": 100,
+     "path": "json.helpBytes",
+     "step": "plainSummary"
+    }
+   ],
+   "requirement": "One serving profile",
+   "scenario": "Started with only an id and a token: it serves on 127.0.0.1:3014 with read tools only, and its journal, tools/list and help name no Platform identifier",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "e2e-exposed",
+     "path": "json.agentId",
+     "step": "exposed"
+    },
+    {
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "path": "json.addresses",
+     "step": "exposedListen"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "exposedWrite"
+    },
+    {
+     "equals": "e2e\n",
+     "path": "stdout",
+     "step": "exposedFile"
+    },
+    {
+     "equalsStep": {
+      "path": "json.catalogSha",
+      "step": "plainSummary"
+     },
+     "path": "json.catalogSha",
+     "step": "exposedSummary"
+    }
+   ],
+   "requirement": "One serving profile",
+   "scenario": "A host exposed on purpose (bind 0.0.0.0, port 3004, mutations true) serves there with mutations admitted and the same catalog",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "path": "json.profileLines",
+     "step": "plainSummary"
+    },
+    {
+     "equals": [
+      "bind=0.0.0.0 port=3004 mutations=true"
+     ],
+     "path": "json.profileLines",
+     "step": "exposedSummary"
+    }
+   ],
+   "requirement": "One serving profile",
+   "scenario": "The effective bind, port and mutation policy are logged once",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "json.body.result.isError",
+     "step": "plainMutation"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "json.body.result.content[0].text",
+     "step": "plainMutation"
+    }
+   ],
+   "requirement": "One serving profile",
+   "scenario": "Mutations not enabled: the refusal names OPUTE_HOST_ALLOW_MUTATIONS",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "e2e-oldmode",
+     "path": "json.agentId",
+     "step": "oldMode"
+    },
+    {
+     "equals": "127.0.0.1:3014\n",
+     "path": "stdout",
+     "step": "oldModeListen"
+    },
+    {
+     "equals": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "path": "json.profileLines",
+     "step": "oldModeSummary"
+    },
+    {
+     "equalsStep": {
+      "path": "json.catalogSha",
+      "step": "plainSummary"
+     },
+     "path": "json.catalogSha",
+     "step": "oldModeSummary"
+    },
+    {
+     "equals": [],
+     "path": "json.hits",
+     "step": "oldModeSummary"
+    },
+    {
+     "equals": true,
+     "path": "json.body.result.isError",
+     "step": "oldModeMutation"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "json.body.result.content[0].text",
+     "step": "oldModeMutation"
+    },
+    {
+     "equalsStep": {
+      "path": "stdout",
+      "step": "plainState"
+     },
+     "path": "stdout",
+     "step": "oldModeState"
+    },
+    {
+     "equals": "standalone\n",
+     "path": "stdout",
+     "step": "plainState"
+    }
+   ],
+   "requirement": "No mode setting exists",
+   "scenario": "A host that still carries OPUTE_AGENT_MODE=platform and no other setting starts exactly as one without it, and nothing it prints mentions the variable",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "json.body.result.isError",
+     "step": "oldAllowMutation"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "json.body.result.content[0].text",
+     "step": "oldAllowMutation"
+    },
+    {
+     "equals": [
+      "bind=127.0.0.1 port=3014 mutations=false"
+     ],
+     "path": "json.profileLines",
+     "step": "oldAllowSummary"
+    },
+    {
+     "equals": [],
+     "path": "json.hits",
+     "step": "oldAllowSummary"
+    }
+   ],
+   "requirement": "No mode setting exists",
+   "scenario": "OPUTE_STANDALONE_ALLOW_MUTATIONS=true admits nothing",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "host-agent-provider.json\n",
+     "path": "stdout",
+     "step": "plainCreds"
+    },
+    {
+     "equals": 200,
+     "path": "json.status",
+     "step": "plainRead"
+    }
+   ],
+   "requirement": "Every orchestrator is an ordinary client",
+   "scenario": "No OAuth clients configured: no machine client is provisioned, and the bearer works",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "ci-runner.json\nhost-agent-provider.json\n",
+     "path": "stdout",
+     "step": "oauthCreds"
+    },
+    {
+     "equals": 200,
+     "path": "json.tokenStatus",
+     "step": "oauthMint"
+    },
+    {
+     "equals": 200,
+     "path": "json.listStatus",
+     "step": "oauthMint"
+    },
+    {
+     "equalsStep": {
+      "path": "json.tools",
+      "step": "plainSummary"
+     },
+     "path": "json.tools",
+     "step": "oauthMint"
+    },
+    {
+     "equals": 401,
+     "path": "json.tokenStatus",
+     "step": "oldClient"
+    },
+    {
+     "equals": "invalid_client",
+     "path": "json.error",
+     "step": "oldClient"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "oauthBearer"
+    },
+    {
+     "equals": "host-agent-provider.json\n",
+     "path": "stdout",
+     "step": "oauthCredsAfter"
+    },
+    {
+     "equals": 401,
+     "path": "json.listStatus",
+     "step": "oauthReuse"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "oauthBearerAfter"
+    }
+   ],
+   "requirement": "Every orchestrator is an ordinary client",
+   "scenario": "A client listed in OPUTE_OAUTH_CLIENTS gets a credential and a working token; the earlier built-in client id is unknown; once unlisted, its credential and token are gone",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "probe",
+   "id": "probeCopy",
+   "to": "/opt/opute-e2e/guest/neutralprobe.py"
+  },
+  {
+   "copy": "rust04",
+   "id": "copy04",
+   "to": "/opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz"
+  },
+  {
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz > /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent && chmod 0755 /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent && /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent --version",
+   "id": "unpack04"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/plain /tmp/e2e-agents/plain/home && systemd-run --quiet --collect --unit=e2e-agent-plain --uid=opute --gid=opute --property=Restart=no --property=PrivateNetwork=yes --setenv='HOME=/tmp/e2e-agents/plain/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-plain' --setenv='MCP_AUTH_TOKEN=${SECRET:plain}' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do nsenter -t $(systemctl show -p MainPID --value e2e-agent-plain) -n curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; nsenter -t $(systemctl show -p MainPID --value e2e-agent-plain) -n curl -fsS http://127.0.0.1:3014/health",
+   "id": "plain"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-plain) -n ss -ltnH 'sport = :3014' | awk '{print $4}'",
+   "id": "plainListen"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-plain) -n python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3014 --token '${SECRET:plain}' --unit e2e-agent-plain --binary /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent",
+   "id": "plainSummary"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-plain) -n python3 /opt/opute-e2e/guest/mcpwire.py <<'EOF'\n{\"kind\": \"mcp\", \"port\": 3014, \"token\": \"${SECRET:plain}\", \"method\": \"tools/call\", \"params\": {\"name\": \"ensure_host_file\", \"arguments\": {\"path\": \".config/opute-e2e/n1.txt\", \"content\": \"e2e\\n\", \"scope\": \"user\"}}}\nEOF",
+   "id": "plainMutation"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-plain) -n python3 /opt/opute-e2e/guest/mcpwire.py <<'EOF'\n{\"kind\": \"mcp\", \"port\": 3014, \"token\": \"${SECRET:plain}\", \"method\": \"tools/call\", \"params\": {\"name\": \"get_host_info\", \"arguments\": {}}}\nEOF",
+   "id": "plainRead"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/plain/home/.config/opute-e2e/n1.txt",
+   "id": "plainNoFile"
+  },
+  {
+   "guest": "ls /tmp/e2e-agents/plain/home/.config/opute/instances",
+   "id": "plainState"
+  },
+  {
+   "guest": "ls /tmp/e2e-agents/plain/home/.config/opute/instances/standalone/state/credentials",
+   "id": "plainCreds"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/oldmode /tmp/e2e-agents/oldmode/home && systemd-run --quiet --collect --unit=e2e-agent-oldmode --uid=opute --gid=opute --property=Restart=no --property=PrivateNetwork=yes --setenv='HOME=/tmp/e2e-agents/oldmode/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-oldmode' --setenv='MCP_AUTH_TOKEN=${SECRET:plain}' --setenv='OPUTE_AGENT_MODE=platform' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldmode) -n curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldmode) -n curl -fsS http://127.0.0.1:3014/health",
+   "id": "oldMode"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldmode) -n ss -ltnH 'sport = :3014' | awk '{print $4}'",
+   "id": "oldModeListen"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldmode) -n python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3014 --token '${SECRET:plain}' --unit e2e-agent-oldmode --binary /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent",
+   "id": "oldModeSummary"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldmode) -n python3 /opt/opute-e2e/guest/mcpwire.py <<'EOF'\n{\"kind\": \"mcp\", \"port\": 3014, \"token\": \"${SECRET:plain}\", \"method\": \"tools/call\", \"params\": {\"name\": \"ensure_host_file\", \"arguments\": {\"path\": \".config/opute-e2e/n1.txt\", \"content\": \"e2e\\n\", \"scope\": \"user\"}}}\nEOF",
+   "id": "oldModeMutation"
+  },
+  {
+   "guest": "ls /tmp/e2e-agents/oldmode/home/.config/opute/instances",
+   "id": "oldModeState"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/oldallow /tmp/e2e-agents/oldallow/home && systemd-run --quiet --collect --unit=e2e-agent-oldallow --uid=opute --gid=opute --property=Restart=no --property=PrivateNetwork=yes --setenv='HOME=/tmp/e2e-agents/oldallow/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-oldallow' --setenv='MCP_AUTH_TOKEN=${SECRET:plain}' --setenv='OPUTE_STANDALONE_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldallow) -n curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldallow) -n curl -fsS http://127.0.0.1:3014/health",
+   "id": "oldAllow"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldallow) -n python3 /opt/opute-e2e/guest/mcpwire.py <<'EOF'\n{\"kind\": \"mcp\", \"port\": 3014, \"token\": \"${SECRET:plain}\", \"method\": \"tools/call\", \"params\": {\"name\": \"ensure_host_file\", \"arguments\": {\"path\": \".config/opute-e2e/n1.txt\", \"content\": \"e2e\\n\", \"scope\": \"user\"}}}\nEOF",
+   "id": "oldAllowMutation"
+  },
+  {
+   "guest": "nsenter -t $(systemctl show -p MainPID --value e2e-agent-oldallow) -n python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3014 --token '${SECRET:plain}' --unit e2e-agent-oldallow --binary /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent",
+   "id": "oldAllowSummary"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/exposed /tmp/e2e-agents/exposed/home && systemd-run --quiet --collect --unit=e2e-agent-exposed --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/exposed/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-exposed' --setenv='MCP_AUTH_TOKEN=${SECRET:exposed}' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health",
+   "id": "exposed"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3004",
+   "id": "exposedListen"
+  },
+  {
+   "auth": "secret:exposed",
+   "id": "exposedList",
+   "mcp": "tools/list",
+   "port": 3004
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3004 --token '${SECRET:exposed}' --unit e2e-agent-exposed --binary /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent",
+   "id": "exposedSummary"
+  },
+  {
+   "arguments": {
+    "content": "e2e\n",
+    "path": ".config/opute-e2e/n1.txt",
+    "scope": "user"
+   },
+   "auth": "secret:exposed",
+   "id": "exposedWrite",
+   "mcp": "tools/call",
+   "port": 3004,
+   "tool": "ensure_host_file"
+  },
+  {
+   "guest": "cat /tmp/e2e-agents/exposed/home/.config/opute-e2e/n1.txt",
+   "id": "exposedFile"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/oauth /tmp/e2e-agents/oauth/home && systemd-run --quiet --collect --unit=e2e-agent-oauth --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/oauth/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-oauth' --setenv='MCP_AUTH_TOKEN=${SECRET:oauth}' --setenv='HOST_MCP_PORT=3051' --setenv='OPUTE_OAUTH_CLIENTS=ci-runner' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3051/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3051/health",
+   "id": "oauthAgent"
+  },
+  {
+   "guest": "ls /tmp/e2e-agents/oauth/home/.config/opute/instances/standalone/state/credentials",
+   "id": "oauthCreds"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3051 --client ci-runner --cred /tmp/e2e-agents/oauth/home/.config/opute/instances/standalone/state/credentials/ci-runner.json --save /tmp/e2e-agents/oauth/token",
+   "id": "oauthMint"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3051 --client opute-mcp-host --secret not-a-secret",
+   "id": "oldClient"
+  },
+  {
+   "auth": "secret:oauth",
+   "id": "oauthBearer",
+   "mcp": "tools/list",
+   "port": 3051
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop oauth",
+   "id": "oauthStop"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/oauth /tmp/e2e-agents/oauth/home && systemd-run --quiet --collect --unit=e2e-agent-oauth --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/oauth/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-oauth' --setenv='MCP_AUTH_TOKEN=${SECRET:oauth}' --setenv='HOST_MCP_PORT=3051' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3051/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3051/health",
+   "id": "oauthAgain"
+  },
+  {
+   "guest": "ls /tmp/e2e-agents/oauth/home/.config/opute/instances/standalone/state/credentials",
+   "id": "oauthCredsAfter"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py reuse --port 3051 --token-file /tmp/e2e-agents/oauth/token",
+   "id": "oauthReuse"
+  },
+  {
+   "auth": "secret:oauth",
+   "id": "oauthBearerAfter",
+   "mcp": "tools/list",
+   "port": 3051
+  }
+ ]
+}

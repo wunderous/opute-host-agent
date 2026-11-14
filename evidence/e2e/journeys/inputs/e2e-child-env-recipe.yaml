@@ -1,0 +1,25 @@
+contractVersion: host-recipe.v1
+recipeId: com.opute.e2e.child-env
+recipeVersion: 1.0.0
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools: [run_host_command, inspect_host_file]
+inputs: {}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.e2e.child-env
+  generation: 1
+  idempotencyKey: e2e-child-env
+  nodes:
+    - id: hold
+      timeoutMs: 120000
+      action:
+        tool: run_host_command
+        args: {command: 'sleep 40 && touch /tmp/e2e-agents/cenv/home/child-env.done'}
+      validate:
+        tool: inspect_host_file
+        args: {path: child-env.done, scope: user}
+        assert:
+          - {path: /exists, op: eq, value: true}

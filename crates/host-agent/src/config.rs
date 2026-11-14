@@ -49,6 +49,65 @@ impl Env {
         self.vars.iter().map(|(k, v)| (k.as_str(), v.as_str()))
     }
 
+    /// The environment a child process gets (D40): the allowlist, and never
+    /// a name with a secret-like part, whatever rule admitted it.
+    pub fn for_child(&self) -> Env {
+        const EXACT: &[&str] = &[
+            "PATH",
+            "HOME",
+            "USER",
+            "LOGNAME",
+            "SHELL",
+            "TERM",
+            "TZ",
+            "TMPDIR",
+            "LANG",
+            "LANGUAGE",
+            "KUBECONFIG",
+            "SSL_CERT_FILE",
+            "SSL_CERT_DIR",
+            "DBUS_SESSION_BUS_ADDRESS",
+            "WSL_DISTRO_NAME",
+            "WSL_INTEROP",
+            "DOCKER_HOST",
+            "DOCKER_CONFIG",
+            "CONTAINER_HOST",
+            "REGISTRY_AUTH_FILE",
+        ];
+        const PROXIES: &[&str] = &["HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY"];
+        const PREFIXES: &[&str] = &["LC_", "XDG_", "INCUS_", "OLLAMA_"];
+        const SECRET_PARTS: &[&str] = &[
+            "TOKEN",
+            "SECRET",
+            "PASSWORD",
+            "PASSWD",
+            "CREDENTIAL",
+            "CREDENTIALS",
+            "AUTH",
+            "KEY",
+        ];
+        let allowed = |name: &str| {
+            EXACT.contains(&name)
+                || PROXIES
+                    .iter()
+                    .any(|p| *p == name || p.to_lowercase() == name)
+                || PREFIXES.iter().any(|p| name.starts_with(p))
+        };
+        let secret = |name: &str| {
+            name.to_uppercase()
+                .split('_')
+                .any(|part| SECRET_PARTS.contains(&part))
+        };
+        Env {
+            vars: self
+                .vars
+                .iter()
+                .filter(|(k, _)| allowed(k) && !secret(k))
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        }
+    }
+
     /// `os.Getenv`.
     pub fn get(&self, key: &str) -> String {
         self.vars.get(key).cloned().unwrap_or_default()
@@ -638,6 +697,42 @@ fn to4(ip: IpAddr) -> Option<Ipv4Addr> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A4 (D40): every place the agent or a provider starts a process clears
+    /// the inherited environment and passes `Env::for_child` instead.
+    #[test]
+    fn every_spawn_site_passes_the_child_environment() {
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = vec![src.clone()];
+        let mut sites = Vec::new();
+        while let Some(path) = files.pop() {
+            if path.is_dir() {
+                files.extend(std::fs::read_dir(&path).unwrap().map(|e| e.unwrap().path()));
+                continue;
+            }
+            if path.extension().is_none_or(|e| e != "rs") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap();
+            // Test modules start their own fakes.
+            let product = text.split("#[cfg(test)]\nmod tests {").next().unwrap();
+            for (at, _) in product.match_indices("Command::new(") {
+                let statement: String = product[at..].chars().take(700).collect();
+                let line = product[..at].lines().count() + 1;
+                sites.push(format!(
+                    "{}:{line}",
+                    path.strip_prefix(&src).unwrap().display()
+                ));
+                assert!(
+                    statement.contains(".env_clear()") && statement.contains("for_child()"),
+                    "{}:{line} starts a process without the child environment",
+                    path.display()
+                );
+            }
+        }
+        // The inventory in the D40 change: a new site must be added there.
+        assert_eq!(sites.len(), 8, "{sites:?}");
+    }
 
     fn base() -> Env {
         Env::from_pairs([("HOME", "/home/test"), ("OPUTE_REMOTE_AGENT_ID", "agent-1")])

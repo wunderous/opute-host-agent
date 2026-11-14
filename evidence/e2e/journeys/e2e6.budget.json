@@ -1,13 +1,13 @@
 {
  "id": "e2e6.budget",
  "gate": "e2e-6",
- "description": "Resource budget (m16): fifteen minutes of mixed calls on one agent; resident memory, open file descriptors, threads and store size are sampled every 30 s and their growth after warm-up is held to the committed budget.",
+ "description": "Resource budget (m16): fifteen minutes of mixed calls on one agent; resident memory, open file descriptors, threads and store size are sampled every 30 s and their growth after warm-up is held to the committed budget; with an audit row bound below the call count, the audit stays within it (D42).",
  "inputs": {
   "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -67,6 +67,33 @@
     }
    ],
    "scenario": "Fifteen minutes of mixed read, write, task and Incus calls stay inside evidence/hardening/resource-budget.json after a two-minute warm-up"
+  },
+  {
+   "spec": "openspec/changes/audit-retention/specs/audit-retention/spec.md",
+   "requirement": "Audit rows are kept within an age and a row bound",
+   "pass": [
+    {
+     "step": "load",
+     "path": "json.calls",
+     "gte": 10000
+    },
+    {
+     "step": "load",
+     "path": "json.growthAfterWarmup.storeBytesLastFiveMinutes",
+     "lte": 8388608
+    },
+    {
+     "step": "pruned",
+     "path": "json.auditRows",
+     "lte": 5000
+    },
+    {
+     "step": "pruned",
+     "path": "json.integrity",
+     "equals": "ok"
+    }
+   ],
+   "scenario": "With a row bound far below the call count, one prune interval after the load the audit holds at most the bound, and the store's growth over the last five minutes stays under the budget (D42)"
   }
  ],
  "effects": {
@@ -92,7 +119,7 @@
   },
   {
    "id": "budAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start bud --port 3049 --id e2e-bud-agent --env MCP_AUTH_TOKEN=${SECRET:bud} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start bud --port 3049 --id e2e-bud-agent --env MCP_AUTH_TOKEN=${SECRET:bud} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_AUDIT_RETENTION_ROWS=5000 --user root"
   },
   {
    "id": "list",
@@ -108,6 +135,10 @@
   {
    "id": "audit",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/bud/state/state.db"
+  },
+  {
+   "id": "pruned",
+   "guest": "sleep 70; python3 /opt/opute-e2e/guest/e2etool.py audit /tmp/e2e-agents/bud/state/state.db"
   }
  ],
  "cleanup": [

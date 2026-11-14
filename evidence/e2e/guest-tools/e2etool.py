@@ -30,10 +30,18 @@
                                       mixed calls for S seconds; samples
                                       procstat and the store size every 30 s
                                       (token from $E2E_TOKEN)
-  e2etool.py bigbody --port P --declared N --send M
-                                      an authenticated /mcp POST declaring N
-                                      bytes, sending M; the reply's status and
-                                      the seconds it took (token from $E2E_TOKEN)
+  e2etool.py bigbody --port P --declared N --send M [--path /mcp] [--limit L]
+                                      an authenticated POST declaring N bytes,
+                                      sending M; the reply's status, whether it
+                                      names the limit L, and the seconds it took
+                                      (token from $E2E_TOKEN)
+  e2etool.py childenv UNIT MATCH [--expect N] [--keep N]
+                                      environment variable names (never
+                                      values) of the unit's main process and of
+                                      its direct children whose command line
+                                      contains MATCH; the secret-like ones;
+                                      whether the agent holds every --expect
+                                      and each child every --keep
   e2etool.py stub PATH MODE           an executable stand-in at PATH: MODE
                                       hang (sleeps forever) or garbage (prints
                                       bytes that are not JSON, exits 0)
@@ -167,7 +175,8 @@ def audit(a):
             "SELECT operation_id, terminal_status, COUNT(*) FROM capability_invocations GROUP BY 1, 2"):
         inv.setdefault(op, {})[status] = n
     return {"integrity": con.execute("PRAGMA integrity_check").fetchone()[0], "operations": ops, "invocations": inv,
-            "unfinished": sum(n for t in ops.values() for st, n in t.items() if st in ("working", "submitted"))}
+            "unfinished": sum(n for t in ops.values() for st, n in t.items() if st in ("working", "submitted")),
+            "auditRows": con.execute("SELECT COUNT(*) FROM capability_invocations").fetchone()[0]}
 
 
 def procstat(a):
@@ -248,6 +257,9 @@ def load(a):
     growth = {k: warm[-1][k] - warm[0][k] for k in ("rssBytes", "fds", "threads", "storeBytes", "calls")}
     # The store keeps one audit row per call: its growth is judged per call.
     growth["storeBytesPerCall"] = round(growth["storeBytes"] / max(growth["calls"], 1))
+    # D42: once the retention bound is reached the store stops growing.
+    late = [s for s in samples if s["t"] >= a.seconds - 300] or samples
+    growth["storeBytesLastFiveMinutes"] = late[-1]["storeBytes"] - late[0]["storeBytes"]
     return {"calls": n, "counts": counts, "errors": errors, "samples": samples, "growthAfterWarmup": growth,
             "peak": {k: max(s[k] for s in samples) for k in ("rssBytes", "fds", "threads")}}
 
@@ -256,7 +268,7 @@ def bigbody(a):
     import socket
     token = os.environ["E2E_TOKEN"]
     s = socket.create_connection(("127.0.0.1", a.port), timeout=10)
-    head = (f"POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:{a.port}\r\nAuthorization: Bearer {token}\r\n"
+    head = (f"POST {a.path} HTTP/1.1\r\nHost: 127.0.0.1:{a.port}\r\nAuthorization: Bearer {token}\r\n"
             "Content-Type: application/json\r\nAccept: application/json, text/event-stream\r\n"
             f"Content-Length: {a.declared}\r\n\r\n").encode()
     start = time.monotonic()
@@ -278,7 +290,37 @@ def bigbody(a):
     line = reply.split(b"\r\n", 1)[0].decode(errors="replace")
     return {"statusLine": line, "status": int(line.split()[1]) if line.startswith("HTTP/") else 0,
             "sentBytes": sent, "seconds": round(time.monotonic() - start, 2),
-            "bodyLimitText": b"request body exceeds 4194304 bytes" in reply}
+            "bodyLimitText": f"request body exceeds {a.limit} bytes".encode() in reply}
+
+
+def childenv(a):
+    """The environment variable names (never values) of the unit's main
+    process and of its direct children whose command line contains MATCH."""
+    pid = sh(["systemctl", "show", "-p", "MainPID", "--value", a.unit]).stdout.strip()
+    if pid in ("", "0"):
+        raise SystemExit(json.dumps({"error": f"{a.unit} has no main process"}))
+    names = lambda p: sorted({e.split(b"=", 1)[0].decode(errors="replace")  # noqa: E731
+                              for e in open(f"/proc/{p}/environ", "rb").read().split(b"\0") if b"=" in e})
+    secret = lambda n: n.startswith("OPUTE_") or any(  # noqa: E731
+        part in ("TOKEN", "SECRET", "PASSWORD", "PASSWD", "CREDENTIAL", "CREDENTIALS", "AUTH", "KEY")
+        for part in n.upper().split("_"))
+    children = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            ppid = re.search(r"^PPid:\s+(\d+)", open(f"/proc/{entry}/status").read(), re.M).group(1)
+            cmd = open(f"/proc/{entry}/cmdline", "rb").read().replace(b"\0", b" ").decode(errors="replace").strip()
+            if ppid == pid and a.match in cmd:
+                children.append({"cmd": cmd[:120], "names": names(entry)})
+        except (OSError, AttributeError):
+            continue
+    agent = names(pid)
+    return {"agentSecrets": sorted(n for n in agent if secret(n)), "found": len(children), "children": children,
+            "agentHasExpected": all(n in agent for n in a.expect),
+            "childrenKeep": bool(children) and all(n in c["names"] for c in children for n in a.keep),
+            "childNames": sorted({n for c in children for n in c["names"]}),
+            "leaked": sorted({n for c in children for n in c["names"] if secret(n)})}
 
 
 def stub(a):
@@ -380,6 +422,13 @@ def main():
     bb.add_argument("--port", type=int, required=True)
     bb.add_argument("--declared", type=int, required=True)
     bb.add_argument("--send", type=int, required=True)
+    bb.add_argument("--path", default="/mcp")
+    bb.add_argument("--limit", type=int, default=4194304)
+    ce = sub.add_parser("childenv")
+    ce.add_argument("unit")
+    ce.add_argument("match")
+    ce.add_argument("--expect", action="append", default=[], help="a name the agent itself must hold")
+    ce.add_argument("--keep", action="append", default=[], help="a name every matched child must hold")
     st = sub.add_parser("stub")
     st.add_argument("path")
     st.add_argument("mode", choices=["hang", "garbage"])
@@ -391,7 +440,7 @@ def main():
     else:
         out = {"db": db, "contains": contains, "ideconfig": ideconfig, "slow": slow,
                "unit": unit, "listen": listen, "audit": audit, "procstat": procstat, "killloop": killloop,
-               "load": load, "bigbody": bigbody, "stub": stub}[a.command](a)
+               "load": load, "bigbody": bigbody, "stub": stub, "childenv": childenv}[a.command](a)
     json.dump(out, sys.stdout, sort_keys=True)
 
 
