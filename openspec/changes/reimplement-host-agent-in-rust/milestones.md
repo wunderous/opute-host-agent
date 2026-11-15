@@ -1368,6 +1368,26 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     checks recaptured on rc4.
   - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
     and Q18 not passed. Tasks 6.3 and 6.4 stay open.
+- **m18 (2026-11-14): the 0.3.0 candidate carries no known secret leak.**
+  A4 and A5 were found on 0.4.0 code (m15, m17), so the 0.3.0 packet did
+  not list them. Measured on `rust-0.3.0-rc4`'s product code first
+  (`evidence/m18/before.log`): `env` run through the command runner held
+  `MCP_AUTH_TOKEN`, the OAuth clients and the provider credentials (A4),
+  and neither the serving relay (A2) nor a provider's `/mcp` (A5) answered
+  before an oversized body ended.
+  - **Decision D43:** D40 and D41 apply to 0.3.0 as declared divergences
+    from Go v0.2.4, with no new setting. D42 adds two settings, so it stays
+    0.4.0 only, and O1 stays open in 0.3.0.
+  - **Fix:** `Env::for_child` at 0.3.0's seven spawn sites (the console,
+    the eighth, is 0.4.0's); the relay's 32 MiB and a provider's 4 MiB
+    bounds, 413 beyond. Three entry points and two properties join the
+    hardening inventory; a clean 60 s fuzz pass ran before the build.
+  - **Gate e2e-6:** `e2e6.child-env` reads a recipe step's `systemd-run`
+    child from `/proc` (0.3.0 serves no console), and `e2e6.pressure` sends
+    a 1 GiB declared body to the serving relay: 8 journeys, 10 requirements.
+  - **Candidate:** `rust-0.3.0-rc5` (d4f8c8745); all gates pass on
+    `m18-r1`, with the contract suites, seam stage `m18`, the arm64 install
+    and the distribution checks recaptured on rc5.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1445,9 +1465,10 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D37 | `register_kubernetes_cluster`, `list_agents`, `install_provider_tools` and `uninstall_provider_tools` are published but not implemented, and describe work the Host Agent does not own | **Decided (owner, 2026-11-11): withdraw** them from the catalog ([`withdraw-platform-and-legacy-provider-tools`](../withdraw-platform-and-legacy-provider-tools/proposal.md)) | Platform owns registration and the bridge; `opute.provider.*` owns the provider lifecycle. A contract change: the catalog revision changes |
 | D38 | A console session: the catalog promises the serial console, Go v0.2.4 ran `incus exec <vm> -- bash -il` | **Decided (owner, 2026-11-11): the serial console**, `incus console <instance>` ([`vm-console-session`](../vm-console-session/proposal.md)) | What the description promises, and no implicit root shell; a departure from Go |
 | D39 | Console output over MCP: Go's MCP path discarded it | **Decided (owner, 2026-11-11): pull from a 64 KiB buffer**, returned by `send_console_input` in new `output` and `closed` fields ([`vm-console-session`](../vm-console-session/proposal.md)) | Plain request and response works on every client; an output-schema change |
-| D40 | A child process inherited the agent's whole environment, its bearer and provider credentials included (m15 finding A4) | **Decided (Host Agent owner, delegated 2026-11-11): an allowlist** for every child, never a secret-named variable ([`child-process-environment`](../child-process-environment/proposal.md)) | `run_host_command` no longer shows the agent's settings; Go passed the whole environment |
+| D40 | A child process inherited the agent's whole environment, its bearer and provider credentials included (m15 finding A4) | **Decided (Host Agent owner, delegated 2026-11-11): an allowlist** for every child, never a secret-named variable ([`child-process-environment`](../child-process-environment/proposal.md)) | The tools the agent runs no longer see its settings; Go passed the whole environment |
 | D41 | The serving relay and the provider executables' `/mcp` read a request body whole (m16 finding A2, m17 finding A5) | **Decided (Host Agent owner, delegated 2026-11-11): bound both reads**, 32 MiB for the relay, the SDK's 4 MiB for providers, 413 beyond ([`bound-relay-request-body`](../bound-relay-request-body/proposal.md)) | An oversized body is refused before it is held |
 | D42 | Audit rows were never pruned (m16 observation O1) | **Decided (Host Agent owner, delegated 2026-11-11): keep 30 days and 50,000 rows** by default, pruned in the background, never a row whose operation is working; finished operations follow after their task's one-hour TTL ([`audit-retention`](../audit-retention/proposal.md)) | Two new settings with stated defaults; the store stops growing at the bound |
+| D43 | D40 to D42 were decided on 0.4.0 code; the 0.3.0 candidate `rust-0.3.0-rc4` has A4, A2 and A5 too (measured in goal m18, `evidence/m18`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m18: D40 and D41 apply to 0.3.0** from `rust-0.3.0-rc5`, as declared divergences from Go v0.2.4. **D42 stays 0.4.0 only**: it adds two settings, a contract change the parity release does not take, so O1 stays an open observation in 0.3.0 | rc5 replaces rc4 as the 0.3.0 candidate; no new setting, tool or endpoint |
 
 ## 7. Risks this plan specifically mitigates
 

@@ -1,6 +1,6 @@
 # Bound the serving relay's and the providers' request bodies
 
-Status: **accepted (Host Agent owner, delegated 2026-11-11) as D41.** Goal m17.
+Status: **accepted (Host Agent owner, delegated 2026-11-11) as D41.** Goal m17. Applies to 0.3.0 from `rust-0.3.0-rc5` (D43, goal m18).
 
 ## Why
 
@@ -14,7 +14,8 @@ body and only then apply the SDK's 4 MiB limit, as `/mcp` did before D29.
 Failing-first tests on rust-0.4.0-rc1's code: neither
 `llmops::tests::oversized_relay_bodies_are_refused_without_reading_them`
 nor `providers::tests::oversized_provider_bodies_are_refused_without_reading_them`
-got a reply before the oversized body ended.
+got a reply before the oversized body ended. Both failed the same way on
+rust-0.3.0-rc4's code (`evidence/m18/before.log`).
 
 ## What Changes
 
@@ -47,4 +48,5 @@ any served model takes.
 ## Impact
 
 `llmops.rs` (`relay_handle`), `providers/mod.rs` (`handle`), and the two
-failing-first tests. A product change: the next candidate is rust-0.4.0-rc2.
+failing-first tests. A product change: the next candidates are rust-0.4.0-rc2 and, by D43,
+rust-0.3.0-rc5.

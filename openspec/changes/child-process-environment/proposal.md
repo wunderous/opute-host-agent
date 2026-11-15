@@ -1,6 +1,6 @@
 # A child process gets only the environment its tool needs
 
-Status: **accepted (Host Agent owner, delegated 2026-11-11) as D40.** Goal m17.
+Status: **accepted (Host Agent owner, delegated 2026-11-11) as D40.** Goal m17. Applies to 0.3.0 from `rust-0.3.0-rc5` (D43, goal m18).
 
 ## Why
 
@@ -18,11 +18,14 @@ path the agent relied on, not a guarantee for the rest.
 
 The failing-first test `hostobs::tests::a_child_never_sees_the_agents_secrets`
 showed `CLOUDFLARE_API_TOKEN` in the output of `env` run through
-`run_command` on rust-0.4.0-rc1's code.
+`run_command` on rust-0.4.0-rc1's code. On rust-0.3.0-rc4's code it showed
+`MCP_AUTH_TOKEN`, `OPUTE_OAUTH_CLIENTS`, `CLOUDFLARE_API_TOKEN` and
+`TAILSCALE_AUTH_KEY` (`evidence/m18/before.log`).
 
 ## Inventory
 
-Eight sites start a process. Each one passes the agent's environment
+Eight sites start a process in 0.4.0. 0.3.0 has seven: the console
+(D38) is 0.4.0 only. Each one passes the agent's environment
 snapshot, except the two marked otherwise.
 
 | Site | Children | What they need |
@@ -79,4 +82,5 @@ outside the allowlist; none of them reads one.
 `config.rs` (`Env::for_child`), the eight sites, and the tests
 `config::tests::every_spawn_site_passes_the_child_environment` and
 `hostobs::tests::a_child_never_sees_the_agents_secrets`, both failing first.
-A product change: the next candidate is rust-0.4.0-rc2.
+A product change: the next candidates are rust-0.4.0-rc2 and, by D43,
+rust-0.3.0-rc5.
