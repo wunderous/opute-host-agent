@@ -1,0 +1,124 @@
+{
+ "cleanup": [
+  {
+   "guest": "systemctl stop e2e-provider-body 2>/dev/null; rm -rf /opt/opute-e2e/providers; true",
+   "id": "cleanProvider"
+  }
+ ],
+ "description": "A provider executable's request body (D41, A5): the release's k3s provider refuses a 1 GiB declared body 413 after 4 MiB with bounded memory, and still answers a body at the limit.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount",
+   "files//opt/opute-e2e/providers*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.provider-body",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "85577be61795ea2275b1c8e4b8196d2202642e81b84b829da7b5288779d3eb7f"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "providerK3s": {
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc5/opute-provider-k3s-linux-x64",
+    "sha256": "4b2397945a29489aa13da52c19e4a249a142641578e08190d1a346a60b4fd1f9"
+   }
+  }
+ },
+ "maxMinutes": 5,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "matches": "^1\n$",
+     "path": "stdout",
+     "step": "start"
+    },
+    {
+     "equals": 413,
+     "path": "json.status",
+     "step": "bigBody"
+    },
+    {
+     "equals": true,
+     "path": "json.bodyLimitText",
+     "step": "bigBody"
+    },
+    {
+     "lte": 10,
+     "path": "json.seconds",
+     "step": "bigBody"
+    },
+    {
+     "lte": 134217728,
+     "path": "json.rssBytes",
+     "step": "rssAfter"
+    },
+    {
+     "gte": 200,
+     "path": "json.status",
+     "step": "atLimit"
+    },
+    {
+     "lte": 412,
+     "path": "json.status",
+     "step": "atLimit"
+    }
+   ],
+   "requirement": "A provider's MCP request body is read only up to its limit",
+   "scenario": "A 1 GiB declared body to the release's k3s provider executable is answered 413 after 4 MiB, its resident memory stays under the budget, and a body at the limit is still answered (D41)",
+   "spec": "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "providerK3s",
+   "id": "providerCopy",
+   "mode": "0755",
+   "to": "/opt/opute-e2e/providers/opute-provider-k3s"
+  },
+  {
+   "guest": "systemd-run --collect --unit=e2e-provider-body --setenv=OPUTE_PROVIDER_PORT=3052 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :3052' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :3052' | wc -l",
+   "id": "start"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py procstat e2e-provider-body.service",
+   "id": "rssBefore"
+  },
+  {
+   "guest": "E2E_TOKEN=unused python3 /opt/opute-e2e/guest/e2etool.py bigbody --port 3052 --limit 4194304 --declared 1073741824 --send 8388608",
+   "id": "bigBody"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py procstat e2e-provider-body.service",
+   "id": "rssAfter"
+  },
+  {
+   "guest": "E2E_TOKEN=unused python3 /opt/opute-e2e/guest/e2etool.py bigbody --port 3052 --limit 4194304 --declared 4194304 --send 4194304",
+   "id": "atLimit"
+  }
+ ]
+}

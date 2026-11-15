@@ -495,7 +495,47 @@ def child_env() -> dict:
                    minutes=10, files=files)
 
 
-JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env]
+# --- 9. a provider executable's request body (D41, A5) ----------------------------------------------
+
+PROVIDER = "/opt/opute-e2e/providers/opute-provider-k3s"
+
+
+def provider_body() -> dict:
+    unit, port = "e2e-provider-body", 3052
+    big = f"E2E_TOKEN=unused {T} bigbody --port {port} --limit 4194304"
+    steps = base.TOOL_STEPS + [
+        {"id": "providerCopy", "copy": "providerK3s", "to": PROVIDER, "mode": "0755"},
+        {"id": "start", "guest": (
+            f"systemd-run --collect --unit={unit} --setenv=OPUTE_PROVIDER_PORT={port} --property=Restart=no "
+            f"{PROVIDER} >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :{port}' | grep -q . && break; "
+            f"sleep 0.5; done; ss -ltnH 'sport = :{port}' | wc -l")},
+        {"id": "rssBefore", "guest": f"{T} procstat {unit}.service"},
+        {"id": "bigBody", "guest": f"{big} --declared 1073741824 --send 8388608"},
+        {"id": "rssAfter", "guest": f"{T} procstat {unit}.service"},
+        # a body at the limit is still read and answered, not refused
+        {"id": "atLimit", "guest": f"{big} --declared 4194304 --send 4194304"},
+    ]
+    reqs = [
+        req(RELAY_SPEC, "A provider's MCP request body is read only up to its limit",
+            a("start", "stdout", matches="^1\n$"),
+            a("bigBody", "json.status", equals=413), a("bigBody", "json.bodyLimitText", equals=True),
+            a("bigBody", "json.seconds", lte=10),
+            a("rssAfter", "json.rssBytes", lte=BUDGET["bodyLimitRssBytesMax"]),
+            a("atLimit", "json.status", gte=200), a("atLimit", "json.status", lte=412),
+            scenario="A 1 GiB declared body to the release's k3s provider executable is answered 413 after "
+                     "4 MiB, its resident memory stays under the budget, and a body at the limit is still "
+                     "answered (D41)"),
+    ]
+    files = {**base.TOOL_FILES, "providerK3s": base.inp(base.CANDIDATE + "/opute-provider-k3s-linux-x64")}
+    cleanup = [{"id": "cleanProvider", "guest": f"systemctl stop {unit} 2>/dev/null; rm -rf /opt/opute-e2e/providers; true"}]
+    return journey("e2e6.provider-body",
+                   "A provider executable's request body (D41, A5): the release's k3s provider refuses a 1 GiB "
+                   "declared body 413 after 4 MiB with bounded memory, and still answers a body at the limit.",
+                   reqs, steps, cleanup, minutes=5, files=files,
+                   allow=("files//opt/opute-e2e/providers*", "system/units/e2e-*", "system/unitFiles/e2e-*"))
+
+
+JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env, provider_body]
 
 
 def render() -> dict[str, str]:
