@@ -1383,8 +1383,10 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     bounds, 413 beyond. Three entry points and two properties join the
     hardening inventory; a clean 60 s fuzz pass ran before the build.
   - **Gate e2e-6:** `e2e6.child-env` reads a recipe step's `systemd-run`
-    child from `/proc` (0.3.0 serves no console), and `e2e6.pressure` sends
-    a 1 GiB declared body to the serving relay: 8 journeys, 10 requirements.
+    child from `/proc` (0.3.0 serves no console), `e2e6.pressure` sends a
+    1 GiB declared body to the serving relay, and `e2e6.provider-body` sends
+    one to the release's k3s provider executable: 9 journeys, 11
+    requirements.
   - **Candidate:** `rust-0.3.0-rc5` (d4f8c8745); all gates pass on
     `m18-r1`, with the contract suites, seam stage `m18`, the arm64 install
     and the distribution checks recaptured on rc5.
