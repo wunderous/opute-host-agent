@@ -3047,7 +3047,7 @@ fn output(env: &Env, argv: &[String]) -> Option<String> {
     let out = std::process::Command::new(program)
         .args(&argv[1..])
         .env_clear()
-        .envs(env.pairs())
+        .envs(env.for_child().pairs())
         .stdin(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .output()
@@ -3652,6 +3652,9 @@ fn unescape_path(escaped: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// The largest inference request body the relay reads (D41).
+const RELAY_MAX_BODY: u64 = 32 << 20;
+
 /// `subtle.ConstantTimeCompare` after a length check.
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
@@ -3699,8 +3702,16 @@ async fn relay_handle(
         } else {
             None
         };
-    let payload = match body.read_all(None).await {
+    // D41: at most 32 MiB is read; a larger body is refused before the rest
+    // arrives, so no request makes the relay hold an unbounded body.
+    let payload = match body.read_all(Some(RELAY_MAX_BODY)).await {
         Ok(payload) => payload,
+        Err(crate::http1::BodyError::TooLarge) => {
+            return (
+                Response::error(&format!("request body exceeds {RELAY_MAX_BODY} bytes"), 413),
+                body,
+            )
+        }
         Err(_) => return (Response::error("upstream unavailable", 502), body),
     };
     let response = proxy(&policy, &req, payload, guard).await;
@@ -4632,6 +4643,53 @@ fn probe_streaming_chat(base: &str, model: &str, token: &str, timeout: Duration)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A2 (D41): the relay reads at most 32 MiB of an inference body; a
+    /// larger one is refused 413 before the rest arrives.
+    #[test]
+    fn oversized_relay_bodies_are_refused_without_reading_them() {
+        use std::io::{Read, Write};
+        let (listener, _, port) = crate::tcprelay::listen("127.0.0.1:0").unwrap();
+        let policy = Arc::new(Policy {
+            allowed: vec![parse_cidr("127.0.0.1/32").unwrap()],
+            legacy_cidrs_empty: false,
+            allowed_source_ip: None,
+            incoming: "test-relay-bearer".into(),
+            upstream_token: String::new(),
+            target_host: "127.0.0.1".into(),
+            // Nothing listens upstream: a body within the bound gets 502.
+            target_port: 9,
+            lock_path: None,
+        });
+        let (_stop, rx) = tokio::sync::oneshot::channel::<()>();
+        std::thread::spawn(move || serve_relay(listener, policy, rx));
+        let send = |declared: usize, sent: usize| {
+            let mut s = std::net::TcpStream::connect(("127.0.0.1", port)).unwrap();
+            s.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
+            let head = format!(
+                "POST /v1/chat/completions HTTP/1.1\r\nHost: 127.0.0.1\r\n\
+                 Authorization: Bearer test-relay-bearer\r\nContent-Type: application/json\r\n\
+                 Content-Length: {declared}\r\n\r\n"
+            );
+            s.write_all(head.as_bytes()).unwrap();
+            let _ = s.write_all(&vec![b' '; sent]);
+            // The write side stays open: the reply must not wait for the rest.
+            let mut reply = vec![0u8; 4096];
+            let n = s.read(&mut reply).unwrap_or(0);
+            String::from_utf8_lossy(&reply[..n]).into_owned()
+        };
+        let over = send(1 << 30, 33 << 20);
+        assert!(
+            over.starts_with("HTTP/1.1 413"),
+            "no 413 before the body ended: {over:?}"
+        );
+        assert!(
+            over.contains("request body exceeds 33554432 bytes"),
+            "{over}"
+        );
+        let at_limit = send(32 << 20, 32 << 20);
+        assert!(at_limit.starts_with("HTTP/1.1 502"), "{at_limit:?}");
+    }
 
     fn config(models: &str) -> OllamaConfig {
         OllamaConfig {

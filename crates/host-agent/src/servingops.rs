@@ -384,7 +384,7 @@ impl Serving {
         std::process::Command::new(program)
             .args(&argv[1..])
             .env_clear()
-            .envs(self.env.pairs())
+            .envs(self.env.for_child().pairs())
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())

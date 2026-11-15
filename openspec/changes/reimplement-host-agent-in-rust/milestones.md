@@ -1368,6 +1368,26 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     checks recaptured on rc4.
   - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
     and Q18 not passed. Tasks 6.3 and 6.4 stay open.
+- **m18 (2026-11-14): the 0.3.0 candidate carries no known secret leak.**
+  A4 and A5 were found on 0.4.0 code (m15, m17), so the 0.3.0 packet did
+  not list them. Measured on `rust-0.3.0-rc4`'s product code first
+  (`evidence/m18/before.log`): `env` run through the command runner held
+  `MCP_AUTH_TOKEN`, the OAuth clients and the provider credentials (A4),
+  and neither the serving relay (A2) nor a provider's `/mcp` (A5) answered
+  before an oversized body ended.
+  - **Decision D43:** D40 and D41 apply to 0.3.0 as declared divergences
+    from Go v0.2.4, with no new setting. D42 adds two settings, so it stays
+    0.4.0 only, and O1 stays open in 0.3.0.
+  - **Fix:** `Env::for_child` at 0.3.0's seven spawn sites (the console,
+    the eighth, is 0.4.0's); the relay's 32 MiB and a provider's 4 MiB
+    bounds, 413 beyond. Three entry points and two properties join the
+    hardening inventory; a clean 60 s fuzz pass ran before the build.
+  - **Gate e2e-6:** `e2e6.child-env` reads a recipe step's `systemd-run`
+    child from `/proc` (0.3.0 serves no console), and `e2e6.pressure` sends
+    a 1 GiB declared body to the serving relay: 8 journeys, 10 requirements.
+  - **Candidate:** `rust-0.3.0-rc5` (d4f8c8745); all gates pass on
+    `m18-r1`, with the contract suites, seam stage `m18`, the arm64 install
+    and the distribution checks recaptured on rc5.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1437,6 +1457,9 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D29 | An authenticated `/mcp` body was read whole before the 4 MiB limit (m16 finding A1) | **Decided (owner, 2026-11-10): bound the read.** At most 4 MiB is read; a larger body gets the SDK's existing 413 before the envelope is parsed ([`bound-mcp-request-body`](../bound-mcp-request-body/proposal.md)) | One request could make the agent hold a body of any size. The only observable change: an oversized malformed body gets 413, not 400. |
 | D30 | A resource id with Unicode whitespace other than space, tab, CR and LF changed identity when its printed URI was parsed (m16 finding F1) | **Decided (owner, 2026-11-10): refuse such ids**, in `Uri::new` and `Uri::parse` ([`resource-id-unicode-whitespace`](../resource-id-unicode-whitespace/proposal.md)) | The spec forbids rewriting IDs; refusing keeps every accepted URI round-trip stable. |
 | D31 | Outcomes of host faults the spec did not state: a full state directory, a damaged store, a hanging or garbage-printing command, a clock stepped back | **Decided (owner, 2026-11-10): the outcomes in [`host-fault-outcomes`](../host-fault-outcomes/proposal.md)**, checked by gate e2e-6 | Journeys must not guess an outcome; these were proposed with the m16 goal's rule (a typed refusal or a clean resume, no half-written state). |
+| D40 | A child process inherited the agent's whole environment, its bearer and provider credentials included (m15 finding A4) | **Decided (Host Agent owner, delegated 2026-11-11): an allowlist** for every child, never a secret-named variable ([`child-process-environment`](../child-process-environment/proposal.md)) | The tools the agent runs no longer see its settings; Go passed the whole environment |
+| D41 | The serving relay and the provider executables' `/mcp` read a request body whole (m16 finding A2, m17 finding A5) | **Decided (Host Agent owner, delegated 2026-11-11): bound both reads**, 32 MiB for the relay, the SDK's 4 MiB for providers, 413 beyond ([`bound-relay-request-body`](../bound-relay-request-body/proposal.md)) | An oversized body is refused before it is held |
+| D43 | D40 to D42 were decided on 0.4.0 code; the 0.3.0 candidate `rust-0.3.0-rc4` has A4, A2 and A5 too (measured in goal m18, `evidence/m18`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m18: D40 and D41 apply to 0.3.0** from `rust-0.3.0-rc5`, as declared divergences from Go v0.2.4. **D42 stays 0.4.0 only**: it adds two settings, a contract change the parity release does not take, so O1 stays an open observation in 0.3.0 | rc5 replaces rc4 as the 0.3.0 candidate; no new setting, tool or endpoint |
 
 ## 7. Risks this plan specifically mitigates
 

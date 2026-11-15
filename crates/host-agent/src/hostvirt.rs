@@ -206,7 +206,7 @@ fn dpkg_architecture(env: &Env) -> Result<String, String> {
     let output = std::process::Command::new(&program)
         .arg("--print-architecture")
         .env_clear()
-        .envs(env.pairs())
+        .envs(env.for_child().pairs())
         .stdin(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .output()

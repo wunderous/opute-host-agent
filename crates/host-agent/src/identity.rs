@@ -163,7 +163,12 @@ fn read_windows_machine_guid() -> Result<String, String> {
     ];
     let mut last_err: Option<String> = None;
     for (program, args) in candidates {
-        let output = match Command::new(program).args(args).output() {
+        let output = match Command::new(program)
+            .args(args)
+            .env_clear()
+            .envs(crate::config::Env::from_process().for_child().pairs())
+            .output()
+        {
             Ok(o) if o.status.success() => o,
             Ok(o) => {
                 last_err = Some(format!("exit status {}", o.status.code().unwrap_or(-1)));
