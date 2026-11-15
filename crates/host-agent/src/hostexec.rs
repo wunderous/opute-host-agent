@@ -121,7 +121,7 @@ fn run_piped(
     let mut cmd = Command::new(&program);
     cmd.args(&argv[1..])
         .env_clear()
-        .envs(env.pairs())
+        .envs(env.for_child().pairs())
         .stdin(Stdio::null())
         .stdout(Stdio::from(writer))
         .stderr(Stdio::from(writer2));
