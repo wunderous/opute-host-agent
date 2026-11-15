@@ -1,0 +1,50 @@
+running 6 tests
+config::tests::every_spawn_site_passes_the_child_environment --- FAILED
+hostobs::tests::a_child_never_sees_the_agents_secrets --- FAILED
+.. 4/6
+providers::tests::oversized_provider_bodies_are_refused_without_reading_them --- FAILED
+llmops::tests::oversized_relay_bodies_are_refused_without_reading_them --- FAILED
+
+failures:
+
+---- config::tests::every_spawn_site_passes_the_child_environment stdout ----
+
+thread 'config::tests::every_spawn_site_passes_the_child_environment' panicked at crates/host-agent/src/config.rs:773:17:
+crates/host-agent/src/llmops.rs:3048 starts a process without the child environment
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- hostobs::tests::a_child_never_sees_the_agents_secrets stdout ----
+
+thread 'hostobs::tests::a_child_never_sees_the_agents_secrets' panicked at crates/host-agent/src/hostobs.rs:1569:9:
+CLOUDFLARE_API_TOKEN=<redacted>
+HOME=/home/test
+HTTPS_PROXY=http://proxy.test:3128
+KUBECONFIG=/home/test/.kube/config
+LANG=C.UTF-8
+MCP_AUTH_TOKEN=<redacted>
+OPUTE_OAUTH_CLIENTS=<redacted>
+OPUTE_REMOTE_AGENT_ID=test-agent-id
+PATH=/usr/bin:/bin
+TAILSCALE_AUTH_KEY=<redacted>
+
+
+---- providers::tests::oversized_provider_bodies_are_refused_without_reading_them stdout ----
+
+thread 'providers::tests::oversized_provider_bodies_are_refused_without_reading_them' panicked at crates/host-agent/src/providers/mod.rs:372:9:
+no 413 before the body ended: ""
+
+---- llmops::tests::oversized_relay_bodies_are_refused_without_reading_them stdout ----
+
+thread 'llmops::tests::oversized_relay_bodies_are_refused_without_reading_them' panicked at crates/host-agent/src/llmops.rs:4682:9:
+no 413 before the body ended: ""
+
+
+failures:
+    config::tests::every_spawn_site_passes_the_child_environment
+    hostobs::tests::a_child_never_sees_the_agents_secrets
+    llmops::tests::oversized_relay_bodies_are_refused_without_reading_them
+    providers::tests::oversized_provider_bodies_are_refused_without_reading_them
+
+test result: FAILED. 2 passed; 4 failed; 0 ignored; 0 measured; 387 filtered out; finished in 10.36s
+
+error: test failed, to rerun pass `-p opute-host-agent --lib`

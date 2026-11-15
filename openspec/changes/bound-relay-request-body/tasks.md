@@ -9,3 +9,9 @@
 - [x] 2.2 Failing-first tests for both (failed on rc1's code, `evidence/m17/before.log`).
 - [x] 2.3 Both reads keep their coverage in `evidence/hardening/entry-points.json`.
 - [x] 2.4 Gate e2e-6 sends an oversized relay body on the release candidate: 413, with RSS flat. Passed: `e2e6.pressure`, run `m17-r2` on `rust-0.4.0-rc2`.
+
+## 3. The 0.3.0 candidate (D43, goal m18)
+
+- [x] 3.1 Both bounds on 0.3.0's code.
+- [x] 3.2 Both tests failed on rust-0.3.0-rc4's code (`evidence/m18/before.log`).
+- [x] 3.3 Gate e2e-6 sends an oversized relay body on rust-0.3.0-rc5: 413, with RSS under the budget. Passed: `e2e6.pressure`, run `m18-r1`.
