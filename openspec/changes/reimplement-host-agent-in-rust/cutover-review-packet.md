@@ -61,7 +61,7 @@ each. Each journey names the spec requirements it proves in its
 | e2e-3a | 5 | 17 | A three-server HA K3s cluster built only through typed calls: workload, losing one server, quorum loss with fail-closed calls and recovery, and the optional cluster endpoint (Q19) |
 | e2e-3 | 3 | 15 | Use cases: cluster discovery through the neutral name, the site deploy recipe, local model serving through the gateway (a test runtime) |
 | e2e-4 | 2 | 10 | Cutover: Rust on Go v0.2.4's real state with work in flight, Rust's new work, rollback to Go on Rust's state; SIGTERM, SIGKILL and an in-place upgrade mid-work |
-| e2e-6 | 8 | 10 | Host faults and pressure (m16, D31): a full state directory refuses effectful calls and recovers without a restart; a truncated store stops startup and the restored store starts intact; SIGKILL during a plan step and twelve SIGKILLs with tasks in flight leave a whole store; a hung or garbage-printing `incus` ends the call typed and the agent serves on; a clock stepped back an hour keeps tokens and reservations; admission refuses beyond the operation limit and below the floors; a 1 GiB declared body is answered 413 (D29), and so is one sent to the serving relay (D41); the 15-minute resource budget holds; a recipe step's child holds none of the agent's secrets (D40, `e2e6.child-env`) |
+| e2e-6 | 9 | 11 | Host faults and pressure (m16, D31): a full state directory refuses effectful calls and recovers without a restart; a truncated store stops startup and the restored store starts intact; SIGKILL during a plan step and twelve SIGKILLs with tasks in flight leave a whole store; a hung or garbage-printing `incus` ends the call typed and the agent serves on; a clock stepped back an hour keeps tokens and reservations; admission refuses beyond the operation limit and below the floors; a 1 GiB declared body is answered 413 (D29), and so is one sent to the serving relay or to the k3s provider executable (D41, `e2e6.provider-body`); the 15-minute resource budget holds; a recipe step's child holds none of the agent's secrets (D40, `e2e6.child-env`) |
 
 Two earlier runs were retired with their cause: `m16-r1` (rc2) when fuzzing
 found F5, and `m16-r2` (rc3) when CI's `cargo fmt` check failed and formatting
@@ -126,9 +126,9 @@ ran one more clean 60 s pass on rc5's code (`evidence/m18/fuzz.txt`).
 | F3 | e2e-6 draft | With the state directory full, an effectful call ran and its audit row was silently lost | fixed under D31: refused with `state_storage_full` below 1 MiB free |
 | F4 | e2e-6 draft | `/health` ran `incus list` on the thread serving every connection; a hung `incus` stalled the agent | fixed |
 | F5 | fuzz `json_document` | A `\u` escape with a sign was accepted (`from_str_radix`); three more decodes had the same defect | fixed |
-| A2 | auth review | The model-serving relay forwards a request body without a bound | fixed in rc5, D41 by D43: 32 MiB, 413 beyond |
-| A4 | m15 review, measured on rc4 in m18 | Every tool the agent ran (incus, kubectl, git, curl, ollama, the `systemd-run` client) inherited its whole environment: `MCP_AUTH_TOKEN`, the OAuth clients and any provider credential | fixed in rc5, D40 by D43: an allowlist at all seven spawn sites |
-| A5 | m17, measured on rc4 in m18 | A provider executable's `/mcp` read the whole body before the 4 MiB check | fixed in rc5, D41 by D43 |
+| A2 | auth review | The model-serving relay forwards a request body without a bound | fixed in rc5, D41 by D43: 32 MiB, 413 beyond; `e2e6.pressure` |
+| A4 | m15 review, measured on rc4 in m18 | Every tool the agent ran (incus, kubectl, git, curl, ollama, the `systemd-run` client) inherited its whole environment: `MCP_AUTH_TOKEN`, the OAuth clients and any provider credential | fixed in rc5, D40 by D43: an allowlist at all seven spawn sites; `e2e6.child-env` |
+| A5 | m17, measured on rc4 in m18 | A provider executable's `/mcp` read the whole body before the 4 MiB check | fixed in rc5, D41 by D43; `e2e6.provider-body` |
 | A3 | auth review | The bootstrap bearer's local-`Host` rule limits audience, not which peer may use it | as specified |
 | O1 | e2e-6 budget | Audit rows are never pruned: about 3.5 KB per call, 78 MB in 15 minutes of heavy load | open in 0.3.0: D42 sets retention for 0.4.0 only (D43) |
 
@@ -145,7 +145,9 @@ absolute 64 MiB store limit had no measured basis and was replaced; audit
 rows are still never pruned in 0.3.0, O1). Peak RSS 95 MB (budget 256 MiB).
 The D29 check: a 1 GiB declared body was answered 413 at once, with RSS 43 MB
 afterwards. The D41 check: a 1 GiB declared body to the serving relay was
-answered 413 in 0.03 s, with RSS 61 MB afterwards (53 MB before).
+answered 413 in 0.03 s, with RSS 61 MB afterwards (53 MB before); one to the
+k3s provider executable's `/mcp` was answered 413 at once, with its RSS
+3.0 MB before and after.
 
 ## 3. Declared divergences from Go
 
