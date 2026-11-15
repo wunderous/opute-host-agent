@@ -1368,6 +1368,26 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     checks recaptured on rc4.
   - **Result:** `make cutover-readiness` passes with only e2e-5, WSL2, Q4
     and Q18 not passed. Tasks 6.3 and 6.4 stay open.
+- **m18 (2026-11-14): the 0.3.0 candidate carries no known secret leak.**
+  A4 and A5 were found on 0.4.0 code (m15, m17), so the 0.3.0 packet did
+  not list them. Measured on `rust-0.3.0-rc4`'s product code first
+  (`evidence/m18/before.log`): `env` run through the command runner held
+  `MCP_AUTH_TOKEN`, the OAuth clients and the provider credentials (A4),
+  and neither the serving relay (A2) nor a provider's `/mcp` (A5) answered
+  before an oversized body ended.
+  - **Decision D43:** D40 and D41 apply to 0.3.0 as declared divergences
+    from Go v0.2.4, with no new setting. D42 adds two settings, so it stays
+    0.4.0 only, and O1 stays open in 0.3.0.
+  - **Fix:** `Env::for_child` at 0.3.0's seven spawn sites (the console,
+    the eighth, is 0.4.0's); the relay's 32 MiB and a provider's 4 MiB
+    bounds, 413 beyond. Three entry points and two properties join the
+    hardening inventory; a clean 60 s fuzz pass ran before the build.
+  - **Gate e2e-6:** `e2e6.child-env` reads a recipe step's `systemd-run`
+    child from `/proc` (0.3.0 serves no console), and `e2e6.pressure` sends
+    a 1 GiB declared body to the serving relay: 8 journeys, 10 requirements.
+  - **Candidate:** `rust-0.3.0-rc5` (d4f8c8745); all gates pass on
+    `m18-r1`, with the contract suites, seam stage `m18`, the arm64 install
+    and the distribution checks recaptured on rc5.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 

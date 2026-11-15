@@ -14,4 +14,4 @@
 
 - [x] 3.1 Both bounds on 0.3.0's code.
 - [x] 3.2 Both tests failed on rust-0.3.0-rc4's code (`evidence/m18/before.log`).
-- [ ] 3.3 Gate e2e-6 sends an oversized relay body on rust-0.3.0-rc5: 413, with RSS flat (`e2e6.pressure`).
+- [x] 3.3 Gate e2e-6 sends an oversized relay body on rust-0.3.0-rc5: 413, with RSS under the budget. Passed: `e2e6.pressure`, run `m18-r1`.

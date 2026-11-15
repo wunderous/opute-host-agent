@@ -14,4 +14,4 @@
 
 - [x] 3.1 The same allowlist at 0.3.0's seven sites; the source test counts seven.
 - [x] 3.2 The tests failed on rust-0.3.0-rc4's code (`evidence/m18/before.log`).
-- [ ] 3.3 Gate e2e-6 reads a recipe step's environment from `/proc` on rust-0.3.0-rc5 (`e2e6.child-env`).
+- [x] 3.3 Gate e2e-6 reads a recipe step's environment from `/proc` on rust-0.3.0-rc5. Passed: `e2e6.child-env`, run `m18-r1`.
