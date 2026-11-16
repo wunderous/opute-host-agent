@@ -78,8 +78,23 @@ plan:
   idempotencyKey: com.opute.host-agent.minimal-site-${vars.inputs.name}-${vars.inputs.hostname}-${vars.inputs.siteVersion}
   defaults:
     timeoutMs: 900000
+  # A node reads its effect before acting (preflight) unless a node it depends on was applied in this run. A
+  # read of a guest or cluster that does not exist yet is refused, so every node that creates one depends on
+  # the node applied just before it: from clean state each runs its action, and on a second run each finds
+  # its effect and skips. The teardown removes the staged context, which starts that chain again.
   nodes:
+    - id: context
+      action:
+        tool: stage_build_context
+        args: {destDir: '${vars.inputs.contextDir}', files: '${vars.inputs.contextFiles}',
+          fileEncoding: '${vars.inputs.contextEncoding}'}
+      validate:
+        tool: inspect_host_file
+        args: {path: '${vars.inputs.contextDir}/Dockerfile'}
+        assert:
+          - {path: /exists, op: eq, value: true}
     - id: guest
+      dependsOn: [context]
       timeoutMs: 600000
       action:
         tool: provision_vm
@@ -101,7 +116,7 @@ plan:
         pollIntervalMs: 2000
         timeoutMs: 120000
     - id: cluster
-      dependsOn: [guest-address]
+      dependsOn: [guest, guest-address]
       timeoutMs: 1200000
       action:
         tool: opute.capability.kubernetes.provision
@@ -128,16 +143,6 @@ plan:
           - {path: /deployment/status/readyReplicas, op: eq, value: 1}
         pollIntervalMs: 5000
         timeoutMs: 300000
-    - id: context
-      action:
-        tool: stage_build_context
-        args: {destDir: '${vars.inputs.contextDir}', files: '${vars.inputs.contextFiles}',
-          fileEncoding: '${vars.inputs.contextEncoding}'}
-      validate:
-        tool: inspect_host_file
-        args: {path: '${vars.inputs.contextDir}/Dockerfile'}
-        assert:
-          - {path: /exists, op: eq, value: true}
     - id: image
       dependsOn: [registry, context]
       timeoutMs: 1200000

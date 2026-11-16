@@ -1,6 +1,7 @@
 # m20: removes what minimal-site.recipe.yaml made: the tunnel and its CNAME at Cloudflare, then the guest
 # container with its cluster, registry, workload and connector. Each node validates the absence it makes, so
-# a second run skips every action.
+# a second run skips every action. Removing the staged context's Dockerfile makes the next site run stage it
+# again, so that run applies every node from clean state.
 #
 # Assertion values are not interpolated, and a read of a removed guest is refused rather than answered, so the
 # guest node asserts the guest's absence from list_vms by its literal name. The caller fills in __GUEST_NAME__
@@ -17,6 +18,8 @@ compatibility:
     - get_cloudflare_tunnel_status
     - delete_vm
     - list_vms
+    - remove_host_file
+    - inspect_host_file
 inputs:
   hostname:
     required: true
@@ -27,6 +30,9 @@ inputs:
   name:
     required: true
     schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,30}$'}
+  contextDir:
+    required: true
+    schema: {type: string, pattern: '^/.+$'}
 plan:
   contractVersion: host-plan.v1
   planId: com.opute.host-agent.minimal-site.teardown
@@ -66,3 +72,13 @@ plan:
               - {path: /name, op: ne, value: __GUEST_NAME__}
         pollIntervalMs: 2000
         timeoutMs: 120000
+    - id: context
+      dependsOn: [guest]
+      action:
+        tool: remove_host_file
+        args: {path: '${vars.inputs.contextDir}/Dockerfile', confirm: true}
+      validate:
+        tool: inspect_host_file
+        args: {path: '${vars.inputs.contextDir}/Dockerfile'}
+        assert:
+          - {path: /exists, op: eq, value: false}
