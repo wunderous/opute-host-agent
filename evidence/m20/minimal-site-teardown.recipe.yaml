@@ -1,0 +1,68 @@
+# m20: removes what minimal-site.recipe.yaml made: the tunnel and its CNAME at Cloudflare, then the guest
+# container with its cluster, registry, workload and connector. Each node validates the absence it makes, so
+# a second run skips every action.
+#
+# Assertion values are not interpolated, and a read of a removed guest is refused rather than answered, so the
+# guest node asserts the guest's absence from list_vms by its literal name. The caller fills in __GUEST_NAME__
+# with the `name` input, as the www-opute-io deploy script fills in its recipe's expected image.
+contractVersion: host-recipe.v1
+recipeId: com.opute.host-agent.minimal-site.teardown
+recipeVersion: 1.0.0
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools:
+    - opute.capability.tunneling.remove-host-tunnel
+    - get_cloudflare_tunnel_status
+    - delete_vm
+    - list_vms
+inputs:
+  hostname:
+    required: true
+    schema: {type: string, pattern: '^(minimal|e2e-[a-z0-9-]{1,40})\.opute\.io$'}
+  tunnelName:
+    required: true
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,62}$'}
+  name:
+    required: true
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,30}$'}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.host-agent.minimal-site.teardown
+  generation: 1
+  idempotencyKey: com.opute.host-agent.minimal-site.teardown-${vars.inputs.name}-${vars.inputs.hostname}
+  defaults:
+    timeoutMs: 600000
+  nodes:
+    - id: tunnel
+      action:
+        tool: opute.capability.tunneling.remove-host-tunnel
+        args: &tunnel
+          bindingId: site
+          hostname: '${vars.inputs.hostname}'
+          tunnelName: '${vars.inputs.tunnelName}'
+          localTarget: 'http://traefik.kube-system.svc.cluster.local:80'
+          placement: kubernetes
+          targetUri: 'cluster:local:${vars.inputs.name}'
+      validate:
+        tool: get_cloudflare_tunnel_status
+        args: *tunnel
+        assert:
+          - {path: /routed, op: eq, value: false}
+          - {path: /tunnelId, op: empty}
+    - id: guest
+      dependsOn: [tunnel]
+      action:
+        tool: delete_vm
+        args: {uri: 'container:local:${vars.inputs.name}'}
+      validate:
+        tool: list_vms
+        args: {fast: true}
+        assert:
+          - path: /vms
+            op: all
+            assertions:
+              - {path: /name, op: ne, value: __GUEST_NAME__}
+        pollIntervalMs: 2000
+        timeoutMs: 120000

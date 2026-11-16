@@ -1,0 +1,29 @@
+   Compiling opute-host-agent v0.2.4 (/home/houman/github/wunderous/opute-host-agent-040/crates/host-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.03s
+     Running unittests src/lib.rs (target/debug/deps/opute_host_agent-afdbac54645d28a7)
+
+running 2 tests
+test recipe::host_recipe::tests::every_tool_that_starts_a_plan_run_is_rejected ... FAILED
+test plan::schema::tests::validate_rejects_every_tool_that_starts_a_plan_run ... FAILED
+
+failures:
+
+---- recipe::host_recipe::tests::every_tool_that_starts_a_plan_run_is_rejected stdout ----
+
+thread 'recipe::host_recipe::tests::every_tool_that_starts_a_plan_run_is_rejected' (298404) panicked at crates/host-agent/src/recipe/host_recipe.rs:498:59:
+run_host_local_recipe: ()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- plan::schema::tests::validate_rejects_every_tool_that_starts_a_plan_run stdout ----
+
+thread 'plan::schema::tests::validate_rejects_every_tool_that_starts_a_plan_run' (298403) panicked at crates/host-agent/src/plan/schema.rs:1401:61:
+run_host_plan: ()
+
+
+failures:
+    plan::schema::tests::validate_rejects_every_tool_that_starts_a_plan_run
+    recipe::host_recipe::tests::every_tool_that_starts_a_plan_run_is_rejected
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 419 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p opute-host-agent --lib`
