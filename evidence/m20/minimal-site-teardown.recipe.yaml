@@ -33,11 +33,15 @@ inputs:
   contextDir:
     required: true
     schema: {type: string, pattern: '^/.+$'}
+  runNonce:
+    default: default
+    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.
+    schema: {type: string, minLength: 1, maxLength: 128}
 plan:
   contractVersion: host-plan.v1
   planId: com.opute.host-agent.minimal-site.teardown
   generation: 1
-  idempotencyKey: com.opute.host-agent.minimal-site.teardown-${vars.inputs.name}-${vars.inputs.hostname}
+  idempotencyKey: com.opute.host-agent.minimal-site.teardown-${vars.inputs.name}-${vars.inputs.hostname}-${vars.inputs.runNonce}
   defaults:
     timeoutMs: 600000
   nodes:

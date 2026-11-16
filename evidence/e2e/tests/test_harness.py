@@ -2,10 +2,12 @@
 
   python3 -m unittest discover -s evidence/e2e/tests
 """
+import http.server
 import json
 import os
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -285,6 +287,41 @@ class Extensions(unittest.TestCase):
         self.assertTrue(runner.journey_problems(j))
         j["inputs"] = {"files": {"bin": {"path": "${PARITY}/x", "sha256": "ab"}}}
         self.assertEqual(runner.journey_problems(j), [])
+
+    def test_a_secret_input_is_copied_unpinned_and_its_values_are_forbidden(self):
+        j = journey(steps=[{"id": "h", "health": True}, {"id": "c", "copy": "env", "to": "/x"}])
+        with tempfile.TemporaryDirectory() as d:
+            env = Path(d) / "owner.env"
+            env.write_text("ACCOUNT=abc\nAPI_TOKEN=owner-secret-0123456789abcdef\nSHORT_TOKEN=tiny\n")
+            j["inputs"] = {"files": {"env": {"path": str(env), "secret": True,
+                                             "secretKeys": ["API_TOKEN", "SHORT_TOKEN"]}}}
+            self.assertEqual(runner.journey_problems(j), [])
+            self.assertEqual(runner.owner_secrets(j), ["owner-secret-0123456789abcdef"])
+
+    def test_fetch_records_status_body_and_polls_until(self):
+        class Handler(http.server.BaseHTTPRequestHandler):
+            calls = 0
+
+            def do_GET(self):
+                Handler.calls += 1
+                self.send_response(200 if Handler.calls > 1 else 503)
+                self.send_header("Content-Type", "text/html")
+                self.end_headers()
+                self.wfile.write(b"<h1>site</h1>")
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            url = f"http://127.0.0.1:{server.server_port}/"
+            out = runner.fetch(url, {}, {"path": "response.status", "in": [200]}, 10, 0.05)
+        finally:
+            server.shutdown()
+        self.assertEqual((out["status"], out["attempts"], out["body"]), (200, 2, "<h1>site</h1>"))
+        self.assertFalse(out["tlsVerified"])
+        self.assertEqual(runner.fetch("https://127.0.0.1:9/", {}, None, 0, 0)["status"], None)
 
 
 class GuestState(unittest.TestCase):

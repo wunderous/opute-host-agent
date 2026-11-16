@@ -71,11 +71,15 @@ inputs:
   k3sVersion:
     default: v1.31.8+k3s1
     schema: {type: string, minLength: 1}
+  runNonce:
+    default: default
+    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.
+    schema: {type: string, minLength: 1, maxLength: 128}
 plan:
   contractVersion: host-plan.v1
   planId: com.opute.host-agent.minimal-site
   generation: 1
-  idempotencyKey: com.opute.host-agent.minimal-site-${vars.inputs.name}-${vars.inputs.hostname}-${vars.inputs.siteVersion}
+  idempotencyKey: com.opute.host-agent.minimal-site-${vars.inputs.name}-${vars.inputs.hostname}-${vars.inputs.siteVersion}-${vars.inputs.runNonce}
   defaults:
     timeoutMs: 900000
   # A node reads its effect before acting (preflight) unless a node it depends on was applied in this run. A
