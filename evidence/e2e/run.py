@@ -24,7 +24,7 @@ A journey (journeys/<id>.json) declares:
                 fetch   an HTTPS GET from the host itself (outside the VM), with
                         the host's default TLS verification; `until` polls
                 restore discard the run overlay and boot the snapshot
-                `${NAME}` expands a captured value; `${SECRET:name}` a per-run
+                `${NAME}` expands a captured value (`$${` is a literal `${`); `${SECRET:name}` a per-run
                 random secret; `${TOKEN}` the agent's test token. All three are
                 redacted from every record. `${RUN}` is the run id.
   cleanup       steps that undo what the journey did
@@ -325,20 +325,23 @@ def scrub(value: Any, ctx: dict) -> Any:
     return json.loads(text)
 
 
-_VAR = re.compile(r"\$\{(SECRET:)?([A-Za-z0-9_.-]+)\}")
+_VAR = re.compile(r"(\$)?\$\{(SECRET:)?([A-Za-z0-9_.-]+)\}")
 
 
 def expand(value: Any, ctx: dict) -> Any:
-    """`${TOKEN}`, `${SECRET:name}` (a per-run random secret) and `${NAME}` (a capture)."""
+    """`${TOKEN}`, `${SECRET:name}` (a per-run random secret) and `${NAME}` (a capture); `$${` is a literal
+    `${`, as in a recipe's own `${vars.inputs.x}`."""
     if isinstance(value, str):
         def sub(m: re.Match) -> str:
             if m.group(1):
-                return ctx["secrets"].setdefault(m.group(2), f"e2e-secret-{secrets.token_hex(16)}")
-            if m.group(2) == "TOKEN":
+                return m.group(0)[1:]
+            if m.group(2):
+                return ctx["secrets"].setdefault(m.group(3), f"e2e-secret-{secrets.token_hex(16)}")
+            if m.group(3) == "TOKEN":
                 return ctx["token"]
-            if m.group(2) not in ctx["vars"]:
-                raise KeyError(f"${{{m.group(2)}}} was never captured")
-            return str(ctx["vars"][m.group(2)])
+            if m.group(3) not in ctx["vars"]:
+                raise KeyError(f"${{{m.group(3)}}} was never captured")
+            return str(ctx["vars"][m.group(3)])
         return _VAR.sub(sub, value)
     if isinstance(value, list):
         return [expand(v, ctx) for v in value]

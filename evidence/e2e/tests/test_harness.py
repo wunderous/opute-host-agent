@@ -298,6 +298,10 @@ class Extensions(unittest.TestCase):
             self.assertEqual(runner.journey_problems(j), [])
             self.assertEqual(runner.owner_secrets(j), ["owner-secret-0123456789abcdef"])
 
+    def test_a_doubled_dollar_is_a_literal_reference(self):
+        ctx = {"token": "t", "vars": {"RUN": "r1"}, "secrets": {}}
+        self.assertEqual(runner.expand("e2e-${RUN} $${vars.inputs.x}", ctx), "e2e-r1 ${vars.inputs.x}")
+
     def test_fetch_records_status_body_and_polls_until(self):
         class Handler(http.server.BaseHTTPRequestHandler):
             calls = 0

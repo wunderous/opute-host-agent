@@ -22,6 +22,7 @@ import os
 import make_e2e1 as base
 from make_e2e1 import HERE, SPEC, a, inp, ok, req
 from make_e2e3a import call, direct, task
+from make_e2e4a import PKGS_BEFORE, PODMAN_CLEANUP, PODMAN_EFFECTS, SUPERVISOR_EFFECTS
 
 GATE = "e2e-7"
 REPO = HERE.parent.parent.parent
@@ -43,6 +44,9 @@ ENV = f"{CFG}/cloudflare.env"
 UNITS = "/home/opute/.config/systemd/user"
 MARKER = "e2e7 public site"
 DONE = ["completed", "failed", "cancelled"]
+# remove_host_file is task-aware and needs the roots capability too
+ROOTS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}},
+                                                             "roots": {}}}
 SITE_NODES = ["context", "guest", "guest-address", "cluster", "registry", "image", "workload", "domain", "tunnel",
               "connector", "public"]
 VALIDATION_ONLY = ["guest-address", "connector", "public"]
@@ -68,6 +72,11 @@ PROVIDERS = [
 ]
 
 
+def literal(text: str) -> str:
+    """A recipe's own `${...}` references, escaped from the harness's expansion."""
+    return text.replace("${", "$${")
+
+
 def unit(p: dict) -> str:
     return "\n".join(["[Unit]", f"Description=Opute {p['id']} provider (e2e7)", "", "[Service]",
                       f"Environment=OPUTE_PROVIDER_PORT={p['port']}", *p["env"],
@@ -87,7 +96,8 @@ def listed(name: str) -> str:
 
 
 def provider_steps() -> list[dict]:
-    steps = [call("supervisor", "ensure_host_service_supervisor", {}), *task("builder", "ensure_oci_builder", {})]
+    steps = [call("supervisor", "ensure_host_service_supervisor", {}), PKGS_BEFORE,
+             *task("builder", "ensure_oci_builder", {})]
     for p in PROVIDERS:
         name, act = f"opute-provider-{p['id']}", f"{CFG}/{p['id']}-activate.yaml"
         desc = {**p["descriptor"],
@@ -99,7 +109,7 @@ def provider_steps() -> list[dict]:
                  {"uri": f"host-service:local:user/{name}", "state": "restart", "scope": "user"}),
             # the pinned Go tree's recipe, byte for byte: the provider's install manifest pins its sha256
             call(f"{p['id']}Activation", "ensure_host_file",
-                 {"path": act, "content": (HERE / "inputs" / p["activate"]).read_text(), "mode": 0o644,
+                 {"path": act, "content": literal((HERE / "inputs" / p["activate"]).read_text()), "mode": 0o644,
                   "scope": "user"}),
             {"id": f"{p['id']}Port", "guest": f"for i in $(seq 60); do ss -ltnH 'sport = :{p['port']}' | grep -q . "
                                               f"&& break; sleep 0.5; done; ss -ltnH 'sport = :{p['port']}' | wc -l"},
@@ -132,6 +142,14 @@ def recipe_run(id_: str, source: str, inputs: dict, timeout: int = 1200) -> list
                  timeout=timeout, interval=5)]
 
 
+def removal(id_: str, path: str) -> list[dict]:
+    """remove_host_file as a task, with the roots capability it requires."""
+    steps = task(id_, "remove_host_file", {"path": path, "confirm": True, "scope": "user"})
+    for step in steps:
+        step["meta"] = ROOTS_META
+    return steps
+
+
 def node(step: str, node_id: str, **op) -> dict:
     return direct(step, f"structuredContent.nodes.{node_id}.status", **op)
 
@@ -161,9 +179,9 @@ def steps() -> list[dict]:
         {"id": "envCopy", "copy": "cloudflareEnv", "to": ENV, "mode": "0600"},
         {"id": "envOwner", "guest": f"chown -R opute:opute {CFG} && stat -c '%a %U' {ENV}"},
         *provider_steps(),
-        call("siteRecipe", "ensure_host_file", {"path": SITE, "content": (M20 / "minimal-site.recipe.yaml").read_text(),
+        call("siteRecipe", "ensure_host_file", {"path": SITE, "content": literal((M20 / "minimal-site.recipe.yaml").read_text()),
                                                 "mode": 0o644, "scope": "user"}),
-        call("downRecipe", "ensure_host_file", {"path": DOWN, "content": teardown, "mode": 0o644, "scope": "user"}),
+        call("downRecipe", "ensure_host_file", {"path": DOWN, "content": literal(teardown), "mode": 0o644, "scope": "user"}),
         call("nestedRecipe", "ensure_host_file", {"path": NESTED, "content": nested_recipe(), "mode": 0o644,
                                                   "scope": "user"}),
         call("validateSite", "validate_host_local_recipe", {"source": SITE, "inputs": site_inputs("up")}),
@@ -195,15 +213,16 @@ def steps() -> list[dict]:
         *recipe_run("down", DOWN, down_inputs("down"), timeout=600),
         *recipe_run("downAgain", DOWN, down_inputs("downAgain"), timeout=300),
         {"id": "dns", "fetch": DOH, "headers": {"Accept": "application/dns-json"},
-         "until": {"path": "response.json.Status", "in": [3]}, "retryTimeout": 180, "interval": 10},
+         # Cloudflare answers a name its zone does not hold with no Answer (NOERROR, not NXDOMAIN)
+         "until": {"path": "response.body", "matches": "^(?![\\s\\S]*\"Answer\")"}, "retryTimeout": 360,
+         "interval": 10},
         call("tunnelGone", "get_cloudflare_tunnel_status", TUNNEL_ARGS),
         {"id": "guestGone", "guest": f"incus --project opute-e2e list -f csv -c n | grep -c -x {NAME}; true"},
         # the providers were host prerequisites; their units go the same typed way
         *[s for p in PROVIDERS for s in (
             call(f"{p['id']}Stop", "set_host_service_state",
                  {"uri": f"host-service:local:user/opute-provider-{p['id']}", "state": "stop", "scope": "user"}),
-            call(f"{p['id']}UnitRemove", "remove_host_file",
-                 {"path": f"{UNITS}/opute-provider-{p['id']}.service", "confirm": True, "scope": "user"}))],
+            *removal(f"{p['id']}UnitRemove", f"{UNITS}/opute-provider-{p['id']}.service"))],
         {"id": "unitsGone", "guest": (f"ls {UNITS} 2>/dev/null | grep -c -E '^opute-(provider|cloudflare)'; "
                                       "systemctl list-units --all --no-legend 'cloudflared*' | wc -l")},
     ]
@@ -230,7 +249,8 @@ def requirements() -> list[dict]:
             *[node("down", n, equals="applied") for n in ("tunnel", "guest", "context")],
             direct("downAgain", "structuredContent.status", equals="completed"),
             *[node("downAgain", n, equals="satisfied") for n in ("tunnel", "guest", "context")],
-            a("dns", "response.json.Status", equals=3),
+            a("dns", "response.json.Status", **{"in": [0, 3]}),
+            a("dns", "response.json.Answer", absent=True),
             direct("tunnelGone", "structuredContent.routed", equals=False),
             direct("tunnelGone", "structuredContent.tunnelId", equals=""),
             a("guestGone", "stdout", equals="0\n"),
@@ -278,11 +298,12 @@ def cleanup() -> list[dict]:
             "opute-provider-k3s opute-provider-cloudflare 2>/dev/null; "
             f"rm -f {UNITS}/opute-provider-*.service; rm -rf {CFG} {CONTEXT} /opt/opute-e2e/guest/leakcheck.py; "
             "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
-            "xargs -r -I{} incus storage volume delete default image/{}; true")},
+            "xargs -r -I{} incus storage volume delete default image/{}; "
+            "loginctl disable-linger opute; " + PODMAN_CLEANUP + "true")},
     ]
 
 
-EFFECTS = ["incus/*", "files//home/opute/.config/opute-e2e7*", "files//home/opute/.config/systemd/user*",
+EFFECTS = PODMAN_EFFECTS + SUPERVISOR_EFFECTS + ["incus/*", "files//home/opute/.config/opute-e2e7*", "files//home/opute/.config/systemd/user*",
            "files//home/opute/.opute*", "files//home/opute/.config/incus*", "files//home/opute/.local/share*",
            "files//home/opute/.config/opute/instances*", "system/units/*", "system/unitFiles/*"]
 PERSIST = ["files//home/opute/.opute*", "files//home/opute/.local/share*", "files//home/opute/.config/opute/instances*"]
