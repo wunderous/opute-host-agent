@@ -493,10 +493,11 @@ fn render_unit(
 }
 
 /// The connector unit's command, run by `/bin/sh -c` with the token file
-/// as the unit's environment.
+/// as the unit's environment. cloudflared reads the token from
+/// `TUNNEL_TOKEN`, never from its arguments (D47).
 fn tunnel_exec(artifact: &str) -> String {
     format!(
-        "exec {} tunnel --no-autoupdate run --token \"${TOKEN_ENV}\"",
+        "TUNNEL_TOKEN=\"${TOKEN_ENV}\"; export TUNNEL_TOKEN; exec {} tunnel --no-autoupdate run",
         shell_quote(artifact)
     )
 }
@@ -1218,7 +1219,10 @@ mod tests {
         let argv = std::fs::read_to_string(dir.path().join("argv")).unwrap();
         assert!(argv.starts_with("tunnel\n--no-autoupdate\nrun\n"), "{argv}");
         assert!(!argv.contains(token), "the token is on cloudflared's argv");
-        assert_eq!(std::fs::read_to_string(dir.path().join("env")).unwrap(), token);
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("env")).unwrap(),
+            token
+        );
     }
 
     #[test]

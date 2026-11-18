@@ -688,9 +688,18 @@ fn reconcile_legacy_host_tunnel_with(
     } else {
         "default.target"
     };
+    // D48: cloudflared reads the run token from a 0600 file, never argv.
+    let token_file = host_token_file(scope, &service_name);
+    let unit_token_file = match token_file.strip_prefix('~') {
+        Some(rest) => format!("%h{rest}"),
+        None => token_file.clone(),
+    };
+    call(
+        "ensure_host_file",
+        json!({"path": token_file, "content": run_token, "mode": 0o600}),
+    )?;
     let unit = format!(
-        "[Unit]\nDescription=Opute Cloudflare tunnel\nAfter=network-online.target\n\n[Service]\nExecStart={executable} tunnel --no-autoupdate run --token {}\nRestart=on-failure\n\n[Install]\nWantedBy={wanted_by}\n",
-        shell_quote(run_token)
+        "[Unit]\nDescription=Opute Cloudflare tunnel\nAfter=network-online.target\n\n[Service]\nExecStart={executable} tunnel --no-autoupdate run --token-file {unit_token_file}\nRestart=on-failure\n\n[Install]\nWantedBy={wanted_by}\n"
     );
     call(
         "ensure_host_file",
@@ -1004,6 +1013,10 @@ fn remove_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
                 "remove_host_file",
                 json!({"path": service_file, "confirm": true, "scope": scope}),
             ),
+            (
+                "remove_host_file",
+                json!({"path": host_token_file(&scope, &service_name), "confirm": true, "scope": scope}),
+            ),
         ];
         for (name, arguments) in calls {
             if let Err(e) = client.call_host(name, arguments) {
@@ -1220,16 +1233,24 @@ fn default_host_service_file(scope: &str, service_name: &str) -> String {
     }
 }
 
+/// The 0600 run token file of a host-placed connector (D48).
+fn host_token_file(scope: &str, service_name: &str) -> String {
+    let stem = service_name
+        .strip_suffix(".service")
+        .unwrap_or(service_name);
+    if scope == "system" {
+        format!("/etc/opute-cloudflare/{stem}.token")
+    } else {
+        format!("~/.config/opute-cloudflare/{stem}.token")
+    }
+}
+
 fn default_cloudflared_artifact_path(scope: &str) -> &'static str {
     if scope == "system" {
         "/opt/opute/cloudflared"
     } else {
         "~/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared"
     }
-}
-
-fn shell_quote(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 /// `json.Marshal` of a string, as the manifests quote YAML scalars.

@@ -1810,8 +1810,10 @@ fn agent_unit() -> String {
     format!("[Unit]\nDescription=Opute Cluster Agent\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=root\nExecStart={AGENT_BINARY}\nRestart=always\nRestartSec=5\nEnvironment=OPUTE_AGENT_CONFIG={AGENT_CONFIG}\n\n[Install]\nWantedBy=multi-user.target\n")
 }
 
-/// `renderClusterAgentInstallScript`.
-fn agent_install_script(bridge_url: &str, arch: &str, config: &str) -> String {
+/// `renderClusterAgentInstallScript`, except that the config (which holds
+/// the bridge token) is read from stdin and written 0600 before any
+/// command that could read stdin (D50); Go embedded it base64-encoded.
+fn agent_install_script(bridge_url: &str, arch: &str) -> String {
     use base64::Engine;
     let b64 = |s: &str| base64::engine::general_purpose::STANDARD.encode(s.as_bytes());
     let artifact = format!(
@@ -1823,11 +1825,11 @@ fn agent_install_script(bridge_url: &str, arch: &str, config: &str) -> String {
         "set -euo pipefail".to_string(),
         "mkdir -p /usr/local/lib/opute /etc/opute".into(),
         format!("systemctl stop {AGENT_SERVICE} 2>/dev/null || true"),
+        format!("(umask 077 && cat > {AGENT_CONFIG}) && chmod 600 {AGENT_CONFIG}"),
         "if ! command -v curl >/dev/null 2>&1; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl; fi".into(),
         "if ! command -v gunzip >/dev/null 2>&1; then apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y gzip; fi".into(),
         format!("curl -sfL --max-time {AGENT_DOWNLOAD_SECONDS} {} | gunzip > {AGENT_BINARY}", q(&artifact)),
         format!("chmod 755 {AGENT_BINARY}"),
-        format!("printf '%s' {} | base64 -d > {AGENT_CONFIG}", q(&b64(config))),
         format!(
             "printf '%s' {} | base64 -d > /etc/systemd/system/{AGENT_SERVICE}.service",
             q(&b64(&agent_unit()))
@@ -1841,7 +1843,10 @@ fn agent_install_script(bridge_url: &str, arch: &str, config: &str) -> String {
 
 /// The install script and what it reads on stdin.
 fn agent_install(bridge_url: &str, arch: &str, config: &str) -> (String, Option<Vec<u8>>) {
-    (agent_install_script(bridge_url, arch, config), None)
+    (
+        agent_install_script(bridge_url, arch),
+        Some(config.as_bytes().to_vec()),
+    )
 }
 
 /// `wrapHostPrivilegedShellBody`.
@@ -2379,7 +2384,11 @@ impl ClusterAgent {
             let bridge = bridge.trim_end_matches('/').to_string();
             let config = agent_config(&bridge, args);
             let (script, stdin) = agent_install(&bridge, arch, &config);
-            let r = self.host_shell_input(&privileged(&script), stdin.as_deref(), AGENT_INSTALL_TIMEOUT)?;
+            let r = self.host_shell_input(
+                &privileged(&script),
+                stdin.as_deref(),
+                AGENT_INSTALL_TIMEOUT,
+            )?;
             if r.exit_code != 0 {
                 return Err(first_non_empty(&[
                     &r.stderr,
@@ -2628,9 +2637,25 @@ mod tests {
         };
         let config = agent_config("http://10.0.0.1:9093", &args);
         assert_eq!(config, go["config"]);
-        let script = agent_install_script("http://10.0.0.1:9093/", "arm64", &config);
-        assert_eq!(script, go["script"]);
-        assert_eq!(privileged(&script), go["privileged"]);
+        // D50: Go's script but for the config, which comes on stdin.
+        let go_script = go["script"].as_str().unwrap();
+        let expected: Vec<String> = go_script
+            .lines()
+            .filter(|l| !l.ends_with(&format!("> {AGENT_CONFIG}")))
+            .flat_map(|l| {
+                let mut out = vec![l.to_string()];
+                if l.starts_with("systemctl stop") {
+                    out.push(format!(
+                        "(umask 077 && cat > {AGENT_CONFIG}) && chmod 600 {AGENT_CONFIG}"
+                    ));
+                }
+                out
+            })
+            .collect();
+        let (script, stdin) = agent_install("http://10.0.0.1:9093/", "arm64", &config);
+        assert_eq!(script, expected.join("\n"));
+        assert_eq!(stdin.as_deref(), Some(config.as_bytes()));
+        assert_eq!(privileged(go_script), go["privileged"]);
         // 2026-10-17T12:00:00Z.
         let now = parse_rfc3339("2026-10-17T12:00:00Z").unwrap();
         for (created, age) in go["ages"].as_object().unwrap() {
