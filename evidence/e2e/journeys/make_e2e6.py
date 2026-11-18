@@ -535,7 +535,150 @@ def provider_body() -> dict:
                    allow=("files//opt/opute-e2e/providers*", "system/units/e2e-*", "system/unitFiles/e2e-*"))
 
 
-JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env, provider_body]
+# --- 10. where each secret goes (m19) ---------------------------------------------------------------
+
+SECRET_SPEC = "openspec/changes/secret-placement/specs/secret-placement/spec.md"
+SW = "python3 /opt/opute-e2e/guest/secretsweep.py"
+SWEEP = "/root/e2e-sweep"
+TUNNEL_UNITS = "/etc/systemd/system/opute-cloudflared-*.service"
+CLUSTER_AGENT = ("/etc/systemd/system/opute-cluster-agent.service /etc/opute/cluster-agent.json "
+                 "/usr/local/lib/opute/cluster-agent")
+# install_cluster_agent and ensure_public_mcp_tunnel run as tasks and need the roots capability
+ROOTS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}},
+                                                             "roots": {}}}
+
+
+def sweep_task(id_: str, tool: str, args: dict, target: dict) -> list[dict]:
+    """A task-aware call and its poll; the poll step (`id_`) holds the outcome."""
+    return [call(id_ + "Call", tool, args, meta=ROOTS_META, **target,
+                 capture={"TID_" + id_: "response.body.result.taskId"}),
+            {"id": id_, "mcp": "tasks/get", "params": {"taskId": "${TID_" + id_ + "}"}, "meta": ROOTS_META, **target,
+             "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
+             "timeout": 300, "interval": 3}]
+
+
+# 0.3.0 takes its machine client's secret from the environment; 0.4.0 generates
+# the secret of each OPUTE_OAUTH_CLIENTS client into a 0600 credential file
+GENERATED_CLIENTS = base.RUST_VERSION != "0.3.0"
+
+
+def secret_sweep() -> dict:
+    n, port, bridge = "sweep", 3056, 3057
+    o = on(n, port)
+    unit = f"e2e-sweep-{n}.service"
+    markers = f"{SWEEP}/markers.json"
+    client_cred = f"{state(n)}/credentials/e2e-sweep.json"
+    client = ("--setting OPUTE_OAUTH_CLIENTS=e2e-sweep " if GENERATED_CLIENTS
+              else "--set OPUTE_HOST_OAUTH_CLIENT_SECRET=${SECRET:oauthClient} ")
+    plant = (f"{SW} plant --env {SWEEP}/agent.env --markers {markers} --set MCP_AUTH_TOKEN=${{SECRET:{n}}} "
+             + client + "--set CLOUDFLARE_API_TOKEN=${SECRET:cfToken} --set TAILSCALE_AUTH_KEY=${SECRET:tsKey} "
+             "--set TAILSCALE_API_KEY=${SECRET:tsApi} "
+             f"--setting OPUTE_REMOTE_AGENT_ID=e2e-{n}-agent --setting OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+             "--marker tunnelToken=${SECRET:tunnelToken} --marker bridgeToken=${SECRET:bridgeToken} "
+             "--marker incomingToken=${SECRET:relayIn} --marker upstreamToken=${SECRET:relayUp}")
+    relay = {"sessionId": "e2e-sweep", "listenHost": "127.0.0.1", "listenPort": 3058, "targetHost": "127.0.0.1",
+             "targetPort": 3059, "incomingToken": "${SECRET:relayIn}", "upstreamToken": "${SECRET:relayUp}",
+             "allowedSourceCIDRs": ["127.0.0.1/32"]}
+    tunnel = {"bindingId": "e2e-sweep", "endpoint": "https://e2e-sweep.invalid/mcp", "scope": "system",
+              "localTarget": f"http://127.0.0.1:{port}/mcp", "tunnelToken": "${SECRET:tunnelToken}"}
+    cluster = {"source": "k3s-host", "clusterId": "e2e-sweep", "clusterName": "e2e-sweep",
+               "agentId": "e2e-sweep-agent", "bridgeToken": "${SECRET:bridgeToken}",
+               "bridgeUrl": f"http://127.0.0.1:{bridge}"}
+    provider_cred = f"{state(n)}/credentials/host-agent-provider.json"
+    holders = [provider_cred] + ([client_cred] if GENERATED_CLIENTS else [])
+    scan = (f"{SW} scan --markers {markers} --unit {unit} --state {state(n)} "
+            + " ".join(f"--holder {h}" for h in holders) + " "
+            + " ".join(f"--root {r}" for r in ("/etc", "/opt", "/tmp", "/var/tmp", "/home", "/root", "/run",
+                                               "/usr/local", "/srv")))
+    steps = base.TOOL_STEPS + [
+        {"id": "sweepTool", "copy": "secretsweep", "to": "/opt/opute-e2e/guest/secretsweep.py"},
+        {"id": "plant", "guest": plant},
+        {"id": "sweepAgent", "guest": f"{SW} agent start {n} --port {port} --env {SWEEP}/agent.env"},
+        # the provider client's secret, which the agent generates into its 0600 credential file
+        {"id": "markProvider", "guest": f"{SW} mark --credential {provider_cred} --as providerSecret "
+                                        f"--markers {markers}"},
+        *([{"id": "markClient", "guest": f"{SW} mark --credential {client_cred} --as oauthClient "
+                                         f"--markers {markers}"}] if GENERATED_CLIENTS else []),
+        {"id": "watch", "guest": f"{SW} watch start --unit {unit}"},
+        {"id": "bridge", "guest": f"{SW} bridge start --port {bridge}"},
+        mcp("list", "tools/list", **o),
+        {"id": "oauth", "guest": (f"{SW} oauth --port {port} --client e2e-sweep --secret oauthClient --basic "
+                                  if GENERATED_CLIENTS else
+                                  f"{SW} oauth --port {port} --client opute-mcp-host --secret OPUTE_HOST_OAUTH_CLIENT_SECRET ")
+                                 + f"--as accessToken --markers {markers}"},
+        call("relay", "ensure_local_llm_relay", relay, **o),
+        *sweep_task("cluster", "install_cluster_agent", cluster, o),
+        *sweep_task("tunnel", "ensure_public_mcp_tunnel", tunnel, o),
+        # cloudflared restarts every 15 s; its runs are in the host-wide trace
+        # (anchored, so the grep's own command line never counts)
+        {"id": "connectorRan", "guest": (f"for i in $(seq 40); do c=$(grep -c '^/opt/opute/tunnels/[^ ]*/cloudflared "
+                                         f"tunnel' {SWEEP}/execve.log || true); [ \"$c\" -ge 2 ] && break; sleep 1; "
+                                         "done; echo \"$c\"")},
+        # a connector that got no token says so; one that read it (from argv or its environment) rejects it
+        {"id": "connectorToken", "guest": "journalctl -u 'opute-cloudflared-*' --no-pager -o cat | "
+                                          "grep -c 'Provided Tunnel token is not valid' || true"},
+        {"id": "unwatch", "guest": f"{SW} watch stop"},
+        {"id": "scan", "guest": scan},
+    ]
+    responses = [a(s, "response.body", excludes="<secret:")
+                 for s in ("list", "relay", "clusterCall", "cluster", "tunnelCall", "tunnel")]
+    reqs = [
+        req(SECRET_SPEC, "A secret never travels on a command line",
+            ok("plant"), ok("sweepAgent"), a("watch", "json.strace", equals=True),
+            a("watch", "json.bpftrace", equals=True), a("bridge", "json.serving", equals=True),
+            a("oauth", "json.issued", equals=True), a("oauth", "json.listed", equals=True),
+            a("relay", "response.body.result.structuredContent.ready", equals=True),
+            a("cluster", "response.body.result.status", equals="completed"),
+            a("cluster", "response.body.result.result.isError", **{"in": [False, "<absent>"]}),
+            a("tunnel", "response.body.result.status", **{"in": ["completed", "failed"]}),
+            a("connectorRan", "stdout", matches="^[1-9][0-9]*\n$"),
+            a("connectorToken", "stdout", matches="^[1-9][0-9]*\n$"),
+            a("scan", "json.execsTraced", gte=1), a("scan", "json.argv", equals={}),
+            scenario="An agent holding its bearer, an OAuth client secret and three provider credentials issues "
+                     "an OAuth token, starts an LLM relay, installs a host cluster agent and a public MCP "
+                     "connector; no process on the host carries any of them, or the tool inputs' tokens, in "
+                     "its arguments"),
+        req(SECRET_SPEC, "A file holding a secret is private to the agent's user",
+            *[a(m, path, equals=v) for m in ["markProvider"] + (["markClient"] if GENERATED_CLIENTS else [])
+              for path, v in (("json.mode", "0o600"), ("json.uid", 0))],
+            a("scan", "json.looseFiles", equals=[]),
+            scenario="Every file under /etc, /opt, /tmp, /var/tmp, /home, /root, /run, /usr/local and /srv that "
+                     "holds a secret, raw or base64-encoded, is 0600 or stricter and owned by the agent's user"),
+        req(SECRET_SPEC, "Logs, the store and responses carry a secret only redacted",
+            a("scan", "json.journal", equals=[]), a("scan", "json.store", equals=[]), *responses,
+            scenario="The journal, the agent's state directory and every MCP response hold no secret"),
+        req(CHILD_SPEC, "A child process never receives the agent's secrets",
+            a("scan", "json.strayEnviron", equals={}),
+            scenario="After the calls, only the agent's own process holds its secrets in its environment"),
+    ]
+    files = {**base.TOOL_FILES, "secretsweep": base.inp("${REPO}/evidence/e2e/guest-tools/secretsweep.py")}
+    cleanup = [
+        {"id": "unwatchAgain", "guest": f"{SW} watch stop >/dev/null; {SW} bridge stop >/dev/null; true"},
+        {"id": "removeConnector", "guest": (
+            f"for u in {TUNNEL_UNITS}; do [ -e \"$u\" ] && systemctl disable --now \"$(basename \"$u\")\"; done; "
+            f"rm -f {TUNNEL_UNITS}; rm -rf /etc/opute/tunnels /opt/opute/tunnels; rmdir /opt/opute 2>/dev/null; "
+            "true")},
+        {"id": "removeClusterAgent", "guest": (
+            f"systemctl disable --now opute-cluster-agent 2>/dev/null; rm -f {CLUSTER_AGENT}; "
+            "rmdir /usr/local/lib/opute 2>/dev/null; systemctl daemon-reload; true")},
+        {"id": "removeAgent", "guest": f"{SW} agent stop {n} >/dev/null; rm -rf {SWEEP}; true"},
+        # bpftrace mounts tracefs
+        {"id": "unmountTracing", "guest": "umount /sys/kernel/debug/tracing 2>/dev/null; true"},
+    ]
+    return journey("e2e6.secret-sweep",
+                   "Where each secret goes (m19): an agent holding a marker per secret class runs the OAuth "
+                   "grant, an LLM relay, a host cluster agent install and a public MCP connector; argv (strace "
+                   "of its tree, bpftrace of the host), every process's environment, the journal, the store, "
+                   "files under the host's writable roots and every response are searched for each marker, "
+                   "raw and base64-encoded.", reqs, steps, cleanup, minutes=15, files=files,
+                   allow=("system/units/e2e-*", "system/unitFiles/e2e-*", "system/units/opute-cloudflared-*",
+                          "system/unitFiles/opute-cloudflared-*", "system/units/opute-cluster-agent*", "files//opt/opute",
+                          "system/unitFiles/opute-cluster-agent*", "files//etc/opute/*", "files//opt/opute/*",
+                          "files//etc/systemd/system/*", "files//usr/local/lib/opute*",
+                          "system/units/sys-kernel-debug-tracing.mount"))
+
+
+JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env, provider_body, secret_sweep]
 
 
 def render() -> dict[str, str]:

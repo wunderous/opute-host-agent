@@ -929,7 +929,7 @@ fn target_uris_input(args: &Args) -> Result<Vec<Uri>, String> {
     Ok(targets)
 }
 
-const HA_CONNECTOR_SCRIPT: &str = "set -eu
+pub(super) const HA_CONNECTOR_SCRIPT: &str = "set -eu
 IFS= read -r tunnel_token || true
 if [ -z \"$tunnel_token\" ]; then
   echo 'Cloudflare Tunnel token was not received on stdin' >&2
@@ -939,11 +939,28 @@ if ! command -v cloudflared >/dev/null 2>&1; then
 \tinstall -m 0755 /tmp/opute-cloudflared /usr/local/bin/cloudflared
 fi
 rm -f /tmp/opute-cloudflared
-printf '%s\\n' '[Unit]' 'After=network-online.target' '' '[Service]' \"ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate run --token $tunnel_token\" 'Restart=on-failure' > /etc/systemd/system/SERVICE_NAME
+(umask 077 && mkdir -p /etc/opute-cloudflare && printf '%s' \"$tunnel_token\" > TOKEN_FILE)
+chmod 0700 /etc/opute-cloudflare
+chmod 0600 TOKEN_FILE
 unset tunnel_token
+printf '%s\\n' '[Unit]' 'After=network-online.target' '' '[Service]' 'ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate run --token-file TOKEN_FILE' 'Restart=on-failure' > /etc/systemd/system/SERVICE_NAME
 systemctl daemon-reload
 systemctl enable --now SERVICE_NAME
 cloudflared --version >/dev/null";
+
+/// The 0600 run token file of an HA connector in its guest (D48).
+fn ha_token_file(service_name: &str) -> String {
+    let stem = service_name
+        .strip_suffix(".service")
+        .unwrap_or(service_name);
+    format!("/etc/opute-cloudflare/{stem}.token")
+}
+
+pub(super) fn ha_connector_script(service_name: &str) -> String {
+    HA_CONNECTOR_SCRIPT
+        .replace("TOKEN_FILE", &ha_token_file(service_name))
+        .replace("SERVICE_NAME", service_name)
+}
 
 fn install_ha_connector(
     client: &HostAgent,
@@ -955,7 +972,7 @@ fn install_ha_connector(
     let artifact = verified_cloudflared_artifact()?;
     stage_cloudflared_artifact(client, target, &artifact)
         .map_err(|e| format!("stage verified Cloudflare connector in guest: {e}"))?;
-    let script = HA_CONNECTOR_SCRIPT.replace("SERVICE_NAME", service_name);
+    let script = ha_connector_script(service_name);
     let result = client.call_host(
         "run_instance_command",
         json!({"uri": target.to_string(), "command": "bash", "args": ["-lc", script], "stdin": format!("{token}\n"), "timeoutMs": 10 * 60 * 1000}),
@@ -1099,7 +1116,7 @@ fn remove_ha_connector(client: &HostAgent, target: &Uri, service_name: &str) -> 
         json!({
             "uri": target.to_string(),
             "command": "bash",
-            "args": ["-lc", format!("systemctl disable --now {service_name} >/dev/null 2>&1 || true; rm -f /etc/systemd/system/{service_name}; systemctl daemon-reload")],
+            "args": ["-lc", format!("systemctl disable --now {service_name} >/dev/null 2>&1 || true; rm -f /etc/systemd/system/{service_name} {}; systemctl daemon-reload", ha_token_file(service_name))],
             "timeoutMs": 120_000,
         }),
     )?;

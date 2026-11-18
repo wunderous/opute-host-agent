@@ -757,7 +757,8 @@ mod tests {
                 files.extend(std::fs::read_dir(&path).unwrap().map(|e| e.unwrap().path()));
                 continue;
             }
-            if path.extension().is_none_or(|e| e != "rs") {
+            // A `tests.rs` is a test module (`#[cfg(test)] mod tests;`).
+            if path.extension().is_none_or(|e| e != "rs") || path.ends_with("tests.rs") {
                 continue;
             }
             let text = std::fs::read_to_string(&path).unwrap();

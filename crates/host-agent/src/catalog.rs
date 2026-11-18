@@ -1885,6 +1885,47 @@ mod tests {
         assert!(cat.find("install_virtualization_stack_x").is_none());
     }
 
+    /// m19 (S5): every declared input whose name says it is a credential
+    /// is published writeOnly, so D13's storage projection redacts it.
+    /// Undeclared inputs are already redacted by the fail-closed rule.
+    #[test]
+    fn every_declared_credential_input_is_write_only() {
+        let secret = regex::Regex::new(
+            r"(?i)(token|secret|password|passwd|credential|authkey|apikey|bearerkey|privatekey)s?$",
+        )
+        .unwrap();
+        fn walk(schema: &J, at: &str, secret: &regex::Regex, out: &mut Vec<String>) {
+            let Some(props) = schema.get("properties").and_then(J::as_object) else {
+                return;
+            };
+            for (key, child) in props {
+                let path = format!("{at}/{key}");
+                if secret.is_match(key)
+                    && child.get("type") == Some(&J::from("string"))
+                    && child.get("writeOnly") != Some(&J::Bool(true))
+                {
+                    out.push(path.clone());
+                }
+                walk(child, &path, secret, out);
+                if let Some(items) = child.get("items") {
+                    walk(items, &format!("{path}[]"), secret, out);
+                }
+            }
+        }
+        let mut missing = Vec::new();
+        for standalone in [false, true] {
+            for d in &for_mode(standalone).tools {
+                walk(&d.input_schema, &d.name, &secret, &mut missing);
+            }
+        }
+        missing.sort();
+        missing.dedup();
+        assert!(
+            missing.is_empty(),
+            "credential inputs not writeOnly: {missing:?}"
+        );
+    }
+
     /// D24: the relay token is published writeOnly in every postgres
     /// service tool, so the storage projection redacts it at the top level
     /// and under localRelay; delivery still hides only marked fields.

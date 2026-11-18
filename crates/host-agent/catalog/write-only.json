@@ -1,8 +1,9 @@
 {
  "decision": "D24",
  "change": "openspec/changes/write-only-relay-token",
- "note": "Input fields Rust publishes writeOnly that Go's catalog leaves unmarked: credentials the schema-driven storage projection must then redact. Each entry is a property path from the input schema's root. tools/parity reads the same file for the D24.write-only-relay-token divergence.",
+ "note": "Input fields Rust publishes writeOnly that Go's catalog leaves unmarked: credentials the schema-driven storage projection must then redact. Each entry is a property path from the input schema's root. tools/parity reads the same file for the D24.write-only-relay-token divergence. D51 (m19, write-only-relay-upstream-token) adds ensure_local_llm_relay's upstreamToken, which the D13 store kept verbatim.",
  "fields": {
+  "ensure_local_llm_relay": [["upstreamToken"]],
   "get_postgresql_service_status": [["localRelay", "relayToken"]],
   "reconcile_postgresql_service": [["localRelay", "relayToken"]],
   "release_postgresql_service_relay": [["relayToken"]],

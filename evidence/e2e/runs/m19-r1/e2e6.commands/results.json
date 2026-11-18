@@ -1,0 +1,116 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-hang.service",
+   "system/unitFiles/e2e-agent-junk.service",
+   "system/units/e2e-agent-hang.service",
+   "system/units/e2e-agent-junk.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.commands",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "stubs"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "hangCall"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "hangCall"
+    },
+    {
+     "actual": 45272,
+     "lte": 60000,
+     "ok": true,
+     "path": "ms",
+     "step": "hangCall"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "hangNext"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A failing provider command ends the call, not the agent",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "junkCall"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "junkInfo"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "junkNext"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A failing provider command ends the call, not the agent",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "hangAgent": 30870,
+   "hangCall": 45272,
+   "hangNext": 234,
+   "junkAgent": 1065,
+   "junkCall": 250,
+   "junkInfo": 206,
+   "junkNext": 272,
+   "listHang": 541,
+   "listJunk": 244,
+   "noStubLeft": 2159,
+   "stubs": 252,
+   "tool": 284,
+   "wire": 283
+  },
+  "stepsSeconds": 126.8
+ },
+ "unverified": []
+}
