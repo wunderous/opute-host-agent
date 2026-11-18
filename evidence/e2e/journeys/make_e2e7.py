@@ -21,7 +21,7 @@ import os
 
 import make_e2e1 as base
 from make_e2e1 import HERE, SPEC, a, inp, ok, req
-from make_e2e3a import call, direct, task
+from make_e2e3a import call, direct, res, task
 from make_e2e4a import PKGS_BEFORE, PODMAN_CLEANUP, PODMAN_EFFECTS, SUPERVISOR_EFFECTS
 
 GATE = "e2e-7"
@@ -142,12 +142,16 @@ def recipe_run(id_: str, source: str, inputs: dict, timeout: int = 1200) -> list
                  timeout=timeout, interval=5)]
 
 
-def removal(id_: str, path: str) -> list[dict]:
-    """remove_host_file as a task, with the roots capability it requires."""
-    steps = task(id_, "remove_host_file", {"path": path, "confirm": True, "scope": "user"})
+def removal_task(id_: str, tool: str, args: dict) -> list[dict]:
+    """A task-aware removal, with the roots capability it requires."""
+    steps = task(id_, tool, args)
     for step in steps:
         step["meta"] = ROOTS_META
     return steps
+
+
+def removal(id_: str, path: str) -> list[dict]:
+    return removal_task(id_, "remove_host_file", {"path": path, "confirm": True, "scope": "user"})
 
 
 def node(step: str, node_id: str, **op) -> dict:
@@ -179,6 +183,8 @@ def steps() -> list[dict]:
         {"id": "envCopy", "copy": "cloudflareEnv", "to": ENV, "mode": "0600"},
         {"id": "envOwner", "guest": f"chown -R opute:opute {CFG} && stat -c '%a %U' {ENV}"},
         *provider_steps(),
+        # the providers' tools, for the schema check of the direct calls below
+        {"id": "catalogProviders", "mcp": "tools/list"},
         call("siteRecipe", "ensure_host_file", {"path": SITE, "content": literal((M20 / "minimal-site.recipe.yaml").read_text()),
                                                 "mode": 0o644, "scope": "user"}),
         call("downRecipe", "ensure_host_file", {"path": DOWN, "content": literal(teardown), "mode": 0o644, "scope": "user"}),
@@ -196,10 +202,10 @@ def steps() -> list[dict]:
         # a deleted pod comes back and the site answers again
         call("pods", "list_pods", {"uri": CLUSTER, "namespace": "site"},
              capture={"POD": "response.body.result.structuredContent.pods[0].name"}),
-        call("deletePod", "delete_cluster_resource",
-             {"uri": CLUSTER, "kind": "Pod", "namespace": "site", "resourceName": "${POD}"}),
+        *removal_task("deletePod", "delete_cluster_resource",
+                      {"uri": CLUSTER, "kind": "Pod", "namespace": "site", "resourceName": "${POD}"}),
         {"id": "podBack", "guest": (
-            f"for i in $(seq 90); do n=$(incus --project opute-e2e exec {NAME} -- k3s kubectl -n site get pods "
+            f"for i in $(seq 90); do n=$(incus exec {NAME} -- k3s kubectl -n site get pods "
             "-l app.kubernetes.io/name=site -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}"
             "{.metadata.name}{\"\\n\"}{end}' | grep -v -x '${POD}' | head -1); [ -n \"$n\" ] && break; sleep 2; "
             "done; [ -n \"$n\" ] && echo replaced"), "timeout": 240},
@@ -217,7 +223,7 @@ def steps() -> list[dict]:
          "until": {"path": "response.body", "matches": "^(?![\\s\\S]*\"Answer\")"}, "retryTimeout": 360,
          "interval": 10},
         call("tunnelGone", "get_cloudflare_tunnel_status", TUNNEL_ARGS),
-        {"id": "guestGone", "guest": f"incus --project opute-e2e list -f csv -c n | grep -c -x {NAME}; true"},
+        {"id": "guestGone", "guest": f"incus list -f csv -c n | grep -c -x {NAME}; true"},
         # the providers were host prerequisites; their units go the same typed way
         *[s for p in PROVIDERS for s in (
             call(f"{p['id']}Stop", "set_host_service_state",
@@ -241,7 +247,7 @@ def requirements() -> list[dict]:
             a("page", "response.status", equals=200),
             a("page", "response.tlsVerified", equals=True),
             a("page", "response.body", contains=MARKER),
-            direct("deletePod", "isError", **{"in": [False, "<absent>"]}),
+            res("deletePod", "isError", **{"in": [False, "<absent>"]}),
             a("podBack", "stdout", equals="replaced\n"),
             a("pageAgain", "response.status", equals=200),
             a("pageAgain", "response.body", contains=MARKER),
@@ -293,10 +299,11 @@ def cleanup() -> list[dict]:
     return [
         *recipe_run("cleanDown", DOWN, down_inputs("cleanup"), timeout=600),
         {"id": "cleanSetup", "guest": (
-            f"incus --project opute-e2e delete -f {NAME} 2>/dev/null; "
+            f"incus delete -f {NAME} 2>/dev/null; "
             "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user stop "
             "opute-provider-k3s opute-provider-cloudflare 2>/dev/null; "
-            f"rm -f {UNITS}/opute-provider-*.service; rm -rf {CFG} {CONTEXT} /opt/opute-e2e/guest/leakcheck.py; "
+            f"rm -f {UNITS}/opute-provider-*.service; rmdir {UNITS} /home/opute/.config/systemd 2>/dev/null; "
+            f"rm -rf {CFG} {CONTEXT} /opt/opute-e2e/guest/leakcheck.py; "
             "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
             "xargs -r -I{} incus storage volume delete default image/{}; "
             "loginctl disable-linger opute; " + PODMAN_CLEANUP + "true")},

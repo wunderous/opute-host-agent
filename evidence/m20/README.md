@@ -73,6 +73,11 @@ new run with the same inputs, and that run skips every node.
 - **Without credentials, the teardown's tunnel node passes without removing
   anything**, because the provider then reports no route and no tunnel. The
   journey therefore checks public DNS directly as well.
+- **The teardown removes the guest before the tunnel.** The connector runs in
+  the guest's cluster, and `remove-host-tunnel` stops only a host-placed
+  connector. Cloudflare refuses to delete a tunnel that still has connections
+  (code 1022) and closes them within minutes of the connector stopping, so the
+  tunnel node retries up to six times, 10 s apart and doubling.
 
 ## Decisions
 
@@ -80,3 +85,28 @@ new run with the same inputs, and that run skips every node.
 |---|---|---|
 | D44 | A recipe node that ran `run_host_local_recipe` validated, then never finished: the inner run waits for the heavy slot the outer run holds. Go v0.2.4 has the same gap. | Plan and recipe validation refuse all seven tools that start a plan run ([refuse-nested-plan-runs](../../openspec/changes/refuse-nested-plan-runs/proposal.md)). Failing first: `d44-before.log`. |
 | D45 | A validation-only node failed at once after an applied dependency: the executor skipped its preflight to force an action it does not have. Go v0.2.4 does the same. | A node without an action always evaluates its validation ([validation-only-node-validates](../../openspec/changes/validation-only-node-validates/proposal.md)). Failing first: `d45-before.log`. |
+
+## Results
+
+Gate e2e-7 ran `e2e7.public-site` on `rust-0.4.0-rc3` under run `m20-r1`
+(`evidence/e2e/runs/m20-r1/e2e7.public-site/`), and
+`evidence/e2e/verify.py --gate e2e-7` passes. From the snapshot, in 317 s:
+
+| Step | Outcome |
+|---|---|
+| Site recipe, first run | completed in 110 s; eight nodes applied, the three validation-only nodes satisfied (D45) |
+| Public page | `https://e2e-m20-r1.opute.io/` answers 200 with the site's marker, fetched by the host over verified TLS |
+| Site recipe, second run | completed in 5 s; every node satisfied |
+| Pod deleted | replaced in 3 s; the page answers again |
+| Secrets | the Cloudflare API token and the tunnel's run token: in no file but the owner's credentials file, in no journal line, in neither run record |
+| Teardown, first run | completed in 90 s; guest, tunnel (attempt 4 of 6) and context applied |
+| Teardown, second run | every node satisfied |
+| After | no CNAME answers, the tunnel is gone by name, no guest, no provider unit, no residue |
+
+The first attempt was retired (`.parity/retired/m20-r1-e2e7-first/`). It
+brought the site up and served it, then found the teardown order above, and
+three journey defects: the pod deletion lacked the client capabilities
+`delete_cluster_resource` requires, four steps read an incus project the
+agent's guests are not in, and a direct provider-tool call was checked against
+the catalog read before the providers were installed. The journey reran once
+under the same run on the same build.

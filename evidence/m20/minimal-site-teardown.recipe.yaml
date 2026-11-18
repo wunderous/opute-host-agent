@@ -1,7 +1,13 @@
-# m20: removes what minimal-site.recipe.yaml made: the tunnel and its CNAME at Cloudflare, then the guest
-# container with its cluster, registry, workload and connector. Each node validates the absence it makes, so
-# a second run skips every action. Removing the staged context's Dockerfile makes the next site run stage it
-# again, so that run applies every node from clean state.
+# m20: removes what minimal-site.recipe.yaml made: the guest container with its cluster, registry, workload
+# and connector, then the tunnel and its CNAME at Cloudflare. Each node validates the absence it makes, so
+# a second run skips every action.
+#
+# The guest goes first because the connector runs in its cluster, and remove-host-tunnel stops only a
+# host-placed connector. Cloudflare refuses to delete a tunnel that still has connections (error 1022, found
+# by e2e7 under m20-r1), and closes them within minutes of the connector stopping, so the tunnel node retries.
+#
+# Removing the staged context's Dockerfile makes the next site run stage it again, so that run applies every
+# node from clean state.
 #
 # Assertion values are not interpolated, and a read of a removed guest is refused rather than answered, so the
 # guest node asserts the guest's absence from list_vms by its literal name. The caller fills in __GUEST_NAME__
@@ -45,7 +51,23 @@ plan:
   defaults:
     timeoutMs: 600000
   nodes:
+    - id: guest
+      action:
+        tool: delete_vm
+        args: {uri: 'container:local:${vars.inputs.name}'}
+      validate:
+        tool: list_vms
+        args: {fast: true}
+        assert:
+          - path: /vms
+            op: all
+            assertions:
+              - {path: /name, op: ne, value: __GUEST_NAME__}
+        pollIntervalMs: 2000
+        timeoutMs: 120000
     - id: tunnel
+      dependsOn: [guest]
+      retry: {maxAttempts: 6, backoffMs: 10000, backoffFactor: 2}
       action:
         tool: opute.capability.tunneling.remove-host-tunnel
         args: &tunnel
@@ -61,23 +83,8 @@ plan:
         assert:
           - {path: /routed, op: eq, value: false}
           - {path: /tunnelId, op: empty}
-    - id: guest
-      dependsOn: [tunnel]
-      action:
-        tool: delete_vm
-        args: {uri: 'container:local:${vars.inputs.name}'}
-      validate:
-        tool: list_vms
-        args: {fast: true}
-        assert:
-          - path: /vms
-            op: all
-            assertions:
-              - {path: /name, op: ne, value: __GUEST_NAME__}
-        pollIntervalMs: 2000
-        timeoutMs: 120000
     - id: context
-      dependsOn: [guest]
+      dependsOn: [tunnel]
       action:
         tool: remove_host_file
         args: {path: '${vars.inputs.contextDir}/Dockerfile', confirm: true}

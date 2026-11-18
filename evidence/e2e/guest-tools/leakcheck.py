@@ -33,7 +33,7 @@ def env_value(path, key):
 
 def k8s_secret(guest, spec):
     namespace, name, key = spec.split("/")
-    out = subprocess.run(["incus", "--project", "opute-e2e", "exec", guest, "--", "k3s", "kubectl", "-n", namespace,
+    out = subprocess.run(["incus", "exec", guest, "--", "k3s", "kubectl", "-n", namespace,
                           "get", "secret", name, "-o", f"jsonpath={{.data.{key}}}"],
                          capture_output=True, text=True)
     return base64.b64decode(out.stdout).decode() if out.returncode == 0 and out.stdout else ""
