@@ -12,5 +12,5 @@
 
 ## 3. Candidates
 
-- [ ] 3.1 Gate e2e-6 passes `e2e6.secret-sweep` on rust-0.3.0-rc6.
-- [ ] 3.2 Gate e2e-6 passes `e2e6.secret-sweep` on rust-0.4.0-rc4.
+- [x] 3.1 Gate e2e-6 passes `e2e6.secret-sweep` on rust-0.3.0-rc6 (run `m19-r1`).
+- [x] 3.2 Gate e2e-6 passes `e2e6.secret-sweep` on rust-0.4.0-rc4 (run `m19-r2`).
