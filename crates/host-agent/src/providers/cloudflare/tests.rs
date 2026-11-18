@@ -1,7 +1,10 @@
 //! The Go provider's pure unit tests, ported; the rest run against this
 //! executable as black boxes (`provider_wire.py`).
 
-use super::mesh::{command_diagnostics, find_mesh_interface, find_mesh_ip, MESH_INSTALL_SCRIPT};
+use super::mesh::{
+    command_diagnostics, find_mesh_interface, find_mesh_ip, HA_CONNECTOR_SCRIPT,
+    MESH_INSTALL_SCRIPT,
+};
 use super::*;
 
 #[test]
@@ -159,14 +162,83 @@ fn a_host_connector_never_carries_its_run_token_on_argv() {
             .find(|a| a["path"].as_str().unwrap().ends_with(".service"))
             .unwrap();
         let unit = unit["content"].as_str().unwrap();
-        assert!(!unit.contains(token), "{scope}: the run token is in ExecStart");
+        assert!(
+            !unit.contains(token),
+            "{scope}: the run token is in ExecStart"
+        );
         let held = files
             .iter()
-            .find(|a| a["content"] == J::from(token))
+            .find(|a| a["content"] == token)
             .expect("a token file");
         assert_eq!(held["mode"], J::from(0o600));
         let path = held["path"].as_str().unwrap();
-        let in_unit = path.strip_prefix('~').map_or(path.to_string(), |rest| format!("%h{rest}"));
-        assert!(unit.contains(&format!("--token-file {in_unit}\n")), "{unit}");
+        let in_unit = path
+            .strip_prefix('~')
+            .map_or(path.to_string(), |rest| format!("%h{rest}"));
+        assert!(
+            unit.contains(&format!("--token-file {in_unit}\n")),
+            "{unit}"
+        );
     }
+}
+
+/// m19 (S6): an HA connector in a guest reads its run token from a 0600
+/// file; neither cloudflared's argv nor its unit file holds it. The script
+/// runs with its /etc paths under a temporary root and stub tools.
+#[test]
+fn an_ha_connector_keeps_its_run_token_in_a_private_file() {
+    use std::io::Write;
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().display().to_string();
+    let bin = dir.path().join("bin");
+    std::fs::create_dir_all(dir.path().join("etc/systemd/system")).unwrap();
+    std::fs::create_dir_all(&bin).unwrap();
+    for name in ["cloudflared", "systemctl"] {
+        let path = bin.join(name);
+        std::fs::write(
+            &path,
+            format!("#!/bin/sh\nprintf '%s\\n' \"$@\" >> {root}/argv\n"),
+        )
+        .unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let token = "ha-run-token-0123456789abcdef0123456789";
+    let script = HA_CONNECTOR_SCRIPT
+        .replace("TOKEN_FILE", "/etc/opute-cloudflare/x.token")
+        .replace("SERVICE_NAME", "x.service")
+        .replace("/etc/", &format!("{root}/etc/"))
+        .replace(
+            "/usr/local/bin/cloudflared",
+            &bin.join("cloudflared").display().to_string(),
+        );
+    let mut child = std::process::Command::new("bash")
+        .arg("-c")
+        .arg(&script)
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+        .stdin(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    writeln!(child.stdin.take().unwrap(), "{token}").unwrap();
+    assert!(child.wait().unwrap().success());
+    let unit = std::fs::read_to_string(dir.path().join("etc/systemd/system/x.service")).unwrap();
+    assert!(!unit.contains(token), "the run token is in the unit file");
+    assert!(
+        !script.contains("--token $"),
+        "the run token is on cloudflared's argv"
+    );
+    let file = dir.path().join("etc/opute-cloudflare/x.token");
+    assert_eq!(std::fs::read_to_string(&file).unwrap(), token);
+    assert_eq!(
+        std::fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    assert!(
+        unit.contains(&format!(
+            "--token-file {root}/etc/opute-cloudflare/x.token\n"
+        )),
+        "{unit}"
+    );
+    let argv = std::fs::read_to_string(dir.path().join("argv")).unwrap();
+    assert!(!argv.contains(token));
 }

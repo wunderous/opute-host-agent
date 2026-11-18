@@ -96,5 +96,8 @@ fn the_auth_key_never_reaches_tailscales_arguments() {
     let argv = std::fs::read_to_string(dir.path().join("argv")).unwrap();
     assert!(argv.contains("up\n"), "{argv}");
     assert!(!argv.contains(key), "the auth key is on tailscale's argv");
-    assert_eq!(std::fs::read_to_string(dir.path().join("key")).unwrap(), key);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("key")).unwrap(),
+        key
+    );
 }

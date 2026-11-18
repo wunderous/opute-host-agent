@@ -614,6 +614,9 @@ def secret_sweep() -> dict:
         {"id": "connectorRan", "guest": (f"for i in $(seq 40); do c=$(grep -c '^/opt/opute/tunnels/[^ ]*/cloudflared "
                                          f"tunnel' {SWEEP}/execve.log || true); [ \"$c\" -ge 2 ] && break; sleep 1; "
                                          "done; echo \"$c\"")},
+        # a connector that got no token says so; one that read it (from argv or its environment) rejects it
+        {"id": "connectorToken", "guest": "journalctl -u 'opute-cloudflared-*' --no-pager -o cat | "
+                                          "grep -c 'Provided Tunnel token is not valid' || true"},
         {"id": "unwatch", "guest": f"{SW} watch stop"},
         {"id": "scan", "guest": scan},
     ]
@@ -629,6 +632,7 @@ def secret_sweep() -> dict:
             a("cluster", "response.body.result.result.isError", **{"in": [False, "<absent>"]}),
             a("tunnel", "response.body.result.status", **{"in": ["completed", "failed"]}),
             a("connectorRan", "stdout", matches="^[1-9][0-9]*\n$"),
+            a("connectorToken", "stdout", matches="^[1-9][0-9]*\n$"),
             a("scan", "json.execsTraced", gte=1), a("scan", "json.argv", equals={}),
             scenario="An agent holding its bearer, an OAuth client secret and three provider credentials issues "
                      "an OAuth token, starts an LLM relay, installs a host cluster agent and a public MCP "

@@ -1223,7 +1223,8 @@ if ! pgrep -x tailscaled >/dev/null 2>&1; then
   echo 'tailscaled is not running; call opute.capability.mesh-runtime.ensure-agent first' >&2
   exit 1
 fi
-timeout 120s tailscale up --authkey="$auth_key" --hostname={} --accept-routes=false --reset
+printf '%s' "$auth_key" | timeout 120s tailscale up --auth-key=file:/dev/stdin --hostname={} --accept-routes=false --reset
+unset auth_key
 mesh_ip=""
 for attempt in $(seq 1 60); do
   mesh_ip="$(tailscale ip -4 2>/dev/null | head -n1 | tr -d '[:space:]' || true)"

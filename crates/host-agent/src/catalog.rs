@@ -1920,7 +1920,10 @@ mod tests {
         }
         missing.sort();
         missing.dedup();
-        assert!(missing.is_empty(), "credential inputs not writeOnly: {missing:?}");
+        assert!(
+            missing.is_empty(),
+            "credential inputs not writeOnly: {missing:?}"
+        );
     }
 
     /// D24: the relay token is published writeOnly in every postgres
