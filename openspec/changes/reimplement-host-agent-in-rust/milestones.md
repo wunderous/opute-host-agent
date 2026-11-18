@@ -1390,6 +1390,23 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   - **Candidate:** `rust-0.3.0-rc5` (d4f8c8745); all gates pass on
     `m18-r1`, with the contract suites, seam stage `m18`, the arm64 install
     and the distribution checks recaptured on rc5.
+- **m19 secret exposure sweep (D46-D51).** `e2e6.secret-sweep` plants a
+  marker per secret class and searches argv (strace and bpftrace), every
+  environment, the journal, the store, files and responses.
+  - **Before:** on rc5 (`m19-before-030`) and rust-0.4.0-rc3
+    (`m19-before-040`): the public-MCP tunnel token on cloudflared's argv
+    (S1), the cluster agent's bridge token on argv, in sudo's journal entry
+    and in a 0644 config (S4), the relay's upstream token in the store (S5).
+    Unit tests found S2, S3 and S6 on paths the dev VM cannot reach.
+  - **Fix:** D46 states the rules; D47 to D51 fix the findings
+    (`openspec/changes/secret-placement`). Each fix has a test that failed
+    first.
+  - **Candidate:** `rust-0.3.0-rc6` (b304544ee); all gates pass on
+    `m19-r1` (e2e-6: 10 journeys, 14 requirements), with the contract
+    suites, seam stage `m19`, the arm64 install and the distribution checks
+    recaptured on rc6. On `rust-0.4.0`: `rust-0.4.0-rc4` (2d2f51d20);
+    all gates pass on `m19-r2` (e2e-6: 9 journeys, 21 requirements), with
+    the same receipts recaptured on rc4.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1473,6 +1490,12 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D43 | D40 to D42 were decided on 0.4.0 code; the 0.3.0 candidate `rust-0.3.0-rc4` has A4, A2 and A5 too (measured in goal m18, `evidence/m18`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m18: D40 and D41 apply to 0.3.0** from `rust-0.3.0-rc5`, as declared divergences from Go v0.2.4. **D42 stays 0.4.0 only**: it adds two settings, a contract change the parity release does not take, so O1 stays an open observation in 0.3.0 | rc5 replaces rc4 as the 0.3.0 candidate; no new setting, tool or endpoint |
 | D44 | A plan or recipe node that starts a plan run of its own waits forever for the heavy admission slot its enclosing run holds; the validators named only `run_host_plan` and `run_runtime_recipe` (found in goal m20, `evidence/m20`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m20: refuse all seven tools that start a plan run** as an action, compensation, recovery or recipe validation, before any side effect; a provider is installed by a typed call before the recipe that uses it ([`refuse-nested-plan-runs`](../refuse-nested-plan-runs/proposal.md)) | A plan that cannot finish is refused at validation; 0.4.0 only, from rc3; no new tool, setting or default |
 | D45 | A plan node with a validation and no action failed at once when a dependency was applied in the same run: the executor skipped its preflight to force an action it does not have; Go v0.2.4 does the same (found in goal m20, `evidence/m20`) | **Decided (Host Agent owner, delegated 2026-11-11), goal m20: a node without an action always evaluates its validation**, polling within its timeout; an applied dependency still forces an action ([`validation-only-node-validates`](../validation-only-node-validates/proposal.md)) | A plan can wait for an effect an earlier node started; 0.4.0 only, from rc3; no new tool, setting or default |
+| D46 | No check covered where a secret goes besides a child's environment (D40): argv, file modes, the journal, the store, responses (goal m19) | **Decided (Host Agent owner, delegated 2026-11-11): three placement rules** (never on a command line; a file holding one is 0600 and the agent's user's; logs, the store and responses only redacted), checked on every candidate by `e2e6.secret-sweep` ([`secret-placement`](../secret-placement/proposal.md)) | Findings S1 to S6 on rc5 and rc3, fixed by D47 to D51 |
+| D47 | The public-MCP connector put its tunnel token on cloudflared's argv (S1) | **Decided (Host Agent owner, delegated 2026-11-11): `TUNNEL_TOKEN`** from the unit's 0600 token file ([`public-tunnel-token-environment`](../public-tunnel-token-environment/proposal.md)) | The token file's format and the tool's result do not change |
+| D48 | The Cloudflare provider's host-placed and HA connectors put the run token in `ExecStart`, the HA unit at 0644 (S2, S6) | **Decided (Host Agent owner, delegated 2026-11-11): `--token-file`** with a 0600 file, as the container and Kubernetes placements already do ([`cloudflare-connector-token-file`](../cloudflare-connector-token-file/proposal.md)) | One new 0600 file per host or HA connector, removed with it |
+| D49 | The Tailscale join ran `tailscale up --authkey="$auth_key"` (S3) | **Decided (Host Agent owner, delegated 2026-11-11): `--auth-key=file:/dev/stdin`** ([`tailscale-auth-key-file`](../tailscale-auth-key-file/proposal.md)) | None outside the guest |
+| D50 | `install_cluster_agent` carried the bridge token base64-encoded in the argv of `bash`, `sudo` and `incus exec`, logged by sudo, and wrote the config 0644 (S4) | **Decided (Host Agent owner, delegated 2026-11-11): the config on stdin, written 0600** ([`cluster-agent-config-stdin`](../cluster-agent-config-stdin/proposal.md)) | The install script is Go's without the embedded config |
+| D51 | `ensure_local_llm_relay.upstreamToken` was stored verbatim (S5) | **Decided (Host Agent owner, delegated 2026-11-11): publish it `writeOnly`** through D24's list ([`write-only-relay-upstream-token`](../write-only-relay-upstream-token/proposal.md)) | The catalog revision changes |
 
 ## 7. Risks this plan specifically mitigates
 

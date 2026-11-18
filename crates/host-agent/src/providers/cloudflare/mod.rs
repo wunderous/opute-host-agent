@@ -641,6 +641,20 @@ fn reconcile_legacy_host_tunnel(
     scope: &str,
     run_token: &str,
 ) -> Result<(), String> {
+    reconcile_legacy_host_tunnel_with(
+        &mut |name, arguments| client.call_host(name, arguments).map(|_| ()),
+        args,
+        scope,
+        run_token,
+    )
+}
+
+fn reconcile_legacy_host_tunnel_with(
+    call: &mut dyn FnMut(&str, J) -> Result<(), String>,
+    args: &Args,
+    scope: &str,
+    run_token: &str,
+) -> Result<(), String> {
     let service_name = first_non_empty(&[
         &args.string("serviceName", ""),
         "opute-cloudflare-tunnel.service",
@@ -661,7 +675,7 @@ fn reconcile_legacy_host_tunnel(
         &args.string("artifactSha256", ""),
         mesh::CLOUDFLARED_ARTIFACT_SHA,
     ]);
-    client.call_host(
+    call(
         "ensure_host_artifact",
         json!({"uri": artifact_uri, "destination": artifact_path, "sha256": artifact_sha, "executable": true}),
     )?;
@@ -674,22 +688,31 @@ fn reconcile_legacy_host_tunnel(
     } else {
         "default.target"
     };
+    // D48: cloudflared reads the run token from a 0600 file, never argv.
+    let token_file = host_token_file(scope, &service_name);
+    let unit_token_file = match token_file.strip_prefix('~') {
+        Some(rest) => format!("%h{rest}"),
+        None => token_file.clone(),
+    };
+    call(
+        "ensure_host_file",
+        json!({"path": token_file, "content": run_token, "mode": 0o600}),
+    )?;
     let unit = format!(
-        "[Unit]\nDescription=Opute Cloudflare tunnel\nAfter=network-online.target\n\n[Service]\nExecStart={executable} tunnel --no-autoupdate run --token {}\nRestart=on-failure\n\n[Install]\nWantedBy={wanted_by}\n",
-        shell_quote(run_token)
+        "[Unit]\nDescription=Opute Cloudflare tunnel\nAfter=network-online.target\n\n[Service]\nExecStart={executable} tunnel --no-autoupdate run --token-file {unit_token_file}\nRestart=on-failure\n\n[Install]\nWantedBy={wanted_by}\n"
     );
-    client.call_host(
+    call(
         "ensure_host_file",
         json!({"path": service_file, "content": unit, "mode": 0o600}),
     )?;
-    client.call_host("ensure_host_service_supervisor", json!({"scope": scope}))?;
-    client.call_host(
+    call("ensure_host_service_supervisor", json!({"scope": scope}))?;
+    call(
         "set_host_service_state",
         json!({"uri": host_service_uri(scope, &service_name), "serviceName": service_name, "state": "start", "scope": scope}),
     )?;
     let target = args.string("localTarget", "");
     if !target.is_empty() {
-        client.call_host(
+        call(
             "probe_http_endpoint",
             json!({"endpoint": target, "acceptAuthenticationChallenge": true}),
         )?;
@@ -990,6 +1013,10 @@ fn remove_tunnel(ctx: &Ctx, args: &Args) -> Outcome {
                 "remove_host_file",
                 json!({"path": service_file, "confirm": true, "scope": scope}),
             ),
+            (
+                "remove_host_file",
+                json!({"path": host_token_file(&scope, &service_name), "confirm": true, "scope": scope}),
+            ),
         ];
         for (name, arguments) in calls {
             if let Err(e) = client.call_host(name, arguments) {
@@ -1206,16 +1233,24 @@ fn default_host_service_file(scope: &str, service_name: &str) -> String {
     }
 }
 
+/// The 0600 run token file of a host-placed connector (D48).
+fn host_token_file(scope: &str, service_name: &str) -> String {
+    let stem = service_name
+        .strip_suffix(".service")
+        .unwrap_or(service_name);
+    if scope == "system" {
+        format!("/etc/opute-cloudflare/{stem}.token")
+    } else {
+        format!("~/.config/opute-cloudflare/{stem}.token")
+    }
+}
+
 fn default_cloudflared_artifact_path(scope: &str) -> &'static str {
     if scope == "system" {
         "/opt/opute/cloudflared"
     } else {
         "~/.local/share/opute/providers/com.opute.cloudflare/bin/cloudflared"
     }
-}
-
-fn shell_quote(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 /// `json.Marshal` of a string, as the manifests quote YAML scalars.
