@@ -1390,6 +1390,21 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   - **Candidate:** `rust-0.3.0-rc5` (d4f8c8745); all gates pass on
     `m18-r1`, with the contract suites, seam stage `m18`, the arm64 install
     and the distribution checks recaptured on rc5.
+- **m19 secret exposure sweep (D46-D51).** `e2e6.secret-sweep` plants a
+  marker per secret class and searches argv (strace and bpftrace), every
+  environment, the journal, the store, files and responses.
+  - **Before:** on rc5 (`m19-before-030`) and rust-0.4.0-rc3
+    (`m19-before-040`): the public-MCP tunnel token on cloudflared's argv
+    (S1), the cluster agent's bridge token on argv, in sudo's journal entry
+    and in a 0644 config (S4), the relay's upstream token in the store (S5).
+    Unit tests found S2, S3 and S6 on paths the dev VM cannot reach.
+  - **Fix:** D46 states the rules; D47 to D51 fix the findings
+    (`openspec/changes/secret-placement`). Each fix has a test that failed
+    first.
+  - **Candidate:** `rust-0.3.0-rc6` (b304544ee); all gates pass on
+    `m19-r1` (e2e-6: 10 journeys, 14 requirements), with the contract
+    suites, seam stage `m19`, the arm64 install and the distribution checks
+    recaptured on rc6.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
