@@ -282,12 +282,12 @@ Each fix has a test that failed on rc1's code
 
 | Field | Value |
 |---|---|
-| Name | `rust-0.4.0-rc2`, version `0.4.0`. It replaces `rust-0.4.0-rc1` (m15, run `m15-r1`), which the m17 fixes superseded |
-| Commit | `5d3e55fde7c4e6b19731e21a980f6f79a7df9285` (branch `claude/m17-observations`, PR #51) |
-| `SHA256SUMS` | `sha256:f4a13f4306231e66f734fd9f99ab5bbea4ce74af0cc93838664e6458bd24e9f8` |
-| `host-agent-linux-x64` | `afef1de42d4f51a833e4ad816cb99c3846851895ebcfd05c2111713bdb13396e` |
-| `host-agent-linux-arm64.gz` | `b23f7874f5e889dad3fe1e1dec08013b3ef7d70b930231c8f531621fb266d28f` |
-| Upgrade target | `rust-0.4.0-rc2-next`, `0.4.1-e2e`, the same commit |
+| Name | `rust-0.4.0-rc3`, version `0.4.0`. It replaces `rust-0.4.0-rc2` (m17, run `m17-r2`), which D44 and D45 (m20) superseded |
+| Commit | `38fa4b01f37449bd8f17006d277c4614fd20bfd4` (branch `claude/m20-public-site`) |
+| `SHA256SUMS` | `sha256:c0b18d88916832567049314936d32a36d2262237a3851d5230abedc3b322498e` |
+| `host-agent-linux-x64` | `6a5e3f2954471f51883b44d3f9d94dcd1fd5297cf32a1c0ed7b29973d5278a1c` |
+| `host-agent-linux-arm64.gz` | `9e91dd0b621a23513b66ad26c95b83fad1b7bbb91427d87e2fe088bad4f5ca6f` |
+| Upgrade target | `rust-0.4.0-rc3-next`, `0.4.1-e2e`, the same commit |
 | Rollback target | `rust-0.3.0-rc4` (section 1), used by `neutral.rollback` |
 
 Before the build: `cargo fmt` and clippy were clean, and a 60 s pass over all
@@ -297,7 +297,7 @@ console-output reader (m15) and, from m17, the serving relay, the provider
 
 ### 7.3 Gates and receipts
 
-Every gate ran on rc2 under run `m17-r2`, and `evidence/e2e/verify.py --gate`
+Every gate ran on rc3 under run `m20-r1`, and `evidence/e2e/verify.py --gate`
 passes each.
 
 | Gate | Journeys | Spec requirements passed | New in 0.4.0 |
@@ -310,6 +310,7 @@ passes each.
 | e2e-4 | 2 | 11 | — |
 | e2e-6 | 8 | 17 | `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 59 MB (D41). `e2e6.budget`: with a 5,000-row bound, 27,529 calls leave exactly 5,000 audit rows, and the store grows 835 bytes per call against 3,455 before (D42) |
 | e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc4 |
+| e2e-7 | 1 | 5 | `e2e7.public-site` (m20): one `run_host_local_recipe` run brings a K3s Service up at `e2e-m20-r1.opute.io`, which the host fetches over verified TLS; a second run skips every node; a deleted pod is replaced; neither the Cloudflare token nor the tunnel's run token is in any file, journal line or run record; one teardown run removes the guest, the CNAME and the tunnel, and a second skips (D44, D45) |
 
 Retired, with cause (`.parity/retired/`):
 - `m15-r1-stale-journeys`: the first attempts of `e2e1.migrate-upgrade`
@@ -328,11 +329,24 @@ Those were rc1's. On rc2:
   failed when the third server could not resolve `github.com` to download
   K3s. Environmental; the journey reran once under `m17-r2` and passed.
 
+On rc3 (`m20-r1`), every journey of the eight earlier gates passed on its first
+attempt. One attempt was retired:
+- `m20-r1-e2e7-first`: the first attempt of `e2e7.public-site` brought the
+  site up and served it, then failed on a recipe defect and three journey
+  defects, none in the binary. The teardown recipe removed the tunnel before
+  the guest; `remove-host-tunnel` stops only a host-placed connector, so the
+  in-cluster connector still held connections and Cloudflare refused the
+  delete (code 1022). The recipe now removes the guest first and retries the
+  tunnel node; on the rerun it succeeded on attempt 4 of 6. The journey
+  deleted the pod without the client capabilities the tool requires, used an
+  incus project the agent's guests are not in, and checked a provider tool
+  against a catalog read before the providers were installed.
+
 | Receipt | What it proves |
 |---|---|
-| Contract suites | Binary `afef1de4…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
-| Seam `m17` | The counts above, the red canary, and a rerun that reproduces the report byte for byte |
-| arm64 clean install | `host-agent-linux-arm64.gz` `b23f7874…` |
+| Contract suites | Binary `6a5e3f29…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
+| Seam `m20` | 144 compliant, 2 unported, 4 unpublished, no gap, the red canary, and a rerun that reproduces the report byte for byte |
+| arm64 clean install | `host-agent-linux-arm64.gz` `9e91dd0b…` |
 | Distribution | Go's read-only canary passes on the locally packed 0.4.0 launcher. After the declared renames, the site preview differs from Go's only in the tools D28, D37 and D39 changed and in `run_host_local_recipe`'s description, from which platform-neutral removes the Platform name |
 
 ### 7.4 Prerequisite for shipping 0.4.0: the proposed install surfaces
