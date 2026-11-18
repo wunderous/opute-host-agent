@@ -110,3 +110,20 @@ three journey defects: the pod deletion lacked the client capabilities
 agent's guests are not in, and a direct provider-tool call was checked against
 the catalog read before the providers were installed. The journey reran once
 under the same run on the same build.
+
+### minimal.opute.io
+
+On 2026-11-17 the dev VM was restored to its snapshot, under the lease held as
+`minimal-opute-io`. The owner's credentials file was copied in unread
+(`/home/opute/.config/opute-m20/cloudflare.env`, 0600). The host prerequisites
+above ran as typed calls, then the site recipe ran with the build context from
+`.parity/minimal-site/context/`, using the first call above.
+
+| Run | Outcome |
+|---|---|
+| `f8397d91-58b0-4a17-80ba-dfd9be2258bb` | completed in under 2 min: eight nodes applied, three validation-only nodes satisfied |
+| `ecf2090a-ed22-4570-98d0-004dc115a172` (`runNonce: again-1`) | completed; every node satisfied |
+
+`https://minimal.opute.io/` answers 200 over verified TLS and serves the
+owner's page, with Cloudflare's injected analytics script. The site stays up
+on the dev VM. The second call above removes it.
