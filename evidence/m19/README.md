@@ -34,3 +34,18 @@ not committed): the same findings, but the guest tool changed after it.
 | S4 | cluster agent's bridge token on argv, in sudo's journal entry, config 0644 | D50 | journey, `clusterops` test |
 | S5 | LLM relay's upstream token in the store | D51 | journey, `catalog` test |
 | S6 | Cloudflare HA connector's run token in `ExecStart`, unit 0644 | D48 | `cloudflare` test |
+
+### minimal.opute.io on rust-0.4.0-rc4
+
+After the gates, on 2026-11-18, the dev VM (built from rc4) was restored to
+its snapshot under the lease held as `minimal-opute-io`. The owner's
+credentials file was copied in unread (0600). The m20 prerequisites ran as
+typed calls, then the m20 site recipe ran unchanged:
+
+| Run | Outcome |
+|---|---|
+| `7655a2ab-a9c5-4484-a673-2e1f1069831b` | completed: eight nodes applied, three validation-only nodes satisfied |
+| `41c132f7-4f25-4972-8caf-1e6bbe47fe92` (`runNonce: again-m19`) | completed; every node satisfied |
+
+`https://minimal.opute.io/` answers 200 over verified TLS with the owner's
+page. The site stays up on the dev VM.
