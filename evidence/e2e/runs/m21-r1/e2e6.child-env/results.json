@@ -1,0 +1,75 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-cenv.service",
+   "system/units/e2e-agent-cenv.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.child-env",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "cenvAgent": 546,
+   "list": 530,
+   "recipeCopy": 433,
+   "recipeDone": 40369,
+   "recipeEnv": 211,
+   "recipeRun": 263,
+   "tool": 283,
+   "wire": 294
+  },
+  "stepsSeconds": 87.4
+ },
+ "unverified": []
+}

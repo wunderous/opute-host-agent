@@ -1077,7 +1077,9 @@ fn public_mcp(host: &crate::tools::Host) -> Service {
         host.shared_host_owner_instance.clone(),
     ));
     let env = host.env.clone();
+    let authz_dir = Arc::new(host.authz_dir.clone());
     let (tunnel_owner, tunnel_env) = (owner.clone(), env.clone());
+    let (tunnel_authz, quick_authz) = (authz_dir.clone(), authz_dir);
     let (quick_owner, quick_env) = (owner.clone(), env.clone());
     Service {
         id: "public-mcp",
@@ -1109,6 +1111,7 @@ fn public_mcp(host: &crate::tools::Host) -> Service {
                         &tunnel_env,
                         &owner,
                         call.ctx,
+                        &tunnel_authz,
                         &args,
                     )
                     .map(|v| {
@@ -1128,6 +1131,7 @@ fn public_mcp(host: &crate::tools::Host) -> Service {
                         &quick_env,
                         &owner,
                         call.ctx,
+                        &quick_authz,
                         text(a, "bindingId"),
                         text(a, "localTarget"),
                         text(a, "artifactUri"),
