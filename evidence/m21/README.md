@@ -23,3 +23,28 @@ only at its `.invalid` public endpoint.
 - Candidate `rust-0.3.0-rc7` (cf151caa7): every gate passes on run `m21-r1`.
   The contract suites, seam stage `m21`, the arm64 install and the
   distribution checks were recaptured on rc7.
+
+## The 0.4.0 side
+
+No 0.4.0 code changed, and `rust-0.4.0-rc4` stays the candidate.
+`e2e4.upgrade-chain` joined gate e2e-4. The rollback journeys and the
+candidate's `rollbackTarget` now name `rust-0.3.0-rc7`. The sweep's scan
+accepts the agent's own user as the owner of a private file: the production
+agent runs as `opute`.
+
+Gates e2e-4, e2e-neutral and e2e-6 reran on rc4 under `m21-r2`, and every
+journey passed on its first attempt. In the chain:
+- Go 0.2.4's run stopped in flight reads back `cancelled` on 0.3.0 and on
+  0.4.0;
+- each connector call on rc7 and on rc4 stops only at the `.invalid`
+  public endpoint;
+- the three scans find no token in the journal, the store, a non-private
+  file or another process's environment.
+
+Four draft runs (`.parity/e2e/drafts-m21/`, not committed) found these
+journey defects before U1:
+- a task needs the user's systemd manager;
+- the scan accepted only root as owner;
+- a system-scoped connector and a host cluster agent need root, which the
+  production agent does not have;
+- the connector calls were asserted only to finish.

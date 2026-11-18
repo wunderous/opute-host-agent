@@ -1,0 +1,142 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-dmg.service",
+   "system/units/e2e-agent-dmg.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.store-damage",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "taskDone"
+    },
+    {
+     "actual": "exit=1\n",
+     "matches": "^exit=[1-9]",
+     "ok": true,
+     "path": "stdout",
+     "step": "startTruncated"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "listenTruncated"
+    },
+    {
+     "actual": "19c32bff5d890a8b6002ca08c7dd693ae2fa4f1a8df071f12dadc5ac5eb1bd0c\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "equalsStep": {
+      "path": "stdout",
+      "step": "truncate"
+     },
+     "ok": true,
+     "other": "19c32bff5d890a8b6002ca08c7dd693ae2fa4f1a8df071f12dadc5ac5eb1bd0c\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "path": "stdout",
+     "step": "afterTruncated"
+    },
+    {
+     "actual": "exit=1\n",
+     "matches": "^exit=[1-9]",
+     "ok": true,
+     "path": "stdout",
+     "step": "startHeader"
+    },
+    {
+     "actual": "56849cfd7d163dcfffa10dbe9ff8ccc2386d2136c0521fa29c73186bbe1187f1\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "equalsStep": {
+      "path": "stdout",
+      "step": "header"
+     },
+     "ok": true,
+     "other": "56849cfd7d163dcfffa10dbe9ff8ccc2386d2136c0521fa29c73186bbe1187f1\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "path": "stdout",
+     "step": "afterHeader"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "restoredAgent"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "kept"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A damaged state store stops startup",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "exit=0\n",
+     "matches": "^exit=[0-9]+\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "startPage"
+    },
+    {
+     "actual": "200\n",
+     "in": [
+      "200\n",
+      "000\n"
+     ],
+     "ok": true,
+     "path": "stdout",
+     "step": "pageRead"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A damaged state store stops startup",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterHeader": 142,
+   "afterTruncated": 142,
+   "dmgAgent": 558,
+   "header": 145,
+   "kept": 239,
+   "list": 523,
+   "listAgain": 239,
+   "listenTruncated": 419,
+   "page": 143,
+   "pageRead": 171,
+   "restore": 138,
+   "restoredAgent": 548,
+   "startHeader": 30352,
+   "startPage": 546,
+   "startTruncated": 30366,
+   "stop": 217,
+   "stopPage": 206,
+   "task": 220,
+   "taskDone": 200,
+   "tool": 280,
+   "truncate": 143,
+   "wire": 286
+  },
+  "stepsSeconds": 110.4
+ },
+ "unverified": []
+}

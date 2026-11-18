@@ -266,7 +266,7 @@ Left empty for the owners (task 6.3).
 | Release | | | | |
 | Deployment | | | | |
 
-## 7. Rust 0.4.0 candidate (goals m15, m17, m20 and m19)
+## 7. Rust 0.4.0 candidate (goals m15, m17, m20, m19 and m21)
 
 Sections 1 to 6 are the 0.3.0 candidate, and its sign-off stands alone.
 This section is the next candidate, from the integration branch
@@ -341,7 +341,7 @@ Each fix has a test that fails on rc3's code
 | `host-agent-linux-x64` | `8fcb0352a1f01f3072a5a1ab7bf005528f618c14936e30665a5ad5e6fbd5a78b` |
 | `host-agent-linux-arm64.gz` | `2505b3e6247699e66fb21b61bdc80e427a8234a55ac5f17a75d5750dd2bb8e60` |
 | Upgrade target | `rust-0.4.0-rc4-next`, `0.4.1-e2e`, the same commit |
-| Rollback target | `rust-0.3.0-rc4` (section 1), used by `neutral.rollback` |
+| Rollback target | `rust-0.3.0-rc7` (section 1), used by `neutral.rollback` and `e2e4.upgrade-chain` (m21; it was `rust-0.3.0-rc4`) |
 
 Before the build: `cargo fmt` and clippy were clean, a 60 s pass over all
 18 fuzz targets found nothing ([`evidence/m19/fuzz-040.txt`](../../../evidence/m19/fuzz-040.txt)),
@@ -352,7 +352,11 @@ console-output reader (m15) and, from m17, the serving relay, the provider
 ### 7.3 Gates and receipts
 
 Every gate ran on rc4 under run `m19-r2`, and `evidence/e2e/verify.py --gate`
-passes each.
+passes each. Goal m21 changed no 0.4.0 code. It added `e2e4.upgrade-chain`,
+pinned the rollback journeys to `rust-0.3.0-rc7` and taught the sweep's scan
+which owners a private file may have, so it reran gates e2e-4, e2e-neutral
+and e2e-6 on rc4 under run `m21-r2`. Every journey there passed on its first
+attempt.
 
 | Gate | Journeys | Spec requirements passed | New in 0.4.0 |
 |---|---|---|---|
@@ -361,9 +365,9 @@ passes each.
 | e2e-2 | 5 | 38 | `e2e2.incus`: the console journey (open, read the login prompt, resize, detach, no `incus console` left) and the NIC journey (attach, attach again, remove, remove again) |
 | e2e-3a | 5 | 33 | `e2e3a.workload`: cluster inspection on the HA cluster through `list_secret_keys`, `list_configmap_keys` and `inspect_workload`; the Q18 workaround is gone |
 | e2e-3 | 3 | 18 | `e2e3.serving` calls both LLM tools; `e2e3.discovery` reads K3s's own keys |
-| e2e-4 | 2 | 11 | — |
-| e2e-6 | 9 | 21 | `e2e6.secret-sweep` (m19): with the public site's tunnel, a Tailscale enrollment and a cluster agent install planted with markers, no marker is on any process's argv (78 execs traced host-wide), in the journal, in the store or in a response, and every file that holds one is 0600; the environ of the agent's own unit holds its own credentials only. `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 59 MB (D41). `e2e6.budget`: with a 5,000-row bound, 28,540 calls leave exactly 5,000 audit rows, and the store grows 852 bytes per call against 3,455 before (D42) |
-| e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc4 |
+| e2e-4 | 3 | 16 | `e2e4.upgrade-chain` (m21): the release path on one host, on the production unit. Go v0.2.4 on Go's unit leaves a run in flight. `rust-0.3.0-rc7` serves that state on the same unit, and installs an LLM relay and a user-scoped public MCP connector with marked tokens. rc4 takes over on the proposed 0.4.0 unit. rc7 is then rolled back onto that unit. At each step, counts and ids reconcile per table, every run, task and operation reads back with the status last reported (Go's in-flight run as `cancelled`), mutations are admitted from the unit, each connector call gets past its origin probe, and no token is in the journal, the store, a non-private file or another process's environment (D52) |
+| e2e-6 | 9 | 21 | `e2e6.secret-sweep` (m19): with markers planted for an OAuth grant, an LLM relay, a host cluster agent install and a public MCP connector, no marker is on any process's argv (78 execs traced host-wide), in the journal, in the store or in a response, and every file that holds one is 0600; the environ of the agent's own unit holds its own credentials only. `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 58 MB (D41). `e2e6.budget`: with a 5,000-row bound, 27,691 calls leave exactly 5,000 audit rows, and the store grows 856 bytes per call against 3,455 before (D42) |
+| e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc7 |
 | e2e-7 | 1 | 5 | `e2e7.public-site` (m20): one `run_host_local_recipe` run brings a K3s Service up at `e2e-m19-r2.opute.io`, which the host fetches over verified TLS; a second run skips every node; a deleted pod is replaced; neither the Cloudflare token nor the tunnel's run token is in any file, journal line or run record; one teardown run removes the guest, the CNAME and the tunnel, and a second skips (D44, D45) |
 
 Retired, with cause (`.parity/retired/`):
@@ -425,6 +429,22 @@ start from the published unit or launcher (platform-neutral-host-agent task
 In step 5, install the proposed unit with the binary. R1 rolls back to the
 0.3.x binary on the same unit: both settings sets stay in it, and 0.3.x
 reads its old ones (`neutral.rollback`).
+
+Measured by `e2e4.upgrade-chain` (m21) on one host:
+1. Upgrade from 0.3.0 to 0.4.0: stop the unit, install the proposed unit
+   and the 0.4.0 binary on the same instance root, env file and drop-ins,
+   and start it. 0.4.0 reconciles 0.3.0's state per table and reads back
+   every run, task and operation, including the run Go stopped in flight
+   (`cancelled`).
+2. Rollback from 0.4.0 to 0.3.0: stop the unit and put the 0.3.0 binary
+   back, keeping the proposed unit. 0.3.0 reads 0.4.0's state the same way,
+   0.4.0-era work included, and admits mutations from that unit's 0.3.0
+   settings.
+3. Both directions keep the relay and connector files private (0600, the
+   agent's user's). A connector reconciled by one line is reconciled again
+   by the other with no second unit. Each line needs its own OAuth settings
+   for that: `OPUTE_HOST_OAUTH_CLIENT_SECRET` for 0.3.0 and
+   `OPUTE_OAUTH_CLIENTS` for 0.4.0.
 
 ### 7.5 Not passed
 
