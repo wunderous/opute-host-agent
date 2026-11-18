@@ -56,6 +56,8 @@ pub struct Host {
     pub llm: Arc<std::sync::OnceLock<Arc<crate::llmops::Live>>>,
     /// `RelayConfigDir`, where the llm domain persists its relays (M8f).
     pub relay_config_dir: String,
+    /// Where `authz.sqlite` lives: a self-probe mints its token there (D52).
+    pub authz_dir: std::path::PathBuf,
     /// `adoptResource` for a cluster URI: the Kubernetes domain, bound when
     /// the built-in services are composed.
     pub cluster_adopter: Arc<std::sync::OnceLock<ClusterAdopter>>,

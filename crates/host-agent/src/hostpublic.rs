@@ -17,6 +17,7 @@ use crate::goerr::{errno_text, path_error, shell_quote};
 use crate::hostfiles::{ensure_host_file, require_shared_host_owner, Owner};
 use crate::hostread::{clean, home_dir, host_owned_path, sha256_label};
 use crate::mcpprobe::{is_loopback_ip, probe_authenticated, validate_endpoint, GoUrl};
+use crate::oauth::{mint_self_probe, SelfProbeToken};
 use crate::plan::runner::RunCtx;
 
 const DEFAULT_ARTIFACT_URI: &str =
@@ -332,10 +333,12 @@ fn sleep_or_cancel(ctx: &RunCtx, delay: Duration) -> Result<(), String> {
 
 /// `probePublicMCPWithRetry`: bounded retries across the DNS publication
 /// race, keeping the final typed error.
-fn probe_with_retry(ctx: &RunCtx, endpoint: &str) -> Result<J, String> {
+fn probe_with_retry(ctx: &RunCtx, authz_dir: &Path, endpoint: &str) -> Result<J, String> {
     let deadline = Instant::now() + PROBE_RETRY_WINDOW;
+    // One token for the whole window, which is shorter than its lifetime.
+    let token = self_probe_token(authz_dir, endpoint)?;
     loop {
-        let last = match probe_authenticated(endpoint, "") {
+        let last = match probe_in_process(endpoint, &token) {
             Ok(result) => return Ok(result),
             Err(e) => e,
         };
@@ -352,9 +355,24 @@ fn probe_with_retry(ctx: &RunCtx, endpoint: &str) -> Result<J, String> {
     }
 }
 
+/// D8 "Self-probes use in-process tokens" (D52): the agent's own resources
+/// are probed with a token minted in its store, bound to the probed
+/// resource, never through its token endpoint.
+fn self_probe_token(authz_dir: &Path, endpoint: &str) -> Result<SelfProbeToken, String> {
+    let resource = validate_endpoint(endpoint)?;
+    mint_self_probe(authz_dir, &resource)
+}
+
+fn probe_in_process(endpoint: &str, token: &SelfProbeToken) -> Result<J, String> {
+    let mut observed = probe_authenticated(endpoint, &token.token)?;
+    observed["authorizationMode"] = J::from("in-process");
+    Ok(observed)
+}
+
 /// The origin probe both tunnel kinds run once the service is started.
-fn probe_origin(local_target: &str, what: &str) -> Result<J, String> {
-    let origin = probe_authenticated(local_target, "")
+fn probe_origin(authz_dir: &Path, local_target: &str, what: &str) -> Result<J, String> {
+    let origin = self_probe_token(authz_dir, local_target)
+        .and_then(|token| probe_in_process(local_target, &token))
         .map_err(|e| format!("probe public MCP {what}origin: {e}"))?;
     if origin.get("ready") != Some(&J::Bool(true)) {
         return Err(format!("public MCP {what}origin is not ready"));
@@ -525,6 +543,7 @@ pub fn ensure_public_mcp_tunnel(
     env: &Env,
     owner: &Owner,
     ctx: &RunCtx,
+    authz_dir: &Path,
     args: &TunnelArgs,
 ) -> Result<J, String> {
     require_shared_host_owner(
@@ -572,8 +591,8 @@ pub fn ensure_public_mcp_tunnel(
     }
     // An MCP resource answers GET with 405, so the origin gets the same
     // authenticated tools/list probe as the public endpoint.
-    let origin = probe_origin(&local_target, "")?;
-    let public = probe_with_retry(ctx, &endpoint)
+    let origin = probe_origin(authz_dir, &local_target, "")?;
+    let public = probe_with_retry(ctx, authz_dir, &endpoint)
         .map_err(|e| format!("probe authenticated public MCP endpoint: {e}"))?;
     Ok(json!({
         "contractVersion": CONTRACT_VERSION,
@@ -930,6 +949,7 @@ pub fn ensure_public_mcp_quick_tunnel(
     env: &Env,
     owner: &Owner,
     ctx: &RunCtx,
+    authz_dir: &Path,
     binding_id: &str,
     local_target: &str,
     artifact_uri: &str,
@@ -988,13 +1008,15 @@ pub fn ensure_public_mcp_quick_tunnel(
     };
     set_host_service_state(env, owner, &paths.service_name, state, &paths.scope)
         .map_err(|e| format!("start public MCP quick connector service: {e}"))?;
-    let origin = probe_origin(&local_target, "quick ")?;
+    let origin = probe_origin(authz_dir, &local_target, "quick ")?;
 
     let mut endpoint = String::new();
     if !unit_changed && active {
         endpoint = read_quick_state(&paths, binding_id, &local_target);
         if !endpoint.is_empty() {
-            if let Ok(public) = probe_authenticated(&endpoint, "") {
+            let public = self_probe_token(authz_dir, &endpoint)
+                .and_then(|token| probe_in_process(&endpoint, &token));
+            if let Ok(public) = public {
                 return Ok(quick_observation(
                     &paths,
                     &local_target,
@@ -1021,7 +1043,7 @@ pub fn ensure_public_mcp_quick_tunnel(
         }
         endpoint = wait_for_quick_endpoint(ctx, &paths.log_file)?;
     }
-    let public = probe_with_retry(ctx, &endpoint)
+    let public = probe_with_retry(ctx, authz_dir, &endpoint)
         .map_err(|e| format!("probe authenticated public MCP quick endpoint: {e}"))?;
     write_quick_state(owner, &paths, binding_id, &local_target, &endpoint)
         .map_err(|e| format!("record public MCP quick tunnel endpoint: {e}"))?;
@@ -1238,5 +1260,87 @@ mod tests {
         assert!(quick_endpoint("https://abc.trycloudflare.com/x").is_none());
         assert!(quick_endpoint("http://abc.trycloudflare.com").is_none());
         assert!(quick_endpoint("https://example.com").is_none());
+    }
+
+    /// D52 (D8 "Self-probes use in-process tokens"): the origin probe
+    /// authenticates with a token minted in the agent's own store, bound to
+    /// the probed resource, for at most five minutes, revoked afterwards; it
+    /// never calls the token endpoint (rust-0.3.0-rc6 did, without a secret,
+    /// and got 401).
+    #[test]
+    fn the_origin_probe_uses_an_in_process_token() {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let dir = tempfile::tempdir().unwrap();
+        let mut store = crate::store::AuthzStore::open(dir.path(), "operator-secret").unwrap();
+        store.close();
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = std::thread::spawn(move || {
+            let mut seen = Vec::new();
+            for stream in listener.incoming().take(1) {
+                let mut stream = stream.unwrap();
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                let path = line
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or_default()
+                    .to_string();
+                let (mut bearer, mut length) = (String::new(), 0usize);
+                loop {
+                    let mut header = String::new();
+                    reader.read_line(&mut header).unwrap();
+                    let header = header.trim_end();
+                    if header.is_empty() {
+                        break;
+                    }
+                    let (name, value) = header.split_once(':').unwrap();
+                    match name.to_ascii_lowercase().as_str() {
+                        "authorization" => {
+                            bearer = value.trim().trim_start_matches("Bearer ").into()
+                        }
+                        "content-length" => length = value.trim().parse().unwrap(),
+                        _ => {}
+                    }
+                }
+                let mut body = vec![0; length];
+                reader.read_exact(&mut body).unwrap();
+                let (status, reply) = if path == "/mcp" && !bearer.is_empty() {
+                    (
+                        "200 OK",
+                        r#"{"jsonrpc":"2.0","id":"host-agent-mcp-probe","result":{"tools":[{"name":"t"}]}}"#,
+                    )
+                } else {
+                    ("401 Unauthorized", r#"{"error":"invalid_client"}"#)
+                };
+                write!(
+                    stream,
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{reply}",
+                    reply.len()
+                )
+                .unwrap();
+                seen.push((path, bearer));
+            }
+            seen
+        });
+        let target = format!("http://127.0.0.1:{port}/mcp");
+        let origin = probe_origin(dir.path(), &target, "").expect("origin probe");
+        assert_eq!(origin["authorizationMode"], "in-process");
+        assert_eq!(origin["ready"], true);
+        let seen = server.join().unwrap();
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0].0, "/mcp", "the probe called {} first", seen[0].0);
+        let conn = rusqlite::Connection::open(dir.path().join("authz.sqlite")).unwrap();
+        let (resource, lifetime, revoked): (String, i64, i64) = conn
+            .query_row(
+                "SELECT resource, expires_at - created_at, revoked FROM tokens WHERE token_hash=?",
+                [crate::oauth::sha256_hex(&seen[0].1)],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .expect("the probe's bearer is a token in the agent's own store");
+        assert_eq!(resource, target);
+        assert!(lifetime <= 300, "{lifetime}");
+        assert_eq!(revoked, 1);
     }
 }

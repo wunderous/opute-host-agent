@@ -319,6 +319,16 @@ fn resolve_listen_addr(addr: &str) -> Result<Vec<SocketAddr>> {
         .map_err(|_| go_err!("listen tcp: lookup {host}: no such host"))
 }
 
+/// Where `authz.sqlite` lives: the standalone state directory, else the
+/// instance root.
+fn authz_dir(cfg: &Config) -> std::path::PathBuf {
+    if cfg.standalone_state_dir.as_os_str().is_empty() {
+        cfg.instance_root.clone()
+    } else {
+        cfg.standalone_state_dir.clone()
+    }
+}
+
 /// `app.Run`: build the runtime, open authz, bind, and serve until SIGINT or
 /// SIGTERM. A graceful stop returns `Ok`, which exits 0 like Go.
 pub fn run(env: &Env, stderr: &mut dyn Write) -> Result<()> {
@@ -328,13 +338,8 @@ pub fn run(env: &Env, stderr: &mut dyn Write) -> Result<()> {
 fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()> {
     let runtime = new_runtime_with(env, fault)?;
     let cfg = runtime.config.clone();
-    let authz_dir = if cfg.standalone_state_dir.as_os_str().is_empty() {
-        cfg.instance_root.clone()
-    } else {
-        cfg.standalone_state_dir.clone()
-    };
     inject_fault(fault, "authz")?;
-    let authz = AuthzStore::open(&authz_dir, &cfg.opute_client_secret)?;
+    let authz = AuthzStore::open(&authz_dir(&cfg), &cfg.opute_client_secret)?;
 
     let addr = format!("{}:{}", cfg.host_mcp_bind_host, cfg.host_mcp_port);
     if addr.ends_with(":0") {
@@ -560,6 +565,7 @@ pub(crate) fn compose(
         postgres: Default::default(),
         llm: Default::default(),
         relay_config_dir: cfg.relay_config_dir.display().to_string(),
+        authz_dir: authz_dir(cfg),
         cluster_adopter: Default::default(),
     };
     // `reclaimTerminalTaskReservations`: a reservation whose task is now

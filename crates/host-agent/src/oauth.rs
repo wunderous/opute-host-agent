@@ -418,6 +418,42 @@ pub fn insert_token(
     Ok(token)
 }
 
+/// The longest a self-probe token lives (D8: at most five minutes).
+pub const SELF_PROBE_TTL: i64 = 300;
+
+/// A token the agent minted in its own store to probe one of its own MCP
+/// resources (D8 "Self-probes use in-process tokens", D52). It is revoked
+/// when dropped, whatever the probe's outcome.
+pub struct SelfProbeToken {
+    conn: Connection,
+    pub token: String,
+}
+
+impl Drop for SelfProbeToken {
+    fn drop(&mut self) {
+        let _ = self.conn.execute(
+            "UPDATE tokens SET revoked=1 WHERE token_hash=?",
+            [sha256_hex(&self.token)],
+        );
+    }
+}
+
+/// Mint a self-probe token for `resource` in the `authz.sqlite` under `dir`,
+/// beside the serving agent's own connection; never through the token
+/// endpoint.
+pub fn mint_self_probe(dir: &Path, resource: &str) -> Result<SelfProbeToken, String> {
+    let conn = Connection::open_with_flags(
+        dir.join("authz.sqlite"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .map_err(|e| format!("open authz store for a self-probe token: {e}"))?;
+    conn.busy_timeout(Duration::from_secs(5))
+        .map_err(|e| format!("open authz store for a self-probe token: {e}"))?;
+    let token = insert_token(&conn, OPUTE_CLIENT_ID, resource, SELF_PROBE_TTL)
+        .map_err(|e| format!("mint self-probe token: {e}"))?;
+    Ok(SelfProbeToken { conn, token })
+}
+
 pub struct ClientRecord {
     pub client_id: String,
     pub secret_hash: String,
