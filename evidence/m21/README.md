@@ -48,3 +48,26 @@ journey defects before U1:
 - a system-scoped connector and a host cluster agent need root, which the
   production agent does not have;
 - the connector calls were asserted only to finish.
+
+## minimal.opute.io through a rollback and back
+
+After the gates, on 2026-11-18, the dev VM (built from `rust-0.4.0-rc4`) was
+restored under the lease held as `minimal-opute-io`. The owner's credentials
+file was copied in unread (0600). The m20 prerequisites ran, then the m20
+site recipe: run `36f0e3f2-cfaa-43f4-b00b-7ee87b1b9a33` completed. The
+tunnel still existed in Cloudflare, so its connector and public nodes were
+already satisfied.
+
+With a probe of `https://minimal.opute.io/` every 5 s
+([`site-roundtrip-probe.log`](site-roundtrip-probe.log)), the agent on the
+production unit was:
+1. rolled back to `rust-0.3.0-rc7` (20:29:09 to 20:29:10 UTC, `0.3.0`
+   active);
+2. left there for 60 s;
+3. moved forward to rc4 again (20:30:11 UTC, `0.4.0` active).
+
+All 22 probes answered 200 over verified TLS.
+
+Afterwards the site recipe ran again (`a449cc55-540f-4498-a676-9927edfb6830`,
+`runNonce: after-roundtrip-m21`), and every node was satisfied. The site
+stays up on the dev VM.
