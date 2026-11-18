@@ -641,6 +641,20 @@ fn reconcile_legacy_host_tunnel(
     scope: &str,
     run_token: &str,
 ) -> Result<(), String> {
+    reconcile_legacy_host_tunnel_with(
+        &mut |name, arguments| client.call_host(name, arguments).map(|_| ()),
+        args,
+        scope,
+        run_token,
+    )
+}
+
+fn reconcile_legacy_host_tunnel_with(
+    call: &mut dyn FnMut(&str, J) -> Result<(), String>,
+    args: &Args,
+    scope: &str,
+    run_token: &str,
+) -> Result<(), String> {
     let service_name = first_non_empty(&[
         &args.string("serviceName", ""),
         "opute-cloudflare-tunnel.service",
@@ -661,7 +675,7 @@ fn reconcile_legacy_host_tunnel(
         &args.string("artifactSha256", ""),
         mesh::CLOUDFLARED_ARTIFACT_SHA,
     ]);
-    client.call_host(
+    call(
         "ensure_host_artifact",
         json!({"uri": artifact_uri, "destination": artifact_path, "sha256": artifact_sha, "executable": true}),
     )?;
@@ -678,18 +692,18 @@ fn reconcile_legacy_host_tunnel(
         "[Unit]\nDescription=Opute Cloudflare tunnel\nAfter=network-online.target\n\n[Service]\nExecStart={executable} tunnel --no-autoupdate run --token {}\nRestart=on-failure\n\n[Install]\nWantedBy={wanted_by}\n",
         shell_quote(run_token)
     );
-    client.call_host(
+    call(
         "ensure_host_file",
         json!({"path": service_file, "content": unit, "mode": 0o600}),
     )?;
-    client.call_host("ensure_host_service_supervisor", json!({"scope": scope}))?;
-    client.call_host(
+    call("ensure_host_service_supervisor", json!({"scope": scope}))?;
+    call(
         "set_host_service_state",
         json!({"uri": host_service_uri(scope, &service_name), "serviceName": service_name, "state": "start", "scope": scope}),
     )?;
     let target = args.string("localTarget", "");
     if !target.is_empty() {
-        client.call_host(
+        call(
             "probe_http_endpoint",
             json!({"endpoint": target, "acceptAuthenticationChallenge": true}),
         )?;

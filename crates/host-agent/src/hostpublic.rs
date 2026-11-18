@@ -487,6 +487,15 @@ fn render_unit(
     )
 }
 
+/// The connector unit's command, run by `/bin/sh -c` with the token file
+/// as the unit's environment.
+fn tunnel_exec(artifact: &str) -> String {
+    format!(
+        "exec {} tunnel --no-autoupdate run --token \"${TOKEN_ENV}\"",
+        shell_quote(artifact)
+    )
+}
+
 /// The connector binary beneath the scope's Opute tunnel directory.
 fn ensure_connector(
     scope: &str,
@@ -538,13 +547,9 @@ pub fn ensure_public_mcp_tunnel(
     require_owned(&paths.token_file, MANAGED_MARKER)?;
     let token_file = ensure_scoped_file(owner, &paths.scope, &paths.token_file, &token_content)
         .map_err(|e| format!("store public MCP tunnel token: {e}"))?;
-    let command = format!(
-        "exec {} tunnel --no-autoupdate run --token \"${TOKEN_ENV}\"",
-        shell_quote(&paths.unit_artifact)
-    );
     let unit = render_unit(
         &paths.scope,
-        &command,
+        &tunnel_exec(&paths.unit_artifact),
         "Opute authenticated public MCP tunnel",
         &format!("EnvironmentFile={}\n", paths.unit_token_file),
         "",
@@ -1180,6 +1185,35 @@ pub fn remove_public_mcp_quick_tunnel(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// m19 (S1): cloudflared gets the tunnel token from its environment,
+    /// never its arguments (any local user reads `/proc/PID/cmdline`).
+    #[test]
+    fn the_tunnel_token_never_reaches_cloudflareds_arguments() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let d = dir.path().display();
+        let stub = dir.path().join("cloudflared");
+        std::fs::write(
+            &stub,
+            format!("#!/bin/sh\nprintf '%s\\n' \"$@\" > {d}/argv\nprintf '%s' \"$TUNNEL_TOKEN\" > {d}/env\n"),
+        )
+        .unwrap();
+        std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let token = "tunnel-token-0123456789abcdef0123456789";
+        let status = std::process::Command::new("/bin/sh")
+            .arg("-c")
+            .arg(tunnel_exec(&stub.display().to_string()))
+            .env_clear()
+            .env(TOKEN_ENV, token)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let argv = std::fs::read_to_string(dir.path().join("argv")).unwrap();
+        assert!(argv.starts_with("tunnel\n--no-autoupdate\nrun\n"), "{argv}");
+        assert!(!argv.contains(token), "the token is on cloudflared's argv");
+        assert_eq!(std::fs::read_to_string(dir.path().join("env")).unwrap(), token);
+    }
 
     #[test]
     fn instance_ids_match_go() {

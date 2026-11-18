@@ -1,0 +1,17 @@
+# m19 failing-first tests on rc5's product code (c2f9947ee) plus behaviour-preserving seams, 2026-11-18T07:46:46Z
+test providers::cloudflare::tests::a_host_connector_never_carries_its_run_token_on_argv ... FAILED
+test clusterops::tests::the_bridge_token_never_travels_on_argv ... FAILED
+test hostpublic::tests::the_tunnel_token_never_reaches_cloudflareds_arguments ... FAILED
+test providers::tailscale::tests::the_auth_key_never_reaches_tailscales_arguments ... FAILED
+test catalog::tests::every_declared_credential_input_is_write_only ... FAILED
+thread 'providers::cloudflare::tests::a_host_connector_never_carries_its_run_token_on_argv' (522464) panicked at crates/host-agent/src/providers/cloudflare/tests.rs:162:9:
+system: the run token is in ExecStart
+thread 'clusterops::tests::the_bridge_token_never_travels_on_argv' (522462) panicked at crates/host-agent/src/clusterops.rs:2413:17:
+the bridge token is on argv
+thread 'hostpublic::tests::the_tunnel_token_never_reaches_cloudflareds_arguments' (522463) panicked at crates/host-agent/src/hostpublic.rs:1214:9:
+the token is on cloudflared's argv
+thread 'providers::tailscale::tests::the_auth_key_never_reaches_tailscales_arguments' (522465) panicked at crates/host-agent/src/providers/tailscale/tests.rs:98:5:
+the auth key is on tailscale's argv
+thread 'catalog::tests::every_declared_credential_input_is_write_only' (522461) panicked at crates/host-agent/src/catalog.rs:1923:9:
+credential inputs not writeOnly: ["ensure_local_llm_relay/upstreamToken"]
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 393 filtered out; finished in 0.08s

@@ -66,7 +66,7 @@ JOURNEYS = E2E / "journeys"
 RUNS = E2E / "runs"
 TOKEN_PATTERN = re.compile(r"e2e-test-token-[0-9a-f]{48}")
 STEP_KINDS = ("mcp", "health", "guest", "restore", "copy", "http")
-OPS = ("equals", "in", "exists", "absent", "matches", "gte", "lte", "contains", "equalsStep")
+OPS = ("equals", "in", "exists", "absent", "matches", "gte", "lte", "contains", "excludes", "equalsStep")
 QUESTION = re.compile(r"^Q\d+$")
 MAX_MINUTES = 30
 
@@ -173,6 +173,8 @@ def check(assertion: dict, record: dict | None, records: dict | None = None) -> 
         other_found, other_value = dig(other, expected.get("path", "")) if other is not None else (False, None)
         ok = found and other_found and actual == other_value
         return {**assertion, "actual": actual, "other": other_value if other_found else "<absent>", "ok": ok}
+    elif op == "excludes":  # found, and its JSON text has no `expected` in it
+        ok = found and expected not in json.dumps(actual)
     else:  # contains
         ok = isinstance(actual, (list, str, dict)) and expected in actual
     return {**assertion, "actual": actual, "ok": ok}

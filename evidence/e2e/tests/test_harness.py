@@ -252,6 +252,14 @@ class Extensions(unittest.TestCase):
         self.assertFalse(runner.check({"step": "a", "path": "json.n", "equalsStep": {"step": "b", "path": "json.n"}},
                                       a, records)["ok"])
 
+    def test_excludes(self):
+        rec = {"step": "a", "phase": "step", "response": {"body": {"result": {"text": "a <secret:x> b"}}}}
+        self.assertFalse(runner.check({"step": "a", "path": "response.body", "excludes": "<secret:"}, rec)["ok"])
+        rec["response"]["body"]["result"]["text"] = "clean"
+        self.assertTrue(runner.check({"step": "a", "path": "response.body", "excludes": "<secret:"}, rec)["ok"])
+        # an absent path never passes as excluding
+        self.assertFalse(runner.check({"step": "a", "path": "response.nothing", "excludes": "<secret:"}, rec)["ok"])
+
     def test_client_reported_results_are_schema_checked(self):
         tool = {"name": "p", "inputSchema": {"type": "object"},
                 "outputSchema": {"type": "object", "required": ["n"]}}

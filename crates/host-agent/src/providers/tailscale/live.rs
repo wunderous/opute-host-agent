@@ -1207,7 +1207,7 @@ ver="$(tailscale version 2>/dev/null | head -n1 | tr -d '\r' || true)"
 printf 'agent_ready=%s\nagent_version=%s\n' "$running" "${ver:-unknown}"
 "#;
 
-fn enroll_script(hostname: &str) -> String {
+pub(super) fn enroll_script(hostname: &str) -> String {
     format!(
         r#"set -euo pipefail
 IFS= read -r auth_key || true
