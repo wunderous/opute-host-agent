@@ -43,7 +43,7 @@ CANDIDATE = os.environ.get("E2E_CANDIDATE", "${PARITY}/e2e/release/rust-0.4.0-rc
 CANDIDATE_NEXT = CANDIDATE + "-next"
 NEXT_VERSION = "0.4.1-e2e"
 # The previous Rust release (0.3.x), for the platform-neutral upgrade and rollback.
-PREVIOUS = "${PARITY}/e2e/release/rust-0.3.0-rc4"
+PREVIOUS = "${PARITY}/e2e/release/rust-0.3.0-rc7"
 # What the installed candidate prints after its hash line.
 RUST_MATCH = "\n" + RUST_VERSION.replace(".", "\\.") + "\n$"
 LAUNCHER = f"opute-host-agent-{RUST_VERSION}.tgz"

@@ -37,6 +37,7 @@ import argparse
 import base64
 import json
 import os
+import pwd
 import re
 import stat
 import subprocess
@@ -324,7 +325,8 @@ def scan(a):
     environ = scan_environ(markers)
     unit_comm = open(f"/proc/{main_pid(a.unit)}/comm").read().strip() if a.unit else ""
     allowed_environ = {f"{unit_comm}@{a.unit}"} | set(a.allow_environ)
-    loose = [f for f in files if not f["store"] and (int(f["mode"], 8) & 0o077 or f["uid"] != 0)]
+    owners = {pwd.getpwnam(o).pw_uid for o in a.owner or ["root"]}
+    loose = [f for f in files if not f["store"] and (int(f["mode"], 8) & 0o077 or f["uid"] not in owners)]
     stray_environ = {n: [p for p in ps if p not in allowed_environ] for n, ps in environ.items()}
     stray_environ = {n: ps for n, ps in stray_environ.items() if ps}
     out = {
@@ -381,6 +383,8 @@ def main():
     s.add_argument("--root", action="append", default=[])
     s.add_argument("--state", required=True)
     s.add_argument("--holder", action="append", default=[], help="a store file meant to hold a secret")
+    s.add_argument("--owner", action="append", default=[],
+                   help="a user that may own a file holding a secret (default root; the agent's own user)")
     s.add_argument("--allow-environ", action="append", default=[], help="comm@unit that may hold a marker")
     a = p.parse_args()
     out = {"plant": plant, "agent": agent, "watch": watch, "bridge": bridge, "mark": mark, "oauth": oauth,

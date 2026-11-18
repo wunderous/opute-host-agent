@@ -1,0 +1,21 @@
+
+running 1 test
+time=2026-11-18T17:22:17.937Z level=INFO msg=oauth event=migrate migration=oauth-issuance.v1 revoked_tokens=0
+time=2026-11-18T17:22:17.938Z level=INFO msg=oauth event=provision client_id=host-agent-provider revoked_tokens=0
+hostpublic::tests::the_origin_probe_uses_an_in_process_token --- FAILED
+
+failures:
+
+---- hostpublic::tests::the_origin_probe_uses_an_in_process_token stdout ----
+
+thread 'hostpublic::tests::the_origin_probe_uses_an_in_process_token' (704372) panicked at crates/host-agent/src/hostpublic.rs:1296:48:
+origin probe: "probe public MCP origin: MCP OAuth token request returned HTTP 401"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    hostpublic::tests::the_origin_probe_uses_an_in_process_token
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 399 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--lib`
