@@ -1,0 +1,139 @@
+{
+ "effects": {
+  "changed": [
+   "incus/instances/e2e-v6",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
+   "incus/volumes/default/virtual-machine/e2e-v6",
+   "system/unitFiles/e2e-agent-cenv.service",
+   "system/units/e2e-agent-cenv.service",
+   "system/units/sys-devices-virtual-net-tapca63177e.device",
+   "system/units/sys-subsystem-net-devices-tapca63177e.device",
+   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.child-env",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "vm"
+    },
+    {
+     "actual": "started",
+     "equals": "started",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "console"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "consoleEnv"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "cenvAgent": 554,
+   "console": 737,
+   "consoleEnv": 232,
+   "ctrlA": 885,
+   "detach": 390,
+   "list": 532,
+   "recipeCopy": 417,
+   "recipeDone": 40381,
+   "recipeEnv": 212,
+   "recipeRun": 248,
+   "tool": 278,
+   "vm": 6623,
+   "vmCall": 216,
+   "wire": 289
+  },
+  "stepsSeconds": 97.2
+ },
+ "unverified": []
+}
