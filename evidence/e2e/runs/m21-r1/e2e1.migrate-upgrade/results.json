@@ -1,0 +1,395 @@
+{
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/j8-done.txt",
+   "files//home/opute/.config/opute-e2e/j8-flight.txt",
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "files//opt/opute-e2e/releases/rust-next",
+   "files//opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.migrate-upgrade",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "aside"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "goInstall"
+    },
+    {
+     "actual": "0cb38a9cb4ee9aba76ea6d9293a8e6cfc158b073e14ccebd1bd41cc9da6e0d46\n0.2.4\n",
+     "matches": "\n0\\.2\\.4\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "goInstall"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "goDoneWait"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "goInFlight"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "goStop"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "goStop"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "rustInstall"
+    },
+    {
+     "actual": "f5b1175704c97b1a46f24be5a854b71c3375ac270468b52783683c5b4b260ff0\n0.3.0\n",
+     "matches": "\n0\\.3\\.0\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "rustInstall"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "rustList"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "rustDb"
+    },
+    {
+     "actual": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7",
+      "d38568c1-9bf0-4bc1-a1ad-9af3ce7bed33"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7",
+      "d38568c1-9bf0-4bc1-a1ad-9af3ce7bed33"
+     ],
+     "path": "json.planRunIds",
+     "step": "rustDb"
+    },
+    {
+     "actual": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7"
+     ],
+     "path": "json.operationIds",
+     "step": "rustDb"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 7,
+      "operations": 1,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 7,
+      "operations": 1,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "rustDb"
+    },
+    {
+     "actual": "d38568c1-9bf0-4bc1-a1ad-9af3ce7bed33",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "goDone"
+     },
+     "ok": true,
+     "other": "d38568c1-9bf0-4bc1-a1ad-9af3ce7bed33",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "rustDone"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustDone"
+    },
+    {
+     "actual": "93065645-8c5d-449f-b529-33a235b6c2f7",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "goFlight"
+     },
+     "ok": true,
+     "other": "93065645-8c5d-449f-b529-33a235b6c2f7",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "rustFlight"
+    },
+    {
+     "actual": "cancelled",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustFlight"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "upgrade"
+    },
+    {
+     "actual": "30a066c545dcdd4eeeca237ed022c33639fee1ca4cb0a0d79826851ccdabe2b0\n0.3.1-e2e\n",
+     "matches": "\n0\\.3\\.1-e2e\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "upgrade"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "nextList"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "nextDb"
+    },
+    {
+     "actual": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7",
+      "d38568c1-9bf0-4bc1-a1ad-9af3ce7bed33"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7",
+      "d38568c1-9bf0-4bc1-a1ad-9af3ce7bed33"
+     ],
+     "path": "json.planRunIds",
+     "step": "nextDb"
+    },
+    {
+     "actual": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7"
+     ],
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": [
+      "93065645-8c5d-449f-b529-33a235b6c2f7"
+     ],
+     "path": "json.operationIds",
+     "step": "nextDb"
+    },
+    {
+     "actual": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 7,
+      "operations": 1,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "goStop"
+     },
+     "ok": true,
+     "other": {
+      "active_capabilities": 0,
+      "active_runtimes": 0,
+      "capability_invocations": 7,
+      "operations": 1,
+      "plan_runs": 2,
+      "provider_generations": 0,
+      "resource_registry": 0
+     },
+     "path": "json.counts",
+     "step": "nextDb"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "nextDone"
+    },
+    {
+     "actual": "93065645-8c5d-449f-b529-33a235b6c2f7",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "goFlight"
+     },
+     "ok": true,
+     "other": "93065645-8c5d-449f-b529-33a235b6c2f7",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "nextFlight"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible modes, configuration, and distribution",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "goHealth"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "rustHealth"
+    },
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "nextHealth"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustFlight"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "nextFlight"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "aside": 148,
+   "goDone": 62,
+   "goDoneWait": 1015,
+   "goFlight": 63,
+   "goHealth": 15,
+   "goInFlight": 1015,
+   "goInstall": 1355,
+   "goList": 10,
+   "goStop": 328,
+   "nextCopy": 336,
+   "nextDb": 188,
+   "nextDone": 15,
+   "nextFlight": 7,
+   "nextHealth": 16,
+   "nextList": 26,
+   "rustDb": 193,
+   "rustDone": 16,
+   "rustFlight": 7,
+   "rustHealth": 17,
+   "rustInstall": 814,
+   "rustList": 27,
+   "slow": 223,
+   "slowStop": 203,
+   "tool": 281,
+   "upgrade": 916,
+   "wire": 286
+  },
+  "stepsSeconds": 52.6
+ },
+ "unverified": []
+}
