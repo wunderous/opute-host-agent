@@ -186,3 +186,44 @@ fn null_host_tunnel_arguments_are_refused() {
         assert_eq!(e, "bindingId and localTarget are required", "{operation}");
     }
 }
+
+/// m19 (S2): a host-placed connector reads its run token from a 0600 file
+/// (`--token-file`), never from its arguments: the unit's `ExecStart`
+/// becomes cloudflared's argv, which any local user reads.
+#[test]
+fn a_host_connector_never_carries_its_run_token_on_argv() {
+    let token = "run-token-0123456789abcdef0123456789";
+    for scope in ["system", "user"] {
+        let mut calls: Vec<(String, J)> = Vec::new();
+        let args = Args::from_map(serde_json::Map::new());
+        reconcile_legacy_host_tunnel_with(
+            &mut |name, arguments| {
+                calls.push((name.to_string(), arguments));
+                Ok(())
+            },
+            &args,
+            scope,
+            token,
+        )
+        .unwrap();
+        let files: Vec<&J> = calls
+            .iter()
+            .filter(|(name, _)| name == "ensure_host_file")
+            .map(|(_, a)| a)
+            .collect();
+        let unit = files
+            .iter()
+            .find(|a| a["path"].as_str().unwrap().ends_with(".service"))
+            .unwrap();
+        let unit = unit["content"].as_str().unwrap();
+        assert!(!unit.contains(token), "{scope}: the run token is in ExecStart");
+        let held = files
+            .iter()
+            .find(|a| a["content"] == J::from(token))
+            .expect("a token file");
+        assert_eq!(held["mode"], J::from(0o600));
+        let path = held["path"].as_str().unwrap();
+        let in_unit = path.strip_prefix('~').map_or(path.to_string(), |rest| format!("%h{rest}"));
+        assert!(unit.contains(&format!("--token-file {in_unit}\n")), "{unit}");
+    }
+}

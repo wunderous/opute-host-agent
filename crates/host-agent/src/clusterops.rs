@@ -1839,6 +1839,11 @@ fn agent_install_script(bridge_url: &str, arch: &str, config: &str) -> String {
     .join("\n")
 }
 
+/// The install script and what it reads on stdin.
+fn agent_install(bridge_url: &str, arch: &str, config: &str) -> (String, Option<Vec<u8>>) {
+    (agent_install_script(bridge_url, arch, config), None)
+}
+
 /// `wrapHostPrivilegedShellBody`.
 pub(crate) fn privileged(body: &str) -> String {
     let escaped = body.replace('\'', "'\"'\"'");
@@ -2273,12 +2278,25 @@ impl ClusterAgent {
         command: &str,
         timeout: Duration,
     ) -> Result<crate::hostobs::CommandResult, String> {
+        self.host_shell_input(command, None, timeout)
+    }
+
+    /// `host_shell` with `stdin` (kept off argv).
+    fn host_shell_input(
+        &self,
+        command: &str,
+        stdin: Option<&[u8]>,
+        timeout: Duration,
+    ) -> Result<crate::hostobs::CommandResult, String> {
         let command = command.trim();
         if command.is_empty() {
             return Err("command is required".into());
         }
         let argv = ["bash", "-lc", command].map(String::from);
-        Ok(crate::hostobs::run_command(&self.env, &argv, timeout))
+        let deadline = (!timeout.is_zero()).then(|| std::time::Instant::now() + timeout);
+        Ok(crate::hostobs::run_command_with(
+            &self.env, &argv, stdin, deadline, timeout, None,
+        ))
     }
 
     /// `WaitForSystemdActive`.
@@ -2360,8 +2378,8 @@ impl ClusterAgent {
             };
             let bridge = bridge.trim_end_matches('/').to_string();
             let config = agent_config(&bridge, args);
-            let script = privileged(&agent_install_script(&bridge, arch, &config));
-            let r = self.host_shell(&script, AGENT_INSTALL_TIMEOUT)?;
+            let (script, stdin) = agent_install(&bridge, arch, &config);
+            let r = self.host_shell_input(&privileged(&script), stdin.as_deref(), AGENT_INSTALL_TIMEOUT)?;
             if r.exit_code != 0 {
                 return Err(first_non_empty(&[
                     &r.stderr,
@@ -2402,8 +2420,15 @@ impl ClusterAgent {
         let resolved = self.bridge_endpoint(vm, &bridge, args.bridge_port)?;
         let arch = self.vm_arch(vm)?;
         let config = agent_config(&resolved, args);
-        let script = agent_install_script(&resolved, arch, &config);
-        let r = self.vm_exec(vm, &["bash", "-lc", &script], AGENT_INSTALL_TIMEOUT)?;
+        let (script, stdin) = agent_install(&resolved, arch, &config);
+        let argv = ["bash", "-lc", &script].map(String::from);
+        let r = self.instances.incus.run_vm_exec(
+            vm,
+            &argv,
+            stdin.as_deref(),
+            AGENT_INSTALL_TIMEOUT,
+            &crate::plan::runner::RunCtx::background(),
+        )?;
         if r.exit_code != 0 {
             return Err(first_non_empty(&[
                 &r.stderr,
@@ -2611,6 +2636,60 @@ mod tests {
         for (created, age) in go["ages"].as_object().unwrap() {
             assert_eq!(age_at(created, now), age.as_str().unwrap(), "{created}");
         }
+    }
+
+    /// m19 (S4): the cluster agent's config, bridge token included, reaches
+    /// the target on stdin, never on the argv of `bash`, `sudo` or `incus
+    /// exec` (raw or base64-encoded), and is written 0600.
+    #[test]
+    fn the_bridge_token_never_travels_on_argv() {
+        use base64::Engine;
+        let token = "bridge-token-0123456789abcdef0123456789";
+        let args = AgentArgs {
+            bridge_token: token.into(),
+            cluster_id: "c1".into(),
+            cluster_name: "n".into(),
+            agent_id: "a".into(),
+            ..AgentArgs::default()
+        };
+        let config = agent_config("http://127.0.0.1:9093", &args);
+        let (script, stdin) = agent_install("http://127.0.0.1:9093", "x64", &config);
+        // base64 at each alignment, less the edges that depend on neighbours
+        let forms: Vec<String> = std::iter::once(token.to_string())
+            .chain((0..3).map(|k| {
+                let mut raw = vec![b'{'; k];
+                raw.extend_from_slice(token.as_bytes());
+                let enc = base64::engine::general_purpose::STANDARD.encode(&raw);
+                enc[if k > 0 { 4 } else { 0 }..enc.len() - 4].to_string()
+            }))
+            .collect();
+        for argv in [&script, &privileged(&script)] {
+            for form in &forms {
+                assert!(!argv.contains(form.as_str()), "the bridge token is on argv");
+            }
+        }
+        assert_eq!(stdin.as_deref(), Some(config.as_bytes()));
+        // The config line, run against an existing world-readable file.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("cluster-agent.json");
+        std::fs::write(&path, "old").unwrap();
+        let line = script
+            .lines()
+            .find(|l| l.contains(AGENT_CONFIG))
+            .unwrap()
+            .replace(AGENT_CONFIG, &path.display().to_string());
+        let mut child = std::process::Command::new("bash")
+            .arg("-c")
+            .arg(line)
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        std::io::Write::write_all(&mut child.stdin.take().unwrap(), config.as_bytes()).unwrap();
+        assert!(child.wait().unwrap().success());
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), config);
     }
 
     #[test]
