@@ -1405,6 +1405,14 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     `m19-r1` (e2e-6: 10 journeys, 14 requirements), with the contract
     suites, seam stage `m19`, the arm64 install and the distribution checks
     recaptured on rc6.
+- **m21 release path (D52).** `e2e4.upgrade-chain` (gate e2e-4 on
+  `rust-0.4.0`) runs Go v0.2.4, then 0.3.0, then 0.4.0, then a rollback to
+  0.3.0 on one host.
+  - **Finding:** on rc6, 0.3.0's public-MCP connector tools always failed
+    their origin probe with HTTP 401 (U1); D52 makes the probe mint its
+    token in process, as D8 requires.
+  - **Candidate:** `rust-0.3.0-rc7` (cf151caa7); all gates pass on
+    `m21-r1`, with the same receipts recaptured on rc7.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
@@ -1483,6 +1491,7 @@ re-checks their hashes against the raw files. A hand-edited summary fails.
 | D49 | The Tailscale join ran `tailscale up --authkey="$auth_key"` (S3) | **Decided (Host Agent owner, delegated 2026-11-11): `--auth-key=file:/dev/stdin`** ([`tailscale-auth-key-file`](../tailscale-auth-key-file/proposal.md)) | None outside the guest |
 | D50 | `install_cluster_agent` carried the bridge token base64-encoded in the argv of `bash`, `sudo` and `incus exec`, logged by sudo, and wrote the config 0644 (S4) | **Decided (Host Agent owner, delegated 2026-11-11): the config on stdin, written 0600** ([`cluster-agent-config-stdin`](../cluster-agent-config-stdin/proposal.md)) | The install script is Go's without the embedded config |
 | D51 | `ensure_local_llm_relay.upstreamToken` was stored verbatim (S5) | **Decided (Host Agent owner, delegated 2026-11-11): publish it `writeOnly`** through D24's list ([`write-only-relay-upstream-token`](../write-only-relay-upstream-token/proposal.md)) | The catalog revision changes |
+| D52 | 0.3.0's public-MCP connector probes asked the agent's own token endpoint for a secretless `opute-mcp-host` token, which D8 refuses, so `ensure_public_mcp_tunnel` and `ensure_public_mcp_quick_tunnel` always ended in HTTP 401 (U1, found by `e2e4.upgrade-chain` in goal m21) | **Decided (Host Agent owner, delegated 2026-11-11): an in-process probe token, as D8 requires** ([`self-probe-in-process-token`](../self-probe-in-process-token/proposal.md)): minted in `authz.sqlite`, bound to the probed resource for 300 s, revoked after | 0.3.0 only; 0.4.0 keeps platform-neutral's N4 probe |
 
 ## 7. Risks this plan specifically mitigates
 
