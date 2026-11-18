@@ -1608,6 +1608,237 @@ def cutover() -> dict:
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
 
+# --- e2e-4 / 3. the release path: Go v0.2.4 -> 0.3.0 -> 0.4.0 -> 0.3.0 (m21) -----------------------------
+
+CHAIN_SPEC = CH + "secret-placement/specs/secret-placement/spec.md"
+NEUTRAL_SPEC = CH + "platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+CHAIN = "/opt/opute-e2e/chain"
+CHAIN_WORK = "/root/e2e-chain"
+SW = "python3 /opt/opute-e2e/guest/secretsweep.py"
+REL03 = f"{CHAIN}/rust-0.3.x/host-agent-linux-x64.gz"
+CHAIN_STATE = "/home/opute/.config/opute/instances/standalone/state"
+CHAIN_ROOTS = ("/etc", "/opt", "/tmp", "/var/tmp", "/home", "/root", "/run", "/usr/local", "/srv")
+# ensure_public_mcp_tunnel is task-aware and needs the roots capability
+ROOTS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}},
+                                                             "roots": {}}}
+
+
+PAST_ORIGIN = "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+
+
+def unit_swap(id_: str, unit_file: str, gz: str) -> dict:
+    """Stop the agent, install a unit file and a binary, start it and print its version."""
+    return {"id": id_, "guest": (f"systemctl stop {UNIT} && install -m 0644 {unit_file} /etc/systemd/system/{UNIT} "
+                                 f"&& systemctl daemon-reload && {base.install_binary(gz)} && systemctl start {UNIT} && "
+                                 f"{base.WAIT_HEALTH.format(port=3014)} && {base.BIN} --version")}
+
+
+def chain_task(id_: str, tool: str, args: dict) -> list[dict]:
+    poll = {"id": id_, "mcp": "tasks/get", "params": {"taskId": "${TID_" + id_ + "}"}, "meta": TASKS_META,
+            "until": {"path": "response.body.result.status", "in": ha.DONE}, "timeout": 300, "interval": 3}
+    return [call(id_ + "Call", tool, args, meta=ROOTS_META, capture={"TID_" + id_: "response.body.result.taskId"}),
+            poll]
+
+
+def chain_scan(id_: str) -> dict:
+    # the production agent runs as opute: a file it writes for itself is opute's, one it installs through sudo root's
+    return {"id": id_, "guest": (f"{SW} scan --markers {CHAIN_WORK}/markers.json --unit {UNIT} --state {CHAIN_STATE} "
+                                 "--owner root --owner opute "
+                                 + " ".join(f"--root {r}" for r in CHAIN_ROOTS))}
+
+
+def wire(id_: str, var: str) -> dict:
+    return {"id": id_, "mcp": "tasks/get", "params": {"taskId": "${" + var + "}"}, "meta": TASKS_META}
+
+
+def upgrade_chain() -> dict:
+    relay = {"sessionId": "e2e-chain", "listenHost": "127.0.0.1", "listenPort": 3058, "targetHost": "127.0.0.1",
+             "targetPort": 3059, "incomingToken": "${SECRET:relayIn}", "upstreamToken": "${SECRET:relayUp}",
+             "allowedSourceCIDRs": ["127.0.0.1/32"]}
+    # user scope: the production agent runs as opute, and a system-scoped connector requires root
+    tunnel = {"bindingId": "e2e-chain", "endpoint": "https://e2e-chain.invalid/mcp", "scope": "user",
+              "localTarget": "http://127.0.0.1:3014/mcp", "tunnelToken": "${SECRET:tunnelToken}"}
+    # Both OAuth settings sets, as a host carries them across 0.3.0 and 0.4.0 (neutral.rollback): 0.3.0's
+    # connector proves its origin with the configured client secret, 0.4.0 generates its machine client's own
+    plant = (f"{SW} plant --env {CHAIN_WORK}/oauth.env --markers {CHAIN_WORK}/markers.json "
+             "--set OPUTE_HOST_OAUTH_CLIENT_SECRET=${SECRET:oauthClient} --setting OPUTE_OAUTH_CLIENTS=opute-mcp-host "
+             "--marker tunnelToken=${SECRET:tunnelToken} "
+             "--marker incomingToken=${SECRET:relayIn} --marker upstreamToken=${SECRET:relayUp}")
+    write = lambda id_, n: call(id_, "ensure_host_file", {"path": f"~/e2e/chain-{n}.txt",  # noqa: E731
+                                                          "content": f"{n}\n", "scope": "user"})
+    run = lambda id_, var, key: call(id_, "run_host_plan",  # noqa: E731
+                                     {"plan": {"contractVersion": "host-plan.v1", "planId": f"e2e.chain.{key}",
+                                               "generation": 1, "idempotencyKey": f"e2e-chain-{key}",
+                                               "nodes": cross_plan("x", "x", "n1")["nodes"][:1]}},
+                                     capture={var: "response.body.result.structuredContent.runId"})
+    db = lambda id_, extra="": {"id": id_, "guest": f"systemctl stop {UNIT} && {T} db {SDB_}{extra}"}  # noqa: E731
+    steps = base.TOOL_STEPS + [
+        {"id": "sweepTool", "copy": "secretsweep", "to": "/opt/opute-e2e/guest/secretsweep.py"},
+        {"id": "goUnitCopy", "copy": "goUnit", "to": f"{CHAIN}/go.service"},
+        {"id": "neutralUnitCopy", "copy": "proposedUnit", "to": f"{CHAIN}/proposed.service"},
+        {"id": "rust03Copy", "copy": "rust03", "to": REL03},
+        {"id": "plant", "guest": plant},
+        {"id": "aside", "guest": f"systemctl stop {UNIT} && mv /home/opute/.config/opute/instances "
+                                 f"/tmp/e2e-chain-rust-instances && cp /etc/systemd/system/{UNIT} {CHAIN}/vm.service "
+                                 f"&& printf '[Service]\\nEnvironmentFile={CHAIN_WORK}/oauth.env\\n' > "
+                                 f"/etc/systemd/system/{UNIT}.d/chain.conf && echo aside"},
+        # 1. Go v0.2.4 on Go's unit: a completed run and one stopped in flight
+        unit_swap("goInstall", f"{CHAIN}/go.service", f"{base.GO_REL}/host-agent-linux-x64.gz"),
+        {"id": "goHealth", "health": True},
+        {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 60"},
+        call("goDone", "run_host_plan", {"plan": base.plan("e2e-chain-go", "e2e-chain-go-1", ".config/opute-e2e/go.txt")},
+             capture={"GO_DONE": "response.body.result.structuredContent.runId"}),
+        base.poll_run("goDoneWait", "GO_DONE"),
+        call("goFlight", "run_host_plan", {"plan": base.plan("e2e-chain-flight", "e2e-chain-flight-1",
+                                                             ".config/opute-e2e/flight.txt", slow=True)},
+             capture={"GO_FLIGHT": "response.body.result.structuredContent.runId"}),
+        call("goInFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"},
+             until={"path": "response.body.result.structuredContent.nodes.n2.attempts", "in": [1]}, timeout=30),
+        db("goStop"),
+        {"id": "slowStop", "guest": f"{T} slow stop"},
+        # 2. rust-0.3.0 on the same unit and state; work that writes the m19 secret classes
+        unit_swap("r3Install", f"{CHAIN}/go.service", REL03),
+        {"id": "r3Health", "health": True},
+        {"id": "r3Db", "guest": f"{T} db {SDB_}"},
+        call("r3GoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("r3GoFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"}),
+        # a task runs in its own user workload unit (Q29), which needs opute's user manager
+        call("r3Supervisor", "ensure_host_service_supervisor", {}),
+        {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
+                                   "done; test -S /run/user/$(id -u opute)/bus && echo up"},
+        call("r3Relay", "ensure_local_llm_relay", relay),
+        *chain_task("r3Tunnel", "ensure_public_mcp_tunnel", tunnel),
+        run("r3Plan", "R3_RUN", "r3"), base.poll_run("r3PlanDone", "R3_RUN"),
+        *task("r3Task", "run_host_command", {"command": "echo r3-era"}),
+        write("r3Write", "r3"),
+        chain_scan("r3Scan"),
+        db("r3Stop"),
+        # 3. rust-0.4.0 on the proposed 0.4.0 unit (packet 7.4)
+        unit_swap("r4Install", f"{CHAIN}/proposed.service", f"{base.REL}/host-agent-linux-x64.gz"),
+        {"id": "r4Health", "health": True},
+        {"id": "r4Db", "guest": f"{T} db {SDB_}"},
+        call("r4GoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("r4GoFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"}),
+        call("r4R3Plan", "get_host_plan_run", {"runId": "${R3_RUN}"}),
+        wire("r4R3Task", "TID_r3Task"), wire("r4R3Tunnel", "TID_r3Tunnel"),
+        call("r4R3TaskOp", "get_operation", {"operationId": "${TID_r3Task}"}),
+        call("r4Read", "inspect_host_file", {"path": "~/e2e/chain-r3.txt", "scope": "user"}),
+        *chain_task("r4Tunnel", "ensure_public_mcp_tunnel", tunnel),
+        run("r4Plan", "R4_RUN", "r4"), base.poll_run("r4PlanDone", "R4_RUN"),
+        *task("r4Task", "run_host_command", {"command": "echo r4-era"}),
+        write("r4Write", "r4"),
+        chain_scan("r4Scan"),
+        db("r4Stop"),
+        # 4. rollback: rust-0.3.0 on the same 0.4.0 unit
+        unit_swap("backInstall", f"{CHAIN}/proposed.service", REL03),
+        {"id": "backHealth", "health": True},
+        {"id": "backDb", "guest": f"{T} db {SDB_}"},
+        call("backGoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("backR3Plan", "get_host_plan_run", {"runId": "${R3_RUN}"}),
+        call("backR4Plan", "get_host_plan_run", {"runId": "${R4_RUN}"}),
+        wire("backR4Task", "TID_r4Task"), wire("backR4Tunnel", "TID_r4Tunnel"), wire("backR3Tunnel", "TID_r3Tunnel"),
+        call("backR4TaskOp", "get_operation", {"operationId": "${TID_r4Task}"}),
+        call("backRead", "inspect_host_file", {"path": "~/e2e/chain-r4.txt", "scope": "user"}),
+        *chain_task("backTunnel", "ensure_public_mcp_tunnel", tunnel),
+        write("backWrite", "back"),
+        chain_scan("backScan"),
+        {"id": "connectors", "guest": "ls /home/opute/.config/systemd/user/ | grep -c '^opute-cloudflared-' || true"},
+        {"id": "tokenFiles", "guest": "stat -c '%a %U' /home/opute/.config/opute/tunnels/*.env"},
+    ]
+    same = lambda step, ref: [a(step, f"json.{k}", equalsStep={"step": ref, "path": f"json.{k}"})  # noqa: E731
+                              for k in ("counts", "operationIds", "planRunIds")]
+    status = lambda step: direct(step, "structuredContent.status", equals="completed")  # noqa: E731
+    wrote = lambda step: direct(step, "isError", **{"in": [False, "<absent>"]})  # noqa: E731
+    clean = lambda step: [a(step, f"json.{k}", equals=v)  # noqa: E731
+                          for k, v in (("journal", []), ("store", []), ("looseFiles", []), ("strayEnviron", {}))]
+    as_before = lambda step, ref: a(step, "response.body.result.status",  # noqa: E731
+                                    equalsStep={"step": ref, "path": "response.body.result.status"})
+    reqs = [
+        req(CUTOVER, "Forward: each release serves the previous release's state unchanged",
+            ok("aside"), a("goInstall", "stdout", matches="\n0\\.2\\.4\n$"),
+            direct("goDoneWait", "structuredContent.status", equals="completed"),
+            direct("goInFlight", "structuredContent.nodes.n2.attempts", equals=1),
+            a("goStop", "json.integrity", equals="ok"),
+            a("r3Install", "stdout", matches="\n0\\.3\\.0\n$"), a("r3Db", "json.integrity", equals="ok"),
+            *same("r3Db", "goStop"), status("r3GoDone"),
+            direct("r3GoFlight", "structuredContent.status", equals="cancelled"),
+            a("r4Install", "stdout", matches=base.RUST_MATCH), a("r4Db", "json.integrity", equals="ok"),
+            *same("r4Db", "r3Stop"), status("r4GoDone"),
+            direct("r4GoFlight", "structuredContent.status", equals="cancelled"), status("r4R3Plan"),
+            as_before("r4R3Task", "r3Task"), as_before("r4R3Tunnel", "r3Tunnel"), status("r4R3TaskOp"),
+            direct("r4Read", "structuredContent.exists", equals=True),
+            scenario="Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with "
+                     "its relay, connector, plan and task, is served by 0.4.0: counts and ids "
+                     "reconcile per table and every record reads back with the status last reported"),
+        req(CUTOVER, "Rollback: 0.3.0 serves 0.4.0's state unchanged",
+            a("backInstall", "stdout", matches="\n0\\.3\\.0\n$"), a("backDb", "json.integrity", equals="ok"),
+            *same("backDb", "r4Stop"), status("backGoDone"), status("backR3Plan"), status("backR4Plan"),
+            as_before("backR4Task", "r4Task"), as_before("backR4Tunnel", "r4Tunnel"),
+            as_before("backR3Tunnel", "r3Tunnel"), status("backR4TaskOp"),
+            direct("backRead", "structuredContent.exists", equals=True),
+            scenario="0.3.0 started on 0.4.0's state, on the same 0.4.0 unit, reads every operation, task and "
+                     "plan run, 0.4.0-era work included, with the status 0.4.0 last reported"),
+        req(NEUTRAL_SPEC, "One serving profile",
+            status("r3PlanDone"), wrote("r3Write"), status("r4PlanDone"), wrote("r4Write"), wrote("backWrite"),
+            res("r3Task", "structuredContent.stdout", equals="r3-era\n"),
+            res("r4Task", "structuredContent.stdout", equals="r4-era\n"),
+            scenario="Each release admits mutations from its unit: 0.3.0 from Go's unit, 0.4.0 from the proposed "
+                     "unit, and 0.3.0 again from the proposed unit after rollback"),
+        req(CHAIN_SPEC, "A file holding a secret is private to the agent's user",
+            ok("plant"), direct("r3Relay", "structuredContent.ready", equals=True),
+            *[a(t, "response.body.result.status", equals="completed") for t in ("r3Tunnel", "r4Tunnel", "backTunnel")],
+            # the endpoint is .invalid, so each call ends at the public probe: past the origin (D52 in 0.3.0)
+            *[res(t, "content[0].text", matches=PAST_ORIGIN) for t in ("r3Tunnel", "r4Tunnel", "backTunnel")],
+            a("connectors", "stdout", equals="1\n"), a("tokenFiles", "stdout", equals="600 opute\n"),
+            *clean("r3Scan"), *clean("r4Scan"), *clean("backScan"),
+            scenario="The relay's and the user-scoped connector's tokens, written under 0.3.0 and ensured again "
+                     "under 0.4.0 and after rollback onto the same one connector, are in no journal line, no store "
+                     "row and no file that is not 0600 and the agent's user's, and in no process's environment; "
+                     "each connector call proves its origin and stops only at the unreachable public endpoint"),
+        req(SPEC, "One exact Host Agent identity",
+            *[a(h, "response.body.agentId", equals="e2e-devvm-agent")
+              for h in ("goHealth", "r3Health", "r4Health", "backHealth")]),
+    ]
+    cleanup = [
+        {"id": "slowStopAgain", "guest": f"{T} slow stop >/dev/null; true"},
+        {"id": "removeConnector", "guest": (
+            "u=$(id -u opute); for f in /home/opute/.config/systemd/user/opute-cloudflared-*.service; do "
+            "[ -e \"$f\" ] && runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$u systemctl --user disable --now "
+            "\"$(basename \"$f\")\"; rm -f \"$f\"; done; rm -rf /home/opute/.config/opute/tunnels "
+            "/home/opute/.local/share/opute/tunnels; rmdir /home/opute/.config/systemd/user/default.target.wants /home/opute/.config/systemd/user "
+            "/home/opute/.config/systemd 2>/dev/null; true")},
+        {"id": "restoreRust", "guest": (
+            f"systemctl stop {UNIT}; rm -f /etc/systemd/system/{UNIT}.d/chain.conf; "
+            f"install -m 0644 {CHAIN}/vm.service /etc/systemd/system/{UNIT} && "
+            f"systemctl daemon-reload && {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} >/dev/null && "
+            "rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-chain-rust-instances "
+            f"/home/opute/.config/opute/instances && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}; "
+            f"loginctl disable-linger opute; rm -rf {HOME}/e2e {HOME}/.config/opute-e2e {CHAIN} {CHAIN_WORK}; true")},
+    ]
+    files = {**base.TOOL_FILES, "secretsweep": inp("${REPO}/evidence/e2e/guest-tools/secretsweep.py"),
+             "goUnit": inp("${PARITY}/go-src/deploy/opute-bootstrap-mcp.service"),
+             "proposedUnit": inp("${REPO}/evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service"),
+             "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")}
+    allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*",
+             "files//home/opute/.config/opute-e2e*", "system/units/e2e-slow*", "system/unitFiles/e2e-slow*",
+             "system/units/opute-host-workload-*", "system/units/e2e-*", "system/unitFiles/e2e-*",
+             "files//home/opute/.config/systemd*", "files//home/opute/.config/opute/tunnels*",
+             "files//home/opute/.local/share/opute/tunnels*",
+             "files//etc/systemd/system/*", "files//opt/opute-e2e/chain*", "linger", "files//var/lib/systemd/linger*",
+             "system/units/user*", "system/units/run-user-*", "user/*"]
+    return journey(
+        "e2e4.upgrade-chain", "e2e-4",
+        "The release path (m21): the host is reinstalled as Go v0.2.4 on Go's unit and leaves a run in flight; "
+        "the previous Rust release (0.3.0) takes over on the same unit and state and installs an LLM relay and a "
+        "user-scoped public MCP connector with marked tokens; the 0.4.0 candidate takes over on the "
+        "proposed 0.4.0 unit and does more work; then 0.3.0 is rolled back onto the same 0.4.0 unit. Each step "
+        "reads the previous binary's records back and searches the host for the tokens.",
+        reqs, steps, cleanup, allow=allow, minutes=25,
+        inputs={"agent": base.AGENT, "go": f"{base.GO_REL} (published Go v0.2.4 release, SHA256SUMS pinned)",
+                "previous": f"the previous Rust release ({base.PREVIOUS}), copied in",
+                "slow": "a local endpoint answering after 60 s (e2etool slow)", "files": files})
+
+
 NEXT = "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
 
 
@@ -1741,7 +1972,7 @@ def restart() -> dict:
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
 
-JOURNEYS = [host_ops, incus, plans, oci, data, discovery, site, serving, cutover, restart]
+JOURNEYS = [host_ops, incus, plans, oci, data, discovery, site, serving, cutover, restart, upgrade_chain]
 
 
 def render() -> dict[str, str]:

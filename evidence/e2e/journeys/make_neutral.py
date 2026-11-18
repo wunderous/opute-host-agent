@@ -411,7 +411,7 @@ def rollback() -> dict:
         "instance and OAuth client settings).",
         reqs, steps, clean("roll"),
         files={**FILES, "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")},
-        previous="the previous Rust release, 0.3.0-rc4 (" + base.PREVIOUS + "), copied in")
+        previous="the previous Rust release, 0.3.0-rc7 (" + base.PREVIOUS + "), copied in")
 
 
 JOURNEYS = [profile, reserved, rollback]
