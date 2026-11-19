@@ -283,7 +283,7 @@ Left empty for the owners (task 6.3).
 | Release | | | | |
 | Deployment | | | | |
 
-## 7. Rust 0.4.0 candidate (goals m15, m17, m20, m19 and m21)
+## 7. Rust 0.4.0 candidate (goals m15, m17, m20, m19, m21 and m22)
 
 Sections 1 to 6 are the 0.3.0 candidate, and its sign-off stands alone.
 This section is the next candidate, from the integration branch
@@ -348,6 +348,18 @@ same fixes as in 0.3.0 rc6:
 Each fix has a test that fails on rc3's code
 ([`evidence/m19/before-040.log`](../../../evidence/m19/before-040.log)).
 
+Goal m22 put the outcome rule (section 1's m22 note) on this line too. Its
+own journeys had 78 flagged steps before the round; the findings in 0.4.0
+match 0.3.0's ([`evidence/m22`](../../../evidence/m22/README.md)), and none
+is a product defect:
+
+| Id | Journeys | Finding | State in 0.4.0 |
+|---|---|---|---|
+| J1 | `e2e6.store-damage` | Its task failed on the user bus, unasserted | journey defect, fixed as in 0.3.0 |
+| E1, E2 | `e2e1.restart`, `e2e4.cutover` | A never-persisted task's `task not found`; Go v0.2.4's first supervisor call | expected; asserted, or opted out with its reason |
+| E3 | `e2e6.secret-sweep`, and `e2e4.upgrade-chain`'s three tunnel calls and three re-reads | The connector stops at its `.invalid` public endpoint, past its origin | expected refusal; `isError: true` and the text asserted |
+| — | `e2e3.discovery`, `e2e3a.workload`, `e2e3a.lose-one`, `e2e6.child-env`, `e2e7.public-site`, `neutral.reserved` | Steps that returned success with no assertion on it (the key tools, the env edits, the console input, the site's host prerequisites, the provider installs) | each now asserts its result |
+
 ### 7.2 The candidate
 
 | Field | Value |
@@ -373,17 +385,19 @@ passes each. Goal m21 changed no 0.4.0 code. It added `e2e4.upgrade-chain`,
 pinned the rollback journeys to `rust-0.3.0-rc7` and taught the sweep's scan
 which owners a private file may have, so it reran gates e2e-4, e2e-neutral
 and e2e-6 on rc4 under run `m21-r2`. Every journey there passed on its first
-attempt.
+attempt. Goal m22 changed no 0.4.0 code either; with the outcome rule on,
+every gate reran on rc4 under run `m22-r2`, which is now the run of every
+gate, and `evidence/e2e/verify.py --gate` passes each.
 
 | Gate | Journeys | Spec requirements passed | New in 0.4.0 |
 |---|---|---|---|
-| e2e-0 | 7 | 7 | — |
+| e2e-0 | 8 | 8 | `selfcheck.unchecked-outcome` (m22) |
 | e2e-1 | 8 | 35 | Install on the proposed unit and launcher (below); upgrade to `0.4.1-e2e` |
 | e2e-2 | 5 | 38 | `e2e2.incus`: the console journey (open, read the login prompt, resize, detach, no `incus console` left) and the NIC journey (attach, attach again, remove, remove again) |
 | e2e-3a | 5 | 33 | `e2e3a.workload`: cluster inspection on the HA cluster through `list_secret_keys`, `list_configmap_keys` and `inspect_workload`; the Q18 workaround is gone |
-| e2e-3 | 3 | 18 | `e2e3.serving` calls both LLM tools; `e2e3.discovery` reads K3s's own keys |
+| e2e-3 | 3 | 19 | `e2e3.serving` calls both LLM tools; `e2e3.discovery` reads K3s's own keys |
 | e2e-4 | 3 | 16 | `e2e4.upgrade-chain` (m21): the release path on one host, on the production unit. Go v0.2.4 on Go's unit leaves a run in flight. `rust-0.3.0-rc7` serves that state on the same unit, and installs an LLM relay and a user-scoped public MCP connector with marked tokens. rc4 takes over on the proposed 0.4.0 unit. rc7 is then rolled back onto that unit. At each step, counts and ids reconcile per table, every run, task and operation reads back with the status last reported (Go's in-flight run as `cancelled`), mutations are admitted from the unit, each connector call gets past its origin probe, and no token is in the journal, the store, a non-private file or another process's environment (D52) |
-| e2e-6 | 9 | 21 | `e2e6.secret-sweep` (m19): with markers planted for an OAuth grant, an LLM relay, a host cluster agent install and a public MCP connector, no marker is on any process's argv (78 execs traced host-wide), in the journal, in the store or in a response, and every file that holds one is 0600; the environ of the agent's own unit holds its own credentials only. `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 58 MB (D41). `e2e6.budget`: with a 5,000-row bound, 27,691 calls leave exactly 5,000 audit rows, and the store grows 856 bytes per call against 3,455 before (D42) |
+| e2e-6 | 9 | 21 | `e2e6.secret-sweep` (m19): with markers planted for an OAuth grant, an LLM relay, a host cluster agent install and a public MCP connector, no marker is on any process's argv (78 execs traced host-wide), in the journal, in the store or in a response, and every file that holds one is 0600; the environ of the agent's own unit holds its own credentials only. `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 58 MB (D41). `e2e6.budget` (`m22-r2`): with a 5,000-row bound, 27,739 calls leave exactly 5,000 audit rows one prune interval later, and the store grows 831 bytes per call against 3,490 in 0.3.0 (D42) |
 | e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc7 |
 | e2e-7 | 1 | 5 | `e2e7.public-site` (m20): one `run_host_local_recipe` run brings a K3s Service up at `e2e-m19-r2.opute.io`, which the host fetches over verified TLS; a second run skips every node; a deleted pod is replaced; neither the Cloudflare token nor the tunnel's run token is in any file, journal line or run record; one teardown run removes the guest, the CNAME and the tunnel, and a second skips (D44, D45) |
 
@@ -421,6 +435,12 @@ On rc4 (`m19-r2`), one attempt was retired:
 - `m19-r2-e2e3a-workload-dns`: the first attempt of `e2e3a.workload` failed
   when a guest could not resolve `get.k3s.io`. Environmental; the journey
   reran once under `m19-r2` and passed in 228 s.
+
+On rc4 under the outcome rule (`m22-r2`), one attempt was retired:
+- `m22-r2-endpoint-dns`: the first attempt of `e2e3a.endpoint` failed when
+  the K3s provider could not resolve `github.com` for the release checksums,
+  and every later step depended on that cluster. Environmental; the journey
+  reran once under `m22-r2`.
 
 | Receipt | What it proves |
 |---|---|

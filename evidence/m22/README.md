@@ -65,7 +65,10 @@ under the rule under one new run id:
   `e2e2.oci` failed on downloads (the Ubuntu archive at 20-37 kB/s; the
   package steps' deadlines expired). They were retired with that cause to
   `.parity/retired/m22-r1-apt-slow/` and each reran once under `m22-r1`.
-- `rust-0.4.0-rc4` (`rust-0.4.0`): recorded on that branch.
+- `rust-0.4.0-rc4` (`rust-0.4.0`): `m22-r2`, every gate passes. The first
+  attempt of `e2e3a.endpoint` failed when the K3s provider could not resolve
+  `github.com`; it was retired with that cause to
+  `.parity/retired/m22-r2-endpoint-dns/` and reran once under `m22-r2`.
 
 `selfcheck.unchecked-outcome` fails with `unchecked-outcome` alone in
 `m22-r1`, as e2e-0 expects.
