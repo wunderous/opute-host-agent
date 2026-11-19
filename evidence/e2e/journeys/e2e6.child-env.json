@@ -30,9 +30,24 @@
      "equals": "completed"
     },
     {
+     "step": "vm",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
      "step": "console",
      "path": "response.body.result.structuredContent.status",
      "equals": "started"
+    },
+    {
+     "step": "ctrlA",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "sent"
+    },
+    {
+     "step": "detach",
+     "path": "response.body.result.structuredContent.closed",
+     "equals": true
     },
     {
      "step": "consoleEnv",

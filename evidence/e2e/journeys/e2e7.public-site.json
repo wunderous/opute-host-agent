@@ -440,6 +440,114 @@
   {
    "pass": [
     {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisor"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "builder"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sUnit"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sStart"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sActivation"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sStop"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareUnit"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareStart"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareActivation"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareStop"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "k3sUnitRemove"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "cloudflareUnitRemove"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "siteRecipe"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "downRecipe"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "nestedRecipe"
+    },
+    {
      "equals": true,
      "path": "json.listed",
      "step": "k3sListed"

@@ -1415,6 +1415,15 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     token in process, as D8 requires.
   - **Candidate:** `rust-0.3.0-rc7` (cf151caa7); all gates pass on
     `m21-r1`, with the same receipts recaptured on rc7.
+- **m22 outcome audit.** The harness fails a journey with
+  `unchecked-outcome` when a tool call or task poll has no assertion
+  deciding its outcome, or returns an error no assertion expects
+  (`evidence/m22`).
+  - **Findings:** one journey defect (`e2e6.store-damage`'s task failed on
+    the user bus, unasserted) and four expected refusals, each now asserted
+    with its text; no product defect.
+  - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under the rule
+    on `m22-r1`.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 

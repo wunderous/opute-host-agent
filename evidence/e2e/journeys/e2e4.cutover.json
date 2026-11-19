@@ -147,6 +147,16 @@
      "equals": "completed"
     },
     {
+     "step": "rustTaskWire",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "go-era\n"
+    },
+    {
+     "step": "rustTask",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
      "step": "rustPlan",
      "path": "response.body.result.structuredContent.status",
      "equals": "completed"
@@ -271,9 +281,27 @@
      "equals": "completed"
     },
     {
+     "step": "goBackRustTaskWire",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "rust-era\n"
+    },
+    {
      "step": "goBackLongWire",
      "path": "response.body.result.status",
      "equals": "cancelled"
+    },
+    {
+     "step": "goBackLong",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "goBackOps",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
     },
     {
      "step": "goBackRustTask",
@@ -367,6 +395,7 @@
    "mcp": "tools/call",
    "tool": "ensure_host_service_supervisor",
    "arguments": {},
+   "expectAnyOutcome": "Go v0.2.4 enables linger and may answer before the user bus is up (Go is frozen); goSupervisorAgain asserts the supervisor ready",
    "retryOn": [
     "host_capacity_saturated"
    ]

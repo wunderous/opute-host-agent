@@ -84,6 +84,11 @@ def is_error(step: str) -> dict:
     return a(step, "response.body.result.isError", equals=True)
 
 
+def task_ok(step: str) -> dict:
+    """A terminal task whose result is no error."""
+    return a(step, "response.body.result.result.isError", equals=False)
+
+
 # --- 1. the state directory fills up --------------------------------------------------------------
 
 def disk_full() -> dict:
@@ -99,7 +104,9 @@ def disk_full() -> dict:
         agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         call("writeBefore", "ensure_host_file", f(1), **o),
-        call("taskBefore", "run_host_command", {"command": "echo before"}, meta=TASKS_META, **o),
+        call("taskBefore", "run_host_command", {"command": "echo before"}, meta=TASKS_META, **o,
+             capture={"BEFORE": "response.body.result.taskId"}),
+        done("taskBeforeDone", "BEFORE", o),
         {"id": "dbBefore", "guest": f"{T} audit {state(n)}/state.db"},
         {"id": "fill", "guest": fill},
         call("writeFull", "ensure_host_file", f(2), **o),
@@ -112,18 +119,23 @@ def disk_full() -> dict:
         {"id": "dbFull", "guest": f"{T} audit {state(n)}/state.db"},
         {"id": "free", "guest": f"rm -f {state(n)}/filler {state(n)}/filler2 && echo freed"},
         call("writeAfter", "ensure_host_file", f(3), **o),
-        call("taskAfter", "run_host_command", {"command": "echo after"}, meta=TASKS_META, **o),
+        call("taskAfter", "run_host_command", {"command": "echo after"}, meta=TASKS_META, **o,
+             capture={"AFTER": "response.body.result.taskId"}),
+        done("taskAfterDone", "AFTER", o),
         {"id": "dbAfter", "guest": f"{T} audit {state(n)}/state.db"},
     ]
     reqs = [
         req(FAULTS, "A full state directory refuses writes and recovers",
             ok("mount"), ok("fullAgent"), not_error("writeBefore"),
+            a("taskBeforeDone", "response.body.result.result.structuredContent.stdout", equals="before\n"),
             a("fill", "stdout", matches="^ *[0-9]+\n$"),
             is_error("writeFull"), is_error("taskFull"), is_error("planFull"),
             a("noHalfWrite", "stdout", matches="none\n$"),
             not_error("readFull"),
             a("dbFull", "json.integrity", equals="ok"), a("dbFull", "json.unfinished", equals=0),
-            not_error("writeAfter"), a("dbAfter", "json.integrity", equals="ok"),
+            not_error("writeAfter"),
+            a("taskAfterDone", "response.body.result.result.structuredContent.stdout", equals="after\n"),
+            a("dbAfter", "json.integrity", equals="ok"),
             scenario="Disk full during a write (D31)"),
         req(FAULTS, "A full state directory refuses writes and recovers",
             a("dbAfter", "json.invocations.ensure_host_file", exists=True),
@@ -145,10 +157,10 @@ def store_damage() -> dict:
     o = on(n, port)
     db = f"{state(n)}/state.db"
     start_fails = (f"{T} agent start {n} --port {port} --id e2e-{n}-agent --env MCP_AUTH_TOKEN=${{SECRET:{n}}} "
-                   f"{MUT} >/dev/null 2>&1; echo exit=$?; {T} agent stop {n} >/dev/null")
+                   f"{MUT} --user root >/dev/null 2>&1; echo exit=$?; {T} agent stop {n} >/dev/null")
     snapshot = f"sha256sum {db} | cut -c1-64; ls {state(n)} | tr '\\n' ' '; echo"
     steps = base.TOOL_STEPS + [
-        agent(n, port),
+        agent(n, port, root=True),
         mcp("list", "tools/list", **o),
         call("task", "run_host_command", {"command": "echo kept"}, meta=TASKS_META, **o,
              capture={"KEPT": "response.body.result.taskId"}),
@@ -170,18 +182,20 @@ def store_damage() -> dict:
         {"id": "page", "guest": f"cp -a {ROOT}/{n}/state.db.bak {db} && dd if=/dev/urandom of={db} bs=4096 seek=2 "
                                 f"count=1 conv=notrunc 2>/dev/null && echo damaged"},
         {"id": "startPage", "guest": f"{T} agent start {n} --port {port} --id e2e-{n}-agent "
-                                     f"--env MCP_AUTH_TOKEN=${{SECRET:{n}}} {MUT} >/dev/null 2>&1; echo exit=$?"},
+                                     f"--env MCP_AUTH_TOKEN=${{SECRET:{n}}} {MUT} --user root >/dev/null 2>&1; "
+                                     "echo exit=$?"},
         {"id": "pageRead", "guest": f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:{port}/health; echo"},
         {"id": "stopPage", "guest": f"{T} agent stop {n} >/dev/null; echo stopped"},
         # restored: the earlier record reads back
         {"id": "restore", "guest": f"cp -a {ROOT}/{n}/state.db.bak {db} && echo restored"},
-        agent(n, port) | {"id": "restoredAgent"},
+        agent(n, port, root=True) | {"id": "restoredAgent"},
         mcp("listAgain", "tools/list", **o),
         call("kept", "get_operation", {"operationId": "${KEPT}"}, **o),
     ]
     reqs = [
         req(FAULTS, "A damaged state store stops startup",
             a("taskDone", "response.body.result.status", equals="completed"),
+            a("taskDone", "response.body.result.result.structuredContent.stdout", equals="kept\n"),
             a("startTruncated", "stdout", matches="^exit=[1-9]"),
             a("listenTruncated", "json.addresses", equals=[]),
             a("afterTruncated", "stdout", equalsStep={"step": "truncate", "path": "stdout"}),
@@ -231,6 +245,7 @@ def kill() -> dict:
     ]
     reqs = [
         req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
+            a("running", "response.body.result.structuredContent.status", **{"in": ["running", "working"]}),
             a("kill", "stdout", matches="killed\n$"), ok("restart"),
             a("runAfter", "response.body.result.structuredContent.status", equals="unknown"),
             a("runLater", "response.body.result.structuredContent.status", equals="unknown"),
@@ -309,7 +324,9 @@ def clock() -> dict:
         call("bootstrapAfter", "get_host_info", **o),
         call("issuedAfter", "get_host_info", port=port, auth="var:ISSUED"),
         call("capAfter", "get_host_capacity", **o),
-        call("newWork", "run_host_command", {"command": "echo after step"}, meta=TASKS_META, **o),
+        call("newWork", "run_host_command", {"command": "echo after step"}, meta=TASKS_META, **o,
+             capture={"NEW": "response.body.result.taskId"}),
+        done("newWorkDone", "NEW", o),
         {"id": "heldDone", "mcp": "tasks/get", "params": {"taskId": "${HELD}"}, "meta": TASKS_META, **o,
          "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
          "timeout": 90, "interval": 3},
@@ -319,7 +336,9 @@ def clock() -> dict:
             a("stepBack", "exit", equals=0), not_error("bootstrapAfter"), not_error("issuedAfter"),
             a("capAfter", "response.body.result.structuredContent.reservations",
               equalsStep={"step": "capBefore", "path": "response.body.result.structuredContent.reservations"}),
-            a("heldDone", "response.body.result.status", equals="completed"),
+            a("capBefore", "response.body.result.structuredContent.reservations", exists=True),
+            a("heldDone", "response.body.result.status", equals="completed"), task_ok("heldDone"),
+            a("newWorkDone", "response.body.result.result.structuredContent.stdout", equals="after step\n"),
             scenario="Clock steps back an hour: bootstrap and issued tokens still authenticate, the running "
                      "task's reservation is kept, and new work is admitted (D31)"),
     ]
@@ -392,7 +411,7 @@ def pressure() -> dict:
         req(SPEC, "Typed target and effect admission",
             a("first", "response.body.result.status", equals="working"),
             *task_refused("secondDone"), *refused("third"), not_error("readWhileFull"),
-            a("firstDone", "response.body.result.status", equals="completed"),
+            a("firstDone", "response.body.result.status", equals="completed"), task_ok("firstDone"),
             a("afterFirst", "response.body.result.status", equals="working"),
             a("limOps", "json.operations.run_host_command", exists=True),
             scenario="Beyond the operation limit new work is refused with a typed admission error (a task's as its "
@@ -504,8 +523,10 @@ def child_env() -> dict:
                           a(step, "json.leaked", equals=[]), a(step, "json.childrenKeep", equals=True)]
     reqs = [
         req(CHILD_SPEC, "A child process never receives the agent's secrets",
-            a("vm", "response.body.result.status", equals="completed"),
+            a("vm", "response.body.result.status", equals="completed"), task_ok("vm"),
             a("console", "response.body.result.structuredContent.status", equals="started"),
+            a("ctrlA", "response.body.result.structuredContent.status", equals="sent"),
+            a("detach", "response.body.result.structuredContent.closed", equals=True),
             *clean("consoleEnv"),
             scenario="With the bearer, two provider credentials and an OPUTE_ setting in the agent's environment, "
                      "its incus console process holds PATH and none of them"),
@@ -623,6 +644,10 @@ def secret_sweep() -> dict:
             a("cluster", "response.body.result.status", equals="completed"),
             a("cluster", "response.body.result.result.isError", **{"in": [False, "<absent>"]}),
             a("tunnel", "response.body.result.status", **{"in": ["completed", "failed"]}),
+            a("tunnel", "response.body.result.result.isError", equals=True),
+            a("tunnel", "response.body.result.result.content[0].text",
+              matches="^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready "
+                      "within .*e2e-sweep\\.invalid"),
             a("connectorRan", "stdout", matches="^[1-9][0-9]*\n$"),
             a("connectorToken", "stdout", matches="^[1-9][0-9]*\n$"),
             a("scan", "json.execsTraced", gte=1), a("scan", "json.argv", equals={}),

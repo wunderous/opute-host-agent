@@ -26,6 +26,14 @@
    "requirement": "A prompt returns a completion through the gateway",
    "pass": [
     {
+     "step": "supervisor",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
      "step": "supervisorAgain",
      "path": "response.body.result.structuredContent.status",
      "equals": "ready"
@@ -182,6 +190,11 @@
      "step": "gatewayGone",
      "path": "stdout",
      "equals": "000"
+    },
+    {
+     "step": "units",
+     "path": "response.body.result.structuredContent.services",
+     "exists": true
     }
    ],
    "scenario": "The gateway is gone after removal; the runtime's transient unit is stopped in cleanup"

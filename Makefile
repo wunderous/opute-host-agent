@@ -168,6 +168,7 @@ E2E_GATE ?= e2e-0
 
 e2e-test:
 	python3 -m unittest discover -s evidence/e2e/tests
+	python3 evidence/e2e/outcomes.py --check
 	python3 -m unittest discover -s evidence/cutover/tests
 
 # Cutover readiness from committed evidence only (D28): every item passed,

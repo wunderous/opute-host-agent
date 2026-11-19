@@ -21,6 +21,14 @@
    "requirement": "An interrupted plan or task reads back truthfully",
    "pass": [
     {
+     "step": "running",
+     "path": "response.body.result.structuredContent.status",
+     "in": [
+      "running",
+      "working"
+     ]
+    },
+    {
      "step": "kill",
      "path": "stdout",
      "matches": "killed\n$"

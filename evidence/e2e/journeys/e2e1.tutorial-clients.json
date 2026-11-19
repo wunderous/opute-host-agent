@@ -184,6 +184,19 @@
      "matches": "^sha256:"
     },
     {
+     "step": "legacyCapacity",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "legacyCapacity",
+     "path": "response.body.result.structuredContent",
+     "exists": true
+    },
+    {
      "step": "legacyPlanDone",
      "path": "response.body.result.structuredContent.status",
      "equals": "completed"

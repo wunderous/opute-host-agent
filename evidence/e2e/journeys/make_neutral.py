@@ -16,7 +16,7 @@ import json
 
 import make_e2e1 as base
 from make_e2e1 import HERE, T, a, inp, ok, req
-from make_e2e3a import res, task
+from make_e2e3a import direct, res, task
 
 GATE = "e2e-neutral"
 NSPEC = "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
@@ -293,6 +293,8 @@ def reserved() -> dict:
     reqs = [
         req(NSPEC, "Reserved names are operator configuration",
             a("providers", "stdout", equals="2\n"),
+            direct("installR", "isError", **{"in": [False, "<absent>"]}),
+            direct("installN", "isError", **{"in": [False, "<absent>"]}),
             a("toolsR", "json.listed", equals=True),
             res("reservedName", "isError", equals=True),
             res("reservedName", "structuredContent.code", equals="reserved_hostname"),
