@@ -179,7 +179,23 @@ is `unverified`, never a pass or a fail. Every journey starts from the
 snapshot, through a checked restore in preflight.
 
 A journey fails on any of: `pass-condition`, `schema`, `undeclared-effect`,
-`cleanup-residue`, `harness-error` or `time-limit`.
+`cleanup-residue`, `harness-error`, `time-limit` or `unchecked-outcome`.
+
+**Outcomes (m22).** Every `tools/call` and `tasks/get` step must have its
+outcome decided by an assertion. A deciding assertion is on `isError`, on
+the result's content or `structuredContent`, on a task's own result, on a
+JSON-RPC error, or on a task status other than `completed`. A task launch
+is judged at the later call or poll that uses its captured id. A journey
+fails with `unchecked-outcome` when:
+- a step has no assertion that decides its outcome; or
+- a step returns `isError: true`, a task result with `isError: true`, a
+  failed task or a JSON-RPC error, and no assertion of that step expects it.
+  To expect it, assert `isError: true`, the JSON-RPC error or the `failed`
+  status, and assert the exact error text.
+
+A step may opt out only with `expectAnyOutcome` set to its reason.
+`python3 evidence/e2e/outcomes.py --check` lists the steps the rule flags
+in the committed journeys. `make e2e-test` requires none.
 
 ```bash
 make e2e-verify E2E_GATE=e2e-0
@@ -204,6 +220,7 @@ first harness; r4 reran it after e2e-1 extended the runner):
 | `selfcheck.undeclared-effect` | fail: `undeclared-effect` |
 | `selfcheck.broken-pass` | fail: `pass-condition` |
 | `selfcheck.schema-violation` (a loopback stub declared as input) | fail: `schema` |
+| `selfcheck.unchecked-outcome` (a stub answers `isError: true`; only its text is asserted) | fail: `unchecked-outcome` |
 | `selfcheck.restore` (a change, then restore) | pass, with the restored state equal to the baseline |
 | `selfcheck.step-kinds` (copy, secrets, http, guest-port mcp, polling, captures) | pass |
 

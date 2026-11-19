@@ -50,9 +50,24 @@
      }
     },
     {
+     "step": "capBefore",
+     "path": "response.body.result.structuredContent.reservations",
+     "exists": true
+    },
+    {
      "step": "heldDone",
      "path": "response.body.result.status",
      "equals": "completed"
+    },
+    {
+     "step": "heldDone",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "newWorkDone",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "after step\n"
     }
    ],
    "scenario": "Clock steps back an hour: bootstrap and issued tokens still authenticate, the running task's reservation is kept, and new work is admitted (D31)"
@@ -197,7 +212,36 @@
     }
    },
    "port": 3045,
-   "auth": "secret:clk"
+   "auth": "secret:clk",
+   "capture": {
+    "NEW": "response.body.result.taskId"
+   }
+  },
+  {
+   "id": "newWorkDone",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${NEW}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "port": 3045,
+   "auth": "secret:clk",
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 60,
+   "interval": 2
   },
   {
    "id": "heldDone",
