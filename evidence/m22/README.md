@@ -55,3 +55,17 @@ not committed.
 No product defect was found, so there is no D53 and no new candidate. Every
 other flagged step returned success on both candidates; each now asserts its
 result.
+
+## Candidates
+
+With no product finding, each line kept its candidate and reran every gate
+under the rule under one new run id:
+- `rust-0.3.0-rc7` (main): `m22-r1`, every gate passes
+  (`evidence/e2e/verify.py --gate`). The first attempts of `e2e2.host-ops` and
+  `e2e2.oci` failed on downloads (the Ubuntu archive at 20-37 kB/s; the
+  package steps' deadlines expired). They were retired with that cause to
+  `.parity/retired/m22-r1-apt-slow/` and each reran once under `m22-r1`.
+- `rust-0.4.0-rc4` (`rust-0.4.0`): recorded on that branch.
+
+`selfcheck.unchecked-outcome` fails with `unchecked-outcome` alone in
+`m22-r1`, as e2e-0 expects.
