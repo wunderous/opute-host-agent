@@ -346,6 +346,11 @@
    "requirement": "An opted-in endpoint is stable across server loss",
    "pass": [
     {
+     "step": "info3",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$"
+    },
+    {
      "step": "optIn",
      "path": "response.body.result.result.isError",
      "equals": false

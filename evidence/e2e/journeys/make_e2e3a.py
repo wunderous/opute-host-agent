@@ -350,6 +350,8 @@ def workload_requirements() -> list[dict]:
             direct("pods", "structuredContent.exitCode", equals=0),
             direct("pods", "structuredContent.stdout", equals="e2e-exec-ok\n"),
             direct("services", "structuredContent.services[0].name", equals="e2e-web-podinfo"),
+            direct("info2", "structuredContent.ipv4[0]", matches=r"^\d+\.\d+\.\d+\.\d+$"),
+            direct("info3", "structuredContent.ipv4[0]", matches=r"^\d+\.\d+\.\d+\.\d+$"),
             a("serve", "stdout", equals="200 200 200 "),
             scenario="A Helm chart installed, a secret put, a command run in a pod, and the service exposed inside "
                      "the VM answering HTTP on every server"),
@@ -592,6 +594,7 @@ def j5() -> dict:
             scenario="The capability is listed only on the host whose provider enables it; the cluster built "
                      "without opting in has no certificate name, resolver entry or record for the hostname"),
         req(ENDPOINT_SPEC, "An opted-in endpoint is stable across server loss",
+            direct("info3", "structuredContent.ipv4[0]", matches=r"^\d+\.\d+\.\d+\.\d+$"),
             res("optIn", "isError", equals=False),
             res("optIn", "structuredContent.endpoint", equals=f"https://{HOST}:6443"),
             res("optIn", "structuredContent.caBundleRef", equals="cluster-endpoint:local:e2e-k1"),

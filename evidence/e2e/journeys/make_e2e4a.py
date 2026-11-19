@@ -179,6 +179,8 @@ def host_ops() -> dict:
             scenario="An HTTPS artifact downloaded and verified against its SHA-256; a wrong checksum installs "
                      "nothing"),
         req(CATALOG, "extract_host_archive",
+            res("archive", "structuredContent.stdout", equals="made\n"),
+            res("traversal", "structuredContent.stdout", equals="made\n"),
             direct("extract", "structuredContent.changed", equals=True),
             direct("extract", "structuredContent.entries", equals=2),
             direct("extracted", "structuredContent.exists", equals=True),
@@ -651,7 +653,9 @@ def cluster_requirements() -> list[dict]:
                 ok("setup"), a("setup", "stdout", equals="1\n"),
                 direct("installA", "isError", **{"in": [False, "<absent>"]}),
                 a("providerToolsA", "json.listed", equals=True),
-                res("vm1", "isError", equals=False), res("provision", "structuredContent.provisioned", equals=True),
+                res("vm1", "isError", equals=False),
+                direct("info1", "structuredContent.ipv4[0]", matches=r"^\d+\.\d+\.\d+\.\d+$"),
+                res("provision", "structuredContent.provisioned", equals=True),
                 direct("ready", "structuredContent.readyNodeCount", equals=1),
                 scenario="The single-node cluster the journey runs on")]
 
@@ -765,6 +769,7 @@ def oci() -> dict:
                      "e2e- guest's cluster"),
         req(CATALOG, "The pushed image is pulled by digest and runs",
             res("trust", "isError", equals=False),
+            direct("readyAgain", "structuredContent.readyNodeCount", equals=1),
             res("pull", "isError", equals=False),
             direct("pulled", "structuredContent.status", equals="ready"),
             direct("logs", "structuredContent.stdout", matches="hello from the e2e registry"),
@@ -775,6 +780,7 @@ def oci() -> dict:
             scenario="Right after the builder is installed, with no user session, the storage report is read "
                      "while Podman warns on stderr (D28)"),
         req(CATALOG, "configure_oci_storage, inspect_container_storage, cleanup_container_storage",
+            direct("supervisor", "isError", **{"in": [False, "<absent>"]}),
             direct("supervisorAgain", "structuredContent.status", equals="ready"),
             direct("inspect", "isError", **{"in": [False, "<absent>"]}),
             res("policy", "isError", equals=False),
@@ -942,7 +948,7 @@ def discovery() -> dict:
             f"{{ grep -a -r -o -F '${{K3S_TOKEN}}' {ha.ADB_A} 2>/dev/null; for u in opute-bootstrap-mcp "
             "e2e-provider-k3s; do journalctl -u $u --no-pager -o cat; done | grep -o -F '${K3S_TOKEN}'; } | wc -l")},
     ]
-    reqs = [
+    reqs = cluster_requirements() + [
         req(USE_CASES, "An empty inventory and a failed inventory probe are different outcomes",
             direct("noProvider", "isError", equals=True),
             direct("noProvider", "content[0].text", equals="Error: no active Kubernetes provider is installed"),
@@ -951,6 +957,7 @@ def discovery() -> dict:
             direct("healthy", "structuredContent.total", equals=1),
             direct("healthy", "structuredContent.clusters[0].uri", equals=CLUSTER),
             direct("unreachable", "isError", equals=True),
+            res("start", "structuredContent.status", equals="running"),
             direct("recovered", "structuredContent.total", equals=1),
             scenario="No provider, an available provider with no cluster, one healthy cluster, and an unreachable "
                      "provider: the empty inventory is a successful result with no clusters, the failed probe an "
@@ -980,8 +987,11 @@ def discovery() -> dict:
             scenario="With its only server stopped, the registered cluster is listed with its instance status "
                      "and no node data (D28)"),
         req(SEAM_SPEC, "Every capability has its three roles",
-            direct("configmapKeys", "structuredContent.code", equals="not_implemented"),
-            direct("secretKeys", "structuredContent.code", equals="not_implemented"),
+            *[x for tool, step in (("list_configmap_keys", "configmapKeys"), ("list_secret_keys", "secretKeys"))
+              for x in (direct(step, "isError", equals=True),
+                        direct(step, "content[0].text",
+                               equals=f"Error: {tool} is not implemented by this Host Agent build"),
+                        direct(step, "structuredContent.code", equals="not_implemented"))],
             scenario="The e2e-3 goal lists config and secret keys: both tools are published but have no "
                      "provider in Rust and no handler in Go v0.2.4, so they fail closed (Q18)"),
         req(SPEC, "Durable and redacted observations",
@@ -1097,9 +1107,17 @@ def site() -> dict:
     ]
     reqs = cluster_requirements() + [
         req(SITE_DEPLOY, "The site answers over HTTP at the test hostname with the pinned image",
-            res("source", "isError", equals=False), res("unpack", "structuredContent.exitCode", equals=0),
+            res("source", "isError", equals=False),
+            direct("supervisor", "isError", **{"in": [False, "<absent>"]}),
+            direct("supervisorAgain", "structuredContent.status", equals="ready"),
+            res("unpack", "structuredContent.exitCode", equals=0),
+            res("builder", "isError", equals=False),
+            res("registry", "isError", equals=False),
+            direct("registryStatus", "structuredContent.deployment.status.readyReplicas", equals=1),
+            res("push", "structuredContent.pushed", equals=True),
             a("digest", "stdout", matches="^sha256:[0-9a-f]{64}$"),
             res("trust", "isError", equals=False),
+            direct("readyAgain", "structuredContent.readyNodeCount", equals=1),
             direct("validate", "structuredContent.valid", equals=True),
             direct("deployed", "structuredContent.status", equals="completed"),
             res("domain", "isError", equals=False),
@@ -1203,6 +1221,7 @@ def serving() -> dict:
     ]
     reqs = [
         req(SERVE_GOAL, "A prompt returns a completion through the gateway",
+            direct("supervisor", "isError", **{"in": [False, "<absent>"]}),
             direct("supervisorAgain", "structuredContent.status", equals="ready"),
             a("modelUp", "stdout", equals="1\n"),
             direct("gateway", "isError", **{"in": [False, "<absent>"]}),
@@ -1227,6 +1246,7 @@ def serving() -> dict:
         req(SERVE_GOAL, "Removing the gateway and runtime leaves nothing behind",
             direct("removeGateway", "isError", **{"in": [False, "<absent>"]}),
             a("gatewayGone", "stdout", equals="000"),
+            direct("units", "structuredContent.services", exists=True),
             scenario="The gateway is gone after removal; the runtime's transient unit is stopped in cleanup"),
     ]
     cleanup = [{"id": "cleanServing", "guest": (
@@ -1299,7 +1319,9 @@ def cutover() -> dict:
         {"id": "goHealth", "health": True},
         {"id": "goList", "mcp": "tools/list"},
         {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 25"},
-        call("goSupervisor", "ensure_host_service_supervisor", {}),
+        call("goSupervisor", "ensure_host_service_supervisor", {},
+             expectAnyOutcome="Go v0.2.4 enables linger and may answer before the user bus is up (Go is frozen); "
+                              "goSupervisorAgain asserts the supervisor ready"),
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
         call("goSupervisorAgain", "ensure_host_service_supervisor", {}),
@@ -1385,6 +1407,8 @@ def cutover() -> dict:
             a("rustDb", "json.planRunIds", equalsStep={"step": "goStop", "path": "json.planRunIds"}),
             direct("rustOps", "isError", **{"in": [False, "<absent>"]}),
             {"step": "rustTaskWire", "path": "response.body.result.status", "equals": "completed"},
+            res("rustTaskWire", "structuredContent.stdout", equals="go-era\n"),
+            direct("rustTask", "structuredContent.status", equals="completed"),
             direct("rustPlan", "structuredContent.status", equals="completed"),
             direct("rustFailed", "structuredContent.status", equals="failed"),
             direct("rustGuest", "structuredContent.status", equals="running"),
@@ -1418,7 +1442,10 @@ def cutover() -> dict:
             a("rustStop", "json.integrity", equals="ok"),
             a("goBack", "stdout", matches="\n0\\.2\\.4\n$"),
             {"step": "goBackRustTaskWire", "path": "response.body.result.status", "equals": "completed"},
+            res("goBackRustTaskWire", "structuredContent.stdout", equals="rust-era\n"),
             {"step": "goBackLongWire", "path": "response.body.result.status", "equals": "cancelled"},
+            direct("goBackLong", "structuredContent.status", equals="cancelled"),
+            direct("goBackOps", "isError", **{"in": [False, "<absent>"]}),
             direct("goBackRustTask", "structuredContent.operationId", exists=True),
             direct("goBackRustPlan", "structuredContent.status", equals="completed"),
             direct("goBackGoPlan", "structuredContent.status", equals="completed"),
@@ -1519,6 +1546,7 @@ def restart() -> dict:
     ]
     reqs = [
         req(SPEC, "Durable and redacted observations (restart)",
+            direct("supervisor", "isError", **{"in": [False, "<absent>"]}),
             direct("supervisorAgain", "structuredContent.status", equals="ready"),
             {"step": "termTask", "path": "response.body.result.status", "equals": "working"},
             a("termP", "stdout", equals="up\n"), a("term", "stdout", equals="up\n"),
@@ -1533,6 +1561,7 @@ def restart() -> dict:
             scenario="A task in flight at SIGTERM is persisted cancelled and reads back so, through get_operation "
                      "and tasks/get; the agent restarts after SIGKILL and an in-place upgrade and keeps serving"),
         req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
+            direct("termWaiting", "structuredContent.status", **{"in": ["running", "working"]}),
             direct("termPlanAfter", "structuredContent.status", equals="cancelled"),
             {"step": "killTaskWire", "path": "response.body.result.status", "equals": "failed"},
             {"step": "upTaskWire", "path": "response.body.result.status", "equals": "cancelled"},
@@ -1552,6 +1581,7 @@ def restart() -> dict:
             a("twins", "stdout", matches="^2\n"),
             a("twinADone", "response.body.result.status", equals="completed"),
             a("twinBDone", "response.body.result.status", equals="completed"),
+            res("twinADone", "isError", equals=False), res("twinBDone", "isError", equals=False),
             scenario="A task cancelled by SIGTERM, or by the in-place upgrade's graceful stop, leaves no process running; the same command runs again after "
                      "the restart and after a SIGKILL; two tasks with the same command run side by side and both "
                      "complete (decided 2026-11-08)"),

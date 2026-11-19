@@ -232,6 +232,16 @@
    "requirement": "extract_host_archive",
    "pass": [
     {
+     "step": "archive",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "made\n"
+    },
+    {
+     "step": "traversal",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "made\n"
+    },
+    {
      "step": "extract",
      "path": "response.body.result.structuredContent.changed",
      "equals": true
