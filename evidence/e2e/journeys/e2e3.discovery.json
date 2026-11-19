@@ -26,6 +26,56 @@
  },
  "requirements": [
   {
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)",
+   "requirement": "A K3s server provisioned through typed Host Agent operations",
+   "pass": [
+    {
+     "step": "setup",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "setup",
+     "path": "stdout",
+     "equals": "1\n"
+    },
+    {
+     "step": "installA",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "providerToolsA",
+     "path": "json.listed",
+     "equals": true
+    },
+    {
+     "step": "vm1",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "info1",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$"
+    },
+    {
+     "step": "provision",
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "equals": true
+    },
+    {
+     "step": "ready",
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "equals": 1
+    }
+   ],
+   "scenario": "The single-node cluster the journey runs on"
+  },
+  {
    "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/use-cases/ (\"Discover Kubernetes clusters when configured\")",
    "requirement": "An empty inventory and a failed inventory probe are different outcomes",
    "pass": [
@@ -66,6 +116,11 @@
      "step": "unreachable",
      "path": "response.body.result.isError",
      "equals": true
+    },
+    {
+     "step": "start",
+     "path": "response.body.result.result.structuredContent.status",
+     "equals": "running"
     },
     {
      "step": "recovered",

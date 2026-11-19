@@ -358,8 +358,18 @@
     },
     {
      "step": "r3Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "r3Tunnel",
      "path": "response.body.result.result.content[0].text",
      "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
+     "step": "r4Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
     },
     {
      "step": "r4Tunnel",
@@ -368,8 +378,58 @@
     },
     {
      "step": "backTunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "backTunnel",
      "path": "response.body.result.result.content[0].text",
      "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
+     "step": "r4R3Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "r4R3Tunnel",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
+     "step": "backR4Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "backR4Tunnel",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
+     "step": "backR3Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "backR3Tunnel",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
+     "step": "r4R3Task",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "r3-era\n"
+    },
+    {
+     "step": "backR4Task",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "r4-era\n"
+    },
+    {
+     "step": "r3Supervisor",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "ready"
     },
     {
      "step": "connectors",

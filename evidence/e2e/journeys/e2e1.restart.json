@@ -181,9 +181,14 @@
      "step": "resubmit",
      "path": "response.body.result.structuredContent.code",
      "absent": true
+    },
+    {
+     "step": "killTask",
+     "path": "response.body.error.message",
+     "matches": "^task not found: "
     }
    ],
-   "scenario": "After a SIGKILL during a plain run_host_plan, whose task was never persisted, the resubmission is admitted (D28)"
+   "scenario": "After a SIGKILL during a plain run_host_plan, whose task was never persisted (tasks/get does not find it), the resubmission is admitted (D28)"
   }
  ],
  "effects": {

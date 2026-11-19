@@ -359,6 +359,16 @@
      "equals": "e2e-web-podinfo"
     },
     {
+     "step": "info2",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$"
+    },
+    {
+     "step": "info3",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$"
+    },
+    {
      "step": "serve",
      "path": "stdout",
      "equals": "200 200 200 "
@@ -441,6 +451,16 @@
    "spec": "openspec/changes/inspect-workload/specs/inspect-workload/spec.md",
    "requirement": "inspect_workload returns a fixed projection of one Deployment",
    "pass": [
+    {
+     "step": "envLiteral",
+     "path": "response.body.result.structuredContent.exitCode",
+     "equals": 0
+    },
+    {
+     "step": "envFromSecret",
+     "path": "response.body.result.structuredContent.exitCode",
+     "equals": 0
+    },
     {
      "step": "rolloutEnv",
      "path": "response.body.result.structuredContent.exitCode",

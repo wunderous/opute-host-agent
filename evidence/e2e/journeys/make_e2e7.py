@@ -287,6 +287,12 @@ def requirements() -> list[dict]:
             scenario="The Cloudflare API token and the tunnel's run token are in no file under the agent's home but "
                      "the owner's credentials file, in no journal line and in neither run record"),
         req(SPEC, "Revisioned provider-neutral catalog and lifecycle",
+            direct("supervisor", "structuredContent.status", equals="ready"),
+            res("builder", "isError", equals=False),
+            *[direct(f"{p['id']}{s}", "isError", **{"in": [False, "<absent>"]})
+              for p in PROVIDERS for s in ("Unit", "Start", "Activation", "Stop")],
+            *[res(f"{p['id']}UnitRemove", "isError", equals=False) for p in PROVIDERS],
+            *[direct(s, "isError", **{"in": [False, "<absent>"]}) for s in ("siteRecipe", "downRecipe", "nestedRecipe")],
             a("k3sListed", "json.listed", equals=True),
             a("cloudflareListed", "json.listed", equals=True),
             scenario="The K3s and Cloudflare providers, started as user units and installed by opute.provider.install, "

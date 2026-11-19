@@ -106,6 +106,10 @@ def journey_problems(journey: dict) -> list[str]:
         kinds = [k for k in STEP_KINDS if k in step]
         if len(kinds) != 1:
             out.append(f"step {step.get('id')}: exactly one of {STEP_KINDS}")
+    for step in journey["steps"]:
+        if "expectAnyOutcome" in step and not (isinstance(step["expectAnyOutcome"], str)
+                                               and step["expectAnyOutcome"].strip()):
+            out.append(f"step {step.get('id')}: expectAnyOutcome needs its reason")
     if not journey["requirements"]:
         out.append("no requirement is checked")
     step_ids = {s["id"] for s in journey["steps"]}
@@ -200,6 +204,95 @@ def state_diff(before: Any, after: Any, prefix: str = "") -> list[str]:
     return [] if before == after else [prefix]
 
 
+# --- outcomes (m22) -------------------------------------------------------------------
+
+OUTCOME_METHODS = ("tools/call", "tasks/get")
+OUTCOME_PARTS = ("isError", "structuredContent", "content", ".result.result", "response.body.error")
+
+
+def asserts_outcome(step: dict, assertion: dict) -> bool:
+    """Whether an assertion decides the step's outcome, not only that it answered: the tool result
+    (`isError`, its content or `structuredContent`), a JSON-RPC error, a refused HTTP status, or a
+    task status other than `completed` (a task that ended any other way has no result to check)."""
+    path = assertion.get("path", "")
+    op = next((op for op in OPS if op in assertion), None)
+    if op == "excludes":  # a secrecy check, whatever the outcome
+        return False
+    if any(part in path for part in OUTCOME_PARTS):
+        return True
+    expected = assertion.get(op)
+    accepted = expected if op == "in" and isinstance(expected, list) else [expected] if op == "equals" else None
+    if path == "response.status":
+        return accepted is not None and 200 not in accepted
+    if path == "response.body.result.status":  # a poll's end, or a launch admitted as a task
+        return accepted is not None and "completed" not in accepted
+    return False
+
+
+def unchecked_outcome_steps(journey: dict) -> list[str]:
+    """Steps whose outcome no assertion decides (m22). A launch is judged where its id is used, and a
+    step may opt out only with `expectAnyOutcome` and its reason; cleanup is judged by residue."""
+    by_step: dict[str, list[dict]] = {}
+    for req in journey["requirements"]:
+        for a in req["pass"]:
+            by_step.setdefault(a["step"], []).append(a)
+    # a value a launch captured and a later call or poll uses (a task id, a run id)
+    polled = {m.group(1) for s in journey["steps"] if s.get("mcp") in OUTCOME_METHODS
+              for m in re.finditer(r"\$\{([A-Za-z0-9_]+)\}",
+                                   json.dumps([s.get("params", {}), s.get("arguments", {})]))}
+    out = []
+    for step in journey["steps"]:
+        if step.get("mcp") not in OUTCOME_METHODS or step.get("expectAnyOutcome"):
+            continue
+        if step.get("mcp") == "tools/call" and set(step.get("capture") or {}) & polled:
+            continue
+        if not any(asserts_outcome(step, a) for a in by_step.get(step["id"], [])):
+            out.append(step["id"])
+    return out
+
+
+def failed_outcome(record: dict) -> bool:
+    """A tool or task error in a recorded MCP response."""
+    body = (record.get("response") or {}).get("body") or {}
+    result = body.get("result") if isinstance(body, dict) else None
+    if not isinstance(result, dict):
+        return isinstance(body, dict) and "error" in body
+    inner = result.get("result")
+    return (result.get("isError") is True or result.get("status") == "failed"
+            or (isinstance(inner, dict) and inner.get("isError") is True))
+
+
+def expects_failure(assertion: dict) -> bool:
+    """Whether an assertion accepts a failed outcome: `isError: true`, a JSON-RPC error, or a task that
+    ended failed."""
+    path = assertion.get("path", "")
+    if "response.body.error" in path:
+        return True
+    expected = assertion.get("in") if isinstance(assertion.get("in"), list) else [assertion.get("equals")] \
+        if "equals" in assertion else []
+    if path.endswith("isError"):
+        return True in expected
+    return path == "response.body.result.status" and "failed" in expected
+
+
+def unexpected_failures(journey: dict, transcript: list[dict]) -> list[str]:
+    """Steps whose recorded response failed although no assertion of theirs accepts a failure. A launch
+    judged at its poll is held to it too, unless the step opted out."""
+    steps = {s["id"]: s for s in journey["steps"]}
+    unchecked = set(unchecked_outcome_steps(journey))
+    expected = {a["step"] for req in journey["requirements"] for a in req["pass"] if expects_failure(a)}
+    out = []
+    for r in transcript:
+        step = steps.get(r.get("step"))
+        if (r.get("phase") != "step" or r.get("kind") != "mcp" or step is None
+                or step.get("mcp") not in OUTCOME_METHODS or step.get("expectAnyOutcome")
+                or r["step"] in unchecked or r["step"] in expected or r["step"] in out):
+            continue
+        if failed_outcome(r):
+            out.append(r["step"])
+    return out
+
+
 def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> dict:
     """Everything a journey's verdict depends on, from its recorded evidence only."""
     records = {r["step"]: r for r in transcript if r.get("phase") == "step"}
@@ -267,6 +360,9 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
         reasons.append("cleanup-residue")
     if harness_errors:
         reasons.append("harness-error")
+    unchecked = unchecked_outcome_steps(journey) + unexpected_failures(journey, transcript)
+    if unchecked:
+        reasons.append("unchecked-outcome")
     if seconds > journey["maxMinutes"] * 60:
         reasons.append("time-limit")
     unverified = sorted({r["openQuestion"] for r in requirements if r["outcome"] == "unverified"})
@@ -274,7 +370,7 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
             "unverified": unverified,
             "requirements": requirements, "schemaErrors": schema,
             "effects": {"changed": changed, "undeclared": undeclared, "residue": residue, "residueUndeclared": left},
-            "harnessErrors": harness_errors,
+            "harnessErrors": harness_errors, "uncheckedOutcomes": unchecked,
             "timings": {"stepsSeconds": round(seconds, 1),
                         "steps": {r["step"]: r.get("ms") for r in transcript if r.get("phase") == "step"}}}
 

@@ -71,6 +71,11 @@
      "equals": false
     },
     {
+     "step": "info1",
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$"
+    },
+    {
      "step": "provision",
      "path": "response.body.result.result.structuredContent.provisioned",
      "equals": true
@@ -93,9 +98,42 @@
      "equals": false
     },
     {
+     "step": "supervisor",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "supervisorAgain",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "ready"
+    },
+    {
      "step": "unpack",
      "path": "response.body.result.result.structuredContent.exitCode",
      "equals": 0
+    },
+    {
+     "step": "builder",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "registry",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "registryStatus",
+     "path": "response.body.result.structuredContent.deployment.status.readyReplicas",
+     "equals": 1
+    },
+    {
+     "step": "push",
+     "path": "response.body.result.result.structuredContent.pushed",
+     "equals": true
     },
     {
      "step": "digest",
@@ -106,6 +144,11 @@
      "step": "trust",
      "path": "response.body.result.result.isError",
      "equals": false
+    },
+    {
+     "step": "readyAgain",
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "equals": 1
     },
     {
      "step": "validate",

@@ -27,6 +27,14 @@
    "requirement": "Durable and redacted observations (restart)",
    "pass": [
     {
+     "step": "supervisor",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
      "step": "supervisorAgain",
      "path": "response.body.result.structuredContent.status",
      "equals": "ready"
@@ -91,6 +99,14 @@
    "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md",
    "requirement": "An interrupted plan or task reads back truthfully",
    "pass": [
+    {
+     "step": "termWaiting",
+     "path": "response.body.result.structuredContent.status",
+     "in": [
+      "running",
+      "working"
+     ]
+    },
     {
      "step": "termPlanAfter",
      "path": "response.body.result.structuredContent.status",
@@ -172,6 +188,16 @@
      "step": "twinBDone",
      "path": "response.body.result.status",
      "equals": "completed"
+    },
+    {
+     "step": "twinADone",
+     "path": "response.body.result.result.isError",
+     "equals": false
+    },
+    {
+     "step": "twinBDone",
+     "path": "response.body.result.result.isError",
+     "equals": false
     }
    ],
    "scenario": "A task cancelled by SIGTERM, or by the in-place upgrade's graceful stop, leaves no process running; the same command runs again after the restart and after a SIGKILL; two tasks with the same command run side by side and both complete (decided 2026-11-08)"

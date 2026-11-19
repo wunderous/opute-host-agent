@@ -74,7 +74,7 @@ class Evaluate(unittest.TestCase):
                       "content": [], "structuredContent": {"n": "x"}}}}}
         j = journey(steps=[{"id": "l", "mcp": "tools/list"}, {"id": "c", "mcp": "tools/call", "tool": "p"}],
                     requirements=[{"spec": SPEC, "requirement": "R", "pass": [
-                        {"step": "c", "path": "response.status", "equals": 200}]}])
+                        {"step": "c", "path": "response.body.result.structuredContent", "exists": True}]}])
         out = runner.evaluate(j, [listed, called], {"before": STATE, "after": STATE, "cleanup": STATE})
         self.assertEqual(out["failures"], ["schema"])
         called["response"]["body"]["result"]["structuredContent"] = {"n": 3}
@@ -94,6 +94,102 @@ class Evaluate(unittest.TestCase):
         a = {"step": "h", "path": "response.body.isError", "in": [False, "<absent>"]}
         self.assertTrue(runner.check(a, health())["ok"])
         self.assertFalse(runner.check({**a, "in": [False]}, health())["ok"])
+
+
+def mcp(step, result=None, error=None, method="tools/call"):
+    body = {"jsonrpc": "2.0", "id": 1, **({"error": error} if error else {"result": result})}
+    return {"step": step, "phase": "step", "kind": "mcp", "method": method, "requestId": 1,
+            "response": {"status": 200, "body": body}, **({"tool": "p"} if method == "tools/call" else {})}
+
+
+def outcome_journey(steps, *assertions, **over):
+    return journey(steps=steps, requirements=[{"spec": SPEC, "requirement": "R", "pass": list(assertions)}], **over)
+
+
+CALL = {"id": "c", "mcp": "tools/call", "tool": "p"}
+LISTED = {"step": "l", "phase": "step", "kind": "mcp", "method": "tools/list", "requestId": 1,
+          "response": {"status": 200, "body": {"jsonrpc": "2.0", "id": 1, "result": {"tools": [
+              {"name": "p", "inputSchema": {"type": "object"}}]}}}}
+FAILED = {"content": [{"type": "text", "text": "Error: refused"}], "isError": True}
+
+
+class Outcomes(unittest.TestCase):
+    """m22: a tools/call or tasks/get step whose outcome no assertion decides fails the journey."""
+
+    def judge(self, j, *records):
+        j = {**j, "steps": [{"id": "l", "mcp": "tools/list"}] + j["steps"]}
+        return runner.evaluate(j, [LISTED, *records], {"before": STATE, "after": STATE, "cleanup": STATE})
+
+    def test_status_only_is_unchecked(self):
+        j = outcome_journey([CALL], {"step": "c", "path": "response.status", "equals": 200})
+        self.assertEqual(runner.unchecked_outcome_steps(j), ["c"])
+        out = self.judge(j, mcp("c", {"content": []}))
+        self.assertEqual(out["failures"], ["unchecked-outcome"])
+        self.assertEqual(out["uncheckedOutcomes"], ["c"])
+
+    def test_asserted_success_passes(self):
+        j = outcome_journey([CALL], {"step": "c", "path": "response.body.result.isError", "in": [False, "<absent>"]})
+        self.assertEqual(runner.unchecked_outcome_steps(j), [])
+        self.assertTrue(self.judge(j, mcp("c", {"content": []}))["pass"])
+
+    def test_unexpected_error_fails_though_its_content_is_asserted(self):
+        j = outcome_journey([CALL], {"step": "c", "path": "response.body.result.content[0].text", "matches": "^Error"})
+        self.assertEqual(runner.unchecked_outcome_steps(j), [])
+        self.assertEqual(self.judge(j, mcp("c", FAILED))["failures"], ["unchecked-outcome"])
+
+    def test_expected_refusal_passes(self):
+        j = outcome_journey([CALL], {"step": "c", "path": "response.body.result.isError", "equals": True},
+                            {"step": "c", "path": "response.body.result.content[0].text", "equals": "Error: refused"})
+        self.assertTrue(self.judge(j, mcp("c", FAILED))["pass"])
+
+    def test_rpc_error_needs_its_assertion(self):
+        poll = {"id": "t", "mcp": "tasks/get", "params": {"taskId": "x"}}
+        error = {"code": -32602, "message": "task not found: x"}
+        j = outcome_journey([poll], {"step": "t", "path": "response.body.result.result.content", "exists": False})
+        self.assertEqual(self.judge(j, mcp("t", error=error, method="tasks/get"))["failures"], ["unchecked-outcome"])
+        j = outcome_journey([poll], {"step": "t", "path": "response.body.error.message", "matches": "^task not found"})
+        self.assertTrue(self.judge(j, mcp("t", error=error, method="tasks/get"))["pass"])
+
+    def test_completed_task_needs_its_result(self):
+        poll = {"id": "t", "mcp": "tasks/get", "params": {"taskId": "x"}}
+        done = {"status": "completed", "result": FAILED}
+        status = {"step": "t", "path": "response.body.result.status", "equals": "completed"}
+        self.assertEqual(runner.unchecked_outcome_steps(outcome_journey([poll], status)), ["t"])
+        result = {"step": "t", "path": "response.body.result.result.structuredContent", "exists": False}
+        j = outcome_journey([poll], status, result)
+        self.assertEqual(runner.unchecked_outcome_steps(j), [])
+        self.assertEqual(self.judge(j, mcp("t", done, method="tasks/get"))["failures"], ["unchecked-outcome"])
+        j = outcome_journey([poll], status, {"step": "t", "path": "response.body.result.result.isError",
+                                             "equals": False})
+        self.assertEqual(self.judge(j, mcp("t", done, method="tasks/get"))["failures"],
+                         ["pass-condition", "unchecked-outcome"])
+
+    def test_launch_is_judged_at_its_poll(self):
+        launch = {**CALL, "capture": {"TID": "response.body.result.taskId"}}
+        poll = {"id": "t", "mcp": "tasks/get", "params": {"taskId": "${TID}"}}
+        j = outcome_journey([launch, poll], {"step": "t", "path": "response.body.result.result.isError",
+                                             "equals": False})
+        self.assertEqual(runner.unchecked_outcome_steps(j), [])
+        ok = {"status": "completed", "result": {"content": [], "isError": False}}
+        self.assertTrue(self.judge(j, mcp("c", {"taskId": "1", "status": "working"}),
+                                   mcp("t", ok, method="tasks/get"))["pass"])
+        # a launch refused outright is still a failure no assertion expects
+        self.assertEqual(self.judge(j, mcp("c", FAILED), mcp("t", ok, method="tasks/get"))["failures"],
+                         ["unchecked-outcome"])
+
+    def test_opt_out_needs_its_reason(self):
+        j = outcome_journey([{**CALL, "expectAnyOutcome": "the bus may not be up yet"},
+                             {"id": "h", "health": True}], {"step": "h", "path": "response.status", "equals": 200})
+        self.assertEqual(runner.unchecked_outcome_steps(j), [])
+        self.assertTrue(self.judge(j, mcp("c", FAILED), health())["pass"])
+        self.assertTrue(runner.journey_problems(
+            outcome_journey([{**CALL, "expectAnyOutcome": " "}, {"id": "h", "health": True}],
+                            {"step": "h", "path": "response.status", "equals": 200})))
+
+    def test_committed_journeys_check_every_outcome(self):
+        for path in sorted((E2E / "journeys").glob("*.json")):
+            j = json.loads(path.read_text())
+            self.assertEqual(runner.unchecked_outcome_steps(j), [], path.name)
 
 
 class Format(unittest.TestCase):

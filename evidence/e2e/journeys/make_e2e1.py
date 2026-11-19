@@ -107,6 +107,12 @@ def plan(plan_id: str, key: str, path: str, content: str = "e2e\n", slow: bool =
             "nodes": nodes}
 
 
+def succeeded(step: str, task: bool = False) -> dict:
+    """The call (or, with `task`, the polled task) returned a result that is not an error (m22)."""
+    path = "response.body.result.result.isError" if task else "response.body.result.isError"
+    return a(step, path, **{"in": [False, "<absent>"]})
+
+
 def mcp(id_: str, method: str, **kw) -> dict:
     return {"id": id_, "mcp": method, **kw}
 
@@ -416,6 +422,7 @@ def j3() -> dict:
             a("legacyList", "response.status", equals=200),
             a("legacyInfo", "response.body.result.structuredContent.uri", matches=":e2e-legacy-agent$"),
             a("legacyCatalog", "response.body.result.structuredContent.catalogRevision", matches="^sha256:"),
+            succeeded("legacyCapacity"), a("legacyCapacity", "response.body.result.structuredContent", exists=True),
             completed("legacyPlanDone"),
             a("legacyDiscover", "response.status", equals=400),
             a("legacyDiscover", "response.body.error.code", exists=True),
@@ -564,7 +571,8 @@ def j5() -> dict:
             ok("gatedNoFile"),
             a("gatedAfter", "json.counts", equalsStep={"step": "gatedBefore", "path": "json.counts"})),
         req(SPEC, "Typed target and effect admission",
-            ok("limitedAgent"), a("saturated", "response.body.result.isError", equals=True),
+            ok("limitedAgent"), succeeded("limitedCapacity"),
+            a("saturated", "response.body.result.isError", equals=True),
             a("saturated", "response.body.result.structuredContent.code", equals="host_capacity_saturated"),
             a("saturated", "response.body.result.structuredContent.owner", equals="admission"),
             ok("limitedNoFile"),
@@ -727,8 +735,9 @@ def j7() -> dict:
         req(Q15_SPEC, "A crashed plan run's orphaned reservation is reclaimed without a task",
             a("resubmit", "response.body.result.isError", **{"in": [False, "<absent>"]}),
             a("resubmit", "response.body.result.structuredContent.code", absent=True),
-            scenario="After a SIGKILL during a plain run_host_plan, whose task was never persisted, the "
-                     "resubmission is admitted (D28)"),
+            a("killTask", "response.body.error.message", matches="^task not found: "),
+            scenario="After a SIGKILL during a plain run_host_plan, whose task was never persisted (tasks/get "
+                     "does not find it), the resubmission is admitted (D28)"),
     ]
     return journey(
         "e2e1.restart",

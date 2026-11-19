@@ -1,0 +1,62 @@
+{
+ "id": "selfcheck.unchecked-outcome",
+ "gate": "e2e-0",
+ "description": "Negative control: a tools/call result with isError true that no assertion of its step expects fails (unchecked-outcome), though an assertion on its content passes. The endpoint is a loopback stub declared as this journey's input.",
+ "inputs": {
+  "stub": {
+   "tools": [
+    {
+     "name": "e2e_probe",
+     "description": "harness self-check",
+     "inputSchema": {
+      "type": "object"
+     }
+    }
+   ],
+   "results": {
+    "e2e_probe": {
+     "content": [
+      {
+       "type": "text",
+       "text": "Error: refused by the stub"
+      }
+     ],
+     "isError": true
+    }
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: an unexpected tool error fails",
+   "pass": [
+    {
+     "step": "call",
+     "path": "response.body.result.content[0].text",
+     "matches": "^Error: "
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "target": "stub"
+  },
+  {
+   "id": "call",
+   "mcp": "tools/call",
+   "target": "stub",
+   "tool": "e2e_probe",
+   "arguments": {}
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 10
+}
