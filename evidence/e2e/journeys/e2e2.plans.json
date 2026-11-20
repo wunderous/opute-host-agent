@@ -215,17 +215,21 @@
  ],
  "effects": {
   "allow": [
-   "incus/*",
    "files//home/opute/e2e*",
-   "files//home/opute/.opute*",
-   "system/units/e2e-slow*",
-   "system/unitFiles/e2e-slow*",
+   "incus/instances/e2e-p1",
+   "incus/instances/e2e-r1",
+   "incus/volumes/default/container/e2e-p1",
+   "incus/volumes/default/container/e2e-r1",
+   "incus/profiles/default/used_by",
+   "incus/networks/incusbr0/used_by",
+   "incus/storage/default/used_by",
    "system/units/sys-devices-virtual-net-veth*",
-   "system/units/sys-subsystem-net-devices-veth*"
+   "system/units/sys-subsystem-net-devices-veth*",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "system/units/e2e-slow.service",
+   "system/unitFiles/e2e-slow.service"
   ],
-  "persist": [
-   "files//home/opute/.opute*"
-  ]
+  "persist": []
  },
  "steps": [
   {

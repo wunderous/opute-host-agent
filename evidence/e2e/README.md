@@ -179,8 +179,8 @@ is `unverified`, never a pass or a fail. Every journey starts from the
 snapshot, through a checked restore in preflight.
 
 A journey fails on any of: `pass-condition`, `schema`, `undeclared-effect`,
-`cleanup-residue`, `harness-error`, `time-limit`, `unchecked-outcome` or
-`unconfirmed-effect`.
+`cleanup-residue`, `harness-error`, `time-limit`, `unchecked-outcome`,
+`unconfirmed-effect`, `unused-allowance` or `broad-allowance`.
 
 **Outcomes (m22).** Every `tools/call` and `tasks/get` step must have its
 outcome decided by an assertion. A deciding assertion is on `isError`, on
@@ -214,6 +214,18 @@ run, a probe that changes nothing, a command that only prints or sleeps, or
 a read through a general command tool. `outcomes.py` lists the unconfirmed
 steps too, from the effects in the gates' committed runs.
 
+**Allowances (m24).** An effects pattern must name a change the journey
+makes. A journey fails with `unused-allowance` when an `allow` pattern
+matches no path its run changed, or a `persist` pattern matches no residue
+after cleanup. It fails with `broad-allowance` when a pattern's literal
+part, before its first wildcard, stops at a `/` or names less than an
+object: under `files//`, the first two path components; elsewhere, a kind,
+its group and an object (`system/units/<unit>`). A pattern whose match
+depends on the host goes in `effects.optional`, a map from the `allow`
+pattern to its reason; an optional pattern is exempt from both checks, and
+the lint refuses an empty reason. `outcomes.py` lists unused and broad
+patterns from the gates' committed states.
+
 ```bash
 make e2e-verify E2E_GATE=e2e-0
 ```
@@ -240,6 +252,8 @@ first harness; r4 reran it after e2e-1 extended the runner):
 | `selfcheck.unchecked-outcome` (a stub answers `isError: true`; only its text is asserted) | fail: `unchecked-outcome` |
 | `selfcheck.unconfirmed-effect` (a stub mutation answers success; nothing confirms it) | fail: `unconfirmed-effect` |
 | `selfcheck.empty-confirmation` (the same stub; a guest step confirms it and finds nothing) | fail: `pass-condition` |
+| `selfcheck.unused-allowance` (allows a file it never writes) | fail: `unused-allowance` |
+| `selfcheck.broad-allowance` (allows `files//etc*` for one file) | fail: `broad-allowance` |
 | `selfcheck.restore` (a change, then restore) | pass, with the restored state equal to the baseline |
 | `selfcheck.step-kinds` (copy, secrets, http, guest-port mcp, polling, captures) | pass |
 

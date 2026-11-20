@@ -138,7 +138,54 @@ def journey_problems(journey: dict) -> list[str]:
         out.append("effects needs allow and persist lists")
     elif not set(effects["persist"]) <= set(effects["allow"]):
         out.append("every persist pattern must also be allowed")
+    optional = effects.get("optional", {})
+    if not isinstance(optional, dict):
+        out.append("effects.optional maps a pattern to its reason")
+    else:
+        for pattern, reason in optional.items():
+            if not isinstance(reason, str) or not reason.strip():
+                out.append(f"effects.optional {pattern!r} needs its reason")
+            if pattern not in (effects.get("allow") or []):
+                out.append(f"effects.optional {pattern!r} is not an allow pattern")
     return out
+
+
+# --- effect allowances (m24) -----------------------------------------------------------
+#
+# Every allow pattern must match a path the run changed, and every persist
+# pattern a path the cleanup left; a pattern whose match depends on the host
+# goes in effects.optional with its reason. A pattern no narrower than its
+# kind (`incus/*`, `system/units/*`, `files//etc*`), or one that takes any
+# entry of a directory (`files//etc/systemd/system/*`), is broad.
+
+GLOB = re.compile(r"[*?\[]")
+
+
+def broad_pattern(pattern: str) -> bool:
+    """The literal part before the first glob names no specific object: it ends
+    at a `/`, or has under `files//` fewer than two path components, otherwise
+    fewer than kind, category and the start of a name."""
+    literal = GLOB.split(pattern, 1)[0]
+    if literal == pattern:
+        return False
+    if literal.endswith("/"):
+        return True
+    if literal.startswith("files//"):
+        parts = literal[len("files//"):].split("/")
+        return len(parts) < 2 or not parts[1]
+    parts = literal.split("/")
+    return len(parts) < 3 or not parts[2]
+
+
+def allowance_problems(journey: dict, changed: list[str], residue: list[str]) -> dict[str, list[str]]:
+    effects = journey["effects"]
+    optional = effects.get("optional") or {}
+    unused = [p for p in effects["allow"]
+              if p not in optional and not any(fnmatch.fnmatchcase(c, p) for c in changed)]
+    unused_persist = [p for p in effects["persist"]
+                      if p not in optional and not any(fnmatch.fnmatchcase(c, p) for c in residue)]
+    broad = [p for p in effects["allow"] if p not in optional and broad_pattern(p)]
+    return {"unusedAllow": unused, "unusedPersist": unused_persist, "broad": broad}
 
 
 # --- evaluation (shared with verify.py) -------------------------------------------------
@@ -449,6 +496,11 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
     unconfirmed = unconfirmed_effect_steps(journey, tool_effects(transcript))
     if unconfirmed:
         reasons.append("unconfirmed-effect")
+    allowances = allowance_problems(journey, changed, residue)
+    if allowances["unusedAllow"] or allowances["unusedPersist"]:
+        reasons.append("unused-allowance")
+    if allowances["broad"]:
+        reasons.append("broad-allowance")
     if seconds > journey["maxMinutes"] * 60:
         reasons.append("time-limit")
     unverified = sorted({r["openQuestion"] for r in requirements if r["outcome"] == "unverified"})
@@ -457,6 +509,7 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
             "requirements": requirements, "schemaErrors": schema,
             "effects": {"changed": changed, "undeclared": undeclared, "residue": residue, "residueUndeclared": left},
             "harnessErrors": harness_errors, "uncheckedOutcomes": unchecked, "unconfirmedEffects": unconfirmed,
+            "allowances": allowances,
             "timings": {"stepsSeconds": round(seconds, 1),
                         "steps": {r["step"]: r.get("ms") for r in transcript if r.get("phase") == "step"}}}
 

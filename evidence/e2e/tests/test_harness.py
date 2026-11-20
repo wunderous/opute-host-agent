@@ -280,6 +280,66 @@ class Effects(unittest.TestCase):
             self.assertEqual(runner.unconfirmed_effect_steps(j, effects), [], path.name)
 
 
+class Allowances(unittest.TestCase):
+    """m24: every allowance matches what the run changed, and none is broader than its effect."""
+
+    AFTER = {"files": {"/etc/a": {"sha256": "1"}, "/etc/b": {"sha256": "2"}}}
+
+    def judge(self, effects, cleanup=None):
+        states = {"before": STATE, "after": self.AFTER, "cleanup": cleanup or STATE}
+        return runner.evaluate(journey(effects=effects), [health()], states)
+
+    def test_used_allowance_passes(self):
+        self.assertTrue(self.judge({"allow": ["files//etc/b"], "persist": []})["pass"])
+
+    def test_unused_allow_fails(self):
+        out = self.judge({"allow": ["files//etc/b", "files//etc/never"], "persist": []})
+        self.assertEqual(out["failures"], ["unused-allowance"])
+        self.assertEqual(out["allowances"]["unusedAllow"], ["files//etc/never"])
+
+    def test_unused_persist_fails(self):
+        out = self.judge({"allow": ["files//etc/b"], "persist": ["files//etc/b"]})
+        self.assertEqual(out["failures"], ["unused-allowance"])
+        self.assertEqual(out["allowances"]["unusedPersist"], ["files//etc/b"])
+        self.assertTrue(self.judge({"allow": ["files//etc/b"], "persist": ["files//etc/b"]}, self.AFTER)["pass"])
+
+    def test_optional_allowance_needs_no_match(self):
+        effects = {"allow": ["files//etc/b", "files//etc/c"], "persist": [],
+                   "optional": {"files//etc/c": "written only when the mirror is stale"}}
+        self.assertTrue(self.judge(effects)["pass"])
+
+    def test_optional_needs_a_reason_and_an_allow_pattern(self):
+        empty = journey(effects={"allow": ["files//etc/c"], "persist": [], "optional": {"files//etc/c": " "}})
+        self.assertIn("effects.optional 'files//etc/c' needs its reason", runner.journey_problems(empty))
+        stray = journey(effects={"allow": [], "persist": [], "optional": {"files//etc/c": "why"}})
+        self.assertIn("effects.optional 'files//etc/c' is not an allow pattern", runner.journey_problems(stray))
+
+    def test_broad_allowance_fails_even_when_used(self):
+        out = self.judge({"allow": ["files//etc*"], "persist": []})
+        self.assertEqual(out["failures"], ["broad-allowance"])
+        self.assertEqual(out["allowances"]["broad"], ["files//etc*"])
+
+    def test_what_is_broad(self):
+        for pattern, broad in (("incus/*", True), ("incus/volumes/*", True), ("system/units/*", True),
+                               ("user/*", True), ("linger*", True), ("files//etc*", True), ("files//*", True),
+                               ("linger", False), ("system/units/e2e-*", False), ("incus/instances/e2e-k*", False),
+                               ("files//etc/systemd/system/*", True), ("incus/volumes/default/image/*", True),
+                               ("files//var/log*", False), ("files//etc/opute-e2e-probe", False),
+                               ("system/units/tmp-e2e*agents-*.mount", False)):
+            self.assertEqual(runner.broad_pattern(pattern), broad, pattern)
+
+    def test_committed_journeys_name_their_effects(self):
+        import outcomes
+        controls = outcomes.negative_controls("broad-allowance")
+        for path in sorted((E2E / "journeys").glob("*.json")):
+            if path.stem in controls:
+                continue
+            j = json.loads(path.read_text())
+            optional = j["effects"].get("optional") or {}
+            broad = [p for p in j["effects"]["allow"] if p not in optional and runner.broad_pattern(p)]
+            self.assertEqual(broad, [], path.name)
+
+
 class Format(unittest.TestCase):
     def test_vacuous_requirement_refused(self):
         j = journey(requirements=[{"spec": SPEC, "requirement": "R", "pass": []}])
