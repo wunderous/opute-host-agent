@@ -202,6 +202,11 @@
      "equals": "completed"
     },
     {
+     "step": "legacyPlanFile",
+     "path": "stdout",
+     "equals": "e2e\n"
+    },
+    {
      "step": "legacyDiscover",
      "path": "response.status",
      "equals": 400
@@ -227,6 +232,11 @@
      "step": "planDone",
      "path": "response.body.result.structuredContent.status",
      "equals": "completed"
+    },
+    {
+     "step": "planFile",
+     "path": "stdout",
+     "equals": "e2e\n"
     },
     {
      "step": "client",
@@ -362,6 +372,13 @@
    "timeout": 90
   },
   {
+   "id": "planFile",
+   "guest": "cat /home/opute/.config/opute-e2e/j3-modern.txt",
+   "confirms": [
+    "plan"
+   ]
+  },
+  {
    "id": "legacyAgent",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start legacy --port 3017 --id e2e-legacy-agent --env MCP_AUTH_TOKEN=${SECRET:legacy} --env OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
   },
@@ -479,6 +496,13 @@
    "port": 3017,
    "auth": "secret:legacy",
    "modern": false
+  },
+  {
+   "id": "legacyPlanFile",
+   "guest": "cat /tmp/e2e-agents/legacy/home/.config/opute-e2e/j3-legacy.txt",
+   "confirms": [
+    "legacyPlan"
+   ]
   },
   {
    "id": "legacyDiscover",

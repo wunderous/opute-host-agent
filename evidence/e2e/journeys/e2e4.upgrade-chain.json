@@ -182,6 +182,41 @@
      "step": "r4Read",
      "path": "response.body.result.structuredContent.exists",
      "equals": true
+    },
+    {
+     "step": "goDoneFile",
+     "path": "stdout",
+     "equals": "e2e\n"
+    },
+    {
+     "step": "goFlightFile",
+     "path": "stdout",
+     "equals": "e2e\n"
+    },
+    {
+     "step": "r3Linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "r3RelayListens",
+     "path": "stdout",
+     "equals": "1\n"
+    },
+    {
+     "step": "r3PlanFile",
+     "path": "stdout",
+     "equals": "n1\n"
+    },
+    {
+     "step": "r4PlanFile",
+     "path": "stdout",
+     "equals": "n1\n"
+    },
+    {
+     "step": "chainFiles",
+     "path": "stdout",
+     "equals": "r3\nr4\nback\n"
     }
    ],
    "scenario": "Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with its relay, connector, plan and task, is served by 0.4.0: counts and ids reconcile per table and every record reads back with the status last reported"
@@ -672,6 +707,13 @@
    ]
   },
   {
+   "id": "goDoneFile",
+   "guest": "cat /home/opute/.config/opute-e2e/go.txt",
+   "confirms": [
+    "goDone"
+   ]
+  },
+  {
    "id": "goFlight",
    "mcp": "tools/call",
    "tool": "run_host_plan",
@@ -748,6 +790,13 @@
    ]
   },
   {
+   "id": "goFlightFile",
+   "guest": "cat /home/opute/.config/opute-e2e/flight.txt",
+   "confirms": [
+    "goFlight"
+   ]
+  },
+  {
    "id": "goStop",
    "guest": "systemctl stop opute-bootstrap-mcp.service && python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
   },
@@ -803,6 +852,13 @@
    "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; test -S /run/user/$(id -u opute)/bus && echo up"
   },
   {
+   "id": "r3Linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "r3Supervisor"
+   ]
+  },
+  {
    "id": "r3Relay",
    "mcp": "tools/call",
    "tool": "ensure_local_llm_relay",
@@ -820,6 +876,13 @@
    },
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r3RelayListens",
+   "guest": "ss -ltnH 'sport = :3058' | wc -l",
+   "confirms": [
+    "r3Relay"
    ]
   },
   {
@@ -939,6 +1002,13 @@
    ]
   },
   {
+   "id": "r3PlanFile",
+   "guest": "cat /home/opute/e2e/n1.txt && rm /home/opute/e2e/n1.txt",
+   "confirms": [
+    "r3Plan"
+   ]
+  },
+  {
    "id": "r3TaskCall",
    "mcp": "tools/call",
    "tool": "run_host_command",
@@ -981,7 +1051,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only prints; its output is asserted"
   },
   {
    "id": "r3Write",
@@ -1217,6 +1288,13 @@
    ]
   },
   {
+   "id": "r4PlanFile",
+   "guest": "cat /home/opute/e2e/n1.txt",
+   "confirms": [
+    "r4Plan"
+   ]
+  },
+  {
    "id": "r4TaskCall",
    "mcp": "tools/call",
    "tool": "run_host_command",
@@ -1259,7 +1337,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only prints; its output is asserted"
   },
   {
    "id": "r4Write",
@@ -1453,6 +1532,15 @@
    },
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "chainFiles",
+   "guest": "cat /home/opute/e2e/chain-r3.txt /home/opute/e2e/chain-r4.txt /home/opute/e2e/chain-back.txt",
+   "confirms": [
+    "r3Write",
+    "r4Write",
+    "backWrite"
    ]
   },
   {

@@ -1,0 +1,275 @@
+{
+ "commit": "fbe5970fa27a08360e2ef3aaa6fede4a674b10a7",
+ "journeys": 41,
+ "mutatingToolsExercised": 59,
+ "unconfirmedEffectSteps": 217,
+ "unconfirmedEffects": {
+  "e2e1.migrate-upgrade": [
+   "goDone",
+   "goFlight"
+  ],
+  "e2e1.restart": [
+   "termRun",
+   "resubmit"
+  ],
+  "e2e1.tutorial-clients": [
+   "plan",
+   "legacyPlan"
+  ],
+  "e2e2.data": [
+   "installA",
+   "vm1",
+   "provision",
+   "reconcile",
+   "release",
+   "remove",
+   "sqlite",
+   "sqliteAgain",
+   "sqliteRemove"
+  ],
+  "e2e2.host-ops": [
+   "supervisor",
+   "supervisorAgain",
+   "unit",
+   "enable",
+   "start",
+   "curl",
+   "restart",
+   "stop",
+   "disable",
+   "removeUnit",
+   "restartIncusSystem",
+   "ninjaTool",
+   "toolAgain",
+   "artifact",
+   "artifactAgain",
+   "archive",
+   "extract",
+   "traversal",
+   "virt"
+  ],
+  "e2e2.incus": [
+   "container",
+   "vm",
+   "serveC",
+   "runV",
+   "stopC",
+   "startC",
+   "restartC",
+   "stopV",
+   "resizeV",
+   "startV",
+   "grow",
+   "overQuota",
+   "reset",
+   "deleteV"
+  ],
+  "e2e2.oci": [
+   "installA",
+   "vm1",
+   "provision",
+   "builder",
+   "stage",
+   "registry",
+   "push",
+   "trust",
+   "pull",
+   "logs",
+   "supervisor",
+   "supervisorAgain",
+   "policy",
+   "dryRun",
+   "cleanup",
+   "deleteRegistry"
+  ],
+  "e2e2.plans": [
+   "run",
+   "again",
+   "recipeRun",
+   "slowRun"
+  ],
+  "e2e3.discovery": [
+   "installA",
+   "vm1",
+   "provision",
+   "stop",
+   "start"
+  ],
+  "e2e3.serving": [
+   "supervisor",
+   "supervisorAgain",
+   "assign",
+   "assignAgain",
+   "gateway",
+   "removeGateway"
+  ],
+  "e2e3.site": [
+   "installA",
+   "vm1",
+   "provision",
+   "source",
+   "supervisor",
+   "supervisorAgain",
+   "unpack",
+   "builder",
+   "registry",
+   "push",
+   "trust",
+   "deploy",
+   "domain",
+   "again",
+   "unmap",
+   "teardown"
+  ],
+  "e2e3a.build": [
+   "installA",
+   "installB",
+   "vm1",
+   "provision",
+   "prepareHa",
+   "vm2",
+   "prepare2",
+   "redeem2",
+   "join2",
+   "vm3",
+   "prepare3",
+   "redeem3",
+   "join3"
+  ],
+  "e2e3a.endpoint": [
+   "installA",
+   "installB",
+   "vm1",
+   "provision",
+   "prepareHa",
+   "vm2",
+   "prepare2",
+   "redeem2",
+   "join2",
+   "vm3",
+   "prepare3",
+   "redeem3",
+   "join3",
+   "optIn",
+   "verifyIn",
+   "optInAgain",
+   "stop3",
+   "verifyDegraded",
+   "retire",
+   "verifyRetired",
+   "optOut",
+   "optOutAgain"
+  ],
+  "e2e3a.lose-one": [
+   "installA",
+   "installB",
+   "vm1",
+   "provision",
+   "prepareHa",
+   "vm2",
+   "prepare2",
+   "redeem2",
+   "join2",
+   "vm3",
+   "prepare3",
+   "redeem3",
+   "join3",
+   "chart",
+   "rollout",
+   "secret",
+   "secretKeys",
+   "pods",
+   "stop2",
+   "write",
+   "start2"
+  ],
+  "e2e3a.quorum-removal": [
+   "installA",
+   "installB",
+   "vm1",
+   "provision",
+   "prepareHa",
+   "vm2",
+   "prepare2",
+   "redeem2",
+   "join2",
+   "vm3",
+   "prepare3",
+   "redeem3",
+   "join3",
+   "writeBefore",
+   "stop2",
+   "stop3",
+   "recover",
+   "removeNode2",
+   "removeNode3",
+   "remove",
+   "delete1",
+   "delete2",
+   "delete3"
+  ],
+  "e2e3a.workload": [
+   "installA",
+   "installB",
+   "vm1",
+   "provision",
+   "prepareHa",
+   "vm2",
+   "prepare2",
+   "redeem2",
+   "join2",
+   "vm3",
+   "prepare3",
+   "redeem3",
+   "join3",
+   "chart",
+   "rollout",
+   "secret",
+   "secretKeys",
+   "pods"
+  ],
+  "e2e4.cutover": [
+   "goSupervisorAgain",
+   "goPlan",
+   "goFail",
+   "goTask",
+   "rustNew",
+   "rustTaskNew"
+  ],
+  "e2e4.restart": [
+   "supervisor",
+   "supervisorAgain",
+   "termPlan",
+   "afterUpgrade",
+   "twinADone",
+   "twinBDone"
+  ],
+  "e2e6.child-env": [
+   "recipeRun"
+  ],
+  "e2e6.clock": [
+   "newWorkDone",
+   "heldDone"
+  ],
+  "e2e6.disk-full": [
+   "writeBefore",
+   "taskBeforeDone",
+   "writeAfter",
+   "taskAfterDone"
+  ],
+  "e2e6.kill": [
+   "plan"
+  ],
+  "e2e6.pressure": [
+   "firstDone",
+   "relay"
+  ],
+  "e2e6.secret-sweep": [
+   "relay",
+   "cluster"
+  ],
+  "e2e6.store-damage": [
+   "taskDone"
+  ]
+ }
+}

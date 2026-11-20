@@ -52,6 +52,16 @@
      "equals": 1
     },
     {
+     "step": "goDoneFile",
+     "path": "stdout",
+     "equals": "e2e\n"
+    },
+    {
+     "step": "goFlightFile",
+     "path": "stdout",
+     "equals": "e2e\n"
+    },
+    {
      "step": "goStop",
      "path": "exit",
      "equals": 0
@@ -344,6 +354,13 @@
    "timeout": 90
   },
   {
+   "id": "goDoneFile",
+   "guest": "cat /home/opute/.config/opute-e2e/j8-done.txt",
+   "confirms": [
+    "goDone"
+   ]
+  },
+  {
    "id": "goFlight",
    "mcp": "tools/call",
    "tool": "run_host_plan",
@@ -412,6 +429,13 @@
     ]
    },
    "timeout": 30
+  },
+  {
+   "id": "goFlightFile",
+   "guest": "cat /home/opute/.config/opute-e2e/j8-flight.txt",
+   "confirms": [
+    "goFlight"
+   ]
   },
   {
    "id": "goStop",

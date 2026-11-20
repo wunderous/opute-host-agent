@@ -110,6 +110,13 @@ def journey_problems(journey: dict) -> list[str]:
         if "expectAnyOutcome" in step and not (isinstance(step["expectAnyOutcome"], str)
                                                and step["expectAnyOutcome"].strip()):
             out.append(f"step {step.get('id')}: expectAnyOutcome needs its reason")
+        if "effectUnobservable" in step and not (isinstance(step["effectUnobservable"], str)
+                                                 and step["effectUnobservable"].strip()):
+            out.append(f"step {step.get('id')}: effectUnobservable needs its reason")
+        earlier = {s["id"] for s in journey["steps"][:journey["steps"].index(step)]}
+        for c in step.get("confirms") or []:
+            if c not in earlier:
+                out.append(f"step {step.get('id')}: confirms {c!r}, which is not an earlier step")
     if not journey["requirements"]:
         out.append("no requirement is checked")
     step_ids = {s["id"] for s in journey["steps"]}
@@ -293,6 +300,88 @@ def unexpected_failures(journey: dict, transcript: list[dict]) -> list[str]:
     return out
 
 
+# --- effects (m23) --------------------------------------------------------------------
+
+MUTATING = ("mutation", "destructive", "credential_bearing")
+OBSERVER_KINDS = ("guest", "http", "fetch")
+
+
+def tool_effects(transcript: list[dict]) -> dict[str, str]:
+    """Each tool's published effect (`_meta.capability.effect`), from the run's own tools/list."""
+    out: dict[str, str] = {}
+    for r in transcript:
+        if r.get("kind") == "mcp" and r.get("method") == "tools/list" and r.get("phase") == "step":
+            body = (r.get("response") or {}).get("body") or {}
+            for tool in ((body.get("result") or {}) if isinstance(body, dict) else {}).get("tools") or []:
+                effect = ((tool.get("_meta") or {}).get("capability") or {}).get("effect")
+                if effect:
+                    out.setdefault(tool["name"], effect)
+    return out
+
+
+def step_tools(journey: dict) -> tuple[dict[str, str], set[str]]:
+    """The tool behind each tools/call step and, for the first tasks/get poll after a launch, the
+    launcher's tool; and the launchers, whose effect their poll carries."""
+    out = {s["id"]: s["tool"] for s in journey["steps"] if s.get("mcp") == "tools/call" and s.get("tool")}
+    launchers: set[str] = set()
+    for s in journey["steps"]:
+        if s.get("mcp") != "tasks/get":
+            continue
+        used = set(re.findall(r"\$\{([A-Za-z0-9_]+)\}", json.dumps(s.get("params", {}))))
+        launcher = next((x for x in journey["steps"] if x.get("mcp") == "tools/call" and x.get("tool")
+                         and set(x.get("capture") or {}) & used), None)
+        # the first poll after the launch carries its effect; a later read of the same task is a read
+        if launcher and launcher["id"] not in launchers:
+            out[s["id"]] = launcher["tool"]
+            launchers.add(launcher["id"])
+    return out, launchers
+
+
+def not_completed(assertion: dict) -> bool:
+    """Whether an assertion expects a task or run to end some way other than `completed`: the
+    journey expects no finished work to confirm."""
+    if assertion.get("path") not in ("response.body.result.status", "response.body.result.structuredContent.status"):
+        return False
+    expected = assertion.get("in") if isinstance(assertion.get("in"), list) else \
+        [assertion["equals"]] if "equals" in assertion else None
+    return expected is not None and "completed" not in expected and \
+        bool(set(map(str, expected)) & {"cancelled", "failed", "working", "running", "unknown", "input_required"})
+
+
+def unconfirmed_effect_steps(journey: dict, effects: dict[str, str]) -> list[str]:
+    """Mutations a journey expects to succeed that no later independent observation confirms (m23).
+
+    A mutation step is a tools/call or task poll whose tool publishes a mutating effect. A launch
+    judged at its poll is the poll's; a step that expects failure, or opts out of its outcome, has no
+    effect to confirm. The confirming step names it in `confirms`, comes later, is a guest command,
+    an HTTP request or a `read` tool call, and carries assertions. `effectUnobservable` opts out."""
+    tools, launchers = step_tools(journey)
+    asserted: dict[str, list[dict]] = {}
+    for req in journey["requirements"]:
+        for a in req["pass"]:
+            asserted.setdefault(a["step"], []).append(a)
+    order = {s["id"]: i for i, s in enumerate(journey["steps"])}
+    confirmed: set[str] = set()
+    for s in journey["steps"]:
+        kind = next((k for k in OBSERVER_KINDS if k in s), None)
+        reads = s.get("mcp") in OUTCOME_METHODS and effects.get(tools.get(s["id"], "")) == "read"
+        if (kind or reads) and asserted.get(s["id"]):
+            confirmed |= {c for c in s.get("confirms") or [] if order.get(c, len(order)) < order[s["id"]]}
+    out = []
+    for s in journey["steps"]:
+        if s.get("mcp") not in OUTCOME_METHODS or s.get("expectAnyOutcome") or s.get("effectUnobservable"):
+            continue
+        if effects.get(tools.get(s["id"], "")) not in MUTATING:
+            continue
+        if s["id"] in launchers:  # its poll carries the effect
+            continue
+        if any(expects_failure(a) or not_completed(a) for a in asserted.get(s["id"], [])):
+            continue
+        if s["id"] not in confirmed:
+            out.append(s["id"])
+    return out
+
+
 def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> dict:
     """Everything a journey's verdict depends on, from its recorded evidence only."""
     records = {r["step"]: r for r in transcript if r.get("phase") == "step"}
@@ -363,6 +452,9 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
     unchecked = unchecked_outcome_steps(journey) + unexpected_failures(journey, transcript)
     if unchecked:
         reasons.append("unchecked-outcome")
+    unconfirmed = unconfirmed_effect_steps(journey, tool_effects(transcript))
+    if unconfirmed:
+        reasons.append("unconfirmed-effect")
     if seconds > journey["maxMinutes"] * 60:
         reasons.append("time-limit")
     unverified = sorted({r["openQuestion"] for r in requirements if r["outcome"] == "unverified"})
@@ -370,7 +462,7 @@ def evaluate(journey: dict, transcript: list[dict], states: dict[str, Any]) -> d
             "unverified": unverified,
             "requirements": requirements, "schemaErrors": schema,
             "effects": {"changed": changed, "undeclared": undeclared, "residue": residue, "residueUndeclared": left},
-            "harnessErrors": harness_errors, "uncheckedOutcomes": unchecked,
+            "harnessErrors": harness_errors, "uncheckedOutcomes": unchecked, "unconfirmedEffects": unconfirmed,
             "timings": {"stepsSeconds": round(seconds, 1),
                         "steps": {r["step"]: r.get("ms") for r in transcript if r.get("phase") == "step"}}}
 

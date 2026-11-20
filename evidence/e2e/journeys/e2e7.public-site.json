@@ -331,7 +331,7 @@
      "step": "guestGone"
     },
     {
-     "equals": "0\n0\n",
+     "equals": "0\n0\n0\n",
      "path": "stdout",
      "step": "unitsGone"
     }
@@ -553,6 +553,41 @@
      "step": "k3sListed"
     },
     {
+     "equals": "yes\nbus\n",
+     "path": "stdout",
+     "step": "linger"
+    },
+    {
+     "equals": "/usr/bin/podman\n",
+     "path": "stdout",
+     "step": "podman"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "k3sPort"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "cloudflarePort"
+    },
+    {
+     "equals": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788\n",
+     "path": "stdout",
+     "step": "k3sActivationFile"
+    },
+    {
+     "equals": "6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460\n",
+     "path": "stdout",
+     "step": "cloudflareActivationFile"
+    },
+    {
+     "equals": "58c168a741ddefc655389bc5e3f4e541c276cb5af1281acd919b8a81cc803149\n24331621f8ef9d3db03db3f0e23685d63da9d7c66555e272768ad8e95584aee8\n3255cf1b92ac9a4fc2782acee31095d2b1bab3ef2ee2df4ffb4ae75d5f05a16c\n",
+     "path": "stdout",
+     "step": "recipeFiles"
+    },
+    {
      "equals": true,
      "path": "json.listed",
      "step": "cloudflareListed"
@@ -594,6 +629,13 @@
    "id": "supervisor",
    "mcp": "tools/call",
    "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "confirms": [
+    "supervisor"
+   ],
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "id": "linger"
   },
   {
    "guest": "dpkg -l | awk '/^ii/{print $2}' | sort > /tmp/e2e-pkgs-before && echo recorded",
@@ -640,6 +682,13 @@
    }
   },
   {
+   "confirms": [
+    "builder"
+   ],
+   "guest": "command -v podman",
+   "id": "podman"
+  },
+  {
    "arguments": {
     "content": "[Unit]\nDescription=Opute k3s provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4320\nExecStart=/opt/opute-e2e/releases/rust/v0.4.0/opute-provider-k3s-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
     "mode": 420,
@@ -672,8 +721,19 @@
    "tool": "ensure_host_file"
   },
   {
+   "confirms": [
+    "k3sUnit",
+    "k3sStart"
+   ],
    "guest": "for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | wc -l",
    "id": "k3sPort"
+  },
+  {
+   "confirms": [
+    "k3sActivation"
+   ],
+   "guest": "sha256sum /home/opute/.config/opute-e2e7/k3s-activate.yaml | cut -c1-64",
+   "id": "k3sActivationFile"
   },
   {
    "arguments": {
@@ -700,6 +760,9 @@
    "tool": "opute.provider.install"
   },
   {
+   "confirms": [
+    "k3sInstall"
+   ],
    "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names)}))' '${TOKEN}'",
    "id": "k3sListed"
   },
@@ -736,8 +799,19 @@
    "tool": "ensure_host_file"
   },
   {
+   "confirms": [
+    "cloudflareUnit",
+    "cloudflareStart"
+   ],
    "guest": "for i in $(seq 60); do ss -ltnH 'sport = :4330' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4330' | wc -l",
    "id": "cloudflarePort"
+  },
+  {
+   "confirms": [
+    "cloudflareActivation"
+   ],
+   "guest": "sha256sum /home/opute/.config/opute-e2e7/cloudflare-activate.yaml | cut -c1-64",
+   "id": "cloudflareActivationFile"
   },
   {
    "arguments": {
@@ -776,6 +850,9 @@
    "tool": "opute.provider.install"
   },
   {
+   "confirms": [
+    "cloudflareInstall"
+   ],
    "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"ensure_cloudflared_tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"ensure_cloudflared_tunnel\" in names, \"tools\": len(names)}))' '${TOKEN}'",
    "id": "cloudflareListed"
   },
@@ -815,6 +892,15 @@
    "id": "nestedRecipe",
    "mcp": "tools/call",
    "tool": "ensure_host_file"
+  },
+  {
+   "confirms": [
+    "siteRecipe",
+    "downRecipe",
+    "nestedRecipe"
+   ],
+   "guest": "sha256sum /home/opute/.config/opute-e2e7/minimal-site.recipe.yaml /home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml /home/opute/.config/opute-e2e7/nested.recipe.yaml | cut -c1-64",
+   "id": "recipeFiles"
   },
   {
    "arguments": {
@@ -903,6 +989,9 @@
    }
   },
   {
+   "confirms": [
+    "upStart"
+   ],
    "fetch": "https://e2e-${RUN}.opute.io/",
    "id": "page",
    "interval": 10,
@@ -1016,11 +1105,17 @@
    }
   },
   {
+   "confirms": [
+    "deletePod"
+   ],
    "guest": "for i in $(seq 90); do n=$(incus exec e2e-s7 -- k3s kubectl -n site get pods -l app.kubernetes.io/name=site -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{\"\\n\"}{end}' | grep -v -x '${POD}' | head -1); [ -n \"$n\" ] && break; sleep 2; done; [ -n \"$n\" ] && echo replaced",
    "id": "podBack",
    "timeout": 240
   },
   {
+   "confirms": [
+    "againStart"
+   ],
    "fetch": "https://e2e-${RUN}.opute.io/",
    "id": "pageAgain",
    "interval": 5,
@@ -1135,6 +1230,10 @@
    "tool": "get_cloudflare_tunnel_status"
   },
   {
+   "confirms": [
+    "downStart",
+    "downAgainStart"
+   ],
    "guest": "incus list -f csv -c n | grep -c -x e2e-s7; true",
    "id": "guestGone"
   },
@@ -1251,7 +1350,13 @@
    }
   },
   {
-   "guest": "ls /home/opute/.config/systemd/user 2>/dev/null | grep -c -E '^opute-(provider|cloudflare)'; systemctl list-units --all --no-legend 'cloudflared*' | wc -l",
+   "confirms": [
+    "k3sStop",
+    "k3sUnitRemove",
+    "cloudflareStop",
+    "cloudflareUnitRemove"
+   ],
+   "guest": "ls /home/opute/.config/systemd/user 2>/dev/null | grep -c -E '^opute-(provider|cloudflare)'; systemctl list-units --all --no-legend 'cloudflared*' | wc -l; ss -ltnH '( sport = :4320 or sport = :4330 )' | wc -l",
    "id": "unitsGone"
   }
  ]

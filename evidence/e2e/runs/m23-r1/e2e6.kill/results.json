@@ -1,0 +1,143 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-kp.service",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-agent-kp.service",
+   "system/units/e2e-slow.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.kill",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "running",
+     "in": [
+      "running",
+      "working"
+     ],
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "running"
+    },
+    {
+     "actual": "killed\n",
+     "matches": "killed\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "kill"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "restart"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "runAfter"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "runLater"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "planFile"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 12,
+     "equals": 12,
+     "ok": true,
+     "path": "json.restarts",
+     "step": "loop"
+    },
+    {
+     "actual": 44,
+     "gte": 1,
+     "ok": true,
+     "path": "json.acceptedTotal",
+     "step": "loop"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "afterLoop"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterLoop": 289,
+   "audit": 186,
+   "kill": 4170,
+   "kpAgent": 560,
+   "list": 535,
+   "listAgain": 239,
+   "loop": 8979,
+   "plan": 254,
+   "planFile": 146,
+   "restart": 545,
+   "runAfter": 214,
+   "runLater": 413,
+   "running": 212,
+   "settle": 45155,
+   "slow": 211,
+   "tool": 282,
+   "wire": 286
+  },
+  "stepsSeconds": 107.1
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

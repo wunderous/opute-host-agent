@@ -85,6 +85,11 @@
      "equals": "container:local:e2e-k1"
     },
     {
+     "step": "info1",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "running"
+    },
+    {
      "step": "vm2",
      "path": "response.body.result.result.structuredContent.uri",
      "equals": "container:local:e2e-k2"
@@ -372,6 +377,11 @@
      "step": "serve",
      "path": "stdout",
      "equals": "200 200 200 "
+    },
+    {
+     "step": "secretGuest",
+     "path": "stdout",
+     "equals": "apiKey "
     }
    ],
    "scenario": "A Helm chart installed, a secret put, a command run in a pod, and the service exposed inside the VM answering HTTP on every server"
@@ -617,11 +627,17 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "providerToolsB",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'",
+   "confirms": [
+    "installB"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -695,7 +711,10 @@
    },
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
-   }
+   },
+   "confirms": [
+    "vm1"
+   ]
   },
   {
    "id": "provisionCall",
@@ -1262,7 +1281,19 @@
     ]
    },
    "timeout": 300,
-   "interval": 5
+   "interval": 5,
+   "confirms": [
+    "provision",
+    "prepareHa",
+    "vm2",
+    "prepare2",
+    "redeem2",
+    "join2",
+    "vm3",
+    "prepare3",
+    "redeem3",
+    "join3"
+   ]
   },
   {
    "id": "status",
@@ -1330,7 +1361,8 @@
     ]
    },
    "timeout": 480,
-   "interval": 5
+   "interval": 5,
+   "effectUnobservable": "a read through the general command tool: kubectl rollout status"
   },
   {
    "id": "secretCall",
@@ -1387,7 +1419,17 @@
     "uri": "cluster:local:e2e-k1",
     "namespace": "e2e-web",
     "secretName": "e2e-secret"
-   }
+   },
+   "confirms": [
+    "secret"
+   ]
+  },
+  {
+   "id": "secretGuest",
+   "confirms": [
+    "secret"
+   ],
+   "guest": "incus exec e2e-k1 -- k3s kubectl -n e2e-web get secret e2e-secret -o go-template='{{range $k, $v := .data}}{{$k}} {{end}}'"
   },
   {
    "id": "secretMissing",
@@ -1424,7 +1466,10 @@
     "uri": "cluster:local:e2e-k1",
     "namespace": "e2e-web",
     "configMapName": "e2e-config"
-   }
+   },
+   "confirms": [
+    "configMap"
+   ]
   },
   {
    "id": "envLiteral",
@@ -1481,7 +1526,8 @@
     ]
    },
    "timeout": 480,
-   "interval": 5
+   "interval": 5,
+   "effectUnobservable": "a read through the general command tool: kubectl rollout status"
   },
   {
    "id": "inspect",
@@ -1491,7 +1537,11 @@
     "uri": "cluster:local:e2e-k1",
     "namespace": "e2e-web",
     "workloadName": "e2e-web-podinfo"
-   }
+   },
+   "confirms": [
+    "envLiteral",
+    "envFromSecret"
+   ]
   },
   {
    "id": "pods",
@@ -1509,7 +1559,8 @@
      "-c",
      "echo e2e-exec-ok"
     ]
-   }
+   },
+   "effectUnobservable": "a read through the general command tool: kubectl exec of echo in a pod"
   },
   {
    "id": "services",
@@ -1548,7 +1599,10 @@
   },
   {
    "id": "serve",
-   "guest": "for ip in ${K1_IP} ${K2_IP} ${K3_IP}; do curl -s -o /dev/null -w '%{http_code} ' --max-time 10 http://$ip:30080/; done"
+   "guest": "for ip in ${K1_IP} ${K2_IP} ${K3_IP}; do curl -s -o /dev/null -w '%{http_code} ' --max-time 10 http://$ip:30080/; done",
+   "confirms": [
+    "chart"
+   ]
   }
  ],
  "cleanup": [

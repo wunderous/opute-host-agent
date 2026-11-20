@@ -50,6 +50,16 @@
      "equals": true
     },
     {
+     "step": "vmState",
+     "path": "stdout",
+     "equals": "RUNNING\n"
+    },
+    {
+     "step": "detached",
+     "path": "stdout",
+     "equals": "0\n"
+    },
+    {
      "step": "consoleEnv",
      "path": "json.agentHasExpected",
      "equals": true
@@ -100,6 +110,11 @@
      "step": "recipeDone",
      "path": "response.body.result.structuredContent.status",
      "equals": "completed"
+    },
+    {
+     "step": "recipeFile",
+     "path": "stdout",
+     "equals": "done\n"
     }
    ],
    "scenario": "While a recipe step's run_host_command workload runs, the systemd-run client the agent started for it holds PATH and none of the agent's secrets"
@@ -193,6 +208,13 @@
    "interval": 3
   },
   {
+   "id": "vmState",
+   "guest": "incus list e2e-v6 -c s -f csv",
+   "confirms": [
+    "vm"
+   ]
+  },
+  {
    "id": "console",
    "mcp": "tools/call",
    "tool": "stream_vm_console",
@@ -204,7 +226,10 @@
   },
   {
    "id": "consoleEnv",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py childenv e2e-agent-cenv.service 'console e2e-v6' --expect MCP_AUTH_TOKEN --expect CLOUDFLARE_API_TOKEN --expect TAILSCALE_AUTH_KEY --expect OPUTE_E2E_MARKER --keep PATH"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py childenv e2e-agent-cenv.service 'console e2e-v6' --expect MCP_AUTH_TOKEN --expect CLOUDFLARE_API_TOKEN --expect TAILSCALE_AUTH_KEY --expect OPUTE_E2E_MARKER --keep PATH",
+   "confirms": [
+    "console"
+   ]
   },
   {
    "id": "ctrlA",
@@ -227,6 +252,14 @@
    },
    "port": 3050,
    "auth": "secret:cenv"
+  },
+  {
+   "id": "detached",
+   "confirms": [
+    "ctrlA",
+    "detach"
+   ],
+   "guest": "for i in $(seq 20); do pgrep -f 'console e2e-v6$' >/dev/null || break; sleep 0.5; done; pgrep -fc 'console e2e-v6$' || true"
   },
   {
    "id": "recipeCopy",
@@ -269,6 +302,13 @@
    "timeout": 120,
    "port": 3050,
    "auth": "secret:cenv"
+  },
+  {
+   "id": "recipeFile",
+   "guest": "test -e /tmp/e2e-agents/cenv/home/child-env.done && echo done",
+   "confirms": [
+    "recipeRun"
+   ]
   }
  ],
  "cleanup": [

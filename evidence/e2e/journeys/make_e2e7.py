@@ -16,6 +16,7 @@ harness refuses to write any record that holds its token.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 
@@ -95,9 +96,39 @@ def listed(name: str) -> str:
             f"print(json.dumps({{\"listed\": \"{name}\" in names, \"tools\": len(names)}}))' '${{TOKEN}}'")
 
 
+def sha256(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def written(id_: str, files: dict[str, str], *confirmed: str) -> dict:
+    """The files as the host holds them, by digest: the writes took effect (m23)."""
+    return {"id": id_, "guest": "sha256sum " + " ".join(files) + " | cut -c1-64", "confirms": list(confirmed)}
+
+
+def digests(files: dict[str, str]) -> str:
+    return "".join(sha256(text) + "\n" for text in files.values())
+
+
+def activation(p: dict) -> dict[str, str]:
+    return {f"{CFG}/{p['id']}-activate.yaml": (HERE / "inputs" / p["activate"]).read_text()}
+
+
+def teardown_recipe() -> str:
+    return (M20 / "minimal-site-teardown.recipe.yaml").read_text().replace("__GUEST_NAME__", NAME)
+
+
+def recipe_files() -> dict[str, str]:
+    return {SITE: (M20 / "minimal-site.recipe.yaml").read_text(), DOWN: teardown_recipe(), NESTED: nested_recipe()}
+
+
 def provider_steps() -> list[dict]:
-    steps = [call("supervisor", "ensure_host_service_supervisor", {}), PKGS_BEFORE,
-             *task("builder", "ensure_oci_builder", {})]
+    steps = [call("supervisor", "ensure_host_service_supervisor", {}),
+             {"id": "linger", "confirms": ["supervisor"], "guest": (
+                 "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; "
+                 "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus")},
+             PKGS_BEFORE,
+             *task("builder", "ensure_oci_builder", {}),
+             {"id": "podman", "guest": "command -v podman", "confirms": ["builder"]}]
     for p in PROVIDERS:
         name, act = f"opute-provider-{p['id']}", f"{CFG}/{p['id']}-activate.yaml"
         desc = {**p["descriptor"],
@@ -111,11 +142,14 @@ def provider_steps() -> list[dict]:
             call(f"{p['id']}Activation", "ensure_host_file",
                  {"path": act, "content": literal((HERE / "inputs" / p["activate"]).read_text()), "mode": 0o644,
                   "scope": "user"}),
+            # the unit, started from the file written above, serves the provider
             {"id": f"{p['id']}Port", "guest": f"for i in $(seq 60); do ss -ltnH 'sport = :{p['port']}' | grep -q . "
-                                              f"&& break; sleep 0.5; done; ss -ltnH 'sport = :{p['port']}' | wc -l"},
+                                              f"&& break; sleep 0.5; done; ss -ltnH 'sport = :{p['port']}' | wc -l",
+             "confirms": [f"{p['id']}Unit", f"{p['id']}Start"]},
+            written(f"{p['id']}ActivationFile", activation(p), f"{p['id']}Activation"),
             call(f"{p['id']}Install", "opute.provider.install",
                  {"descriptor": desc, "activate": True, "recipeSource": act}),
-            {"id": f"{p['id']}Listed", "guest": listed(p["probe"])},
+            {"id": f"{p['id']}Listed", "guest": listed(p["probe"]), "confirms": [f"{p['id']}Install"]},
         ]
     return steps
 
@@ -177,7 +211,7 @@ DOH = "https://cloudflare-dns.com/dns-query?name=" + HOST + "&type=CNAME"
 
 
 def steps() -> list[dict]:
-    teardown = (M20 / "minimal-site-teardown.recipe.yaml").read_text().replace("__GUEST_NAME__", NAME)
+    teardown = teardown_recipe()
     return base.TOOL_STEPS + [
         {"id": "leakCopy", "copy": "leakcheck", "to": "/opt/opute-e2e/guest/leakcheck.py"},
         {"id": "envCopy", "copy": "cloudflareEnv", "to": ENV, "mode": "0600"},
@@ -190,13 +224,14 @@ def steps() -> list[dict]:
         call("downRecipe", "ensure_host_file", {"path": DOWN, "content": literal(teardown), "mode": 0o644, "scope": "user"}),
         call("nestedRecipe", "ensure_host_file", {"path": NESTED, "content": nested_recipe(), "mode": 0o644,
                                                   "scope": "user"}),
+        written("recipeFiles", recipe_files(), "siteRecipe", "downRecipe", "nestedRecipe"),
         call("validateSite", "validate_host_local_recipe", {"source": SITE, "inputs": site_inputs("up")}),
         call("validateDown", "validate_host_local_recipe", {"source": DOWN, "inputs": down_inputs("down")}),
         call("validateNested", "validate_host_local_recipe", {"source": NESTED}),
         # one run brings the site up
         *recipe_run("up", SITE, site_inputs("up")),
         {"id": "page", "fetch": f"https://{HOST}/", "until": {"path": "response.status", "in": [200]},
-         "retryTimeout": 300, "interval": 10},
+         "retryTimeout": 300, "interval": 10, "confirms": ["upStart"]},
         # a second run with the same inputs finds every effect in place
         *recipe_run("again", SITE, site_inputs("again"), timeout=600),
         # a deleted pod comes back and the site answers again
@@ -208,9 +243,10 @@ def steps() -> list[dict]:
             f"for i in $(seq 90); do n=$(incus exec {NAME} -- k3s kubectl -n site get pods "
             "-l app.kubernetes.io/name=site -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}"
             "{.metadata.name}{\"\\n\"}{end}' | grep -v -x '${POD}' | head -1); [ -n \"$n\" ] && break; sleep 2; "
-            "done; [ -n \"$n\" ] && echo replaced"), "timeout": 240},
+            "done; [ -n \"$n\" ] && echo replaced"), "timeout": 240, "confirms": ["deletePod"]},
+        # after the second run and the replaced pod, the site still answers
         {"id": "pageAgain", "fetch": f"https://{HOST}/", "until": {"path": "response.status", "in": [200]},
-         "retryTimeout": 120, "interval": 5},
+         "retryTimeout": 120, "interval": 5, "confirms": ["againStart"]},
         # no file, journal line or run record holds the Cloudflare token or the tunnel's run token
         {"id": "leaks", "guest": (f"python3 /opt/opute-e2e/guest/leakcheck.py --env {ENV} --key CLOUDFLARE_API_TOKEN "
                                   f"--guest {NAME} --secret cloudflare-connector/cloudflared-token/token "
@@ -223,14 +259,17 @@ def steps() -> list[dict]:
          "until": {"path": "response.body", "matches": "^(?![\\s\\S]*\"Answer\")"}, "retryTimeout": 360,
          "interval": 10},
         call("tunnelGone", "get_cloudflare_tunnel_status", TUNNEL_ARGS),
-        {"id": "guestGone", "guest": f"incus list -f csv -c n | grep -c -x {NAME}; true"},
+        {"id": "guestGone", "guest": f"incus list -f csv -c n | grep -c -x {NAME}; true",
+         "confirms": ["downStart", "downAgainStart"]},
         # the providers were host prerequisites; their units go the same typed way
         *[s for p in PROVIDERS for s in (
             call(f"{p['id']}Stop", "set_host_service_state",
                  {"uri": f"host-service:local:user/opute-provider-{p['id']}", "state": "stop", "scope": "user"}),
             *removal(f"{p['id']}UnitRemove", f"{UNITS}/opute-provider-{p['id']}.service"))],
         {"id": "unitsGone", "guest": (f"ls {UNITS} 2>/dev/null | grep -c -E '^opute-(provider|cloudflare)'; "
-                                      "systemctl list-units --all --no-legend 'cloudflared*' | wc -l")},
+                                      "systemctl list-units --all --no-legend 'cloudflared*' | wc -l; "
+                                      "ss -ltnH '( sport = :4320 or sport = :4330 )' | wc -l"),
+         "confirms": [f"{p['id']}{s}" for p in PROVIDERS for s in ("Stop", "UnitRemove")]},
     ]
 
 
@@ -260,7 +299,7 @@ def requirements() -> list[dict]:
             direct("tunnelGone", "structuredContent.routed", equals=False),
             direct("tunnelGone", "structuredContent.tunnelId", equals=""),
             a("guestGone", "stdout", equals="0\n"),
-            a("unitsGone", "stdout", equals="0\n0\n"),
+            a("unitsGone", "stdout", equals="0\n0\n0\n"),
             scenario="One host-local recipe run brings a K3s Service up at a public hostname that the host fetches "
                      "over verified TLS, a second run skips every node, a deleted pod is replaced, and one teardown "
                      "run removes the CNAME, the tunnel and the guest (goal m20)"),
@@ -294,6 +333,10 @@ def requirements() -> list[dict]:
             *[res(f"{p['id']}UnitRemove", "isError", equals=False) for p in PROVIDERS],
             *[direct(s, "isError", **{"in": [False, "<absent>"]}) for s in ("siteRecipe", "downRecipe", "nestedRecipe")],
             a("k3sListed", "json.listed", equals=True),
+            a("linger", "stdout", equals="yes\nbus\n"), a("podman", "stdout", equals="/usr/bin/podman\n"),
+            *[a(f"{p['id']}Port", "stdout", equals="1\n") for p in PROVIDERS],
+            *[a(f"{p['id']}ActivationFile", "stdout", equals=digests(activation(p))) for p in PROVIDERS],
+            a("recipeFiles", "stdout", equals=digests(recipe_files())),
             a("cloudflareListed", "json.listed", equals=True),
             scenario="The K3s and Cloudflare providers, started as user units and installed by opute.provider.install, "
                      "publish their tools in the agent's catalog"),

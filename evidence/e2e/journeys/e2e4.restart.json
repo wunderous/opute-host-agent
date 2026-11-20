@@ -113,6 +113,16 @@
      "equals": "cancelled"
     },
     {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "termFile",
+     "path": "stdout",
+     "equals": "e2e\n"
+    },
+    {
      "step": "killTaskWire",
      "path": "response.body.result.status",
      "equals": "failed"
@@ -295,6 +305,14 @@
    ]
   },
   {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
+   ]
+  },
+  {
    "id": "termPlan",
    "mcp": "tools/call",
    "tool": "run_host_plan",
@@ -369,6 +387,13 @@
    "timeout": 60,
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "termFile",
+   "guest": "cat /home/opute/e2e/term.txt",
+   "confirms": [
+    "termPlan"
    ]
   },
   {
@@ -617,7 +642,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only prints; its output is asserted"
   },
   {
    "id": "twinA",
@@ -683,7 +709,8 @@
     ]
    },
    "timeout": 90,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only sleeps; the twins step saw both running, each in its own unit"
   },
   {
    "id": "twinBDone",
@@ -707,7 +734,8 @@
     ]
    },
    "timeout": 90,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only sleeps; the twins step saw both running, each in its own unit"
   },
   {
    "id": "db",
@@ -717,7 +745,7 @@
  "cleanup": [
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; pkill -fx 'sleep 120'; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; pkill -fx 'sleep 120'; incus delete -f e2e-t1 2>/dev/null; rm -rf /home/opute/e2e /home/opute/.opute/databases /home/opute/.config/opute/instances/standalone/databases /opt/opute-e2e/releases/rust-next; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 20

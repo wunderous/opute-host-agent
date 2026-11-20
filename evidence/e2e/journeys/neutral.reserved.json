@@ -274,11 +274,17 @@
   },
   {
    "id": "toolsR",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3041, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.tunneling.ensure-host-tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.tunneling.ensure-host-tunnel\" in names}))' '${SECRET:r}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3041, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.tunneling.ensure-host-tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.tunneling.ensure-host-tunnel\" in names}))' '${SECRET:r}'",
+   "confirms": [
+    "installR"
+   ]
   },
   {
    "id": "toolsN",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3042, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.tunneling.ensure-host-tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.tunneling.ensure-host-tunnel\" in names}))' '${SECRET:n}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3042, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.tunneling.ensure-host-tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.tunneling.ensure-host-tunnel\" in names}))' '${SECRET:n}'",
+   "confirms": [
+    "installN"
+   ]
   },
   {
    "id": "catalogR",

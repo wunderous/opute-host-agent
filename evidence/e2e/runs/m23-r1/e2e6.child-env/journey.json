@@ -1,0 +1,153 @@
+{
+ "cleanup": [
+  {
+   "guest": "rm -f /tmp/e2e-agents/child-env-recipe.yaml",
+   "id": "cleanRecipe"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove cenv >/dev/null ; true",
+   "id": "remove"
+  }
+ ],
+ "description": "A child's environment (D40): an agent holding its bearer, two provider credentials and an OPUTE_ setting runs a recipe step; /proc shows its child holds none of them.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.child-env",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.3.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "85577be61795ea2275b1c8e4b8196d2202642e81b84b829da7b5288779d3eb7f"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "recipe": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/e2e-child-env-recipe.yaml",
+    "sha256": "487b12955bdfdc82edb6855451162dc1273ab254de341cf79ff58e3d1ca3a913"
+   }
+  }
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "gte": 1,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "equals": [],
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "equals": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    },
+    {
+     "equals": "done\n",
+     "path": "stdout",
+     "step": "recipeFile"
+    }
+   ],
+   "requirement": "A child process never receives the agent's secrets",
+   "scenario": "While a recipe step's run_host_command workload runs, the systemd-run client the agent started for it holds PATH and none of the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start cenv --port 3050 --id e2e-cenv-agent --env MCP_AUTH_TOKEN=${SECRET:cenv} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env CLOUDFLARE_API_TOKEN=${SECRET:cfToken} --env TAILSCALE_AUTH_KEY=${SECRET:tsKey} --env OPUTE_E2E_MARKER=e2e-marker --user root",
+   "id": "cenvAgent"
+  },
+  {
+   "auth": "secret:cenv",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3050
+  },
+  {
+   "copy": "recipe",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/tmp/e2e-agents/child-env-recipe.yaml"
+  },
+  {
+   "arguments": {
+    "source": "/tmp/e2e-agents/child-env-recipe.yaml"
+   },
+   "auth": "secret:cenv",
+   "capture": {
+    "RRUN": "response.body.result.structuredContent.runId"
+   },
+   "id": "recipeRun",
+   "mcp": "tools/call",
+   "port": 3050,
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "guest": "for i in $(seq 40); do out=$(python3 /opt/opute-e2e/guest/e2etool.py childenv e2e-agent-cenv.service 'systemd-run' --expect MCP_AUTH_TOKEN --expect CLOUDFLARE_API_TOKEN --expect TAILSCALE_AUTH_KEY --expect OPUTE_E2E_MARKER --keep PATH); echo \"$out\" | grep -q '\"found\": [1-9]' && break; sleep 1; done; echo \"$out\"",
+   "id": "recipeEnv"
+  },
+  {
+   "arguments": {
+    "runId": "${RRUN}"
+   },
+   "auth": "secret:cenv",
+   "id": "recipeDone",
+   "mcp": "tools/call",
+   "port": 3050,
+   "timeout": 120,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "confirms": [
+    "recipeRun"
+   ],
+   "guest": "test -e /tmp/e2e-agents/cenv/home/child-env.done && echo done",
+   "id": "recipeFile"
+  }
+ ]
+}

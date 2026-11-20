@@ -85,6 +85,11 @@
      "equals": "container:local:e2e-k1"
     },
     {
+     "step": "info1",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "running"
+    },
+    {
      "step": "vm2",
      "path": "response.body.result.result.structuredContent.uri",
      "equals": "container:local:e2e-k2"
@@ -662,11 +667,17 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "providerToolsB",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'",
+   "confirms": [
+    "installB"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -740,7 +751,10 @@
    },
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
-   }
+   },
+   "confirms": [
+    "vm1"
+   ]
   },
   {
    "id": "provisionCall",
@@ -1307,7 +1321,19 @@
     ]
    },
    "timeout": 300,
-   "interval": 5
+   "interval": 5,
+   "confirms": [
+    "provision",
+    "prepareHa",
+    "vm2",
+    "prepare2",
+    "redeem2",
+    "join2",
+    "vm3",
+    "prepare3",
+    "redeem3",
+    "join3"
+   ]
   },
   {
    "id": "status",
@@ -1406,7 +1432,10 @@
   },
   {
    "id": "sansIn",
-   "guest": "ip=$(incus list e2e-k1 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k3 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test';"
+   "guest": "ip=$(incus list e2e-k1 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k2 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test'; ip=$(incus list e2e-k3 -f json | python3 -c \"import json,sys; i=json.load(sys.stdin)[0]; print([a['address'] for a in i['state']['network']['eth0']['addresses'] if a['family']=='inet'][0])\"); echo | timeout 10 openssl s_client -connect $ip:6443 -servername k3s.e2e.test 2>/dev/null | openssl x509 -noout -ext subjectAltName 2>/dev/null | grep -c 'DNS:k3s.e2e.test';",
+   "confirms": [
+    "optIn"
+   ]
   },
   {
    "id": "resolvesIn",
@@ -1456,7 +1485,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "a probe: ensure-ha-endpoint reads membership and probes the endpoint, changing nothing"
   },
   {
    "id": "optInAgainCall",
@@ -1563,12 +1593,18 @@
     ]
    },
    "timeout": 300,
-   "interval": 5
+   "interval": 5,
+   "confirms": [
+    "stop3"
+   ]
   },
   {
    "id": "through",
    "guest": "incus exec e2e-k1 -- sh -c 'sed \"s#https://127.0.0.1:6443#https://k3s.e2e.test:6443#\" /etc/rancher/k3s/k3s.yaml > /tmp/ep.yaml; start=$(date +%s); for i in $(seq 60); do k3s kubectl --kubeconfig /tmp/ep.yaml get --raw /version >/dev/null 2>&1 && k3s kubectl --kubeconfig /tmp/ep.yaml create configmap e2e-through-endpoint -n default --from-literal=via=endpoint >/dev/null 2>&1 && break; sleep 2; done; echo seconds=$(( $(date +%s) - start )); k3s kubectl --kubeconfig /tmp/ep.yaml get configmap e2e-through-endpoint -n default -o jsonpath={.data.via}; rm -f /tmp/ep.yaml'",
-   "timeout": 200
+   "timeout": 200,
+   "confirms": [
+    "optInAgain"
+   ]
   },
   {
    "id": "verifyDegradedCall",
@@ -1614,7 +1650,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "a probe: ensure-ha-endpoint reads membership and probes the endpoint, changing nothing"
   },
   {
    "id": "retireCall",
@@ -1664,7 +1701,10 @@
   },
   {
    "id": "resolvesRetired",
-   "guest": "incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk '{print $1}' | sort -u | tr '\\n' ' '; echo; incus network get incusbr0 raw.dnsmasq | grep -c 'host-record=k3s.e2e.test,'; incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk -v ip='${K3_IP}' '$1 == ip' | wc -l"
+   "guest": "incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk '{print $1}' | sort -u | tr '\\n' ' '; echo; incus network get incusbr0 raw.dnsmasq | grep -c 'host-record=k3s.e2e.test,'; incus exec e2e-k1 -- getent ahostsv4 k3s.e2e.test | awk -v ip='${K3_IP}' '$1 == ip' | wc -l",
+   "confirms": [
+    "retire"
+   ]
   },
   {
    "id": "verifyRetiredCall",
@@ -1710,7 +1750,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "a probe: ensure-ha-endpoint reads membership and probes the endpoint, changing nothing"
   },
   {
    "id": "optOutCall",
@@ -1766,7 +1807,10 @@
   },
   {
    "id": "recordOut",
-   "guest": "incus exec e2e-k1 -- k3s kubectl -n kube-system get configmap opute-cluster-endpoint 2>&1 | grep -c NotFound"
+   "guest": "incus exec e2e-k1 -- k3s kubectl -n kube-system get configmap opute-cluster-endpoint 2>&1 | grep -c NotFound",
+   "confirms": [
+    "optOut"
+   ]
   },
   {
    "id": "directOut",
@@ -1860,7 +1904,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "a repeat of an applied removal changes nothing"
   }
  ],
  "cleanup": [
