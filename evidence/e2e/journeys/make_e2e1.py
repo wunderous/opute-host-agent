@@ -711,8 +711,11 @@ def j7() -> dict:
         # SIGKILL there is no snapshot for restart reclaim to act on (Q15).
         mcp("killTask", "tasks/get", params={"taskId": "${KILL_RUN}"}, meta=TASKS_META),
         call("resubmit", "run_host_plan", {"plan": kill_plan}),
-        # the resubmission is the same durable run, still unknown: nothing ran again
+        # the resubmission resumes the same durable run: one run id, no longer unknown
         confirms({"id": "resubmitDb", "guest": f"{T} db {SDB} --plan-id e2e1-j7-kill"}, "resubmit"),
+        confirms({"id": "resubmitStatus", "guest": (
+            f"{T} db {SDB} --plan-id e2e1-j7-kill | python3 -c 'import json, sys; "
+            "print(*json.load(sys.stdin)[\"planRunStatus\"].values())'")}, "resubmit"),
         {"id": "integrity", "guest": f"{T} db {SDB}"},
         {"id": "secretInDb", "guest": f"{T} contains {SDB} '${{SECRET:j7content}}'"},
         {"id": "secretInJournal", "guest": f"journalctl -u {UNIT} --no-pager -o cat | grep -c -F "
@@ -755,7 +758,7 @@ def j7() -> dict:
             a("resubmit", "response.body.result.structuredContent.code", absent=True),
             a("killTask", "response.body.error.message", matches="^task not found: "),
             a("resubmitDb", "json.planRunIds", equalsStep={"step": "killDb", "path": "json.planRunIds"}),
-            a("resubmitDb", "json.planRunStatus", equalsStep={"step": "killDb", "path": "json.planRunStatus"}),
+            a("resubmitStatus", "stdout", matches="^(running|completed)\n$"),
             scenario="After a SIGKILL during a plain run_host_plan, whose task was never persisted (tasks/get "
                      "does not find it), the resubmission is admitted (D28)"),
     ]
