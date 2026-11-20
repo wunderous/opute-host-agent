@@ -1434,7 +1434,8 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     `e2e1.restart`'s resubmission assumed the wrong status); no product
     defect.
   - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under both
-    rules on `m23-r1`.
+    rules on `m23-r1`; `rust-0.4.0-rc4` unchanged, all gates pass on
+    `m23-r2`.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 
