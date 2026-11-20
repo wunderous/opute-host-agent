@@ -201,12 +201,9 @@
      }
     },
     {
-     "step": "resubmitDb",
-     "path": "json.planRunStatus",
-     "equalsStep": {
-      "step": "killDb",
-      "path": "json.planRunStatus"
-     }
+     "step": "resubmitStatus",
+     "path": "stdout",
+     "matches": "^(running|completed)\n$"
     }
    ],
    "scenario": "After a SIGKILL during a plain run_host_plan, whose task was never persisted (tasks/get does not find it), the resubmission is admitted (D28)"
@@ -495,6 +492,13 @@
   {
    "id": "resubmitDb",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-kill",
+   "confirms": [
+    "resubmit"
+   ]
+  },
+  {
+   "id": "resubmitStatus",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-kill | python3 -c 'import json, sys; print(*json.load(sys.stdin)[\"planRunStatus\"].values())'",
    "confirms": [
     "resubmit"
    ]

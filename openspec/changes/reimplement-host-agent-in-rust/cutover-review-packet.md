@@ -42,6 +42,14 @@ error no assertion expects (`evidence/e2e/README.md`, *Outcomes*). Every
 flagged step was classified (section 2a): one journey defect, four expected
 refusals, no product defect. Every gate reran on rc7 under the rule.
 
+m23 kept `rust-0.3.0-rc7`. An asserted success is still the tool's own
+report. The harness now fails a journey with `unconfirmed-effect` when a
+mutation it expects to succeed is not confirmed by a later, independent
+observation that checks the effect (`evidence/e2e/README.md`, *Effects*).
+All 217 unconfirmed steps on main are confirmed, or opt out with their
+reason. Two journey defects were found and no product defect (section 2a).
+Every gate reran on rc7 under both rules.
+
 ## 1. The candidate
 
 | Field | Value |
@@ -67,17 +75,18 @@ binary reports `0.3.0`. Go stays the published v0.2.4 release
 
 ## 2. Gates and receipts
 
-Every gate ran on the candidate under one run id, `m22-r1`
-(`evidence/e2e/runs/m22-r1/`), with the m22 outcome rule on, and
-`evidence/e2e/verify.py --gate` passes each. Every `tools/call` and
-`tasks/get` step of every journey asserts its outcome:
-`evidence/e2e/outcomes.py --check` reports none flagged, and `make e2e-test`
-runs it. Each journey names the spec requirements it proves in its
+Every gate ran on the candidate under one run id, `m23-r1`
+(`evidence/e2e/runs/m23-r1/`), with the m22 outcome rule and the m23 effect
+rule on. `evidence/e2e/verify.py --gate` passes each gate. Every `tools/call`
+and `tasks/get` step of every journey asserts its outcome. Every mutation a
+journey expects to succeed is confirmed by a later observation, or opts out
+with its reason. `evidence/e2e/outcomes.py --check` flags no step under
+either rule, and `make e2e-test` runs it. Each journey names the spec requirements it proves in its
 `results.json`.
 
 | Gate | Journeys | Spec requirements passed | What it proves |
 |---|---|---|---|
-| e2e-0 | 8 | 8 | The harness can fail: undeclared effects, a broken pass condition, a schema violation and a tool error no assertion expects (`unchecked-outcome`, m22) are reported as failures, and the VM restores between journeys |
+| e2e-0 | 10 | 10 | The harness can fail: undeclared effects, a broken pass condition, a schema violation, a tool error no assertion expects (`unchecked-outcome`, m22), and a mutation nothing confirms or whose confirmation finds nothing (`unconfirmed-effect`, `pass-condition`, m23) are reported as failures, and the VM restores between journeys |
 | e2e-1 | 8 | 20 | Install and first success: the system and user units, the npm launcher (packed locally), tutorial clients, auth and admission refusals with no durable writes, two agents and the writer lock, restart recovery, and migration from Go v0.2.4 with an in-place upgrade |
 | e2e-2 | 5 | 30 | Typed domain work: host operations, Incus containers and VMs with ownership, cross-domain plans and cancellation, OCI build/push/run on K3s, PostgreSQL and SQLite data services |
 | e2e-3a | 5 | 17 | A three-server HA K3s cluster built only through typed calls: workload, losing one server, quorum loss with fail-closed calls and recovery, and the optional cluster endpoint (Q19) |
@@ -94,6 +103,7 @@ under the same run id (`.parity/retired/m16-r3-lose-one-timeout/`).
 Run `m16-r3` named rc4 and is kept as its record; `m18-r1` named rc5 and is
 kept as its record; `m19-r1` named rc6 and is kept as its record; `m21-r1`
 named rc7 before the outcome rule and is kept as its record; `m22-r1`
+named rc7 under the outcome rule and is kept as its record; `m23-r1`
 replaces it as the candidate's run. One journey start in `m19-r1`
 (`e2e1.user-unit-npm`) was refused before it recorded anything, because the
 dev VM's ports were still in TIME-WAIT after the previous journey's reboot; it
@@ -102,7 +112,8 @@ attempt. In `m22-r1` the first attempts of `e2e2.host-ops` and `e2e2.oci`
 failed on downloads: the Ubuntu archive served the guest at 20-37 kB/s, and
 the package steps' deadlines expired. They were retired with that cause
 (`.parity/retired/m22-r1-apt-slow/`) and each reran once under the same run
-id after the mirror recovered.
+id after the mirror recovered. In `m23-r1` every journey passed on its first
+attempt.
 
 | Receipt | Where | What it proves |
 |---|---|---|
@@ -117,7 +128,7 @@ The distribution checks map onto tasks 5.1 and 5.2 as follows. All are local.
 
 | Check | Evidence |
 |---|---|
-| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m22-r1) |
+| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m23-r1) |
 | Clean-machine install (arm64) | the arm64 receipt |
 | Upgrade from Go v0.2.4 | `e2e1.migrate-upgrade` and `e2e4.cutover` |
 | Rollback to Go v0.2.4 | `e2e4.cutover` |
@@ -150,7 +161,7 @@ targets that found nothing). m18 added three entry points (the serving
 relay, a provider's `/mcp`, the child environment) and two properties, and
 ran one more clean 60 s pass on rc5's code (`evidence/m18/fuzz.txt`); m19
 ran another on rc6's code (`evidence/m19/fuzz.txt`), and m21 one on rc7's
-(`evidence/m21/fuzz.txt`). m22 changed no Rust code.
+(`evidence/m21/fuzz.txt`). m22 and m23 changed no Rust code.
 
 | Id | Found by | What | State |
 |---|---|---|---|
@@ -173,6 +184,8 @@ ran another on rc6's code (`evidence/m19/fuzz.txt`), and m21 one on rc7's
 | U1 | m21 upgrade chain, on rc6 | `ensure_public_mcp_tunnel` and `ensure_public_mcp_quick_tunnel` asked the agent's own token endpoint for a secretless `opute-mcp-host` token, which D8 refuses, so every call ended in HTTP 401 after starting the connector | fixed in rc7, D52 (an in-process token, as D8 requires); `e2e4.upgrade-chain` on `rust-0.4.0`, `e2e6.secret-sweep` |
 | J1 | m22 outcome rule, on rc7 | `e2e6.store-damage` ran its agent as `opute`, which has no user manager on the VM, so its task failed (`Failed to connect to bus`) while the journey asserted only the status `completed` | journey defect, fixed: the agent runs as root and the task's output is asserted |
 | E1-E4 | m22 outcome rule | Failures the journeys meant but did not assert: `tasks/get` of a never-persisted task (`task not found`, Q15); Go v0.2.4's first supervisor call before the user bus is up; the public-MCP connector stopping at its `.invalid` endpoint; `list_configmap_keys` and `list_secret_keys` not implemented (Q18) | expected refusals: each asserts `isError` and its text (Go's call opts out with its reason); [`evidence/m22`](../../../evidence/m22/README.md) |
+| J2 | m23 effect rule, on rc7 | `e2e2.data` checked SQLite removal under `~/.opute/databases`, a path the agent never uses (it keeps them under the instance's `databases` root), so the check could never fail and cleanup left the databases | journey defect, fixed: the check, the plans' read-backs and every cleanup use the agent's root |
+| J3 | m23 effect rule, its own draft on rc7 | The new read-back of `e2e1.restart`'s resubmission assumed the run stayed `unknown`; the resubmission resumes the same durable run (`running`), and Q15 requires only that it is admitted | journey defect, fixed: same run id, `running` or `completed`; [`evidence/m23`](../../../evidence/m23/README.md) |
 | O1 | e2e-6 budget | Audit rows are never pruned: about 3.5 KB per call, 78 MB in 15 minutes of heavy load | open in 0.3.0: D42 sets retention for 0.4.0 only (D43) |
 
 Each m18 fix has a test that failed on rc4's code
@@ -183,9 +196,9 @@ fix has one that failed on rc6's ([`evidence/m21`](../../../evidence/m21/README.
 The full auth walk is [`auth-review.md`](../../../evidence/hardening/auth-review.md).
 
 Resource budget (`resource-budget.json`), on the candidate in `e2e6.budget`
-(run `m22-r1`): 28,037 calls in 15 minutes with no error; after a two-minute
-warm-up RSS grew 16.7 MB (budget 48 MiB), open FDs and threads did not grow,
-and the store grew 3,490 bytes per call (budget 8 KiB; the first budget's
+(run `m23-r1`): 27,751 calls in 15 minutes with no error; after a two-minute
+warm-up RSS grew 16.3 MB (budget 48 MiB), open FDs and threads did not grow,
+and the store grew 3,466 bytes per call (budget 8 KiB; the first budget's
 absolute 64 MiB store limit had no measured basis and was replaced; audit
 rows are still never pruned in 0.3.0, O1). Peak RSS 96 MB (budget 256 MiB).
 The D29 check: a 1 GiB declared body was answered 413 at once, with RSS 43 MB
@@ -254,7 +267,7 @@ was done or scoped; they change no observable behaviour against Go.
 ## 5. Cutover and rollback runbook
 
 For the deployment owner, after sign-off. Each step names the journey that
-rehearsed it on the dev VM with the candidate (run `m22-r1`). Production
+rehearsed it on the dev VM with the candidate (run `m23-r1`). Production
 hosts, Platform registration, tunnels and DNS were never touched.
 
 | # | Step | Rehearsed by |
