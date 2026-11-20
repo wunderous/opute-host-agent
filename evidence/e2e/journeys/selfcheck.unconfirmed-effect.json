@@ -1,0 +1,67 @@
+{
+ "id": "selfcheck.unconfirmed-effect",
+ "description": "Negative control: a mutation tool (a loopback stub declared as this journey's input) reports success and nothing confirms its effect, so the journey fails (unconfirmed-effect).",
+ "gate": "e2e-0",
+ "inputs": {
+  "stub": {
+   "tools": [
+    {
+     "name": "e2e_write",
+     "description": "harness self-check",
+     "inputSchema": {
+      "type": "object"
+     },
+     "_meta": {
+      "capability": {
+       "effect": "mutation"
+      }
+     }
+    }
+   ],
+   "results": {
+    "e2e_write": {
+     "content": [
+      {
+       "type": "text",
+       "text": "Wrote /tmp/e2e-selfcheck-written."
+      }
+     ],
+     "isError": false
+    }
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: an unconfirmed mutation fails",
+   "pass": [
+    {
+     "step": "write",
+     "path": "response.body.result.isError",
+     "equals": false
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "target": "stub"
+  },
+  {
+   "id": "write",
+   "mcp": "tools/call",
+   "target": "stub",
+   "tool": "e2e_write",
+   "arguments": {}
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 10
+}

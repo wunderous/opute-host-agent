@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE.parent))
 import readiness  # noqa: E402
 
 REPO = readiness.ROOT
-RUN = "m22-r1"  # a receipt recorded under the current harness (m22 added uncheckedOutcomes)
+RUN = "m23-r1"  # a receipt recorded under the current harness (m23 added unconfirmedEffects)
 JOURNEY = "selfcheck.noop"
 
 

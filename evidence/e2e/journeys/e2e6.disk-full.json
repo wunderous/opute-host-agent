@@ -69,6 +69,16 @@
      "matches": "none\n$"
     },
     {
+     "step": "fileBefore",
+     "path": "stdout",
+     "equals": "e2e 1\n"
+    },
+    {
+     "step": "fileAfter",
+     "path": "stdout",
+     "equals": "e2e 3\n"
+    },
+    {
      "step": "readFull",
      "path": "response.body.result.isError",
      "in": [
@@ -219,7 +229,15 @@
     ]
    },
    "timeout": 60,
-   "interval": 2
+   "interval": 2,
+   "effectUnobservable": "the command only prints; its output is asserted"
+  },
+  {
+   "id": "fileBefore",
+   "guest": "cat /tmp/e2e-agents/full/home/.config/opute-e2e/full-1.txt",
+   "confirms": [
+    "writeBefore"
+   ]
   },
   {
    "id": "dbBefore",
@@ -376,7 +394,15 @@
     ]
    },
    "timeout": 60,
-   "interval": 2
+   "interval": 2,
+   "effectUnobservable": "the command only prints; its output is asserted"
+  },
+  {
+   "id": "fileAfter",
+   "guest": "cat /tmp/e2e-agents/full/home/.config/opute-e2e/full-3.txt",
+   "confirms": [
+    "writeAfter"
+   ]
   },
   {
    "id": "dbAfter",

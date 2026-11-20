@@ -1,0 +1,44 @@
+{
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [
+  "unchecked-outcome"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.unchecked-outcome",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "Error: refused by the stub",
+     "matches": "^Error: ",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "call"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: an unexpected tool error fails",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "call": 1,
+   "list": 1
+  },
+  "stepsSeconds": 43.9
+ },
+ "uncheckedOutcomes": [
+  "call"
+ ],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

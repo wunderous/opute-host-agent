@@ -44,6 +44,11 @@
      "equals": "1\n"
     },
     {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
      "step": "gateway",
      "path": "response.body.result.isError",
      "in": [
@@ -206,6 +211,14 @@
    ]
   },
   {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
+   ]
+  },
+  {
    "id": "assign",
    "mcp": "tools/call",
    "tool": "reconcile_serving_assignment",
@@ -317,7 +330,11 @@
   },
   {
    "id": "modelUp",
-   "guest": "for i in $(seq 50); do ss -ltnH 'sport = :18091' | grep -q . && break; sleep 0.2; done; ss -ltnH 'sport = :18091' | wc -l"
+   "guest": "for i in $(seq 50); do ss -ltnH 'sport = :18091' | grep -q . && break; sleep 0.2; done; ss -ltnH 'sport = :18091' | wc -l",
+   "confirms": [
+    "assign",
+    "assignAgain"
+   ]
   },
   {
    "id": "gateway",
@@ -341,7 +358,10 @@
   },
   {
    "id": "chat",
-   "guest": "python3 - <<'PY'\nimport json, urllib.request, urllib.error\nreq = urllib.request.Request('http://127.0.0.1:18434/v1/chat/completions', method='POST', data=json.dumps({'model': 'e2e-fixture', 'messages': [{'role': 'user', 'content': 'hi'}]}).encode())\nreq.add_header('Content-Type', 'application/json')\nreq.add_header('Authorization', 'Bearer ${SECRET:gatewayToken}')\ntry:\n    r = urllib.request.urlopen(req, timeout=10); body = json.loads(r.read())\n    print(json.dumps({'status': r.status, 'content': body['choices'][0]['message']['content']}))\nexcept urllib.error.HTTPError as e:\n    print(json.dumps({'status': e.code}))\nPY"
+   "guest": "python3 - <<'PY'\nimport json, urllib.request, urllib.error\nreq = urllib.request.Request('http://127.0.0.1:18434/v1/chat/completions', method='POST', data=json.dumps({'model': 'e2e-fixture', 'messages': [{'role': 'user', 'content': 'hi'}]}).encode())\nreq.add_header('Content-Type', 'application/json')\nreq.add_header('Authorization', 'Bearer ${SECRET:gatewayToken}')\ntry:\n    r = urllib.request.urlopen(req, timeout=10); body = json.loads(r.read())\n    print(json.dumps({'status': r.status, 'content': body['choices'][0]['message']['content']}))\nexcept urllib.error.HTTPError as e:\n    print(json.dumps({'status': e.code}))\nPY",
+   "confirms": [
+    "gateway"
+   ]
   },
   {
    "id": "chatNoToken",
@@ -377,7 +397,10 @@
   },
   {
    "id": "gatewayGone",
-   "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:18434/v1/models || true"
+   "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:18434/v1/models || true",
+   "confirms": [
+    "removeGateway"
+   ]
   },
   {
    "id": "units",

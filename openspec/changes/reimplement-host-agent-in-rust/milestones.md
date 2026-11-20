@@ -1422,6 +1422,17 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
     with its text; no product defect.
   - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under the rule
     on `m22-r1`.
+- **m23 effect confirmation.** The harness fails a journey with
+  `unconfirmed-effect` when a mutation step it expects to succeed is not
+  named in `confirms` by a later guest, HTTP, fetch or read-tool step that
+  checks the effect (`evidence/m23`). 217 unconfirmed steps on main, 279 on
+  `rust-0.4.0`, now none.
+  - **Findings:** two journey defects (`e2e2.data` checked SQLite removal
+    at a path the agent never uses; m23's own draft read-back of
+    `e2e1.restart`'s resubmission assumed the wrong status); no product
+    defect.
+  - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under both
+    rules on `m23-r1`.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 

@@ -190,6 +190,96 @@ class Outcomes(unittest.TestCase):
             self.assertEqual(runner.unchecked_outcome_steps(j), [], path.name)
 
 
+def listed_with_effects(**effects):
+    tools = [{"name": n, "inputSchema": {"type": "object"}, "_meta": {"capability": {"effect": e}}}
+             for n, e in effects.items()]
+    return {"step": "l", "phase": "step", "kind": "mcp", "method": "tools/list", "requestId": 1,
+            "response": {"status": 200, "body": {"jsonrpc": "2.0", "id": 1, "result": {"tools": tools}}}}
+
+
+def guest(step, stdout="", exit_=0):
+    return {"step": step, "phase": "step", "kind": "guest", "exit": exit_, "stdout": stdout, "ms": 5}
+
+
+class Effects(unittest.TestCase):
+    """m23: a mutation the journey expects to succeed needs a later independent observation."""
+
+    WRITE = {"id": "w", "mcp": "tools/call", "tool": "write"}
+    OK = {"step": "w", "path": "response.body.result.isError", "in": [False, "<absent>"]}
+    EFFECTS = {"write": "mutation", "read": "read"}
+
+    def judge(self, steps, *assertions, records=()):
+        j = outcome_journey([{"id": "l", "mcp": "tools/list"}] + steps, *assertions)
+        lst = listed_with_effects(**self.EFFECTS)
+        return j, runner.evaluate(j, [lst, *records], {"before": STATE, "after": STATE, "cleanup": STATE})
+
+    def call(self, step, tool):
+        return {**mcp(step, {"content": []}), "tool": tool}
+
+    def test_unconfirmed_mutation_fails(self):
+        j, out = self.judge([self.WRITE], self.OK, records=[self.call("w", "write")])
+        self.assertEqual(runner.unconfirmed_effect_steps(j, self.EFFECTS), ["w"])
+        self.assertEqual(out["failures"], ["unconfirmed-effect"])
+        self.assertEqual(out["unconfirmedEffects"], ["w"])
+
+    def test_guest_confirmation_passes(self):
+        look = {"id": "g", "guest": "cat /f", "confirms": ["w"]}
+        _, out = self.judge([self.WRITE, look], self.OK, {"step": "g", "path": "stdout", "equals": "x\n"},
+                            records=[self.call("w", "write"), guest("g", "x\n")])
+        self.assertTrue(out["pass"], out)
+
+    def test_confirmation_that_finds_nothing_fails(self):
+        look = {"id": "g", "guest": "cat /f", "confirms": ["w"]}
+        _, out = self.judge([self.WRITE, look], self.OK, {"step": "g", "path": "stdout", "equals": "x\n"},
+                            records=[self.call("w", "write"), guest("g", "")])
+        self.assertEqual(out["failures"], ["pass-condition"])
+
+    def test_read_tool_confirms_and_mutating_tool_does_not(self):
+        read = {"id": "r", "mcp": "tools/call", "tool": "read", "confirms": ["w"]}
+        again = {"id": "r", "mcp": "tools/call", "tool": "write", "confirms": ["w"]}
+        ra = {"step": "r", "path": "response.body.result.structuredContent", "exists": False}
+        j, out = self.judge([self.WRITE, read], self.OK, ra, records=[self.call("w", "write"), self.call("r", "read")])
+        self.assertEqual(runner.unconfirmed_effect_steps(j, self.EFFECTS), [])
+        j = outcome_journey([self.WRITE, again], self.OK, ra)
+        self.assertEqual(runner.unconfirmed_effect_steps(j, self.EFFECTS), ["w", "r"])
+
+    def test_confirmation_needs_its_own_assertion_and_must_come_later(self):
+        look = {"id": "g", "guest": "cat /f", "confirms": ["w"]}
+        self.assertEqual(runner.unconfirmed_effect_steps(outcome_journey([self.WRITE, look], self.OK), self.EFFECTS),
+                         ["w"])
+        early = outcome_journey([{"id": "g", "guest": "true", "confirms": ["w"]}, self.WRITE], self.OK,
+                                {"step": "g", "path": "exit", "equals": 0})
+        self.assertTrue(runner.journey_problems(early))
+
+    def test_expected_failure_and_opt_out_need_no_confirmation(self):
+        refused = {"step": "w", "path": "response.body.result.isError", "equals": True}
+        self.assertEqual(runner.unconfirmed_effect_steps(outcome_journey([self.WRITE], refused), self.EFFECTS), [])
+        out = outcome_journey([{**self.WRITE, "effectUnobservable": "its only effect is its output"}], self.OK)
+        self.assertEqual(runner.unconfirmed_effect_steps(out, self.EFFECTS), [])
+        self.assertTrue(runner.journey_problems(outcome_journey([{**self.WRITE, "effectUnobservable": ""}], self.OK)))
+
+    def test_task_effect_is_its_polls(self):
+        launch = {**self.WRITE, "capture": {"TID": "response.body.result.taskId"}}
+        poll = {"id": "t", "mcp": "tasks/get", "params": {"taskId": "${TID}"}}
+        reread = {"id": "t2", "mcp": "tasks/get", "params": {"taskId": "${TID}"}}
+        res = {"step": "t", "path": "response.body.result.result.isError", "equals": False}
+        j = outcome_journey([launch, poll, reread], res, {"step": "t2", "path": "response.body.result.status",
+                                                          "equals": "completed"})
+        self.assertEqual(runner.unconfirmed_effect_steps(j, self.EFFECTS), ["t"])
+        cancelled = outcome_journey([launch, poll], {"step": "t", "path": "response.body.result.status",
+                                                     "equals": "cancelled"})
+        self.assertEqual(runner.unconfirmed_effect_steps(cancelled, self.EFFECTS), [])
+
+    def test_committed_journeys_confirm_every_effect(self):
+        import outcomes
+        effects = outcomes.committed_effects()
+        for path in sorted((E2E / "journeys").glob("*.json")):
+            if path.stem in outcomes.negative_controls("unconfirmed-effect"):
+                continue
+            j = json.loads(path.read_text())
+            self.assertEqual(runner.unconfirmed_effect_steps(j, effects), [], path.name)
+
+
 class Format(unittest.TestCase):
     def test_vacuous_requirement_refused(self):
         j = journey(requirements=[{"spec": SPEC, "requirement": "R", "pass": []}])

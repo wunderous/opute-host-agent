@@ -123,6 +123,16 @@
      "equals": "running"
     },
     {
+     "step": "k1Stopped",
+     "path": "stdout",
+     "equals": "STOPPED\n"
+    },
+    {
+     "step": "k1Started",
+     "path": "stdout",
+     "equals": "RUNNING\n"
+    },
+    {
      "step": "recovered",
      "path": "response.body.result.structuredContent.total",
      "equals": 1
@@ -375,7 +385,10 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -454,6 +467,9 @@
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
    },
+   "confirms": [
+    "vm1"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -524,6 +540,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "provision"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -656,6 +675,13 @@
    "interval": 3
   },
   {
+   "id": "k1Stopped",
+   "guest": "incus list e2e-k1 -c s -f csv",
+   "confirms": [
+    "stop"
+   ]
+  },
+  {
    "id": "stoppedList",
    "mcp": "tools/call",
    "tool": "list_compute_clusters",
@@ -737,6 +763,13 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "k1Started",
+   "guest": "incus list e2e-k1 -c s -f csv",
+   "confirms": [
+    "start"
+   ]
   },
   {
    "id": "recovered",

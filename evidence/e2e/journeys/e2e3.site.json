@@ -171,6 +171,26 @@
      "matches": "^200\n[1-9]"
     },
     {
+     "step": "sourceFile",
+     "path": "stdout",
+     "equals": "d995d8410af9219d38d8b5f3aa792669c27ca0f3916953e1a541f0fb4404b930\n"
+    },
+    {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "unpacked",
+     "path": "stdout",
+     "equals": "dockerfile\n"
+    },
+    {
+     "step": "podman",
+     "path": "stdout",
+     "equals": "/usr/bin/podman\n"
+    },
+    {
      "step": "image",
      "path": "response.body.result.structuredContent.resource.spec.template.spec.containers[0].image",
      "matches": "@sha256:[0-9a-f]{64}$"
@@ -241,6 +261,11 @@
      "step": "unserved",
      "path": "stdout",
      "equals": "404"
+    },
+    {
+     "step": "unmapped",
+     "path": "stdout",
+     "equals": "1\n"
     }
    ],
    "scenario": "The teardown recipe's workload node deletes the namespace, and with it the Ingress"
@@ -339,7 +364,10 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -405,6 +433,9 @@
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
    },
+   "confirms": [
+    "vm1"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -475,6 +506,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "provision"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -549,6 +583,13 @@
    "interval": 3
   },
   {
+   "id": "sourceFile",
+   "guest": "sha256sum /home/opute/e2e/site-src.tar.gz | cut -d' ' -f1",
+   "confirms": [
+    "source"
+   ]
+  },
+  {
    "id": "supervisor",
    "mcp": "tools/call",
    "tool": "ensure_host_service_supervisor",
@@ -616,6 +657,21 @@
    "interval": 3
   },
   {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
+   ]
+  },
+  {
+   "id": "unpacked",
+   "guest": "test -f /home/opute/.opute/build-contexts/e2e-site/Dockerfile && echo dockerfile",
+   "confirms": [
+    "unpack"
+   ]
+  },
+  {
    "id": "pkgsBefore",
    "guest": "dpkg -l | awk '/^ii/{print $2}' | sort > /tmp/e2e-pkgs-before && echo recorded"
   },
@@ -661,6 +717,13 @@
    },
    "timeout": 900,
    "interval": 3
+  },
+  {
+   "id": "podman",
+   "guest": "command -v podman",
+   "confirms": [
+    "builder"
+   ]
   },
   {
    "id": "registryCall",
@@ -724,6 +787,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "registry"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -780,7 +846,10 @@
    "guest": "curl -fsSI -H 'Accept: application/vnd.oci.image.manifest.v1+json' -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' http://${K1_IP}:30500/v2/host-agent-www/manifests/e2e | tr -d '\\r' | awk 'tolower($1)==\"docker-content-digest:\"{printf \"%s\", $2}'",
    "capture": {
     "DIGEST": "stdout"
-   }
+   },
+   "confirms": [
+    "push"
+   ]
   },
   {
    "id": "trustCall",
@@ -969,6 +1038,11 @@
   },
   {
    "id": "serve",
+   "confirms": [
+    "trust",
+    "deploy",
+    "domain"
+   ],
    "guest": "for i in $(seq 60); do code=$(curl -s -o /tmp/e2e-site.html -w '%{http_code}' --max-time 5 -H 'Host: www.e2e.test' http://${K1_IP}/); [ \"$code\" = 200 ] && break; sleep 2; done; echo $code; grep -c 'Opute Host Agent' /tmp/e2e-site.html"
   },
   {
@@ -1032,6 +1106,9 @@
     "namespace": "host-agent-site",
     "resourceName": "host-agent-www"
    },
+   "confirms": [
+    "again"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -1086,6 +1163,13 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "unmapped",
+   "confirms": [
+    "unmap"
+   ],
+   "guest": "incus exec e2e-k1 -- k3s kubectl get ingress e2e-www -n host-agent-site 2>&1 | grep -c NotFound"
   },
   {
    "id": "teardown",
@@ -1143,6 +1227,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "teardown"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]

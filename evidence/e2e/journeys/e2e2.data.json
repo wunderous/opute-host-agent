@@ -156,6 +156,11 @@
      "step": "gone",
      "path": "stdout",
      "equals": "0\n"
+    },
+    {
+     "step": "relayClosed",
+     "path": "stdout",
+     "equals": "closed\n"
     }
    ],
    "scenario": "The relay released only with its token; removal leaves no service or data behind"
@@ -202,6 +207,11 @@
      "step": "sqliteGone",
      "path": "stdout",
      "equals": "0\n"
+    },
+    {
+     "step": "sqliteFile",
+     "path": "stdout",
+     "equals": "main.sqlite\n"
     }
    ],
    "scenario": "A caller-scoped SQLite database provisioned, reported, refused removal without confirmation, and removed"
@@ -287,7 +297,10 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -353,6 +366,9 @@
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
    },
+   "confirms": [
+    "vm1"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -423,6 +439,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "provision"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -528,7 +547,10 @@
   },
   {
    "id": "read",
-   "guest": "incus exec e2e-k1 -- k3s kubectl -n e2e-data exec pg-1 -c postgres -- psql -d app -Atqc 'SELECT note FROM e2e'"
+   "guest": "incus exec e2e-k1 -- k3s kubectl -n e2e-data exec pg-1 -c postgres -- psql -d app -Atqc 'SELECT note FROM e2e'",
+   "confirms": [
+    "reconcile"
+   ]
   },
   {
    "id": "tokenRows",
@@ -557,6 +579,13 @@
    "retryOn": [
     "host_capacity_saturated"
    ]
+  },
+  {
+   "id": "relayClosed",
+   "confirms": [
+    "release"
+   ],
+   "guest": "python3 - <<'PY'\nimport socket\ntry:\n    socket.create_connection(('127.0.0.1', 15433), timeout=5)\n    print('open')\nexcept OSError:\n    print('closed')\nPY"
   },
   {
    "id": "removeCall",
@@ -619,7 +648,10 @@
   },
   {
    "id": "gone",
-   "guest": "for i in $(seq 60); do n=$(incus exec e2e-k1 -- k3s kubectl -n e2e-data get clusters.postgresql.cnpg.io,pvc -o name | wc -l); [ \"$n\" = 0 ] && break; sleep 5; done; echo $n"
+   "guest": "for i in $(seq 60); do n=$(incus exec e2e-k1 -- k3s kubectl -n e2e-data get clusters.postgresql.cnpg.io,pvc -o name | wc -l); [ \"$n\" = 0 ] && break; sleep 5; done; echo $n",
+   "confirms": [
+    "remove"
+   ]
   },
   {
    "id": "sqlite",
@@ -643,6 +675,14 @@
    },
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "sqliteFile",
+   "guest": "ls /home/opute/.config/opute/instances/standalone/databases/e2e-a",
+   "confirms": [
+    "sqlite",
+    "sqliteAgain"
    ]
   },
   {
@@ -685,7 +725,10 @@
   },
   {
    "id": "sqliteGone",
-   "guest": "ls /home/opute/.opute/databases/e2e-a 2>/dev/null | wc -l"
+   "guest": "ls /home/opute/.config/opute/instances/standalone/databases/e2e-a 2>/dev/null | wc -l",
+   "confirms": [
+    "sqliteRemove"
+   ]
   }
  ],
  "cleanup": [
@@ -783,7 +826,7 @@
   },
   {
    "id": "cleanSetup",
-   "guest": "rm -rf /home/opute/.opute/databases; systemctl stop e2e-provider-k3s 2>/dev/null; incus delete -f e2e-k1 2>/dev/null; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true"
+   "guest": "rm -rf /home/opute/.config/opute/instances/standalone/databases; systemctl stop e2e-provider-k3s 2>/dev/null; incus delete -f e2e-k1 2>/dev/null; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true"
   }
  ],
  "maxMinutes": 28

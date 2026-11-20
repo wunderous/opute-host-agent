@@ -1,6 +1,6 @@
 {
  "e2e-0": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "selfcheck.noop": {
     "pass": true
@@ -37,11 +37,23 @@
     "failures": [
      "unchecked-outcome"
     ]
+   },
+   "selfcheck.unconfirmed-effect": {
+    "pass": false,
+    "failures": [
+     "unconfirmed-effect"
+    ]
+   },
+   "selfcheck.empty-confirmation": {
+    "pass": false,
+    "failures": [
+     "pass-condition"
+    ]
    }
   }
  },
  "e2e-1": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "e2e1.system-unit": {
     "pass": true
@@ -70,7 +82,7 @@
   }
  },
  "e2e-2": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "e2e2.host-ops": {
     "pass": true
@@ -90,7 +102,7 @@
   }
  },
  "e2e-3a": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "e2e3a.build": {
     "pass": true
@@ -110,7 +122,7 @@
   }
  },
  "e2e-3": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "e2e3.discovery": {
     "pass": true
@@ -124,7 +136,7 @@
   }
  },
  "e2e-4": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "e2e4.cutover": {
     "pass": true
@@ -140,7 +152,7 @@
   "blocked": "goal e2e-5 (Platform-enrolled) has not run; no journeys are recorded"
  },
  "e2e-6": {
-  "run": "m22-r1",
+  "run": "m23-r1",
   "journeys": {
    "e2e6.disk-full": {
     "pass": true
