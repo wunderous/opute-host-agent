@@ -350,32 +350,29 @@
  ],
  "effects": {
   "allow": [
-   "incus/*",
-   "files//home/opute/.config/incus*",
-   "system/units/e2e-*",
-   "system/unitFiles/e2e-*",
-   "files//opt/incus*",
-   "files//usr/lib/systemd/system/incus*",
-   "system/units/linstor-satellite.service",
-   "system/units/packagekit.service",
-   "files//var/lib/dpkg*",
-   "files//var/lib/apt*",
-   "files//var/cache*",
-   "files//var/log*",
+   "incus/instances/e2e-foreign",
+   "incus/volumes/default/container/e2e-foreign",
+   "incus/profiles/default/used_by",
+   "incus/networks/incusbr0/used_by",
+   "incus/storage/default/used_by",
    "system/units/sys-devices-virtual-net-veth*",
    "system/units/sys-subsystem-net-devices-veth*",
-   "system/units/sys-devices-virtual-net-tap*",
-   "system/units/sys-subsystem-net-devices-tap*"
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
+   "system/units/e2e-agent-b.service",
+   "system/unitFiles/e2e-agent-b.service",
+   "files//opt/incus*",
+   "files//usr/lib/systemd/system/incus.service*",
+   "files//var/lib/dpkg/info/incus*",
+   "system/units/linstor-satellite.service",
+   "system/units/packagekit.service"
   ],
   "persist": [
    "files//opt/incus*",
-   "files//usr/lib/systemd/system/incus*",
+   "files//usr/lib/systemd/system/incus.service*",
+   "files//var/lib/dpkg/info/incus*",
    "system/units/linstor-satellite.service",
-   "system/units/packagekit.service",
-   "files//var/lib/dpkg*",
-   "files//var/lib/apt*",
-   "files//var/cache*",
-   "files//var/log*"
+   "system/units/packagekit.service"
   ]
  },
  "steps": [

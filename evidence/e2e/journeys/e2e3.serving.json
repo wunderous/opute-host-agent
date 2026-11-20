@@ -153,19 +153,14 @@
  "effects": {
   "allow": [
    "files//home/opute/e2e*",
-   "files//home/opute/.opute*",
-   "files//home/opute/.config/systemd*",
-   "files//tmp/serving-assignment*",
-   "user/*",
-   "linger*",
-   "files//var/lib/systemd/linger*",
-   "system/units/user*",
-   "system/units/run-user-*",
-   "system/units/opute-*"
+   "linger",
+   "files//var/lib/systemd/linger/opute",
+   "system/units/user@1001.service",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user-1001.slice",
+   "system/units/run-user-1001.mount"
   ],
-  "persist": [
-   "files//home/opute/.opute*"
-  ]
+  "persist": []
  },
  "steps": [
   {

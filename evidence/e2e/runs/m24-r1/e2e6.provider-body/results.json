@@ -1,0 +1,98 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "system/unitFiles/e2e-provider-body.service",
+   "system/units/e2e-provider-body.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.provider-body",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "1\n",
+     "matches": "^1\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "start"
+    },
+    {
+     "actual": 413,
+     "equals": 413,
+     "ok": true,
+     "path": "json.status",
+     "step": "bigBody"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.bodyLimitText",
+     "step": "bigBody"
+    },
+    {
+     "actual": 0.0,
+     "lte": 10,
+     "ok": true,
+     "path": "json.seconds",
+     "step": "bigBody"
+    },
+    {
+     "actual": 2777088,
+     "lte": 134217728,
+     "ok": true,
+     "path": "json.rssBytes",
+     "step": "rssAfter"
+    },
+    {
+     "actual": 400,
+     "gte": 200,
+     "ok": true,
+     "path": "json.status",
+     "step": "atLimit"
+    },
+    {
+     "actual": 400,
+     "lte": 412,
+     "ok": true,
+     "path": "json.status",
+     "step": "atLimit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A provider's MCP request body is read only up to its limit",
+   "spec": "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "atLimit": 208,
+   "bigBody": 199,
+   "providerCopy": 475,
+   "rssAfter": 199,
+   "rssBefore": 204,
+   "start": 183,
+   "tool": 289,
+   "wire": 285
+  },
+  "stepsSeconds": 46.3
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

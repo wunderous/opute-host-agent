@@ -1,0 +1,40 @@
+{
+ "id": "selfcheck.broad-allowance",
+ "gate": "e2e-0",
+ "description": "Negative control for m24: the change happens and is allowed, but only by a pattern as broad as /etc.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: an allowance broader than its effect fails",
+   "pass": [
+    {
+     "step": "touch",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [
+   "files//etc*"
+  ],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "touch",
+   "guest": "touch /etc/opute-e2e-broad-probe"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "rm",
+   "guest": "rm -f /etc/opute-e2e-broad-probe"
+  }
+ ],
+ "maxMinutes": 10
+}

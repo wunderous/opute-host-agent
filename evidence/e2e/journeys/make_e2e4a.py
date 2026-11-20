@@ -42,6 +42,31 @@ E2E2_GOAL = ".agents/goals/e2e-2-host-workloads.md (flows 4, 5, 7, 8)"
 HOME = "/home/opute"
 # where the standalone agent keeps caller SQLite databases (config.rs sqlite_root)
 SQLITE = f"{HOME}/.config/opute/instances/standalone/databases"
+
+# --- what a journey may change (m24): each pattern names its object ------------------------------------------
+OPUTE_UID = 1001  # the snapshot's opute user
+# the agent user's session, as the service supervisor leaves it: linger and the user manager
+USER_SESSION = ["linger", "files//var/lib/systemd/linger/opute", f"system/units/user@{OPUTE_UID}.service",
+                f"system/units/user-runtime-dir@{OPUTE_UID}.service", f"system/units/user-{OPUTE_UID}.slice",
+                f"system/units/run-user-{OPUTE_UID}.mount"]
+# the snapshot's images a guest is created from, cached by Incus under their fingerprints: parity-noble (as in
+# e2e-3a) and parity-noble-vm
+IMAGE_VOLUME = ha.IMAGE_VOLUME
+VM_IMAGE_VOLUME = "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b"
+SLOW_UNIT = ["system/units/e2e-slow.service", "system/unitFiles/e2e-slow.service"]
+AGENT_B_UNIT = ["system/units/e2e-agent-b.service", "system/unitFiles/e2e-agent-b.service"]
+# install_virtualization_stack (and reset_virtualization_stack's reinstall) installs *or upgrades* Incus from its
+# package source: a declared, lasting effect that cleanup cannot undo
+STACK_REINSTALL = ["files//opt/incus*", "files//usr/lib/systemd/system/incus.service*", "files//var/lib/dpkg/info/incus*",
+                   "system/units/linstor-satellite.service", "system/units/packagekit.service"]
+
+
+def guest_effects(*names: str) -> list[str]:
+    """Running containers and what Incus records for them: their volumes, the default profile, network and
+    storage pool's users, and each container's veth device."""
+    return ([f"incus/instances/{n}" for n in names] + [f"incus/volumes/default/container/{n}" for n in names]
+            + ["incus/profiles/default/used_by", "incus/networks/incusbr0/used_by", "incus/storage/default/used_by",
+               "system/units/sys-devices-virtual-net-veth*", "system/units/sys-subsystem-net-devices-veth*"])
 SVC = "host-service:local:system/dbus.service"  # the binding set_host_service_state is admitted against
 UNIT_TEXT = ("[Unit]\nDescription=e2e web\n\n[Service]\nExecStart=/usr/bin/python3 -m http.server 8781 "
              "--bind 127.0.0.1 --directory /tmp\n\n[Install]\nWantedBy=default.target\n")
@@ -270,20 +295,11 @@ def host_ops() -> dict:
         f"rm -rf {HOME}/e2e {HOME}/evil; DEBIAN_FRONTEND=noninteractive apt-get purge -y -q ninja-build "
         ">/dev/null 2>&1; apt-get autoremove -y -q >/dev/null 2>&1; loginctl disable-linger opute; "
         "rmdir /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; true")}]
-    allow = ["files//home/opute/e2e*", "files//home/opute/evil", "files//home/opute/.config/systemd*",
-             "packages/ninja-build*", "files//usr/bin/ninja*", "files//var/lib/dpkg*", "files//var/lib/apt*",
-             "files//var/cache*", "files//var/log*", "files//usr/share/doc/ninja-build*",
-             "files//usr/share/man*", "files//usr/share/bash-completion*", "files//usr/share/zsh*",
-             "files//usr/share/vim*", "files//usr/share/emacs*",
-             "system/units/opute-host-workload-*", "user/units/e2e-web*", "user/unitFiles/e2e-web*",
-             "linger/*", "users/opute/linger*", "system/units/user@*", "system/units/user-runtime-dir@*",
-             "system/units/user-*.slice", "incus/*", "files//var/lib/systemd/linger*", "linger",
-             "system/units/run-user-*", "system/units/packagekit.service",
-             # install_virtualization_stack installs *or upgrades* Incus from its package source: a declared,
-             # lasting effect that cleanup cannot undo
-             "files//opt/incus*", "files//usr/lib/systemd/system/incus*", "system/units/linstor-satellite.service"]
-    persist = ["files//opt/incus*", "files//usr/lib/systemd/system/incus*", "system/units/linstor-satellite.service",
-               "system/units/packagekit.service", "files//var/lib/dpkg/info/incus*"]
+    # the traversal archive's `evil` is made inside ~/e2e; ~/evil is what an escape would write, so it is not
+    # allowed (m24). The user unit's files go with removeUnit; its directories stay until cleanup.
+    allow = (["files//home/opute/e2e*", "files//home/opute/.config/systemd", "files//home/opute/.config/systemd/user",
+              "files//usr/bin/ninja", "files//var/lib/dpkg/info/ninja-build.*"] + USER_SESSION + STACK_REINSTALL)
+    persist = STACK_REINSTALL
     return journey(
         "e2e2.host-ops", "e2e-2",
         "Host operations on the dev VM itself through typed calls: a user service's lifecycle (file, enable, "
@@ -473,15 +489,9 @@ def incus() -> dict:
         "cp -p /root/e2e-incus-config.yml /home/opute/.config/incus/config.yml; rm -f /root/e2e-incus-config.yml; fi; for n in e2e-c1 e2e-v1 e2e-foreign; do incus delete -f $n 2>/dev/null; "
         "done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
-    allow = ["incus/*", "files//home/opute/.config/incus*", "system/units/e2e-*", "system/unitFiles/e2e-*", "files//opt/incus*",
-             "files//usr/lib/systemd/system/incus*", "system/units/linstor-satellite.service",
-             "system/units/packagekit.service", "files//var/lib/dpkg*", "files//var/lib/apt*", "files//var/cache*",
-             "files//var/log*", "system/units/sys-devices-virtual-net-veth*",
-             "system/units/sys-subsystem-net-devices-veth*", "system/units/sys-devices-virtual-net-tap*",
-             "system/units/sys-subsystem-net-devices-tap*"]
-    persist = ["files//opt/incus*", "files//usr/lib/systemd/system/incus*", "system/units/linstor-satellite.service",
-               "system/units/packagekit.service", "files//var/lib/dpkg*", "files//var/lib/apt*", "files//var/cache*",
-               "files//var/log*"]
+    # e2e-c1 and e2e-v1 are deleted by typed calls; e2e-foreign stays until cleanup. The reset reinstalls the stack.
+    allow = guest_effects("e2e-foreign") + [IMAGE_VOLUME, VM_IMAGE_VOLUME] + AGENT_B_UNIT + STACK_REINSTALL
+    persist = STACK_REINSTALL
     inputs = {"agent": base.AGENT, "agentB": f"a transient Rust agent {B_ID} on port {B_PORT} (e2etool agent start) "
                                              "with Incus ownership enforced and itself as the shared host owner",
               "images": "the snapshot's local Incus images parity-noble (container) and parity-noble-vm",
@@ -672,10 +682,8 @@ def plans() -> dict:
         f"rm -rf {HOME}/e2e {SQLITE}/e2e-*; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
-    allow = ["incus/*", "files//home/opute/e2e*", "files//home/opute/.opute*", "system/units/e2e-slow*",
-             "system/unitFiles/e2e-slow*", "system/units/sys-devices-virtual-net-veth*",
-             "system/units/sys-subsystem-net-devices-veth*"]
-    persist = ["files//home/opute/.opute*"]
+    allow = ["files//home/opute/e2e*"] + guest_effects("e2e-p1", "e2e-r1") + [IMAGE_VOLUME] + SLOW_UNIT
+    persist = []
     inputs = {"agent": base.AGENT, "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files}
     return journey(
         "e2e2.plans", "e2e-2",
@@ -741,9 +749,11 @@ def cluster_cleanup(extra: str = "") -> list[dict]:
                 "rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true")}]
 
 
-CLUSTER_EFFECTS = ["incus/*", "files//home/opute/.config/opute-e2e*", "files//home/opute/.config/incus*",
-                   "files//opt/opute-e2e/providers*", "system/units/e2e-*", "system/unitFiles/e2e-*",
-                   "system/units/sys-devices-virtual-net-veth*", "system/units/sys-subsystem-net-devices-veth*"]
+# the k3s provider beside the agent, and the single-node cluster's guest
+CLUSTER_EFFECTS = (["files//home/opute/.config/opute-e2e", "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+                    "files//opt/opute-e2e/providers", "files//opt/opute-e2e/providers/opute-provider-k3s",
+                    "system/units/e2e-provider-k3s.service", "system/unitFiles/e2e-provider-k3s.service"]
+                   + guest_effects("e2e-k1") + [IMAGE_VOLUME])
 CLUSTER_INPUTS = {"agent": base.AGENT + ", with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, "
                                         "port 4320)",
                   "k3s": ha.INPUTS["k3s"]}
@@ -780,10 +790,29 @@ PODMAN_CLEANUP = (
     "rm -rf /etc/containers; mkdir -p -m 0755 /etc/apparmor.d/disable; systemctl daemon-reload; "
     "systemctl stop packagekit.service boot-complete.target 2>/dev/null; "
     "systemctl reset-failed podman-restart.service 2>/dev/null; ")
-PODMAN_EFFECTS = ["files//home/opute/.local/share/containers*", "files//home/opute/.config/containers*",
-                  "files//home/opute/.config/cni*", "files//usr*", "files//etc*", "files//var*", "files//opt/cni*",
-                  "system/*", "packages/*", "users/*", "groups/*"]
-SUPERVISOR_EFFECTS = ["user/*", "linger*", "files//var/lib/systemd/linger*", "files//home/opute/.config/systemd*"]
+# what installing Podman from the archive changes, by package, binary, unit and configuration file; the agent
+# user's container store and network config
+PODMAN_PACKAGES = ("aardvark-dns", "buildah", "catatonit", "conmon", "containernetworking-plugins", "crun",
+                   "fuse-overlayfs", "golang-github-containers-common", "golang-github-containers-image",
+                   "libslirp0:amd64", "libsubid4:amd64", "libyajl2:amd64", "netavark", "passt", "podman",
+                   "slirp4netns", "uidmap")
+PODMAN_BINARIES = ("buildah", "catatonit", "conmon", "crun", "fuse-overlayfs", "getsubids", "newgidmap", "newuidmap",
+                   "passt", "passt.avx2", "pasta", "pasta.avx2", "podman", "podmansh", "qrap", "slirp4netns")
+PODMAN_EFFECTS = ([f"files//var/lib/dpkg/info/{p}.*" for p in PODMAN_PACKAGES]
+                  + [f"files//usr/bin/{b}" for b in PODMAN_BINARIES]
+                  + ["files//usr/lib/systemd/system/podman*", "files//usr/lib/systemd/system/cni-dhcp.*",
+                     "files//usr/lib/systemd/user/podman*", "files//usr/lib/systemd/system-generators/podman-system-generator",
+                     "files//usr/lib/systemd/user-generators/podman-user-generator",
+                     "files//etc/apparmor.d/abstractions/passt", "files//etc/apparmor.d/abstractions/pasta",
+                     "files//etc/apparmor.d/local/usr.bin.passt", "files//etc/apparmor.d/usr.bin.passt",
+                     "files//etc/cni*", "files//etc/containers*",
+                     "files//etc/systemd/system/default.target.wants", "files//etc/systemd/system/default.target.wants/podman*",
+                     "files//etc/systemd/system/sockets.target.wants/podman.socket",
+                     "files//etc/systemd/system/timers.target.wants",
+                     "files//etc/systemd/system/timers.target.wants/podman-auto-update.timer",
+                     "system/unitFiles/podman*", "system/unitFiles/cni-dhcp.*", "system/units/podman*",
+                     "system/units/boot-complete.target", "system/units/packagekit.service",
+                     "files//home/opute/.local/share/containers*", "files//home/opute/.config/cni*"])
 
 
 def oci() -> dict:
@@ -882,14 +911,13 @@ def oci() -> dict:
                      "with the shortest allowed age, and the registry deleted"),
     ]
     cleanup = cluster_cleanup(f"rm -rf {CTX}; loginctl disable-linger opute; " + PODMAN_CLEANUP)
-    allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*"] + PODMAN_EFFECTS + SUPERVISOR_EFFECTS
+    allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*"] + PODMAN_EFFECTS + USER_SESSION
     return journey(
         "e2e2.oci", "e2e-2",
         "OCI build, push and pull on a single-node K3s cluster built through typed calls: ensure a builder, stage "
         "a context, install a registry in the cluster, build and push an image, trust the registry in K3s and "
         "run the image by digest in a pod; then apply the storage policy, inspect and clean up.",
-        reqs, steps, cleanup, allow=allow, persist=["files//var/lib/dpkg*", "files//var/log*", "files//var/cache*"],
-        minutes=28, inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
+        reqs, steps, cleanup, allow=allow, minutes=28, inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
 
 
 # --- e2e-2 / 5. data services -----------------------------------------------------------------------------
@@ -972,16 +1000,14 @@ def data() -> dict:
                      "confirmation, and removed"),
     ]
     cleanup = cluster_cleanup(f"rm -rf {SQLITE}; ")
-    allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*", "system/units/opute-*", "user/units/*",
-                               "user/unitFiles/*", "files//home/opute/.config/systemd*", "linger*",
-                               "files//var/lib/systemd/linger*", "system/units/user*", "system/units/run-user-*"]
+    # the relay is released and the databases removed within the steps
+    allow = CLUSTER_EFFECTS
     return journey(
         "e2e2.data", "e2e-2",
         "Data services on a single-node K3s cluster built through typed calls: a CloudNativePG service reconciled "
         "with a local relay, a client through the relay with the issued token writing and reading a row, the "
         "token in no durable row, relay release and service removal; then a SQLite database's lifecycle.",
-        reqs, steps, cleanup, allow=allow, persist=["files//home/opute/.opute*"], minutes=28,
-        inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
+        reqs, steps, cleanup, allow=allow, minutes=28, inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
 
 
 # --- e2e-3 / 1. cluster discovery -------------------------------------------------------------------------
@@ -1259,16 +1285,15 @@ def site() -> dict:
     ]
     cleanup = cluster_cleanup(f"rm -rf {SITE_CTX} {HOME}/e2e /tmp/e2e-site.html; loginctl disable-linger opute; "
                               + PODMAN_CLEANUP)
-    allow = (CLUSTER_EFFECTS + ["files//home/opute/.opute*", "files//home/opute/e2e*"] + PODMAN_EFFECTS
-             + SUPERVISOR_EFFECTS)
+    allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*", "files//home/opute/e2e*"] + PODMAN_EFFECTS + USER_SESSION
     return journey(
         "e2e3.site", "e2e-3",
         "Site deploy through the opute-site-deploy recipe on a single-node K3s cluster: the site image built "
         "locally from the published source and pushed to an e2e registry, the recipe's own nodes run with the "
         "image pinned by digest, the page served at a local test hostname (no tunnel, no public host), a rerun, "
         "and removal through the teardown recipe.",
-        reqs, steps, cleanup, allow=allow, persist=["files//var/lib/dpkg*", "files//var/log*", "files//var/cache*"],
-        minutes=28, inputs={**CLUSTER_INPUTS, "source": f"{SITE_SRC} (sha256 {SITE_SRC_SHA})", "files": files})
+        reqs, steps, cleanup, allow=allow, minutes=28,
+        inputs={**CLUSTER_INPUTS, "source": f"{SITE_SRC} (sha256 {SITE_SRC_SHA})", "files": files})
 
 
 # --- e2e-3 / 3. local model serving -----------------------------------------------------------------------
@@ -1368,16 +1393,15 @@ def serving() -> dict:
         "XDG_RUNTIME_DIR=/run/user/$uid systemctl --user stop $u; done; "
         f"rm -rf {HOME}/e2e /tmp/serving-assignment-* {HOME}/.config/systemd/user/e2e-model.service; "
         f"rmdir {HOME}/.config/systemd/user {HOME}/.config/systemd 2>/dev/null; loginctl disable-linger opute; true")}]
-    allow = ["files//home/opute/e2e*", "files//home/opute/.opute*", "files//home/opute/.config/systemd*",
-             "files//tmp/serving-assignment*", "user/*", "linger*", "files//var/lib/systemd/linger*",
-             "system/units/user*", "system/units/run-user-*", "system/units/opute-*"]
+    # the assignment's process and the gateway are stopped within the steps
+    allow = ["files//home/opute/e2e*"] + USER_SESSION
     return journey(
         "e2e3.serving", "e2e-3",
         "Local model serving through the Host Agent's serving path: a serving assignment runs an OpenAI-compatible "
         "runtime (a test fixture), the gateway (ensure_local_llm_relay) admits a token-bearing request and "
         "returns a completion, the probe reports it ready, and removal leaves nothing behind. A real runtime and "
         "weights are blocked: they need downloads beyond test fixtures.",
-        reqs, steps, cleanup, allow=allow, persist=["files//home/opute/.opute*"], minutes=15,
+        reqs, steps, cleanup, allow=allow, minutes=15,
         inputs={"agent": base.AGENT, "runtime": "evidence/e2e/journeys/inputs/e2e-openai-fixture.py (a fixture, "
                                                  "not a model)", "files": files})
 
@@ -1588,10 +1612,8 @@ def cutover() -> dict:
         f"rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /tmp/e2e-sync.json /tmp/e2e-go-state.sha; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
-    allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "incus/*", "files//home/opute/e2e*",
-             "files//home/opute/.opute*", "system/units/e2e-slow*", "system/unitFiles/e2e-slow*",
-             "system/units/opute-host-workload-*", "system/units/sys-devices-virtual-net-veth*",
-             "system/units/sys-subsystem-net-devices-veth*"] + ["linger", "files//var/lib/systemd/linger*", "system/units/user*", "system/units/run-user-*", "user/*"]
+    allow = (["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*"]
+             + guest_effects("e2e-g1") + [IMAGE_VOLUME] + SLOW_UNIT + USER_SESSION)
     return journey(
         "e2e4.cutover", "e2e-4",
         "Forward cutover and rollback on a Go host's own accumulated state: the host is reinstalled as Go v0.2.4 "
@@ -1599,7 +1621,7 @@ def cutover() -> dict:
         "call, a working task and a running plan in flight; the Rust release starts on that state, which must "
         "reconcile per table and read back; Rust does new work; then Go starts again on Rust's state and must "
         "report every record with the status Rust last reported.",
-        reqs, steps, cleanup, allow=allow, persist=["files//home/opute/.opute*"], minutes=28,
+        reqs, steps, cleanup, allow=allow, minutes=28,
         inputs={"agent": base.AGENT, "go": f"{base.GO_REL} (published Go v0.2.4 release, SHA256SUMS pinned)",
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
@@ -1728,16 +1750,15 @@ def restart() -> dict:
         f"2>/dev/null; rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /opt/opute-e2e/releases/rust-next; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
-    allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "incus/*", "files//home/opute/e2e*",
-             "files//home/opute/.opute*", "files//opt/opute-e2e/releases/rust-next*", "system/units/e2e-slow*",
-             "system/unitFiles/e2e-slow*", "system/units/opute-host-workload-*",
-             "system/units/sys-devices-virtual-net-veth*", "system/units/sys-subsystem-net-devices-veth*"] + ["linger", "files//var/lib/systemd/linger*", "system/units/user*", "system/units/run-user-*", "user/*"]
+    # each task's workload unit is gone before the after-state (Q29)
+    allow = (["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*",
+              "files//opt/opute-e2e/releases/rust-next*"] + SLOW_UNIT + USER_SESSION)
     return journey(
         "e2e4.restart", "e2e-4",
         "Kill, restart and upgrade mid-work on the Rust system unit: SIGTERM with a task and a plan in flight, "
         "SIGKILL with a task in flight, then an in-place upgrade to a newer local Rust build with a task in "
         "flight; each item's durable state is read back through get_operation, tasks/get and get_host_plan_run.",
-        reqs, steps, cleanup, allow=allow, persist=["files//home/opute/.opute*"], minutes=20,
+        reqs, steps, cleanup, allow=allow, minutes=20,
         inputs={"agent": base.AGENT, "next": "Rust release set built locally from this branch with "
                                              f"VERSION={base.NEXT_VERSION} (no tag, no publish)",
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})

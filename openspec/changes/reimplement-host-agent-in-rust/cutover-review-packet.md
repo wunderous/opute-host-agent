@@ -50,6 +50,15 @@ All 217 unconfirmed steps on main are confirmed, or opt out with their
 reason. Two journey defects were found and no product defect (section 2a).
 Every gate reran on rc7 under both rules.
 
+m24 kept `rust-0.3.0-rc7`. Nothing bounded what else a journey's effects
+patterns let happen. The harness now fails a journey with `unused-allowance`
+when an `allow` pattern matches no change of its own run, or a `persist`
+pattern no residue, and with `broad-allowance` when a pattern covers a whole
+tree (`evidence/e2e/README.md`, *Allowances*). On main, 122 of 331 allow
+patterns and 14 of 24 persist patterns were unused, and 46 were broad; each
+now names what its run changes. Five kinds of journey defect were found and
+no product defect (section 2a). Every gate reran on rc7 under the three rules.
+
 ## 1. The candidate
 
 | Field | Value |
@@ -75,18 +84,19 @@ binary reports `0.3.0`. Go stays the published v0.2.4 release
 
 ## 2. Gates and receipts
 
-Every gate ran on the candidate under one run id, `m23-r1`
-(`evidence/e2e/runs/m23-r1/`), with the m22 outcome rule and the m23 effect
-rule on. `evidence/e2e/verify.py --gate` passes each gate. Every `tools/call`
+Every gate ran on the candidate under one run id, `m24-r1`
+(`evidence/e2e/runs/m24-r1/`), with the m22 outcome rule, the m23 effect
+rule and the m24 allowance rule on. `evidence/e2e/verify.py --gate` passes each gate. Every `tools/call`
 and `tasks/get` step of every journey asserts its outcome. Every mutation a
 journey expects to succeed is confirmed by a later observation, or opts out
-with its reason. `evidence/e2e/outcomes.py --check` flags no step under
-either rule, and `make e2e-test` runs it. Each journey names the spec requirements it proves in its
+with its reason. Every effects pattern matches a change of the journey's
+own run and names no whole tree. `evidence/e2e/outcomes.py --check` flags no
+step or pattern under the three rules, and `make e2e-test` runs it. Each journey names the spec requirements it proves in its
 `results.json`.
 
 | Gate | Journeys | Spec requirements passed | What it proves |
 |---|---|---|---|
-| e2e-0 | 10 | 10 | The harness can fail: undeclared effects, a broken pass condition, a schema violation, a tool error no assertion expects (`unchecked-outcome`, m22), and a mutation nothing confirms or whose confirmation finds nothing (`unconfirmed-effect`, `pass-condition`, m23) are reported as failures, and the VM restores between journeys |
+| e2e-0 | 12 | 12 | The harness can fail: undeclared effects, a broken pass condition, a schema violation, a tool error no assertion expects (`unchecked-outcome`, m22), a mutation nothing confirms or whose confirmation finds nothing (`unconfirmed-effect`, `pass-condition`, m23), and an allowance the run never uses or one that covers a whole tree (`unused-allowance`, `broad-allowance`, m24) are reported as failures, and the VM restores between journeys |
 | e2e-1 | 8 | 20 | Install and first success: the system and user units, the npm launcher (packed locally), tutorial clients, auth and admission refusals with no durable writes, two agents and the writer lock, restart recovery, and migration from Go v0.2.4 with an in-place upgrade |
 | e2e-2 | 5 | 30 | Typed domain work: host operations, Incus containers and VMs with ownership, cross-domain plans and cancellation, OCI build/push/run on K3s, PostgreSQL and SQLite data services |
 | e2e-3a | 5 | 17 | A three-server HA K3s cluster built only through typed calls: workload, losing one server, quorum loss with fail-closed calls and recovery, and the optional cluster endpoint (Q19) |
@@ -104,7 +114,8 @@ Run `m16-r3` named rc4 and is kept as its record; `m18-r1` named rc5 and is
 kept as its record; `m19-r1` named rc6 and is kept as its record; `m21-r1`
 named rc7 before the outcome rule and is kept as its record; `m22-r1`
 named rc7 under the outcome rule and is kept as its record; `m23-r1`
-replaces it as the candidate's run. One journey start in `m19-r1`
+named rc7 under both rules and is kept as its record; `m24-r1` replaces it
+as the candidate's run. One journey start in `m19-r1`
 (`e2e1.user-unit-npm`) was refused before it recorded anything, because the
 dev VM's ports were still in TIME-WAIT after the previous journey's reboot; it
 ran once the ports were free. In `m21-r1` every journey passed on its first
@@ -112,8 +123,8 @@ attempt. In `m22-r1` the first attempts of `e2e2.host-ops` and `e2e2.oci`
 failed on downloads: the Ubuntu archive served the guest at 20-37 kB/s, and
 the package steps' deadlines expired. They were retired with that cause
 (`.parity/retired/m22-r1-apt-slow/`) and each reran once under the same run
-id after the mirror recovered. In `m23-r1` every journey passed on its first
-attempt.
+id after the mirror recovered. In `m23-r1` and in `m24-r1` every journey
+passed on its first attempt.
 
 | Receipt | Where | What it proves |
 |---|---|---|
@@ -128,7 +139,7 @@ The distribution checks map onto tasks 5.1 and 5.2 as follows. All are local.
 
 | Check | Evidence |
 |---|---|
-| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m23-r1) |
+| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m24-r1) |
 | Clean-machine install (arm64) | the arm64 receipt |
 | Upgrade from Go v0.2.4 | `e2e1.migrate-upgrade` and `e2e4.cutover` |
 | Rollback to Go v0.2.4 | `e2e4.cutover` |
@@ -186,6 +197,8 @@ ran another on rc6's code (`evidence/m19/fuzz.txt`), and m21 one on rc7's
 | E1-E4 | m22 outcome rule | Failures the journeys meant but did not assert: `tasks/get` of a never-persisted task (`task not found`, Q15); Go v0.2.4's first supervisor call before the user bus is up; the public-MCP connector stopping at its `.invalid` endpoint; `list_configmap_keys` and `list_secret_keys` not implemented (Q18) | expected refusals: each asserts `isError` and its text (Go's call opts out with its reason); [`evidence/m22`](../../../evidence/m22/README.md) |
 | J2 | m23 effect rule, on rc7 | `e2e2.data` checked SQLite removal under `~/.opute/databases`, a path the agent never uses (it keeps them under the instance's `databases` root), so the check could never fail and cleanup left the databases | journey defect, fixed: the check, the plans' read-backs and every cleanup use the agent's root |
 | J3 | m23 effect rule, its own draft on rc7 | The new read-back of `e2e1.restart`'s resubmission assumed the run stayed `unknown`; the resubmission resumes the same durable run (`running`), and Q15 requires only that it is admitted | journey defect, fixed: same run id, `running` or `completed`; [`evidence/m23`](../../../evidence/m23/README.md) |
+| W1 | m24 allowance rule | `e2e2.host-ops` allowed `~/evil`, the file a path-traversal escape would write, so an escape would have passed the effects check | journey defect, fixed: removed |
+| W2-W5 | m24 allowance rule | Patterns that could not match (`packages/*`, `users/*`, `groups/*`, kinds the state never records), units stopped before the after-state, patterns covering a whole tree (`files//etc*`, `incus/*`, `system/*`, `files//etc/systemd/system/*`), and `persist` patterns no run left residue for | journey defects, fixed: each pattern names its run's change; [`evidence/m24`](../../../evidence/m24/README.md) |
 | O1 | e2e-6 budget | Audit rows are never pruned: about 3.5 KB per call, 78 MB in 15 minutes of heavy load | open in 0.3.0: D42 sets retention for 0.4.0 only (D43) |
 
 Each m18 fix has a test that failed on rc4's code
@@ -196,11 +209,11 @@ fix has one that failed on rc6's ([`evidence/m21`](../../../evidence/m21/README.
 The full auth walk is [`auth-review.md`](../../../evidence/hardening/auth-review.md).
 
 Resource budget (`resource-budget.json`), on the candidate in `e2e6.budget`
-(run `m23-r1`): 27,751 calls in 15 minutes with no error; after a two-minute
-warm-up RSS grew 16.3 MB (budget 48 MiB), open FDs and threads did not grow,
-and the store grew 3,466 bytes per call (budget 8 KiB; the first budget's
+(run `m24-r1`): 25,846 calls in 15 minutes with no error; after a two-minute
+warm-up RSS grew 15.6 MB (budget 48 MiB), open FDs and threads did not grow,
+and the store grew 3,421 bytes per call (budget 8 KiB; the first budget's
 absolute 64 MiB store limit had no measured basis and was replaced; audit
-rows are still never pruned in 0.3.0, O1). Peak RSS 96 MB (budget 256 MiB).
+rows are still never pruned in 0.3.0, O1). Peak RSS 95 MB (budget 256 MiB).
 The D29 check: a 1 GiB declared body was answered 413 at once, with RSS 43 MB
 afterwards. The D41 check: a 1 GiB declared body to the serving relay was
 answered 413 in 0.03 s, with RSS 61 MB afterwards (53 MB before); one to the
@@ -267,7 +280,7 @@ was done or scoped; they change no observable behaviour against Go.
 ## 5. Cutover and rollback runbook
 
 For the deployment owner, after sign-off. Each step names the journey that
-rehearsed it on the dev VM with the candidate (run `m23-r1`). Production
+rehearsed it on the dev VM with the candidate (run `m24-r1`). Production
 hosts, Platform registration, tunnels and DNS were never touched.
 
 | # | Step | Rehearsed by |

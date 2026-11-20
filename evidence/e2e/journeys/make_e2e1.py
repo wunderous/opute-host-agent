@@ -324,10 +324,10 @@ def j2() -> dict:
             a("npmInfo", "response.body.result.isError", **{"in": [False, "<absent>"]}),
             scenario="Read-only authenticated first call"),
     ]
-    allow = ["files//home/ubuntu/.local*", "files//home/ubuntu/.config*", "files//home/ubuntu/.cache*",
-             "files//home/ubuntu/.npm*", "files//opt/opute-e2e/node*", f"files//opt/opute-e2e/{LAUNCHER}",
-             "files//opt/opute-e2e/deploy-user*", "linger*", "user/*", "system/units/user*",
-             "system/units/run-user-1000.mount*", "system/units/e2e-release*", "system/unitFiles/e2e-release*"]
+    # the journey's last steps stop the release server, disable linger and stop the user manager: none of
+    # them is in the after-state (m24)
+    allow = ["files//home/ubuntu/.local*", "files//home/ubuntu/.config*", "files//home/ubuntu/.npm*",
+             "files//opt/opute-e2e/node*", f"files//opt/opute-e2e/{LAUNCHER}", "files//opt/opute-e2e/deploy-user*"]
     return journey(
         "e2e1.user-unit-npm",
         "Flow 2, user install: Go's recorded user unit (deploy/opute-host-agent.service) for the existing user "
@@ -760,8 +760,7 @@ def j7() -> dict:
         "served as one durable record, the store passes its integrity check, and the write-only content is in no "
         "durable row and no journal line. The resubmission after the SIGKILL is admitted (D28, Q15).",
         {"agent": AGENT, "files": files, "slow": "a local endpoint answering after 30 s (e2etool slow)"},
-        reqs, steps, cleanup, allow=["files//home/opute/.config/opute-e2e*", "system/units/e2e-slow*",
-                                     "system/unitFiles/e2e-slow*"], minutes=15)
+        reqs, steps, cleanup, allow=["files//home/opute/.config/opute-e2e*"], minutes=15)
 
 
 # --- 8. migrate a Go-installed host, then upgrade -------------------------------------------------------
@@ -856,7 +855,7 @@ def j8() -> dict:
          "next": f"Rust release set built locally with VERSION={NEXT_VERSION}"},
         reqs, steps, cleanup,
         allow=["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/.config/opute-e2e*",
-               "files//opt/opute-e2e/releases/rust-next*", "system/units/e2e-slow*", "system/unitFiles/e2e-slow*"],
+               "files//opt/opute-e2e/releases/rust-next*"],
         minutes=20)
 
 

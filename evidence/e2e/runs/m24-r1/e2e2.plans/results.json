@@ -1,0 +1,328 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/c1.txt",
+   "files//home/opute/e2e/p1.txt",
+   "files//home/opute/e2e/r1.txt",
+   "files//home/opute/e2e/recipe.yaml",
+   "incus/instances/e2e-p1",
+   "incus/instances/e2e-r1",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-p1",
+   "incus/volumes/default/container/e2e-r1",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-slow.service",
+   "system/units/sys-devices-virtual-net-veth4c195174.device",
+   "system/units/sys-devices-virtual-net-vetha264b979.device",
+   "system/units/sys-subsystem-net-devices-veth4c195174.device",
+   "system/units/sys-subsystem-net-devices-vetha264b979.device"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-2",
+ "harnessErrors": [],
+ "journey": "e2e2.plans",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.valid",
+     "step": "validate"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "done"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "step": "done"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "done"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.data.status",
+     "step": "done"
+    },
+    {
+     "actual": "0330cd9a-2e79-4468-ae39-eed1bbaf54b5",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "run"
+     },
+     "ok": true,
+     "other": "0330cd9a-2e79-4468-ae39-eed1bbaf54b5",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "again"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "againDone"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.plan.valid",
+     "step": "recipeValidate"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.data.status",
+     "step": "recipeDone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "operation"
+    },
+    {
+     "actual": "0330cd9a-2e79-4468-ae39-eed1bbaf54b5",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "run"
+     },
+     "ok": true,
+     "other": "0330cd9a-2e79-4468-ae39-eed1bbaf54b5",
+     "path": "response.body.result.structuredContent.taskId",
+     "step": "operation"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "operations"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "unknown"
+    },
+    {
+     "actual": "Error: operation not found: no-such-operation",
+     "equals": "Error: operation not found: no-such-operation",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "unknown"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "operation"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An operation record reports its task's terminal status",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "slow"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "step": "waiting"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "cancel"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "cancel"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "cancelled"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "step": "cancelled"
+    },
+    {
+     "actual": "pending",
+     "in": [
+      "pending",
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "cancelled"
+    },
+    {
+     "actual": "0\nfile-kept\n",
+     "equals": "0\nfile-kept\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "afterCancel"
+    },
+    {
+     "actual": "p1\nRUNNING\nmain.sqlite\n",
+     "equals": "p1\nRUNNING\nmain.sqlite\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "p1State"
+    },
+    {
+     "actual": "p1\nRUNNING\nmain.sqlite\n",
+     "equals": "p1\nRUNNING\nmain.sqlite\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "p1Again"
+    },
+    {
+     "actual": "recipe\nRUNNING\nmain.sqlite\n",
+     "equals": "recipe\nRUNNING\nmain.sqlite\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "r1State"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "cancelAgain"
+    },
+    {
+     "actual": "Error: host plan run cannot be cancelled in status \"cancelled\"",
+     "matches": "cannot be cancelled in status",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "cancelAgain"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One typed plan and recipe execution path (Interrupted plan)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterCancel": 30165,
+   "again": 31,
+   "againDone": 1018,
+   "cancel": 87,
+   "cancelAgain": 42,
+   "cancelled": 13,
+   "done": 7106,
+   "operation": 18,
+   "operations": 14,
+   "own": 148,
+   "p1Again": 165,
+   "p1State": 158,
+   "r1State": 155,
+   "recipeCopy": 433,
+   "recipeDone": 4048,
+   "recipeRun": 36,
+   "recipeValidate": 10,
+   "released": 5144,
+   "released2": 5142,
+   "run": 107,
+   "settle": 3367,
+   "slow": 208,
+   "slowRun": 32,
+   "tool": 286,
+   "unknown": 37,
+   "validate": 27,
+   "waiting": 1018,
+   "wire": 281
+  },
+  "stepsSeconds": 106.2
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}
