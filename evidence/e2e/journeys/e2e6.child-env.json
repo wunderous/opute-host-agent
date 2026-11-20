@@ -122,16 +122,17 @@
  ],
  "effects": {
   "allow": [
-   "system/units/e2e-agent-*",
-   "system/unitFiles/e2e-agent-*",
-   "system/units/e2e-slow*",
-   "system/unitFiles/e2e-slow*",
-   "system/units/tmp-e2e*agents-*.mount",
-   "incus/*",
-   "files//home/opute/.config/incus*",
+   "system/units/e2e-agent-cenv.service",
+   "system/unitFiles/e2e-agent-cenv.service",
+   "incus/instances/e2e-v6",
+   "incus/volumes/default/virtual-machine/e2e-v6",
+   "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
    "system/units/sys-devices-virtual-net-tap*",
    "system/units/sys-subsystem-net-devices-tap*",
-   "system/units/var-lib-incus-devices-*"
+   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount"
   ],
   "persist": []
  },

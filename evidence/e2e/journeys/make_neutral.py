@@ -37,8 +37,7 @@ SETUP = base.TOOL_STEPS + [
     {"id": "unpack04", "guest": f"gzip -dc {REL4}/host-agent-linux-x64.gz > {BIN4} && chmod 0755 {BIN4} && "
                                 f"{BIN4} --version"},
 ]
-EFFECTS = ["files//opt/opute-e2e/releases/rust-0.4.0*", "files//opt/opute-e2e/releases/rust-0.3.x*",
-           "system/units/e2e-*", "system/unitFiles/e2e-*"]
+EFFECTS = [f"files/{REL4}*"]
 AGENT04 = ("the 0.4.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` "
            "and explicit settings")
 
@@ -86,7 +85,12 @@ def listen(name: str) -> str:
     return f"{ns(name)}ss -ltnH 'sport = :3014' | awk '{{print $4}}'"
 
 
+def units(*names: str) -> list[str]:
+    return [f"system/{kind}/{name}.service" for name in names for kind in ("units", "unitFiles")]
+
+
 def journey(id_, description, requirements, steps, cleanup, files=FILES, allow=(), minutes=15, **inputs):
+    """`allow` names the journey's own effects beyond the 0.4.0 release it unpacks (m24)."""
     return base.journey(id_, description, {"agent": AGENT04, **inputs, "files": files}, requirements, steps,
                         cleanup, allow=EFFECTS + list(allow), minutes=minutes, gate=GATE)
 
@@ -97,6 +101,8 @@ def clean(*names: str, more: str = "") -> list[dict]:
 
 
 # --- 1. the single profile, the old variables, ordinary clients -------------------------------------------
+
+PROFILE_AGENTS = ("plain", "oldmode", "oldallow", "exposed", "oauth")
 
 def profile() -> dict:
     target = {"path": ".config/opute-e2e/n1.txt", "content": "e2e\n", "scope": "user"}
@@ -219,7 +225,7 @@ def profile() -> dict:
         "The single serving profile of 0.4.0: an agent with only an id and a token; agents that still carry the old "
         "mode and mutation variables; a host exposed on purpose; and OAuth machine clients from operator "
         "configuration.",
-        reqs, steps, clean("plain", "oldmode", "oldallow", "exposed", "oauth"))
+        reqs, steps, clean(*PROFILE_AGENTS), allow=units(*(f"e2e-agent-{n}" for n in PROFILE_AGENTS)))
 
 
 # --- 2. reserved hostnames ------------------------------------------------------------------------------
@@ -322,7 +328,8 @@ def reserved() -> dict:
         "its own Cloudflare provider and no Cloudflare credentials; one provider runs with "
         "OPUTE_RESERVED_HOSTNAMES=*.opute.io.",
         reqs, steps, clean("r", "n", more=more), files=files,
-        allow=["files//home/opute/.config/opute-e2e*", "files//opt/opute-e2e/providers*"],
+        allow=["files//home/opute/.config/opute-e2e*", "files//opt/opute-e2e/providers", f"files/{PROVIDER}",
+               *units("e2e-agent-r", "e2e-agent-n", "e2e-provider-cf-r", "e2e-provider-cf-n")],
         provider="the Rust Cloudflare provider 1.0.1 from the same release set, without Cloudflare credentials")
 
 
@@ -417,7 +424,7 @@ def rollback() -> dict:
         "Upgrade a Platform-style host from the previous 0.3.x release to 0.4.0 and roll it back, with one environment "
         "holding both settings sets (OPUTE_AGENT_MODE=platform next to the explicit bind, port, mutation, "
         "instance and OAuth client settings).",
-        reqs, steps, clean("roll"),
+        reqs, steps, clean("roll"), allow=[f"files/{REL3}*"],
         files={**FILES, "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")},
         previous="the previous Rust release, 0.3.0-rc7 (" + base.PREVIOUS + "), copied in")
 
