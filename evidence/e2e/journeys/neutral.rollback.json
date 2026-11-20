@@ -136,6 +136,11 @@
      "step": "backDb",
      "path": "json.integrity",
      "equals": "ok"
+    },
+    {
+     "step": "rollFiles",
+     "path": "stdout",
+     "equals": "r1\nr2\nr3\n"
     }
    ],
    "scenario": "Rollback to 0.3.x keeps both settings sets: the old binary reads OPUTE_AGENT_MODE, the new one ignored it, and work done under 0.4.0 is there"
@@ -361,6 +366,15 @@
   {
    "id": "backDb",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db"
+  },
+  {
+   "id": "rollFiles",
+   "guest": "cat /tmp/e2e-agents/roll/home/.config/opute-e2e/r1.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r2.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r3.txt",
+   "confirms": [
+    "write1",
+    "write2",
+    "write3"
+   ]
   }
  ],
  "cleanup": [

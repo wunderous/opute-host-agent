@@ -1,0 +1,79 @@
+{
+ "id": "selfcheck.empty-confirmation",
+ "description": "Negative control: a mutation tool (a loopback stub) reports writing a file, and the guest command that confirms it finds no file, so the journey fails (pass-condition).",
+ "gate": "e2e-0",
+ "inputs": {
+  "stub": {
+   "tools": [
+    {
+     "name": "e2e_write",
+     "description": "harness self-check",
+     "inputSchema": {
+      "type": "object"
+     },
+     "_meta": {
+      "capability": {
+       "effect": "mutation"
+      }
+     }
+    }
+   ],
+   "results": {
+    "e2e_write": {
+     "content": [
+      {
+       "type": "text",
+       "text": "Wrote /tmp/e2e-selfcheck-written."
+      }
+     ],
+     "isError": false
+    }
+   }
+  }
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: a confirmation that finds nothing fails",
+   "pass": [
+    {
+     "step": "write",
+     "path": "response.body.result.isError",
+     "equals": false
+    },
+    {
+     "step": "look",
+     "path": "stdout",
+     "equals": "found\n"
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "list",
+   "mcp": "tools/list",
+   "target": "stub"
+  },
+  {
+   "id": "write",
+   "mcp": "tools/call",
+   "target": "stub",
+   "tool": "e2e_write",
+   "arguments": {}
+  },
+  {
+   "id": "look",
+   "guest": "test -e /tmp/e2e-selfcheck-written && echo found; true",
+   "confirms": [
+    "write"
+   ]
+  }
+ ],
+ "cleanup": [],
+ "maxMinutes": 10
+}

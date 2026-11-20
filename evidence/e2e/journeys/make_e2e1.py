@@ -113,6 +113,16 @@ def succeeded(step: str, task: bool = False) -> dict:
     return a(step, path, **{"in": [False, "<absent>"]})
 
 
+def confirms(step: dict, *ids: str) -> dict:
+    """An independent observation of the effects the named steps claim (m23)."""
+    return {**step, "confirms": list(ids)}
+
+
+def read_file(id_: str, path: str, *ids: str) -> dict:
+    """A guest read of a file the named steps claim to have written (m23)."""
+    return confirms({"id": id_, "guest": f"cat {path}"}, *ids)
+
+
 def mcp(id_: str, method: str, **kw) -> dict:
     return {"id": id_, "mcp": method, **kw}
 
@@ -362,6 +372,7 @@ def j3() -> dict:
         call("plan", "run_host_plan", {"plan": modern_plan},
              capture={"RUN": "response.body.result.structuredContent.runId"}),
         poll_run("planDone", "RUN"),
+        read_file("planFile", "/home/opute/.config/opute-e2e/j3-modern.txt", "plan"),
         # (b) a legacy-handshake client against an agent with the opt-in exception
         {"id": "legacyAgent", "guest": f"{T} agent start legacy --port 3017 --id e2e-legacy-agent "
                                        "--env MCP_AUTH_TOKEN=${SECRET:legacy} --env OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true "
@@ -375,6 +386,7 @@ def j3() -> dict:
         call("legacyPlan", "run_host_plan", {"plan": legacy_plan},
              capture={"LRUN": "response.body.result.structuredContent.runId"}, **legacy),
         poll_run("legacyPlanDone", "LRUN", **legacy),
+        read_file("legacyPlanFile", "/tmp/e2e-agents/legacy/home/.config/opute-e2e/j3-legacy.txt", "legacyPlan"),
         mcp("legacyDiscover", "server/discover", **legacy),
         {"id": "legacyStop", "guest": f"{T} agent remove legacy"},
         # (c) the published Go client library, pkg/hostagentclient
@@ -423,14 +435,14 @@ def j3() -> dict:
             a("legacyInfo", "response.body.result.structuredContent.uri", matches=":e2e-legacy-agent$"),
             a("legacyCatalog", "response.body.result.structuredContent.catalogRevision", matches="^sha256:"),
             succeeded("legacyCapacity"), a("legacyCapacity", "response.body.result.structuredContent", exists=True),
-            completed("legacyPlanDone"),
+            completed("legacyPlanDone"), a("legacyPlanFile", "stdout", equals="e2e\n"),
             a("legacyDiscover", "response.status", equals=400),
             a("legacyDiscover", "response.body.error.code", exists=True),
             scenario="Legacy exception remains bounded: the opt-in legacy client completes the tutorial, a "
                      "modern-only method without modern metadata is refused"),
         req(SPEC, "One typed plan and recipe execution path",
             a("plan", "response.body.result.structuredContent.runId", exists=True),
-            completed("planDone"),
+            completed("planDone"), a("planFile", "stdout", equals="e2e\n"),
             ok("client"), a("client", "json.plan.status", equals="completed"),
             a("client", "json.catalog.revision", matches="^sha256:"), a("client", "json.toolsList", gte=1),
             scenario="an approved mutation (mutations enabled on the agent) runs as a host plan; its run is "
@@ -685,6 +697,9 @@ def j7() -> dict:
         mcp("termList", "tools/list"),
         call("termAfter", "get_host_plan_run", {"runId": "${TERM_RUN}"}),
         {"id": "termDb", "guest": f"{T} db {SDB} --plan-id e2e1-j7-term"},
+        # node n1 ran before the slow step: its file holds the write-only content
+        confirms({"id": "termFile",
+                  "guest": "grep -c -F '${SECRET:j7content}' /home/opute/.config/opute-e2e/j7-term.txt"}, "termRun"),
         call("killRun", "run_host_plan", {"plan": kill_plan}, capture={"KILL_RUN": "response.body.result.structuredContent.runId"}),
         call("killInFlight", "get_host_plan_run", {"runId": "${KILL_RUN}"}, until=in_flight, timeout=30),
         {"id": "kill", "guest": f"systemctl kill -s KILL {UNIT} && sleep 1 && {WAIT_HEALTH.format(port=3014)} && "
@@ -696,6 +711,8 @@ def j7() -> dict:
         # SIGKILL there is no snapshot for restart reclaim to act on (Q15).
         mcp("killTask", "tasks/get", params={"taskId": "${KILL_RUN}"}, meta=TASKS_META),
         call("resubmit", "run_host_plan", {"plan": kill_plan}),
+        # the resubmission is the same durable run, still unknown: nothing ran again
+        confirms({"id": "resubmitDb", "guest": f"{T} db {SDB} --plan-id e2e1-j7-kill"}, "resubmit"),
         {"id": "integrity", "guest": f"{T} db {SDB}"},
         {"id": "secretInDb", "guest": f"{T} contains {SDB} '${{SECRET:j7content}}'"},
         {"id": "secretInJournal", "guest": f"journalctl -u {UNIT} --no-pager -o cat | grep -c -F "
@@ -726,6 +743,7 @@ def j7() -> dict:
             a("termDb", "json.planRunIds[1]", absent=True),
             a("killDb", "json.planRunIds[0]", equalsStep={"step": "killRun", "path": "response.body.result.structuredContent.runId"}),
             a("killDb", "json.planRunIds[1]", absent=True),
+            a("termFile", "stdout", equals="1\n"),
             scenario="exactly one durable run per interrupted plan: nothing lost or duplicated"),
         req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
             a("termAfter", "response.body.result.structuredContent.status", equals="cancelled"),
@@ -736,6 +754,8 @@ def j7() -> dict:
             a("resubmit", "response.body.result.isError", **{"in": [False, "<absent>"]}),
             a("resubmit", "response.body.result.structuredContent.code", absent=True),
             a("killTask", "response.body.error.message", matches="^task not found: "),
+            a("resubmitDb", "json.planRunIds", equalsStep={"step": "killDb", "path": "json.planRunIds"}),
+            a("resubmitDb", "json.planRunStatus", equalsStep={"step": "killDb", "path": "json.planRunStatus"}),
             scenario="After a SIGKILL during a plain run_host_plan, whose task was never persisted (tasks/get "
                      "does not find it), the resubmission is admitted (D28)"),
     ]
@@ -768,9 +788,11 @@ def j8() -> dict:
         {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 60"},
         call("goDone", "run_host_plan", {"plan": done_plan}, capture={"DONE": "response.body.result.structuredContent.runId"}),
         poll_run("goDoneWait", "DONE"),
+        read_file("goDoneFile", "/home/opute/.config/opute-e2e/j8-done.txt", "goDone"),
         call("goFlight", "run_host_plan", {"plan": flight_plan}, capture={"FLIGHT": "response.body.result.structuredContent.runId"}),
         call("goInFlight", "get_host_plan_run", {"runId": "${FLIGHT}"},
              until={"path": "response.body.result.structuredContent.nodes.n2.attempts", "in": [1]}, timeout=30),
+        read_file("goFlightFile", "/home/opute/.config/opute-e2e/j8-flight.txt", "goFlight"),
         {"id": "goStop", "guest": f"systemctl stop {UNIT} && {T} db {SDB}"},
         swap("rustInstall", f"{REL}/host-agent-linux-x64.gz"),
         {"id": "rustHealth", "health": True},
@@ -796,6 +818,7 @@ def j8() -> dict:
             ok("aside"), ok("goInstall"), a("goInstall", "stdout", matches="\n0\\.2\\.4\n$"),
             a("goDoneWait", "response.body.result.structuredContent.status", equals="completed"),
             a("goInFlight", "response.body.result.structuredContent.nodes.n2.attempts", equals=1),
+            a("goDoneFile", "stdout", equals="e2e\n"), a("goFlightFile", "stdout", equals="e2e\n"),
             ok("goStop"), a("goStop", "json.integrity", equals="ok"),
             ok("rustInstall"), a("rustInstall", "stdout", matches=RUST_MATCH),
             a("rustList", "response.status", equals=200),

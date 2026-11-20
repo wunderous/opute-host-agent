@@ -179,7 +179,8 @@ is `unverified`, never a pass or a fail. Every journey starts from the
 snapshot, through a checked restore in preflight.
 
 A journey fails on any of: `pass-condition`, `schema`, `undeclared-effect`,
-`cleanup-residue`, `harness-error`, `time-limit` or `unchecked-outcome`.
+`cleanup-residue`, `harness-error`, `time-limit`, `unchecked-outcome` or
+`unconfirmed-effect`.
 
 **Outcomes (m22).** Every `tools/call` and `tasks/get` step must have its
 outcome decided by an assertion. A deciding assertion is on `isError`, on
@@ -196,6 +197,22 @@ fails with `unchecked-outcome` when:
 A step may opt out only with `expectAnyOutcome` set to its reason.
 `python3 evidence/e2e/outcomes.py --check` lists the steps the rule flags
 in the committed journeys. `make e2e-test` requires none.
+
+**Effects (m23).** A step is a mutation when its tool's
+`_meta.capability.effect`, as the run's own `tools/list` publishes it, is
+`mutation`, `destructive` or `credential_bearing`. A task's effect is
+judged at its first poll; a re-read of the same task is not a mutation.
+When a journey expects a mutation step to succeed, a later step must name
+it in `confirms` and check the effect with its own assertions. That later
+step is a guest command, an HTTP request, a `fetch`, or a call of a tool
+whose effect is `read`. Otherwise the journey fails with
+`unconfirmed-effect`. A step that expects a failure, or a task status other
+than `completed`, needs no confirmation.
+
+A step may opt out only with `effectUnobservable` set to its reason: a dry
+run, a probe that changes nothing, a command that only prints or sleeps, or
+a read through a general command tool. `outcomes.py` lists the unconfirmed
+steps too, from the effects in the gates' committed runs.
 
 ```bash
 make e2e-verify E2E_GATE=e2e-0
@@ -221,6 +238,8 @@ first harness; r4 reran it after e2e-1 extended the runner):
 | `selfcheck.broken-pass` | fail: `pass-condition` |
 | `selfcheck.schema-violation` (a loopback stub declared as input) | fail: `schema` |
 | `selfcheck.unchecked-outcome` (a stub answers `isError: true`; only its text is asserted) | fail: `unchecked-outcome` |
+| `selfcheck.unconfirmed-effect` (a stub mutation answers success; nothing confirms it) | fail: `unconfirmed-effect` |
+| `selfcheck.empty-confirmation` (the same stub; a guest step confirms it and finds nothing) | fail: `pass-condition` |
 | `selfcheck.restore` (a change, then restore) | pass, with the restored state equal to the baseline |
 | `selfcheck.step-kinds` (copy, secrets, http, guest-port mcp, polling, captures) | pass |
 

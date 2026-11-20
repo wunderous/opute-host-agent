@@ -226,6 +226,36 @@
      "step": "deleteRegistry",
      "path": "response.body.result.result.isError",
      "equals": false
+    },
+    {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "podman",
+     "path": "stdout",
+     "equals": "/usr/bin/podman\n"
+    },
+    {
+     "step": "staged",
+     "path": "stdout",
+     "equals": "./Dockerfile\n./src/main.txt\n"
+    },
+    {
+     "step": "policyFile",
+     "path": "stdout",
+     "matches": "\"minAgeSeconds\": ?3600"
+    },
+    {
+     "step": "inspectAfter",
+     "path": "response.body.result.structuredContent.categories.images.bytes",
+     "gte": 1
+    },
+    {
+     "step": "registryGone",
+     "path": "stdout",
+     "equals": "1\n"
     }
    ],
    "scenario": "With the user service supervisor ready: the storage policy applied, a dry run, a cleanup with the shortest allowed age, and the registry deleted"
@@ -323,7 +353,10 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -389,6 +422,9 @@
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
    },
+   "confirms": [
+    "vm1"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -459,6 +495,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "provision"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -511,6 +550,13 @@
    "interval": 3
   },
   {
+   "id": "podman",
+   "guest": "command -v podman",
+   "confirms": [
+    "builder"
+   ]
+  },
+  {
    "id": "stageCall",
    "mcp": "tools/call",
    "tool": "stage_build_context",
@@ -558,6 +604,13 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "staged",
+   "guest": "cd /home/opute/.opute/build-contexts/e2e-app && find . -type f | sort",
+   "confirms": [
+    "stage"
+   ]
   },
   {
    "id": "registryCall",
@@ -621,6 +674,9 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "registry"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -677,7 +733,10 @@
    "guest": "curl -fsSI -H 'Accept: application/vnd.oci.image.manifest.v1+json' -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' http://${K1_IP}:30500/v2/e2e/app/manifests/1 | tr -d '\\r' | awk 'tolower($1)==\"docker-content-digest:\"{printf \"%s\", $2}'",
    "capture": {
     "DIGEST": "stdout"
-   }
+   },
+   "confirms": [
+    "push"
+   ]
   },
   {
    "id": "trustCall",
@@ -814,6 +873,10 @@
    },
    "timeout": 300,
    "interval": 5,
+   "confirms": [
+    "trust",
+    "pull"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -831,6 +894,7 @@
      "default"
     ]
    },
+   "effectUnobservable": "a read through the general command tool: kubectl logs",
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -864,6 +928,14 @@
    "arguments": {},
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
    ]
   },
   {
@@ -922,6 +994,13 @@
    "interval": 3
   },
   {
+   "id": "policyFile",
+   "guest": "find /home/opute/.config/opute -name oci-storage-policy.json -exec cat {} +",
+   "confirms": [
+    "policy"
+   ]
+  },
+  {
    "id": "dryRunCall",
    "mcp": "tools/call",
    "tool": "cleanup_container_storage",
@@ -964,7 +1043,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "a dry run changes nothing"
   },
   {
    "id": "cleanupCall",
@@ -1016,6 +1096,9 @@
    "mcp": "tools/call",
    "tool": "inspect_container_storage",
    "arguments": {},
+   "confirms": [
+    "cleanup"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -1064,6 +1147,13 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "registryGone",
+   "confirms": [
+    "deleteRegistry"
+   ],
+   "guest": "for i in $(seq 60); do incus exec e2e-k1 -- k3s kubectl get namespace registry-system >/dev/null 2>&1 || break; sleep 2; done; incus exec e2e-k1 -- k3s kubectl get namespace registry-system 2>&1 | grep -c NotFound"
   }
  ],
  "cleanup": [

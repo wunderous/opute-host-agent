@@ -138,7 +138,8 @@ def profile() -> dict:
         base.mcp("exposedList", "tools/list", **exposed),
         {"id": "exposedSummary", "guest": summary("exposed", "${SECRET:exposed}", port=3004)},
         base.call("exposedWrite", "ensure_host_file", target, **exposed),
-        {"id": "exposedFile", "guest": f"cat {ROOT}/exposed/home/.config/opute-e2e/n1.txt"},
+        {"id": "exposedFile", "guest": f"cat {ROOT}/exposed/home/.config/opute-e2e/n1.txt",
+         "confirms": ["exposedWrite"]},
         # machine clients come from the operator
         {"id": "oauthAgent", "guest": start("oauth", {**oenv, "OPUTE_OAUTH_CLIENTS": "ci-runner"}, port=3051)},
         {"id": "oauthCreds", "guest": creds("oauth")},
@@ -281,8 +282,8 @@ def reserved() -> dict:
                   {"descriptor": descriptor(4330), "activate": True, "recipeSource": RECIPE}, **r_),
         base.call("installN", "opute.provider.install",
                   {"descriptor": descriptor(4331), "activate": True, "recipeSource": RECIPE}, **n_),
-        {"id": "toolsR", "guest": wait_tool(3041, "${SECRET:r}")},
-        {"id": "toolsN", "guest": wait_tool(3042, "${SECRET:n}")},
+        {"id": "toolsR", "guest": wait_tool(3041, "${SECRET:r}"), "confirms": ["installR"]},
+        {"id": "toolsN", "guest": wait_tool(3042, "${SECRET:n}"), "confirms": ["installN"]},
         base.mcp("catalogR", "tools/list", **r_),
         base.mcp("catalogN", "tools/list", **n_),
         *task("reservedName", TUNNEL, tunnel("mcp.opute.io", 3041), r_, timeout=120),
@@ -377,6 +378,10 @@ def rollback() -> dict:
         {"id": "backMint", "guest": mint},
         {"id": "backStop", "guest": stop("roll")},
         {"id": "backDb", "guest": f"{T} db {sdb}"},
+        # each release's write, on the host
+        {"id": "rollFiles", "guest": " ".join(["cat"] + [f"{ROOT}/roll/home/.config/opute-e2e/r{n}.txt"
+                                                         for n in (1, 2, 3)]),
+         "confirms": ["write1", "write2", "write3"]},
     ]
     served = lambda s: [a(s, "json.agentId", equals="e2e-roll")]  # noqa: E731
     wrote = lambda s: a(s, "response.body.result.isError", **{"in": [False, "<absent>"]})  # noqa: E731
@@ -395,6 +400,7 @@ def rollback() -> dict:
         req(NSPEC, "No mode setting exists",
             *served("back"), a("backListen", "json.addresses", equals=["0.0.0.0:3004"]),
             exists("backRead2"), wrote("write3"), a("backDb", "json.integrity", equals="ok"),
+            a("rollFiles", "stdout", equals="r1\nr2\nr3\n"),
             scenario="Rollback to 0.3.x keeps both settings sets: the old binary reads OPUTE_AGENT_MODE, the new "
                      "one ignored it, and work done under 0.4.0 is there"),
         req(NSPEC, "Every orchestrator is an ordinary client",

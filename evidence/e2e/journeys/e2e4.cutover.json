@@ -90,6 +90,21 @@
      "equals": "go-era\n"
     },
     {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "g1State",
+     "path": "stdout",
+     "equals": "g1\nRUNNING\n"
+    },
+    {
+     "step": "failFile",
+     "path": "stdout",
+     "equals": "x\n"
+    },
+    {
      "step": "goStop",
      "path": "exit",
      "equals": 0
@@ -266,6 +281,11 @@
      "equals": "rust-era\n"
     },
     {
+     "step": "n1File",
+     "path": "stdout",
+     "equals": "n1\n"
+    },
+    {
      "step": "rustStop",
      "path": "json.integrity",
      "equals": "ok"
@@ -414,6 +434,13 @@
    ]
   },
   {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "goSupervisorAgain"
+   ]
+  },
+  {
    "id": "goPlan",
    "mcp": "tools/call",
    "tool": "run_host_plan",
@@ -537,6 +564,13 @@
    ]
   },
   {
+   "id": "g1State",
+   "guest": "cat /home/opute/e2e/g1.txt; incus list e2e-g1 -c s -f csv",
+   "confirms": [
+    "goPlan"
+   ]
+  },
+  {
    "id": "goFail",
    "mcp": "tools/call",
    "tool": "run_host_plan",
@@ -603,6 +637,13 @@
    ]
   },
   {
+   "id": "failFile",
+   "guest": "cat /home/opute/e2e/fail.txt",
+   "confirms": [
+    "goFail"
+   ]
+  },
+  {
    "id": "goTaskCall",
    "mcp": "tools/call",
    "tool": "run_host_command",
@@ -645,7 +686,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only prints; its output is asserted"
   },
   {
    "id": "settle",
@@ -811,6 +853,9 @@
     "consumerId": "e2e-g1",
     "databaseName": "main"
    },
+   "confirms": [
+    "goPlan"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -882,6 +927,13 @@
    ]
   },
   {
+   "id": "n1File",
+   "guest": "cat /home/opute/e2e/n1.txt",
+   "confirms": [
+    "rustNew"
+   ]
+  },
+  {
    "id": "rustTaskNewCall",
    "mcp": "tools/call",
    "tool": "run_host_command",
@@ -924,7 +976,8 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "the command only prints; its output is asserted"
   },
   {
    "id": "rustStop",
@@ -1038,7 +1091,7 @@
  "cleanup": [
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases /tmp/e2e-sync.json /tmp/e2e-go-state.sha; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases /home/opute/.config/opute/instances/standalone/databases /tmp/e2e-sync.json /tmp/e2e-go-state.sha; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 28

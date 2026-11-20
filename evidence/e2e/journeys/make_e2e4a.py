@@ -21,7 +21,7 @@ import re
 import make_e2e1 as base
 import make_e2e3a as ha
 from make_e2e1 import HERE, SPEC, T, TASKS_META, a, inp, ok, req
-from make_e2e3a import call, direct, res, task
+from make_e2e3a import call, direct, res, task, unobservable
 
 QUESTIONS = "openspec/changes/archive/2026-11-07-rust-spec-authority/questions.md"
 CH = "openspec/changes/"
@@ -41,6 +41,8 @@ Q5_SPEC = CH + "truthful-interrupted-plan/specs/host-agent-contract/spec.md"
 CATALOG = "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
 E2E2_GOAL = ".agents/goals/e2e-2-host-workloads.md (flows 4, 5, 7, 8)"
 HOME = "/home/opute"
+# where the standalone agent keeps caller SQLite databases (config.rs sqlite_root)
+SQLITE = f"{HOME}/.config/opute/instances/standalone/databases"
 SVC = "host-service:local:system/dbus.service"  # the binding set_host_service_state is admitted against
 UNIT_TEXT = ("[Unit]\nDescription=e2e web\n\n[Service]\nExecStart=/usr/bin/python3 -m http.server 8781 "
              "--bind 127.0.0.1 --directory /tmp\n\n[Install]\nWantedBy=default.target\n")
@@ -58,6 +60,30 @@ def journey(id_, gate, description, requirements, steps, cleanup, allow=(), pers
                         persist=list(persist), minutes=minutes, gate=gate)
 
 
+USER_SYSTEMCTL = "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user"
+
+
+def pid_before(id_: str, unit: str, user: bool = False) -> dict:
+    """The unit's main PID, kept on the guest for `restarted` to compare after a restart (m23)."""
+    ctl = USER_SYSTEMCTL if user else "systemctl"
+    return {"id": id_, "guest": f"{ctl} show -p MainPID --value {unit} | tee /tmp/{id_}.pid"}
+
+
+def restarted(id_: str, before: str, unit: str, *confirmed: str, user: bool = False) -> dict:
+    """A new main PID for the unit: it was restarted, not only left running (m23)."""
+    ctl = USER_SYSTEMCTL if user else "systemctl"
+    return {"id": id_, "confirms": list(confirmed), "guest": (
+        f"for i in $(seq 60); do now=$({ctl} show -p MainPID --value {unit}); [ \"$now\" != 0 ] && "
+        f"[ \"$now\" != \"$(cat /tmp/{before}.pid)\" ] && {ctl} is-active -q {unit} && break; sleep 0.5; done; "
+        f"{ctl} is-active {unit}; [ \"$now\" != \"$(cat /tmp/{before}.pid)\" ] && echo restarted")}
+
+
+def linger(id_: str = "linger") -> dict:
+    """The user manager the supervisor calls settle: linger on and the user bus up (m23)."""
+    return {"id": id_, "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus "
+                                "&& echo bus", "confirms": ["supervisor", "supervisorAgain"]}
+
+
 def svc(id_: str, state: str, name: str = "e2e-web.service", scope: str = "user") -> dict:
     return call(id_, "set_host_service_state", {"uri": SVC, "serviceName": name, "state": state, "scope": scope})
 
@@ -72,18 +98,25 @@ def host_ops() -> dict:
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
         call("supervisorAgain", "ensure_host_service_supervisor", {}),
+        linger(),
         call("unit", "ensure_host_file", {"path": "~/.config/systemd/user/e2e-web.service", "content": UNIT_TEXT}),
         svc("enable", "enable"), svc("start", "start"),
         call("inspect", "inspect_host_service", {"uri": "host-service:local:user/e2e-web.service",
-                                                 "listenPort": 8781}),
+                                                 "listenPort": 8781}, confirms=["unit", "enable", "start"]),
         call("services", "list_host_services", {}),
-        *task("curl", "run_host_command", {"command": "curl -s -o /dev/null -w %{http_code} http://127.0.0.1:8781/"}),
+        *unobservable(task("curl", "run_host_command",
+                           {"command": "curl -s -o /dev/null -w %{http_code} http://127.0.0.1:8781/"}),
+                      "a read: curl of the service through run_host_command"),
+        pid_before("webPid", "e2e-web.service", user=True),
         svc("restart", "restart"),
         {"id": "running", "guest": f"{T} unit e2e-web.service --user opute"},
+        restarted("webRestarted", "webPid", "e2e-web.service", "restart", user=True),
         svc("stop", "stop"), svc("disable", "disable"),
+        {"id": "stoppedUnit", "guest": f"{T} unit e2e-web.service --user opute", "confirms": ["stop", "disable"]},
         *task("removeUnconfirmed", "remove_host_file", {"path": "~/.config/systemd/user/e2e-web.service"}),
         *task("removeUnit", "remove_host_file", {"path": "~/.config/systemd/user/e2e-web.service", "confirm": True}),
-        call("inspectGone", "inspect_host_file", {"path": "~/.config/systemd/user/e2e-web.service"}),
+        call("inspectGone", "inspect_host_file", {"path": "~/.config/systemd/user/e2e-web.service"},
+             confirms=["removeUnit"]),
         # system scope: the agent's user cannot write system unit files
         call("systemUnitDenied", "ensure_host_file",
              {"path": "/etc/systemd/system/e2e-sys.service", "content": UNIT_TEXT, "scope": "system"}),
@@ -91,18 +124,19 @@ def host_ops() -> dict:
         call("restartIncusNamed", "restart_host_service",
              {"uri": "host-service:local:system/incus.service", "serviceName": "incus.service"}),
         # D28 (Q23): a system service is restarted through set_host_service_state, scope system
+        pid_before("incusPid", "incus"),
         call("restartIncusSystem", "set_host_service_state",
              {"uri": "host-service:local:system/incus.service", "serviceName": "incus.service", "state": "restart",
               "scope": "system"}),
-        {"id": "incusActive", "guest": "for i in $(seq 60); do systemctl is-active --quiet incus && break; sleep 1; "
-                                       "done; systemctl is-active incus"},
+        restarted("incusActive", "incusPid", "incus", "restartIncusSystem"),
         # exec of workloads
         *task("execFails", "run_host_command", {"command": "echo err >&2; exit 3"}),
         *task("execTimeout", "run_host_command", {"command": "sleep 30", "timeoutMs": 1500}),
         # packages
         *task("ninjaTool", "ensure_host_tool", {"tool": "ninja"}),
         *task("toolAgain", "ensure_host_tool", {"tool": "ninja"}),
-        {"id": "ninja", "guest": "dpkg -s ninja-build | sed -n 's/^Status: //p'"},
+        {"id": "ninja", "guest": "dpkg -s ninja-build | sed -n 's/^Status: //p'",
+         "confirms": ["ninjaTool", "toolAgain"]},
         # artifact download with a checksum
         *task("artifact", "ensure_host_artifact", {"uri": SUMS_URI, "destination": "e2e/art/sums.txt",
                                                    "sha256": SUMS_SHA}),
@@ -110,22 +144,25 @@ def host_ops() -> dict:
                                                         "sha256": SUMS_SHA}),
         *task("artifactBad", "ensure_host_artifact", {"uri": SUMS_URI, "destination": "e2e/art/bad.txt",
                                                       "sha256": "0" * 64}),
-        call("artifactFile", "inspect_host_file", {"path": "e2e/art/sums.txt"}),
+        call("artifactFile", "inspect_host_file", {"path": "e2e/art/sums.txt"}, confirms=["artifact", "artifactAgain"]),
         call("artifactBadFile", "inspect_host_file", {"path": "e2e/art/bad.txt"}),
         # files and archives: the archive is made by a typed host command, then extracted
         *task("archive", "run_host_command",
               {"command": "mkdir -p $HOME/e2e/src/d && printf hello > $HOME/e2e/src/d/a.txt && "
                           "tar --zstd -C $HOME/e2e/src -cf $HOME/e2e/in.tar.zst d && echo made"}),
         call("extract", "extract_host_archive", {"archivePath": "e2e/in.tar.zst", "destination": "e2e/out"}),
-        call("extracted", "inspect_host_file", {"path": "e2e/out/d/a.txt"}),
+        call("extracted", "inspect_host_file", {"path": "e2e/out/d/a.txt"}, confirms=["archive", "extract"]),
         *task("traversal", "run_host_command",
               {"command": "cd $HOME/e2e && printf x > evil && tar --zstd -cf bad.tar.zst --transform 's,^,../,' "
                           "evil && echo made"}),
+        {"id": "badArchive", "guest": f"tar --zstd -tf {HOME}/e2e/bad.tar.zst", "confirms": ["traversal"]},
         call("extractTraversal", "extract_host_archive", {"archivePath": "e2e/bad.tar.zst",
                                                           "destination": "e2e/out2"}),
         {"id": "noEscape", "guest": f"test -e {HOME}/evil && echo escaped || echo contained"},
         # the virtualization stack (already installed on the snapshot: an idempotent reconcile)
         *task("virt", "install_virtualization_stack", {}, timeout=900),
+        {"id": "virtState", "guest": "systemctl is-active incus; incus version >/dev/null && echo incus",
+         "confirms": ["virt"]},
         # the bridge control plane: none is installed on a standalone host
         call("bridge", "diagnose_bridge", {}),
         call("recoverBridge", "recover_bridge", {}),
@@ -147,6 +184,10 @@ def host_ops() -> dict:
             res("curl", "structuredContent.stdout", equals="200"),
             direct("restart", "structuredContent.status", **{"in": ["applied", "scheduled"]}),
             a("running", "json.ActiveState", equals="active"),
+            a("linger", "stdout", equals="yes\nbus\n"),
+            a("webPid", "stdout", matches="^[1-9][0-9]*\n$"), a("webRestarted", "stdout", equals="active\nrestarted\n"),
+            a("stoppedUnit", "json.ActiveState", equals="inactive"),
+            a("stoppedUnit", "json.UnitFileState", equals="disabled"),
             direct("stop", "structuredContent.status", equals="applied"),
             direct("disable", "structuredContent.status", equals="applied"),
             res("removeUnconfirmed", "isError", equals=True),
@@ -187,11 +228,15 @@ def host_ops() -> dict:
             direct("extracted", "structuredContent.exists", equals=True),
             direct("extractTraversal", "isError", equals=True),
             a("noEscape", "stdout", equals="contained\n"),
+            a("badArchive", "stdout", equals="../evil\n"),
+            direct("extracted", "structuredContent.sha256",  # "hello"
+                   equals="sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"),
             scenario="A tar.zst archive extracted beneath the home directory; a traversal entry is rejected and "
                      "nothing escapes"),
         req(CATALOG, "install_virtualization_stack",
             res("virt", "isError", equals=False),
             res("virt", "structuredContent.incus", matches="Server version"),
+            a("virtState", "stdout", equals="active\nincus\n"),
             scenario="The virtualization stack reconciled on a host that has it: Incus reported, nothing broken"),
         req(Q21_SPEC, "A tool declares every input it reads",
             direct("restartIncus", "isError", equals=True),
@@ -203,7 +248,8 @@ def host_ops() -> dict:
             direct("restartIncusNamed", "content[0].text", matches="set_host_service_state"),
             direct("restartIncusSystem", "isError", **{"in": [False, "<absent>"]}),
             direct("restartIncusSystem", "structuredContent.status", equals="scheduled"),
-            a("incusActive", "stdout", equals="active\n"),
+            a("incusPid", "stdout", matches="^[1-9][0-9]*\n$"),
+            a("incusActive", "stdout", equals="active\nrestarted\n"),
             scenario="Restarting Incus with restart_host_service is refused before acting and names "
                      "set_host_service_state; Incus is restarted through it with scope system (D28)"),
         req(Q20_SPEC, "The first ensure call settles the user service manager",
@@ -268,6 +314,8 @@ CONSOLE_SPEC = CH + "vm-console-session/specs/vm-console-session/spec.md"
 NIC_SPEC = CH + "vm-bridged-nic/specs/vm-bridged-nic/spec.md"
 RM_NIC_SPEC = CH + "remove-vm-network-device/specs/remove-vm-network-device/spec.md"
 PROMPT = "(login|Password): $"  # the guest getty's answer to Enter
+# keystrokes into the guest's console: only the console's own answer shows them (m23)
+KEYS = "console input: the guest's answer comes back only through the console session"
 CONSOLES = "pgrep -fc 'console e2e-v1$' || true"  # the agent's `incus ... console e2e-v1` processes
 
 
@@ -277,20 +325,21 @@ def console_steps() -> list[dict]:
     return [
         call("console", "stream_vm_console", {"uri": V1, "width": 100, "height": 30}, B),
         call("consoleAgain", "stream_vm_console", {"uri": V1}, B),
-        {"id": "consoleProcs", "guest": CONSOLES},
+        {"id": "consoleProcs", "guest": CONSOLES, "confirms": ["console", "consoleAgain"]},
         # type Enter until the guest's getty answers with a prompt (login: or Password:, by its state)
         call("consoleRead", "send_console_input", {"operationId": "console-e2e-v1", "data": "\r"}, B,
              until={"path": "response.body.result.structuredContent.output", "matches": PROMPT}, timeout=60,
-             interval=2),
-        call("consoleResize", "resize_console", {"operationId": "console-e2e-v1", "width": 120, "height": 40}, B),
+             interval=2, effectUnobservable=KEYS),
+        call("consoleResize", "resize_console", {"operationId": "console-e2e-v1", "width": 120, "height": 40}, B,
+             effectUnobservable="the window size lives in the agent's console pty, which no other reader sees"),
         call("consoleResizeBad", "resize_console", {"operationId": "console-e2e-v1", "width": 0, "height": 40}, B),
         # ctrl+a, then q, as two keystrokes: incus reads the detach sequence one key at a time
         call("consoleCtrlA", "send_console_input", {"operationId": "console-e2e-v1", "data": "\u0001"}, B),
         call("consoleDetach", "send_console_input", {"operationId": "console-e2e-v1", "data": "q"}, B),
         call("consoleAfter", "send_console_input", {"operationId": "console-e2e-v1", "data": ""}, B),
-        {"id": "consoleGone", "guest": CONSOLES},
+        {"id": "consoleGone", "guest": CONSOLES, "confirms": ["consoleCtrlA", "consoleDetach"]},
         call("consoleHeld", "stream_vm_console", {"uri": V1}, B),
-        {"id": "consoleHeldProcs", "guest": CONSOLES},
+        {"id": "consoleHeldProcs", "guest": CONSOLES, "confirms": ["consoleHeld"]},
         {"id": "stopB", "guest": f"{T} agent stop b >/dev/null; sleep 1; {CONSOLES}"},
         {"id": "restartB", "guest": START_B},
     ]
@@ -307,17 +356,18 @@ def nic_steps() -> list[dict]:
         *task("nicNoParent", "configure_network", {"uri": V1, "deviceName": "eth2", "parent": "e2e-nope"}, B),
         {"id": "nicDevices", "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0'; "
                                       "incus config device get e2e-v1 eth1 nictype; "
-                                      "incus config device show e2e-v1 | grep -c '^eth2:' || true"},
+                                      "incus config device show e2e-v1 | grep -c '^eth2:' || true",
+         "confirms": ["nic", "nicAgain"]},
         call("nicGuest", "run_instance_command",
              {"uri": V1, "command": "sh", "args": ["-c", "ls /sys/class/net | grep -vc '^lo$'"]}, B,
              until={"path": "response.body.result.structuredContent.stdout", "in": ["2\n"]}, timeout=60,
-             interval=3),
+             interval=3, effectUnobservable="a read inside the guest: its network interfaces"),
         *task("nicProfile", "remove_vm_network_device", {"uri": V1, "deviceName": "eth0"}, B),
         *task("nicRemove", "remove_vm_network_device", {"uri": V1, "deviceName": "eth1"}, B),
         *task("nicRemoveAgain", "remove_vm_network_device", {"uri": V1, "deviceName": "eth1"}, B),
         {"id": "nicAfter", "guest": "incus config device show e2e-v1 | grep -c 'parent: e2e-br0' || true; "
                                     "incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'; "
-                                    "ip link del e2e-br0 && echo gone"},
+                                    "ip link del e2e-br0 && echo gone", "confirms": ["nicRemove", "nicRemoveAgain"]},
     ]
 
 
@@ -406,10 +456,11 @@ def incus() -> dict:
         *task("vm", "provision_vm", {"name": "e2e-v1", "instanceType": "virtual-machine", "image": "parity-noble-vm",
                                      "cpus": 1, "memory": "1GiB", "disk": "10GiB"}, B, timeout=900),
         call("infoC", "get_vm_info", {"uri": C1}, B),
-        {"id": "inDefault", "guest": "incus list e2e-c1 --project default -c n -f csv; "
+        {"id": "inDefault", "confirms": ["container"], "guest": "incus list e2e-c1 --project default -c n -f csv; "
                                      "incus list --project e2e-other -c n -f csv | wc -l"},
-        {"id": "vmAddress", "guest": "for i in $(seq 150); do incus list e2e-v1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' "
-                                     "&& break; sleep 2; done; incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'"},
+        {"id": "vmAddress", "confirms": ["vm"], "guest": (
+            "for i in $(seq 150); do incus list e2e-v1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' && break; sleep 2; "
+            "done; incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'")},
         call("infoV", "get_vm_info", {"uri": V1}, B,
              until={"path": "response.body.result.structuredContent.agentReady", "in": [True]}, timeout=300,
              interval=5, capture={"V1_IP": "response.body.result.structuredContent.ipv4[0]"}),
@@ -417,29 +468,41 @@ def incus() -> dict:
         call("serveC", "run_instance_command",
               {"uri": C1, "command": "sh", "args": ["-c", "nohup python3 -m http.server 8080 --directory /etc "
                                                          ">/dev/null 2>&1 & sleep 1; echo serving"]}, B),
-        {"id": "reachC", "guest": f"ping -c1 -W5 {STATIC_IP} >/dev/null && echo ping-ok; curl -s -o /dev/null -w "
-                                  f"'%{{http_code}}' --max-time 10 http://{STATIC_IP}:8080/hostname"},
-        call("runV", "run_instance_command", {"uri": V1, "command": "sh", "args": ["-c", "nproc; uname -s"]}, B),
+        {"id": "reachC", "confirms": ["serveC"], "guest": (
+            f"ping -c1 -W5 {STATIC_IP} >/dev/null && echo ping-ok; curl -s -o /dev/null -w "
+            f"'%{{http_code}}' --max-time 10 http://{STATIC_IP}:8080/hostname")},
+        call("runV", "run_instance_command", {"uri": V1, "command": "sh", "args": ["-c", "nproc; uname -s"]}, B,
+             effectUnobservable="a read inside the guest: nproc and uname"),
         {"id": "reachV", "guest": "ping -c1 -W5 ${V1_IP} >/dev/null && echo ping-ok; "
                                   "timeout 5 bash -c 'echo > /dev/tcp/${V1_IP}/22' 2>/dev/null && echo ssh-port"},
         *console_steps(),
         *nic_steps(),
         # lifecycle
-        *task("stopC", "stop_vm", {"uri": C1}, B), *task("startC", "start_vm", {"uri": C1}, B),
+        *task("stopC", "stop_vm", {"uri": C1}, B),
+        {"id": "cStopped", "guest": "incus list e2e-c1 -c s -f csv", "confirms": ["stopC"]},
+        *task("startC", "start_vm", {"uri": C1}, B),
+        {"id": "cStarted", "guest": "incus info e2e-c1 | sed -n 's/^PID: //p' | tee /tmp/e2e-c1.pid; "
+                                    "incus list e2e-c1 -c s -f csv", "confirms": ["startC"]},
         *task("restartC", "restart_vm", {"uri": C1}, B),
+        {"id": "cRestarted", "confirms": ["restartC"], "guest": (
+            "[ \"$(incus info e2e-c1 | sed -n 's/^PID: //p')\" != \"$(cat /tmp/e2e-c1.pid)\" ] && echo restarted; "
+            "incus list e2e-c1 -c s -f csv")},
         call("infoAfter", "get_vm_info", {"uri": C1}, B,
              until={"path": "response.body.result.structuredContent.ipv4[0]", "in": [STATIC_IP]}, timeout=120,
              interval=3),
         *task("stopV", "stop_vm", {"uri": V1}, B),
+        {"id": "vStopped", "guest": "incus list e2e-v1 -c s -f csv", "confirms": ["stopV"]},
         call("resizeV", "update_vm_resources", {"uri": V1, "cpus": 2, "memory": "1536MiB"}, B),
         *task("startV", "start_vm", {"uri": V1}, B, timeout=300),
-        {"id": "limitsV", "guest": "incus config get e2e-v1 limits.cpu; incus config get e2e-v1 limits.memory"},
+        {"id": "limitsV", "guest": "incus config get e2e-v1 limits.cpu; incus config get e2e-v1 limits.memory; "
+                                   "incus list e2e-v1 -c s -f csv", "confirms": ["resizeV", "startV"]},
         # root disk and storage quota
         call("grow", "update_vm_resources", {"uri": C1, "disk": "5GiB"}, B),
-        {"id": "rootSize", "guest": "incus config device get e2e-c1 root size"},
+        {"id": "rootSize", "guest": "incus config device get e2e-c1 root size", "confirms": ["grow"]},
         call("overQuota", "run_instance_command",
               {"uri": C1, "command": "sh", "args": ["-c", "head -c 6G /dev/zero > /root/fill; r=$?; rm -f /root/fill; "
-                                                         "exit $r"], "timeoutMs": 240000}, B),
+                                                         "exit $r"], "timeoutMs": 240000}, B,
+             effectUnobservable="a write the quota refuses, removed by the same command: no effect remains"),
         # ownership: B refuses the instance it does not own, and leaves it untouched
         *task("stopForeign", "stop_vm", {"uri": FOREIGN}, B),
         *task("deleteForeign", "delete_vm", {"uri": FOREIGN}, B),
@@ -453,11 +516,11 @@ def incus() -> dict:
               {"confirm": True, "reinstall": True, "instanceNames": ["e2e-c1"],
                "disposableHostFingerprint": "e2e-devvm", "expectedHostFingerprint": "e2e-devvm",
                "disposableHostAuthorization": "dispose:e2e-devvm"}, B, timeout=900),
-        {"id": "resetGone", "guest": "incus list e2e-c1 -c n -f csv | wc -l"},
+        {"id": "resetGone", "guest": "incus list e2e-c1 -c n -f csv | wc -l", "confirms": ["reset"]},
         *task("deleteV", "delete_vm", {"uri": V1}, B),
         *task("deleteAgain", "delete_vm", {"uri": V1}, B),
         call("listAfter", "list_vms", {}, B),
-        {"id": "left", "guest": "incus list -c n -f csv"},
+        {"id": "left", "guest": "incus list -c n -f csv", "confirms": ["deleteV"]},
         {"id": "projectBack", "guest": "runuser -u opute -- incus project switch default && "
                                        "incus project delete e2e-other >/dev/null && cp -p /root/e2e-incus-config.yml "
                                        "/home/opute/.config/incus/config.yml && rm /root/e2e-incus-config.yml && echo restored"},
@@ -490,6 +553,8 @@ def incus() -> dict:
         req(Q21_SPEC, "A tool's published input schema declares every input it reads",
             direct("infoC", "structuredContent.ipv4[0]", equals=STATIC_IP),
             direct("infoAfter", "structuredContent.ipv4[0]", equals=STATIC_IP),
+            a("cStopped", "stdout", equals="STOPPED\n"), a("cStarted", "stdout", matches="^[1-9][0-9]*\nRUNNING\n$"),
+            a("cRestarted", "stdout", equals="restarted\nRUNNING\n"),
             scenario="provision_container's declared ipv4Address pins the container's bridge address across "
                      "stop, start and restart (D28)"),
         req(CATALOG, "stop_vm, start_vm, restart_vm, update_vm_resources",
@@ -499,7 +564,8 @@ def incus() -> dict:
             res("stopV", "structuredContent.status", equals="stopped"),
             direct("resizeV", "isError", **{"in": [False, "<absent>"]}),
             res("startV", "structuredContent.status", equals="running"),
-            a("limitsV", "stdout", equals="2\n1536MiB\n"),
+            a("limitsV", "stdout", equals="2\n1536MiB\nRUNNING\n"),
+            a("vStopped", "stdout", equals="STOPPED\n"),
             scenario="Lifecycle of both kinds; a stopped VM resized and started with its new limits"),
         req(CATALOG, "update_vm_resources disk is admitted only where the pool enforces it",
             direct("grow", "isError", **{"in": [False, "<absent>"]}), a("rootSize", "stdout", equals="5GiB\n"),
@@ -656,9 +722,13 @@ def plans() -> dict:
         call("run", "run_host_plan", {"plan": cross_plan("e2e.cross", "e2e-cross-1", "p1")},
              capture={"RUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("done", "RUN", timeout=600),
+        {"id": "p1State", "guest": f"cat {HOME}/e2e/p1.txt; incus list e2e-p1 -c s -f csv; ls {SQLITE}/e2e-p1",
+         "confirms": ["run"]},
         # a repeat re-runs the same run: every node revalidates and re-applies only what drifted (Go's design)
         call("again", "run_host_plan", {"plan": cross_plan("e2e.cross", "e2e-cross-1", "p1")}),
         base.poll_run("againDone", "RUN", timeout=600),
+        {"id": "p1Again", "guest": f"cat {HOME}/e2e/p1.txt; incus list e2e-p1 -c s -f csv; ls {SQLITE}/e2e-p1",
+         "confirms": ["again"]},
         {"id": "released", "guest": "sleep 5"},
         call("operation", "get_operation", {"operationId": "${RUN}"}),
         call("operations", "list_operations", {"limit": 50}),
@@ -667,6 +737,8 @@ def plans() -> dict:
         call("recipeRun", "run_host_local_recipe", {"source": recipe_path, "inputs": {"name": "r1"}},
              capture={"RRUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("recipeDone", "RRUN", timeout=600),
+        {"id": "r1State", "guest": f"cat {HOME}/e2e/r1.txt; incus list e2e-r1 -c s -f csv; ls {SQLITE}/e2e-r1",
+         "confirms": ["recipeRun"]},
         {"id": "released2", "guest": "sleep 5"},
         # cancel mid-plan: the file node completes, the run waits on the slow endpoint, then is cancelled
         call("slowRun", "run_host_plan", {"plan": cross_plan("e2e.cancel", "e2e-cancel-1", "c1", slow=True)},
@@ -678,7 +750,7 @@ def plans() -> dict:
         call("cancel", "cancel_operation", {"operationId": "${CRUN}"}),
         base.poll_run("cancelled", "CRUN", timeout=120),
         {"id": "afterCancel", "guest": "sleep 30; incus list e2e-c1 -c n -f csv | wc -l; "
-                                       f"test -e {HOME}/e2e/c1.txt && echo file-kept"},
+                                       f"test -e {HOME}/e2e/c1.txt && echo file-kept", "confirms": ["slowRun"]},
         call("cancelAgain", "cancel_operation", {"operationId": "${CRUN}"}),
         call("unknown", "get_operation", {"operationId": "no-such-operation"}),
     ]
@@ -719,6 +791,9 @@ def plans() -> dict:
             direct("cancelled", "structuredContent.nodes.file.status", equals="applied"),
             direct("cancelled", "structuredContent.nodes.guest.status", **{"in": ["pending", "<absent>"]}),
             a("afterCancel", "stdout", equals="0\nfile-kept\n"),
+            a("p1State", "stdout", equals="p1\nRUNNING\nmain.sqlite\n"),
+            a("p1Again", "stdout", equals="p1\nRUNNING\nmain.sqlite\n"),
+            a("r1State", "stdout", equals="recipe\nRUNNING\nmain.sqlite\n"),
             direct("cancelAgain", "isError", equals=True),
             direct("cancelAgain", "content[0].text", matches="cannot be cancelled in status"),
             scenario="A running plan cancelled through cancel_operation: the completed node's effect stays, the "
@@ -727,7 +802,7 @@ def plans() -> dict:
     ]
     cleanup = [{"id": "cleanPlans", "guest": (
         f"{T} slow stop >/dev/null; for n in e2e-p1 e2e-r1 e2e-c1; do incus delete -f $n 2>/dev/null; done; "
-        f"rm -rf {HOME}/e2e {HOME}/.opute/databases/e2e-*; "
+        f"rm -rf {HOME}/e2e {SQLITE}/e2e-*; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     allow = ["incus/*", "files//home/opute/e2e*", "files//home/opute/.opute*", "system/units/e2e-slow*",
@@ -766,14 +841,15 @@ def cluster_steps(vm: dict | None = None) -> list[dict]:
             "grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | wc -l")},
         call("installA", "opute.provider.install",
              {"descriptor": ha.descriptor(4320), "activate": True, "recipeSource": ha.RECIPE}),
-        {"id": "providerToolsA", "guest": ha.wait_tool(3014, "${TOKEN}")},
+        {"id": "providerToolsA", "guest": ha.wait_tool(3014, "${TOKEN}"), "confirms": ["installA"]},
         {"id": "catalogAfterA", "mcp": "tools/list"},
         *task("vm1", "provision_vm", {"name": "e2e-k1", **(vm or ha.VM)}),
-        call("info1", "get_vm_info", {"uri": K1}, capture={"K1_IP": "response.body.result.structuredContent.ipv4[0]"}),
+        call("info1", "get_vm_info", {"uri": K1}, capture={"K1_IP": "response.body.result.structuredContent.ipv4[0]"},
+             confirms=["vm1"]),
         *task("provision", K + "provision", {**ha.target("e2e-k1"), "version": ha.VERSION, "clusterInit": True}),
         call("ready", K + "status", CL,
              until={"path": "response.body.result.structuredContent.readyNodeCount", "in": [1]}, timeout=300,
-             interval=5),
+             interval=5, confirms=["provision"]),
     ]
 
 
@@ -848,16 +924,19 @@ def oci() -> dict:
     steps = cluster_steps(vm) + [
         PKGS_BEFORE,
         *task("builder", "ensure_oci_builder", {}, timeout=900),
+        {"id": "podman", "guest": "command -v podman", "confirms": ["builder"]},
         *task("stage", "stage_build_context", {"destDir": CTX, "files": APP}),
+        {"id": "staged", "guest": f"cd {CTX} && find . -type f | sort", "confirms": ["stage"]},
         *task("registry", "install_oci_registry", {"uri": CLUSTER, "image": "registry:2.8.3", "storageSize": "1Gi"},
               timeout=600),
         call("registryStatus", "get_oci_registry_status", {"uri": CLUSTER},
              until={"path": "response.body.result.structuredContent.deployment.status.readyReplicas", "in": [1]},
-             timeout=300, interval=5),
+             timeout=300, interval=5, confirms=["registry"]),
         *task("push", "build_and_push_oci_image",
               {"contextDir": CTX, "image": "${K1_IP}:30500/e2e/app:1", "insecureRegistry": True}, timeout=900),
         # the push result names no digest; the registry's manifest answer does
-        {"id": "digest", "guest": registry_digest("e2e/app", "1"), "capture": {"DIGEST": "stdout"}},
+        {"id": "digest", "guest": registry_digest("e2e/app", "1"), "capture": {"DIGEST": "stdout"},
+         "confirms": ["push"]},
         *task("trust", K + "configure-registry",
               {**CL, "endpoint": "http://${K1_IP}:30500", "registry": "${K1_IP}:30500", "insecure": True},
               timeout=600),
@@ -868,8 +947,9 @@ def oci() -> dict:
         call("pulled", "get_cluster_resource_status",
              {"uri": CLUSTER, "resourceKind": "Pod", "namespace": "default", "resourceName": "e2e-pull"},
              until={"path": "response.body.result.structuredContent.status", "in": ["ready"]}, timeout=300,
-             interval=5),
-        call("logs", "exec_cluster_command", {"uri": CLUSTER, "command": "logs", "args": ["e2e-pull", "-n", "default"]}),
+             interval=5, confirms=["trust", "pull"]),
+        call("logs", "exec_cluster_command", {"uri": CLUSTER, "command": "logs", "args": ["e2e-pull", "-n", "default"]},
+             effectUnobservable="a read through the general command tool: kubectl logs"),
         # storage policy and cleanup. Without a user session Podman warns on stderr; the report is parsed from
         # stdout alone (D28, Q26). The user service supervisor then provides the session
         call("inspectNoSession", "inspect_container_storage", {}),
@@ -877,12 +957,21 @@ def oci() -> dict:
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
         call("supervisorAgain", "ensure_host_service_supervisor", {}),
+        linger(),
         call("inspect", "inspect_container_storage", {}),
         *task("policy", "configure_oci_storage", {"uri": CLUSTER, "minAgeSeconds": 3600}),
-        *task("dryRun", "cleanup_container_storage", {"dryRun": True}),
+        # the policy as the agent persisted it (3600 s is also the default, so the report alone cannot tell)
+        {"id": "policyFile", "guest": "find /home/opute/.config/opute -name oci-storage-policy.json -exec cat {} +",
+         "confirms": ["policy"]},
+        *unobservable(task("dryRun", "cleanup_container_storage", {"dryRun": True}), "a dry run changes nothing"),
         *task("cleanup", "cleanup_container_storage", {"minAgeSeconds": 3600}),
-        call("inspectAfter", "inspect_container_storage", {}),
+        # nothing is an hour old yet: the images stay
+        call("inspectAfter", "inspect_container_storage", {}, confirms=["cleanup"]),
         *task("deleteRegistry", "delete_oci_registry", {"uri": CLUSTER}),
+        {"id": "registryGone", "confirms": ["deleteRegistry"], "guest": (
+            "for i in $(seq 60); do incus exec e2e-k1 -- k3s kubectl get namespace registry-system >/dev/null 2>&1 "
+            "|| break; sleep 2; done; incus exec e2e-k1 -- k3s kubectl get namespace registry-system 2>&1 | "
+            "grep -c NotFound")},
     ]
     reqs = cluster_requirements() + [
         req(CATALOG, "ensure_oci_builder, stage_build_context, install_oci_registry, build_and_push_oci_image",
@@ -917,6 +1006,11 @@ def oci() -> dict:
             res("cleanup", "isError", equals=False),
             direct("inspectAfter", "isError", **{"in": [False, "<absent>"]}),
             res("deleteRegistry", "isError", equals=False),
+            a("linger", "stdout", equals="yes\nbus\n"), a("podman", "stdout", equals="/usr/bin/podman\n"),
+            a("staged", "stdout", equals="./Dockerfile\n./src/main.txt\n"),
+            a("policyFile", "stdout", matches='"minAgeSeconds": ?3600'),
+            direct("inspectAfter", "structuredContent.categories.images.bytes", gte=1),
+            a("registryGone", "stdout", equals="1\n"),
             scenario="With the user service supervisor ready: the storage policy applied, a dry run, a cleanup "
                      "with the shortest allowed age, and the registry deleted"),
     ]
@@ -955,26 +1049,32 @@ def data() -> dict:
             "try:\n    s.sendall(b'not-the-token\\n'); s.sendall(bytes([0, 0, 0, 8, 4, 210, 22, 47]))\n"
             "    print((s.recv(1) or b'closed').decode())\nexcept OSError:\n    print('closed')\nPY")},
         {"id": "write", "guest": f"{psql} \"CREATE TABLE e2e(note text); INSERT INTO e2e VALUES ('written')\""},
-        {"id": "read", "guest": f"{psql} 'SELECT note FROM e2e'"},
+        {"id": "read", "guest": f"{psql} 'SELECT note FROM e2e'", "confirms": ["reconcile"]},
         {"id": "tokenRows", "guest": f"{T} contains {SDB} '${{SECRET:relayToken}}'"},
         call("releaseWrong", "release_postgresql_service_relay", {"sessionId": "e2e-session",
                                                                   "relayToken": "not-the-relay-token-0123456789abcdef"}),
         call("release", "release_postgresql_service_relay", {"sessionId": "e2e-session",
                                                              "relayToken": "${SECRET:relayToken}"}),
+        # released: the relay no longer listens
+        {"id": "relayClosed", "confirms": ["release"], "guest": (
+            "python3 - <<'PY'\nimport socket\ntry:\n    socket.create_connection(('127.0.0.1', 15433), timeout=5)\n"
+            "    print('open')\nexcept OSError:\n    print('closed')\nPY")},
         *task("remove", "remove_postgresql_service", {**PG, "confirm": True, "retentionPolicy": "delete"}, timeout=600),
         # the service and its data go; the namespace is the caller's and stays
         {"id": "gone", "guest": (
             "for i in $(seq 60); do n=$(incus exec e2e-k1 -- k3s kubectl -n e2e-data get "
-            "clusters.postgresql.cnpg.io,pvc -o name | wc -l); [ \"$n\" = 0 ] && break; sleep 5; done; echo $n")},
+            "clusters.postgresql.cnpg.io,pvc -o name | wc -l); [ \"$n\" = 0 ] && break; sleep 5; done; echo $n"),
+         "confirms": ["remove"]},
         # SQLite
         call("sqlite", "ensure_sqlite_database", {"consumerId": "e2e-a", "databaseName": "main"}),
         call("sqliteAgain", "ensure_sqlite_database", {"consumerId": "e2e-a", "databaseName": "main"}),
+        {"id": "sqliteFile", "guest": f"ls {SQLITE}/e2e-a", "confirms": ["sqlite", "sqliteAgain"]},
         call("sqliteStatus", "get_sqlite_database_status", {"consumerId": "e2e-a", "databaseName": "main"}),
         call("sqliteUnconfirmed", "remove_sqlite_database", {"consumerId": "e2e-a", "databaseName": "main",
                                                              "confirm": False}),
         call("sqliteRemove", "remove_sqlite_database", {"consumerId": "e2e-a", "databaseName": "main",
                                                         "confirm": True}),
-        {"id": "sqliteGone", "guest": f"ls {HOME}/.opute/databases/e2e-a 2>/dev/null | wc -l"},
+        {"id": "sqliteGone", "guest": f"ls {SQLITE}/e2e-a 2>/dev/null | wc -l", "confirms": ["sqliteRemove"]},
     ]
     reqs = cluster_requirements() + [
         req(CATALOG, "reconcile_postgresql_service, get_postgresql_service_status (localRelay)",
@@ -992,7 +1092,7 @@ def data() -> dict:
             direct("releaseWrong", "isError", equals=True),
             direct("release", "isError", **{"in": [False, "<absent>"]}),
             res("remove", "isError", equals=False),
-            a("gone", "stdout", equals="0\n"),
+            a("gone", "stdout", equals="0\n"), a("relayClosed", "stdout", equals="closed\n"),
             scenario="The relay released only with its token; removal leaves no service or data behind"),
         req(CATALOG, "ensure_sqlite_database, get_sqlite_database_status, remove_sqlite_database",
             direct("sqlite", "isError", **{"in": [False, "<absent>"]}),
@@ -1000,11 +1100,11 @@ def data() -> dict:
             direct("sqliteStatus", "structuredContent.exists", equals=True),
             direct("sqliteUnconfirmed", "isError", equals=True),
             direct("sqliteRemove", "isError", **{"in": [False, "<absent>"]}),
-            a("sqliteGone", "stdout", equals="0\n"),
+            a("sqliteGone", "stdout", equals="0\n"), a("sqliteFile", "stdout", equals="main.sqlite\n"),
             scenario="A caller-scoped SQLite database provisioned, reported, refused removal without "
                      "confirmation, and removed"),
     ]
-    cleanup = cluster_cleanup(f"rm -rf {HOME}/.opute/databases; ")
+    cleanup = cluster_cleanup(f"rm -rf {SQLITE}; ")
     allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*", "system/units/opute-*", "user/units/*",
                                "user/unitFiles/*", "files//home/opute/.config/systemd*", "linger*",
                                "files//var/lib/systemd/linger*", "system/units/user*", "system/units/run-user-*"]
@@ -1031,7 +1131,7 @@ def discovery() -> dict:
         *cluster_steps()[2:5],  # provider copy, recipe copy, setup (TOOL_STEPS already ran)
         call("installA", "opute.provider.install",
              {"descriptor": ha.descriptor(4320), "activate": True, "recipeSource": ha.RECIPE}),
-        {"id": "providerToolsA", "guest": ha.wait_tool(3014, "${TOKEN}")},
+        {"id": "providerToolsA", "guest": ha.wait_tool(3014, "${TOKEN}"), "confirms": ["installA"]},
         {"id": "catalogAfterA", "mcp": "tools/list"},
         # an available provider and no cluster: an empty inventory
         call("empty", "list_compute_clusters", {}),
@@ -1043,11 +1143,12 @@ def discovery() -> dict:
             "'${TOKEN}'")},
         # one healthy cluster
         *task("vm1", "provision_vm", {"name": "e2e-k1", **ha.VM}),
-        call("info1", "get_vm_info", {"uri": K1}, capture={"K1_IP": "response.body.result.structuredContent.ipv4[0]"}),
+        call("info1", "get_vm_info", {"uri": K1}, capture={"K1_IP": "response.body.result.structuredContent.ipv4[0]"},
+             confirms=["vm1"]),
         *task("provision", K + "provision", {**ha.target("e2e-k1"), "version": ha.VERSION, "clusterInit": True}),
         call("ready", K + "status", CL,
              until={"path": "response.body.result.structuredContent.readyNodeCount", "in": [1]}, timeout=300,
-             interval=5),
+             interval=5, confirms=["provision"]),
         call("healthy", "list_compute_clusters", {}),
         call("namespaces", "list_namespaces", {"uri": CLUSTER}),
         call("pods", "list_pods", {"uri": CLUSTER, "namespace": "kube-system"}),
@@ -1059,6 +1160,7 @@ def discovery() -> dict:
                                                 "secretName": "k3s-serving"}),
         # a failed probe: the cluster's server is stopped
         *task("stop", "stop_vm", {"uri": K1}),
+        {"id": "k1Stopped", "guest": "incus list e2e-k1 -c s -f csv", "confirms": ["stop"]},
         call("stoppedList", "list_compute_clusters", {}),
         call("stoppedEvents", "list_cluster_events", {"uri": CLUSTER, "namespace": "kube-system"}),
         # a failed probe: the provider behind discovery is unreachable
@@ -1069,6 +1171,7 @@ def discovery() -> dict:
             f"--setenv=OPUTE_PROVIDER_PORT=4320 --property=Restart=no {ha.PROVIDER} >/dev/null && for i in "
             "$(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; echo started")},
         *task("start", "start_vm", {"uri": K1}),
+        {"id": "k1Started", "guest": "incus list e2e-k1 -c s -f csv", "confirms": ["start"]},
         call("recovered", "list_compute_clusters", {},
              until={"path": "response.body.result.structuredContent.total", "in": [1]}, timeout=180, interval=5),
         {"id": "joinToken", "guest": "incus exec e2e-k1 -- cat /var/lib/rancher/k3s/server/token | tr -d '\\n'",
@@ -1087,6 +1190,7 @@ def discovery() -> dict:
             direct("healthy", "structuredContent.clusters[0].uri", equals=CLUSTER),
             direct("unreachable", "isError", equals=True),
             res("start", "structuredContent.status", equals="running"),
+            a("k1Stopped", "stdout", equals="STOPPED\n"), a("k1Started", "stdout", equals="RUNNING\n"),
             direct("recovered", "structuredContent.total", equals=1),
             scenario="No provider, an available provider with no cluster, one healthy cluster, and an unreachable "
                      "provider: the empty inventory is a successful result with no clusters, the failed probe an "
@@ -1171,6 +1275,7 @@ def site() -> dict:
         # the site image, built locally from the published source and pushed to an e2e registry
         *task("source", "ensure_host_artifact", {"uri": SITE_SRC, "destination": "e2e/site-src.tar.gz",
                                                  "sha256": SITE_SRC_SHA}),
+        {"id": "sourceFile", "guest": f"sha256sum {HOME}/e2e/site-src.tar.gz | cut -d' ' -f1", "confirms": ["source"]},
         # host commands run under the user service manager
         call("supervisor", "ensure_host_service_supervisor", {}),
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
@@ -1180,17 +1285,21 @@ def site() -> dict:
               {"command": f"mkdir -p {SITE_CTX} && tar -xzf $HOME/e2e/site-src.tar.gz -C {SITE_CTX} "
                           "--strip-components=2 host-agents-c9f9e775d8648a54ebaccc052c840cc1dcbdc42e/site && "
                           f"ls {SITE_CTX}"}),
+        linger(),
+        {"id": "unpacked", "guest": f"test -f {SITE_CTX}/Dockerfile && echo dockerfile", "confirms": ["unpack"]},
         PKGS_BEFORE,
         *task("builder", "ensure_oci_builder", {}, timeout=900),
+        {"id": "podman", "guest": "command -v podman", "confirms": ["builder"]},
         *task("registry", "install_oci_registry", {"uri": CLUSTER, "image": "registry:2.8.3", "storageSize": "1Gi"},
               timeout=600),
         call("registryStatus", "get_oci_registry_status", {"uri": CLUSTER},
              until={"path": "response.body.result.structuredContent.deployment.status.readyReplicas", "in": [1]},
-             timeout=300, interval=5),
+             timeout=300, interval=5, confirms=["registry"]),
         *task("push", "build_and_push_oci_image",
               {"contextDir": SITE_CTX, "image": "${K1_IP}:30500/host-agent-www:e2e", "insecureRegistry": True},
               timeout=900),
-        {"id": "digest", "guest": registry_digest("host-agent-www", "e2e"), "capture": {"DIGEST": "stdout"}},
+        {"id": "digest", "guest": registry_digest("host-agent-www", "e2e"), "capture": {"DIGEST": "stdout"},
+         "confirms": ["push"]},
         *task("trust", K + "configure-registry",
               {**CL, "endpoint": "http://${K1_IP}:30500", "registry": "${K1_IP}:30500", "insecure": True},
               timeout=600),
@@ -1212,7 +1321,8 @@ def site() -> dict:
         *task("domain", "configure_service_domain",
               {"uri": CLUSTER, "namespace": "host-agent-site", "ingressName": "e2e-www", "hostname": SITE_HOST,
                "serviceName": "host-agent-www", "servicePort": 80}),
-        {"id": "serve", "guest": (
+        # the page answers from pods that pulled the image through the trusted registry
+        {"id": "serve", "confirms": ["trust", "deploy", "domain"], "guest": (
             f"for i in $(seq 60); do code=$(curl -s -o /tmp/e2e-site.html -w '%{{http_code}}' --max-time 5 -H "
             f"'Host: {SITE_HOST}' http://${{K1_IP}}/); [ \"$code\" = 200 ] && break; sleep 2; done; echo $code; "
             "grep -c 'Opute Host Agent' /tmp/e2e-site.html")},
@@ -1223,11 +1333,13 @@ def site() -> dict:
         base.poll_run("againDone", "RUN", timeout=600),
         call("imageAgain", "get_cluster_resource_status",
              {"uri": CLUSTER, "resourceKind": "Deployment", "namespace": "host-agent-site",
-              "resourceName": "host-agent-www"}),
+              "resourceName": "host-agent-www"}, confirms=["again"]),
         {"id": "released", "guest": "sleep 5"},
         # removal: the domain mapping, then the teardown recipe's workload node
         *task("unmap", "remove_service_domain",
               {"uri": CLUSTER, "namespace": "host-agent-site", "ingressName": "e2e-www"}),
+        {"id": "unmapped", "confirms": ["unmap"], "guest": (
+            "incus exec e2e-k1 -- k3s kubectl get ingress e2e-www -n host-agent-site 2>&1 | grep -c NotFound")},
         call("teardown", "run_host_local_recipe", {"source": SITE_TEARDOWN,
                                                    "inputs": {"host": "e2e-devvm-agent", "clusterUri": CLUSTER}},
              capture={"TRUN": "response.body.result.structuredContent.runId"}),
@@ -1236,7 +1348,7 @@ def site() -> dict:
              {"uri": CLUSTER, "resourceKind": "Deployment", "namespace": "host-agent-site",
               "resourceName": "host-agent-www"},
              until={"path": "response.body.result.structuredContent.status", "in": ["missing"]}, timeout=300,
-             interval=5),
+             interval=5, confirms=["teardown"]),
         {"id": "unserved", "guest": f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 5 -H 'Host: {SITE_HOST}' "
                                     "http://${K1_IP}/"},
     ]
@@ -1257,6 +1369,8 @@ def site() -> dict:
             direct("deployed", "structuredContent.status", equals="completed"),
             res("domain", "isError", equals=False),
             a("serve", "stdout", matches="^200\n[1-9]"),
+            a("sourceFile", "stdout", equals=SITE_SRC_SHA + "\n"), a("linger", "stdout", equals="yes\nbus\n"),
+            a("unpacked", "stdout", equals="dockerfile\n"), a("podman", "stdout", equals="/usr/bin/podman\n"),
             direct("image", "structuredContent.resource.spec.template.spec.containers[0].image",
                    matches=r"@sha256:[0-9a-f]{64}$"),
             scenario="The site image built from the published source at c9f9e775, pushed to the e2e registry and "
@@ -1279,6 +1393,7 @@ def site() -> dict:
             direct("tornDown", "structuredContent.status", equals="completed"),
             direct("gone", "structuredContent.status", equals="missing"),
             a("unserved", "stdout", equals="404"),
+            a("unmapped", "stdout", equals="1\n"),
             scenario="The teardown recipe's workload node deletes the namespace, and with it the Ingress"),
     ]
     cleanup = cluster_cleanup(f"rm -rf {SITE_CTX} {HOME}/e2e /tmp/e2e-site.html; loginctl disable-linger opute; "
@@ -1334,6 +1449,7 @@ def serving() -> dict:
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
         call("supervisorAgain", "ensure_host_service_supervisor", {}),
+        linger(),
         call("assign", "reconcile_serving_assignment", assignment(1, "e2e-model-1")),
         call("assignAgain", "reconcile_serving_assignment", assignment(1, "e2e-model-1")),
         # the process's own record: its supervisor log and the user manager's journal for it
@@ -1342,9 +1458,10 @@ def serving() -> dict:
                                       "ss -ltnH 'sport = :18091' | wc -l")},
         # D28 (Q27): the assignment's own process is the runtime the gateway reaches
         {"id": "modelUp", "guest": "for i in $(seq 50); do ss -ltnH 'sport = :18091' | grep -q . && break; sleep 0.2; "
-                                   "done; ss -ltnH 'sport = :18091' | wc -l"},
+                                   "done; ss -ltnH 'sport = :18091' | wc -l", "confirms": ["assign", "assignAgain"]},
         call("gateway", "ensure_local_llm_relay", relay),
-        {"id": "chat", "guest": CHAT.replace("{auth}", "req.add_header('Authorization', 'Bearer ${SECRET:gatewayToken}')\n")},
+        {"id": "chat", "guest": CHAT.replace("{auth}", "req.add_header('Authorization', 'Bearer ${SECRET:gatewayToken}')\n"),
+         "confirms": ["gateway"]},
         {"id": "chatNoToken", "guest": CHAT.replace("{auth}", "")},
         call("probe", "probe_openai_compatible_server",
              {"endpoint": "http://127.0.0.1:18434", "bearerToken": "${SECRET:gatewayToken}", "includeChat": True}),
@@ -1353,17 +1470,17 @@ def serving() -> dict:
         *task("removeModel", "remove_local_llm_model", {"modelRef": "e2e-model", "purge": True}),
         *task("configureRuntime", "configure_local_llm_runtime", {"numParallel": 4, "maxLoadedModels": 1}),
         {"id": "ollamaUntouched", "guest": "systemctl list-units --all --plain --no-legend 'ollama*' | wc -l; "
-                                           "ss -ltnH 'sport = :11434' | wc -l"},
+                                           "ss -ltnH 'sport = :11434' | wc -l", "confirms": ["removeModel"]},
         call("removeGateway", "remove_local_llm_relay", {"sessionId": "e2e-gateway"}),
         {"id": "gatewayGone", "guest": "curl -s -o /dev/null -w '%{http_code}' --max-time 3 "
-                                       "http://127.0.0.1:18434/v1/models || true"},
+                                       "http://127.0.0.1:18434/v1/models || true", "confirms": ["removeGateway"]},
         call("units", "list_host_services", {}),
     ]
     reqs = [
         req(SERVE_GOAL, "A prompt returns a completion through the gateway",
             direct("supervisor", "isError", **{"in": [False, "<absent>"]}),
             direct("supervisorAgain", "structuredContent.status", equals="ready"),
-            a("modelUp", "stdout", equals="1\n"),
+            a("modelUp", "stdout", equals="1\n"), a("linger", "stdout", equals="yes\nbus\n"),
             direct("gateway", "isError", **{"in": [False, "<absent>"]}),
             a("chat", "json.status", equals=200),
             a("chat", "json.content", equals="e2e fixture completion"),
@@ -1454,6 +1571,10 @@ def fail_plan() -> dict:
 
 
 
+PRINTS = "the command only prints; its output is asserted"
+TWIN = "the command only sleeps; the twins step saw both running, each in its own unit"
+
+
 def second_writer(id_: str, gz: str) -> dict:
     """D25: another release started on the serving agent's instance root, as the unit runs it; it must
     refuse with the decided line and exit 1 while the first keeps serving."""
@@ -1479,14 +1600,18 @@ def cutover() -> dict:
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
         call("goSupervisorAgain", "ensure_host_service_supervisor", {}),
+        {**linger(), "confirms": ["goSupervisorAgain"]},
         # Go's real history: a completed cross-domain plan, a failed plan, a completed task
         call("goPlan", "run_host_plan", {"plan": work_plan("e2e.go", "e2e-go-1", "g1")},
              capture={"GO_RUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("goPlanDone", "GO_RUN", timeout=600),
+        {"id": "g1State", "guest": f"cat {HOME}/e2e/g1.txt; incus list e2e-g1 -c s -f csv", "confirms": ["goPlan"]},
         call("goFail", "run_host_plan", {"plan": fail_plan()},
              capture={"GO_FAIL": "response.body.result.structuredContent.runId"}),
         base.poll_run("goFailDone", "GO_FAIL", timeout=120),
-        *task("goTask", "run_host_command", {"command": "echo go-era"}),
+        # the failed run's node wrote before its validation failed
+        {"id": "failFile", "guest": f"cat {HOME}/e2e/fail.txt", "confirms": ["goFail"]},
+        *unobservable(task("goTask", "run_host_command", {"command": "echo go-era"}), PRINTS),
         # work in flight when Go stops: a working task and an open synchronous call. The coordinator never
         # admits normal work beside heavy work, and a running plan is heavy, so a plan cannot be in flight with
         # them; e2e1.migrate-upgrade stops Go with a plan in flight, and e2e4.restart stops Rust with one.
@@ -1512,14 +1637,16 @@ def cutover() -> dict:
         call("rustPlan", "get_host_plan_run", {"runId": "${GO_RUN}"}),
         call("rustFailed", "get_host_plan_run", {"runId": "${GO_FAIL}"}),
         call("rustGuest", "get_vm_info", {"uri": "container:local:e2e-g1"}),
-        call("rustSqlite", "get_sqlite_database_status", {"consumerId": "e2e-g1", "databaseName": "main"}),
+        call("rustSqlite", "get_sqlite_database_status", {"consumerId": "e2e-g1", "databaseName": "main"},
+             confirms=["goPlan"]),
         # Rust-era work
         call("rustNew", "run_host_plan", {"plan": {"contractVersion": "host-plan.v1", "planId": "e2e.rust",
                                                    "generation": 1, "idempotencyKey": "e2e-rust-1",
                                                    "nodes": cross_plan("x", "x", "n1")["nodes"][:1]}},
              capture={"RUST_RUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("rustNewDone", "RUST_RUN", timeout=120),
-        *task("rustTaskNew", "run_host_command", {"command": "echo rust-era"}),
+        {"id": "n1File", "guest": f"cat {HOME}/e2e/n1.txt", "confirms": ["rustNew"]},
+        *unobservable(task("rustTaskNew", "run_host_command", {"command": "echo rust-era"}), PRINTS),
         {"id": "rustStop", "guest": f"systemctl stop {UNIT} && {T} db {SDB_}"},
         # rollback: Go on Rust's state
         base.swap("goBack", f"{base.GO_REL}/host-agent-linux-x64.gz"),
@@ -1553,6 +1680,8 @@ def cutover() -> dict:
             direct("goFailDone", "structuredContent.status", equals="failed"),
             direct("goSupervisorAgain", "structuredContent.status", equals="ready"),
             res("goTask", "structuredContent.stdout", equals="go-era\n"),
+            a("linger", "stdout", equals="yes\nbus\n"), a("g1State", "stdout", equals="g1\nRUNNING\n"),
+            a("failFile", "stdout", equals="x\n"),
             ok("goStop"), a("goStop", "json.integrity", equals="ok"),
             a("rustInstall", "stdout", matches=base.RUST_MATCH),
             a("rustDb", "json.integrity", equals="ok"),
@@ -1593,6 +1722,7 @@ def cutover() -> dict:
         req(CUTOVER, "Rollback: Go reports every task, Rust-era work included, with the status Rust last reported",
             direct("rustNewDone", "structuredContent.status", equals="completed"),
             res("rustTaskNew", "structuredContent.stdout", equals="rust-era\n"),
+            a("n1File", "stdout", equals="n1\n"),
             a("rustStop", "json.integrity", equals="ok"),
             a("goBack", "stdout", matches="\n0\\.2\\.4\n$"),
             {"step": "goBackRustTaskWire", "path": "response.body.result.status", "equals": "completed"},
@@ -1613,7 +1743,7 @@ def cutover() -> dict:
         ">/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances "
         f"/home/opute/.config/opute/instances && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}; "
         "loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; "
-        f"rm -rf {HOME}/e2e {HOME}/.opute/databases /tmp/e2e-sync.json /tmp/e2e-go-state.sha; "
+        f"rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /tmp/e2e-sync.json /tmp/e2e-go-state.sha; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "incus/*", "files//home/opute/e2e*",
@@ -1713,11 +1843,14 @@ def upgrade_chain() -> dict:
         call("goDone", "run_host_plan", {"plan": base.plan("e2e-chain-go", "e2e-chain-go-1", ".config/opute-e2e/go.txt")},
              capture={"GO_DONE": "response.body.result.structuredContent.runId"}),
         base.poll_run("goDoneWait", "GO_DONE"),
+        {"id": "goDoneFile", "guest": f"cat {HOME}/.config/opute-e2e/go.txt", "confirms": ["goDone"]},
         call("goFlight", "run_host_plan", {"plan": base.plan("e2e-chain-flight", "e2e-chain-flight-1",
                                                              ".config/opute-e2e/flight.txt", slow=True)},
              capture={"GO_FLIGHT": "response.body.result.structuredContent.runId"}),
         call("goInFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"},
              until={"path": "response.body.result.structuredContent.nodes.n2.attempts", "in": [1]}, timeout=30),
+        # the in-flight run's first node wrote before the second waits on the slow endpoint
+        {"id": "goFlightFile", "guest": f"cat {HOME}/.config/opute-e2e/flight.txt", "confirms": ["goFlight"]},
         db("goStop"),
         {"id": "slowStop", "guest": f"{T} slow stop"},
         # 2. rust-0.3.0 on the same unit and state; work that writes the m19 secret classes
@@ -1730,10 +1863,13 @@ def upgrade_chain() -> dict:
         call("r3Supervisor", "ensure_host_service_supervisor", {}),
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
+        {**linger("r3Linger"), "confirms": ["r3Supervisor"]},
         call("r3Relay", "ensure_local_llm_relay", relay),
+        {"id": "r3RelayListens", "guest": "ss -ltnH 'sport = :3058' | wc -l", "confirms": ["r3Relay"]},
         *chain_task("r3Tunnel", "ensure_public_mcp_tunnel", tunnel),
         run("r3Plan", "R3_RUN", "r3"), base.poll_run("r3PlanDone", "R3_RUN"),
-        *task("r3Task", "run_host_command", {"command": "echo r3-era"}),
+        {"id": "r3PlanFile", "guest": f"cat {HOME}/e2e/n1.txt && rm {HOME}/e2e/n1.txt", "confirms": ["r3Plan"]},
+        *unobservable(task("r3Task", "run_host_command", {"command": "echo r3-era"}), PRINTS),
         write("r3Write", "r3"),
         chain_scan("r3Scan"),
         db("r3Stop"),
@@ -1749,7 +1885,9 @@ def upgrade_chain() -> dict:
         call("r4Read", "inspect_host_file", {"path": "~/e2e/chain-r3.txt", "scope": "user"}),
         *chain_task("r4Tunnel", "ensure_public_mcp_tunnel", tunnel),
         run("r4Plan", "R4_RUN", "r4"), base.poll_run("r4PlanDone", "R4_RUN"),
-        *task("r4Task", "run_host_command", {"command": "echo r4-era"}),
+        # r3PlanFile removed the file r3's run wrote: this one is r4's
+        {"id": "r4PlanFile", "guest": f"cat {HOME}/e2e/n1.txt", "confirms": ["r4Plan"]},
+        *unobservable(task("r4Task", "run_host_command", {"command": "echo r4-era"}), PRINTS),
         write("r4Write", "r4"),
         chain_scan("r4Scan"),
         db("r4Stop"),
@@ -1765,6 +1903,8 @@ def upgrade_chain() -> dict:
         call("backRead", "inspect_host_file", {"path": "~/e2e/chain-r4.txt", "scope": "user"}),
         *chain_task("backTunnel", "ensure_public_mcp_tunnel", tunnel),
         write("backWrite", "back"),
+        {"id": "chainFiles", "guest": f"cat {HOME}/e2e/chain-r3.txt {HOME}/e2e/chain-r4.txt {HOME}/e2e/chain-back.txt",
+         "confirms": ["r3Write", "r4Write", "backWrite"]},
         chain_scan("backScan"),
         {"id": "connectors", "guest": "ls /home/opute/.config/systemd/user/ | grep -c '^opute-cloudflared-' || true"},
         {"id": "tokenFiles", "guest": "stat -c '%a %U' /home/opute/.config/opute/tunnels/*.env"},
@@ -1791,6 +1931,10 @@ def upgrade_chain() -> dict:
             direct("r4GoFlight", "structuredContent.status", equals="cancelled"), status("r4R3Plan"),
             as_before("r4R3Task", "r3Task"), as_before("r4R3Tunnel", "r3Tunnel"), status("r4R3TaskOp"),
             direct("r4Read", "structuredContent.exists", equals=True),
+            a("goDoneFile", "stdout", equals="e2e\n"), a("goFlightFile", "stdout", equals="e2e\n"),
+            a("r3Linger", "stdout", equals="yes\nbus\n"), a("r3RelayListens", "stdout", equals="1\n"),
+            a("r3PlanFile", "stdout", equals="n1\n"), a("r4PlanFile", "stdout", equals="n1\n"),
+            a("chainFiles", "stdout", equals="r3\nr4\nback\n"),
             scenario="Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with "
                      "its relay, connector, plan and task, is served by 0.4.0: counts and ids "
                      "reconcile per table and every record reads back with the status last reported"),
@@ -1884,11 +2028,13 @@ def restart() -> dict:
         {"id": "userBus", "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; "
                                    "done; test -S /run/user/$(id -u opute)/bus && echo up"},
         call("supervisorAgain", "ensure_host_service_supervisor", {}),
+        linger(),
         # SIGTERM with a plan in flight, then SIGTERM with a task in flight (the coordinator never admits normal
         # work beside a running plan, which is heavy)
         call("termPlan", "run_host_plan", {"plan": base.plan("e2e.term", "e2e-term-1", "e2e/term.txt", slow=True)},
              capture={"TERM_RUN": "response.body.result.structuredContent.runId"}),
         base.poll_run("termWaiting", "TERM_RUN", done=("running", "working"), timeout=60),
+        {"id": "termFile", "guest": f"cat {HOME}/e2e/term.txt", "confirms": ["termPlan"]},
         {"id": "termP", "guest": f"systemctl restart {UNIT} && {base.WAIT_HEALTH.format(port=3014)} && echo up"},
         {"id": "settleP", "guest": "sleep 5"},
         call("termTask", "run_host_command", {"command": "sleep 120"}, meta=TASKS_META,
@@ -1916,7 +2062,7 @@ def restart() -> dict:
         {"id": "upGone", "guest": "sleep 3; pgrep -fx 'sleep 120' | wc -l"},
         call("upTaskAfter", "get_operation", {"operationId": "${UP_TASK}"}),
         {"id": "upTaskWire", "mcp": "tasks/get", "params": {"taskId": "${UP_TASK}"}, "meta": TASKS_META},
-        *task("afterUpgrade", "run_host_command", {"command": "echo upgraded"}),
+        *unobservable(task("afterUpgrade", "run_host_command", {"command": "echo upgraded"}), PRINTS),
         # Q29: two tasks with the same command at the same time, each in its own unit
         call("twinA", "run_host_command", {"command": "sleep 20"}, meta=TASKS_META, retryOn=[],
              capture={"TWIN_A": "response.body.result.taskId"}),
@@ -1927,10 +2073,10 @@ def restart() -> dict:
                                  "--no-legend 2>/dev/null | wc -l"},
         {"id": "twinADone", "mcp": "tasks/get", "params": {"taskId": "${TWIN_A}"}, "meta": TASKS_META,
          "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
-         "timeout": 90, "interval": 3},
+         "timeout": 90, "interval": 3, "effectUnobservable": TWIN},
         {"id": "twinBDone", "mcp": "tasks/get", "params": {"taskId": "${TWIN_B}"}, "meta": TASKS_META,
          "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
-         "timeout": 90, "interval": 3},
+         "timeout": 90, "interval": 3, "effectUnobservable": TWIN},
         {"id": "db", "guest": f"{T} db {SDB_}"},
     ]
     reqs = [
@@ -1952,6 +2098,7 @@ def restart() -> dict:
         req(Q5_SPEC, "An interrupted plan or task reads back truthfully",
             direct("termWaiting", "structuredContent.status", **{"in": ["running", "working"]}),
             direct("termPlanAfter", "structuredContent.status", equals="cancelled"),
+            a("linger", "stdout", equals="yes\nbus\n"), a("termFile", "stdout", equals="e2e\n"),
             {"step": "killTaskWire", "path": "response.body.result.status", "equals": "failed"},
             {"step": "upTaskWire", "path": "response.body.result.status", "equals": "cancelled"},
             direct("cancelAfterKill", "isError", equals=True),
@@ -1985,7 +2132,7 @@ def restart() -> dict:
         f"systemctl stop {UNIT}; {T} slow stop >/dev/null; {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} "
         f">/dev/null && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}; loginctl disable-linger opute; "
         "pkill -fx 'sleep 120'; incus delete -f e2e-t1 "
-        f"2>/dev/null; rm -rf {HOME}/e2e {HOME}/.opute/databases /opt/opute-e2e/releases/rust-next; "
+        f"2>/dev/null; rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /opt/opute-e2e/releases/rust-next; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "incus/*", "files//home/opute/e2e*",

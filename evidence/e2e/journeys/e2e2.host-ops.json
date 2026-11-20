@@ -89,6 +89,31 @@
      "equals": "active"
     },
     {
+     "step": "linger",
+     "path": "stdout",
+     "equals": "yes\nbus\n"
+    },
+    {
+     "step": "webPid",
+     "path": "stdout",
+     "matches": "^[1-9][0-9]*\n$"
+    },
+    {
+     "step": "webRestarted",
+     "path": "stdout",
+     "equals": "active\nrestarted\n"
+    },
+    {
+     "step": "stoppedUnit",
+     "path": "json.ActiveState",
+     "equals": "inactive"
+    },
+    {
+     "step": "stoppedUnit",
+     "path": "json.UnitFileState",
+     "equals": "disabled"
+    },
+    {
      "step": "stop",
      "path": "response.body.result.structuredContent.status",
      "equals": "applied"
@@ -265,6 +290,16 @@
      "step": "noEscape",
      "path": "stdout",
      "equals": "contained\n"
+    },
+    {
+     "step": "badArchive",
+     "path": "stdout",
+     "equals": "../evil\n"
+    },
+    {
+     "step": "extracted",
+     "path": "response.body.result.structuredContent.sha256",
+     "equals": "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
     }
    ],
    "scenario": "A tar.zst archive extracted beneath the home directory; a traversal entry is rejected and nothing escapes"
@@ -282,6 +317,11 @@
      "step": "virt",
      "path": "response.body.result.result.structuredContent.incus",
      "matches": "Server version"
+    },
+    {
+     "step": "virtState",
+     "path": "stdout",
+     "equals": "active\nincus\n"
     }
    ],
    "scenario": "The virtualization stack reconciled on a host that has it: Incus reported, nothing broken"
@@ -331,9 +371,14 @@
      "equals": "scheduled"
     },
     {
+     "step": "incusPid",
+     "path": "stdout",
+     "matches": "^[1-9][0-9]*\n$"
+    },
+    {
      "step": "incusActive",
      "path": "stdout",
-     "equals": "active\n"
+     "equals": "active\nrestarted\n"
     }
    ],
    "scenario": "Restarting Incus with restart_host_service is refused before acting and names set_host_service_state; Incus is restarted through it with scope system (D28)"
@@ -462,6 +507,14 @@
    ]
   },
   {
+   "id": "linger",
+   "guest": "loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "confirms": [
+    "supervisor",
+    "supervisorAgain"
+   ]
+  },
+  {
    "id": "unit",
    "mcp": "tools/call",
    "tool": "ensure_host_file",
@@ -509,6 +562,11 @@
     "uri": "host-service:local:user/e2e-web.service",
     "listenPort": 8781
    },
+   "confirms": [
+    "unit",
+    "enable",
+    "start"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -565,7 +623,12 @@
     ]
    },
    "timeout": 600,
-   "interval": 3
+   "interval": 3,
+   "effectUnobservable": "a read: curl of the service through run_host_command"
+  },
+  {
+   "id": "webPid",
+   "guest": "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user show -p MainPID --value e2e-web.service | tee /tmp/webPid.pid"
   },
   {
    "id": "restart",
@@ -584,6 +647,13 @@
   {
    "id": "running",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py unit e2e-web.service --user opute"
+  },
+  {
+   "id": "webRestarted",
+   "confirms": [
+    "restart"
+   ],
+   "guest": "for i in $(seq 60); do now=$(runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user show -p MainPID --value e2e-web.service); [ \"$now\" != 0 ] && [ \"$now\" != \"$(cat /tmp/webPid.pid)\" ] && runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user is-active -q e2e-web.service && break; sleep 0.5; done; runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user is-active e2e-web.service; [ \"$now\" != \"$(cat /tmp/webPid.pid)\" ] && echo restarted"
   },
   {
    "id": "stop",
@@ -611,6 +681,14 @@
    },
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "stoppedUnit",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py unit e2e-web.service --user opute",
+   "confirms": [
+    "stop",
+    "disable"
    ]
   },
   {
@@ -711,6 +789,9 @@
    "arguments": {
     "path": "~/.config/systemd/user/e2e-web.service"
    },
+   "confirms": [
+    "removeUnit"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -752,6 +833,10 @@
    ]
   },
   {
+   "id": "incusPid",
+   "guest": "systemctl show -p MainPID --value incus | tee /tmp/incusPid.pid"
+  },
+  {
    "id": "restartIncusSystem",
    "mcp": "tools/call",
    "tool": "set_host_service_state",
@@ -767,7 +852,10 @@
   },
   {
    "id": "incusActive",
-   "guest": "for i in $(seq 60); do systemctl is-active --quiet incus && break; sleep 1; done; systemctl is-active incus"
+   "confirms": [
+    "restartIncusSystem"
+   ],
+   "guest": "for i in $(seq 60); do now=$(systemctl show -p MainPID --value incus); [ \"$now\" != 0 ] && [ \"$now\" != \"$(cat /tmp/incusPid.pid)\" ] && systemctl is-active -q incus && break; sleep 0.5; done; systemctl is-active incus; [ \"$now\" != \"$(cat /tmp/incusPid.pid)\" ] && echo restarted"
   },
   {
    "id": "execFailsCall",
@@ -952,7 +1040,11 @@
   },
   {
    "id": "ninja",
-   "guest": "dpkg -s ninja-build | sed -n 's/^Status: //p'"
+   "guest": "dpkg -s ninja-build | sed -n 's/^Status: //p'",
+   "confirms": [
+    "ninjaTool",
+    "toolAgain"
+   ]
   },
   {
    "id": "artifactCall",
@@ -1102,6 +1194,10 @@
    "arguments": {
     "path": "e2e/art/sums.txt"
    },
+   "confirms": [
+    "artifact",
+    "artifactAgain"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -1181,6 +1277,10 @@
    "arguments": {
     "path": "e2e/out/d/a.txt"
    },
+   "confirms": [
+    "archive",
+    "extract"
+   ],
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -1229,6 +1329,13 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "badArchive",
+   "guest": "tar --zstd -tf /home/opute/e2e/bad.tar.zst",
+   "confirms": [
+    "traversal"
+   ]
   },
   {
    "id": "extractTraversal",
@@ -1288,6 +1395,13 @@
    },
    "timeout": 900,
    "interval": 3
+  },
+  {
+   "id": "virtState",
+   "guest": "systemctl is-active incus; incus version >/dev/null && echo incus",
+   "confirms": [
+    "virt"
+   ]
   },
   {
    "id": "bridge",

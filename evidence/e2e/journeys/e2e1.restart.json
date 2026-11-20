@@ -144,6 +144,11 @@
      "step": "killDb",
      "path": "json.planRunIds[1]",
      "absent": true
+    },
+    {
+     "step": "termFile",
+     "path": "stdout",
+     "equals": "1\n"
     }
    ],
    "scenario": "exactly one durable run per interrupted plan: nothing lost or duplicated"
@@ -186,6 +191,22 @@
      "step": "killTask",
      "path": "response.body.error.message",
      "matches": "^task not found: "
+    },
+    {
+     "step": "resubmitDb",
+     "path": "json.planRunIds",
+     "equalsStep": {
+      "step": "killDb",
+      "path": "json.planRunIds"
+     }
+    },
+    {
+     "step": "resubmitDb",
+     "path": "json.planRunStatus",
+     "equalsStep": {
+      "step": "killDb",
+      "path": "json.planRunStatus"
+     }
     }
    ],
    "scenario": "After a SIGKILL during a plain run_host_plan, whose task was never persisted (tasks/get does not find it), the resubmission is admitted (D28)"
@@ -307,6 +328,13 @@
   {
    "id": "termDb",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-term"
+  },
+  {
+   "id": "termFile",
+   "guest": "grep -c -F '${SECRET:j7content}' /home/opute/.config/opute-e2e/j7-term.txt",
+   "confirms": [
+    "termRun"
+   ]
   },
   {
    "id": "killRun",
@@ -463,6 +491,13 @@
      ]
     }
    }
+  },
+  {
+   "id": "resubmitDb",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db --plan-id e2e1-j7-kill",
+   "confirms": [
+    "resubmit"
+   ]
   },
   {
    "id": "integrity",

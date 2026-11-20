@@ -47,6 +47,11 @@
      "step": "runLater",
      "path": "response.body.result.structuredContent.status",
      "equals": "unknown"
+    },
+    {
+     "step": "planFile",
+     "path": "stdout",
+     "equals": "e2e\n"
     }
    ],
    "scenario": "A plan killed with SIGKILL during its slow step reads back unknown and is not run again"
@@ -196,6 +201,13 @@
    "timeout": 60,
    "port": 3042,
    "auth": "secret:kp"
+  },
+  {
+   "id": "planFile",
+   "guest": "cat /tmp/e2e-agents/kp/home/.config/opute-e2e/kill.txt",
+   "confirms": [
+    "plan"
+   ]
   },
   {
    "id": "kill",
