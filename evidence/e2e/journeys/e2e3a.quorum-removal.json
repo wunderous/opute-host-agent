@@ -85,6 +85,11 @@
      "equals": "container:local:e2e-k1"
     },
     {
+     "step": "info1",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "running"
+    },
+    {
      "step": "vm2",
      "path": "response.body.result.result.structuredContent.uri",
      "equals": "container:local:e2e-k2"
@@ -369,6 +374,11 @@
      "step": "readRecovered",
      "path": "response.body.result.structuredContent.json",
      "matches": "before-quorum-loss"
+    },
+    {
+     "step": "stopped",
+     "path": "stdout",
+     "equals": "e2e-k2,STOPPED\ne2e-k3,STOPPED\n"
     }
    ],
    "scenario": "After the acknowledged reset the data written before the loss reads back"
@@ -558,11 +568,17 @@
   },
   {
    "id": "providerToolsA",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "confirms": [
+    "installA"
+   ]
   },
   {
    "id": "providerToolsB",
-   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'"
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3031, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${SECRET:tokenB}'",
+   "confirms": [
+    "installB"
+   ]
   },
   {
    "id": "catalogAfterA",
@@ -636,7 +652,10 @@
    },
    "capture": {
     "K1_IP": "response.body.result.structuredContent.ipv4[0]"
-   }
+   },
+   "confirms": [
+    "vm1"
+   ]
   },
   {
    "id": "provisionCall",
@@ -1203,7 +1222,19 @@
     ]
    },
    "timeout": 300,
-   "interval": 5
+   "interval": 5,
+   "confirms": [
+    "provision",
+    "prepareHa",
+    "vm2",
+    "prepare2",
+    "redeem2",
+    "join2",
+    "vm3",
+    "prepare3",
+    "redeem3",
+    "join3"
+   ]
   },
   {
    "id": "status",
@@ -1357,6 +1388,14 @@
    "interval": 3
   },
   {
+   "id": "stopped",
+   "guest": "incus list -f csv -c ns | grep -E '^e2e-k[23],'",
+   "confirms": [
+    "stop2",
+    "stop3"
+   ]
+  },
+  {
    "id": "settle",
    "guest": "sleep 20"
   },
@@ -1467,7 +1506,11 @@
     "kind": "configmap",
     "namespace": "default",
     "resourceName": "e2e-before-loss"
-   }
+   },
+   "confirms": [
+    "writeBefore",
+    "recover"
+   ]
   },
   {
    "id": "removeNode2Call",
@@ -1570,7 +1613,11 @@
     "providerInstanceName": "e2e-k1",
     "instanceType": "container",
     "requireEmbeddedEtcd": true
-   }
+   },
+   "confirms": [
+    "removeNode2",
+    "removeNode3"
+   ]
   },
   {
    "id": "removeCall",
@@ -1620,7 +1667,10 @@
    "id": "clustersAfter",
    "mcp": "tools/call",
    "tool": "list_compute_clusters",
-   "arguments": {}
+   "arguments": {},
+   "confirms": [
+    "remove"
+   ]
   },
   {
    "id": "delete1Call",
@@ -1752,7 +1802,12 @@
    "id": "vmsAfter",
    "mcp": "tools/call",
    "tool": "list_vms",
-   "arguments": {}
+   "arguments": {},
+   "confirms": [
+    "delete1",
+    "delete2",
+    "delete3"
+   ]
   }
  ],
  "cleanup": [

@@ -48,6 +48,11 @@
      "step": "recipeDone",
      "path": "response.body.result.structuredContent.status",
      "equals": "completed"
+    },
+    {
+     "step": "recipeFile",
+     "path": "stdout",
+     "equals": "done\n"
     }
    ],
    "scenario": "While a recipe step's run_host_command workload runs, the systemd-run client the agent started for it holds PATH and none of the agent's secrets"
@@ -125,6 +130,13 @@
    "timeout": 120,
    "port": 3050,
    "auth": "secret:cenv"
+  },
+  {
+   "id": "recipeFile",
+   "guest": "test -e /tmp/e2e-agents/cenv/home/child-env.done && echo done",
+   "confirms": [
+    "recipeRun"
+   ]
   }
  ],
  "cleanup": [

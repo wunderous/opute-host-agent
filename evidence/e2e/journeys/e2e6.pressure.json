@@ -331,7 +331,8 @@
     ]
    },
    "timeout": 60,
-   "interval": 2
+   "interval": 2,
+   "effectUnobservable": "the command only sleeps; its completion is asserted"
   },
   {
    "id": "afterFirst",
@@ -487,6 +488,9 @@
   },
   {
    "id": "relayBody",
+   "confirms": [
+    "relay"
+   ],
    "guest": "E2E_TOKEN=${SECRET:relayIn} python3 /opt/opute-e2e/guest/e2etool.py bigbody --port 3051 --path /v1/chat/completions --declared 1073741824 --send 41943040 --limit 33554432"
   },
   {

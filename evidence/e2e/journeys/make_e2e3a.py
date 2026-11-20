@@ -75,6 +75,11 @@ def task(id_: str, tool: str, args: dict, host: dict | None = None, timeout: int
                  capture={"TID_" + id_: "response.body.result.taskId"}), poll]
 
 
+def unobservable(steps: list[dict], reason: str) -> list[dict]:
+    """A task whose effect no later step can observe: its poll step carries the reason (m23)."""
+    return [*steps[:-1], {**steps[-1], "effectUnobservable": reason}]
+
+
 def res(step: str, path: str = "", **op) -> dict:
     """An assertion on a task's tool result."""
     return a(step, "response.body.result.result" + (("." + path) if path else ""), **op)
@@ -90,6 +95,10 @@ def target(name: str) -> dict:
 
 CL = {"targetUri": CLUSTER, "providerInstanceName": "e2e-k1", "instanceType": "container"}
 VM = {"image": "parity-noble", "instanceType": "container", "cpus": 2, "memory": "3GiB", "disk": "15GiB"}
+
+
+# ensure-ha-endpoint publishes a mutating effect, but reads membership and probes the endpoint (m23)
+PROBE = "a probe: ensure-ha-endpoint reads membership and probes the endpoint, changing nothing"
 
 
 def membership(id_: str, ready: int, timeout: int = 300) -> dict:
@@ -132,14 +141,14 @@ def build_steps(endpoint: bool = False) -> list[dict]:
              {"descriptor": descriptor(4320), "activate": True, "recipeSource": RECIPE}),
         call("installB", "opute.provider.install",
              {"descriptor": descriptor(4321), "activate": True, "recipeSource": RECIPE}, B),
-        {"id": "providerToolsA", "guest": wait_tool(3014, "${TOKEN}")},
-        {"id": "providerToolsB", "guest": wait_tool(B_PORT, "${SECRET:tokenB}")},
+        {"id": "providerToolsA", "guest": wait_tool(3014, "${TOKEN}"), "confirms": ["installA"]},
+        {"id": "providerToolsB", "guest": wait_tool(B_PORT, "${SECRET:tokenB}"), "confirms": ["installB"]},
         {"id": "catalogAfterA", "mcp": "tools/list"},
         {"id": "catalogAfterB", "mcp": "tools/list", **B},
         call("catalogA", "opute.capability.kubernetes.validate", {}),
         *task("vm1", "provision_vm", {"name": "e2e-k1", **VM}),
         call("info1", "get_vm_info", {"uri": "container:local:e2e-k1"},
-             capture={"K1_IP": "response.body.result.structuredContent.ipv4[0]"}),
+             capture={"K1_IP": "response.body.result.structuredContent.ipv4[0]"}, confirms=["vm1"]),
         *task("provision", K + "provision", {**target("e2e-k1"), "version": VERSION, "clusterInit": True}),
         call("listClusters", "list_compute_clusters", {}),
         *task("prepareHa", K + "prepare-ha",
@@ -165,7 +174,9 @@ def build_steps(endpoint: bool = False) -> list[dict]:
                    "clusterInit": False, "role": "server"}, B, timeout=900),
         ]
     steps += [
-        membership("members", 3),
+        # three ready embedded-etcd servers: the cluster, its HA preparation and each server's join chain
+        {**membership("members", 3), "confirms": ["provision", "prepareHa"] + [
+            f"{step}{n}" for n in ("2", "3") for step in ("vm", "prepare", "redeem", "join")]},
         call("status", K + "status", CL),
         {"id": "joinToken", "guest": "incus exec e2e-k1 -- cat /var/lib/rancher/k3s/server/token | tr -d '\\n'",
          "capture": {"K3S_TOKEN": {"path": "stdout", "secret": True}}},
@@ -201,6 +212,7 @@ def build_requirements() -> list[dict]:
             a("providerToolsA", "json.listed", equals=True), a("providerToolsB", "json.listed", equals=True),
             direct("catalogA", "isError", **{"in": [False, "<absent>"]}),
             res("vm1", "isError", equals=False), res("vm1", "structuredContent.uri", equals="container:local:e2e-k1"),
+            direct("info1", "structuredContent.status", equals="running"),
             res("vm2", "structuredContent.uri", equals="container:local:e2e-k2"),
             res("vm3", "structuredContent.uri", equals="container:local:e2e-k3"),
             res("provision", "isError", equals=False), res("provision", "structuredContent.provisioned", equals=True),
@@ -319,23 +331,31 @@ def workload_steps() -> list[dict]:
         call("rollout", "exec_cluster_command",
              {"uri": CLUSTER, "command": "rollout",
               "args": ["status", "deployment/e2e-web-podinfo", "-n", "e2e-web", "--timeout=60s"]},
-             until={"path": "response.body.result.structuredContent.exitCode", "in": [0]}, timeout=480, interval=5),
+             until={"path": "response.body.result.structuredContent.exitCode", "in": [0]}, timeout=480, interval=5,
+             effectUnobservable="a read through the general command tool: kubectl rollout status"),
         *task("secret", "put_cluster_secret",
               {"uri": CLUSTER, "namespace": "e2e-web", "name": "e2e-secret", "data": {"apiKey": "${SECRET:apiValue}"}}),
         call("secretKeysTool", "list_secret_keys", {"uri": CLUSTER, "namespace": "e2e-web", "secretName": "e2e-secret"}),
         call("secretKeys", "exec_cluster_command",
              {"uri": CLUSTER, "command": "get",
-              "args": ["secret", "e2e-secret", "-n", "e2e-web", "-o", "go-template={{range $k, $v := .data}}{{$k}} {{end}}"]}),
+              "args": ["secret", "e2e-secret", "-n", "e2e-web", "-o",
+                       "go-template={{range $k, $v := .data}}{{$k}} {{end}}"]},
+             effectUnobservable="a read through the general command tool: kubectl get secret, key names only"),
+        # the Secret, read on the server itself: its key names, never its values
+        {"id": "secretGuest", "confirms": ["secret"], "guest": (
+            "incus exec e2e-k1 -- k3s kubectl -n e2e-web get secret e2e-secret -o "
+            "go-template='{{range $k, $v := .data}}{{$k}} {{end}}'")},
         call("pods", "exec_cluster_command",
              {"uri": CLUSTER, "command": "exec",
-              "args": ["-n", "e2e-web", "deployment/e2e-web-podinfo", "--", "sh", "-c", "echo e2e-exec-ok"]}),
+              "args": ["-n", "e2e-web", "deployment/e2e-web-podinfo", "--", "sh", "-c", "echo e2e-exec-ok"]},
+             effectUnobservable="a read through the general command tool: kubectl exec of echo in a pod"),
         call("services", "list_services", {"uri": CLUSTER, "namespace": "e2e-web"}),
         call("info2", "get_vm_info", {"uri": "container:local:e2e-k2"}, B,
              capture={"K2_IP": "response.body.result.structuredContent.ipv4[0]"}),
         call("info3", "get_vm_info", {"uri": "container:local:e2e-k3"}, B,
              capture={"K3_IP": "response.body.result.structuredContent.ipv4[0]"}),
         {"id": "serve", "guest": "for ip in ${K1_IP} ${K2_IP} ${K3_IP}; do curl -s -o /dev/null -w '%{http_code} ' "
-                                 "--max-time 10 http://$ip:30080/; done"},
+                                 "--max-time 10 http://$ip:30080/; done", "confirms": ["chart"]},
     ]
 
 
@@ -353,6 +373,7 @@ def workload_requirements() -> list[dict]:
             direct("info2", "structuredContent.ipv4[0]", matches=r"^\d+\.\d+\.\d+\.\d+$"),
             direct("info3", "structuredContent.ipv4[0]", matches=r"^\d+\.\d+\.\d+\.\d+$"),
             a("serve", "stdout", equals="200 200 200 "),
+            a("secretGuest", "stdout", equals="apiKey "),
             scenario="A Helm chart installed, a secret put, a command run in a pod, and the service exposed inside "
                      "the VM answering HTTP on every server"),
         req(SPEC, "Durable and redacted observations",
@@ -395,14 +416,15 @@ def j3() -> dict:
         *task("stop2", "stop_vm", {"uri": "container:local:e2e-k2"}),
         call("degraded", K + "status", CL,
              until={"path": "response.body.result.structuredContent.readyNodeCount", "in": [2]}, timeout=180,
-             interval=5),
+             interval=5, confirms=["stop2"]),
         call("degradedMembers", K + "inspect-membership", {**CL, "expectedServers": 3}),
         *task("write", "apply_manifest", {"uri": CLUSTER, "manifest": CM_DOWN}),
         call("read", "get_cluster_resource",
-             {"uri": CLUSTER, "kind": "configmap", "namespace": "e2e-web", "resourceName": "e2e-during-failure"}),
+             {"uri": CLUSTER, "kind": "configmap", "namespace": "e2e-web", "resourceName": "e2e-during-failure"},
+             confirms=["write"]),
         {"id": "serveDegraded", "guest": SERVE_LOOP, "timeout": 200},
         *task("start2", "start_vm", {"uri": "container:local:e2e-k2"}),
-        membership("rejoined", 3),
+        {**membership("rejoined", 3), "confirms": ["start2"]},
         call("readAfter", "get_cluster_resource",
              {"uri": CLUSTER, "kind": "configmap", "namespace": "e2e-web", "resourceName": "e2e-during-failure"}),
     ]
@@ -451,20 +473,23 @@ def j4() -> dict:
         *task("writeBefore", "apply_manifest", {"uri": CLUSTER, "manifest": CM_BEFORE}),
         *task("stop2", "stop_vm", {"uri": "container:local:e2e-k2"}),
         *task("stop3", "stop_vm", {"uri": "container:local:e2e-k3"}),
+        {"id": "stopped", "guest": "incus list -f csv -c ns | grep -E '^e2e-k[23],'", "confirms": ["stop2", "stop3"]},
         {"id": "settle", "guest": "sleep 20"},
         *task("writeNoQuorum", "apply_manifest", {"uri": CLUSTER, "manifest": CM_NOQ}),
         call("statusNoQuorum", K + "status", CL),
         *task("recover", K + "recover-quorum", {**CL, "acknowledgeSingleMemberReset": True}, timeout=900),
         call("readRecovered", "get_cluster_resource",
-             {"uri": CLUSTER, "kind": "configmap", "namespace": "default", "resourceName": "e2e-before-loss"}),
+             {"uri": CLUSTER, "kind": "configmap", "namespace": "default", "resourceName": "e2e-before-loss"},
+             confirms=["writeBefore", "recover"]),
         # D28 (Q17): remove-node itself waits for recovery to settle (no wait here)
         *task("removeNode2", K + "remove-node", {**CL, "nodeName": "e2e-k2", "role": "server"}, timeout=600),
         *task("removeNode3", K + "remove-node", {**CL, "nodeName": "e2e-k3", "role": "server"}, timeout=600),
-        call("membersAfter", K + "inspect-membership", {**CL, "requireEmbeddedEtcd": True}),
+        call("membersAfter", K + "inspect-membership", {**CL, "requireEmbeddedEtcd": True},
+             confirms=["removeNode2", "removeNode3"]),
         *task("remove", K + "remove", CL),
-        call("clustersAfter", "list_compute_clusters", {}),
+        call("clustersAfter", "list_compute_clusters", {}, confirms=["remove"]),
         *[s for name in SERVERS for s in task(f"delete{name[-1]}", "delete_vm", {"uri": f"container:local:{name}"})],
-        call("vmsAfter", "list_vms", {}),
+        call("vmsAfter", "list_vms", {}, confirms=["delete1", "delete2", "delete3"]),
     ]
     reqs = build_requirements() + [
         req(PAGE, "K3s datastore quorum: with a majority of servers lost, Kubernetes writes are not available",
@@ -479,6 +504,7 @@ def j4() -> dict:
             res("recover", "isError", equals=False),
             res("recover", "structuredContent.quorumRestored", equals=True),
             direct("readRecovered", "structuredContent.json", matches="before-quorum-loss"),
+            a("stopped", "stdout", equals="e2e-k2,STOPPED\ne2e-k3,STOPPED\n"),
             scenario="After the acknowledged reset the data written before the loss reads back"),
         req(Q17_SPEC, "Dead servers are retired once quorum recovery settles",
             res("removeNode2", "isError", equals=False),
@@ -561,30 +587,33 @@ def j5() -> dict:
         # opt in
         *task("optIn", ensure, {**CL, "hostname": HOST}, timeout=900,
               capture={"CAREF": "response.body.result.result.structuredContent.caBundleRef"}),
-        {"id": "sansIn", "guest": sans(SERVERS)},
+        {"id": "sansIn", "guest": sans(SERVERS), "confirms": ["optIn"]},
         {"id": "resolvesIn", "guest": resolved()},
-        *task("verifyIn", K + "ensure-ha-endpoint", {**CL, **EP}),
+        *unobservable(task("verifyIn", K + "ensure-ha-endpoint", {**CL, **EP}), PROBE),
         *task("optInAgain", ensure, {**CL, "hostname": HOST}, timeout=900),
         # lose one server
         *task("stop3", "stop_vm", {"uri": "container:local:e2e-k3"}),
-        membership("degraded", 2),
-        {"id": "through", "guest": THROUGH, "timeout": 200},
-        *task("verifyDegraded", K + "ensure-ha-endpoint", {**CL, **EP}),
+        {**membership("degraded", 2), "confirms": ["stop3"]},
+        # the endpoint, opted in once and ensured again, carries a write
+        {"id": "through", "guest": THROUGH, "timeout": 200, "confirms": ["optInAgain"]},
+        *unobservable(task("verifyDegraded", K + "ensure-ha-endpoint", {**CL, **EP}), PROBE),
         # retire it
         *task("retire", K + "remove-node", {**CL, "nodeName": "e2e-k3", "role": "server"}, timeout=600),
         {"id": "resolvesRetired", "guest": resolved() + "; incus exec e2e-k1 -- getent ahostsv4 " + HOST +
-                                           " | awk -v ip='${K3_IP}' '$1 == ip' | wc -l"},
-        *task("verifyRetired", K + "ensure-ha-endpoint", {**CL, **EP}),
+                                           " | awk -v ip='${K3_IP}' '$1 == ip' | wc -l", "confirms": ["retire"]},
+        *unobservable(task("verifyRetired", K + "ensure-ha-endpoint", {**CL, **EP}), PROBE),
         # opt out
         *task("optOut", K + "remove-cluster-endpoint", CL, timeout=900),
         {"id": "sansOut", "guest": sans(SERVERS[:2])},
         {"id": "resolvesOut", "guest": f"incus exec e2e-k1 -- getent ahostsv4 {HOST} | wc -l; "
                                        f"incus network get incusbr0 raw.dnsmasq | grep -c '{HOST}'"},
         {"id": "recordOut", "guest": "incus exec e2e-k1 -- k3s kubectl -n kube-system get configmap "
-                                     "opute-cluster-endpoint 2>&1 | grep -c NotFound"},
+                                     "opute-cluster-endpoint 2>&1 | grep -c NotFound", "confirms": ["optOut"]},
         {"id": "directOut", "guest": "incus exec e2e-k1 -- k3s kubectl get nodes -o name | wc -l"},
         *task("verifyOut", K + "ensure-ha-endpoint", {**CL, **EP}),
-        *task("optOutAgain", K + "remove-cluster-endpoint", CL),
+        # a repeat of an applied removal: its `changed: false` is asserted, and recordOut saw the removal
+        *unobservable(task("optOutAgain", K + "remove-cluster-endpoint", CL),
+                      "a repeat of an applied removal changes nothing"),
     ]
     reqs = build_requirements() + [
         req(ENDPOINT_SPEC, "The HA registration endpoint is optional and off by default",

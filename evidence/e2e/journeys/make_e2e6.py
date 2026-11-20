@@ -75,6 +75,15 @@ def done(id_: str, var: str, target: dict) -> dict:
             "timeout": 60, "interval": 2}
 
 
+# effects no later step can observe (m23)
+PRINTS = "the command only prints; its output is asserted"
+SLEEPS = "the command only sleeps; its completion is asserted"
+
+
+def quiet(step: dict, reason: str) -> dict:
+    return {**step, "effectUnobservable": reason}
+
+
 def not_error(step: str) -> dict:
     return a(step, "response.body.result.isError", **{"in": [False, "<absent>"]})
 
@@ -105,7 +114,8 @@ def disk_full() -> dict:
         call("writeBefore", "ensure_host_file", f(1), **o),
         call("taskBefore", "run_host_command", {"command": "echo before"}, meta=TASKS_META, **o,
              capture={"BEFORE": "response.body.result.taskId"}),
-        done("taskBeforeDone", "BEFORE", o),
+        quiet(done("taskBeforeDone", "BEFORE", o), PRINTS),
+        {"id": "fileBefore", "guest": f"cat {home}/full-1.txt", "confirms": ["writeBefore"]},
         {"id": "dbBefore", "guest": f"{T} audit {state(n)}/state.db"},
         {"id": "fill", "guest": fill},
         call("writeFull", "ensure_host_file", f(2), **o),
@@ -120,7 +130,8 @@ def disk_full() -> dict:
         call("writeAfter", "ensure_host_file", f(3), **o),
         call("taskAfter", "run_host_command", {"command": "echo after"}, meta=TASKS_META, **o,
              capture={"AFTER": "response.body.result.taskId"}),
-        done("taskAfterDone", "AFTER", o),
+        quiet(done("taskAfterDone", "AFTER", o), PRINTS),
+        {"id": "fileAfter", "guest": f"cat {home}/full-3.txt", "confirms": ["writeAfter"]},
         {"id": "dbAfter", "guest": f"{T} audit {state(n)}/state.db"},
     ]
     reqs = [
@@ -130,6 +141,7 @@ def disk_full() -> dict:
             a("fill", "stdout", matches="^ *[0-9]+\n$"),
             is_error("writeFull"), is_error("taskFull"), is_error("planFull"),
             a("noHalfWrite", "stdout", matches="none\n$"),
+            a("fileBefore", "stdout", equals="e2e 1\n"), a("fileAfter", "stdout", equals="e2e 3\n"),
             not_error("readFull"),
             a("dbFull", "json.integrity", equals="ok"), a("dbFull", "json.unfinished", equals=0),
             not_error("writeAfter"),
@@ -165,7 +177,7 @@ def store_damage() -> dict:
              capture={"KEPT": "response.body.result.taskId"}),
         {"id": "taskDone", "mcp": "tasks/get", "params": {"taskId": "${KEPT}"}, "meta": TASKS_META, **o,
          "until": {"path": "response.body.result.status", "in": ["completed", "failed"]}, "timeout": 60,
-         "interval": 2},
+         "interval": 2, "effectUnobservable": PRINTS},
         {"id": "stop", "guest": f"{T} agent stop {n} && cp -a {db} {ROOT}/{n}/state.db.bak && echo saved"},
         # (a) truncated after the header page
         {"id": "truncate", "guest": f"truncate -s 4096 {db} && {snapshot}"},
@@ -229,6 +241,8 @@ def kill() -> dict:
         call("plan", "run_host_plan", {"plan": plan("e2e6.kill", "e2e6-kill-1", rel, slow=True)}, **o,
              capture={"RUN": "response.body.result.structuredContent.runId"}),
         poll_run("running", "RUN", done=("running", "working"), timeout=60, **o),
+        # the plan's first node wrote before the second waits on the slow endpoint
+        {"id": "planFile", "guest": f"cat {ROOT}/{n}/home/{rel}", "confirms": ["plan"]},
         {"id": "kill", "guest": f"sleep 3; systemctl kill -s KILL e2e-agent-{n}.service; sleep 1; "
                                 f"! systemctl is-active -q e2e-agent-{n}.service && echo killed"},
         agent(n, port, root=True) | {"id": "restart"},
@@ -248,6 +262,7 @@ def kill() -> dict:
             a("kill", "stdout", matches="killed\n$"), ok("restart"),
             a("runAfter", "response.body.result.structuredContent.status", equals="unknown"),
             a("runLater", "response.body.result.structuredContent.status", equals="unknown"),
+            a("planFile", "stdout", equals="e2e\n"),
             scenario="A plan killed with SIGKILL during its slow step reads back unknown and is not run again"),
         req(SPEC, "Durable and redacted observations",
             a("loop", "json.restarts", equals=12), a("loop", "json.acceptedTotal", gte=1),
@@ -325,10 +340,10 @@ def clock() -> dict:
         call("capAfter", "get_host_capacity", **o),
         call("newWork", "run_host_command", {"command": "echo after step"}, meta=TASKS_META, **o,
              capture={"NEW": "response.body.result.taskId"}),
-        done("newWorkDone", "NEW", o),
+        quiet(done("newWorkDone", "NEW", o), PRINTS),
         {"id": "heldDone", "mcp": "tasks/get", "params": {"taskId": "${HELD}"}, "meta": TASKS_META, **o,
          "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
-         "timeout": 90, "interval": 3},
+         "timeout": 90, "interval": 3, "effectUnobservable": SLEEPS},
     ]
     reqs = [
         req(FAULTS, "A clock stepped back does not break the agent",
@@ -372,7 +387,7 @@ def pressure() -> dict:
         call("readWhileFull", "get_host_info", **lim),
         {"id": "firstDone", "mcp": "tasks/get", "params": {"taskId": "${FIRST}"}, "meta": TASKS_META, **lim,
          "until": {"path": "response.body.result.status", "in": ["completed", "failed", "cancelled"]},
-         "timeout": 60, "interval": 2},
+         "timeout": 60, "interval": 2, "effectUnobservable": SLEEPS},
         call("afterFirst", "run_host_command", {"command": "echo after"}, meta=TASKS_META, **lim, retryOn=[]),
         {"id": "limOps", "guest": f"{T} audit {state('lim')}/state.db"},
         agent("low", 3047, "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES=1125899906842624",
@@ -397,8 +412,9 @@ def pressure() -> dict:
             "targetPort": 9, "incomingToken": "${SECRET:relayIn}", "allowedSourceCIDRs": ["127.0.0.1/32"]},
              **body),
         {"id": "relayRssBefore", "guest": f"{T} procstat e2e-agent-big.service"},
-        {"id": "relayBody", "guest": f"E2E_TOKEN=${{SECRET:relayIn}} {T} bigbody --port 3051 --path "
-                                     "/v1/chat/completions --declared 1073741824 --send 41943040 --limit 33554432"},
+        {"id": "relayBody", "confirms": ["relay"], "guest": (
+            f"E2E_TOKEN=${{SECRET:relayIn}} {T} bigbody --port 3051 --path /v1/chat/completions "
+            "--declared 1073741824 --send 41943040 --limit 33554432")},
         {"id": "relayRssAfter", "guest": f"{T} procstat e2e-agent-big.service"},
         call("relayNext", "get_host_info", **body),
     ]
@@ -495,6 +511,8 @@ def child_env() -> dict:
                                       "echo \"$out\" | grep -q '\"found\": [1-9]' && break; sleep 1; done; "
                                       "echo \"$out\"")},
         poll_run("recipeDone", "RRUN", timeout=120, **o),
+        {"id": "recipeFile", "guest": f"test -e {ROOT}/{n}/home/child-env.done && echo done",
+         "confirms": ["recipeRun"]},
     ]
     clean = lambda step: [a(step, "json.agentHasExpected", equals=True), a(step, "json.found", gte=1),  # noqa: E731
                           a(step, "json.leaked", equals=[]), a(step, "json.childrenKeep", equals=True)]
@@ -502,6 +520,7 @@ def child_env() -> dict:
         req(CHILD_SPEC, "A child process never receives the agent's secrets",
             *clean("recipeEnv"),
             a("recipeDone", "response.body.result.structuredContent.status", equals="completed"),
+            a("recipeFile", "stdout", equals="done\n"),
             scenario="While a recipe step's run_host_command workload runs, the systemd-run client the agent "
                      "started for it holds PATH and none of the agent's secrets"),
     ]
@@ -626,7 +645,9 @@ def secret_sweep() -> dict:
                                   f"{SW} oauth --port {port} --client opute-mcp-host --secret OPUTE_HOST_OAUTH_CLIENT_SECRET ")
                                  + f"--as accessToken --markers {markers}"},
         call("relay", "ensure_local_llm_relay", relay, **o),
+        {"id": "relayListens", "guest": "ss -ltnH 'sport = :3058' | wc -l", "confirms": ["relay"]},
         *sweep_task("cluster", "install_cluster_agent", cluster, o),
+        {"id": "clusterAgent", "guest": "systemctl is-active opute-cluster-agent", "confirms": ["cluster"]},
         *sweep_task("tunnel", "ensure_public_mcp_tunnel", tunnel, o),
         # cloudflared restarts every 15 s; its runs are in the host-wide trace
         # (anchored, so the grep's own command line never counts)
@@ -649,6 +670,7 @@ def secret_sweep() -> dict:
             a("relay", "response.body.result.structuredContent.ready", equals=True),
             a("cluster", "response.body.result.status", equals="completed"),
             a("cluster", "response.body.result.result.isError", **{"in": [False, "<absent>"]}),
+            a("relayListens", "stdout", equals="1\n"), a("clusterAgent", "stdout", equals="active\n"),
             a("tunnel", "response.body.result.status", **{"in": ["completed", "failed"]}),
             a("tunnel", "response.body.result.result.isError", equals=True),
             a("tunnel", "response.body.result.result.content[0].text",

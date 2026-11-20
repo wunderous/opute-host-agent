@@ -148,6 +148,21 @@
      "step": "infoAfter",
      "path": "response.body.result.structuredContent.ipv4[0]",
      "equals": "10.0.100.50"
+    },
+    {
+     "step": "cStopped",
+     "path": "stdout",
+     "equals": "STOPPED\n"
+    },
+    {
+     "step": "cStarted",
+     "path": "stdout",
+     "matches": "^[1-9][0-9]*\nRUNNING\n$"
+    },
+    {
+     "step": "cRestarted",
+     "path": "stdout",
+     "equals": "restarted\nRUNNING\n"
     }
    ],
    "scenario": "provision_container's declared ipv4Address pins the container's bridge address across stop, start and restart (D28)"
@@ -192,7 +207,12 @@
     {
      "step": "limitsV",
      "path": "stdout",
-     "equals": "2\n1536MiB\n"
+     "equals": "2\n1536MiB\nRUNNING\n"
+    },
+    {
+     "step": "vStopped",
+     "path": "stdout",
+     "equals": "STOPPED\n"
     }
    ],
    "scenario": "Lifecycle of both kinds; a stopped VM resized and started with its new limits"
@@ -521,10 +541,16 @@
   },
   {
    "id": "inDefault",
+   "confirms": [
+    "container"
+   ],
    "guest": "incus list e2e-c1 --project default -c n -f csv; incus list --project e2e-other -c n -f csv | wc -l"
   },
   {
    "id": "vmAddress",
+   "confirms": [
+    "vm"
+   ],
    "guest": "for i in $(seq 150); do incus list e2e-v1 -c 4 -f csv | grep -q '10\\.0\\.100\\.' && break; sleep 2; done; incus list e2e-v1 -c 4 -f csv | grep -c '10\\.0\\.100\\.'"
   },
   {
@@ -582,6 +608,9 @@
   },
   {
    "id": "reachC",
+   "confirms": [
+    "serveC"
+   ],
    "guest": "ping -c1 -W5 10.0.100.50 >/dev/null && echo ping-ok; curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://10.0.100.50:8080/hostname"
   },
   {
@@ -598,6 +627,7 @@
    },
    "port": 3032,
    "auth": "secret:tokenB",
+   "effectUnobservable": "a read inside the guest: nproc and uname",
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -656,6 +686,13 @@
    "interval": 3
   },
   {
+   "id": "cStopped",
+   "guest": "incus list e2e-c1 -c s -f csv",
+   "confirms": [
+    "stopC"
+   ]
+  },
+  {
    "id": "startCCall",
    "mcp": "tools/call",
    "tool": "start_vm",
@@ -705,6 +742,13 @@
    "interval": 3
   },
   {
+   "id": "cStarted",
+   "guest": "incus info e2e-c1 | sed -n 's/^PID: //p' | tee /tmp/e2e-c1.pid; incus list e2e-c1 -c s -f csv",
+   "confirms": [
+    "startC"
+   ]
+  },
+  {
    "id": "restartCCall",
    "mcp": "tools/call",
    "tool": "restart_vm",
@@ -752,6 +796,13 @@
    },
    "timeout": 600,
    "interval": 3
+  },
+  {
+   "id": "cRestarted",
+   "confirms": [
+    "restartC"
+   ],
+   "guest": "[ \"$(incus info e2e-c1 | sed -n 's/^PID: //p')\" != \"$(cat /tmp/e2e-c1.pid)\" ] && echo restarted; incus list e2e-c1 -c s -f csv"
   },
   {
    "id": "infoAfter",
@@ -824,6 +875,13 @@
    "interval": 3
   },
   {
+   "id": "vStopped",
+   "guest": "incus list e2e-v1 -c s -f csv",
+   "confirms": [
+    "stopV"
+   ]
+  },
+  {
    "id": "resizeV",
    "mcp": "tools/call",
    "tool": "update_vm_resources",
@@ -889,7 +947,11 @@
   },
   {
    "id": "limitsV",
-   "guest": "incus config get e2e-v1 limits.cpu; incus config get e2e-v1 limits.memory"
+   "guest": "incus config get e2e-v1 limits.cpu; incus config get e2e-v1 limits.memory; incus list e2e-v1 -c s -f csv",
+   "confirms": [
+    "resizeV",
+    "startV"
+   ]
   },
   {
    "id": "grow",
@@ -907,7 +969,10 @@
   },
   {
    "id": "rootSize",
-   "guest": "incus config device get e2e-c1 root size"
+   "guest": "incus config device get e2e-c1 root size",
+   "confirms": [
+    "grow"
+   ]
   },
   {
    "id": "overQuota",
@@ -924,6 +989,7 @@
    },
    "port": 3032,
    "auth": "secret:tokenB",
+   "effectUnobservable": "a write the quota refuses, removed by the same command: no effect remains",
    "retryOn": [
     "host_capacity_saturated"
    ]
@@ -1144,7 +1210,10 @@
   },
   {
    "id": "resetGone",
-   "guest": "incus list e2e-c1 -c n -f csv | wc -l"
+   "guest": "incus list e2e-c1 -c n -f csv | wc -l",
+   "confirms": [
+    "reset"
+   ]
   },
   {
    "id": "deleteVCall",
@@ -1257,7 +1326,10 @@
   },
   {
    "id": "left",
-   "guest": "incus list -c n -f csv"
+   "guest": "incus list -c n -f csv",
+   "confirms": [
+    "deleteV"
+   ]
   },
   {
    "id": "projectBack",

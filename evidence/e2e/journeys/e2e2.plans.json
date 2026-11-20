@@ -185,6 +185,21 @@
      "equals": "0\nfile-kept\n"
     },
     {
+     "step": "p1State",
+     "path": "stdout",
+     "equals": "p1\nRUNNING\nmain.sqlite\n"
+    },
+    {
+     "step": "p1Again",
+     "path": "stdout",
+     "equals": "p1\nRUNNING\nmain.sqlite\n"
+    },
+    {
+     "step": "r1State",
+     "path": "stdout",
+     "equals": "recipe\nRUNNING\nmain.sqlite\n"
+    },
+    {
      "step": "cancelAgain",
      "path": "response.body.result.isError",
      "equals": true
@@ -461,6 +476,13 @@
    ]
   },
   {
+   "id": "p1State",
+   "guest": "cat /home/opute/e2e/p1.txt; incus list e2e-p1 -c s -f csv; ls /home/opute/.config/opute/instances/standalone/databases/e2e-p1",
+   "confirms": [
+    "run"
+   ]
+  },
+  {
    "id": "again",
    "mcp": "tools/call",
    "tool": "run_host_plan",
@@ -581,6 +603,13 @@
    ]
   },
   {
+   "id": "p1Again",
+   "guest": "cat /home/opute/e2e/p1.txt; incus list e2e-p1 -c s -f csv; ls /home/opute/.config/opute/instances/standalone/databases/e2e-p1",
+   "confirms": [
+    "again"
+   ]
+  },
+  {
    "id": "released",
    "guest": "sleep 5"
   },
@@ -655,6 +684,13 @@
    "timeout": 600,
    "retryOn": [
     "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r1State",
+   "guest": "cat /home/opute/e2e/r1.txt; incus list e2e-r1 -c s -f csv; ls /home/opute/.config/opute/instances/standalone/databases/e2e-r1",
+   "confirms": [
+    "recipeRun"
    ]
   },
   {
@@ -831,7 +867,10 @@
   },
   {
    "id": "afterCancel",
-   "guest": "sleep 30; incus list e2e-c1 -c n -f csv | wc -l; test -e /home/opute/e2e/c1.txt && echo file-kept"
+   "guest": "sleep 30; incus list e2e-c1 -c n -f csv | wc -l; test -e /home/opute/e2e/c1.txt && echo file-kept",
+   "confirms": [
+    "slowRun"
+   ]
   },
   {
    "id": "cancelAgain",
@@ -859,7 +898,7 @@
  "cleanup": [
   {
    "id": "cleanPlans",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; for n in e2e-p1 e2e-r1 e2e-c1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases/e2e-*; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; for n in e2e-p1 e2e-r1 e2e-c1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.config/opute/instances/standalone/databases/e2e-*; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 25
