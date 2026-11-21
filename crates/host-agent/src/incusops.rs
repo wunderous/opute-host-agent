@@ -1047,6 +1047,86 @@ impl Instances {
         Ok(J::Object(out))
     }
 
+    /// An instance's own and expanded (profile-inherited) devices.
+    fn instance_devices(&self, vm: &str) -> R<(Map<String, J>, Map<String, J>)> {
+        let path = format!("/1.0/instances/{}", escape(vm));
+        let res = self.must(
+            &["query", &path],
+            DISCOVERY_TIMEOUT,
+            "incus instance query failed",
+        )?;
+        let doc: J = serde_json::from_str(&res.stdout)
+            .map_err(|_| format!("invalid Incus instance response for {}", quote(vm)))?;
+        let devices = |key: &str| {
+            doc.get(key)
+                .and_then(J::as_object)
+                .cloned()
+                .unwrap_or_default()
+        };
+        Ok((devices("devices"), devices("expanded_devices")))
+    }
+
+    /// D35 (`configure_network`): one bridged NIC, idempotent.
+    pub fn configure_network(&self, vm: &str, device: &str, parent: &str) -> R<J> {
+        let vm = self.scoped(vm, "configure_network")?;
+        let device = nic_name(device, "eth1", "deviceName")?;
+        let parent = nic_name(parent, "wlan0", "parent")?;
+        let (_, expanded) = self.instance_devices(&vm)?;
+        if bridged_nic_needed(&expanded, &vm, &device, &parent)? {
+            if !std::path::Path::new("/sys/class/net")
+                .join(&parent)
+                .exists()
+            {
+                return Err(format!("host has no network interface {}", quote(&parent)).into());
+            }
+            let nictype = "nictype=bridged".to_string();
+            let parent_key = format!("parent={parent}");
+            self.must(
+                &[
+                    "config",
+                    "device",
+                    "add",
+                    &vm,
+                    &device,
+                    "nic",
+                    &nictype,
+                    &parent_key,
+                ],
+                DISCOVERY_TIMEOUT,
+                "incus device add failed",
+            )?;
+        }
+        let mut out = self.lifecycle_result(&vm, "attached");
+        out["deviceName"] = J::from(device);
+        out["parent"] = J::from(parent);
+        Ok(out)
+    }
+
+    /// D36 (`remove_vm_network_device`): one NIC from the instance's own
+    /// configuration.
+    pub fn remove_vm_network_device(&self, vm: &str, device: &str) -> R<J> {
+        let vm = self.scoped(vm, "remove_vm_network_device")?;
+        let device = nic_name(device, "", "deviceName")?;
+        let (own, expanded) = self.instance_devices(&vm)?;
+        let removed = nic_removal_needed(&own, &expanded, &vm, &device)?;
+        if removed {
+            self.must(
+                &["config", "device", "remove", &vm, &device],
+                DISCOVERY_TIMEOUT,
+                "incus device remove failed",
+            )?;
+        }
+        let mut out = Map::new();
+        out.insert("vmName".into(), J::from(vm.clone()));
+        out.insert("deviceName".into(), J::from(device));
+        out.insert("removed".into(), J::Bool(removed));
+        let uri = self.uri_for(&vm);
+        if !uri.is_empty() {
+            out.insert("uri".into(), J::from(uri));
+        }
+        Ok(J::Object(out))
+    }
+
     /// `UpdateVMResources`: CPU and memory limits, and a grow-only root disk
     /// admitted on the instance's own pool.
     pub fn update_vm_resources(&self, vm: &str, cpus: i64, memory: &str, disk: &str) -> R<J> {
@@ -2531,9 +2611,123 @@ impl Instances {
     }
 }
 
+/// A device or host interface name: the default when blank, else letters,
+/// digits, `-`, `_` and `.`, and never `.` or `..`.
+fn nic_name(name: &str, default: &str, field: &str) -> R<String> {
+    let name = match name.trim() {
+        "" if !default.is_empty() => default,
+        "" => return Err(format!("{field} is required").into()),
+        name => name,
+    };
+    let valid = name.len() <= 64
+        && !matches!(name, "." | "..")
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
+    if !valid {
+        return Err(format!("invalid {field} {}", quote(name)).into());
+    }
+    Ok(name.to_string())
+}
+
+fn device_field<'a>(device: &'a J, key: &str) -> &'a str {
+    device.get(key).and_then(J::as_str).unwrap_or("")
+}
+
+/// D35: whether the bridged NIC must be added; the same device already
+/// present needs nothing, and any other device of that name is a conflict.
+pub(crate) fn bridged_nic_needed(
+    expanded: &Map<String, J>,
+    vm: &str,
+    device: &str,
+    parent: &str,
+) -> R<bool> {
+    let Some(existing) = expanded.get(device) else {
+        return Ok(true);
+    };
+    let same = device_field(existing, "type") == "nic"
+        && device_field(existing, "nictype") == "bridged"
+        && device_field(existing, "parent") == parent;
+    if same {
+        Ok(false)
+    } else {
+        Err(format!(
+            "instance {} already has a device {} with a different configuration",
+            quote(vm),
+            quote(device)
+        )
+        .into())
+    }
+}
+
+/// D36: whether the device must be removed; absent is no change, and only
+/// a NIC in the instance's own configuration may go.
+pub(crate) fn nic_removal_needed(
+    own: &Map<String, J>,
+    expanded: &Map<String, J>,
+    vm: &str,
+    device: &str,
+) -> R<bool> {
+    match (own.get(device), expanded.contains_key(device)) {
+        (Some(found), _) if device_field(found, "type") == "nic" => Ok(true),
+        (Some(_), _) => Err(format!(
+            "device {} on instance {} is not a network interface",
+            quote(device),
+            quote(vm)
+        )
+        .into()),
+        (None, true) => Err(format!(
+            "device {} on instance {} comes from a profile; remove it from the profile instead",
+            quote(device),
+            quote(vm)
+        )
+        .into()),
+        (None, false) => Ok(false),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn devices(v: J) -> Map<String, J> {
+        v.as_object().cloned().unwrap()
+    }
+
+    /// D35: absent is added, the same bridged NIC is no change, anything
+    /// else of that name is refused.
+    #[test]
+    fn bridged_nic_plan() {
+        let expanded = devices(json!({
+            "eth0": {"type": "nic", "network": "incusbr0"},
+            "eth1": {"type": "nic", "nictype": "bridged", "parent": "br0"},
+        }));
+        assert!(bridged_nic_needed(&expanded, "v", "eth2", "br0").unwrap());
+        assert!(!bridged_nic_needed(&expanded, "v", "eth1", "br0").unwrap());
+        assert!(bridged_nic_needed(&expanded, "v", "eth1", "wlan0").is_err());
+        assert!(bridged_nic_needed(&expanded, "v", "eth0", "br0").is_err());
+        assert_eq!(nic_name("", "eth1", "deviceName").unwrap(), "eth1");
+        assert!(nic_name("", "", "deviceName").is_err());
+        for bad in ["..", "a/b", "x y", "-o=1;"] {
+            assert!(nic_name(bad, "eth1", "deviceName").is_err(), "{bad}");
+        }
+    }
+
+    /// D36: an own NIC goes, absent is no change, a profile device or a
+    /// non-NIC is refused.
+    #[test]
+    fn nic_removal_plan() {
+        let own = devices(json!({
+            "eth1": {"type": "nic", "nictype": "bridged", "parent": "br0"},
+            "data": {"type": "disk", "path": "/data"},
+        }));
+        let mut expanded = own.clone();
+        expanded.insert("eth0".into(), json!({"type": "nic", "network": "incusbr0"}));
+        assert!(nic_removal_needed(&own, &expanded, "v", "eth1").unwrap());
+        assert!(!nic_removal_needed(&own, &expanded, "v", "eth9").unwrap());
+        assert!(nic_removal_needed(&own, &expanded, "v", "eth0").is_err());
+        assert!(nic_removal_needed(&own, &expanded, "v", "data").is_err());
+    }
 
     #[test]
     fn launch_image_matches_go() {

@@ -1,0 +1,22 @@
+   Compiling opute-host-agent v0.2.4 (/home/houman/github/wunderous/opute-host-agent-040/crates/host-agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.99s
+     Running unittests src/lib.rs (target/debug/deps/opute_host_agent-afdbac54645d28a7)
+
+running 1 test
+test plan::runner::tests::validation_only_node_after_an_applied_dependency_validates ... FAILED
+
+failures:
+
+---- plan::runner::tests::validation_only_node_after_an_applied_dependency_validates stdout ----
+
+thread 'plan::runner::tests::validation_only_node_after_an_applied_dependency_validates' (301609) panicked at crates/host-agent/src/plan/runner.rs:1973:9:
+Err("node \"n2\" has no action after validation failed")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    plan::runner::tests::validation_only_node_after_an_applied_dependency_validates
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 421 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p opute-host-agent --lib`

@@ -284,7 +284,7 @@ fn ordered(value: &J, order: &[&str]) -> String {
     }
 }
 
-/// `hostplatform.Platform` (with `CPU` and `WSL`) in struct field order.
+/// Go `hostplatform`'s host description (with `CPU` and `WSL`) in struct field order.
 const PLATFORM_ORDER: [&str; 20] = [
     "contractVersion",
     "os",

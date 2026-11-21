@@ -77,7 +77,9 @@ either branch. Every changed journey then ran once on `rust-0.3.0-rc7`, as
 the draft `m24-d1` (30 journeys; drafts are not committed). Every journey
 passed, and the two controls failed with their own failure alone. The draft
 found nothing the replay had not: no change outside the narrowed patterns and
-no pattern its live run left unused.
+no pattern its live run left unused. On `rust-0.4.0`, its 34 changed journeys
+ran once on `rust-0.4.0-rc4` as the draft `m24-d2` (VM built from that
+branch's `devvm.py`), with the same result.
 
 ## Candidates
 
@@ -88,4 +90,5 @@ under one new run id:
   controls fail as expected: `selfcheck.unused-allowance` with
   `unused-allowance` alone, and `selfcheck.broad-allowance` with
   `broad-allowance` alone.
-- `rust-0.4.0-rc4` (`rust-0.4.0`): `m24-r2`, recorded on that branch.
+- `rust-0.4.0-rc4` (`rust-0.4.0`): `m24-r2`. Every journey passed on its
+  first attempt, and `verify.py --gate` passes every gate.

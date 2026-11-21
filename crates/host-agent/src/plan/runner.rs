@@ -918,7 +918,9 @@ impl<'a> Runner<'a> {
             return result.map_err(PlanError::Other);
         }
 
-        if node.validate.is_some() && !force_action {
+        // D45: an applied dependency forces the action; a node without one
+        // still validates.
+        if node.validate.is_some() && (!force_action || node.action.is_none()) {
             // A failed preflight must yield to the node action immediately;
             // polling here would wait for a resource this node itself
             // creates. A validation-only node has no action and may poll.
@@ -1263,7 +1265,7 @@ impl<'a> Runner<'a> {
             if let Some(e) = ctx.err() {
                 return Err(e);
             }
-            if node.validate.is_some() && !force_action {
+            if node.validate.is_some() && (!force_action || node.action.is_none()) {
                 match self.validate_node_ready_plain(
                     ctx,
                     doc,
@@ -1954,6 +1956,25 @@ mod tests {
                 other => panic!("unexpected tool {other}"),
             }
         })
+    }
+
+    /// D45: an applied dependency forces a node's action instead of its
+    /// preflight; a validation-only node has no action, so it validates.
+    #[test]
+    fn validation_only_node_after_an_applied_dependency_validates() {
+        let (mut doc, applied) = gated_action_doc();
+        doc.nodes.push(Node {
+            id: "n2".to_string(),
+            depends_on: vec!["n1".to_string()],
+            validate: doc.nodes[0].validate.clone(),
+            ..Default::default()
+        });
+        let calls = Arc::new(AtomicUsize::new(0));
+        let runner = gated_dispatch(applied, calls);
+        let (state, result) = runner.run(&RunCtx::background(), &doc, RunState::default());
+        assert!(result.is_ok(), "{result:?}");
+        assert_eq!(state.nodes.get("n1").unwrap().status, STATUS_APPLIED);
+        assert_eq!(state.nodes.get("n2").unwrap().status, STATUS_SATISFIED);
     }
 
     #[test]

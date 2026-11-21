@@ -1,8 +1,8 @@
 # Implement list_secret_keys (proposed)
 
-Status: proposed. Owner question Q18
+Status: **accepted (owner, 2026-11-11) as D32**, answering owner question Q18
 ([rust-spec-authority/questions.md](../archive/2026-11-07-rust-spec-authority/questions.md)).
-Nothing here is implemented.
+Implemented on the `rust-0.4.0` branch (goal m15).
 
 ## Why
 
@@ -24,7 +24,7 @@ call, not the typed, schema-declared read the catalog promises.
 
 ## What Changes
 
-If the owner accepts Q18, a built-in Service Provider for `list_secret_keys`
+A built-in Service Provider for `list_secret_keys`
 on a registered cluster target:
 
 - it returns the Secret's data keys, sorted, and never a value;

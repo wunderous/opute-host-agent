@@ -1,0 +1,605 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/j3-client.txt",
+   "files//home/opute/.config/opute-e2e/j3-modern.txt",
+   "files//opt/opute-e2e/clients",
+   "files//opt/opute-e2e/clients/hostagentclient",
+   "files//opt/opute-e2e/docs",
+   "files//opt/opute-e2e/docs/get-started.html"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.tutorial-clients",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "e2e-devvm-agent",
+     "equals": "e2e-devvm-agent",
+     "ok": true,
+     "path": "response.body.agentId",
+     "step": "health"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "list"
+    },
+    {
+     "actual": "apply_manifest",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.tools[0].name",
+     "step": "list"
+    },
+    {
+     "actual": "host:local:e2e-devvm-agent",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "info"
+    },
+    {
+     "actual": "opute-parity-t2",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.hostName",
+     "step": "info"
+    },
+    {
+     "actual": "incus",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.providerId",
+     "step": "info"
+    },
+    {
+     "actual": "/usr/bin/incus",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.lxcBinaryPath",
+     "step": "info"
+    },
+    {
+     "actual": "/usr/bin/systemctl",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.systemctlPath",
+     "step": "info"
+    },
+    {
+     "actual": [
+      "apply_manifest",
+      "build_and_push_oci_image",
+      "check_local_llm_prerequisites",
+      "cleanup_container_storage",
+      "compact_host_vm_disk",
+      "configure_agent_connection",
+      "configure_local_llm_model",
+      "configure_local_llm_runtime",
+      "configure_network",
+      "configure_oci_storage",
+      "create_vm",
+      "delete_cluster_resource",
+      "delete_oci_registry",
+      "delete_vm",
+      "detect_host_platform",
+      "diagnose_bridge",
+      "discover_service_ingress",
+      "ensure_container_engine",
+      "ensure_host_artifact",
+      "ensure_host_file",
+      "ensure_host_service_supervisor",
+      "ensure_host_tool",
+      "ensure_local_llm_k3s_proxy",
+      "ensure_local_llm_relay",
+      "ensure_local_llm_server_binary",
+      "ensure_oci_builder",
+      "ensure_public_mcp_quick_tunnel",
+      "ensure_public_mcp_tunnel",
+      "ensure_sqlite_database",
+      "exec_cluster_command",
+      "extract_host_archive",
+      "garbage_collect_cluster_registry",
+      "get_capability_catalog",
+      "get_host_capacity",
+      "get_host_info",
+      "get_host_plan_run",
+      "get_cluster_resource",
+      "get_cluster_resource_status",
+      "get_oci_registry_status",
+      "get_postgresql_service_status",
+      "get_runtime_recipe_run",
+      "get_sqlite_database_status",
+      "get_tunnel_run",
+      "get_vm_info",
+      "inspect_container_storage",
+      "inspect_guest_storage",
+      "inspect_host_file",
+      "inspect_host_service",
+      "inspect_host_service_supervisor",
+      "inspect_workload",
+      "install_cluster_agent",
+      "install_cluster_package",
+      "install_virtualization_stack",
+      "install_local_llm_model",
+      "install_oci_registry",
+      "install_provider_tools",
+      "list_agents",
+      "list_certificate_issuers",
+      "list_configmap_keys",
+      "list_deployments",
+      "list_host_services",
+      "list_ingress_classes",
+      "list_cluster_events",
+      "list_compute_clusters",
+      "list_local_llm_models",
+      "list_namespaces",
+      "list_pods",
+      "list_secret_keys",
+      "list_services",
+      "list_storage_classes",
+      "list_vms",
+      "open_assistant_session",
+      "opute.provider.install",
+      "opute.provider.reload",
+      "opute.provider.status",
+      "opute.provider.teardown",
+      "opute.provider.validate",
+      "prepare_host_agent_artifacts",
+      "probe_gpu_container",
+      "probe_http_endpoint",
+      "probe_virtualization_gpu",
+      "probe_local_llm",
+      "probe_openai_compatible_server",
+      "provision_container",
+      "provision_vm",
+      "prune_unused_cluster_images",
+      "put_cluster_secret",
+      "reconcile_host_resource_policy",
+      "reconcile_postgresql_service",
+      "reconcile_serving_assignment",
+      "recover_bridge",
+      "register_kubernetes_cluster",
+      "release_postgresql_service_relay",
+      "remove_host_file",
+      "remove_local_llm_k3s_proxy",
+      "remove_local_llm_model",
+      "remove_local_llm_relay",
+      "remove_postgresql_service",
+      "remove_public_mcp_quick_tunnel",
+      "remove_sqlite_database",
+      "remove_vm_network_device",
+      "render_cluster_package",
+      "reset_virtualization_stack",
+      "resize_console",
+      "restart_host_service",
+      "restart_vm",
+      "run_host_command",
+      "run_host_local_recipe",
+      "run_host_plan",
+      "run_instance_command",
+      "run_runtime_recipe",
+      "run_tunnel_recipe",
+      "send_console_input",
+      "set_host_service_state",
+      "shutdown_host_vm_subsystem",
+      "stage_build_context",
+      "start_local_llm_runtime",
+      "start_vm",
+      "stop_local_llm_runtime",
+      "stop_vm",
+      "stream_vm_console",
+      "terminate_host_vm_distribution",
+      "trim_guest_storage",
+      "uninstall_virtualization_stack",
+      "uninstall_provider_tools",
+      "update_vm_resources",
+      "validate_host_local_recipe",
+      "validate_host_plan",
+      "validate_runtime_recipe",
+      "validate_tunnel_recipe"
+     ],
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.supportedTools",
+     "step": "info"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "First success: health, connect, refresh tools, get_host_info {}",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/get-started/index.html"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "ide"
+    },
+    {
+     "actual": "http",
+     "equals": "http",
+     "ok": true,
+     "path": "json.config.type",
+     "step": "ide"
+    },
+    {
+     "actual": "http://127.0.0.1:3014/mcp",
+     "equals": "http://127.0.0.1:3014/mcp",
+     "ok": true,
+     "path": "json.config.url",
+     "step": "ide"
+    },
+    {
+     "actual": "Bearer ${input:opute-host-token}",
+     "equals": "Bearer ${input:opute-host-token}",
+     "ok": true,
+     "path": "json.config.authorization",
+     "step": "ide"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.config.inputs[0].password",
+     "step": "ide"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.toolsListStatus",
+     "step": "ide"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.callStatus",
+     "step": "ide"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "json.results[0].isError",
+     "step": "ide"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Connect VS Code: the documented .vscode/mcp.json",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/get-started/index.html"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "discover"
+    },
+    {
+     "actual": {
+      "_meta": {
+       "io.modelcontextprotocol/serverInfo": {
+        "name": "host-agent",
+        "version": "0.4.0"
+       }
+      },
+      "capabilities": {
+       "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+       },
+       "tools": {}
+      },
+      "resultType": "complete",
+      "supportedVersions": [
+       "2026-07-28"
+      ]
+     },
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result",
+     "step": "discover"
+    },
+    {
+     "actual": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c",
+     "matches": "^sha256:",
+     "ok": true,
+     "path": "response.body.result.structuredContent.catalogRevision",
+     "step": "catalog"
+    },
+    {
+     "actual": "enforced",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.enforcement",
+     "step": "capacity"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible authenticated MCP surface",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "legacyAgent"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "legacyInit"
+    },
+    {
+     "actual": "2025-06-18",
+     "equals": "2025-06-18",
+     "ok": true,
+     "path": "response.body.result.protocolVersion",
+     "step": "legacyInit"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "legacyList"
+    },
+    {
+     "actual": "host:local:e2e-legacy-agent",
+     "matches": ":e2e-legacy-agent$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.uri",
+     "step": "legacyInfo"
+    },
+    {
+     "actual": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c",
+     "matches": "^sha256:",
+     "ok": true,
+     "path": "response.body.result.structuredContent.catalogRevision",
+     "step": "legacyCatalog"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "legacyCapacity"
+    },
+    {
+     "actual": {
+      "cgroupControllers": [
+       "cpuset",
+       "cpu",
+       "io",
+       "memory",
+       "pids"
+      ],
+      "checkedAt": "2026-11-21T00:25:25Z",
+      "currentUsage": {
+       "diskAvailableBytes": 99085168640,
+       "diskBytes": 3802927104,
+       "memoryAvailableBytes": 16092602368,
+       "memoryBytes": 676028416,
+       "tasks": 3
+      },
+      "diskAvailableBytes": 99085168640,
+      "diskPressure": "normal",
+      "effectiveLimits": {
+       "cpuCores": 6,
+       "diskBytes": 102888095744,
+       "memoryBytes": 11811160064,
+       "tasks": 4096
+      },
+      "enforcement": "enforced",
+      "heavyInFlight": 0,
+      "memoryAvailableBytes": 16092602368,
+      "memoryEvents": {
+       "high": 0,
+       "low": 0,
+       "max": 0,
+       "oom": 0,
+       "oom_group_kill": 0,
+       "oom_kill": 0
+      },
+      "normalInFlight": 0,
+      "observedLimits": {
+       "diskBytes": 102888095744,
+       "tasks": 19144
+      },
+      "policyRevision": "opute-host-resource-policy.v2",
+      "pressure": "normal",
+      "psi": {
+       "cpu": {
+        "someAvg10": 0.04,
+        "someAvg300": 0.08,
+        "someAvg60": 0.25,
+        "someTotalUsec": 415039
+       },
+       "io": {
+        "fullAvg10": 6.44,
+        "fullAvg300": 0.5,
+        "fullAvg60": 2.04,
+        "fullTotalUsec": 1641427,
+        "someAvg10": 6.44,
+        "someAvg300": 0.52,
+        "someAvg60": 2.07,
+        "someTotalUsec": 1700575
+       },
+       "memory": {
+        "fullTotalUsec": 85,
+        "someTotalUsec": 85
+       }
+      },
+      "queue": {
+       "heavyActive": 0,
+       "heavyQueued": 0,
+       "normalActive": 0,
+       "queued": 0
+      },
+      "queued": 0,
+      "reservations": {
+       "count": 0
+      },
+      "tasksCurrent": 3,
+      "tasksLimit": 19144
+     },
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent",
+     "step": "legacyCapacity"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "legacyPlanDone"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "legacyPlanFile"
+    },
+    {
+     "actual": 400,
+     "equals": 400,
+     "ok": true,
+     "path": "response.status",
+     "step": "legacyDiscover"
+    },
+    {
+     "actual": -32020,
+     "exists": true,
+     "ok": true,
+     "path": "response.body.error.code",
+     "step": "legacyDiscover"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Compatible authenticated MCP surface",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "dabab724-9ff5-43ec-bbb6-83ba7e4c3652",
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.runId",
+     "step": "plan"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "planDone"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "planFile"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "client"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "json.plan.status",
+     "step": "client"
+    },
+    {
+     "actual": "sha256:6ceca36091c4fc214fac50a643f9dfad87cb4163fb6ebe8b1913a57286e0178c",
+     "matches": "^sha256:",
+     "ok": true,
+     "path": "json.catalog.revision",
+     "step": "client"
+    },
+    {
+     "actual": 138,
+     "gte": 1,
+     "ok": true,
+     "path": "json.toolsList",
+     "step": "client"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "capacity": 34,
+   "catalog": 32,
+   "client": 1506,
+   "clientCopy": 539,
+   "discover": 1,
+   "docsCopy": 422,
+   "health": 16,
+   "ide": 362,
+   "info": 172,
+   "legacyAgent": 853,
+   "legacyCapacity": 242,
+   "legacyCatalog": 250,
+   "legacyDiscover": 204,
+   "legacyInfo": 312,
+   "legacyInit": 505,
+   "legacyList": 244,
+   "legacyPlan": 306,
+   "legacyPlanDone": 211,
+   "legacyPlanFile": 141,
+   "legacyStop": 268,
+   "list": 17,
+   "plan": 100,
+   "planDone": 1019,
+   "planFile": 142,
+   "tool": 284,
+   "wire": 286
+  },
+  "stepsSeconds": 52.9
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

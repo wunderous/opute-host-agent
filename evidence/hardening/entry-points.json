@@ -138,7 +138,7 @@
     {
       "id": "state-store",
       "source": "state.db on disk: a crash, a full disk, or another process",
-      "code": "store::StateStore::open (schema init, migrations, interrupted-work marking)",
+      "code": "store::StateStore::open (schema init, migrations, interrupted-work marking); prune_audit (D42 retention)",
       "fuzz": [
         "state_store"
       ],
@@ -196,7 +196,7 @@
     {
       "id": "incus-output",
       "source": "incus list --format json",
-      "code": "incus::decode_list, ListItem::config_value",
+      "code": "incus::decode_list, ListItem::config_value; incusops::instance_devices -> bridged_nic_needed, nic_removal_needed (incus query /1.0/instances/<name>, D35, D36)",
       "fuzz": [
         "incus_output"
       ],
@@ -226,12 +226,24 @@
     {
       "id": "provider-command-output",
       "source": "k3s, kubectl and crictl inside guests; cloudflared and warp-cli; remote MCP endpoints the agent probes",
-      "code": "providers::k3s::membership::parse_native_membership, parse_cluster_node_snapshot, raw_url_decode; providers::k3s::storage::keep_set_from_pod_json, parse_cri_images, parse_cri_containers, parse_df_bytes, parse_du_line; providers::cloudflare::api::decode_first; providers::cloudflare::mesh::find_mesh_ip, find_mesh_interface; mcpprobe::decode; clusterops::privileged",
+      "code": "providers::k3s::membership::parse_native_membership, parse_cluster_node_snapshot, raw_url_decode; providers::k3s::storage::keep_set_from_pod_json, parse_cri_images, parse_cri_containers, parse_df_bytes, parse_du_line; providers::cloudflare::api::decode_first; providers::cloudflare::mesh::find_mesh_ip, find_mesh_interface; mcpprobe::decode; clusterops::privileged; clusterops::object_keys (key names only, D32, D33) and project_deployment (kubectl get deployment -o json, D34)",
       "fuzz": [
         "command_output"
       ],
       "properties": [
-        "diagnostics_never_show_the_secret"
+        "diagnostics_never_show_the_secret",
+        "workload_projection_never_shows_a_value"
+      ]
+    },
+    {
+      "id": "console-output",
+      "source": "the guest behind an instance console: whatever it writes to its serial console, and whoever can log in to it",
+      "code": "console::Consoles reader thread -> console::append (64 KiB bound) and drain (UTF-8 boundaries), returned by send_console_input (D38, D39)",
+      "fuzz": [
+        "console_output"
+      ],
+      "properties": [
+        "console_reads_lose_nothing_within_the_bound"
       ]
     },
     {
@@ -318,29 +330,29 @@
       "id": "O1",
       "summary": "The state store keeps one capability-invocation row per call (about 3.5 KB each for the e2e6.budget mix) and never prunes them; under 28,144 calls in 15 minutes it grew 81.5 MB. The spec states durable audit but no retention, so this is growth by contract, not a leak.",
       "foundBy": "gate e2e-6 draft, journey e2e6.budget",
-      "test": "journey e2e6.budget (storeBytesPerCall)",
-      "state": "open observation for the owners in 0.3.0: audit retention is not specified. D42 decides it for 0.4.0 only (D43)"
+      "test": "store::tests::audit_rows_are_pruned_by_age_and_count_but_never_while_referenced",
+      "state": "fixed by D42 (openspec/changes/audit-retention): 30 days and 50,000 rows by default, pruned in the background"
     },
     {
       "id": "A2",
       "summary": "The model-serving relay read an inference request's whole body before forwarding it, with no bound.",
       "foundBy": "auth review (m16)",
       "test": "llmops::tests::oversized_relay_bodies_are_refused_without_reading_them",
-      "state": "fixed by D41 (openspec/changes/bound-relay-request-body), applied to 0.3.0 by D43 in rust-0.3.0-rc5: 32 MiB, 413 beyond"
+      "state": "fixed by D41 (openspec/changes/bound-relay-request-body): 32 MiB, 413 beyond"
     },
     {
       "id": "A4",
       "summary": "Every process the agent started inherited the agent's whole environment, MCP_AUTH_TOKEN, OPUTE_OAUTH_CLIENTS and provider credentials included: incus, kubectl, git, curl, ollama and the systemd-run client all received them. A caller's own run_host_command ran in a systemd unit and did not.",
-      "foundBy": "m15 review of the console spawn; measured on rust-0.3.0-rc4 in m18",
+      "foundBy": "m15 review of the console spawn",
       "test": "hostobs::tests::a_child_never_sees_the_agents_secrets; config::tests::every_spawn_site_passes_the_child_environment",
-      "state": "fixed by D40 (openspec/changes/child-process-environment), applied to 0.3.0 by D43 in rust-0.3.0-rc5: an allowlist at every spawn site"
+      "state": "fixed by D40 (openspec/changes/child-process-environment): an allowlist at every spawn site"
     },
     {
       "id": "A5",
       "summary": "A provider executable's /mcp read a request's whole body before the SDK's 4 MiB limit, as /mcp did before D29.",
       "foundBy": "m17, measuring A2",
       "test": "providers::tests::oversized_provider_bodies_are_refused_without_reading_them",
-      "state": "fixed by D41 (openspec/changes/bound-relay-request-body), applied to 0.3.0 by D43 in rust-0.3.0-rc5: the SDK's 4 MiB, 413 beyond"
+      "state": "fixed by D41 (openspec/changes/bound-relay-request-body): the SDK's 4 MiB, 413 beyond"
     }
   ]
 }

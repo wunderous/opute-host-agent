@@ -1,0 +1,267 @@
+# m20: a static website served from a K3s Service and published at a Cloudflare hostname, brought up by one
+# run_host_local_recipe. Every node is a typed tool with a validate on its effect, so a second run finds each
+# effect in place and skips every action (status "satisfied").
+#
+# Host prerequisites, set up once by typed calls before the first run (evidence/m20/README.md): the K3s and
+# Cloudflare providers installed with opute.provider.install (an install runs its own activation recipe, which
+# a node of this recipe cannot do, D44), and the container builder.
+#
+# The cluster pulls the image from the in-cluster registry as localhost:30500 (the registry's NodePort on the
+# node itself), which containerd reaches over plain HTTP with no registry configuration. The host pushes to
+# the same registry at the guest's address.
+contractVersion: host-recipe.v1
+recipeId: com.opute.host-agent.minimal-site
+recipeVersion: 1.0.0
+execution:
+  coordinator: host-agent
+  mode: local
+compatibility:
+  requiredTools:
+    - provision_vm
+    - get_vm_info
+    - opute.capability.kubernetes.provision
+    - opute.capability.kubernetes.status
+    - install_oci_registry
+    - get_oci_registry_status
+    - stage_build_context
+    - inspect_host_file
+    - build_and_push_oci_image
+    - probe_http_endpoint
+    - apply_manifest
+    - get_cluster_resource_status
+    - configure_service_domain
+    - get_cluster_resource
+    - ensure_cloudflared_tunnel
+    - get_cloudflare_tunnel_status
+inputs:
+  hostname:
+    required: true
+    description: Public hostname; the provider creates its tunnel route and CNAME.
+    schema: {type: string, pattern: '^(minimal|e2e-[a-z0-9-]{1,40})\.opute\.io$'}
+  tunnelName:
+    required: true
+    description: Name of the dedicated Cloudflare tunnel that serves the hostname.
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,62}$'}
+  name:
+    required: true
+    description: Name of the guest container and its single-node K3s cluster.
+    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,30}$'}
+  guestImage:
+    required: true
+    description: Incus image alias for the guest container.
+    schema: {type: string, minLength: 1}
+  contextDir:
+    required: true
+    description: Absolute host directory the build context is staged into, one per site version.
+    schema: {type: string, pattern: '^/.+$'}
+  contextFiles:
+    required: true
+    description: The site's build context (relative path to file content), with a Dockerfile at its root.
+    schema: {type: object, minProperties: 1, additionalProperties: {type: string}, required: [Dockerfile]}
+  contextEncoding:
+    default: utf8
+    schema: {type: string, enum: [utf8, base64]}
+  siteVersion:
+    required: true
+    description: Version of the site image; a new context needs a new version.
+    schema: {type: string, pattern: '^[a-z0-9][a-z0-9.-]{0,40}$'}
+  containerPort:
+    default: 80
+    schema: {type: integer, minimum: 1, maximum: 65535}
+  k3sVersion:
+    default: v1.31.8+k3s1
+    schema: {type: string, minLength: 1}
+  runNonce:
+    default: default
+    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.
+    schema: {type: string, minLength: 1, maxLength: 128}
+plan:
+  contractVersion: host-plan.v1
+  planId: com.opute.host-agent.minimal-site
+  generation: 1
+  idempotencyKey: com.opute.host-agent.minimal-site-${vars.inputs.name}-${vars.inputs.hostname}-${vars.inputs.siteVersion}-${vars.inputs.runNonce}
+  defaults:
+    timeoutMs: 900000
+  # A node reads its effect before acting (preflight) unless a node it depends on was applied in this run. A
+  # read of a guest or cluster that does not exist yet is refused, so every node that creates one depends on
+  # the node applied just before it: from clean state each runs its action, and on a second run each finds
+  # its effect and skips. The teardown removes the staged context, which starts that chain again.
+  nodes:
+    - id: context
+      action:
+        tool: stage_build_context
+        args: {destDir: '${vars.inputs.contextDir}', files: '${vars.inputs.contextFiles}',
+          fileEncoding: '${vars.inputs.contextEncoding}'}
+      validate:
+        tool: inspect_host_file
+        args: {path: '${vars.inputs.contextDir}/Dockerfile'}
+        assert:
+          - {path: /exists, op: eq, value: true}
+    - id: guest
+      dependsOn: [context]
+      timeoutMs: 600000
+      action:
+        tool: provision_vm
+        args: {name: '${vars.inputs.name}', image: '${vars.inputs.guestImage}', instanceType: container, cpus: 2,
+          memory: 4GiB, disk: 20GiB}
+      validate:
+        tool: get_vm_info
+        args: {uri: 'container:local:${vars.inputs.name}', fast: true}
+        assert:
+          - {path: /status, op: eq, value: running}
+    # Validation only: waits for the guest's address, which the image node pushes to.
+    - id: guest-address
+      dependsOn: [guest]
+      validate:
+        tool: get_vm_info
+        args: {uri: 'container:local:${vars.inputs.name}', fast: true}
+        assert:
+          - {path: /ipv4/0, op: matches, value: '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'}
+        pollIntervalMs: 2000
+        timeoutMs: 120000
+    - id: cluster
+      dependsOn: [guest, guest-address]
+      timeoutMs: 1200000
+      action:
+        tool: opute.capability.kubernetes.provision
+        args: {targetUri: 'container:local:${vars.inputs.name}', providerInstanceName: '${vars.inputs.name}',
+          instanceType: container, version: '${vars.inputs.k3sVersion}', clusterInit: true}
+      validate:
+        tool: opute.capability.kubernetes.status
+        args: {targetUri: 'cluster:local:${vars.inputs.name}', providerInstanceName: '${vars.inputs.name}',
+          instanceType: container}
+        assert:
+          - {path: /readyNodeCount, op: eq, value: 1}
+        pollIntervalMs: 5000
+        timeoutMs: 300000
+    - id: registry
+      dependsOn: [cluster]
+      timeoutMs: 600000
+      action:
+        tool: install_oci_registry
+        args: {uri: 'cluster:local:${vars.inputs.name}', image: 'registry:2.8.3', storageSize: 1Gi}
+      validate:
+        tool: get_oci_registry_status
+        args: {uri: 'cluster:local:${vars.inputs.name}'}
+        assert:
+          - {path: /deployment/status/readyReplicas, op: eq, value: 1}
+        pollIntervalMs: 5000
+        timeoutMs: 300000
+    - id: image
+      dependsOn: [registry, context]
+      timeoutMs: 1200000
+      action:
+        tool: build_and_push_oci_image
+        args: {contextDir: '${vars.inputs.contextDir}', insecureRegistry: true,
+          image: '${nodes.guest-address.output.ipv4.0}:30500/site/${vars.inputs.siteVersion}:latest'}
+      # A repository per version: its tag list exists once that version is pushed.
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: 'http://${nodes.guest-address.output.ipv4.0}:30500/v2/site/${vars.inputs.siteVersion}/tags/list'}
+        assert:
+          - {path: /statusCode, op: eq, value: 200}
+    - id: workload
+      dependsOn: [image]
+      timeoutMs: 600000
+      action:
+        tool: apply_manifest
+        args:
+          uri: 'cluster:local:${vars.inputs.name}'
+          manifest: |
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: site
+            ---
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: site-${vars.inputs.siteVersion}
+              namespace: site
+            spec:
+              replicas: 1
+              selector:
+                matchLabels: {app.kubernetes.io/name: site, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
+              template:
+                metadata:
+                  labels: {app.kubernetes.io/name: site, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
+                spec:
+                  containers:
+                    - name: web
+                      image: localhost:30500/site/${vars.inputs.siteVersion}:latest
+                      ports: [{name: http, containerPort: ${vars.inputs.containerPort}}]
+                      readinessProbe:
+                        httpGet: {path: /, port: http}
+            ---
+            apiVersion: v1
+            kind: Service
+            metadata:
+              name: site
+              namespace: site
+            spec:
+              selector: {app.kubernetes.io/name: site, app.kubernetes.io/version: '${vars.inputs.siteVersion}'}
+              ports: [{name: http, port: 80, targetPort: http}]
+      # Assertion values are not interpolated, so the version is in the Deployment's name: a new version is a
+      # new Deployment, and the Service's selector moves to it.
+      validate:
+        tool: get_cluster_resource_status
+        args: {uri: 'cluster:local:${vars.inputs.name}', resourceKind: Deployment, namespace: site,
+          resourceName: 'site-${vars.inputs.siteVersion}'}
+        assert:
+          - {path: /status, op: eq, value: ready}
+        pollIntervalMs: 5000
+        timeoutMs: 300000
+    - id: domain
+      dependsOn: [workload]
+      action:
+        tool: configure_service_domain
+        args: {uri: 'cluster:local:${vars.inputs.name}', namespace: site, ingressName: '${vars.inputs.hostname}', ingressClass: traefik,
+          hostname: '${vars.inputs.hostname}', serviceName: site, servicePort: 80}
+      validate:
+        tool: get_cluster_resource
+        args: {uri: 'cluster:local:${vars.inputs.name}', kind: Ingress, namespace: site,
+          resourceName: '${vars.inputs.hostname}'}
+        assert:
+          # The read returns the resource as JSON text; the Ingress is named after the hostname it routes.
+          - {path: /json, op: notEmpty}
+    # The connector runs in the cluster and sends the public hostname to Traefik, which routes it by the
+    # domain's Ingress.
+    - id: tunnel
+      dependsOn: [domain]
+      timeoutMs: 600000
+      action:
+        tool: ensure_cloudflared_tunnel
+        args: &tunnel
+          bindingId: site
+          hostname: '${vars.inputs.hostname}'
+          tunnelName: '${vars.inputs.tunnelName}'
+          localTarget: 'http://traefik.kube-system.svc.cluster.local:80'
+          placement: kubernetes
+          targetUri: 'cluster:local:${vars.inputs.name}'
+          manageHostConnector: true
+      validate:
+        tool: get_cloudflare_tunnel_status
+        args: *tunnel
+        assert:
+          - {path: /routed, op: eq, value: true}
+    # Validation only: the connector the tunnel node installed is running.
+    - id: connector
+      dependsOn: [tunnel]
+      validate:
+        tool: get_cluster_resource_status
+        args: {uri: 'cluster:local:${vars.inputs.name}', resourceKind: Deployment, namespace: cloudflare-connector,
+          resourceName: cloudflared}
+        assert:
+          - {path: /status, op: eq, value: ready}
+        pollIntervalMs: 5000
+        timeoutMs: 300000
+    # Validation only: the public URL answers over TLS the agent verifies.
+    - id: public
+      dependsOn: [connector]
+      validate:
+        tool: probe_http_endpoint
+        args: {endpoint: 'https://${vars.inputs.hostname}/'}
+        assert:
+          - {path: /statusCode, op: eq, value: 200}
+        pollIntervalMs: 10000
+        timeoutMs: 600000

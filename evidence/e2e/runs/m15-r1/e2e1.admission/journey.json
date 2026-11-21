@@ -1,0 +1,304 @@
+{
+ "cleanup": [],
+ "description": "Flow 3, admission: an agent with the documented defaults (mutations not enabled) refuses a mutation, a destructive call and a host plan with the D10 gate error and runs a read tool; an agent with mutations enabled and a 1 MiB memory capacity refuses a mutation with a typed resource-limit error. Neither writes a durable row or a file, and the VM diff is empty.",
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "gate": "e2e-1",
+ "id": "e2e1.admission",
+ "inputs": {
+  "agent": "two Rust agents started for the journey under /tmp/e2e-agents (ports 3019, 3020)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "gatedAgent"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "mutation"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "response.body.result.content[0].text",
+     "step": "mutation"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "destructive"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "response.body.result.content[0].text",
+     "step": "destructive"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "planGate"
+    },
+    {
+     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+     "path": "response.body.result.content[0].text",
+     "step": "planGate"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "gatedRead"
+    },
+    {
+     "matches": ":e2e-gated-agent$",
+     "path": "response.body.result.structuredContent.uri",
+     "step": "gatedRead"
+    }
+   ],
+   "requirement": "Standalone without mutations runs read tools only",
+   "spec": "openspec/changes/standalone-read-only-gate/specs/standalone-read-only-gate/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "gatedNoFile"
+    },
+    {
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "gatedBefore"
+     },
+     "path": "json.counts",
+     "step": "gatedAfter"
+    }
+   ],
+   "requirement": "The gate refuses before any effect",
+   "spec": "openspec/changes/standalone-read-only-gate/specs/standalone-read-only-gate/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "limitedAgent"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "saturated"
+    },
+    {
+     "equals": "host_capacity_saturated",
+     "path": "response.body.result.structuredContent.code",
+     "step": "saturated"
+    },
+    {
+     "equals": "admission",
+     "path": "response.body.result.structuredContent.owner",
+     "step": "saturated"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "limitedNoFile"
+    },
+    {
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "limitedBefore"
+     },
+     "path": "json.counts",
+     "step": "limitedAfter"
+    }
+   ],
+   "requirement": "Typed target and effect admission",
+   "scenario": "a resource-limit refusal is typed and comes before any side effect or durable row",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "matches": "^Error: host_capacity_saturated: ",
+     "path": "response.body.result.content[0].text",
+     "step": "saturated"
+    }
+   ],
+   "requirement": "Typed target and effect admission",
+   "scenario": "the refusal names its error code; its message text is not contract (D28, Q3)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start gated --port 3019 --id e2e-gated-agent --env MCP_AUTH_TOKEN=${SECRET:gated}",
+   "id": "gatedAgent"
+  },
+  {
+   "auth": "secret:gated",
+   "id": "gatedList",
+   "mcp": "tools/list",
+   "port": 3019
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/gated/state/state.db",
+   "id": "gatedBefore"
+  },
+  {
+   "arguments": {
+    "content": "e2e\n",
+    "path": ".config/opute-e2e/j5.txt",
+    "scope": "user"
+   },
+   "auth": "secret:gated",
+   "id": "mutation",
+   "mcp": "tools/call",
+   "port": 3019,
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "path": ".config/opute-e2e/j5.txt"
+   },
+   "auth": "secret:gated",
+   "id": "destructive",
+   "mcp": "tools/call",
+   "port": 3019,
+   "tool": "remove_host_file"
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j5-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "e2e\n",
+         "path": ".config/opute-e2e/j5.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/j5.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      }
+     ],
+     "planId": "e2e1-j5"
+    }
+   },
+   "auth": "secret:gated",
+   "id": "planGate",
+   "mcp": "tools/call",
+   "port": 3019,
+   "tool": "run_host_plan"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/gated/state/state.db",
+   "id": "gatedAfter"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:gated",
+   "id": "gatedRead",
+   "mcp": "tools/call",
+   "port": 3019,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/gated/home/.config/opute-e2e/j5.txt",
+   "id": "gatedNoFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start limited --port 3020 --id e2e-limited-agent --env MCP_AUTH_TOKEN=${SECRET:limited} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES=1048576",
+   "id": "limitedAgent"
+  },
+  {
+   "auth": "secret:limited",
+   "id": "limitedList",
+   "mcp": "tools/list",
+   "port": 3020
+  },
+  {
+   "arguments": {},
+   "auth": "secret:limited",
+   "id": "limitedCapacity",
+   "mcp": "tools/call",
+   "port": 3020,
+   "tool": "get_host_capacity"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/limited/state/state.db",
+   "id": "limitedBefore"
+  },
+  {
+   "arguments": {
+    "content": "e2e\n",
+    "path": ".config/opute-e2e/j5.txt",
+    "scope": "user"
+   },
+   "auth": "secret:limited",
+   "id": "saturated",
+   "mcp": "tools/call",
+   "port": 3020,
+   "tool": "ensure_host_file"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/limited/state/state.db",
+   "id": "limitedAfter"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/limited/home/.config/opute-e2e/j5.txt",
+   "id": "limitedNoFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove gated && python3 /opt/opute-e2e/guest/e2etool.py agent remove limited",
+   "id": "stop"
+  }
+ ]
+}

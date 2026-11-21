@@ -1,0 +1,193 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-full.service",
+   "system/units/e2e-agent-full.service",
+   "system/units/tmp-e2e\\x2dagents-full-state.mount"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.disk-full",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "mount"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "fullAgent"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "writeBefore"
+    },
+    {
+     "actual": "    0\n",
+     "matches": "^ *[0-9]+\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "fill"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "writeFull"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "taskFull"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "planFull"
+    },
+    {
+     "actual": "full-1.txt\nnone\n",
+     "matches": "none\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "noHalfWrite"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "readFull"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "dbFull"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "dbFull"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "writeAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "dbAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A full state directory refuses writes and recovers",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": {
+      "success": 2
+     },
+     "exists": true,
+     "ok": true,
+     "path": "json.invocations.ensure_host_file",
+     "step": "dbAfter"
+    },
+    {
+     "actual": {
+      "ensure_host_file": {
+       "success": 1
+      },
+      "run_host_command": {
+       "success": 1
+      }
+     },
+     "equalsStep": {
+      "path": "json.invocations",
+      "step": "dbBefore"
+     },
+     "ok": true,
+     "other": {
+      "ensure_host_file": {
+       "success": 1
+      },
+      "run_host_command": {
+       "success": 1
+      }
+     },
+     "path": "json.invocations",
+     "step": "dbFull"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A full state directory refuses writes and recovers",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "dbAfter": 191,
+   "dbBefore": 189,
+   "dbFull": 192,
+   "fill": 152,
+   "free": 144,
+   "fullAgent": 559,
+   "list": 526,
+   "mount": 147,
+   "noHalfWrite": 141,
+   "planFull": 211,
+   "readFull": 266,
+   "taskAfter": 213,
+   "taskBefore": 210,
+   "taskFull": 206,
+   "tool": 286,
+   "wire": 280,
+   "writeAfter": 218,
+   "writeBefore": 233,
+   "writeFull": 209
+  },
+  "stepsSeconds": 48.9
+ },
+ "unverified": []
+}

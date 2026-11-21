@@ -1,0 +1,785 @@
+{
+ "cleanup": [
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_cleanRemove": "response.body.result.taskId"
+   },
+   "id": "cleanRemoveCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.capability.kubernetes.remove"
+  },
+  {
+   "id": "cleanRemove",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanRemove}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "TID_cleanDelete1": "response.body.result.taskId"
+   },
+   "id": "cleanDelete1Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "delete_vm"
+  },
+  {
+   "id": "cleanDelete1",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_cleanDelete1}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "rm -rf /home/opute/.opute/databases; systemctl stop e2e-provider-k3s 2>/dev/null; incus delete -f e2e-k1 2>/dev/null; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; true",
+   "id": "cleanSetup"
+  }
+ ],
+ "description": "Data services on a single-node K3s cluster built through typed calls: a CloudNativePG service reconciled with a local relay, a client through the relay with the issued token writing and reading a row, the token in no durable row, relay release and service removal; then a SQLite database's lifecycle.",
+ "effects": {
+  "allow": [
+   "incus/*",
+   "files//home/opute/.config/opute-e2e*",
+   "files//home/opute/.config/incus*",
+   "files//opt/opute-e2e/providers*",
+   "system/units/e2e-*",
+   "system/unitFiles/e2e-*",
+   "system/units/sys-devices-virtual-net-veth*",
+   "system/units/sys-subsystem-net-devices-veth*",
+   "files//home/opute/.opute*",
+   "system/units/opute-*",
+   "user/units/*",
+   "user/unitFiles/*",
+   "files//home/opute/.config/systemd*",
+   "linger*",
+   "files//var/lib/systemd/linger*",
+   "system/units/user*",
+   "system/units/run-user-*"
+  ],
+  "persist": [
+   "files//home/opute/.opute*"
+  ]
+ },
+ "gate": "e2e-2",
+ "id": "e2e2.data",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token), with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, port 4320)",
+  "files": {
+   "activate": {
+    "path": "${REPO}/evidence/e2e/journeys/inputs/k3s-activate.yaml",
+    "sha256": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788"
+   },
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "providerK3s": {
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc2/opute-provider-k3s-linux-x64",
+    "sha256": "2b785eea87f889dd233ac48b40d83d4f6d2323f1be836479ef670261a108b4bd"
+   }
+  },
+  "k3s": "K3s v1.31.8+k3s1, downloaded by the provider from the K3s GitHub release and checked against its checksums; images pulled by K3s from public registries"
+ },
+ "maxMinutes": 28,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "equals": 1,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "ready"
+    }
+   ],
+   "requirement": "A K3s server provisioned through typed Host Agent operations",
+   "scenario": "The single-node cluster the journey runs on",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "pass": [
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "reconcile"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "relay"
+    },
+    {
+     "in": [
+      "S\n",
+      "N\n"
+     ],
+     "path": "stdout",
+     "step": "relayClient"
+    },
+    {
+     "equals": "closed\n",
+     "path": "stdout",
+     "step": "relayWrongToken"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "write"
+    },
+    {
+     "equals": "written\n",
+     "path": "stdout",
+     "step": "read"
+    }
+   ],
+   "requirement": "reconcile_postgresql_service, get_postgresql_service_status (localRelay)",
+   "scenario": "A client reaches PostgreSQL through the relay with the issued token (the server answers the SSL probe); a wrong token is dropped; a row is written and read back",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "json.rows",
+     "step": "tokenRows"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "Secret-bearing input (D24): the relay token is in no durable row",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "releaseWrong"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "release"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "remove"
+    },
+    {
+     "equals": "0\n",
+     "path": "stdout",
+     "step": "gone"
+    }
+   ],
+   "requirement": "release_postgresql_service_relay, remove_postgresql_service",
+   "scenario": "The relay released only with its token; removal leaves no service or data behind",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  },
+  {
+   "pass": [
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "sqlite"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "sqliteAgain"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "sqliteStatus"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "sqliteUnconfirmed"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "sqliteRemove"
+    },
+    {
+     "equals": "0\n",
+     "path": "stdout",
+     "step": "sqliteGone"
+    }
+   ],
+   "requirement": "ensure_sqlite_database, get_sqlite_database_status, remove_sqlite_database",
+   "scenario": "A caller-scoped SQLite database provisioned, reported, refused removal without confirmation, and removed",
+   "spec": "the agent's published tools/list (inputSchema, outputSchema, description) for the tool named"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "providerK3s",
+   "id": "providerCopy",
+   "mode": "0755",
+   "to": "/opt/opute-e2e/providers/opute-provider-k3s"
+  },
+  {
+   "copy": "activate",
+   "id": "recipeCopy",
+   "mode": "0644",
+   "to": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+  },
+  {
+   "guest": "chown -R opute /home/opute/.config/opute-e2e && systemd-run --collect --unit=e2e-provider-k3s --uid=opute --gid=opute --setenv=HOME=/home/opute --setenv=OPUTE_PROVIDER_PORT=4320 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | wc -l",
+   "id": "setup"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4320/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e/k3s-activate.yaml"
+   },
+   "id": "installA",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.provider.install"
+  },
+  {
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names), \"polls\": i + 1}))' '${TOKEN}'",
+   "id": "providerToolsA"
+  },
+  {
+   "id": "catalogAfterA",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {
+    "cpus": 3,
+    "disk": "20GiB",
+    "image": "parity-noble",
+    "instanceType": "container",
+    "memory": "5GiB",
+    "name": "e2e-k1"
+   },
+   "capture": {
+    "TID_vm1": "response.body.result.taskId"
+   },
+   "id": "vm1Call",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "provision_vm"
+  },
+  {
+   "id": "vm1",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_vm1}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "uri": "container:local:e2e-k1"
+   },
+   "capture": {
+    "K1_IP": "response.body.result.structuredContent.ipv4[0]"
+   },
+   "id": "info1",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_vm_info"
+  },
+  {
+   "arguments": {
+    "clusterInit": true,
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "container:local:e2e-k1",
+    "version": "v1.31.8+k3s1"
+   },
+   "capture": {
+    "TID_provision": "response.body.result.taskId"
+   },
+   "id": "provisionCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "opute.capability.kubernetes.provision"
+  },
+  {
+   "id": "provision",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_provision}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "instanceType": "container",
+    "providerInstanceName": "e2e-k1",
+    "targetUri": "cluster:local:e2e-k1"
+   },
+   "id": "ready",
+   "interval": 5,
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "timeout": 300,
+   "tool": "opute.capability.kubernetes.status",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.readyNodeCount"
+   }
+  },
+  {
+   "arguments": {
+    "clusterName": "pg",
+    "consumerDatabaseKeys": {
+     "app": "DATABASE_URL"
+    },
+    "consumerSecretLabel": "opute.io/pg-consumer",
+    "consumerSecretName": "pg-consumer",
+    "databases": [
+     "app"
+    ],
+    "namespace": "e2e-data",
+    "serviceOwner": "e2e",
+    "servicePartOf": "e2e",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_reconcile": "response.body.result.taskId"
+   },
+   "id": "reconcileCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "reconcile_postgresql_service"
+  },
+  {
+   "id": "reconcile",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_reconcile}"
+   },
+   "timeout": 1200,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "clusterName": "pg",
+    "consumerDatabaseKeys": {
+     "app": "DATABASE_URL"
+    },
+    "consumerSecretLabel": "opute.io/pg-consumer",
+    "consumerSecretName": "pg-consumer",
+    "databases": [
+     "app"
+    ],
+    "localRelay": {
+     "listenPort": 15433,
+     "persistent": true,
+     "relayToken": "${SECRET:relayToken}",
+     "sessionId": "e2e-session"
+    },
+    "namespace": "e2e-data",
+    "relayDeviceName": "e2e-pg-relay",
+    "serviceOwner": "e2e",
+    "servicePartOf": "e2e",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "id": "relay",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_postgresql_service_status"
+  },
+  {
+   "guest": "python3 - <<'PY'\nimport socket\ns = socket.create_connection(('127.0.0.1', 15433), timeout=20)\ns.sendall(b'${SECRET:relayToken}\\n')\ns.sendall(bytes([0, 0, 0, 8, 4, 210, 22, 47]))\nprint((s.recv(1) or b'closed').decode())\nPY",
+   "id": "relayClient"
+  },
+  {
+   "guest": "python3 - <<'PY'\nimport socket\ns = socket.create_connection(('127.0.0.1', 15433), timeout=20)\ntry:\n    s.sendall(b'not-the-token\\n'); s.sendall(bytes([0, 0, 0, 8, 4, 210, 22, 47]))\n    print((s.recv(1) or b'closed').decode())\nexcept OSError:\n    print('closed')\nPY",
+   "id": "relayWrongToken"
+  },
+  {
+   "guest": "incus exec e2e-k1 -- k3s kubectl -n e2e-data exec pg-1 -c postgres -- psql -d app -Atqc \"CREATE TABLE e2e(note text); INSERT INTO e2e VALUES ('written')\"",
+   "id": "write"
+  },
+  {
+   "guest": "incus exec e2e-k1 -- k3s kubectl -n e2e-data exec pg-1 -c postgres -- psql -d app -Atqc 'SELECT note FROM e2e'",
+   "id": "read"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py contains /home/opute/.config/opute/instances/standalone/state/state.db '${SECRET:relayToken}'",
+   "id": "tokenRows"
+  },
+  {
+   "arguments": {
+    "relayToken": "not-the-relay-token-0123456789abcdef",
+    "sessionId": "e2e-session"
+   },
+   "id": "releaseWrong",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "release_postgresql_service_relay"
+  },
+  {
+   "arguments": {
+    "relayToken": "${SECRET:relayToken}",
+    "sessionId": "e2e-session"
+   },
+   "id": "release",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "release_postgresql_service_relay"
+  },
+  {
+   "arguments": {
+    "clusterName": "pg",
+    "confirm": true,
+    "consumerDatabaseKeys": {
+     "app": "DATABASE_URL"
+    },
+    "consumerSecretLabel": "opute.io/pg-consumer",
+    "consumerSecretName": "pg-consumer",
+    "databases": [
+     "app"
+    ],
+    "namespace": "e2e-data",
+    "retentionPolicy": "delete",
+    "serviceOwner": "e2e",
+    "servicePartOf": "e2e",
+    "uri": "cluster:local:e2e-k1"
+   },
+   "capture": {
+    "TID_remove": "response.body.result.taskId"
+   },
+   "id": "removeCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_postgresql_service"
+  },
+  {
+   "id": "remove",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_remove}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "for i in $(seq 60); do n=$(incus exec e2e-k1 -- k3s kubectl -n e2e-data get clusters.postgresql.cnpg.io,pvc -o name | wc -l); [ \"$n\" = 0 ] && break; sleep 5; done; echo $n",
+   "id": "gone"
+  },
+  {
+   "arguments": {
+    "consumerId": "e2e-a",
+    "databaseName": "main"
+   },
+   "id": "sqlite",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_sqlite_database"
+  },
+  {
+   "arguments": {
+    "consumerId": "e2e-a",
+    "databaseName": "main"
+   },
+   "id": "sqliteAgain",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "ensure_sqlite_database"
+  },
+  {
+   "arguments": {
+    "consumerId": "e2e-a",
+    "databaseName": "main"
+   },
+   "id": "sqliteStatus",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "get_sqlite_database_status"
+  },
+  {
+   "arguments": {
+    "confirm": false,
+    "consumerId": "e2e-a",
+    "databaseName": "main"
+   },
+   "id": "sqliteUnconfirmed",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_sqlite_database"
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "consumerId": "e2e-a",
+    "databaseName": "main"
+   },
+   "id": "sqliteRemove",
+   "mcp": "tools/call",
+   "retryOn": [
+    "host_capacity_saturated"
+   ],
+   "tool": "remove_sqlite_database"
+  },
+  {
+   "guest": "ls /home/opute/.opute/databases/e2e-a 2>/dev/null | wc -l",
+   "id": "sqliteGone"
+  }
+ ]
+}

@@ -1,0 +1,138 @@
+{
+ "effects": {
+  "changed": [
+   "system/unitFiles/e2e-agent-bud.service",
+   "system/units/e2e-agent-bud.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.budget",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 27739,
+     "gte": 2000,
+     "ok": true,
+     "path": "json.calls",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.errors",
+     "step": "load"
+    },
+    {
+     "actual": 16764928,
+     "lte": 50331648,
+     "ok": true,
+     "path": "json.growthAfterWarmup.rssBytes",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "lte": 16,
+     "ok": true,
+     "path": "json.growthAfterWarmup.fds",
+     "step": "load"
+    },
+    {
+     "actual": -1,
+     "lte": 8,
+     "ok": true,
+     "path": "json.growthAfterWarmup.threads",
+     "step": "load"
+    },
+    {
+     "actual": 831,
+     "lte": 8192,
+     "ok": true,
+     "path": "json.growthAfterWarmup.storeBytesPerCall",
+     "step": "load"
+    },
+    {
+     "actual": 103092224,
+     "lte": 268435456,
+     "ok": true,
+     "path": "json.peak.rssBytes",
+     "step": "load"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 27739,
+     "gte": 10000,
+     "ok": true,
+     "path": "json.calls",
+     "step": "load"
+    },
+    {
+     "actual": 3158016,
+     "lte": 8388608,
+     "ok": true,
+     "path": "json.growthAfterWarmup.storeBytesLastFiveMinutes",
+     "step": "load"
+    },
+    {
+     "actual": 5000,
+     "lte": 5000,
+     "ok": true,
+     "path": "json.auditRows",
+     "step": "pruned"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "pruned"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Audit rows are kept within an age and a row bound",
+   "spec": "openspec/changes/audit-retention/specs/audit-retention/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "audit": 436,
+   "budAgent": 556,
+   "list": 526,
+   "load": 900175,
+   "pruned": 70225,
+   "tool": 287,
+   "wire": 282
+  },
+  "stepsSeconds": 1016.7
+ },
+ "uncheckedOutcomes": [],
+ "unverified": []
+}

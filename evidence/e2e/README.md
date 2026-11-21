@@ -134,7 +134,7 @@ A journey declares:
 - **steps:**
   - `mcp`: a JSON-RPC request to the forwarded agent, to a guest port
     (`port`), or to a self-check stub. It accepts `capture`, `until`
-    polling, `retryOn` (admission codes waited out per `retryAfterMs`,
+    polling (the path's value `in` a list, or a string that `matches`), `retryOn` (admission codes waited out per `retryAfterMs`,
     up to `retryTimeout`, default 120 s), `auth` (`token`, `none`, `var:`, `secret:` or `literal:`),
     `meta` and `modern: false` for a legacy client;
   - `http`: a plain HTTP request, such as the OAuth endpoints;

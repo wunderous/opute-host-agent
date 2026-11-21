@@ -49,12 +49,8 @@ pub fn run(args: &[String], env: Env, io: &mut Io<'_>) -> Result<()> {
     }
     let (command, rest) = split_command(args);
     match command.as_str() {
-        "standalone" => {
-            let mut with_mode = vec!["--mode=standalone".to_string()];
-            with_mode.extend(rest);
-            run_server(&with_mode, env, io)
-        }
-        "serve" => run_server(&rest, env, io),
+        // `standalone` is the older spelling of `serve` (N5).
+        "standalone" | "serve" => run_server(&rest, env, io),
         "public-mcp" => run_public_mcp(&rest, env, io),
         "recipe" => run_recipe(&rest, env, io),
         "provider" => run_provider(&rest, env, io),
@@ -87,15 +83,13 @@ fn split_command(args: &[String]) -> (String, Vec<String>) {
 
 const USAGE: &str = "Usage: opute-host-agent [standalone|serve|public-mcp|recipe|provider|help] [flags]
 
-  opute-host-agent                   server-only standalone MCP profile (HTTP)
+  opute-host-agent                   MCP server only (HTTP)
   opute-host-agent serve             MCP server only (HTTP)
   opute-host-agent recipe validate --source ./recipe.yaml
   opute-host-agent recipe apply --source ./recipe.yaml --activate --input model=hf.co/LiquidAI/LFM2-2.6B-GGUF:Q4_K_M
   opute-host-agent recipe status --run-id RUN_ID
   opute-host-agent public-mcp --binding-id ID --endpoint https://host.example/mcp --local-target http://127.0.0.1:3004/mcp --token-file ~/.config/opute/tunnels/ID.env [--origin-host-id ID]
   opute-host-agent provider install --source ./plugin.yaml --activate
-
-Standalone mode never requires Opute Platform.
 ";
 
 fn parse(fs: &FlagSet, args: &[String], io: &mut Io<'_>) -> Result<Values> {
@@ -107,7 +101,6 @@ fn parse(fs: &FlagSet, args: &[String], io: &mut Io<'_>) -> Result<Values> {
 
 fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
     let fs = FlagSet::new("serve")
-        .string("mode", "", "agent profile: standalone or platform")
         .string("transport", "", "MCP transport: http")
         .string("env-file", "", "load KEY=VALUE settings from a file")
         .bool(
@@ -132,13 +125,6 @@ fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
             _ => return Err(go_err!("--env requires KEY=VALUE")),
         }
     }
-    let mut mode = flags.string("mode").trim().to_string();
-    if mode.is_empty() {
-        mode = env.get("OPUTE_AGENT_MODE").trim().to_string();
-    }
-    if mode.is_empty() {
-        mode = "standalone".into();
-    }
     let mut transport = flags.string("transport").trim().to_string();
     if transport.is_empty() {
         transport = env.get("OPUTE_TRANSPORT").trim().to_string();
@@ -152,7 +138,6 @@ fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
             quote(&transport)
         ));
     }
-    env.set("OPUTE_AGENT_MODE", &mode);
     env.set("OPUTE_TRANSPORT", &transport);
     if flags.bool("check") {
         app::check(&env)?;
@@ -303,8 +288,8 @@ boundary. Start the agent once before using it.
   consents                         list remembered approvals
   revoke-consent CLIENT RESOURCE   forget an approval and revoke the client's tokens for it
   revoke-client CLIENT             revoke every token issued to a client
-  rotate-secret CLIENT             new secret for host-agent-provider or opute-mcp-host;
-                                   revokes the client's tokens
+  rotate-secret CLIENT             new secret for host-agent-provider or a client in
+                                   OPUTE_OAUTH_CLIENTS; revokes the client's tokens
 ";
 
 /// `opute-host-agent oauth ...`: the operator's approval channel.
@@ -452,10 +437,12 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
         "rotate-secret" => {
             need(1)?;
             let client = pos[0].as_str();
-            if client != crate::oauth::PROVIDER_CLIENT_ID && client != crate::oauth::OPUTE_CLIENT_ID
+            let configured = crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+                .map_err(goerr::Error)?;
+            if client != crate::oauth::PROVIDER_CLIENT_ID && !configured.iter().any(|c| c == client)
             {
                 return Err(go_err!(
-                    "rotate-secret applies to host-agent-provider and opute-mcp-host"
+                    "rotate-secret applies to host-agent-provider and the clients in OPUTE_OAUTH_CLIENTS"
                 ));
             }
             crate::oauth::rotate_secret(&conn, &dir, client, "rotate-secret")
@@ -464,14 +451,6 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
                 "rotated {client}; new secret in {}\n",
                 crate::oauth::credential_path(&dir, client).display()
             ));
-            if client == crate::oauth::OPUTE_CLIENT_ID
-                && !env
-                    .value("OPUTE_HOST_OAUTH_CLIENT_SECRET")
-                    .trim()
-                    .is_empty()
-            {
-                out.push_str("note: OPUTE_HOST_OAUTH_CLIENT_SECRET is set; the agent re-applies it on its next start\n");
-            }
         }
         other => {
             return Err(go_err!(

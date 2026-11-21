@@ -1,0 +1,183 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove hang >/dev/null ; python3 /opt/opute-e2e/guest/e2etool.py agent remove junk >/dev/null ; true",
+   "id": "remove"
+  },
+  {
+   "guest": "pkill -f incus-hang; rm -rf /tmp/e2e-agents/stubs; rmdir /tmp/e2e-agents 2>/dev/null; true",
+   "id": "stubsGone"
+  }
+ ],
+ "description": "D31: an agent whose incus is a stand-in that never exits, and one whose incus prints garbage; each call ends in a typed error and the agent keeps serving.",
+ "effects": {
+  "allow": [
+   "system/units/e2e-agent-*",
+   "system/unitFiles/e2e-agent-*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*",
+   "system/units/tmp-e2e*agents-*.mount"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.commands",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  }
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "stubs"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "hangCall"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "hangCall"
+    },
+    {
+     "lte": 60000,
+     "path": "ms",
+     "step": "hangCall"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "hangNext"
+    }
+   ],
+   "requirement": "A failing provider command ends the call, not the agent",
+   "scenario": "Hanging command: list_vms ends in a typed error within the 45 s discovery timeout, and the next call is served (D31)",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "junkCall"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "junkInfo"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "junkNext"
+    }
+   ],
+   "requirement": "A failing provider command ends the call, not the agent",
+   "scenario": "Garbage output: list_vms and get_vm_info end in typed errors, and the next call is served (D31)",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "guest": "mkdir -p /tmp/e2e-agents/stubs && python3 /opt/opute-e2e/guest/e2etool.py stub /tmp/e2e-agents/stubs/incus-hang hang >/dev/null && python3 /opt/opute-e2e/guest/e2etool.py stub /tmp/e2e-agents/stubs/incus-junk garbage >/dev/null && chmod 755 /tmp/e2e-agents/stubs && echo ready",
+   "id": "stubs"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start hang --port 3043 --id e2e-hang-agent --env MCP_AUTH_TOKEN=${SECRET:hang} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_INCUS_BINARY_PATH=/tmp/e2e-agents/stubs/incus-hang",
+   "id": "hangAgent"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start junk --port 3044 --id e2e-junk-agent --env MCP_AUTH_TOKEN=${SECRET:junk} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_INCUS_BINARY_PATH=/tmp/e2e-agents/stubs/incus-junk",
+   "id": "junkAgent"
+  },
+  {
+   "auth": "secret:hang",
+   "id": "listHang",
+   "mcp": "tools/list",
+   "port": 3043
+  },
+  {
+   "auth": "secret:junk",
+   "id": "listJunk",
+   "mcp": "tools/list",
+   "port": 3044
+  },
+  {
+   "arguments": {},
+   "auth": "secret:hang",
+   "id": "hangCall",
+   "mcp": "tools/call",
+   "port": 3043,
+   "tool": "list_vms"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:hang",
+   "id": "hangNext",
+   "mcp": "tools/call",
+   "port": 3043,
+   "tool": "detect_host_platform"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:junk",
+   "id": "junkCall",
+   "mcp": "tools/call",
+   "port": 3044,
+   "tool": "list_vms"
+  },
+  {
+   "arguments": {
+    "name": "e2e-none"
+   },
+   "auth": "secret:junk",
+   "id": "junkInfo",
+   "mcp": "tools/call",
+   "port": 3044,
+   "tool": "get_vm_info"
+  },
+  {
+   "arguments": {},
+   "auth": "secret:junk",
+   "id": "junkNext",
+   "mcp": "tools/call",
+   "port": 3044,
+   "tool": "get_host_info"
+  },
+  {
+   "guest": "sleep 2; pgrep -f incus-hang | wc -l",
+   "id": "noStubLeft"
+  }
+ ]
+}

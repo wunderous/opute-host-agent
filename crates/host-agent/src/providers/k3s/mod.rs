@@ -143,19 +143,7 @@ fn structured(value: J) -> ToolCallOutcome {
 fn respond(outcome: Outcome) -> ToolCallOutcome {
     match outcome {
         Ok(value) => structured(value),
-        Err(e) => match e.strip_prefix(endpoint::TYPED) {
-            // A typed error: an error result whose structured content names it.
-            Some(typed) => {
-                let value: J = serde_json::from_str(typed).unwrap_or(J::Null);
-                let text = value["message"].as_str().unwrap_or("").to_string();
-                ToolCallOutcome::Result(json!({
-                    "content": [{"type": "text", "text": text}],
-                    "structuredContent": value,
-                    "isError": true,
-                }))
-            }
-            None => ToolCallOutcome::Protocol(0, e, None),
-        },
+        Err(e) => super::error_outcome(e),
     }
 }
 

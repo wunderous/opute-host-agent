@@ -355,10 +355,16 @@ fn read_limited(response: ureq::Response, limit: u64) -> Vec<u8> {
     body
 }
 
-/// `mintProbeToken`.
-fn mint_token(token_url: &str, resource: &str) -> Result<String, String> {
+/// `mintProbeToken`, as the configured machine client (N4).
+fn mint_token(
+    token_url: &str,
+    resource: &str,
+    client: &(String, String),
+) -> Result<String, String> {
     let form = format!(
-        "client_id=opute-mcp-host&grant_type=client_credentials&resource={}",
+        "client_id={}&client_secret={}&grant_type=client_credentials&resource={}",
+        query_escape(&client.0),
+        query_escape(&client.1),
         query_escape(resource)
     );
     let response = match agent(token_url)
@@ -508,13 +514,42 @@ fn decode_rpc(node: &Node) -> Result<(Option<usize>, Option<i64>), String> {
     }
 }
 
-/// `ProbeAuthenticatedMCPEndpoint`.
-pub fn probe_authenticated(endpoint: &str, bearer: &str) -> Result<J, String> {
+/// The observation of an endpoint the agent cannot authenticate to: no
+/// machine client is configured (`OPUTE_OAUTH_CLIENTS`), so nothing was sent.
+pub fn unverified(resource: &str) -> J {
+    json!({
+        "servingContract": "mcp-exposure.v1",
+        "endpoint": resource,
+        "ready": false,
+        "authenticated": false,
+        "verified": false,
+        "authorizationMode": "unverified",
+        "reason": "no OAuth machine client is configured (OPUTE_OAUTH_CLIENTS)",
+    })
+}
+
+/// Whether a probe observation is `unverified` rather than a failure.
+pub fn is_unverified(observation: &J) -> bool {
+    observation.get("verified") == Some(&J::Bool(false))
+}
+
+/// `ProbeAuthenticatedMCPEndpoint`. Without a bearer it mints a token as
+/// `client`; with neither it reports the endpoint unverified (N4).
+pub fn probe_authenticated(
+    endpoint: &str,
+    bearer: &str,
+    client: Option<&(String, String)>,
+) -> Result<J, String> {
     let (resource, token_url) = probe_urls(endpoint)?;
-    let (token, mode) = if bearer.trim().is_empty() {
-        (mint_token(&token_url, &resource)?, "client-credentials")
-    } else {
+    let (token, mode) = if !bearer.trim().is_empty() {
         (bearer.trim().to_string(), "provided-bearer")
+    } else if let Some(client) = client {
+        (
+            mint_token(&token_url, &resource, client)?,
+            "client-credentials",
+        )
+    } else {
+        return Ok(unverified(&resource));
     };
     // `json.Marshal` of the request map: keys sorted.
     let body = format!(
@@ -565,6 +600,15 @@ pub fn probe_authenticated(endpoint: &str, bearer: &str) -> Result<J, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn without_a_machine_client_a_probe_reports_unverified_and_sends_nothing() {
+        // Port 1 refuses connections: a request would fail, not return Ok.
+        let observation = probe_authenticated("http://127.0.0.1:1/mcp", "", None).unwrap();
+        assert!(is_unverified(&observation));
+        assert_eq!(observation["ready"], false);
+        assert_eq!(observation["endpoint"], "http://127.0.0.1:1/mcp");
+    }
 
     #[test]
     fn endpoints_normalize_like_go() {

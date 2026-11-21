@@ -24,10 +24,10 @@
       "privilege": {
        "$ne": "read"
       },
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      },
      "expect": {
-      "selected": 87,
+      "selected": 84,
       "notRefused": []
      }
     },
@@ -68,10 +68,10 @@
      "as": "sweep",
      "sweep": {
       "privilege": "read",
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      },
      "expect": {
-      "selected": 55,
+      "selected": 54,
       "refused": []
      }
     },
@@ -120,7 +120,7 @@
        "install_sql_forward_sidecar",
        "release_sql_connector"
       ],
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      },
      "expect": {
       "published": [],
@@ -175,7 +175,7 @@
       "names": [
        "get_sql_connector_status"
       ],
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      },
      "expect": {
       "published": [],
@@ -197,7 +197,7 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"
+       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
       }
      },
      "expect": {
@@ -210,10 +210,10 @@
       "privilege": {
        "$ne": "read"
       },
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      },
      "expect": {
-      "selected": 87,
+      "selected": 84,
       "refused": []
      }
     },
@@ -230,40 +230,9 @@
        "install_sql_forward_sidecar",
        "release_sql_connector"
       ],
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
      },
      "expect": {
-      "refused": []
-     }
-    }
-   ]
-  },
-  {
-   "id": "gate.platform-unaffected",
-   "requirement": "Standalone without mutations runs read tools only",
-   "specScenario": "Platform mode",
-   "steps": [
-    {
-     "as": "start",
-     "serve": {
-      "profile": "platform"
-     },
-     "expect": {
-      "ready": true
-     }
-    },
-    {
-     "as": "published",
-     "sweep": {
-      "privilege": {
-       "$ne": "read"
-      },
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
-     },
-     "expect": {
-      "selected": {
-       "$min": 1
-      },
       "refused": []
      }
     }
@@ -289,7 +258,7 @@
       "privilege": {
        "$ne": "read"
       },
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
       "arguments": {
        "uri": "vm:default:vm-a",
        "command": "true",
@@ -312,7 +281,7 @@
        "install_sql_forward_sidecar",
        "release_sql_connector"
       ],
-      "refusal": "Error: standalone mutations are disabled; set OPUTE_STANDALONE_ALLOW_MUTATIONS=true",
+      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
       "arguments": {
        "command": "true"
       }

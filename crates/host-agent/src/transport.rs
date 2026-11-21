@@ -55,7 +55,6 @@ pub struct Server {
     /// Committed provider-neutral publication, shared by all catalog readers.
     pub catalog: Arc<crate::provider::publication::Publication>,
     pub providers: Arc<crate::provider::runtime::Runtime>,
-    pub standalone: bool,
     pub allow_mutations: bool,
     pub host: crate::tools::Host,
     /// The MCP Tasks registry.

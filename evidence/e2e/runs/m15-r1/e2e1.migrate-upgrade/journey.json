@@ -1,0 +1,496 @@
+{
+ "cleanup": [
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-j8-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/releases/rust-next",
+   "id": "restoreRust"
+  }
+ ],
+ "description": "Flow 14, migration and upgrade: the host is reinstalled as a Go v0.2.4 install (the published release, the same unit, path, instance root and agent ID) and does work, one run completed and one stopped in flight; the binary is then replaced by the Rust 0.4.0 release candidate, and then upgraded in place to a newer local Rust build (0.4.1-e2e, built locally; no tag, no publish). Go is the source install, not an oracle.",
+ "effects": {
+  "allow": [
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "files//home/opute/.config/opute-e2e*",
+   "files//opt/opute-e2e/releases/rust-next*",
+   "system/units/e2e-slow*",
+   "system/unitFiles/e2e-slow*"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-1",
+ "id": "e2e1.migrate-upgrade",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "ade206dda988e71aab7ddfcc6117a24d3283f70bf0b5995f0de439c552bfc606"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "rustNext": {
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc1-next/host-agent-linux-x64.gz",
+    "sha256": "8c6cc153d93c23734ed636fea5ec30f0e4107c43bb46d59b3db673a1b21d5b06"
+   }
+  },
+  "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
+  "next": "Rust release set built locally with VERSION=0.4.1-e2e"
+ },
+ "maxMinutes": 20,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "aside"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "goInstall"
+    },
+    {
+     "matches": "\n0\\.2\\.4\n$",
+     "path": "stdout",
+     "step": "goInstall"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "goDoneWait"
+    },
+    {
+     "equals": 1,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "goInFlight"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "goStop"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "goStop"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "rustInstall"
+    },
+    {
+     "matches": "\n0\\.4\\.0\n$",
+     "path": "stdout",
+     "step": "rustInstall"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "rustList"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "rustDb"
+    },
+    {
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "goStop"
+     },
+     "path": "json.planRunIds",
+     "step": "rustDb"
+    },
+    {
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "goStop"
+     },
+     "path": "json.operationIds",
+     "step": "rustDb"
+    },
+    {
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "goStop"
+     },
+     "path": "json.counts",
+     "step": "rustDb"
+    },
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "goDone"
+     },
+     "path": "response.body.result.structuredContent.runId",
+     "step": "rustDone"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustDone"
+    },
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "goFlight"
+     },
+     "path": "response.body.result.structuredContent.runId",
+     "step": "rustFlight"
+    },
+    {
+     "exists": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustFlight"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "a Go v0.2.4 install's state, with a run stopped in flight, is served by Rust on the same instance root: every operation and run is there once, unchanged (D1: the schema is bit-compatible, so conversion is the identity)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "upgrade"
+    },
+    {
+     "matches": "\n0\\.4\\.1\\-e2e\n$",
+     "path": "stdout",
+     "step": "upgrade"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "nextList"
+    },
+    {
+     "equals": "ok",
+     "path": "json.integrity",
+     "step": "nextDb"
+    },
+    {
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "goStop"
+     },
+     "path": "json.planRunIds",
+     "step": "nextDb"
+    },
+    {
+     "equalsStep": {
+      "path": "json.operationIds",
+      "step": "goStop"
+     },
+     "path": "json.operationIds",
+     "step": "nextDb"
+    },
+    {
+     "equalsStep": {
+      "path": "json.counts",
+      "step": "goStop"
+     },
+     "path": "json.counts",
+     "step": "nextDb"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "nextDone"
+    },
+    {
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "goFlight"
+     },
+     "path": "response.body.result.structuredContent.runId",
+     "step": "nextFlight"
+    }
+   ],
+   "requirement": "Compatible modes, configuration, and distribution",
+   "scenario": "an in-place upgrade to a newer local Rust build keeps the state, unchanged",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "e2e-devvm-agent",
+     "path": "response.body.agentId",
+     "step": "goHealth"
+    },
+    {
+     "equals": "e2e-devvm-agent",
+     "path": "response.body.agentId",
+     "step": "rustHealth"
+    },
+    {
+     "equals": "e2e-devvm-agent",
+     "path": "response.body.agentId",
+     "step": "nextHealth"
+    }
+   ],
+   "requirement": "One exact Host Agent identity",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "rustFlight"
+    },
+    {
+     "equals": "cancelled",
+     "path": "response.body.result.structuredContent.status",
+     "step": "nextFlight"
+    }
+   ],
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "scenario": "A run Go stopped gracefully in flight reads back cancelled after the migration and the upgrade, and is not run again (D28)",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "rustNext",
+   "id": "nextCopy",
+   "to": "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
+  },
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && mv /home/opute/.config/opute/instances /tmp/e2e-j8-rust-instances",
+   "id": "aside"
+  },
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version",
+   "id": "goInstall"
+  },
+  {
+   "health": true,
+   "id": "goHealth"
+  },
+  {
+   "id": "goList",
+   "mcp": "tools/list"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow start --port 8799 --delay 60",
+   "id": "slow"
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j8-done-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "e2e\n",
+         "path": ".config/opute-e2e/j8-done.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/j8-done.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      }
+     ],
+     "planId": "e2e1-j8-done"
+    }
+   },
+   "capture": {
+    "DONE": "response.body.result.structuredContent.runId"
+   },
+   "id": "goDone",
+   "mcp": "tools/call",
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {
+    "runId": "${DONE}"
+   },
+   "id": "goDoneWait",
+   "mcp": "tools/call",
+   "timeout": 90,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "generation": 1,
+     "idempotencyKey": "e2e1-j8-flight-1",
+     "nodes": [
+      {
+       "action": {
+        "args": {
+         "content": "e2e\n",
+         "path": ".config/opute-e2e/j8-flight.txt",
+         "scope": "user"
+        },
+        "tool": "ensure_host_file"
+       },
+       "id": "n1",
+       "validate": {
+        "args": {
+         "path": ".config/opute-e2e/j8-flight.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "op": "eq",
+          "path": "/exists",
+          "value": true
+         }
+        ],
+        "tool": "inspect_host_file"
+       }
+      },
+      {
+       "action": {
+        "args": {
+         "endpoint": "http://127.0.0.1:8799/"
+        },
+        "tool": "probe_http_endpoint"
+       },
+       "dependsOn": [
+        "n1"
+       ],
+       "id": "n2"
+      }
+     ],
+     "planId": "e2e1-j8-flight"
+    }
+   },
+   "capture": {
+    "FLIGHT": "response.body.result.structuredContent.runId"
+   },
+   "id": "goFlight",
+   "mcp": "tools/call",
+   "tool": "run_host_plan"
+  },
+  {
+   "arguments": {
+    "runId": "${FLIGHT}"
+   },
+   "id": "goInFlight",
+   "mcp": "tools/call",
+   "timeout": 30,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     1
+    ],
+    "path": "response.body.result.structuredContent.nodes.n2.attempts"
+   }
+  },
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "goStop"
+  },
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version",
+   "id": "rustInstall"
+  },
+  {
+   "health": true,
+   "id": "rustHealth"
+  },
+  {
+   "id": "rustList",
+   "mcp": "tools/list"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "rustDb"
+  },
+  {
+   "arguments": {
+    "runId": "${DONE}"
+   },
+   "id": "rustDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run"
+  },
+  {
+   "arguments": {
+    "runId": "${FLIGHT}"
+   },
+   "id": "rustFlight",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run"
+  },
+  {
+   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version",
+   "id": "upgrade"
+  },
+  {
+   "health": true,
+   "id": "nextHealth"
+  },
+  {
+   "id": "nextList",
+   "mcp": "tools/list"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db",
+   "id": "nextDb"
+  },
+  {
+   "arguments": {
+    "runId": "${DONE}"
+   },
+   "id": "nextDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run"
+  },
+  {
+   "arguments": {
+    "runId": "${FLIGHT}"
+   },
+   "id": "nextFlight",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py slow stop",
+   "id": "slowStop"
+  }
+ ]
+}

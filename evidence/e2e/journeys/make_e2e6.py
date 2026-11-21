@@ -17,6 +17,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import make_e2e1 as base  # noqa: E402
+from make_e2e4a import VM_IMAGE_VOLUME  # noqa: E402
 
 a, ok, req, call, mcp, plan, poll_run = base.a, base.ok, base.req, base.call, base.mcp, base.plan, base.poll_run
 T = base.T
@@ -25,6 +26,7 @@ FAULTS = "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md
 BODY = "openspec/changes/bound-mcp-request-body/specs/bound-mcp-request-body/spec.md"
 CHILD_SPEC = "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
 RELAY_SPEC = "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md"
+RETENTION_SPEC = "openspec/changes/audit-retention/specs/audit-retention/spec.md"
 Q5_SPEC = "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted-plan/spec.md"
 TASKS_META = base.TASKS_META
 BUDGET = json.loads((base.REPO / "evidence/hardening/resource-budget.json").read_text())
@@ -464,13 +466,15 @@ def budget() -> dict:
     o = on(n, port)
     b = BUDGET
     steps = base.TOOL_STEPS + [
-        agent(n, port, root=True),
+        agent(n, port, f"OPUTE_AUDIT_RETENTION_ROWS={b['auditRetentionRows']}", root=True),
         mcp("list", "tools/list", **o),
         {"id": "load", "guest": f"E2E_TOKEN=${{SECRET:{n}}} {T} load --port {port} --seconds {b['seconds']} "
                                 f"--sample-unit e2e-agent-{n}.service --state {state(n)}",
          # A guest step's default limit is 600 s; the load runs for the budget's seconds.
          "timeout": b["seconds"] + 180},
         {"id": "audit", "guest": f"{T} audit {state(n)}/state.db"},
+        # one prune interval after the load: every audit row beyond the bound is gone
+        {"id": "pruned", "guest": f"sleep 70; {T} audit {state(n)}/state.db"},
     ]
     g = "json.growthAfterWarmup."
     reqs = [
@@ -483,16 +487,31 @@ def budget() -> dict:
             a("audit", "json.integrity", equals="ok"), a("audit", "json.unfinished", equals=0),
             scenario="Fifteen minutes of mixed read, write, task and Incus calls stay inside "
                      "evidence/hardening/resource-budget.json after a two-minute warm-up"),
+        req(RETENTION_SPEC, "Audit rows are kept within an age and a row bound",
+            a("load", "json.calls", gte=b["auditRetentionRows"] * 2),
+            a("load", g + "storeBytesLastFiveMinutes", lte=b["storeLateGrowthBytesMax"]),
+            a("pruned", "json.auditRows", lte=b["auditRetentionRows"]),
+            a("pruned", "json.integrity", equals="ok"),
+            scenario="With a row bound far below the call count, one prune interval after the load the audit "
+                     "holds at most the bound, and the store's growth over the last five minutes stays under the "
+                     "budget (D42)"),
     ]
     return journey("e2e6.budget",
                    "Resource budget (m16): fifteen minutes of mixed calls on one agent; resident memory, open file "
                    "descriptors, threads and store size are sampled every 30 s and their growth after warm-up is "
-                   "held to the committed budget.", reqs, steps, remove(n), [n], minutes=25)
+                   "held to the committed budget; with an audit row bound below the call count, the audit stays "
+                   "within it (D42).", reqs, steps, remove(n), [n], minutes=25)
 
 
 # --- 8. a child's environment (D40) ----------------------------------------------------------------
 
 CHILD_SECRETS = ("MCP_AUTH_TOKEN", "CLOUDFLARE_API_TOKEN", "TAILSCALE_AUTH_KEY", "OPUTE_E2E_MARKER")
+V6 = "vm:local:e2e-v6"
+# the console's VM, its disk and the image its launch cached; the tap device's name is the host's
+INCUS_ALLOW = ("incus/instances/e2e-v6", "incus/volumes/default/virtual-machine/e2e-v6", VM_IMAGE_VOLUME,
+               "incus/networks/incusbr0/used_by", "incus/profiles/default/used_by", "incus/storage/default/used_by",
+               "system/units/sys-devices-virtual-net-tap*", "system/units/sys-subsystem-net-devices-tap*",
+               "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount")
 
 
 def child_env() -> dict:
@@ -505,6 +524,18 @@ def child_env() -> dict:
         agent(n, port, "CLOUDFLARE_API_TOKEN=${SECRET:cfToken}", "TAILSCALE_AUTH_KEY=${SECRET:tsKey}",
               "OPUTE_E2E_MARKER=e2e-marker", root=True),
         mcp("list", "tools/list", **o),
+        call("vmCall", "provision_vm", {"name": "e2e-v6", "instanceType": "virtual-machine",
+                                        "image": "parity-noble-vm", "cpus": 1, "memory": "1GiB", "disk": "10GiB"},
+             meta=TASKS_META, **o, capture={"VM": "response.body.result.taskId"}),
+        {**done("vm", "VM", o), "timeout": 900, "interval": 3},
+        {"id": "vmState", "guest": "incus list e2e-v6 -c s -f csv", "confirms": ["vm"]},
+        call("console", "stream_vm_console", {"uri": V6}, **o),
+        {"id": "consoleEnv", "guest": probe("console e2e-v6"), "confirms": ["console"]},
+        call("ctrlA", "send_console_input", {"operationId": "console-e2e-v6", "data": "\u0001"}, **o),
+        call("detach", "send_console_input", {"operationId": "console-e2e-v6", "data": "q"}, **o),
+        {"id": "detached", "confirms": ["ctrlA", "detach"], "guest": (
+            "for i in $(seq 20); do pgrep -f 'console e2e-v6$' >/dev/null || break; sleep 0.5; done; "
+            "pgrep -fc 'console e2e-v6$' || true")},
         {"id": "recipeCopy", "copy": "recipe", "to": recipe, "mode": "0644"},
         call("recipeRun", "run_host_local_recipe", {"source": recipe}, **o,
              capture={"RRUN": "response.body.result.structuredContent.runId"}),
@@ -520,6 +551,15 @@ def child_env() -> dict:
                           a(step, "json.leaked", equals=[]), a(step, "json.childrenKeep", equals=True)]
     reqs = [
         req(CHILD_SPEC, "A child process never receives the agent's secrets",
+            a("vm", "response.body.result.status", equals="completed"), task_ok("vm"),
+            a("console", "response.body.result.structuredContent.status", equals="started"),
+            a("ctrlA", "response.body.result.structuredContent.status", equals="sent"),
+            a("detach", "response.body.result.structuredContent.closed", equals=True),
+            a("vmState", "stdout", equals="RUNNING\n"), a("detached", "stdout", equals="0\n"),
+            *clean("consoleEnv"),
+            scenario="With the bearer, two provider credentials and an OPUTE_ setting in the agent's environment, "
+                     "its incus console process holds PATH and none of them"),
+        req(CHILD_SPEC, "A child process never receives the agent's secrets",
             *clean("recipeEnv"),
             a("recipeDone", "response.body.result.structuredContent.status", equals="completed"),
             a("recipeFile", "stdout", equals="done\n"),
@@ -527,55 +567,18 @@ def child_env() -> dict:
                      "started for it holds PATH and none of the agent's secrets"),
     ]
     files = {**base.TOOL_FILES, "recipe": base.inp("${REPO}/evidence/e2e/journeys/inputs/e2e-child-env-recipe.yaml")}
-    # 0.3.0 serves no console (D38 is 0.4.0): the recipe step is the probed child
-    cleanup = [{"id": "cleanRecipe", "guest": f"rm -f {recipe}"}] + remove(n)
+    # as e2e2.incus: the VM, then the image volume its launch cached
+    cleanup = [{"id": "cleanVm", "guest": (
+        f"incus delete -f e2e-v6 2>/dev/null; rm -f {recipe}; incus storage volume list default -f csv | "
+        "awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true")}] \
+        + remove(n)
     return journey("e2e6.child-env",
                    "A child's environment (D40): an agent holding its bearer, two provider credentials and an "
-                   "OPUTE_ setting runs a recipe step; /proc shows its child holds none of them.", reqs, steps, cleanup, [n],
-                   minutes=10, files=files)
+                   "OPUTE_ setting opens a VM console and runs a recipe step; /proc shows neither child holds "
+                   "any of them.", reqs, steps, cleanup, [n], minutes=20, files=files, allow=INCUS_ALLOW)
 
 
-# --- 9. a provider executable's request body (D41, A5) ----------------------------------------------
-
-PROVIDER = "/opt/opute-e2e/providers/opute-provider-k3s"
-
-
-def provider_body() -> dict:
-    unit, port = "e2e-provider-body", 3052
-    big = f"E2E_TOKEN=unused {T} bigbody --port {port} --limit 4194304"
-    steps = base.TOOL_STEPS + [
-        {"id": "providerCopy", "copy": "providerK3s", "to": PROVIDER, "mode": "0755"},
-        {"id": "start", "guest": (
-            f"systemd-run --collect --unit={unit} --setenv=OPUTE_PROVIDER_PORT={port} --property=Restart=no "
-            f"{PROVIDER} >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :{port}' | grep -q . && break; "
-            f"sleep 0.5; done; ss -ltnH 'sport = :{port}' | wc -l")},
-        {"id": "rssBefore", "guest": f"{T} procstat {unit}.service"},
-        {"id": "bigBody", "guest": f"{big} --declared 1073741824 --send 8388608"},
-        {"id": "rssAfter", "guest": f"{T} procstat {unit}.service"},
-        # a body at the limit is still read and answered, not refused
-        {"id": "atLimit", "guest": f"{big} --declared 4194304 --send 4194304"},
-    ]
-    reqs = [
-        req(RELAY_SPEC, "A provider's MCP request body is read only up to its limit",
-            a("start", "stdout", matches="^1\n$"),
-            a("bigBody", "json.status", equals=413), a("bigBody", "json.bodyLimitText", equals=True),
-            a("bigBody", "json.seconds", lte=10),
-            a("rssAfter", "json.rssBytes", lte=BUDGET["bodyLimitRssBytesMax"]),
-            a("atLimit", "json.status", gte=200), a("atLimit", "json.status", lte=412),
-            scenario="A 1 GiB declared body to the release's k3s provider executable is answered 413 after "
-                     "4 MiB, its resident memory stays under the budget, and a body at the limit is still "
-                     "answered (D41)"),
-    ]
-    files = {**base.TOOL_FILES, "providerK3s": base.inp(base.CANDIDATE + "/opute-provider-k3s-linux-x64")}
-    cleanup = [{"id": "cleanProvider", "guest": f"systemctl stop {unit} 2>/dev/null; rm -rf /opt/opute-e2e/providers; true"}]
-    return journey("e2e6.provider-body",
-                   "A provider executable's request body (D41, A5): the release's k3s provider refuses a 1 GiB "
-                   "declared body 413 after 4 MiB with bounded memory, and still answers a body at the limit.",
-                   reqs, steps, cleanup, (), minutes=5, files=files,
-                   allow=("files//opt/opute-e2e/providers", f"files/{PROVIDER}") + units(f"{unit}.service"))
-
-
-# --- 10. where each secret goes (m19) ---------------------------------------------------------------
+# --- 9. where each secret goes (m19) ---------------------------------------------------------------
 
 SWEEP_EFFECTS = (
     ("files//etc/opute/cluster-agent.json", "files//etc/opute/tunnels", "files//etc/opute/tunnels/e2e-sweep.env",
@@ -732,7 +735,7 @@ def secret_sweep() -> dict:
                    allow=SWEEP_EFFECTS)
 
 
-JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env, provider_body, secret_sweep]
+JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env, secret_sweep]
 
 
 def render() -> dict[str, str]:

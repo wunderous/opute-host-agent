@@ -808,8 +808,24 @@ def _site_run(tree: Path, argv: list[str], env: dict | None = None) -> dict:
     return {"exit": done.returncode, "last": (lines[-1:] or [""])[0][:400]}
 
 
+# Go's capture script starts the binary with --mode, which 0.4.0 refuses
+# (platform-neutral-host-agent N5). For a 0.4.x binary the capture runs on
+# the owners' proposed script (evidence/cutover/proposed-0.4.0), and the
+# script is restored afterwards so the tree's status shows only the site.
+SITE_CAPTURE_PATCH = TOOLS_DIR.parents[1] / "evidence/cutover/proposed-0.4.0/site-capture-catalog.mjs.patch"
+
+
 def _site_capture(tree: Path, binary: Path) -> dict:
-    return _site_run(tree, ["node", "site/scripts/capture-catalog.mjs"], {"OPUTE_HOST_AGENT_BINARY": str(binary)})
+    version = subprocess.run([str(binary), "--version"], capture_output=True, text=True).stdout.strip()
+    proposed = version.startswith("0.4.")
+    if proposed:
+        subprocess.run(["git", "-C", str(tree), "apply", str(SITE_CAPTURE_PATCH)], check=True, capture_output=True)
+    try:
+        out = _site_run(tree, ["node", "site/scripts/capture-catalog.mjs"], {"OPUTE_HOST_AGENT_BINARY": str(binary)})
+    finally:
+        if proposed:
+            subprocess.run(["git", "-C", str(tree), "checkout", "-q", "--", "site/scripts/capture-catalog.mjs"], check=True)
+    return {**out, "proposedScript": proposed}
 
 
 def _site_generate(tree: Path) -> dict:
@@ -1345,7 +1361,8 @@ def evaluate_site(obs: dict, reviewed: list[str]) -> dict:
 # receipts; editing a harness file after the capture invalidates it.
 HARNESS_FILES = ["tools/parity/parity/dist.py", "tools/parity/t2guest/distjourney.py",
                  "tools/release/build-artifacts.sh", "tools/parity/divergences.json",
-                 "crates/host-agent/catalog/neutral-names.json", "crates/host-agent/catalog/write-only.json"]
+                 "crates/host-agent/catalog/neutral-names.json", "crates/host-agent/catalog/write-only.json",
+                 "evidence/cutover/proposed-0.4.0/site-capture-catalog.mjs.patch"]
 DISTROS = ["ubuntu", "debian"]
 
 

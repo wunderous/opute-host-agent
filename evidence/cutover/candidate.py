@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Record the release candidate every gate and receipt must name (m13b).
 
-  python3 evidence/cutover/candidate.py --release DIR --upgrade-target DIR
+  python3 evidence/cutover/candidate.py --release DIR --upgrade-target DIR [--rollback-target DIR]
 
 Writes evidence/cutover/candidate.json from a locally built release set
 (tools/release/build-artifacts.sh; no tag, no publish):
@@ -12,6 +12,8 @@ Writes evidence/cutover/candidate.json from a locally built release set
   artifacts       every file SHA256SUMS lists, verified against it
   upgradeTarget   the newer local build of the same sources that the
                   in-place upgrade journeys install
+  rollbackTarget  the earlier release set a rollback journey returns to
+                  (optional; e2e-neutral rolls 0.4.x back to 0.3.x)
   catalogRevision the served catalog revision pinned in parity-manifest.json
   sourceDigest    the sources it was built from, as readiness.py digests them
 
@@ -55,6 +57,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--release", type=Path, required=True)
     parser.add_argument("--upgrade-target", type=Path, required=True)
+    parser.add_argument("--rollback-target", type=Path)
     args = parser.parse_args()
     manifest = json.loads((readiness.ROOT / readiness.MANIFEST).read_text())
     item = next(i for i in manifest["items"] if i["kind"] == "candidate")
@@ -66,6 +69,10 @@ def main() -> int:
               "built": "locally with tools/release/build-artifacts.sh; no tag, no publish"}
     if record["commit"] != record["upgradeTarget"]["commit"]:
         raise SystemExit("refused: the upgrade target was built from another commit")
+    if args.rollback_target:
+        record["rollbackTarget"] = release_set(args.rollback_target)
+        if record["rollbackTarget"]["version"] == record["version"]:
+            raise SystemExit("refused: the rollback target is the candidate's own version")
     RECORD.write_text(json.dumps(record, indent=1) + "\n")
     print(json.dumps({k: record[k] for k in ("name", "version", "commit", "sha256sums")}))
     return 0
