@@ -1,0 +1,191 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "incus/instances/e2e-v6",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
+   "incus/volumes/default/virtual-machine/e2e-v6",
+   "system/unitFiles/e2e-agent-cenv.service",
+   "system/units/e2e-agent-cenv.service",
+   "system/units/sys-devices-virtual-net-tap0c1a4ef7.device",
+   "system/units/sys-subsystem-net-devices-tap0c1a4ef7.device",
+   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.child-env",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "vm"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "vm"
+    },
+    {
+     "actual": "started",
+     "equals": "started",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "console"
+    },
+    {
+     "actual": "sent",
+     "equals": "sent",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "ctrlA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.closed",
+     "step": "detach"
+    },
+    {
+     "actual": "RUNNING\n",
+     "equals": "RUNNING\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "vmState"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "detached"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "consoleEnv"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    },
+    {
+     "actual": "done\n",
+     "equals": "done\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "recipeFile"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "cenvAgent": 556,
+   "console": 749,
+   "consoleEnv": 234,
+   "ctrlA": 881,
+   "detach": 393,
+   "detached": 165,
+   "list": 537,
+   "recipeCopy": 427,
+   "recipeDone": 40587,
+   "recipeEnv": 211,
+   "recipeFile": 146,
+   "recipeRun": 251,
+   "tool": 278,
+   "vm": 6655,
+   "vmCall": 218,
+   "vmState": 168,
+   "wire": 287
+  },
+  "stepsSeconds": 98.0
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

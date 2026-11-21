@@ -1,0 +1,402 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/.local/share/opute/opute-host-agent/sha256",
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/term.txt",
+   "files//opt/opute-e2e/releases/rust-next",
+   "files//opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz",
+   "files//var/lib/systemd/linger/opute",
+   "linger",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-slow.service",
+   "system/units/run-user-1001.mount",
+   "system/units/user-1001.slice",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user@1001.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-4",
+ "harnessErrors": [],
+ "journey": "e2e4.restart",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "supervisor"
+    },
+    {
+     "actual": "ready",
+     "equals": "ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisorAgain"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "termTask"
+    },
+    {
+     "actual": "up\n",
+     "equals": "up\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "termP"
+    },
+    {
+     "actual": "up\n",
+     "equals": "up\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "term"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "termTaskWire"
+    },
+    {
+     "actual": "The Host Agent shut down before the task completed.",
+     "equals": "The Host Agent shut down before the task completed.",
+     "ok": true,
+     "path": "response.body.result.statusMessage",
+     "step": "termTaskWire"
+    },
+    {
+     "actual": "up\n",
+     "equals": "up\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "kill"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "opsAfterKill"
+    },
+    {
+     "actual": "4432116e38e7a57f8968b3dc0a458d5cafc8e712c0440448ffce31a53baae3b7\n0.4.1-e2e\n",
+     "matches": "\n0\\.4\\.1\\-e2e\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "upgrade"
+    },
+    {
+     "actual": "upgraded\n",
+     "equals": "upgraded\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "afterUpgrade"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "db"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations (restart)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "running",
+     "in": [
+      "running",
+      "working"
+     ],
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "termWaiting"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "termPlanAfter"
+    },
+    {
+     "actual": "yes\nbus\n",
+     "equals": "yes\nbus\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "linger"
+    },
+    {
+     "actual": "e2e\n",
+     "equals": "e2e\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "termFile"
+    },
+    {
+     "actual": "failed",
+     "equals": "failed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "killTaskWire"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "upTaskWire"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "cancelAfterKill"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "termTaskWire"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "termGone"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "killOrphan"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "upGone"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "killTask"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "upTask"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "twinA"
+    },
+    {
+     "actual": "working",
+     "equals": "working",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "twinB"
+    },
+    {
+     "actual": "2\n2\n",
+     "matches": "^2\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "twins"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "twinADone"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "twinBDone"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "twinADone"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "twinBDone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Each task runs in its own workload unit",
+   "spec": "openspec/changes/workload-unit-per-task/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "termTaskAfter"
+    },
+    {
+     "actual": "failed",
+     "equals": "failed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "killTaskAfter"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "upTaskAfter"
+    },
+    {
+     "actual": [
+      {
+       "createdAt": "2026-11-21T01:25:18.044820204Z",
+       "description": "Executing run_host_command...",
+       "operationId": "ad005e46-6ccc-4bb1-bf53-e9be8129762d",
+       "status": "failed",
+       "toolName": "run_host_command",
+       "updatedAt": "2026-11-21T01:25:21.236926797Z"
+      },
+      {
+       "createdAt": "2026-11-21T01:25:14.092303703Z",
+       "description": "Executing run_host_command...",
+       "operationId": "0f2ad641-33b8-41c3-a978-279d5cb7f00e",
+       "result": {
+        "content": [
+         {
+          "text": "Running as unit: opute-host-workload-0a97812bf9632aea25a2363b.service; invocation ID: 8b4d86928f02429e9042c1c37339cfe1\n",
+          "type": "text"
+         }
+        ],
+        "isError": true,
+        "structuredContent": {
+         "exitCode": -1,
+         "stderr": "Running as unit: opute-host-workload-0a97812bf9632aea25a2363b.service; invocation ID: 8b4d86928f02429e9042c1c37339cfe1\n",
+         "stdout": ""
+        }
+       },
+       "status": "cancelled",
+       "toolName": "run_host_command",
+       "updatedAt": "2026-11-21T01:25:14.282242709Z"
+      }
+     ],
+     "exists": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.operations",
+     "step": "opsAfterKill"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An operation record reports its task's terminal status",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterUpgrade": 3002,
+   "afterUpgradeCall": 8,
+   "cancelAfterKill": 14,
+   "db": 546,
+   "kill": 3701,
+   "killOrphan": 1165,
+   "killTask": 10,
+   "killTaskAfter": 26,
+   "killTaskWire": 1,
+   "linger": 144,
+   "nextCopy": 352,
+   "opsAfterKill": 15,
+   "settleP": 5143,
+   "slow": 215,
+   "supervisor": 338,
+   "supervisorAgain": 42,
+   "term": 751,
+   "termFile": 142,
+   "termGone": 3152,
+   "termP": 748,
+   "termPlan": 45,
+   "termPlanAfter": 8,
+   "termTask": 16,
+   "termTaskAfter": 31,
+   "termTaskWire": 1,
+   "termWaiting": 9,
+   "tool": 287,
+   "twinA": 9,
+   "twinADone": 18009,
+   "twinB": 10,
+   "twinBDone": 1,
+   "twins": 3189,
+   "upGone": 3153,
+   "upTask": 9,
+   "upTaskAfter": 29,
+   "upTaskWire": 1,
+   "upgrade": 884,
+   "userBus": 146,
+   "wire": 291
+  },
+  "stepsSeconds": 90.9
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

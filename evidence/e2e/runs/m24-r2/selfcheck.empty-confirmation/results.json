@@ -1,0 +1,55 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [
+  "pass-condition"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.empty-confirmation",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write"
+    },
+    {
+     "actual": "",
+     "equals": "found\n",
+     "ok": false,
+     "path": "stdout",
+     "step": "look"
+    }
+   ],
+   "outcome": "fail",
+   "requirement": "Harness: a confirmation that finds nothing fails",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "list": 1,
+   "look": 146,
+   "write": 1
+  },
+  "stepsSeconds": 44.2
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}
