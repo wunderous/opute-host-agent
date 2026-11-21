@@ -60,11 +60,32 @@ No pattern is optional on main.
 
 | Id | Journeys | Class | Finding | State |
 |---|---|---|---|---|
-| A1 | `e2e2.host-ops` | journey defect | `allow` named `files//home/opute/evil`, the file a path-traversal escape would write. Had the guard failed, the escape would have passed the effects check | removed |
-| A2 | `e2e2.host-ops`, `e2e2.oci`, `e2e3.site` | journey defect | 8 patterns named `packages/...`, `users/...` and `groups/*`, kinds the state never records, so they could match nothing | removed |
-| A3 | e2e1, e2e2, e2e3, e2e4, e2e6 | journey defect | Units that steps stop before the after-state were allowed: the slow-endpoint helper outside `e2e6.kill`, the release server and the user manager's units once `e2e1.user-unit-npm` stops them, workload units, `systemd-timedated`, `run-user-1000.mount` (opute is uid 1001), and tap device units no run left. Each matched nothing | removed |
-| A4 | 17 journeys (e2e1, e2e2, e2e3, e2e3a, e2e4, e2e6) | journey defect | Broad patterns (`files//usr*`, `files//etc*`, `files//var*`, `system/*`, `incus/*`, `user/*`, `files//etc/systemd/system/*`, `files//etc/opute/*`, `files//opt/opute/*`) allowed any change in a tree | replaced by the paths each run changes |
-| A5 | 8 journeys (e2e2, e2e3, e2e4) | journey defect | `persist` named residue the run never left: `~/.opute*` (5 journeys), and `/var/lib/apt*`, `/var/lib/dpkg*`, `/var/cache*`, `/var/log*` (`e2e2.incus`, `e2e2.oci`, `e2e3.site`) | removed |
-| N1 | `e2e2.incus` | observation | `reset_virtualization_stack` reinstalls the stack (`install_incus_stack`): `/opt/incus`, the incus unit and dpkg entries change, and stay | intended; allowed and persisted as `STACK_REINSTALL` |
+| W1 | `e2e2.host-ops` | journey defect | `allow` named `files//home/opute/evil`, the file a path-traversal escape would write. Had the guard failed, the escape would have passed the effects check | removed |
+| W2 | `e2e2.host-ops`, `e2e2.oci`, `e2e3.site` | journey defect | 8 patterns named `packages/...`, `users/...` and `groups/*`, kinds the state never records, so they could match nothing | removed |
+| W3 | e2e1, e2e2, e2e3, e2e4, e2e6 | journey defect | Units that steps stop before the after-state were allowed: the slow-endpoint helper outside `e2e6.kill`, the release server and the user manager's units once `e2e1.user-unit-npm` stops them, workload units, `systemd-timedated`, `run-user-1000.mount` (opute is uid 1001), and tap device units no run left. Each matched nothing | removed |
+| W4 | 17 journeys (e2e1, e2e2, e2e3, e2e3a, e2e4, e2e6) | journey defect | Broad patterns (`files//usr*`, `files//etc*`, `files//var*`, `system/*`, `incus/*`, `user/*`, `files//etc/systemd/system/*`, `files//etc/opute/*`, `files//opt/opute/*`) allowed any change in a tree | replaced by the paths each run changes |
+| W5 | 8 journeys (e2e2, e2e3, e2e4) | journey defect | `persist` named residue the run never left: `~/.opute*` (5 journeys), and `/var/lib/apt*`, `/var/lib/dpkg*`, `/var/cache*`, `/var/log*` (`e2e2.incus`, `e2e2.oci`, `e2e3.site`) | removed |
+| W6 | `e2e2.incus` | observation | `reset_virtualization_stack` reinstalls the stack (`install_incus_stack`): `/opt/incus`, the incus unit and dpkg entries change, and stay | intended; allowed and persisted as `STACK_REINSTALL` |
 
 No product defect was found.
+
+## Measure
+
+The narrowed patterns were first replayed against the committed states
+(`m23-r1`, `m23-r2`): no unused, broad or unjustified pattern was left on
+either branch. Every changed journey then ran once on `rust-0.3.0-rc7`, as
+the draft `m24-d1` (30 journeys; drafts are not committed). Every journey
+passed, and the two controls failed with their own failure alone. The draft
+found nothing the replay had not: no change outside the narrowed patterns and
+no pattern its live run left unused.
+
+## Candidates
+
+Each line kept its candidate and reran every gate under the three rules,
+under one new run id:
+- `rust-0.3.0-rc7` (main): `m24-r1`. Every journey passed on its first
+  attempt, and `evidence/e2e/verify.py --gate` passes every gate. The new
+  controls fail as expected: `selfcheck.unused-allowance` with
+  `unused-allowance` alone, and `selfcheck.broad-allowance` with
+  `broad-allowance` alone.
+- `rust-0.4.0-rc4` (`rust-0.4.0`): `m24-r2`, recorded on that branch.
