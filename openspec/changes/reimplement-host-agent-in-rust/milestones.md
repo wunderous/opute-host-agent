@@ -1436,6 +1436,18 @@ The spec-based evidence M13 now requires. Harness, rules and resource lease:
   - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under both
     rules on `m23-r1`; `rust-0.4.0-rc4` unchanged, all gates pass on
     `m23-r2`.
+- **m24 effect allowances.** The harness fails a journey with
+  `unused-allowance` when an effects pattern matches no change (or, for
+  `persist`, no residue) of its own run, and with `broad-allowance` when a
+  pattern covers a whole tree; a host-dependent pattern is `optional` with
+  its reason (`evidence/m24`). Main had 122 unused allow, 14 unused persist
+  and 46 broad patterns; `rust-0.4.0` 138, 17 and 61; now none.
+  - **Findings:** journey defects only: an allowed traversal-escape target,
+    patterns for kinds the state never records, stale units, whole-tree
+    patterns, persist without residue; no product defect.
+  - **Candidate:** `rust-0.3.0-rc7` unchanged; all gates pass under the
+    three rules on `m24-r1`; `rust-0.4.0-rc4` unchanged, all gates pass
+    on `m24-r2`.
 - **e2e-5.** Blocked in `evidence/e2e/gates.json`: it waits on the owner
   (the Platform repository).
 

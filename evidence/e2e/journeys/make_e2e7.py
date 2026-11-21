@@ -23,7 +23,7 @@ import os
 import make_e2e1 as base
 from make_e2e1 import HERE, SPEC, a, inp, ok, req
 from make_e2e3a import call, direct, res, task
-from make_e2e4a import PKGS_BEFORE, PODMAN_CLEANUP, PODMAN_EFFECTS, SUPERVISOR_EFFECTS
+from make_e2e4a import IMAGE_VOLUME, PKGS_BEFORE, PODMAN_CLEANUP, PODMAN_EFFECTS, USER_SESSION
 
 GATE = "e2e-7"
 REPO = HERE.parent.parent.parent
@@ -359,10 +359,12 @@ def cleanup() -> list[dict]:
     ]
 
 
-EFFECTS = PODMAN_EFFECTS + SUPERVISOR_EFFECTS + ["incus/*", "files//home/opute/.config/opute-e2e7*", "files//home/opute/.config/systemd/user*",
-           "files//home/opute/.opute*", "files//home/opute/.config/incus*", "files//home/opute/.local/share*",
-           "files//home/opute/.config/opute/instances*", "system/units/*", "system/unitFiles/*"]
-PERSIST = ["files//home/opute/.opute*", "files//home/opute/.local/share*", "files//home/opute/.config/opute/instances*"]
+# The site's guest is gone by the after-state; the image its launch cached and the build context stay
+# until cleanup (m24).
+EFFECTS = PODMAN_EFFECTS + USER_SESSION + [
+    "files//home/opute/.config/opute-e2e7*", "files//home/opute/.config/systemd*", "files//home/opute/.opute*",
+    IMAGE_VOLUME, "incus/storage/default/used_by"]
+PERSIST = []
 
 INPUTS = {"agent": base.AGENT,
           "providers": "the release's K3s and Cloudflare provider executables, started as user units by typed calls",

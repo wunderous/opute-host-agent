@@ -1,0 +1,417 @@
+{
+ "branch": "rust-0.4.0",
+ "commit": "b7408ff6ed3670b8c856994b9bcf9b09ee02fb8b",
+ "journeys": 47,
+ "allowPatterns": 386,
+ "persistPatterns": 27,
+ "counts": {
+  "unusedAllow": 138,
+  "unusedPersist": 17,
+  "broad": 61
+ },
+ "allowances": {
+  "e2e1.migrate-upgrade": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*"
+   ]
+  },
+  "e2e1.restart": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*"
+   ]
+  },
+  "e2e1.user-unit-npm": {
+   "broad": [
+    "linger*",
+    "user/*"
+   ],
+   "unusedAllow": [
+    "files//home/ubuntu/.cache*",
+    "linger*",
+    "user/*",
+    "system/units/user*",
+    "system/units/run-user-1000.mount*",
+    "system/units/e2e-release*",
+    "system/unitFiles/e2e-release*"
+   ]
+  },
+  "e2e2.data": {
+   "broad": [
+    "incus/*",
+    "user/units/*",
+    "user/unitFiles/*",
+    "linger*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*",
+    "files//home/opute/.opute*",
+    "system/units/opute-*",
+    "user/units/*",
+    "user/unitFiles/*",
+    "files//home/opute/.config/systemd*",
+    "linger*",
+    "files//var/lib/systemd/linger*",
+    "system/units/user*",
+    "system/units/run-user-*"
+   ],
+   "unusedPersist": [
+    "files//home/opute/.opute*"
+   ]
+  },
+  "e2e2.host-ops": {
+   "broad": [
+    "packages/ninja-build*",
+    "linger/*",
+    "incus/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/evil",
+    "packages/ninja-build*",
+    "files//var/lib/apt*",
+    "files//var/cache*",
+    "files//var/log*",
+    "files//usr/share/doc/ninja-build*",
+    "files//usr/share/man*",
+    "files//usr/share/bash-completion*",
+    "files//usr/share/zsh*",
+    "files//usr/share/vim*",
+    "files//usr/share/emacs*",
+    "system/units/opute-host-workload-*",
+    "user/units/e2e-web*",
+    "user/unitFiles/e2e-web*",
+    "linger/*",
+    "users/opute/linger*",
+    "incus/*"
+   ]
+  },
+  "e2e2.incus": {
+   "broad": [
+    "incus/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*",
+    "files//var/lib/apt*",
+    "files//var/cache*",
+    "files//var/log*",
+    "system/units/sys-devices-virtual-net-tap*",
+    "system/units/sys-subsystem-net-devices-tap*",
+    "system/units/sys-devices-virtual-net-e2e*",
+    "system/units/sys-subsystem-net-devices-e2e*"
+   ],
+   "unusedPersist": [
+    "files//var/lib/apt*",
+    "files//var/cache*",
+    "files//var/log*"
+   ]
+  },
+  "e2e2.oci": {
+   "broad": [
+    "incus/*",
+    "files//usr*",
+    "files//etc*",
+    "files//var*",
+    "system/*",
+    "packages/*",
+    "users/*",
+    "groups/*",
+    "user/*",
+    "linger*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*",
+    "files//home/opute/.config/containers*",
+    "files//opt/cni*",
+    "packages/*",
+    "users/*",
+    "groups/*",
+    "user/*",
+    "files//home/opute/.config/systemd*",
+    "files//var/log*",
+    "files//var/cache*"
+   ],
+   "unusedPersist": [
+    "files//var/lib/dpkg*",
+    "files//var/log*",
+    "files//var/cache*"
+   ]
+  },
+  "e2e2.plans": {
+   "broad": [
+    "incus/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.opute*"
+   ],
+   "unusedPersist": [
+    "files//home/opute/.opute*"
+   ]
+  },
+  "e2e3.discovery": {
+   "broad": [
+    "incus/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*"
+   ]
+  },
+  "e2e3.serving": {
+   "broad": [
+    "user/*",
+    "linger*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.opute*",
+    "files//home/opute/.config/systemd*",
+    "files//tmp/serving-assignment*",
+    "user/*",
+    "system/units/opute-*"
+   ],
+   "unusedPersist": [
+    "files//home/opute/.opute*"
+   ]
+  },
+  "e2e3.site": {
+   "broad": [
+    "incus/*",
+    "files//usr*",
+    "files//etc*",
+    "files//var*",
+    "system/*",
+    "packages/*",
+    "users/*",
+    "groups/*",
+    "user/*",
+    "linger*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*",
+    "files//home/opute/.config/containers*",
+    "files//opt/cni*",
+    "packages/*",
+    "users/*",
+    "groups/*",
+    "user/*",
+    "files//home/opute/.config/systemd*",
+    "files//var/log*",
+    "files//var/cache*"
+   ],
+   "unusedPersist": [
+    "files//var/lib/dpkg*",
+    "files//var/log*",
+    "files//var/cache*"
+   ]
+  },
+  "e2e3a.build": {
+   "broad": [
+    "incus/volumes/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*"
+   ]
+  },
+  "e2e3a.endpoint": {
+   "broad": [
+    "incus/volumes/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*"
+   ]
+  },
+  "e2e3a.lose-one": {
+   "broad": [
+    "incus/volumes/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*"
+   ]
+  },
+  "e2e3a.quorum-removal": {
+   "broad": [
+    "incus/volumes/*"
+   ],
+   "unusedAllow": [
+    "incus/instances/e2e-k*",
+    "incus/profiles/default/used_by*",
+    "incus/networks/incusbr0/used_by*",
+    "files//home/opute/.config/incus*",
+    "system/units/sys-devices-virtual-net-veth*",
+    "system/units/sys-subsystem-net-devices-veth*"
+   ]
+  },
+  "e2e3a.workload": {
+   "broad": [
+    "incus/volumes/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/incus*"
+   ]
+  },
+  "e2e4.cutover": {
+   "broad": [
+    "incus/*",
+    "user/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.opute*",
+    "system/units/opute-host-workload-*",
+    "user/*"
+   ],
+   "unusedPersist": [
+    "files//home/opute/.opute*"
+   ]
+  },
+  "e2e4.restart": {
+   "broad": [
+    "incus/*",
+    "user/*"
+   ],
+   "unusedAllow": [
+    "incus/*",
+    "files//home/opute/.opute*",
+    "system/units/opute-host-workload-*",
+    "system/units/sys-devices-virtual-net-veth*",
+    "system/units/sys-subsystem-net-devices-veth*",
+    "user/*"
+   ],
+   "unusedPersist": [
+    "files//home/opute/.opute*"
+   ]
+  },
+  "e2e4.upgrade-chain": {
+   "broad": [
+    "files//etc/systemd/system/*",
+    "user/*"
+   ],
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/opute-host-workload-*",
+    "system/units/e2e-*",
+    "system/unitFiles/e2e-*",
+    "user/*"
+   ]
+  },
+  "e2e6.budget": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount"
+   ]
+  },
+  "e2e6.child-env": {
+   "broad": [
+    "incus/*"
+   ],
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount",
+    "files//home/opute/.config/incus*"
+   ]
+  },
+  "e2e6.clock": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount",
+    "system/units/systemd-timedated.service"
+   ]
+  },
+  "e2e6.commands": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount"
+   ]
+  },
+  "e2e6.disk-full": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*"
+   ]
+  },
+  "e2e6.kill": {
+   "unusedAllow": [
+    "system/units/tmp-e2e*agents-*.mount"
+   ]
+  },
+  "e2e6.pressure": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount"
+   ]
+  },
+  "e2e6.secret-sweep": {
+   "broad": [
+    "files//etc/opute/*",
+    "files//opt/opute/*",
+    "files//etc/systemd/system/*"
+   ],
+   "unusedAllow": [
+    "system/units/e2e-agent-*",
+    "system/unitFiles/e2e-agent-*",
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount"
+   ]
+  },
+  "e2e6.store-damage": {
+   "unusedAllow": [
+    "system/units/e2e-slow*",
+    "system/unitFiles/e2e-slow*",
+    "system/units/tmp-e2e*agents-*.mount"
+   ]
+  },
+  "e2e7.public-site": {
+   "broad": [
+    "files//usr*",
+    "files//etc*",
+    "files//var*",
+    "system/*",
+    "packages/*",
+    "users/*",
+    "groups/*",
+    "user/*",
+    "linger*",
+    "incus/*",
+    "system/units/*",
+    "system/unitFiles/*"
+   ],
+   "unusedAllow": [
+    "files//home/opute/.config/containers*",
+    "files//opt/cni*",
+    "packages/*",
+    "users/*",
+    "groups/*",
+    "user/*",
+    "files//home/opute/.config/incus*",
+    "files//home/opute/.config/opute/instances*"
+   ],
+   "unusedPersist": [
+    "files//home/opute/.opute*",
+    "files//home/opute/.local/share*",
+    "files//home/opute/.config/opute/instances*"
+   ]
+  },
+  "neutral.profile": {
+   "unusedAllow": [
+    "files//opt/opute-e2e/releases/rust-0.3.x*"
+   ]
+  },
+  "neutral.reserved": {
+   "unusedAllow": [
+    "files//opt/opute-e2e/releases/rust-0.3.x*"
+   ]
+  },
+  "neutral.rollback": {
+   "unusedAllow": [
+    "system/units/e2e-*",
+    "system/unitFiles/e2e-*"
+   ]
+  }
+ },
+ "noRun": []
+}
