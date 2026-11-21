@@ -5,7 +5,8 @@ one release candidate and the evidence that names it. This packet selects
 nothing and authorizes nothing. Go v0.2.4 stays the production owner until
 the owners sign below and the responsible owner authorizes cutover through
 its normal rollout path (spec, *Cutover requires specification-based
-evidence*). Tasks 6.3 and 6.4 stay open.
+evidence*). The owners signed on 2026-11-21 (section 6), closing task 6.3;
+cutover has not been started, and task 6.4 stays open.
 
 Machine-checked form: `make cutover-readiness` (`evidence/cutover/readiness.py`,
 items in `evidence/cutover/readiness.json`). Its `candidate` item fails
@@ -300,11 +301,16 @@ hosts, Platform registration, tunnels and DNS were never touched.
 
 ## 6. Sign-off
 
-Left empty for the owners (task 6.3).
+The owner, who holds all four roles, signed off in the session on
+2026-11-21 ("I'm signing off on your recommendations") and chose to record
+it in every row. The approval covers the candidate as reviewed in sections 1
+to 5, on run `m24-r1`. It does not tag, publish or select a production host:
+cutover through the normal rollout path is a separate, explicit step, and Go
+stays the production owner until then (task 6.3).
 
 | Owner | Name | Decision | Date | Notes |
 |---|---|---|---|---|
-| Host Agent | | | | |
-| Opute Platform | | | | |
-| Release | | | | |
-| Deployment | | | | |
+| Host Agent | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | Q18 stays deferred as a new capability (D28); O1 stays open in 0.3.0 (D43) |
+| Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | e2e-5 and Q4 stay open (section 4) |
+| Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | WSL2 stays blocked; publishing, npm and the site's catalog claims (5.2) stay separate steps (D28) |
+| Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | Cutover follows the section 5 runbook when the owner starts it; rollback window 14 days |

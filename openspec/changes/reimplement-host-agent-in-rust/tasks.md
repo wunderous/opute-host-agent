@@ -313,7 +313,7 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
     binding).
   - **Still open:** the bounded rollback window is a cutover decision (M13),
     and the rehearsal on staging needs M11.
-- [ ] 6.3 Review the complete manifest with Host Agent, Platform, release,
+- [x] 6.3 Review the complete manifest with Host Agent, Platform, release,
   and deployment owners before any production selection. Gate: Go remains the
   production owner until the whole-agent gate passes and the responsible owner
   explicitly authorizes cutover through its normal rollout path.
@@ -321,6 +321,10 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   [cutover-review-packet.md](cutover-review-packet.md): one candidate,
   `rust-0.3.0-rc1`, named by every gate and receipt; its sign-off table is
   empty.
+  *Signed off 2026-11-21:* the owner, holding all four roles, approved
+  `rust-0.3.0-rc7` as reviewed on run `m24-r1` (packet section 6). Go stays
+  the production owner until the owner starts cutover through the normal
+  rollout path; nothing was tagged, published or selected.
 - [ ] 6.4 After the rollback window, make a separate, evidenced retirement
   decision for Go and a separate ownership decision for releases and the
   website. Gate: no Go artifact or registration is removed by this spec alone.
