@@ -5,11 +5,12 @@
 //! Host Agent's provider binding is the Consumer, reached over MCP exactly as
 //! it reaches Go's executables. This module is what every Go provider `main`
 //! shares: go-sdk v1.7.0's stateless, JSON-response Streamable HTTP handler
-//! (`mcpsdk`) served by `http.ListenAndServe(":"+port, handler)`.
+//! (`mcpsdk`) served by `http.ListenAndServe(":"+port, handler)`, except that
+//! the listener is loopback only (D53).
 //!
 //! ```text
 //!  main   OPUTE_PROVIDER_PORT (default per provider) -> log.Printf listening
-//!         -> net.Listen(":"+port) (error: log.Fatal, exit 1)
+//!         -> listen 127.0.0.1:port (D53; error: log.Fatal, exit 1)
 //!  serve  every path -> go-sdk handler (OPTIONS * answered by net/http)
 //! ```
 //!
@@ -267,7 +268,7 @@ pub(crate) fn lookup_port(service: &str) -> Result<u16, String> {
     listen_port(service)
 }
 
-/// The provider `main`: read the port, log, listen on every interface and
+/// The provider `main`: read the port, log, listen on loopback (D53) and
 /// serve until the process is killed. A listen failure is `log.Fatal`.
 pub fn run(server: Server, default_port: &str, listening: impl Fn(&str) -> String) -> ! {
     let mut port = std::env::var("OPUTE_PROVIDER_PORT").unwrap_or_default();
@@ -276,12 +277,7 @@ pub fn run(server: Server, default_port: &str, listening: impl Fn(&str) -> Strin
     }
     let mut stderr = std::io::stderr();
     log_printf(&mut stderr, &listening(&port));
-    let listener = listen_port(&port).and_then(|number| {
-        let addr = format!(":{number}");
-        let addrs: Vec<SocketAddr> = vec![SocketAddr::from(([0, 0, 0, 0], number))];
-        crate::app::go_listen(&addrs, &addr).map_err(|e| e.0)
-    });
-    let listener = match listener {
+    let listener = match listen(&port) {
         Ok(l) => l,
         Err(e) => {
             log_printf(&mut stderr, &e);
@@ -305,6 +301,17 @@ pub fn run(server: Server, default_port: &str, listening: impl Fn(&str) -> Strin
         .expect("start runtime");
     let _ = worker.join();
     std::process::exit(1)
+}
+
+/// D53: the loopback interface only, where the agent reaches its providers.
+/// Go listened on every interface (`":"+port`) with no authentication, so any
+/// guest on a bridge or peer on the network could call a provider (P1).
+fn listen(port: &str) -> Result<std::net::TcpListener, String> {
+    listen_port(port).and_then(|number| {
+        let addr = format!("127.0.0.1:{number}");
+        let addrs = [SocketAddr::from(([127, 0, 0, 1], number))];
+        crate::app::go_listen(&addrs, &addr).map_err(|e| e.0)
+    })
 }
 
 async fn accept(listener: std::net::TcpListener, server: Arc<Server>) {
@@ -359,6 +366,15 @@ async fn handle(server: Arc<Server>, req: Request, mut body: Body) -> (Response,
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// P1 (D53): a provider answers only on the loopback interface, where the
+    /// agent reaches it; a guest on a bridge or a peer on the LAN cannot.
+    #[test]
+    fn a_provider_listens_on_loopback_only() {
+        let listener = listen("0").expect("listen");
+        let local = listener.local_addr().expect("local address");
+        assert_eq!(local.ip(), std::net::Ipv4Addr::LOCALHOST);
+    }
 
     /// A5 (D41): a provider's `/mcp` reads at most the SDK's 4 MiB, as the
     /// agent does (D29); a larger body is refused 413 before the rest.
