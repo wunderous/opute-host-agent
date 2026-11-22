@@ -261,11 +261,36 @@ def cleanup_steps(typed: bool = True) -> list[dict]:
 # The snapshot's parity-noble image, cached by Incus under its fingerprint when a guest is created from it (the
 # golden image pins it)
 IMAGE_VOLUME = "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c"
+# m25: kernel state a guest leaves on the host. A container's NIC loads veth, a VM's tap and vhost_net; a K3s
+# guest's kube-proxy and flannel load netfilter modules and set the bridge sysctls. A module stays loaded once the
+# guest is gone.
+GUEST_KERNEL = ["modules/veth"]
+VM_KERNEL = ["modules/tap", "modules/vhost_net"]
+K3S_MODULES = ("br_netfilter", "ip6_udp_tunnel", "ip_set", "ipt_REJECT", "iptable_filter", "iptable_mangle",
+               "iptable_nat", "nf_conntrack_netlink", "nf_reject_ipv4", "nfnetlink_acct", "nfnetlink_log", "nft_compat",
+               "overlay", "tls", "udp_tunnel", "vxlan", "xt_MASQUERADE", "xt_NFLOG", "xt_addrtype", "xt_comment",
+               "xt_conntrack", "xt_limit", "xt_mark", "xt_multiport", "xt_nat", "xt_nfacct", "xt_physdev", "xt_statistic",
+               "xt_tcpudp")
+K3S_KERNEL = ([f"modules/{m}" for m in K3S_MODULES]
+              + [f"sysctl/net.bridge.{k}" for k in ("bridge-nf-call-arptables", "bridge-nf-call-ip6tables",
+                                                    "bridge-nf-call-iptables", "bridge-nf-filter-pppoe-tagged",
+                                                    "bridge-nf-filter-vlan-tagged", "bridge-nf-pass-vlan-input-dev")]
+              + ["sysctl/net.fan.vxlan"])
+K3S_OPTIONAL = {p: "which modules K3s loads depends on how far its networking came up and on the host kernel"
+                for p in K3S_KERNEL}
+
+
 # What every journey leaves until cleanup: the image volume, the providers and their units, agent B
 EFFECTS = [IMAGE_VOLUME, "incus/storage/default/used_by",
            "files//home/opute/.config/opute-e2e*", "files//opt/opute-e2e/providers*",
            "system/units/e2e-provider-k3s*", "system/unitFiles/e2e-provider-k3s*",
-           "system/units/e2e-agent-b.service", "system/unitFiles/e2e-agent-b.service"]
+           "system/units/e2e-agent-b.service", "system/unitFiles/e2e-agent-b.service",
+           "files//tmp/e2e-agents", "files//tmp/e2e-agents/b*",
+           "processes//system.slice/e2e-agent-b.service opute-host-agen",
+           f"sockets/tcp 127.0.0.1:{B_PORT} opute-host-agen",
+           *(f"processes//system.slice/{unit}.service opute-provider-"
+             for unit in ("e2e-provider-k3s", "e2e-provider-k3s-b")),
+           *(f"sockets/tcp 127.0.0.1:{port} opute-provider-" for port in (4320, 4321))]
 # ...and while the three servers still run: the guests, their volumes and network devices
 SERVERS_UP = ["incus/instances/e2e-k*", "incus/volumes/default/container/e2e-k*", "incus/profiles/default/used_by",
               "incus/networks/incusbr0/used_by", "system/units/sys-devices-virtual-net-veth*",
@@ -279,9 +304,16 @@ INPUTS = {"agentA": base.AGENT + ", with the Rust k3s provider 1.0.2 from the re
           "files": FILES}
 
 
-def journey(id_, description, requirements, steps, cleanup, allow=tuple(SERVERS_UP), minutes=25):
+def journey(id_, description, requirements, steps, cleanup, running=SERVERS, minutes=25):
+    guests = []
+    if running:
+        guests = SERVERS_UP + ["links/veth*"]
+        for name in running:
+            guests += [f"processes//lxc.monitor.{name} incusd", f"processes//lxc.payload.{name} guest"]
+    persist = K3S_KERNEL + GUEST_KERNEL
     return base.journey(id_, description, INPUTS, requirements, steps, cleanup,
-                        allow=EFFECTS + list(allow), minutes=minutes, gate=GATE)
+                        allow=EFFECTS + guests + persist, persist=persist, optional=K3S_OPTIONAL,
+                        minutes=minutes, gate=GATE)
 
 
 # --- 1. build ---------------------------------------------------------------------------------------------
@@ -578,7 +610,7 @@ def j4() -> dict:
         "stopped servers are NotReady, retire e2e-k2, then remove the cluster and delete the guests through "
         "typed calls. Pass: the cluster is gone and nothing remains after cleanup.",
         # the guests are deleted by typed calls before the after-state
-        reqs, steps, cleanup_steps(typed=False), allow=(), minutes=28)
+        reqs, steps, cleanup_steps(typed=False), running=(), minutes=28)
 
 
 # --- 5. the optional cluster endpoint (Q19) ----------------------------------------------------------------
@@ -726,7 +758,7 @@ def j5() -> dict:
         "The optional cluster endpoint (Q19) on the HA cluster built as in e2e3a.build, with host A's provider "
         "enabled for it and host B's not: opt in at k3s.e2e.test, verify certificates, bridge resolution and "
         "ensure-ha-endpoint with the CA reference; stop e2e-k3 and use the hostname; retire e2e-k3; opt out.",
-        reqs, steps, cleanup, minutes=29)
+        reqs, steps, cleanup, running=SERVERS[:2], minutes=29)
 
 
 JOURNEYS = [j1, j2, j3, j4, j5]

@@ -189,12 +189,23 @@
  ],
  "effects": {
   "allow": [
+   "sockets/tcp 127.0.0.1:3051 opute-host-agen",
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-lim.service",
    "system/unitFiles/e2e-agent-lim.service",
+   "files//tmp/e2e-agents/lim*",
+   "processes//system.slice/e2e-agent-lim.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3046 opute-host-agen",
    "system/units/e2e-agent-low.service",
    "system/unitFiles/e2e-agent-low.service",
+   "files//tmp/e2e-agents/low*",
+   "processes//system.slice/e2e-agent-low.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3047 opute-host-agen",
    "system/units/e2e-agent-big.service",
-   "system/unitFiles/e2e-agent-big.service"
+   "system/unitFiles/e2e-agent-big.service",
+   "files//tmp/e2e-agents/big*",
+   "processes//system.slice/e2e-agent-big.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3048 opute-host-agen"
   ],
   "persist": []
  },

@@ -1,0 +1,12 @@
+# rust-0.3.0-rc7's provider listen (listen() refactored out of run(), behaviour unchanged), 150f4a25f
+running 1 test
+providers::tests::a_provider_listens_on_loopback_only --- FAILED
+failures:
+---- providers::tests::a_provider_listens_on_loopback_only stdout ----
+thread 'providers::tests::a_provider_listens_on_loopback_only' (1372262) panicked at crates/host-agent/src/providers/mod.rs:343:9:
+provider listens on [::]:41317
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+failures:
+    providers::tests::a_provider_listens_on_loopback_only
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 400 filtered out; finished in 0.00s
+error: test failed, to rerun pass `-p opute-host-agent --lib`

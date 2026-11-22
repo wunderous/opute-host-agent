@@ -18,8 +18,8 @@
     "sha256": "1ed02ede839e09d7f4d0bea7779ae9e248951f6deb7c79a015af76cfbadfbdad"
    },
    "rust04": {
-    "path": "${PARITY}/e2e/release/rust-0.4.0-rc4/host-agent-linux-x64.gz",
-    "sha256": "e0b23b327359934d7fa04cb8d02fb564d26bf50001d5844bc60df25815d78872"
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc5/host-agent-linux-x64.gz",
+    "sha256": "44fe5b3fd2707a907c5420673a6545d5ff66d00803dd3f2b829e4571fec020b6"
    }
   }
  },
@@ -346,7 +346,20 @@
    "system/units/e2e-agent-exposed.service",
    "system/unitFiles/e2e-agent-exposed.service",
    "system/units/e2e-agent-oauth.service",
-   "system/unitFiles/e2e-agent-oauth.service"
+   "system/unitFiles/e2e-agent-oauth.service",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/plain*",
+   "files//tmp/e2e-agents/oldmode*",
+   "files//tmp/e2e-agents/oldallow*",
+   "files//tmp/e2e-agents/exposed*",
+   "files//tmp/e2e-agents/oauth*",
+   "processes//system.slice/e2e-agent-plain.service opute-host-agen",
+   "processes//system.slice/e2e-agent-oldmode.service opute-host-agen",
+   "processes//system.slice/e2e-agent-oldallow.service opute-host-agen",
+   "processes//system.slice/e2e-agent-exposed.service opute-host-agen",
+   "processes//system.slice/e2e-agent-oauth.service opute-host-agen",
+   "sockets/tcp 0.0.0.0:3004 opute-host-agen",
+   "sockets/tcp 127.0.0.1:3051 opute-host-agen"
   ],
   "persist": []
  },

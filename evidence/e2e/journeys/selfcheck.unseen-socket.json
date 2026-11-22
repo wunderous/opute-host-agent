@@ -1,0 +1,40 @@
+{
+ "id": "selfcheck.unseen-socket",
+ "gate": "e2e-0",
+ "description": "Negative control for m25: a listening socket (its process is declared), undeclared. The observer before m25 did not see it.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: a listening socket (its process is declared) is an effect",
+   "pass": [
+    {
+     "step": "plant",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [
+   "processes//user.slice/user-0.slice/session.scope python3"
+  ],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "plant",
+   "guest": "setsid -f python3 -m http.server --bind 127.0.0.1 3999 </dev/null >/dev/null 2>&1; for i in $(seq 50); do ss -ltnH 'sport = :3999' | grep -q . && break; sleep 0.2; done"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "remove",
+   "guest": "pkill -f 'http.server --bind 127.0.0.1 3999'; true"
+  }
+ ],
+ "maxMinutes": 10
+}

@@ -97,8 +97,12 @@
  ],
  "effects": {
   "allow": [
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-dmg.service",
-   "system/unitFiles/e2e-agent-dmg.service"
+   "system/unitFiles/e2e-agent-dmg.service",
+   "files//tmp/e2e-agents/dmg*",
+   "processes//system.slice/e2e-agent-dmg.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3041 opute-host-agen"
   ],
   "persist": []
  },

@@ -89,6 +89,11 @@ def units(*names: str) -> list[str]:
     return [f"system/{kind}/{name}.service" for name in names for kind in ("units", "unitFiles")]
 
 
+def agent_effects(*names: str) -> list[str]:
+    return [f"files/{ROOT}", *(f"files/{ROOT}/{name}*" for name in names),
+            *(f"processes//system.slice/e2e-agent-{name}.service opute-host-agen" for name in names)]
+
+
 def journey(id_, description, requirements, steps, cleanup, files=FILES, allow=(), minutes=15, **inputs):
     """`allow` names the journey's own effects beyond the 0.4.0 release it unpacks (m24)."""
     return base.journey(id_, description, {"agent": AGENT04, **inputs, "files": files}, requirements, steps,
@@ -225,7 +230,9 @@ def profile() -> dict:
         "The single serving profile of 0.4.0: an agent with only an id and a token; agents that still carry the old "
         "mode and mutation variables; a host exposed on purpose; and OAuth machine clients from operator "
         "configuration.",
-        reqs, steps, clean(*PROFILE_AGENTS), allow=units(*(f"e2e-agent-{n}" for n in PROFILE_AGENTS)))
+        reqs, steps, clean(*PROFILE_AGENTS),
+        allow=units(*(f"e2e-agent-{n}" for n in PROFILE_AGENTS)) + agent_effects(*PROFILE_AGENTS)
+        + ["sockets/tcp 0.0.0.0:3004 opute-host-agen", "sockets/tcp 127.0.0.1:3051 opute-host-agen"])
 
 
 # --- 2. reserved hostnames ------------------------------------------------------------------------------
@@ -329,7 +336,11 @@ def reserved() -> dict:
         "OPUTE_RESERVED_HOSTNAMES=*.opute.io.",
         reqs, steps, clean("r", "n", more=more), files=files,
         allow=["files//home/opute/.config/opute-e2e*", "files//opt/opute-e2e/providers", f"files/{PROVIDER}",
-               *units("e2e-agent-r", "e2e-agent-n", "e2e-provider-cf-r", "e2e-provider-cf-n")],
+               *units("e2e-agent-r", "e2e-agent-n", "e2e-provider-cf-r", "e2e-provider-cf-n"),
+               *agent_effects("r", "n"),
+               *(f"processes//system.slice/e2e-provider-cf-{name}.service opute-provider-" for name in ("r", "n")),
+               *(f"sockets/tcp 127.0.0.1:{port} opute-host-agen" for port in (3041, 3042)),
+               *(f"sockets/tcp 127.0.0.1:{port} opute-provider-" for port in (4330, 4331))],
         provider="the Rust Cloudflare provider 1.0.1 from the same release set, without Cloudflare credentials")
 
 
@@ -424,9 +435,9 @@ def rollback() -> dict:
         "Upgrade a Platform-style host from the previous 0.3.x release to 0.4.0 and roll it back, with one environment "
         "holding both settings sets (OPUTE_AGENT_MODE=platform next to the explicit bind, port, mutation, "
         "instance and OAuth client settings).",
-        reqs, steps, clean("roll"), allow=[f"files/{REL3}*"],
+        reqs, steps, clean("roll"), allow=[f"files/{REL3}*", f"files/{ROOT}", f"files/{ROOT}/roll*"],
         files={**FILES, "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")},
-        previous="the previous Rust release, 0.3.0-rc7 (" + base.PREVIOUS + "), copied in")
+        previous="the previous Rust release, 0.3.0-rc8 (" + base.PREVIOUS + "), copied in")
 
 
 JOURNEYS = [profile, reserved, rollback]

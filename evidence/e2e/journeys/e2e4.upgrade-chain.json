@@ -5,7 +5,7 @@
  "inputs": {
   "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
-  "previous": "the previous Rust release (${PARITY}/e2e/release/rust-0.3.0-rc7), copied in",
+  "previous": "the previous Rust release (${PARITY}/e2e/release/rust-0.3.0-rc8), copied in",
   "slow": "a local endpoint answering after 60 s (e2etool slow)",
   "files": {
    "e2etool": {
@@ -29,8 +29,8 @@
     "sha256": "8ade0e7e59673216ba4e5f283dacbe707a30075b32ee5b6127fb590281622a3f"
    },
    "rust03": {
-    "path": "${PARITY}/e2e/release/rust-0.3.0-rc7/host-agent-linux-x64.gz",
-    "sha256": "a8443363f9284f75be74adbb5499e978ab01c5363fb0acdc8258877d0b8f3da7"
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc8/host-agent-linux-x64.gz",
+    "sha256": "f8fe9ea72594cd17c4d51bdcbb1dc653c2fe6df00a07ad535a2d56f583628817"
    }
   }
  },
@@ -576,12 +576,34 @@
    "files//home/opute/.local/share/opute/tunnels*",
    "files//etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf",
    "files//opt/opute-e2e/chain*",
+   "files//root/e2e-chain",
+   "files//root/e2e-chain/markers.json",
+   "files//root/e2e-chain/oauth.env",
+   "files//tmp/e2e-chain-rust-instances*",
+   "opute/units/opute-cloudflared-e2e-chain.service",
    "linger",
    "files//var/lib/systemd/linger/opute",
    "system/units/user@1001.service",
    "system/units/user-runtime-dir@1001.service",
    "system/units/user-1001.slice",
-   "system/units/run-user-1001.mount"
+   "system/units/run-user-1001.mount",
+   "opute/running",
+   "mounts//run/user/1001 tmpfs",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket"
   ],
   "persist": []
  },

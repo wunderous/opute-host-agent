@@ -19,12 +19,12 @@
     "sha256": "1ed02ede839e09d7f4d0bea7779ae9e248951f6deb7c79a015af76cfbadfbdad"
    },
    "rust04": {
-    "path": "${PARITY}/e2e/release/rust-0.4.0-rc4/host-agent-linux-x64.gz",
-    "sha256": "e0b23b327359934d7fa04cb8d02fb564d26bf50001d5844bc60df25815d78872"
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc5/host-agent-linux-x64.gz",
+    "sha256": "44fe5b3fd2707a907c5420673a6545d5ff66d00803dd3f2b829e4571fec020b6"
    },
    "providerCloudflare": {
-    "path": "${PARITY}/e2e/release/rust-0.4.0-rc4/opute-provider-cloudflare-linux-x64",
-    "sha256": "83399377e9aa5aad31e597aedd6546986e71d5fe5fceb125e201cd358151c28c"
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc5/opute-provider-cloudflare-linux-x64",
+    "sha256": "33762023c31e66d57ab77efd4630dd2a9e3736637cf92f6cef7e8b3849911d57"
    },
    "activate": {
     "path": "${REPO}/evidence/e2e/journeys/inputs/cloudflare-activate-tunneling.yaml",
@@ -137,7 +137,18 @@
    "system/units/e2e-provider-cf-r.service",
    "system/unitFiles/e2e-provider-cf-r.service",
    "system/units/e2e-provider-cf-n.service",
-   "system/unitFiles/e2e-provider-cf-n.service"
+   "system/unitFiles/e2e-provider-cf-n.service",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/r*",
+   "files//tmp/e2e-agents/n*",
+   "processes//system.slice/e2e-agent-r.service opute-host-agen",
+   "processes//system.slice/e2e-agent-n.service opute-host-agen",
+   "processes//system.slice/e2e-provider-cf-r.service opute-provider-",
+   "processes//system.slice/e2e-provider-cf-n.service opute-provider-",
+   "sockets/tcp 127.0.0.1:3041 opute-host-agen",
+   "sockets/tcp 127.0.0.1:3042 opute-host-agen",
+   "sockets/tcp 127.0.0.1:4330 opute-provider-",
+   "sockets/tcp 127.0.0.1:4331 opute-provider-"
   ],
   "persist": []
  },

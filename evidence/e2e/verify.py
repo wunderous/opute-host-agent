@@ -72,6 +72,8 @@ def verify_receipt(directory: Path, expect: dict) -> list[str]:
         problems.append(f"verdict pass={derived['pass']} ({derived['failures']}), expected pass={expect['pass']}")
     if "failures" in expect and derived["failures"] != expect["failures"]:
         problems.append(f"failures {derived['failures']} != expected {expect['failures']}")
+    if "undeclared" in expect and derived["effects"]["undeclared"] != expect["undeclared"]:
+        problems.append(f"undeclared {derived['effects']['undeclared']} != expected {expect['undeclared']}")
     if derived["unverified"] != expect.get("unverified", []):
         problems.append(f"unverified {derived['unverified']} != expected {expect.get('unverified', [])}")
     return problems
