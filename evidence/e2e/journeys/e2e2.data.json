@@ -161,6 +161,11 @@
      "step": "relayClosed",
      "path": "stdout",
      "equals": "closed\n"
+    },
+    {
+     "step": "incusProxy",
+     "path": "exit",
+     "equals": 0
     }
    ],
    "scenario": "The relay released only with its token; removal leaves no service or data behind"
@@ -239,6 +244,7 @@
    "processes//lxc.monitor.e2e-k1 incusd",
    "processes//lxc.payload.e2e-k1 guest",
    "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "sockets/tcp 127.0.0.1:[0-9][0-9][0-9][0-9][0-9] incusd",
    "modules/br_netfilter",
    "modules/ip6_udp_tunnel",
    "modules/ip_set",
@@ -844,6 +850,10 @@
    "confirms": [
     "sqliteRemove"
    ]
+  },
+  {
+   "id": "incusProxy",
+   "guest": "listen=$(incus config device get e2e-k1 e2e-pg-relay listen) && case \"$listen\" in tcp:127.0.0.1:*) ;; *) exit 1;; esac; endpoints=$(ss -Hlntp | awk '$4 ~ /^127[.]0[.]0[.]1:/ && /incusd/ {print $4}'); test \"tcp:$endpoints\" = \"$listen\""
   }
  ],
  "cleanup": [

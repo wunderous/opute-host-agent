@@ -1035,6 +1035,11 @@ def data() -> dict:
         call("sqliteRemove", "remove_sqlite_database", {"consumerId": "e2e-a", "databaseName": "main",
                                                         "confirm": True}),
         {"id": "sqliteGone", "guest": f"ls {SQLITE}/e2e-a 2>/dev/null | wc -l", "confirms": ["sqliteRemove"]},
+        {"id": "incusProxy", "guest": (
+            "listen=$(incus config device get e2e-k1 e2e-pg-relay listen) && "
+            "case \"$listen\" in tcp:127.0.0.1:*) ;; *) exit 1;; esac; "
+            "endpoints=$(ss -Hlntp | awk '$4 ~ /^127[.]0[.]0[.]1:/ && /incusd/ {print $4}'); "
+            "test \"tcp:$endpoints\" = \"$listen\"")},
     ]
     reqs = cluster_requirements() + [
         req(CATALOG, "reconcile_postgresql_service, get_postgresql_service_status (localRelay)",
@@ -1053,6 +1058,7 @@ def data() -> dict:
             direct("release", "isError", **{"in": [False, "<absent>"]}),
             res("remove", "isError", equals=False),
             a("gone", "stdout", equals="0\n"), a("relayClosed", "stdout", equals="closed\n"),
+            ok("incusProxy"),
             scenario="The relay released only with its token; removal leaves no service or data behind"),
         req(CATALOG, "ensure_sqlite_database, get_sqlite_database_status, remove_sqlite_database",
             direct("sqlite", "isError", **{"in": [False, "<absent>"]}),
@@ -1065,8 +1071,9 @@ def data() -> dict:
                      "confirmation, and removed"),
     ]
     cleanup = cluster_cleanup(f"rm -rf {SQLITE}; ")
-    # the relay is released and the databases removed within the steps
-    allow = CLUSTER_EFFECTS
+    # The relay is released and the databases are removed during the steps.
+    # The guest's loopback-only Incus forward is kept for reuse until guest cleanup.
+    allow = CLUSTER_EFFECTS + ["sockets/tcp 127.0.0.1:[0-9][0-9][0-9][0-9][0-9] incusd"]
     persist, optional = CLUSTER_PERSIST, CLUSTER_OPTIONAL
     return journey(
         "e2e2.data", "e2e-2",
