@@ -16,6 +16,10 @@
   {"kind": "mounts", "examples": "a tmpfs or bind mount; systemd mount units were observed", "before": "partial: mount units only"},
   {"kind": "network links and routes", "examples": "veth and tap devices, bridges, routes; device units were observed", "before": "partial: device units only"},
   {"kind": "Incus objects, firewall rule sets, the cluster's objects, rootless images, system units, ubuntu's user units, linger", "before": "observed"},
+  {"kind": "system clock and NTP", "examples": "e2e6.clock steps the clock back and disables NTP", "before": "partial: observes changed NTP unit and symlinks", "reason": "wall time changes during every observation, so the journey asserts behavior across the clock step"},
+  {"kind": "Windows-side WSL distribution and disk state", "examples": "shutdown_wsl, terminate_wsl_distribution and compact_wsl_disk", "before": "not observed", "reason": "native Linux fixture only, with WSL2 recorded blocked in the cutover packet"},
+  {"kind": "remote DNS, tunnel, mesh and registry state", "examples": "provider-managed DNS and connectors, peer membership and registry pushes", "before": "partial: host units, config, guests and in-VM registry objects", "reason": "off-host effects require independent service read-back in the journeys that exercise them"},
+  {"kind": "private runtime and session state", "examples": "isolated workload namespaces, in-memory console sessions and active operation reservations", "before": "partial: unit and guest lifecycle", "reason": "session and operation outcomes are observed through their typed interfaces"},
   {"kind": "logs and the journal (/var/log, journald)", "examples": "every run writes them", "before": "not observed", "reason": "they change in every run and cannot be compared deterministically; secrets in them are searched by e2e6.secret-sweep instead"}
  ]
 }
