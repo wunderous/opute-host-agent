@@ -71,3 +71,9 @@ forwarded port cleared TIME-WAIT.
 | The upgrade chain sets aside the active Rust state and stages its secret-check fixtures. | Record the temporary instance tree, the fixture files and the connector user unit. |
 | The console test starts a VM. | Record the VM's tap, config mount and QEMU process, and the modules left loaded after removal. |
 | The public-site teardown leaves Podman fixture files and K3s modules. | Use the shared Podman cleanup, declare the measured package and kernel effects, and check both installed providers' loopback listeners before teardown. |
+
+The first `m25-r1` data journey recorded an Incus loopback proxy that
+remains available for reuse while the guest exists. Its socket matched
+the guest's `e2e-pg-relay` device and disappeared during cleanup. The
+journey now verifies the socket against that device and declares it
+through guest removal.
