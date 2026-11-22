@@ -16,12 +16,12 @@ fields removes the planted differences from the effects check.
 
 | Area | Scope |
 | --- | --- |
-| Files | The observer scans the listed roots and records metadata and hashes. Files outside those roots, including arbitrary paths passed to a general command tool, require an independent journey assertion. |
+| Files | The observer scans the listed roots and records type, mode, owner, symlink targets and regular-file hashes. Files beyond those roots and changes to ACLs, xattrs, hard-link identity or timestamps require an independent journey assertion. |
 | Volatile files and logs | Boot and timer state, randomized systemd private temporary directories, and the harness's own directory are excluded. The secret sweep searches the journal and files for its test markers. |
 | Projected state | Agent databases and specified caches are covered by tool reads and the durability and secret-sweep journeys. Incus and Kubernetes use their existing object projections. Container-internal processes are represented by the running container. |
 | Processes | The process projection records names and counts by stable cgroup. It omits kernel threads, the inspecting session's own processes, and short-lived udev workers. PID, arguments and environment are excluded. |
 | Sockets | The observer records host TCP listeners and stable UDP socket addresses. The ephemeral UDP range is excluded because the DNS and NTP clients use it. Established connections and guest-private sockets are outside the host projection. |
-| Kernel and networking | The snapshot compares stable sysctl values, loaded modules, visible mount points and filesystem types, links by name, and routes with metrics. Autotuned counters, per-interface sysctls, route lifetimes, mount options and private namespaces are outside this projection. |
+| Kernel and networking | The snapshot compares stable sysctl values, loaded modules, visible mount points and filesystem types, links by name, and routes with metrics. Autotuned counters, per-interface sysctls, route lifetimes, mount options, link configuration and private namespaces are outside this projection. |
 
 ## Provider artifact check
 

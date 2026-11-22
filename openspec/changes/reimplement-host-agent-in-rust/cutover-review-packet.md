@@ -5,8 +5,8 @@ one release candidate and the evidence that names it. This packet selects
 nothing and authorizes nothing. Go v0.2.4 stays the production owner until
 the owners sign below and the responsible owner authorizes cutover through
 its normal rollout path (spec, *Cutover requires specification-based
-evidence*). The owners signed on 2026-11-21 (section 6), closing task 6.3;
-cutover has not been started, and task 6.4 stays open.
+evidence*). The owners signed off on rc7 on 2026-11-21. D53 reopens
+review under task 6.3 for rc8 (section 6).
 
 Machine-checked form: `make cutover-readiness` (`evidence/cutover/readiness.py`,
 items in `evidence/cutover/readiness.json`). Its `candidate` item fails
@@ -60,34 +60,39 @@ patterns and 14 of 24 persist patterns were unused, and 46 were broad; each
 now names what its run changes. Five kinds of journey defect were found and
 no product defect (section 2a). Every gate reran on rc7 under the three rules.
 
+m25 extends the journey observer to additional host files and runtime state.
+It found that provider executables listened beyond loopback (P1). D53
+restricts the binding to `127.0.0.1`. The successor candidate is
+`rust-0.3.0-rc8`. The expanded journey evidence is in progress.
+
 ## 1. The candidate
 
 | Field | Value |
 |---|---|
-| Name | `rust-0.3.0-rc7` ([`evidence/cutover/candidate.json`](../../../evidence/cutover/candidate.json)) |
+| Name | `rust-0.3.0-rc8` ([`evidence/cutover/candidate.json`](../../../evidence/cutover/candidate.json)) |
 | Version | `0.3.0` (the binary's `--version`; D28 makes 0.3.0 the first Rust package) |
-| Commit | `cf151caa7b5b13b29f553d9645221ba734fa3264` (branch `claude/m21-self-probe`) |
+| Commit | `a8c018197e6ba0136c02274d9d7a78bad2973655` (branch `claude/m25-observer-coverage`) |
 | Built | locally with `tools/release/build-artifacts.sh`, `VERSION=0.3.0`; no tag, no publish. The set carries a CycloneDX SBOM, `sbom.cdx.json`, with its own checksum |
-| `SHA256SUMS` | `sha256:e01d7bb8cfbb504fdd0b4940f5a05b9355534ee715892012da2f4b9d9be95df6` |
-| `host-agent-linux-x64` | `f5b1175704c97b1a46f24be5a854b71c3375ac270468b52783683c5b4b260ff0` |
-| `host-agent-linux-x64.gz` | `a8443363f9284f75be74adbb5499e978ab01c5363fb0acdc8258877d0b8f3da7` |
-| `host-agent-linux-arm64.gz` | `b2396cc0e1860e30869415614cc7f29931e3126e6e160136a387b140380772cf` |
-| `opute-provider-k3s-linux-x64` | `e9f8c3882b728fbd77b77bd216521d39bc3ceb022427f00a49709ed90254cfb4` |
-| `opute-provider-cloudflare-linux-x64` | `9800ebfb72b44a53d89a1e605d9dd3b1f2ef46c245fac5a0d74acd7e263b6515` |
-| `opute-provider-tailscale-linux-x64` | `3d78e0916fdede00c62b40fe9f64376ef5630f0973574938775958e731f44a1d` |
+| `SHA256SUMS` | `sha256:e87d480ed303d2dc859fd859c2cf54965076aa12031801fb3ef7dafd4904aa87` |
+| `host-agent-linux-x64` | `0cd61080aad40c6e40730f9a96d49adddbbb43aa06ae390c35957e848089fc60` |
+| `host-agent-linux-x64.gz` | `f8fe9ea72594cd17c4d51bdcbb1dc653c2fe6df00a07ad535a2d56f583628817` |
+| `host-agent-linux-arm64.gz` | `c9f77a7721a52fe6ccee21cfc5701eb0ec264cf39a2715c4cfc1d06e638cdb03` |
+| `opute-provider-k3s-linux-x64` | `5726d74524c3b68948feb78a045ee1ed2191971a4e94f7ce7a725a2f479429bc` |
+| `opute-provider-cloudflare-linux-x64` | `9f8224dfd60932b0dfcfd1847ee810e3efdc9ec90f33e331fe8847bc012d875d` |
+| `opute-provider-tailscale-linux-x64` | `975b3fd51f223f0c7bc5e6ccda2ada8775d12fce67b5bedd1a268c3e272238c4` |
 | Catalog revision, standalone | `sha256:9aba4c895695d25c6b8f91aecf06297a813283561bfe308a50cc3569fb20d912` (142 public tools; the site capture from the binary reports the same revision) |
 | Catalog revision, platform | `sha256:257a3f615b68b4b889f182659dc3c9aa32540bfa2653d53ece099050884d0483` |
-| Upgrade target | `rust-0.3.0-rc7-next`, `0.3.1-e2e`, the same commit, used only by the in-place upgrade journeys |
+| Upgrade target | `rust-0.3.0-rc8-next`, `0.3.1-e2e`, the same commit, used only by the in-place upgrade journeys |
 
-The dev VM was rebuilt from this set; its build refuses unless the installed
-binary reports `0.3.0`. Go stays the published v0.2.4 release
+The dev VM build verifies that the installed binary reports `0.3.0`. Go stays the published v0.2.4 release
 (`baseline/source-lock.json`).
 
 ## 2. Gates and receipts
 
-Every gate ran on the candidate under one run id, `m24-r1`
+Every gate ran on rc7 under one run id, `m24-r1`
 (`evidence/e2e/runs/m24-r1/`), with the m22 outcome rule, the m23 effect
-rule and the m24 allowance rule on. `evidence/e2e/verify.py --gate` passes each gate. Every `tools/call`
+rule and the m24 allowance rule on. Each receipt passed at the m24
+revision. Every `tools/call`
 and `tasks/get` step of every journey asserts its outcome. Every mutation a
 journey expects to succeed is confirmed by a later observation, or opts out
 with its reason. Every effects pattern matches a change of the journey's
@@ -200,6 +205,7 @@ ran another on rc6's code (`evidence/m19/fuzz.txt`), and m21 one on rc7's
 | J3 | m23 effect rule, its own draft on rc7 | The new read-back of `e2e1.restart`'s resubmission assumed the run stayed `unknown`; the resubmission resumes the same durable run (`running`), and Q15 requires only that it is admitted | journey defect, fixed: same run id, `running` or `completed`; [`evidence/m23`](../../../evidence/m23/README.md) |
 | W1 | m24 allowance rule | `e2e2.host-ops` allowed `~/evil`, the file a path-traversal escape would write, so an escape would have passed the effects check | journey defect, fixed: removed |
 | W2-W5 | m24 allowance rule | Patterns that could not match (`packages/*`, `users/*`, `groups/*`, kinds the state never records), units stopped before the after-state, patterns covering a whole tree (`files//etc*`, `incus/*`, `system/*`, `files//etc/systemd/system/*`), and `persist` patterns no run left residue for | journey defects, fixed: each pattern names its run's change; [`evidence/m24`](../../../evidence/m24/README.md) |
+| P1 | m25 socket observation on rc7 | Provider executables listened on all host interfaces | D53 binds providers to IPv4 loopback. See [m25 evidence](../../../evidence/m25/README.md). |
 | O1 | e2e-6 budget | Audit rows are never pruned: about 3.5 KB per call, 78 MB in 15 minutes of heavy load | open in 0.3.0: D42 sets retention for 0.4.0 only (D43) |
 
 Each m18 fix has a test that failed on rc4's code
@@ -260,6 +266,7 @@ linked changes.
 | D50 | The cluster agent's config goes on stdin and is written 0600; Go embedded it base64-encoded in the install script | Host Agent owner, delegated 2026-11-11 |
 | D51 | `ensure_local_llm_relay.upstreamToken` is published `writeOnly` | Host Agent owner, delegated 2026-11-11 |
 | D52 | The public-MCP connector probes the agent's own resources with an in-process token; Go asked its token endpoint without a secret | Host Agent owner, delegated 2026-11-11 |
+| D53 | Provider executables listen on IPv4 loopback at their configured port | Host Agent owner, 2026-11-21 |
 
 D1 (bit-compatible SQLite), D4–D7, D14 and D15 constrain how the migration
 was done or scoped; they change no observable behaviour against Go.
@@ -301,10 +308,14 @@ hosts, Platform registration, tunnels and DNS were never touched.
 
 ## 6. Sign-off
 
+The 2026-11-21 approval covers rc7 on `m24-r1`. The provider listener
+change in D53 reopens review for the successor candidate. The owner rows
+below preserve the historical decision.
+
+
 The owner, who holds all four roles, signed off in the session on
 2026-11-21 ("I'm signing off on your recommendations") and chose to record
-it in every row. The approval covers the candidate as reviewed in sections 1
-to 5, on run `m24-r1`. It does not tag, publish or select a production host:
+it in every row. The approval covers rc7 and its evidence on run `m24-r1`. It does not tag, publish or select a production host:
 cutover through the normal rollout path is a separate, explicit step, and Go
 stays the production owner until then (task 6.3).
 
