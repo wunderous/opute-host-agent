@@ -125,7 +125,7 @@ def sockets() -> list[str]:
         if cols[0] == "udp" and low <= int(cols[4].rsplit(":", 1)[1]) <= high:
             continue
         name = re.search(r'"([^"]+)"', line)
-        out.add(f"{cols[0]} {cols[4]} {name.group(1) if name else '-'}")
+        out.append(f"{cols[0]} {cols[4]} {name.group(1) if name else '-'}")
     return sorted(out)
 
 

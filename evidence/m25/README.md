@@ -50,3 +50,9 @@ The 0.4.0 draft also found an intermittent restart journey failure.
 Systemd sent SIGKILL to the agent process, then reported an error for an
 auxiliary process that had already exited. The journey now targets the
 main process so it can observe the service restart.
+
+The first rc8 baseline build stopped in the socket observer. Its accumulator
+had been changed to a list to preserve duplicate listeners, but insertion
+still called the set method. The build log is archived as
+`.parity/e2e/m25-main-after-draft.log` and the baseline was rebuilt after
+correcting the insertion.
