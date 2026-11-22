@@ -31,6 +31,12 @@ single IPv4 loopback listener when started in a clean temporary directory.
 
 ## Findings from the 0.3.0 draft
 
+The rc7 draft `m25-d3` exposed effects that the journeys had yet to
+declare. Its receipts were moved to `.parity/retired/m25-d3` after
+classification. The rc8 run uses the updated observer, declarations and
+cleanup steps.
+
+
 | Finding | Classification | Work |
 | --- | --- | --- |
 | P1. Provider executables listened on all host interfaces. | Product defect | D53 binds the shared listener to IPv4 loopback. The failing-first log and the focused Rust test cover the listener. The provider-body journey verifies the installed binary's socket. |
