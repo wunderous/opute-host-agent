@@ -697,7 +697,7 @@ def j7() -> dict:
                   "guest": "grep -c -F '${SECRET:j7content}' /home/opute/.config/opute-e2e/j7-term.txt"}, "termRun"),
         call("killRun", "run_host_plan", {"plan": kill_plan}, capture={"KILL_RUN": "response.body.result.structuredContent.runId"}),
         call("killInFlight", "get_host_plan_run", {"runId": "${KILL_RUN}"}, until=in_flight, timeout=30),
-        {"id": "kill", "guest": f"systemctl kill -s KILL {UNIT} && sleep 1 && {WAIT_HEALTH.format(port=3014)} && "
+        {"id": "kill", "guest": f"systemctl kill --kill-who=main -s KILL {UNIT} && sleep 1 && {WAIT_HEALTH.format(port=3014)} && "
                                 f"{T} unit {UNIT}"},
         mcp("killList", "tools/list"),
         call("killAfter", "get_host_plan_run", {"runId": "${KILL_RUN}"}),

@@ -39,3 +39,8 @@ single IPv4 loopback listener when started in a clean temporary directory.
 | J3. The harness left PID comparison files under `/tmp`. | Journey defect | Store them with the harness's guest tools. |
 | J4. Transient agents, serving workloads, installed providers, guests, and test mounts were absent from the old effect lists. | Journey defect | Name the files, services, processes, listeners and mounts the journeys leave until cleanup. |
 | H1. Apt mirror indexes, PackageKit and K3s kernel extensions vary with the mirror, idle timer or fixture state. | Host-dependent | Limit optional allowances to the known effects and record a reason alongside each pattern. |
+
+The 0.4.0 draft also found an intermittent restart journey failure.
+Systemd sent SIGKILL to the agent process, then reported an error for an
+auxiliary process that had already exited. The journey now targets the
+main process so it can observe the service restart.
