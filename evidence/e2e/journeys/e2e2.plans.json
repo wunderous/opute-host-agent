@@ -225,11 +225,21 @@
    "incus/storage/default/used_by",
    "system/units/sys-devices-virtual-net-veth*",
    "system/units/sys-subsystem-net-devices-veth*",
+   "links/veth*",
+   "processes//lxc.monitor.e2e-p1 incusd",
+   "processes//lxc.monitor.e2e-r1 incusd",
+   "processes//lxc.payload.e2e-p1 guest",
+   "processes//lxc.payload.e2e-r1 guest",
    "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
    "system/units/e2e-slow.service",
-   "system/unitFiles/e2e-slow.service"
+   "system/unitFiles/e2e-slow.service",
+   "processes//system.slice/e2e-slow.service python3",
+   "sockets/tcp 127.0.0.1:8799 python3",
+   "modules/veth"
   ],
-  "persist": []
+  "persist": [
+   "modules/veth"
+  ]
  },
  "steps": [
   {

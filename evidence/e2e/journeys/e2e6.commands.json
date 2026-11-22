@@ -79,10 +79,18 @@
  ],
  "effects": {
   "allow": [
+   "files//tmp/e2e-agents/stubs*",
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-hang.service",
    "system/unitFiles/e2e-agent-hang.service",
+   "files//tmp/e2e-agents/hang*",
+   "processes//system.slice/e2e-agent-hang.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3043 opute-host-agen",
    "system/units/e2e-agent-junk.service",
-   "system/unitFiles/e2e-agent-junk.service"
+   "system/unitFiles/e2e-agent-junk.service",
+   "files//tmp/e2e-agents/junk*",
+   "processes//system.slice/e2e-agent-junk.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3044 opute-host-agen"
   ],
   "persist": []
  },
@@ -175,7 +183,7 @@
   },
   {
    "id": "stubsGone",
-   "guest": "pkill -f incus-hang; rm -rf /tmp/e2e-agents/stubs; rmdir /tmp/e2e-agents 2>/dev/null; true"
+   "guest": "pkill -f '[i]ncus-hang'; rm -rf /tmp/e2e-agents/stubs; rmdir /tmp/e2e-agents 2>/dev/null; true"
   }
  ],
  "maxMinutes": 10

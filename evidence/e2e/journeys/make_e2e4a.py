@@ -48,17 +48,46 @@ OPUTE_UID = 1001  # the snapshot's opute user
 # the agent user's session, as the service supervisor leaves it: linger and the user manager
 USER_SESSION = ["linger", "files//var/lib/systemd/linger/opute", f"system/units/user@{OPUTE_UID}.service",
                 f"system/units/user-runtime-dir@{OPUTE_UID}.service", f"system/units/user-{OPUTE_UID}.slice",
-                f"system/units/run-user-{OPUTE_UID}.mount"]
+                f"system/units/run-user-{OPUTE_UID}.mount",
+                # m25: the manager itself, its runtime mount and the units it starts by default
+                "opute/running", f"mounts//run/user/{OPUTE_UID} tmpfs",
+                *(f"processes//user.slice/user-{OPUTE_UID}.slice/user@{OPUTE_UID}.service/{p}" for p in (
+                    "init.scope systemd", "init.scope (sd-pam)", "session.slice/dbus.service dbus-daemon")),
+                *(f"opute/units/{u}" for u in (
+                    "dbus.service", "dbus.socket", "dirmngr.socket", "gpg-agent-browser.socket",
+                    "gpg-agent-extra.socket", "gpg-agent-ssh.socket", "gpg-agent.socket", "init.scope",
+                    "keyboxd.socket", "launchpadlib-cache-clean.timer", "pk-debconf-helper.socket",
+                    "snapd.session-agent.socket"))]
 # the snapshot's images a guest is created from, cached by Incus under their fingerprints: parity-noble (as in
 # e2e-3a) and parity-noble-vm
 IMAGE_VOLUME = ha.IMAGE_VOLUME
 VM_IMAGE_VOLUME = "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b"
-SLOW_UNIT = ["system/units/e2e-slow.service", "system/unitFiles/e2e-slow.service"]
-AGENT_B_UNIT = ["system/units/e2e-agent-b.service", "system/unitFiles/e2e-agent-b.service"]
+SLOW_UNIT = ["system/units/e2e-slow.service", "system/unitFiles/e2e-slow.service",
+             "processes//system.slice/e2e-slow.service python3", "sockets/tcp 127.0.0.1:8799 python3"]
+
+
+def agent_b(port: int) -> list[str]:
+    """A transient agent B (e2etool agent start): its unit, process, port and /tmp root (m25)."""
+    return ["system/units/e2e-agent-b.service", "system/unitFiles/e2e-agent-b.service",
+            "processes//system.slice/e2e-agent-b.service opute-host-agen", f"sockets/tcp 127.0.0.1:{port} opute-host-agen",
+            "files//tmp/e2e-agents", "files//tmp/e2e-agents/b*"]
 # install_virtualization_stack (and reset_virtualization_stack's reinstall) installs *or upgrades* Incus from its
 # package source: a declared, lasting effect that cleanup cannot undo
 STACK_REINSTALL = ["files//opt/incus*", "files//usr/lib/systemd/system/incus.service*", "files//var/lib/dpkg/info/incus*",
                    "system/units/linstor-satellite.service", "system/units/packagekit.service"]
+# m25: apt's own state after an install, which stays: the archive's indexes, dpkg's status, and PackageKit,
+# which apt's hook starts
+APT_INDEXES = [f"files//var/lib/apt/lists/{source}*"
+               for source in ("archive.ubuntu.com_ubuntu_dists_noble",
+                              "security.ubuntu.com_ubuntu_dists_noble-security",
+                              "pkgs.zabbly.com_incus_stable_dists_noble")]
+PACKAGEKIT = "processes//system.slice/packagekit.service packagekitd"
+APT_STATE = APT_INDEXES + ["files//var/lib/dpkg/status*", PACKAGEKIT]
+APT_OPTIONAL = {**dict.fromkeys(APT_INDEXES, "the archive's indexes depend on the mirror's state at run time"),
+                PACKAGEKIT: "PackageKit exits on its own idle timer"}
+GUEST_KERNEL = ha.GUEST_KERNEL
+VM_KERNEL = ["modules/tap", "modules/vhost_net"]
+K3S_KERNEL, K3S_OPTIONAL = ha.K3S_KERNEL, ha.K3S_OPTIONAL
 
 
 def guest_effects(*names: str) -> list[str]:
@@ -66,7 +95,10 @@ def guest_effects(*names: str) -> list[str]:
     storage pool's users, and each container's veth device."""
     return ([f"incus/instances/{n}" for n in names] + [f"incus/volumes/default/container/{n}" for n in names]
             + ["incus/profiles/default/used_by", "incus/networks/incusbr0/used_by", "incus/storage/default/used_by",
-               "system/units/sys-devices-virtual-net-veth*", "system/units/sys-subsystem-net-devices-veth*"])
+               "system/units/sys-devices-virtual-net-veth*", "system/units/sys-subsystem-net-devices-veth*",
+               "links/veth*"]
+            # m25: the host side of each container: its monitor and its processes
+            + [f"processes//lxc.monitor.{n} incusd" for n in names] + [f"processes//lxc.payload.{n} guest" for n in names])
 SVC = "host-service:local:system/dbus.service"  # the binding set_host_service_state is admitted against
 UNIT_TEXT = ("[Unit]\nDescription=e2e web\n\n[Service]\nExecStart=/usr/bin/python3 -m http.server 8781 "
              "--bind 127.0.0.1 --directory /tmp\n\n[Install]\nWantedBy=default.target\n")
@@ -75,22 +107,25 @@ SUMS_SHA = "726d24fbdca8e47c01733ad73d1791efcc1ac3e96bb3daf40b17696c28176689"
 INPUTS = {"agent": base.AGENT, "files": dict(base.TOOL_FILES)}
 
 
-def journey(id_, gate, description, requirements, steps, cleanup, allow=(), persist=(), minutes=20, inputs=None):
+def journey(id_, gate, description, requirements, steps, cleanup, allow=(), persist=(), minutes=20, inputs=None,
+            optional=None):
+    optional = {p: why for p, why in (optional or {}).items() if p in allow or p in persist}
     allow = list(allow) + [p for p in persist if p not in allow]  # what may remain must also be allowed
     for step in list(steps) + list(cleanup):  # a refusal for capacity is waited out, as a client must
         if step.get("mcp") == "tools/call":
             step.setdefault("retryOn", ["host_capacity_saturated"])
     return base.journey(id_, description, inputs or INPUTS, requirements, steps, cleanup, allow=allow,
-                        persist=list(persist), minutes=minutes, gate=gate)
+                        persist=list(persist), minutes=minutes, gate=gate, optional=optional)
 
 
 USER_SYSTEMCTL = "runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user"
 
 
 def pid_before(id_: str, unit: str, user: bool = False) -> dict:
-    """The unit's main PID, kept on the guest for `restarted` to compare after a restart (m23)."""
+    """The unit's main PID, kept on the guest for `restarted` to compare after a restart (m23), in the harness's
+    own directory: under /tmp it outlived the journey (m25)."""
     ctl = USER_SYSTEMCTL if user else "systemctl"
-    return {"id": id_, "guest": f"{ctl} show -p MainPID --value {unit} | tee /tmp/{id_}.pid"}
+    return {"id": id_, "guest": f"{ctl} show -p MainPID --value {unit} | tee /opt/opute-e2e/guest/{id_}.pid"}
 
 
 def restarted(id_: str, before: str, unit: str, *confirmed: str, user: bool = False) -> dict:
@@ -98,8 +133,8 @@ def restarted(id_: str, before: str, unit: str, *confirmed: str, user: bool = Fa
     ctl = USER_SYSTEMCTL if user else "systemctl"
     return {"id": id_, "confirms": list(confirmed), "guest": (
         f"for i in $(seq 60); do now=$({ctl} show -p MainPID --value {unit}); [ \"$now\" != 0 ] && "
-        f"[ \"$now\" != \"$(cat /tmp/{before}.pid)\" ] && {ctl} is-active -q {unit} && break; sleep 0.5; done; "
-        f"{ctl} is-active {unit}; [ \"$now\" != \"$(cat /tmp/{before}.pid)\" ] && echo restarted")}
+        f"[ \"$now\" != \"$(cat /opt/opute-e2e/guest/{before}.pid)\" ] && {ctl} is-active -q {unit} && break; sleep 0.5; done; "
+        f"{ctl} is-active {unit}; [ \"$now\" != \"$(cat /opt/opute-e2e/guest/{before}.pid)\" ] && echo restarted")}
 
 
 def linger(id_: str = "linger") -> dict:
@@ -299,7 +334,7 @@ def host_ops() -> dict:
     # allowed (m24). The user unit's files go with removeUnit; its directories stay until cleanup.
     allow = (["files//home/opute/e2e*", "files//home/opute/.config/systemd", "files//home/opute/.config/systemd/user",
               "files//usr/bin/ninja", "files//var/lib/dpkg/info/ninja-build.*"] + USER_SESSION + STACK_REINSTALL)
-    persist = STACK_REINSTALL
+    persist = STACK_REINSTALL + APT_STATE
     return journey(
         "e2e2.host-ops", "e2e-2",
         "Host operations on the dev VM itself through typed calls: a user service's lifecycle (file, enable, "
@@ -367,11 +402,11 @@ def incus() -> dict:
         *task("stopC", "stop_vm", {"uri": C1}, B),
         {"id": "cStopped", "guest": "incus list e2e-c1 -c s -f csv", "confirms": ["stopC"]},
         *task("startC", "start_vm", {"uri": C1}, B),
-        {"id": "cStarted", "guest": "incus info e2e-c1 | sed -n 's/^PID: //p' | tee /tmp/e2e-c1.pid; "
+        {"id": "cStarted", "guest": "incus info e2e-c1 | sed -n 's/^PID: //p' | tee /opt/opute-e2e/guest/e2e-c1.pid; "
                                     "incus list e2e-c1 -c s -f csv", "confirms": ["startC"]},
         *task("restartC", "restart_vm", {"uri": C1}, B),
         {"id": "cRestarted", "confirms": ["restartC"], "guest": (
-            "[ \"$(incus info e2e-c1 | sed -n 's/^PID: //p')\" != \"$(cat /tmp/e2e-c1.pid)\" ] && echo restarted; "
+            "[ \"$(incus info e2e-c1 | sed -n 's/^PID: //p')\" != \"$(cat /opt/opute-e2e/guest/e2e-c1.pid)\" ] && echo restarted; "
             "incus list e2e-c1 -c s -f csv")},
         call("infoAfter", "get_vm_info", {"uri": C1}, B,
              until={"path": "response.body.result.structuredContent.ipv4[0]", "in": [STATIC_IP]}, timeout=120,
@@ -490,8 +525,8 @@ def incus() -> dict:
         "done; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     # e2e-c1 and e2e-v1 are deleted by typed calls; e2e-foreign stays until cleanup. The reset reinstalls the stack.
-    allow = guest_effects("e2e-foreign") + [IMAGE_VOLUME, VM_IMAGE_VOLUME] + AGENT_B_UNIT + STACK_REINSTALL
-    persist = STACK_REINSTALL
+    allow = guest_effects("e2e-foreign") + [IMAGE_VOLUME, VM_IMAGE_VOLUME] + agent_b(B_PORT) + STACK_REINSTALL
+    persist = STACK_REINSTALL + APT_STATE + GUEST_KERNEL + VM_KERNEL
     inputs = {"agent": base.AGENT, "agentB": f"a transient Rust agent {B_ID} on port {B_PORT} (e2etool agent start) "
                                              "with Incus ownership enforced and itself as the shared host owner",
               "images": "the snapshot's local Incus images parity-noble (container) and parity-noble-vm",
@@ -683,7 +718,7 @@ def plans() -> dict:
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     allow = ["files//home/opute/e2e*"] + guest_effects("e2e-p1", "e2e-r1") + [IMAGE_VOLUME] + SLOW_UNIT
-    persist = []
+    persist = GUEST_KERNEL
     inputs = {"agent": base.AGENT, "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files}
     return journey(
         "e2e2.plans", "e2e-2",
@@ -752,8 +787,14 @@ def cluster_cleanup(extra: str = "") -> list[dict]:
 # the k3s provider beside the agent, and the single-node cluster's guest
 CLUSTER_EFFECTS = (["files//home/opute/.config/opute-e2e", "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
                     "files//opt/opute-e2e/providers", "files//opt/opute-e2e/providers/opute-provider-k3s",
-                    "system/units/e2e-provider-k3s.service", "system/unitFiles/e2e-provider-k3s.service"]
+                    "system/units/e2e-provider-k3s.service", "system/unitFiles/e2e-provider-k3s.service",
+                    "processes//system.slice/e2e-provider-k3s.service opute-provider-",
+                    "sockets/tcp 127.0.0.1:4320 opute-provider-",
+                    "processes//system.slice/incus.service incusd"]  # loopback only (D53)
                    + guest_effects("e2e-k1") + [IMAGE_VOLUME])
+CLUSTER_PERSIST = K3S_KERNEL + GUEST_KERNEL
+INCUS_WORKER = "processes//system.slice/incus.service incusd"
+CLUSTER_OPTIONAL = {**K3S_OPTIONAL, INCUS_WORKER: "Incus may still have an active worker at inspection"}
 CLUSTER_INPUTS = {"agent": base.AGENT + ", with the Rust k3s provider 1.0.2 from the release (e2e-provider-k3s, "
                                         "port 4320)",
                   "k3s": ha.INPUTS["k3s"]}
@@ -785,6 +826,9 @@ PODMAN_CLEANUP = (
     f"if [ -f /tmp/e2e-pkgs-before ]; then {PKGS} > /tmp/e2e-pkgs-after; comm -13 /tmp/e2e-pkgs-before "
     "/tmp/e2e-pkgs-after | DEBIAN_FRONTEND=noninteractive xargs -r apt-get purge -y -q >/dev/null 2>&1; fi; "
     "rm -f /tmp/e2e-pkgs-before /tmp/e2e-pkgs-after; "
+    # rootless Podman's pause process (in the agent's own unit) and the state it keeps under /tmp when the agent's
+    # user has no XDG_RUNTIME_DIR, and root's image store (m25)
+    "pkill -x catatonit; rm -rf /tmp/containers-user-1001 /tmp/podman-run-1001 /var/lib/containers; "
     # what the purge and apt leave behind: Podman's runtime network config, the empty apparmor disable directory
     # passt's purge removes, and the units apt started
     "rm -rf /etc/containers; mkdir -p -m 0755 /etc/apparmor.d/disable; systemctl daemon-reload; "
@@ -798,6 +842,10 @@ PODMAN_PACKAGES = ("aardvark-dns", "buildah", "catatonit", "conmon", "containern
                    "slirp4netns", "uidmap")
 PODMAN_BINARIES = ("buildah", "catatonit", "conmon", "crun", "fuse-overlayfs", "getsubids", "newgidmap", "newuidmap",
                    "passt", "passt.avx2", "pasta", "pasta.avx2", "podman", "podmansh", "qrap", "slirp4netns")
+PODMAN_OPTIONAL = {
+    "files//tmp/podman-run-1001*": "Podman uses a /tmp runtime directory only without XDG_RUNTIME_DIR",
+    "processes//system.slice/opute-bootstrap-mcp.service catatonit": "Podman may still have its pause process",
+}
 PODMAN_EFFECTS = ([f"files//var/lib/dpkg/info/{p}.*" for p in PODMAN_PACKAGES]
                   + [f"files//usr/bin/{b}" for b in PODMAN_BINARIES]
                   + ["files//usr/lib/systemd/system/podman*", "files//usr/lib/systemd/system/cni-dhcp.*",
@@ -812,7 +860,22 @@ PODMAN_EFFECTS = ([f"files//var/lib/dpkg/info/{p}.*" for p in PODMAN_PACKAGES]
                      "files//etc/systemd/system/timers.target.wants/podman-auto-update.timer",
                      "system/unitFiles/podman*", "system/unitFiles/cni-dhcp.*", "system/units/podman*",
                      "system/units/boot-complete.target", "system/units/packagekit.service",
-                     "files//home/opute/.local/share/containers*", "files//home/opute/.config/cni*"])
+                     "files//home/opute/.local/share/containers*", "files//home/opute/.config/cni*"]
+                  # m25: the package scripts' record of the units they enabled, the pause process and Podman's
+                  # runtime state, root's image store, and the package list the cleanup compares against
+                  + [f"files//var/lib/systemd/deb-systemd-helper-enabled/{f}" for f in (
+                      "cni-dhcp.service.dsh-also", "cni-dhcp.socket.dsh-also", "default.target.wants",
+                      "default.target.wants/podman-auto-update.service", "default.target.wants/podman-clean-transient.service",
+                      "default.target.wants/podman-restart.service", "default.target.wants/podman.service",
+                      "podman-auto-update.service.dsh-also", "podman-auto-update.timer.dsh-also",
+                      "podman-clean-transient.service.dsh-also", "podman-restart.service.dsh-also",
+                      "podman.service.dsh-also", "podman.socket.dsh-also", "sockets.target.wants/podman.socket",
+                      "timers.target.wants/podman-auto-update.timer")]
+                  + ["files//var/lib/apt/extended_states*", "files//tmp/e2e-pkgs-before",
+                     "files//tmp/containers-user-1001*", "files//tmp/podman-run-1001*", "files//var/lib/containers*",
+                     "opute/units/podman-pause-*",
+                     "processes//user.slice/user-1001.slice/user@1001.service/user.slice/podman-pause-*",
+                     "processes//system.slice/opute-bootstrap-mcp.service catatonit"])
 
 
 def oci() -> dict:
@@ -912,12 +975,14 @@ def oci() -> dict:
     ]
     cleanup = cluster_cleanup(f"rm -rf {CTX}; loginctl disable-linger opute; " + PODMAN_CLEANUP)
     allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*"] + PODMAN_EFFECTS + USER_SESSION
+    persist, optional = CLUSTER_PERSIST + APT_STATE, {**CLUSTER_OPTIONAL, **APT_OPTIONAL, **PODMAN_OPTIONAL}
     return journey(
         "e2e2.oci", "e2e-2",
         "OCI build, push and pull on a single-node K3s cluster built through typed calls: ensure a builder, stage "
         "a context, install a registry in the cluster, build and push an image, trust the registry in K3s and "
         "run the image by digest in a pod; then apply the storage policy, inspect and clean up.",
-        reqs, steps, cleanup, allow=allow, minutes=28, inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
+        reqs, steps, cleanup, allow=allow, persist=persist, optional=optional, minutes=28,
+        inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
 
 
 # --- e2e-2 / 5. data services -----------------------------------------------------------------------------
@@ -1002,12 +1067,14 @@ def data() -> dict:
     cleanup = cluster_cleanup(f"rm -rf {SQLITE}; ")
     # the relay is released and the databases removed within the steps
     allow = CLUSTER_EFFECTS
+    persist, optional = CLUSTER_PERSIST, CLUSTER_OPTIONAL
     return journey(
         "e2e2.data", "e2e-2",
         "Data services on a single-node K3s cluster built through typed calls: a CloudNativePG service reconciled "
         "with a local relay, a client through the relay with the issued token writing and reading a row, the "
         "token in no durable row, relay release and service removal; then a SQLite database's lifecycle.",
-        reqs, steps, cleanup, allow=allow, minutes=28, inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
+        reqs, steps, cleanup, allow=allow, persist=persist, optional=optional, minutes=28,
+        inputs={**CLUSTER_INPUTS, "files": CLUSTER_FILES})
 
 
 # --- e2e-3 / 1. cluster discovery -------------------------------------------------------------------------
@@ -1130,7 +1197,8 @@ def discovery() -> dict:
         "Cluster discovery through the neutral name, as the Use cases page describes it: no provider; an "
         "available provider with an empty inventory; one healthy single-node K3s cluster with its resources, "
         "events and keys; the cluster's server stopped; the provider unreachable (a failed probe), then back.",
-        reqs, steps, cluster_cleanup(), allow=CLUSTER_EFFECTS, minutes=25, inputs=inputs)
+        reqs, steps, cluster_cleanup(), allow=CLUSTER_EFFECTS, persist=CLUSTER_PERSIST, optional=CLUSTER_OPTIONAL,
+        minutes=25, inputs=inputs)
 
 
 # --- e2e-3 / 2. site deploy through its recipe -------------------------------------------------------------
@@ -1285,14 +1353,16 @@ def site() -> dict:
     ]
     cleanup = cluster_cleanup(f"rm -rf {SITE_CTX} {HOME}/e2e /tmp/e2e-site.html; loginctl disable-linger opute; "
                               + PODMAN_CLEANUP)
-    allow = CLUSTER_EFFECTS + ["files//home/opute/.opute*", "files//home/opute/e2e*"] + PODMAN_EFFECTS + USER_SESSION
+    allow = (CLUSTER_EFFECTS + ["files//home/opute/.opute*", "files//home/opute/e2e*", "files//tmp/e2e-site.html"]
+             + PODMAN_EFFECTS + USER_SESSION)
     return journey(
         "e2e3.site", "e2e-3",
         "Site deploy through the opute-site-deploy recipe on a single-node K3s cluster: the site image built "
         "locally from the published source and pushed to an e2e registry, the recipe's own nodes run with the "
         "image pinned by digest, the page served at a local test hostname (no tunnel, no public host), a rerun, "
         "and removal through the teardown recipe.",
-        reqs, steps, cleanup, allow=allow, minutes=28,
+        reqs, steps, cleanup, allow=allow, persist=CLUSTER_PERSIST + APT_STATE,
+        optional={**CLUSTER_OPTIONAL, **APT_OPTIONAL, **PODMAN_OPTIONAL}, minutes=28,
         inputs={**CLUSTER_INPUTS, "source": f"{SITE_SRC} (sha256 {SITE_SRC_SHA})", "files": files})
 
 
@@ -1393,15 +1463,22 @@ def serving() -> dict:
         "XDG_RUNTIME_DIR=/run/user/$uid systemctl --user stop $u; done; "
         f"rm -rf {HOME}/e2e /tmp/serving-assignment-* {HOME}/.config/systemd/user/e2e-model.service; "
         f"rmdir {HOME}/.config/systemd/user {HOME}/.config/systemd 2>/dev/null; loginctl disable-linger opute; true")}]
-    # the assignment's process and the gateway are stopped within the steps
-    allow = ["files//home/opute/e2e*"] + USER_SESSION
+    # The gateway stops in the steps. The runtime remains up until cleanup.
+    allow = ["files//home/opute/e2e*", "files//tmp/serving-assignment-e2e-model-supervisor.log",
+             "files//tmp/serving-assignment-e2e-model.pid", "files//tmp/serving-assignment-e2e-model.state.json",
+             "opute/units/host-serving-e2e-model.service", "sockets/tcp 127.0.0.1:18091 python3",
+             f"processes//user.slice/user-{OPUTE_UID}.slice/user@{OPUTE_UID}.service/"
+             "opute.slice/opute-workload.slice/host-serving-e2e-model.service python3"] + USER_SESSION
+    bus = ("opute/units/dbus.service", f"processes//user.slice/user-{OPUTE_UID}.slice/user@{OPUTE_UID}.service/"
+                                      "session.slice/dbus.service dbus-daemon")
+    optional = dict.fromkeys(bus, "The user bus may only have its socket active at inspection")
     return journey(
         "e2e3.serving", "e2e-3",
         "Local model serving through the Host Agent's serving path: a serving assignment runs an OpenAI-compatible "
         "runtime (a test fixture), the gateway (ensure_local_llm_relay) admits a token-bearing request and "
         "returns a completion, the probe reports it ready, and removal leaves nothing behind. A real runtime and "
         "weights are blocked: they need downloads beyond test fixtures.",
-        reqs, steps, cleanup, allow=allow, minutes=15,
+        reqs, steps, cleanup, allow=allow, optional=optional, minutes=15,
         inputs={"agent": base.AGENT, "runtime": "evidence/e2e/journeys/inputs/e2e-openai-fixture.py (a fixture, "
                                                  "not a model)", "files": files})
 
@@ -1612,7 +1689,12 @@ def cutover() -> dict:
         f"rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /tmp/e2e-sync.json /tmp/e2e-go-state.sha; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
-    allow = (["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*"]
+    allow = (["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*",
+              "files//tmp/e2e-cutover-rust-instances*", "files//tmp/e2e-go-state.sha", "files//tmp/e2e-sync.json",
+              "opute/units/opute-host-workload-*.service",
+              f"processes//user.slice/user-{OPUTE_UID}.slice/user@{OPUTE_UID}.service/"
+              "opute.slice/opute-workload.slice/opute-host-workload-*.service sleep",
+              "sockets/tcp [*]:3014 opute-host-agen", "sockets/tcp 0.0.0.0:3014 opute-host-agen"]
              + guest_effects("e2e-g1") + [IMAGE_VOLUME] + SLOW_UNIT + USER_SESSION)
     return journey(
         "e2e4.cutover", "e2e-4",
@@ -1621,7 +1703,7 @@ def cutover() -> dict:
         "call, a working task and a running plan in flight; the Rust release starts on that state, which must "
         "reconcile per table and read back; Rust does new work; then Go starts again on Rust's state and must "
         "report every record with the status Rust last reported.",
-        reqs, steps, cleanup, allow=allow, minutes=28,
+        reqs, steps, cleanup, allow=allow, persist=GUEST_KERNEL, minutes=28,
         inputs={"agent": base.AGENT, "go": f"{base.GO_REL} (published Go v0.2.4 release, SHA256SUMS pinned)",
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 

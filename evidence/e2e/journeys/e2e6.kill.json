@@ -94,10 +94,16 @@
  ],
  "effects": {
   "allow": [
+   "system/units/e2e-slow.service",
+   "system/unitFiles/e2e-slow.service",
+   "processes//system.slice/e2e-slow.service python3",
+   "sockets/tcp 127.0.0.1:8799 python3",
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-kp.service",
    "system/unitFiles/e2e-agent-kp.service",
-   "system/units/e2e-slow.service",
-   "system/unitFiles/e2e-slow.service"
+   "files//tmp/e2e-agents/kp*",
+   "processes//system.slice/e2e-agent-kp.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3042 opute-host-agen"
   ],
   "persist": []
  },

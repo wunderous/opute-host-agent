@@ -140,9 +140,14 @@
  ],
  "effects": {
   "allow": [
+   "system/units/tmp-e2e\\x2dagents-full-state.mount",
+   "mounts//tmp/e2e-agents/full/state tmpfs",
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-full.service",
    "system/unitFiles/e2e-agent-full.service",
-   "system/units/tmp-e2e\\x2dagents-full-state.mount"
+   "files//tmp/e2e-agents/full*",
+   "processes//system.slice/e2e-agent-full.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3040 opute-host-agen"
   ],
   "persist": []
  },

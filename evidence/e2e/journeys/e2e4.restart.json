@@ -16,8 +16,8 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "rustNext": {
-    "path": "${PARITY}/e2e/release/rust-0.3.0-rc7-next/host-agent-linux-x64.gz",
-    "sha256": "aa90e0ad30a2b270b87a5994d69c5b550249b6c07ed8ab9ede3c8804f8a8e22f"
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc8-next/host-agent-linux-x64.gz",
+    "sha256": "166d27912332fdb9ab7deff3f1323e09bebe146ecc586c84e19a811344199c73"
    }
   }
  },
@@ -247,12 +247,31 @@
    "files//opt/opute-e2e/releases/rust-next*",
    "system/units/e2e-slow.service",
    "system/unitFiles/e2e-slow.service",
+   "processes//system.slice/e2e-slow.service python3",
+   "sockets/tcp 127.0.0.1:8799 python3",
    "linger",
    "files//var/lib/systemd/linger/opute",
    "system/units/user@1001.service",
    "system/units/user-runtime-dir@1001.service",
    "system/units/user-1001.slice",
-   "system/units/run-user-1001.mount"
+   "system/units/run-user-1001.mount",
+   "opute/running",
+   "mounts//run/user/1001 tmpfs",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket"
   ],
   "persist": []
  },
