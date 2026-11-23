@@ -237,6 +237,22 @@ the verdict `gates.json` expects. A missing, altered or token-bearing
 receipt fails. The gates e2e-1 to e2e-5 stay blocked until their goals
 record runs.
 
+## Host state observed by journey checks
+
+m25 extends the file snapshots to every home under `/home`, `/root`,
+`/srv`, `/tmp`, `/var/tmp`, `/var/spool`, and `/var/lib`. They include
+file metadata and regular-file hashes. The runtime snapshot also records
+process identities and counts, TCP listeners and UDP sockets outside the
+ephemeral range, stable sysctl values, kernel modules, mounts visible to
+the observer, routes, links, and the `opute` user manager.
+
+Each observation in these runtime categories has its own effects path,
+such as `modules/veth` or `sockets/tcp 127.0.0.1:4320 opute-provider-`.
+The same allowance and cleanup rules apply to these paths. The inventory
+and exclusions are recorded in [the m25 evidence](../m25/README.md).
+The e2e-0 probes for the newly observed effects expect exactly
+`undeclared-effect`.
+
 ## The e2e-0 self-checks
 
 The run `e2e-0-r4` proves the harness can pass and fail (r3 ran on the

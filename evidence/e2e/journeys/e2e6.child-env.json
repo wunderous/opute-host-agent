@@ -122,8 +122,6 @@
  ],
  "effects": {
   "allow": [
-   "system/units/e2e-agent-cenv.service",
-   "system/unitFiles/e2e-agent-cenv.service",
    "incus/instances/e2e-v6",
    "incus/volumes/default/virtual-machine/e2e-v6",
    "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
@@ -132,9 +130,24 @@
    "incus/storage/default/used_by",
    "system/units/sys-devices-virtual-net-tap*",
    "system/units/sys-subsystem-net-devices-tap*",
-   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount"
+   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount",
+   "files//tmp/e2e-agents/child-env-recipe.yaml",
+   "links/tap*",
+   "mounts//var/lib/incus/devices/e2e-v6/config.mount btrfs",
+   "processes//system.slice/incus.service qemu-system-x86",
+   "modules/tap",
+   "modules/vhost_net",
+   "files//tmp/e2e-agents",
+   "system/units/e2e-agent-cenv.service",
+   "system/unitFiles/e2e-agent-cenv.service",
+   "files//tmp/e2e-agents/cenv*",
+   "processes//system.slice/e2e-agent-cenv.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3050 opute-host-agen"
   ],
-  "persist": []
+  "persist": [
+   "modules/tap",
+   "modules/vhost_net"
+  ]
  },
  "steps": [
   {

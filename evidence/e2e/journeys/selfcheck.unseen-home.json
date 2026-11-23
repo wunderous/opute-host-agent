@@ -1,0 +1,38 @@
+{
+ "id": "selfcheck.unseen-home",
+ "gate": "e2e-0",
+ "description": "Negative control for m25: a home directory of a user the observer does not know, undeclared. The observer before m25 did not see it.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: a home directory of a user the observer does not know is an effect",
+   "pass": [
+    {
+     "step": "plant",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "plant",
+   "guest": "install -d /home/opute-e2e-probe"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "remove",
+   "guest": "rmdir /home/opute-e2e-probe"
+  }
+ ],
+ "maxMinutes": 10
+}

@@ -1,0 +1,784 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/b",
+   "files//tmp/e2e-agents/b/home",
+   "files//tmp/e2e-agents/b/home/.cache",
+   "files//tmp/e2e-agents/b/home/.cache/incus",
+   "files//tmp/e2e-agents/b/home/.config",
+   "files//tmp/e2e-agents/b/home/.config/incus",
+   "files//tmp/e2e-agents/b/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/b/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/b/home/.config/opute",
+   "files//tmp/e2e-agents/b/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/b/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/b/instance",
+   "files//tmp/e2e-agents/b/instance/host-agent.lock",
+   "files//tmp/e2e-agents/b/state",
+   "files//tmp/e2e-agents/b/state/authz.sqlite",
+   "files//tmp/e2e-agents/b/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/b/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/b/state/credentials",
+   "files//tmp/e2e-agents/b/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/b/state/credentials/opute-mcp-host.json",
+   "files//tmp/e2e-agents/b/state/host-agent.lock",
+   "files//tmp/e2e-agents/b/state/state.db",
+   "files//tmp/e2e-agents/b/state/state.db-shm",
+   "files//tmp/e2e-agents/b/state/state.db-wal",
+   "incus/instances/e2e-k1",
+   "incus/instances/e2e-k2",
+   "incus/instances/e2e-k3",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-k1",
+   "incus/volumes/default/container/e2e-k2",
+   "incus/volumes/default/container/e2e-k3",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "links/veth19e67ba2",
+   "links/veth6ddd9bac",
+   "links/vetha7359a3d",
+   "modules/br_netfilter",
+   "modules/ip6_udp_tunnel",
+   "modules/ip_set",
+   "modules/ipt_REJECT",
+   "modules/iptable_filter",
+   "modules/iptable_mangle",
+   "modules/iptable_nat",
+   "modules/nf_conntrack_netlink",
+   "modules/nf_reject_ipv4",
+   "modules/nfnetlink_acct",
+   "modules/nfnetlink_log",
+   "modules/nft_compat",
+   "modules/overlay",
+   "modules/udp_tunnel",
+   "modules/veth",
+   "modules/vxlan",
+   "modules/xt_MASQUERADE",
+   "modules/xt_NFLOG",
+   "modules/xt_addrtype",
+   "modules/xt_comment",
+   "modules/xt_conntrack",
+   "modules/xt_limit",
+   "modules/xt_mark",
+   "modules/xt_multiport",
+   "modules/xt_nat",
+   "modules/xt_nfacct",
+   "modules/xt_physdev",
+   "modules/xt_statistic",
+   "modules/xt_tcpudp",
+   "processes//lxc.monitor.e2e-k1 incusd",
+   "processes//lxc.monitor.e2e-k2 incusd",
+   "processes//lxc.monitor.e2e-k3 incusd",
+   "processes//lxc.payload.e2e-k1 guest",
+   "processes//lxc.payload.e2e-k2 guest",
+   "processes//lxc.payload.e2e-k3 guest",
+   "processes//system.slice/e2e-agent-b.service opute-host-agen",
+   "processes//system.slice/e2e-provider-k3s-b.service opute-provider-",
+   "processes//system.slice/e2e-provider-k3s.service opute-provider-",
+   "sockets/tcp 127.0.0.1:3031 opute-host-agen",
+   "sockets/tcp 127.0.0.1:4320 opute-provider-",
+   "sockets/tcp 127.0.0.1:4321 opute-provider-",
+   "sysctl/net.bridge.bridge-nf-call-arptables",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables",
+   "sysctl/net.bridge.bridge-nf-call-iptables",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev",
+   "sysctl/net.fan.vxlan",
+   "system/unitFiles/e2e-agent-b.service",
+   "system/unitFiles/e2e-provider-k3s-b.service",
+   "system/unitFiles/e2e-provider-k3s.service",
+   "system/units/e2e-agent-b.service",
+   "system/units/e2e-provider-k3s-b.service",
+   "system/units/e2e-provider-k3s.service",
+   "system/units/sys-devices-virtual-net-veth19e67ba2.device",
+   "system/units/sys-devices-virtual-net-veth6ddd9bac.device",
+   "system/units/sys-devices-virtual-net-vetha7359a3d.device",
+   "system/units/sys-subsystem-net-devices-veth19e67ba2.device",
+   "system/units/sys-subsystem-net-devices-veth6ddd9bac.device",
+   "system/units/sys-subsystem-net-devices-vetha7359a3d.device"
+  ],
+  "residue": [
+   "modules/br_netfilter",
+   "modules/ip6_udp_tunnel",
+   "modules/ip_set",
+   "modules/ipt_REJECT",
+   "modules/iptable_filter",
+   "modules/iptable_mangle",
+   "modules/iptable_nat",
+   "modules/nf_conntrack_netlink",
+   "modules/nf_reject_ipv4",
+   "modules/nfnetlink_acct",
+   "modules/nfnetlink_log",
+   "modules/nft_compat",
+   "modules/overlay",
+   "modules/udp_tunnel",
+   "modules/veth",
+   "modules/vxlan",
+   "modules/xt_MASQUERADE",
+   "modules/xt_NFLOG",
+   "modules/xt_addrtype",
+   "modules/xt_comment",
+   "modules/xt_conntrack",
+   "modules/xt_limit",
+   "modules/xt_mark",
+   "modules/xt_multiport",
+   "modules/xt_nat",
+   "modules/xt_nfacct",
+   "modules/xt_physdev",
+   "modules/xt_statistic",
+   "modules/xt_tcpudp",
+   "sysctl/net.bridge.bridge-nf-call-arptables",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables",
+   "sysctl/net.bridge.bridge-nf-call-iptables",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev",
+   "sysctl/net.fan.vxlan"
+  ],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-3a",
+ "harnessErrors": [],
+ "journey": "e2e3a.workload",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "actual": "2\n",
+     "equals": "2\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installB"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsB"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "catalogA"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "actual": "container:local:e2e-k1",
+     "equals": "container:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm1"
+    },
+    {
+     "actual": "running",
+     "equals": "running",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "info1"
+    },
+    {
+     "actual": "container:local:e2e-k2",
+     "equals": "container:local:e2e-k2",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm2"
+    },
+    {
+     "actual": "container:local:e2e-k3",
+     "equals": "container:local:e2e-k3",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "provision"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.version",
+     "step": "provision"
+    },
+    {
+     "actual": "cluster:local:e2e-k1",
+     "equals": "cluster:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "step": "listClusters"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.readyForServerPromotion",
+     "step": "prepareHa"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "prepareHa"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "redeem2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "join2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join2"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "redeem3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "join3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join3"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join3"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.serverCount",
+     "step": "members"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "members"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.datastoreMode",
+     "step": "members"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusterIdentityKnown",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k1",
+     "equals": "e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].version",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k2",
+     "equals": "e2e-k2",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].version",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k3",
+     "equals": "e2e-k3",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].version",
+     "step": "members"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "status"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Three Incus server containers provisioned and configured through typed Host Agent operations as a K3s cluster with embedded-etcd",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare2"
+    },
+    {
+     "actual": "host-agent-handshake",
+     "equals": "host-agent-handshake",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.secretDelivery",
+     "step": "prepare2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare3"
+    },
+    {
+     "actual": "RSA-OAEP-SHA256",
+     "equals": "RSA-OAEP-SHA256",
+     "ok": true,
+     "path": "response.body.result.structuredContent.keyAlgorithm",
+     "step": "key2"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "joinToken"
+    },
+    {
+     "actual": "<secret:K3S_TOKEN>",
+     "equals": "<secret:K3S_TOKEN>",
+     "ok": true,
+     "path": "stdout",
+     "step": "joinToken"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "tokenLeaks"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "tokenLeaks"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "installing",
+     "equals": "installing",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "chart"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "rollout"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "secret"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.configured",
+     "step": "secret"
+    },
+    {
+     "actual": "apiKey ",
+     "equals": "apiKey ",
+     "ok": true,
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "secretKeys"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exitCode",
+     "step": "pods"
+    },
+    {
+     "actual": "e2e-exec-ok\n",
+     "equals": "e2e-exec-ok\n",
+     "ok": true,
+     "path": "response.body.result.structuredContent.stdout",
+     "step": "pods"
+    },
+    {
+     "actual": "e2e-web-podinfo",
+     "equals": "e2e-web-podinfo",
+     "ok": true,
+     "path": "response.body.result.structuredContent.services[0].name",
+     "step": "services"
+    },
+    {
+     "actual": "10.0.100.251",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "step": "info2"
+    },
+    {
+     "actual": "10.0.100.55",
+     "matches": "^\\d+\\.\\d+\\.\\d+\\.\\d+$",
+     "ok": true,
+     "path": "response.body.result.structuredContent.ipv4[0]",
+     "step": "info3"
+    },
+    {
+     "actual": "200 200 200 ",
+     "equals": "200 200 200 ",
+     "ok": true,
+     "path": "stdout",
+     "step": "serve"
+    },
+    {
+     "actual": "apiKey ",
+     "equals": "apiKey ",
+     "ok": true,
+     "path": "stdout",
+     "step": "secretGuest"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "install_cluster_package, put_cluster_secret, exec_cluster_command and list_services on the HA cluster",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "Kubernetes Secret configured.",
+     "equals": "Kubernetes Secret configured.",
+     "ok": true,
+     "path": "response.body.result.result.content[0].text",
+     "step": "secret"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.data",
+     "step": "secret"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "secretKeysTool"
+    },
+    {
+     "actual": "not_implemented",
+     "equals": "not_implemented",
+     "ok": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "secretKeysTool"
+    },
+    {
+     "actual": "capability",
+     "equals": "capability",
+     "ok": true,
+     "path": "response.body.result.structuredContent.owner",
+     "step": "secretKeysTool"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every capability has its three roles",
+   "spec": "openspec/changes/three-role-capability-seam/specs/capability-seam/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "catalogA": 32,
+   "catalogAfterA": 24,
+   "catalogAfterB": 252,
+   "catalogB": 525,
+   "chart": 439,
+   "info1": 108,
+   "info2": 318,
+   "info3": 313,
+   "installA": 220,
+   "installB": 375,
+   "join2": 35528,
+   "join2Call": 222,
+   "join3": 35972,
+   "join3Call": 219,
+   "joinToken": 180,
+   "key2": 309,
+   "key3": 244,
+   "listClusters": 276,
+   "members": 326,
+   "pods": 199,
+   "prepare2": 3002,
+   "prepare2Call": 13,
+   "prepare3": 3002,
+   "prepare3Call": 13,
+   "prepareHa": 3002,
+   "prepareHaCall": 13,
+   "providerCopy": 522,
+   "providerToolsA": 230,
+   "providerToolsB": 236,
+   "provision": 27012,
+   "provisionCall": 11,
+   "recipeCopy": 430,
+   "redeem2": 203,
+   "redeem2Call": 214,
+   "redeem3": 209,
+   "redeem3Call": 222,
+   "rollout": 31294,
+   "secret": 3002,
+   "secretCall": 12,
+   "secretGuest": 612,
+   "secretKeys": 147,
+   "secretKeysTool": 17,
+   "serve": 169,
+   "services": 140,
+   "setup": 893,
+   "status": 186,
+   "tokenLeaks": 173,
+   "tool": 281,
+   "vm1": 9006,
+   "vm1Call": 12,
+   "vm2": 6639,
+   "vm2Call": 579,
+   "vm3": 6629,
+   "vm3Call": 217,
+   "wire": 287
+  },
+  "stepsSeconds": 232.4
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

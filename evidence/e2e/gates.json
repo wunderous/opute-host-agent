@@ -1,6 +1,6 @@
 {
  "e2e-0": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "selfcheck.noop": {
     "pass": true
@@ -61,11 +61,137 @@
     "failures": [
      "broad-allowance"
     ]
+   },
+   "selfcheck.unseen-root": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "files//root/opute-e2e-probe"
+    ]
+   },
+   "selfcheck.unseen-home": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "files//home/opute-e2e-probe"
+    ]
+   },
+   "selfcheck.unseen-tmp": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "files//tmp/opute-e2e-probe"
+    ]
+   },
+   "selfcheck.unseen-srv": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "files//srv/opute-e2e-probe"
+    ]
+   },
+   "selfcheck.unseen-cron": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "files//var/spool/cron/crontabs/opute"
+    ]
+   },
+   "selfcheck.unseen-var-lib": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "files//var/lib/opute-e2e-probe"
+    ]
+   },
+   "selfcheck.unseen-user-unit": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "opute/units/e2e-probe.service"
+    ]
+   },
+   "selfcheck.unseen-process": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "processes//user.slice/user-0.slice/session.scope sleep"
+    ]
+   },
+   "selfcheck.unseen-socket": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "sockets/tcp 127.0.0.1:3999 python3"
+    ]
+   },
+   "selfcheck.unseen-sysctl": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "sysctl/vm.swappiness"
+    ]
+   },
+   "selfcheck.unseen-module": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "modules/tcp_bbr"
+    ]
+   },
+   "selfcheck.unseen-route": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "routes/blackhole 198.51.100.0/24"
+    ]
+   },
+   "selfcheck.unseen-mount": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "mounts//mnt tmpfs"
+    ]
+   },
+   "selfcheck.unseen-link": {
+    "pass": false,
+    "failures": [
+     "undeclared-effect"
+    ],
+    "undeclared": [
+     "links/m25probe"
+    ]
    }
   }
  },
  "e2e-1": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e1.system-unit": {
     "pass": true
@@ -94,7 +220,7 @@
   }
  },
  "e2e-2": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e2.host-ops": {
     "pass": true
@@ -114,7 +240,7 @@
   }
  },
  "e2e-3a": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e3a.build": {
     "pass": true
@@ -134,7 +260,7 @@
   }
  },
  "e2e-3": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e3.discovery": {
     "pass": true
@@ -148,7 +274,7 @@
   }
  },
  "e2e-4": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e4.cutover": {
     "pass": true
@@ -162,7 +288,7 @@
   }
  },
  "e2e-neutral": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "neutral.profile": {
     "pass": true
@@ -181,7 +307,7 @@
   "blocked": "goal e2e-5 (an external orchestrator client on a host configured by explicit settings, run in Platform staging) has not run; no journeys are recorded"
  },
  "e2e-6": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e6.disk-full": {
     "pass": true
@@ -213,7 +339,7 @@
   }
  },
  "e2e-7": {
-  "run": "m24-r2",
+  "run": "m25-r4",
   "journeys": {
    "e2e7.public-site": {
     "pass": true

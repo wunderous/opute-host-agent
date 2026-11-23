@@ -1,0 +1,41 @@
+{
+ "id": "selfcheck.unseen-module",
+ "gate": "e2e-0",
+ "description": "Negative control for m25: a loaded kernel module, undeclared. The observer before m25 did not see it.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: a loaded kernel module is an effect",
+   "pass": [
+    {
+     "step": "plant",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [
+   "sysctl/net.ipv4.tcp_allowed_congestion_control",
+   "sysctl/net.ipv4.tcp_available_congestion_control"
+  ],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "plant",
+   "guest": "modprobe tcp_bbr"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "remove",
+   "guest": "modprobe -r tcp_bbr; true"
+  }
+ ],
+ "maxMinutes": 10
+}

@@ -1,0 +1,50 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "sysctl/vm.swappiness"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": [
+   "sysctl/vm.swappiness"
+  ]
+ },
+ "failures": [
+  "undeclared-effect"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.unseen-sysctl",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: a runtime sysctl is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "plant": 140
+  },
+  "stepsSeconds": 44.6
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

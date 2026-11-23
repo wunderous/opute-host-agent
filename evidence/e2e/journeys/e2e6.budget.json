@@ -98,8 +98,12 @@
  ],
  "effects": {
   "allow": [
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-bud.service",
-   "system/unitFiles/e2e-agent-bud.service"
+   "system/unitFiles/e2e-agent-bud.service",
+   "files//tmp/e2e-agents/bud*",
+   "processes//system.slice/e2e-agent-bud.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3049 opute-host-agen"
   ],
   "persist": []
  },

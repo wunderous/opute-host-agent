@@ -1,0 +1,183 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/dmg",
+   "files//tmp/e2e-agents/dmg/home",
+   "files//tmp/e2e-agents/dmg/home/.cache",
+   "files//tmp/e2e-agents/dmg/home/.cache/incus",
+   "files//tmp/e2e-agents/dmg/home/.config",
+   "files//tmp/e2e-agents/dmg/home/.config/incus",
+   "files//tmp/e2e-agents/dmg/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/dmg/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/dmg/home/.config/opute",
+   "files//tmp/e2e-agents/dmg/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/dmg/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/dmg/instance",
+   "files//tmp/e2e-agents/dmg/instance/host-agent.lock",
+   "files//tmp/e2e-agents/dmg/state",
+   "files//tmp/e2e-agents/dmg/state.db.bak",
+   "files//tmp/e2e-agents/dmg/state/authz.sqlite",
+   "files//tmp/e2e-agents/dmg/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/dmg/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/dmg/state/credentials",
+   "files//tmp/e2e-agents/dmg/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/dmg/state/host-agent.lock",
+   "files//tmp/e2e-agents/dmg/state/state.db",
+   "files//tmp/e2e-agents/dmg/state/state.db-shm",
+   "files//tmp/e2e-agents/dmg/state/state.db-wal",
+   "processes//system.slice/e2e-agent-dmg.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3041 opute-host-agen",
+   "system/unitFiles/e2e-agent-dmg.service",
+   "system/units/e2e-agent-dmg.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.store-damage",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "taskDone"
+    },
+    {
+     "actual": "kept\n",
+     "equals": "kept\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "taskDone"
+    },
+    {
+     "actual": "exit=1\n",
+     "matches": "^exit=[1-9]",
+     "ok": true,
+     "path": "stdout",
+     "step": "startTruncated"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "listenTruncated"
+    },
+    {
+     "actual": "19c32bff5d890a8b6002ca08c7dd693ae2fa4f1a8df071f12dadc5ac5eb1bd0c\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "equalsStep": {
+      "path": "stdout",
+      "step": "truncate"
+     },
+     "ok": true,
+     "other": "19c32bff5d890a8b6002ca08c7dd693ae2fa4f1a8df071f12dadc5ac5eb1bd0c\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "path": "stdout",
+     "step": "afterTruncated"
+    },
+    {
+     "actual": "exit=1\n",
+     "matches": "^exit=[1-9]",
+     "ok": true,
+     "path": "stdout",
+     "step": "startHeader"
+    },
+    {
+     "actual": "77cd1a00261c14d776272359a4060b17957241e972f8b7cfa20daab6f82929da\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "equalsStep": {
+      "path": "stdout",
+      "step": "header"
+     },
+     "ok": true,
+     "other": "77cd1a00261c14d776272359a4060b17957241e972f8b7cfa20daab6f82929da\nauthz.sqlite credentials host-agent.lock state.db \n",
+     "path": "stdout",
+     "step": "afterHeader"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "restoredAgent"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "kept"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A damaged state store stops startup",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "exit=0\n",
+     "matches": "^exit=[0-9]+\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "startPage"
+    },
+    {
+     "actual": "200\n",
+     "in": [
+      "200\n",
+      "000\n"
+     ],
+     "ok": true,
+     "path": "stdout",
+     "step": "pageRead"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A damaged state store stops startup",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterHeader": 144,
+   "afterTruncated": 143,
+   "dmgAgent": 566,
+   "header": 146,
+   "kept": 231,
+   "list": 528,
+   "listAgain": 238,
+   "listenTruncated": 406,
+   "page": 141,
+   "pageRead": 176,
+   "restore": 152,
+   "restoredAgent": 554,
+   "startHeader": 30366,
+   "startPage": 545,
+   "startTruncated": 30342,
+   "stop": 224,
+   "stopPage": 211,
+   "task": 216,
+   "taskDone": 206,
+   "tool": 291,
+   "truncate": 143,
+   "wire": 279
+  },
+  "stepsSeconds": 110.8
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

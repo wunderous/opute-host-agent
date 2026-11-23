@@ -23,13 +23,15 @@ import os
 import make_e2e1 as base
 from make_e2e1 import HERE, SPEC, a, inp, ok, req
 from make_e2e3a import call, direct, res, task
-from make_e2e4a import IMAGE_VOLUME, PKGS_BEFORE, PODMAN_CLEANUP, PODMAN_EFFECTS, USER_SESSION
+from make_e2e4a import (APT_OPTIONAL, APT_STATE, CLUSTER_PERSIST, IMAGE_VOLUME, K3S_OPTIONAL,
+                        PKGS_BEFORE, PODMAN_CLEANUP, PODMAN_EFFECTS, PODMAN_OPTIONAL, USER_SESSION)
 
 GATE = "e2e-7"
 REPO = HERE.parent.parent.parent
 M20 = REPO / "evidence/m20"
 NESTED_SPEC = "openspec/changes/refuse-nested-plan-runs/specs/refuse-nested-plan-runs/spec.md"
 VALIDATE_SPEC = "openspec/changes/validation-only-node-validates/specs/validation-only-node-validates/spec.md"
+LOOPBACK_SPEC = "openspec/changes/provider-loopback-listen/specs/provider-loopback-listen/spec.md"
 REL = base.REL
 CFG = "/home/opute/.config/opute-e2e7"
 NAME = "e2e-s7"
@@ -144,7 +146,7 @@ def provider_steps() -> list[dict]:
                   "scope": "user"}),
             # the unit, started from the file written above, serves the provider
             {"id": f"{p['id']}Port", "guest": f"for i in $(seq 60); do ss -ltnH 'sport = :{p['port']}' | grep -q . "
-                                              f"&& break; sleep 0.5; done; ss -ltnH 'sport = :{p['port']}' | wc -l",
+                                              f"&& break; sleep 0.5; done; ss -ltnH 'sport = :{p['port']}' | awk '{{print $4}}'",
              "confirms": [f"{p['id']}Unit", f"{p['id']}Start"]},
             written(f"{p['id']}ActivationFile", activation(p), f"{p['id']}Activation"),
             call(f"{p['id']}Install", "opute.provider.install",
@@ -276,6 +278,9 @@ def steps() -> list[dict]:
 def requirements() -> list[dict]:
     up, again = "up", "again"
     return [
+        req(LOOPBACK_SPEC, "Provider executables listen on loopback only",
+            *[a(f"{p['id']}Port", "stdout", equals=f"127.0.0.1:{p['port']}\n") for p in PROVIDERS],
+            scenario="Each installed provider listens on its configured IPv4 loopback socket"),
         req(SPEC, "One typed plan and recipe execution path",
             direct("validateSite", "structuredContent.plan.valid", equals=True),
             direct("validateDown", "structuredContent.plan.valid", equals=True),
@@ -334,7 +339,6 @@ def requirements() -> list[dict]:
             *[direct(s, "isError", **{"in": [False, "<absent>"]}) for s in ("siteRecipe", "downRecipe", "nestedRecipe")],
             a("k3sListed", "json.listed", equals=True),
             a("linger", "stdout", equals="yes\nbus\n"), a("podman", "stdout", equals="/usr/bin/podman\n"),
-            *[a(f"{p['id']}Port", "stdout", equals="1\n") for p in PROVIDERS],
             *[a(f"{p['id']}ActivationFile", "stdout", equals=digests(activation(p))) for p in PROVIDERS],
             a("recipeFiles", "stdout", equals=digests(recipe_files())),
             a("cloudflareListed", "json.listed", equals=True),
@@ -364,7 +368,8 @@ def cleanup() -> list[dict]:
 EFFECTS = PODMAN_EFFECTS + USER_SESSION + [
     "files//home/opute/.config/opute-e2e7*", "files//home/opute/.config/systemd*", "files//home/opute/.opute*",
     IMAGE_VOLUME, "incus/storage/default/used_by"]
-PERSIST = []
+PERSIST = CLUSTER_PERSIST + APT_STATE
+OPTIONAL = {**K3S_OPTIONAL, **APT_OPTIONAL, **PODMAN_OPTIONAL}
 
 INPUTS = {"agent": base.AGENT,
           "providers": "the release's K3s and Cloudflare provider executables, started as user units by typed calls",
@@ -382,7 +387,7 @@ def journey() -> dict:
         "evidence/m20/minimal-site.recipe.yaml brings a K3s Service up at e2e-<run>.opute.io through a dedicated "
         "Cloudflare tunnel, the host fetches it over verified TLS, a second run skips every node, a deleted pod is "
         "replaced, no record holds a token, and the teardown recipe removes the CNAME, tunnel and guest.",
-        INPUTS, requirements(), steps(), cleanup(), allow=EFFECTS, persist=PERSIST, minutes=30, gate=GATE)
+        INPUTS, requirements(), steps(), cleanup(), allow=EFFECTS + PERSIST, persist=PERSIST, minutes=30, gate=GATE, optional=OPTIONAL)
 
 
 def main() -> None:

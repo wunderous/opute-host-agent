@@ -1,0 +1,43 @@
+{
+ "cleanup": [
+  {
+   "guest": "umount /mnt",
+   "id": "remove"
+  }
+ ],
+ "description": "Negative control for m25: a mounted filesystem, undeclared. The observer before m25 did not see it.",
+ "effects": {
+  "allow": [
+   "system/units/mnt.mount"
+  ],
+  "optional": {
+   "system/units/mnt.mount": "systemd may still be loading the unit or the module may already be present"
+  },
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.unseen-mount",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "requirement": "Harness: a mounted filesystem is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "guest": "mount -t tmpfs -o size=1m m25-probe /mnt",
+   "id": "plant"
+  }
+ ]
+}

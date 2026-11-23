@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the e2e-6 journeys (m16 hardening): host faults, admission under
 pressure and a resource budget, each on a transient agent of the installed
-release candidate under /tmp/e2e-agents (outside the VM state diff).
+release candidate under /tmp/e2e-agents.
 
   python3 evidence/e2e/journeys/make_e2e6.py
 
@@ -60,11 +60,18 @@ def state(name: str) -> str:
     return f"{ROOT}/{name}/state"
 
 
-def journey(id_, description, requirements, steps, cleanup, agents, minutes=20, files=None, allow=()):
+def journey(id_, description, requirements, steps, cleanup, agents, minutes=20, files=None, allow=(), persist=()):
+    effects = [*allow, *persist]
+    if agents:
+        effects += ["files//tmp/e2e-agents"]
+    for name, port in agents:
+        unit = f"e2e-agent-{name}.service"
+        effects += [*units(unit), f"files//tmp/e2e-agents/{name}*",
+                    f"processes//system.slice/{unit} opute-host-agen", f"sockets/tcp 127.0.0.1:{port} opute-host-agen"]
     return base.journey(id_, description, {"agent": f"transient Rust agents of the installed release candidate "
                                                     f"({base.RUST_VERSION}) under {ROOT}",
                                            "files": files or base.TOOL_FILES},
-                        requirements, steps, cleanup, allow=units(*(f"e2e-agent-{a}.service" for a in agents)) + tuple(allow), minutes=minutes, gate="e2e-6")
+                        requirements, steps, cleanup, allow=effects, persist=persist, minutes=minutes, gate="e2e-6")
 
 
 def remove(*names: str) -> list[dict]:
@@ -161,8 +168,8 @@ def disk_full() -> dict:
     return journey("e2e6.disk-full",
                    "D31: an agent whose state directory is a 24 MiB tmpfs; the directory is filled, durable calls are "
                    "refused with typed errors and leave no file or row, reads answer, and once space is freed the "
-                   "same calls succeed without a restart.", reqs, steps, cleanup, [n], minutes=15,
-                   allow=("system/units/tmp-e2e\\x2dagents-full-state.mount",))
+                   "same calls succeed without a restart.", reqs, steps, cleanup, [(n, port)], minutes=15,
+                   allow=("system/units/tmp-e2e\\x2dagents-full-state.mount", f"mounts/{state(n)} tmpfs"))
 
 
 # --- 2. a damaged state store ---------------------------------------------------------------------
@@ -229,7 +236,7 @@ def store_damage() -> dict:
     return journey("e2e6.store-damage",
                    "D31: the agent's state.db truncated, its header overwritten, and a middle page overwritten; "
                    "startup refuses without serving or writing, and the restored store starts with the earlier "
-                   "task's record intact.", reqs, steps, remove(n), [n], minutes=15)
+                   "task's record intact.", reqs, steps, remove(n), [(n, port)], minutes=15)
 
 
 # --- 3. killed during a plan step and during store writes ----------------------------------------------
@@ -279,7 +286,9 @@ def kill() -> dict:
     return journey("e2e6.kill",
                    "An agent killed with SIGKILL during a plan's slow step, then twelve times with task calls in "
                    "flight; the plan reads back unknown and stays so, and the store stays whole.",
-                   reqs, steps, cleanup, [n], minutes=20, allow=units("e2e-slow.service"))
+                   reqs, steps, cleanup, [(n, port)], minutes=20,
+                   allow=units("e2e-slow.service") + ("processes//system.slice/e2e-slow.service python3",
+                                                      "sockets/tcp 127.0.0.1:8799 python3"))
 
 
 # --- 4. a provider command that hangs or prints garbage -------------------------------------------------
@@ -314,11 +323,12 @@ def commands() -> dict:
             scenario="Garbage output: list_vms and get_vm_info end in typed errors, and the next call is served "
                      "(D31)"),
     ]
-    cleanup = remove("hang", "junk") + [{"id": "stubsGone", "guest": f"pkill -f incus-hang; rm -rf {stub}; "
+    cleanup = remove("hang", "junk") + [{"id": "stubsGone", "guest": f"pkill -f '[i]ncus-hang'; rm -rf {stub}; "
                                                                      f"rmdir {ROOT} 2>/dev/null; true"}]
     return journey("e2e6.commands",
                    "D31: an agent whose incus is a stand-in that never exits, and one whose incus prints garbage; "
-                   "each call ends in a typed error and the agent keeps serving.", reqs, steps, cleanup, ["hang", "junk"], minutes=10)
+                   "each call ends in a typed error and the agent keeps serving.", reqs, steps, cleanup,
+                   [("hang", 3043), ("junk", 3044)], minutes=10, allow=(f"files/{stub}*",))
 
 
 # --- 5. the clock steps back --------------------------------------------------------------------
@@ -365,13 +375,14 @@ def clock() -> dict:
     return journey("e2e6.clock",
                    "D31: the guest clock stepped back one hour while an agent holds a reservation for a running "
                    "task; tokens still authenticate, the reservation is kept and new work is admitted.",
-                   reqs, steps, cleanup, [n], minutes=10,
+                   reqs, steps, cleanup, [(n, port)], minutes=10,
                    # Turning NTP off disables timesyncd until cleanup turns it back on.
                    allow=("files//etc/systemd/system/dbus-org.freedesktop.timesync1.service",
                           "files//etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service",
                           "system/unitFiles/dbus-org.freedesktop.timesync1.service",
                           "system/unitFiles/systemd-timesyncd.service",
-                          "system/units/systemd-timesyncd.service"))
+                          "system/units/systemd-timesyncd.service",
+                          "processes//system.slice/systemd-timesyncd.service systemd-timesyn"))
 
 
 # --- 6. admission under pressure, and the body limit -------------------------------------------------
@@ -456,7 +467,8 @@ def pressure() -> dict:
                    "Admission under pressure: an agent with one normal operation slot refuses work beyond it and "
                    "admits again after; one whose memory and disk floors cannot be met refuses effectful work; one "
                    "sent a 1 GiB body answers 413 with bounded memory (D29), and so does its serving relay (D41).",
-                   reqs, steps, remove("lim", "low", "big"), ["lim", "low", "big"], minutes=10)
+                   reqs, steps, remove("lim", "low", "big"), [("lim", 3046), ("low", 3047), ("big", 3048)],
+                   minutes=10, allow=("sockets/tcp 127.0.0.1:3051 opute-host-agen",))
 
 
 # --- 7. resource budget under 15 minutes of mixed load --------------------------------------------------
@@ -500,7 +512,7 @@ def budget() -> dict:
                    "Resource budget (m16): fifteen minutes of mixed calls on one agent; resident memory, open file "
                    "descriptors, threads and store size are sampled every 30 s and their growth after warm-up is "
                    "held to the committed budget; with an audit row bound below the call count, the audit stays "
-                   "within it (D42).", reqs, steps, remove(n), [n], minutes=25)
+                   "within it (D42).", reqs, steps, remove(n), [(n, port)], minutes=25)
 
 
 # --- 8. a child's environment (D40) ----------------------------------------------------------------
@@ -575,7 +587,11 @@ def child_env() -> dict:
     return journey("e2e6.child-env",
                    "A child's environment (D40): an agent holding its bearer, two provider credentials and an "
                    "OPUTE_ setting opens a VM console and runs a recipe step; /proc shows neither child holds "
-                   "any of them.", reqs, steps, cleanup, [n], minutes=20, files=files, allow=INCUS_ALLOW)
+                   "any of them.", reqs, steps, cleanup, [(n, port)], minutes=20, files=files,
+                   allow=(*INCUS_ALLOW, f"files/{recipe}", "links/tap*",
+                          "mounts//var/lib/incus/devices/e2e-v6/config.mount btrfs",
+                          "processes//system.slice/incus.service qemu-system-x86"),
+                   persist=("modules/tap", "modules/vhost_net"))
 
 
 # --- 9. where each secret goes (m19) ---------------------------------------------------------------
@@ -732,7 +748,16 @@ def secret_sweep() -> dict:
                    "files under the host's writable roots and every response are searched for each marker, "
                    "raw and base64-encoded.", reqs, steps, cleanup, (), minutes=15, files=files,
                    # the cluster agent install and the public connector's tunnel, until cleanup removes them
-                   allow=SWEEP_EFFECTS)
+                   allow=SWEEP_EFFECTS + (
+                       "files//root/e2e-sweep*", "files//tmp/e2e-agents", "files//tmp/e2e-agents/sweep*",
+                       "mounts//sys/kernel/debug/tracing tracefs",
+                       "processes//system.slice/e2e-sweep-bridge.service python3",
+                       "processes//system.slice/e2e-sweep-sweep.service opute-host-agen",
+                       "processes//system.slice/opute-cluster-agent.service sleep",
+                       "sockets/tcp 127.0.0.1:3056 opute-host-agen",
+                       "sockets/tcp 127.0.0.1:3057 python3",
+                       "sockets/tcp 127.0.0.1:3058 opute-host-agen",
+                   ))
 
 
 JOURNEYS = [disk_full, store_damage, kill, commands, clock, pressure, budget, child_env, secret_sweep]

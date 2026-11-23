@@ -403,7 +403,7 @@
   },
   {
    "id": "kill",
-   "guest": "systemctl kill -s KILL opute-bootstrap-mcp.service && sleep 1 && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && python3 /opt/opute-e2e/guest/e2etool.py unit opute-bootstrap-mcp.service"
+   "guest": "systemctl kill --kill-who=main -s KILL opute-bootstrap-mcp.service && sleep 1 && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && python3 /opt/opute-e2e/guest/e2etool.py unit opute-bootstrap-mcp.service"
   },
   {
    "id": "killList",

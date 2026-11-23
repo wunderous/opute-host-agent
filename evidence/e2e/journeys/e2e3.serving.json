@@ -208,14 +208,41 @@
  "effects": {
   "allow": [
    "files//home/opute/e2e*",
+   "files//tmp/serving-assignment-e2e-model-supervisor.log",
+   "files//tmp/serving-assignment-e2e-model.pid",
+   "files//tmp/serving-assignment-e2e-model.state.json",
+   "opute/units/host-serving-e2e-model.service",
+   "sockets/tcp 127.0.0.1:18091 python3",
+   "processes//user.slice/user-1001.slice/user@1001.service/opute.slice/opute-workload.slice/host-serving-e2e-model.service python3",
    "linger",
    "files//var/lib/systemd/linger/opute",
    "system/units/user@1001.service",
    "system/units/user-runtime-dir@1001.service",
    "system/units/user-1001.slice",
-   "system/units/run-user-1001.mount"
+   "system/units/run-user-1001.mount",
+   "opute/running",
+   "mounts//run/user/1001 tmpfs",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket"
   ],
-  "persist": []
+  "persist": [],
+  "optional": {
+   "opute/units/dbus.service": "The user bus may only have its socket active at inspection",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon": "The user bus may only have its socket active at inspection"
+  }
  },
  "steps": [
   {

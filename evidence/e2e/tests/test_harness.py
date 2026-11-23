@@ -327,7 +327,11 @@ class Allowances(unittest.TestCase):
                                ("linger", False), ("system/units/e2e-*", False), ("incus/instances/e2e-k*", False),
                                ("files//etc/systemd/system/*", True), ("incus/volumes/default/image/*", True),
                                ("files//var/log*", False), ("files//etc/opute-e2e-probe", False),
-                               ("system/units/tmp-e2e*agents-*.mount", False)):
+                               ("system/units/tmp-e2e*agents-*.mount", False),
+                               # flat kinds (m25): the object sits directly under the kind
+                               ("links/*", True), ("links/veth*", False), ("modules/veth", False),
+                               ("processes/*", True), ("processes//lxc.payload.e2e-k*", False),
+                               ("sysctl/net.*", False), ("opute/units/*", True)):
             self.assertEqual(runner.broad_pattern(pattern), broad, pattern)
 
     def test_committed_journeys_name_their_effects(self):
@@ -397,6 +401,20 @@ class Format(unittest.TestCase):
         import make_neutral  # hashes its inputs on import
         for name, text in make_neutral.render().items():
             self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_neutral.py")
+
+    def test_m25_probes_match_the_generator_and_gate(self):
+        sys.path.insert(0, str(E2E / "journeys"))
+        import make_e2e1
+        if not Path(make_e2e1.CANDIDATE.replace("${PARITY}", str(make_e2e1.PARITY))).exists():
+            self.skipTest("the generator's pinned inputs live under .parity/ (absent on CI)")
+        import make_m25_probes
+        gate = json.loads((E2E / "gates.json").read_text())["e2e-0"]["journeys"]
+        for name, generated in make_m25_probes.render().items():
+            self.assertEqual((E2E / "journeys" / name).read_text(), generated)
+            expect = gate[Path(name).stem]
+            self.assertFalse(expect["pass"])
+            self.assertEqual(expect["failures"], ["undeclared-effect"])
+            self.assertEqual(len(expect["undeclared"]), 1)
 
     def test_gates_name_committed_journeys(self):
         gates = json.loads((E2E / "gates.json").read_text())
