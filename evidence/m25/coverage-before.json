@@ -1,0 +1,25 @@
+{
+ "observer": "evidence/e2e/devvm/guest/state.py over tools/parity/t2guest/snapshot.py, as of main 98cac2174",
+ "kinds": [
+  {"kind": "files under /etc, /opt, /usr/bin, /usr/sbin, /usr/local, /usr/lib/systemd, /home/ubuntu, /home/opute, /etc/opute, /var/lib/dpkg/info, /var/lib/systemd/linger", "examples": "units, env files, binaries, provider executables, packages (dpkg info), sudoers, /etc/hosts", "before": "observed"},
+  {"kind": "files under /root", "examples": "e2e6.secret-sweep's work dir, e2e2.incus's saved Incus config", "before": "not observed"},
+  {"kind": "files under another user's home (/home/*)", "examples": "a user a command creates", "before": "not observed"},
+  {"kind": "files under /tmp and /var/tmp", "examples": "build contexts (/tmp/opute-build-contexts, /var/tmp/opute-build-contexts), serving assignment pid and state (/tmp/serving-assignment-*), /tmp/opute-k3s-*, transient agents under /tmp/e2e-agents", "before": "not observed"},
+  {"kind": "files under /srv", "examples": "model and pool paths (/srv/models, /srv/pool)", "before": "not observed"},
+  {"kind": "files under /var/spool", "examples": "crontabs a command installs", "before": "not observed"},
+  {"kind": "files under /var/lib outside dpkg info, linger and Incus", "examples": "root podman storage (/var/lib/containers/storage), K3s on a host (/var/lib/rancher/k3s), dpkg status, apt state", "before": "not observed"},
+  {"kind": "the opute user's service manager", "examples": "user units of the public connector and providers started as opute; the observer's `user` kind is uid 1000 (ubuntu), not opute (1001)", "before": "not observed (only their unit files under ~/.config/systemd)"},
+  {"kind": "processes outside a recorded unit", "examples": "a daemon a command leaves in its ssh session, a workload outside systemd", "before": "not observed"},
+  {"kind": "listening sockets", "examples": "a port a workload, relay or tunnel leaves open", "before": "not observed"},
+  {"kind": "runtime sysctls", "examples": "sysctl -w by a command or a K3s install (/etc/sysctl.d was observed)", "before": "not observed"},
+  {"kind": "loaded kernel modules", "examples": "br_netfilter, overlay, vhost for guests", "before": "not observed"},
+  {"kind": "mounts", "examples": "a tmpfs or bind mount; systemd mount units were observed", "before": "partial: mount units only"},
+  {"kind": "network links and routes", "examples": "veth and tap devices, bridges, routes; device units were observed", "before": "partial: device units only"},
+  {"kind": "Incus objects, firewall rule sets, the cluster's objects, rootless images, system units, ubuntu's user units, linger", "before": "observed"},
+  {"kind": "system clock and NTP", "examples": "e2e6.clock steps the clock back and disables NTP", "before": "partial: observes changed NTP unit and symlinks", "reason": "wall time changes during every observation, so the journey asserts behavior across the clock step"},
+  {"kind": "Windows-side WSL distribution and disk state", "examples": "shutdown_wsl, terminate_wsl_distribution and compact_wsl_disk", "before": "not observed", "reason": "native Linux fixture only, with WSL2 recorded blocked in the cutover packet"},
+  {"kind": "remote DNS, tunnel, mesh and registry state", "examples": "provider-managed DNS and connectors, peer membership and registry pushes", "before": "partial: host units, config, guests and in-VM registry objects", "reason": "off-host effects require independent service read-back in the journeys that exercise them"},
+  {"kind": "private runtime and session state", "examples": "isolated workload namespaces, in-memory console sessions and active operation reservations", "before": "partial: unit and guest lifecycle", "reason": "session and operation outcomes are observed through their typed interfaces"},
+  {"kind": "logs and the journal (/var/log, journald)", "examples": "every run writes them", "before": "not observed", "reason": "they change in every run and cannot be compared deterministically; secrets in them are searched by e2e6.secret-sweep instead"}
+ ]
+}

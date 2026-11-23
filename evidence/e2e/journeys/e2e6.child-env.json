@@ -60,8 +60,13 @@
  ],
  "effects": {
   "allow": [
+   "files//tmp/e2e-agents/child-env-recipe.yaml",
+   "files//tmp/e2e-agents",
    "system/units/e2e-agent-cenv.service",
-   "system/unitFiles/e2e-agent-cenv.service"
+   "system/unitFiles/e2e-agent-cenv.service",
+   "files//tmp/e2e-agents/cenv*",
+   "processes//system.slice/e2e-agent-cenv.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3050 opute-host-agen"
   ],
   "persist": []
  },

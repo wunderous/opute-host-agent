@@ -75,13 +75,18 @@
  ],
  "effects": {
   "allow": [
-   "system/units/e2e-agent-clk.service",
-   "system/unitFiles/e2e-agent-clk.service",
    "files//etc/systemd/system/dbus-org.freedesktop.timesync1.service",
    "files//etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service",
    "system/unitFiles/dbus-org.freedesktop.timesync1.service",
    "system/unitFiles/systemd-timesyncd.service",
-   "system/units/systemd-timesyncd.service"
+   "system/units/systemd-timesyncd.service",
+   "processes//system.slice/systemd-timesyncd.service systemd-timesyn",
+   "files//tmp/e2e-agents",
+   "system/units/e2e-agent-clk.service",
+   "system/unitFiles/e2e-agent-clk.service",
+   "files//tmp/e2e-agents/clk*",
+   "processes//system.slice/e2e-agent-clk.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3045 opute-host-agen"
   ],
   "persist": []
  },

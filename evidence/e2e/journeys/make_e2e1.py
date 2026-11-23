@@ -35,7 +35,7 @@ DIST = "baseline/inventory/distribution.json"
 # The Rust release under test (m13b): one candidate for every gate, and a newer local build of the same
 # sources as the in-place upgrade target. Go stays the published v0.2.4.
 RUST_VERSION = "0.3.0"
-CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc7"
+CANDIDATE = "${PARITY}/e2e/release/rust-0.3.0-rc9"
 CANDIDATE_NEXT = CANDIDATE + "-next"
 NEXT_VERSION = "0.3.1-e2e"
 # What the installed candidate prints after its hash line.
@@ -132,10 +132,13 @@ def poll_run(id_: str, var: str, done=("completed", "failed", "cancelled"), time
 
 
 def journey(id_: str, description: str, inputs: dict, requirements: list, steps: list, cleanup: list,
-            allow=(), persist=(), minutes: int = 20, gate: str = "e2e-1") -> dict:
+            allow=(), persist=(), minutes: int = 20, gate: str = "e2e-1", optional=None) -> dict:
+    """`optional` maps an allow pattern whose match depends on the host to its reason (m24)."""
+    effects = {"allow": list(allow), "persist": list(persist)}
+    if optional:
+        effects["optional"] = dict(optional)
     return {"id": id_, "gate": gate, "description": description, "inputs": inputs, "requirements": requirements,
-            "effects": {"allow": list(allow), "persist": list(persist)}, "steps": steps, "cleanup": cleanup,
-            "maxMinutes": minutes}
+            "effects": effects, "steps": steps, "cleanup": cleanup, "maxMinutes": minutes}
 
 
 def install_binary(gz: str) -> str:
@@ -290,8 +293,9 @@ def j2() -> dict:
     ]
     # None of .local, .config, .cache or .npm exists in ubuntu's home at the snapshot; the agent's own
     # incus client writes .config/incus (e2e-1-r1, retired).
+    # npm (Node 22) keeps its compile cache in /tmp (m25)
     cleanup = [{"id": "remove", "guest": f"rm -rf {home}/.local {home}/.config {home}/.cache {home}/.npm "
-                                         "/opt/opute-e2e/node /opt/opute-e2e/node.tar.xz "
+                                         "/tmp/node-compile-cache /opt/opute-e2e/node /opt/opute-e2e/node.tar.xz "
                                          f"/opt/opute-e2e/{LAUNCHER} /opt/opute-e2e/deploy-user"}]
     reqs = [
         req(SPEC, "Compatible modes, configuration, and distribution",
@@ -327,7 +331,8 @@ def j2() -> dict:
     # the journey's last steps stop the release server, disable linger and stop the user manager: none of
     # them is in the after-state (m24)
     allow = ["files//home/ubuntu/.local*", "files//home/ubuntu/.config*", "files//home/ubuntu/.npm*",
-             "files//opt/opute-e2e/node*", f"files//opt/opute-e2e/{LAUNCHER}", "files//opt/opute-e2e/deploy-user*"]
+             "files//opt/opute-e2e/node*", f"files//opt/opute-e2e/{LAUNCHER}", "files//opt/opute-e2e/deploy-user*",
+             "files//tmp/node-compile-cache*"]
     return journey(
         "e2e1.user-unit-npm",
         "Flow 2, user install: Go's recorded user unit (deploy/opute-host-agent.service) for the existing user "
@@ -692,7 +697,7 @@ def j7() -> dict:
                   "guest": "grep -c -F '${SECRET:j7content}' /home/opute/.config/opute-e2e/j7-term.txt"}, "termRun"),
         call("killRun", "run_host_plan", {"plan": kill_plan}, capture={"KILL_RUN": "response.body.result.structuredContent.runId"}),
         call("killInFlight", "get_host_plan_run", {"runId": "${KILL_RUN}"}, until=in_flight, timeout=30),
-        {"id": "kill", "guest": f"systemctl kill -s KILL {UNIT} && sleep 1 && {WAIT_HEALTH.format(port=3014)} && "
+        {"id": "kill", "guest": f"systemctl kill --kill-who=main -s KILL {UNIT} && sleep 1 && {WAIT_HEALTH.format(port=3014)} && "
                                 f"{T} unit {UNIT}"},
         mcp("killList", "tools/list"),
         call("killAfter", "get_host_plan_run", {"runId": "${KILL_RUN}"}),
@@ -855,7 +860,9 @@ def j8() -> dict:
          "next": f"Rust release set built locally with VERSION={NEXT_VERSION}"},
         reqs, steps, cleanup,
         allow=["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/.config/opute-e2e*",
-               "files//opt/opute-e2e/releases/rust-next*"],
+               "files//opt/opute-e2e/releases/rust-next*",
+               # Rust's instance root, set aside while Go runs and put back by cleanup (m25)
+               "files//tmp/e2e-j8-rust-instances*"],
         minutes=20)
 
 
@@ -889,7 +896,8 @@ def step_kinds() -> dict:
                    "Positive control for the step kinds e2e-1 added: a hash-pinned copy, a per-run secret that is "
                    "redacted from the record, a plain HTTP request, health and MCP requests made inside the guest "
                    "(schema-validated against the guest port's own tools/list), polling, and captured values.",
-                   {"agent": AGENT, "files": files}, reqs, steps, cleanup, gate="e2e-0", minutes=10)
+                   {"agent": AGENT, "files": files}, reqs, steps, cleanup, gate="e2e-0", minutes=10,
+                   allow=["files//tmp/e2e-copy-probe.json"])  # the copy's own target (m25)
 
 
 JOURNEYS = [j1, j2, j3, j4, j5, j6, j7, j8, step_kinds]

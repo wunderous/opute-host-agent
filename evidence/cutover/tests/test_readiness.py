@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE.parent))
 import readiness  # noqa: E402
 
 REPO = readiness.ROOT
-RUN = "m24-r1"  # a receipt recorded under the current harness (m24 added allowances)
+RUN = "m25-r3"  # a receipt recorded under the current harness (m25 widened the observer)
 JOURNEY = "selfcheck.noop"
 
 

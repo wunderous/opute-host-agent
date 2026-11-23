@@ -1,0 +1,107 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "processes//system.slice/e2e-provider-body.service opute-provider-",
+   "sockets/tcp 127.0.0.1:3052 opute-provider-",
+   "system/unitFiles/e2e-provider-body.service",
+   "system/units/e2e-provider-body.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.provider-body",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "127.0.0.1:3052\n",
+     "equals": "127.0.0.1:3052\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "start"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Provider executables listen on loopback only",
+   "spec": "openspec/changes/provider-loopback-listen/specs/provider-loopback-listen/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 413,
+     "equals": 413,
+     "ok": true,
+     "path": "json.status",
+     "step": "bigBody"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.bodyLimitText",
+     "step": "bigBody"
+    },
+    {
+     "actual": 0.0,
+     "lte": 10,
+     "ok": true,
+     "path": "json.seconds",
+     "step": "bigBody"
+    },
+    {
+     "actual": 2842624,
+     "lte": 134217728,
+     "ok": true,
+     "path": "json.rssBytes",
+     "step": "rssAfter"
+    },
+    {
+     "actual": 400,
+     "gte": 200,
+     "ok": true,
+     "path": "json.status",
+     "step": "atLimit"
+    },
+    {
+     "actual": 400,
+     "lte": 412,
+     "ok": true,
+     "path": "json.status",
+     "step": "atLimit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A provider's MCP request body is read only up to its limit",
+   "spec": "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "atLimit": 202,
+   "bigBody": 203,
+   "providerCopy": 471,
+   "rssAfter": 198,
+   "rssBefore": 205,
+   "start": 175,
+   "tool": 284,
+   "wire": 293
+  },
+  "stepsSeconds": 46.6
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

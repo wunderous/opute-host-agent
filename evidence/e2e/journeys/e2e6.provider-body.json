@@ -14,21 +14,28 @@
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "providerK3s": {
-    "path": "${PARITY}/e2e/release/rust-0.3.0-rc7/opute-provider-k3s-linux-x64",
-    "sha256": "e9f8c3882b728fbd77b77bd216521d39bc3ceb022427f00a49709ed90254cfb4"
+    "path": "${PARITY}/e2e/release/rust-0.3.0-rc9/opute-provider-k3s-linux-x64",
+    "sha256": "535bd3fa94e360949919ffdb4533929f059cd446adecc237347328aca78826e4"
    }
   }
  },
  "requirements": [
   {
-   "spec": "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md",
-   "requirement": "A provider's MCP request body is read only up to its limit",
+   "spec": "openspec/changes/provider-loopback-listen/specs/provider-loopback-listen/spec.md",
+   "requirement": "Provider executables listen on loopback only",
    "pass": [
     {
      "step": "start",
      "path": "stdout",
-     "matches": "^1\n$"
-    },
+     "equals": "127.0.0.1:3052\n"
+    }
+   ],
+   "scenario": "The installed provider is listening on exactly one IPv4 loopback socket"
+  },
+  {
+   "spec": "openspec/changes/bound-relay-request-body/specs/bound-relay-request-body/spec.md",
+   "requirement": "A provider's MCP request body is read only up to its limit",
+   "pass": [
     {
      "step": "bigBody",
      "path": "json.status",
@@ -67,6 +74,8 @@
   "allow": [
    "files//opt/opute-e2e/providers",
    "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "processes//system.slice/e2e-provider-body.service opute-provider-",
+   "sockets/tcp 127.0.0.1:3052 opute-provider-",
    "system/units/e2e-provider-body.service",
    "system/unitFiles/e2e-provider-body.service"
   ],
@@ -91,7 +100,7 @@
   },
   {
    "id": "start",
-   "guest": "systemd-run --collect --unit=e2e-provider-body --setenv=OPUTE_PROVIDER_PORT=3052 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :3052' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :3052' | wc -l"
+   "guest": "systemd-run --collect --unit=e2e-provider-body --setenv=OPUTE_PROVIDER_PORT=3052 --property=Restart=no /opt/opute-e2e/providers/opute-provider-k3s >/dev/null && for i in $(seq 60); do ss -ltnH 'sport = :3052' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :3052' | awk '{print $4}'"
   },
   {
    "id": "rssBefore",

@@ -1,0 +1,119 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/cenv",
+   "files//tmp/e2e-agents/cenv/home",
+   "files//tmp/e2e-agents/cenv/home/.cache",
+   "files//tmp/e2e-agents/cenv/home/.cache/incus",
+   "files//tmp/e2e-agents/cenv/home/.config",
+   "files//tmp/e2e-agents/cenv/home/.config/incus",
+   "files//tmp/e2e-agents/cenv/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/cenv/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/cenv/home/.config/opute",
+   "files//tmp/e2e-agents/cenv/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/cenv/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/cenv/home/child-env.done",
+   "files//tmp/e2e-agents/cenv/instance",
+   "files//tmp/e2e-agents/cenv/instance/host-agent.lock",
+   "files//tmp/e2e-agents/cenv/state",
+   "files//tmp/e2e-agents/cenv/state/authz.sqlite",
+   "files//tmp/e2e-agents/cenv/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/cenv/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/cenv/state/credentials",
+   "files//tmp/e2e-agents/cenv/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/cenv/state/credentials/opute-mcp-host.json",
+   "files//tmp/e2e-agents/cenv/state/host-agent.lock",
+   "files//tmp/e2e-agents/cenv/state/state.db",
+   "files//tmp/e2e-agents/cenv/state/state.db-shm",
+   "files//tmp/e2e-agents/cenv/state/state.db-wal",
+   "files//tmp/e2e-agents/child-env-recipe.yaml",
+   "processes//system.slice/e2e-agent-cenv.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3050 opute-host-agen",
+   "system/unitFiles/e2e-agent-cenv.service",
+   "system/units/e2e-agent-cenv.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.child-env",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    },
+    {
+     "actual": "done\n",
+     "equals": "done\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "recipeFile"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "cenvAgent": 551,
+   "list": 540,
+   "recipeCopy": 430,
+   "recipeDone": 40419,
+   "recipeEnv": 213,
+   "recipeFile": 136,
+   "recipeRun": 263,
+   "tool": 286,
+   "wire": 280
+  },
+  "stepsSeconds": 87.9
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

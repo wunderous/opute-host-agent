@@ -1,0 +1,50 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "processes//user.slice/user-0.slice/session.scope sleep"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": [
+   "processes//user.slice/user-0.slice/session.scope sleep"
+  ]
+ },
+ "failures": [
+  "undeclared-effect"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.unseen-process",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: a process left in the step's ssh session is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "plant": 142
+  },
+  "stepsSeconds": 44.6
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

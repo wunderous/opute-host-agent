@@ -1,0 +1,263 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/full",
+   "files//tmp/e2e-agents/full/home",
+   "files//tmp/e2e-agents/full/home/.cache",
+   "files//tmp/e2e-agents/full/home/.cache/incus",
+   "files//tmp/e2e-agents/full/home/.config",
+   "files//tmp/e2e-agents/full/home/.config/incus",
+   "files//tmp/e2e-agents/full/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/full/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/full/home/.config/opute",
+   "files//tmp/e2e-agents/full/home/.config/opute-e2e",
+   "files//tmp/e2e-agents/full/home/.config/opute-e2e/full-1.txt",
+   "files//tmp/e2e-agents/full/home/.config/opute-e2e/full-3.txt",
+   "files//tmp/e2e-agents/full/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/full/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/full/instance",
+   "files//tmp/e2e-agents/full/instance/host-agent.lock",
+   "files//tmp/e2e-agents/full/state",
+   "files//tmp/e2e-agents/full/state/authz.sqlite",
+   "files//tmp/e2e-agents/full/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/full/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/full/state/credentials",
+   "files//tmp/e2e-agents/full/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/full/state/credentials/opute-mcp-host.json",
+   "files//tmp/e2e-agents/full/state/host-agent.lock",
+   "files//tmp/e2e-agents/full/state/state.db",
+   "files//tmp/e2e-agents/full/state/state.db-shm",
+   "files//tmp/e2e-agents/full/state/state.db-wal",
+   "mounts//tmp/e2e-agents/full/state tmpfs",
+   "processes//system.slice/e2e-agent-full.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3040 opute-host-agen",
+   "system/unitFiles/e2e-agent-full.service",
+   "system/units/e2e-agent-full.service",
+   "system/units/tmp-e2e\\x2dagents-full-state.mount"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.disk-full",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "mount"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "fullAgent"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "writeBefore"
+    },
+    {
+     "actual": "before\n",
+     "equals": "before\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "taskBeforeDone"
+    },
+    {
+     "actual": "    0\n",
+     "matches": "^ *[0-9]+\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "fill"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "writeFull"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "taskFull"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "planFull"
+    },
+    {
+     "actual": "full-1.txt\nnone\n",
+     "matches": "none\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "noHalfWrite"
+    },
+    {
+     "actual": "e2e 1\n",
+     "equals": "e2e 1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "fileBefore"
+    },
+    {
+     "actual": "e2e 3\n",
+     "equals": "e2e 3\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "fileAfter"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "readFull"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "dbFull"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "dbFull"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "writeAfter"
+    },
+    {
+     "actual": "after\n",
+     "equals": "after\n",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.stdout",
+     "step": "taskAfterDone"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "dbAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A full state directory refuses writes and recovers",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": {
+      "success": 2
+     },
+     "exists": true,
+     "ok": true,
+     "path": "json.invocations.ensure_host_file",
+     "step": "dbAfter"
+    },
+    {
+     "actual": {
+      "ensure_host_file": {
+       "success": 1
+      },
+      "run_host_command": {
+       "success": 1
+      }
+     },
+     "equalsStep": {
+      "path": "json.invocations",
+      "step": "dbBefore"
+     },
+     "ok": true,
+     "other": {
+      "ensure_host_file": {
+       "success": 1
+      },
+      "run_host_command": {
+       "success": 1
+      }
+     },
+     "path": "json.invocations",
+     "step": "dbFull"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A full state directory refuses writes and recovers",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "dbAfter": 196,
+   "dbBefore": 198,
+   "dbFull": 191,
+   "fileAfter": 140,
+   "fileBefore": 152,
+   "fill": 153,
+   "free": 146,
+   "fullAgent": 564,
+   "list": 544,
+   "mount": 141,
+   "noHalfWrite": 140,
+   "planFull": 208,
+   "readFull": 272,
+   "taskAfter": 214,
+   "taskAfterDone": 200,
+   "taskBefore": 212,
+   "taskBeforeDone": 208,
+   "taskFull": 210,
+   "tool": 283,
+   "wire": 287,
+   "writeAfter": 221,
+   "writeBefore": 231,
+   "writeFull": 207
+  },
+  "stepsSeconds": 50.2
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

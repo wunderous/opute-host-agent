@@ -1,0 +1,47 @@
+{
+ "id": "selfcheck.unseen-link",
+ "gate": "e2e-0",
+ "description": "Negative control for m25: a network link, undeclared. The observer before m25 did not see it.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: a network link is an effect",
+   "pass": [
+    {
+     "step": "plant",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [
+   "modules/dummy",
+   "system/units/sys-devices-virtual-net-m25probe.device",
+   "system/units/sys-subsystem-net-devices-m25probe.device"
+  ],
+  "persist": [],
+  "optional": {
+   "modules/dummy": "systemd may still be loading the unit or the module may already be present",
+   "system/units/sys-devices-virtual-net-m25probe.device": "systemd may still be loading the unit or the module may already be present",
+   "system/units/sys-subsystem-net-devices-m25probe.device": "systemd may still be loading the unit or the module may already be present"
+  }
+ },
+ "steps": [
+  {
+   "id": "plant",
+   "guest": "ip link add m25probe type dummy"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "remove",
+   "guest": "ip link del m25probe; modprobe -r dummy"
+  }
+ ],
+ "maxMinutes": 10
+}

@@ -1,0 +1,38 @@
+{
+ "id": "selfcheck.unseen-route",
+ "gate": "e2e-0",
+ "description": "Negative control for m25: a route, undeclared. The observer before m25 did not see it.",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "requirements": [
+  {
+   "spec": "evidence/e2e/README.md",
+   "requirement": "Harness: a route is an effect",
+   "pass": [
+    {
+     "step": "plant",
+     "path": "exit",
+     "equals": 0
+    }
+   ]
+  }
+ ],
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "steps": [
+  {
+   "id": "plant",
+   "guest": "ip route add blackhole 198.51.100.0/24"
+  }
+ ],
+ "cleanup": [
+  {
+   "id": "remove",
+   "guest": "ip route del blackhole 198.51.100.0/24; true"
+  }
+ ],
+ "maxMinutes": 10
+}

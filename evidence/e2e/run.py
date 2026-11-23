@@ -161,10 +161,16 @@ def journey_problems(journey: dict) -> list[str]:
 GLOB = re.compile(r"[*?\[]")
 
 
+# State kinds whose objects sit directly under the kind (m25): `links/<name>`,
+# `processes/<cgroup> <comm>`, `sysctl/<key>` and so on.
+FLAT_KINDS = ("processes", "sockets", "sysctl", "modules", "mounts", "routes", "links")
+
+
 def broad_pattern(pattern: str) -> bool:
     """The literal part before the first glob names no specific object: it ends
-    at a `/`, or has under `files//` fewer than two path components, otherwise
-    fewer than kind, category and the start of a name."""
+    at a `/`, or has under `files//` fewer than two path components, under a
+    flat kind no start of a name, otherwise fewer than kind, category and the
+    start of a name."""
     literal = GLOB.split(pattern, 1)[0]
     if literal == pattern:
         return False
@@ -173,6 +179,9 @@ def broad_pattern(pattern: str) -> bool:
     if literal.startswith("files//"):
         parts = literal[len("files//"):].split("/")
         return len(parts) < 2 or not parts[1]
+    kind, _, rest = literal.partition("/")
+    if kind in FLAT_KINDS:
+        return not rest
     parts = literal.split("/")
     return len(parts) < 3 or not parts[2]
 
@@ -704,7 +713,8 @@ def run_step(step: dict, phase: str, ctx: dict) -> dict:
             actual = e2elib.sha256_file(source)
             if actual != spec["sha256"]:
                 raise ValueError(f"input {step['copy']} sha256 {actual} != pinned {spec['sha256']}")
-            devvm.guest(f"install -d {shlex.quote(str(Path(step['to']).parent))}", check=True)
+            # mkdir -p, not install -d: install resets an existing parent's mode (it made /tmp 0755, m25)
+            devvm.guest(f"mkdir -p {shlex.quote(str(Path(step['to']).parent))}", check=True)
             devvm.scp([source], step["to"])
             if "mode" in step:
                 devvm.guest(f"chmod {step['mode']} {shlex.quote(step['to'])}", check=True)
