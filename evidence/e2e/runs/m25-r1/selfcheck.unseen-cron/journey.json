@@ -1,0 +1,38 @@
+{
+ "cleanup": [
+  {
+   "guest": "crontab -u opute -r",
+   "id": "remove"
+  }
+ ],
+ "description": "Negative control for m25: a crontab, undeclared. The observer before m25 did not see it.",
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.unseen-cron",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "requirement": "Harness: a crontab is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "guest": "echo '# m25 probe' | crontab -u opute -",
+   "id": "plant"
+  }
+ ]
+}
