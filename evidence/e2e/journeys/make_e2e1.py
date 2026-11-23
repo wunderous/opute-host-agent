@@ -39,11 +39,11 @@ PROPOSED = "evidence/cutover/proposed-0.4.0/README.md"
 # sources as the in-place upgrade target. Go stays the published v0.2.4. E2E_CANDIDATE points draft
 # journeys (never committed) at a draft release set.
 RUST_VERSION = "0.4.0"
-CANDIDATE = os.environ.get("E2E_CANDIDATE", "${PARITY}/e2e/release/rust-0.4.0-rc5")
+CANDIDATE = os.environ.get("E2E_CANDIDATE", "${PARITY}/e2e/release/rust-0.4.0-rc6")
 CANDIDATE_NEXT = CANDIDATE + "-next"
 NEXT_VERSION = "0.4.1-e2e"
 # The previous Rust release (0.3.x), for the platform-neutral upgrade and rollback.
-PREVIOUS = "${PARITY}/e2e/release/rust-0.3.0-rc8"
+PREVIOUS = "${PARITY}/e2e/release/rust-0.3.0-rc9"
 # What the installed candidate prints after its hash line.
 RUST_MATCH = "\n" + RUST_VERSION.replace(".", "\\.") + "\n$"
 LAUNCHER = f"opute-host-agent-{RUST_VERSION}.tgz"

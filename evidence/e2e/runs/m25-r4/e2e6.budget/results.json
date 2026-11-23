@@ -1,0 +1,172 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/bud",
+   "files//tmp/e2e-agents/bud/home",
+   "files//tmp/e2e-agents/bud/home/.cache",
+   "files//tmp/e2e-agents/bud/home/.cache/incus",
+   "files//tmp/e2e-agents/bud/home/.config",
+   "files//tmp/e2e-agents/bud/home/.config/incus",
+   "files//tmp/e2e-agents/bud/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/bud/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/bud/home/.config/opute",
+   "files//tmp/e2e-agents/bud/home/.config/opute-e2e",
+   "files//tmp/e2e-agents/bud/home/.config/opute-e2e/load.txt",
+   "files//tmp/e2e-agents/bud/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/bud/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/bud/instance",
+   "files//tmp/e2e-agents/bud/instance/host-agent.lock",
+   "files//tmp/e2e-agents/bud/state",
+   "files//tmp/e2e-agents/bud/state/authz.sqlite",
+   "files//tmp/e2e-agents/bud/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/bud/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/bud/state/credentials",
+   "files//tmp/e2e-agents/bud/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/bud/state/host-agent.lock",
+   "files//tmp/e2e-agents/bud/state/state.db",
+   "files//tmp/e2e-agents/bud/state/state.db-shm",
+   "files//tmp/e2e-agents/bud/state/state.db-wal",
+   "processes//system.slice/e2e-agent-bud.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3049 opute-host-agen",
+   "system/unitFiles/e2e-agent-bud.service",
+   "system/units/e2e-agent-bud.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.budget",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 28555,
+     "gte": 2000,
+     "ok": true,
+     "path": "json.calls",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.errors",
+     "step": "load"
+    },
+    {
+     "actual": 16904192,
+     "lte": 50331648,
+     "ok": true,
+     "path": "json.growthAfterWarmup.rssBytes",
+     "step": "load"
+    },
+    {
+     "actual": 0,
+     "lte": 16,
+     "ok": true,
+     "path": "json.growthAfterWarmup.fds",
+     "step": "load"
+    },
+    {
+     "actual": -1,
+     "lte": 8,
+     "ok": true,
+     "path": "json.growthAfterWarmup.threads",
+     "step": "load"
+    },
+    {
+     "actual": 804,
+     "lte": 8192,
+     "ok": true,
+     "path": "json.growthAfterWarmup.storeBytesPerCall",
+     "step": "load"
+    },
+    {
+     "actual": 102801408,
+     "lte": 268435456,
+     "ok": true,
+     "path": "json.peak.rssBytes",
+     "step": "load"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "audit"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.unfinished",
+     "step": "audit"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 28555,
+     "gte": 10000,
+     "ok": true,
+     "path": "json.calls",
+     "step": "load"
+    },
+    {
+     "actual": 2789376,
+     "lte": 8388608,
+     "ok": true,
+     "path": "json.growthAfterWarmup.storeBytesLastFiveMinutes",
+     "step": "load"
+    },
+    {
+     "actual": 5000,
+     "lte": 5000,
+     "ok": true,
+     "path": "json.auditRows",
+     "step": "pruned"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "pruned"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Audit rows are kept within an age and a row bound",
+   "spec": "openspec/changes/audit-retention/specs/audit-retention/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "audit": 439,
+   "budAgent": 556,
+   "list": 528,
+   "load": 900123,
+   "pruned": 70231,
+   "tool": 284,
+   "wire": 292
+  },
+  "stepsSeconds": 1017.0
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

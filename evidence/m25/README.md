@@ -77,3 +77,14 @@ remains available for reuse while the guest exists. Its socket matched
 the guest's `e2e-pg-relay` device and disappeared during cleanup. The
 journey now verifies the socket against that device and declares it
 through guest removal.
+
+## Supply-chain update
+
+CI on PR #67 flagged RUSTSEC-2026-0592 for `url` 2.5.8. Both lines now
+lock `url` 2.5.9 and its required `form_urlencoded` 1.2.3. Local
+`make supply-chain` passed on both lines. The earlier candidate runs
+keep their own binary hashes. The updated builds are `rust-0.3.0-rc9`
+and `rust-0.4.0-rc6`, and their fresh E2E runs are `m25-r3` and `m25-r4`.
+The partial rc5 journey run is archived under `.parity/retired/m25-r2-rc5`.
+In `m25-r4` all 63 receipts verified on rc6 and every journey passed on
+its first attempt; the 0.4.0 gates now name `m25-r4`.

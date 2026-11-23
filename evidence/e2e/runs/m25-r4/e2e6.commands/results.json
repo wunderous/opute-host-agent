@@ -1,0 +1,166 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/hang",
+   "files//tmp/e2e-agents/hang/home",
+   "files//tmp/e2e-agents/hang/home/.config",
+   "files//tmp/e2e-agents/hang/home/.config/opute",
+   "files//tmp/e2e-agents/hang/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/hang/instance",
+   "files//tmp/e2e-agents/hang/instance/host-agent.lock",
+   "files//tmp/e2e-agents/hang/state",
+   "files//tmp/e2e-agents/hang/state/authz.sqlite",
+   "files//tmp/e2e-agents/hang/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/hang/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/hang/state/credentials",
+   "files//tmp/e2e-agents/hang/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/hang/state/host-agent.lock",
+   "files//tmp/e2e-agents/hang/state/state.db",
+   "files//tmp/e2e-agents/hang/state/state.db-shm",
+   "files//tmp/e2e-agents/hang/state/state.db-wal",
+   "files//tmp/e2e-agents/junk",
+   "files//tmp/e2e-agents/junk/home",
+   "files//tmp/e2e-agents/junk/home/.config",
+   "files//tmp/e2e-agents/junk/home/.config/opute",
+   "files//tmp/e2e-agents/junk/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/junk/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/junk/instance",
+   "files//tmp/e2e-agents/junk/instance/host-agent.lock",
+   "files//tmp/e2e-agents/junk/state",
+   "files//tmp/e2e-agents/junk/state/authz.sqlite",
+   "files//tmp/e2e-agents/junk/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/junk/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/junk/state/credentials",
+   "files//tmp/e2e-agents/junk/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/junk/state/host-agent.lock",
+   "files//tmp/e2e-agents/junk/state/state.db",
+   "files//tmp/e2e-agents/junk/state/state.db-shm",
+   "files//tmp/e2e-agents/junk/state/state.db-wal",
+   "files//tmp/e2e-agents/stubs",
+   "files//tmp/e2e-agents/stubs/incus-hang",
+   "files//tmp/e2e-agents/stubs/incus-junk",
+   "processes//system.slice/e2e-agent-hang.service opute-host-agen",
+   "processes//system.slice/e2e-agent-junk.service opute-host-agen",
+   "sockets/tcp 127.0.0.1:3043 opute-host-agen",
+   "sockets/tcp 127.0.0.1:3044 opute-host-agen",
+   "system/unitFiles/e2e-agent-hang.service",
+   "system/unitFiles/e2e-agent-junk.service",
+   "system/units/e2e-agent-hang.service",
+   "system/units/e2e-agent-junk.service"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.commands",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "stubs"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "hangCall"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "hangCall"
+    },
+    {
+     "actual": 45254,
+     "lte": 60000,
+     "ok": true,
+     "path": "ms",
+     "step": "hangCall"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "hangNext"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A failing provider command ends the call, not the agent",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "junkCall"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "junkInfo"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "junkNext"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A failing provider command ends the call, not the agent",
+   "spec": "openspec/changes/host-fault-outcomes/specs/host-fault-outcomes/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "hangAgent": 30543,
+   "hangCall": 45254,
+   "hangNext": 224,
+   "junkAgent": 747,
+   "junkCall": 234,
+   "junkInfo": 209,
+   "junkNext": 247,
+   "listHang": 531,
+   "listJunk": 238,
+   "noStubLeft": 2153,
+   "stubs": 246,
+   "tool": 291,
+   "wire": 282
+  },
+  "stepsSeconds": 126.0
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

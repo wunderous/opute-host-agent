@@ -430,19 +430,20 @@ The m25 draft expanded the host observer to cover filesystem and runtime
 effects. It confirmed the provider listener exposure recorded as P1.
 D53 binds the provider executables to IPv4 loopback. The draft also captured
 new effects in the neutral-profile, upgrade-chain, console and public-site
-journeys. The current candidate evidence is in progress.
+journeys. The supply-chain dependency patch that superseded rc8 also
+supersedes rc5 with rc6. Every gate verifies on rc6 under `m25-r4`.
 
 ### 7.2 The candidate
 
 | Field | Value |
 |---|---|
-| Name | `rust-0.4.0-rc5`, version `0.4.0`. It supersedes rc4 for D53. |
-| Commit | `3e3c74d2a69072ba1031494912fb8743abb9cec6` (branch `codex/m25-observer-040`) |
-| `SHA256SUMS` | `sha256:1d3eeee7916d769249cd2fa2f99cdd871ec6cdb0ac89cf09a8d4458313ca70c1` |
-| `host-agent-linux-x64` | `d9c5d2465c6f20e26895040d028887deb7c35010633ec21478f318a76ff7ea72` |
-| `host-agent-linux-arm64.gz` | `563c40d5353e3d3581ba14afb5cbcfe643cad222a262b94b15d9930e33281628` |
-| Upgrade target | `rust-0.4.0-rc5-next`, `0.4.1-e2e`, the same commit |
-| Rollback target | `rust-0.3.0-rc8` (section 1), used by the rollback and upgrade-chain journeys |
+| Name | `rust-0.4.0-rc6`, version `0.4.0`. It includes the patched URL dependency. |
+| Commit | `dd38feade924716a539eb613d4a17c0377e3c30c` (branch `codex/m25-observer-040`) |
+| `SHA256SUMS` | `sha256:5dacdb8f5e374edfd79399cecb16a340e024eeea61e9c89994de11f5418b6f3e` |
+| `host-agent-linux-x64` | `f2dfb569fb82035777f5e40aba33385a0977c663e196ad338b95cf2d5050bc25` |
+| `host-agent-linux-arm64.gz` | `d308eb0f0a0c89548c52c4ea389d0cc3f09102d8820dafea65befd10b4c6acd6` |
+| Upgrade target | `rust-0.4.0-rc6-next`, `0.4.1-e2e`, the same commit |
+| Rollback target | `rust-0.3.0-rc9` (section 1), used by the rollback and upgrade-chain journeys |
 
 Before the build: `cargo fmt` and clippy were clean, a 60 s pass over all
 18 fuzz targets found nothing ([`evidence/m25/fuzz-040.txt`](../../../evidence/m25/fuzz-040.txt)),
@@ -461,12 +462,13 @@ attempt. Goal m22 changed no 0.4.0 code either; with the outcome rule on,
 every gate reran on rc4 under run `m22-r2`. Goal m23 changed no 0.4.0 code.
 With the outcome and effect rules on, every gate reran on rc4 under run
 `m23-r2`. Goal m24 changed no 0.4.0 code. With the three rules on, every
-gate reran on rc4 under run `m24-r2`, which is now the run of every gate. `evidence/e2e/verify.py --gate`
-passes each.
+gate reran on rc4 under run `m24-r2`. Goal m25 widened the host observer and
+fixed P1 (D53); every gate reran on rc6 under run `m25-r4`, which is now the
+run of every gate. `evidence/e2e/verify.py --gate` passes each.
 
 | Gate | Journeys | Spec requirements passed | New in 0.4.0 |
 |---|---|---|---|
-| e2e-0 | 12 | 12 | `selfcheck.unchecked-outcome` (m22); `selfcheck.unconfirmed-effect` and `selfcheck.empty-confirmation` (m23); `selfcheck.unused-allowance` and `selfcheck.broad-allowance` (m24) |
+| e2e-0 | 26 | 25 | `selfcheck.unchecked-outcome` (m22); `selfcheck.unconfirmed-effect` and `selfcheck.empty-confirmation` (m23); `selfcheck.unused-allowance` and `selfcheck.broad-allowance` (m24); fourteen observer probes, each failing with its exact planted effect (m25) |
 | e2e-1 | 8 | 35 | Install on the proposed unit and launcher (below); upgrade to `0.4.1-e2e` |
 | e2e-2 | 5 | 38 | `e2e2.incus`: the console journey (open, read the login prompt, resize, detach, no `incus console` left) and the NIC journey (attach, attach again, remove, remove again) |
 | e2e-3a | 5 | 33 | `e2e3a.workload`: cluster inspection on the HA cluster through `list_secret_keys`, `list_configmap_keys` and `inspect_workload`; the Q18 workaround is gone |
@@ -474,7 +476,7 @@ passes each.
 | e2e-4 | 3 | 16 | `e2e4.upgrade-chain` (m21): the release path on one host, on the production unit. Go v0.2.4 on Go's unit leaves a run in flight. `rust-0.3.0-rc7` serves that state on the same unit, and installs an LLM relay and a user-scoped public MCP connector with marked tokens. rc4 takes over on the proposed 0.4.0 unit. rc7 is then rolled back onto that unit. At each step, counts and ids reconcile per table, every run, task and operation reads back with the status last reported (Go's in-flight run as `cancelled`), mutations are admitted from the unit, each connector call gets past its origin probe, and no token is in the journal, the store, a non-private file or another process's environment (D52) |
 | e2e-6 | 9 | 21 | `e2e6.secret-sweep` (m19): with markers planted for an OAuth grant, an LLM relay, a host cluster agent install and a public MCP connector, no marker is on any process's argv (78 execs traced host-wide), in the journal, in the store or in a response, and every file that holds one is 0600; the environ of the agent's own unit holds its own credentials only. `e2e6.child-env`: `/proc` shows that neither a console's `incus` process nor a recipe step's `systemd-run` client holds the agent's bearer, a provider credential or an `OPUTE_` setting (D40). `e2e6.pressure`: a 1 GiB body to the serving relay is answered 413 in 0.03 s, with RSS at 58 MB (D41). `e2e6.budget` (`m24-r2`): with a 5,000-row bound, 28,154 calls leave exactly 5,000 audit rows one prune interval later, and the store grows 773 bytes per call against 3,421 in 0.3.0 (D42) |
 | e2e-neutral | 3 | 13 | Rerun after PR #43's merge; rollback from 0.4.0 to 0.3.0 rc7 |
-| e2e-7 | 1 | 5 | `e2e7.public-site` (m20): one `run_host_local_recipe` run brings a K3s Service up at `e2e-m24-r2.opute.io`, which the host fetches over verified TLS; a second run skips every node; a deleted pod is replaced; neither the Cloudflare token nor the tunnel's run token is in any file, journal line or run record; one teardown run removes the guest, the CNAME and the tunnel, and a second skips (D44, D45) |
+| e2e-7 | 1 | 5 | `e2e7.public-site` (m20): one `run_host_local_recipe` run brings a K3s Service up at `e2e-m25-r4.opute.io`, which the host fetches over verified TLS; a second run skips every node; a deleted pod is replaced; neither the Cloudflare token nor the tunnel's run token is in any file, journal line or run record; one teardown run removes the guest, the CNAME and the tunnel, and a second skips (D44, D45) |
 
 Retired, with cause (`.parity/retired/`):
 - `m15-r1-stale-journeys`: the first attempts of `e2e1.migrate-upgrade`
@@ -518,13 +520,15 @@ On rc4 under the outcome rule (`m22-r2`), one attempt was retired:
   reran once under `m22-r2`.
 
 On rc4 under both rules (`m23-r2`), every journey passed on its first attempt.
-So did every journey under the three rules (`m24-r2`).
+So did every journey under the three rules (`m24-r2`), and on rc6 under the
+widened observer (`m25-r4`). The partial rc5 round was superseded by rc6 and
+archived as `.parity/retired/m25-r2-rc5`.
 
 | Receipt | What it proves |
 |---|---|
-| Contract suites | Binary `8fcb0352…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
-| Seam `m19` | 144 compliant, 2 unported, 4 unpublished, no gap, the red canary, and a rerun that reproduces the report byte for byte |
-| arm64 clean install | `host-agent-linux-arm64.gz` `2505b3e6…`, 89 s |
+| Contract suites | Binary `f2dfb569…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. PR #43 (platform-neutral) removed two 0.3.0 scenarios. `credentials.operator-secret` went because OAuth machine clients now come from `OPUTE_OAUTH_CLIENTS`. `gate.platform-unaffected` went because there is one serving profile and no mode |
+| Seam `m25-rc6` | 144 compliant, 2 unported, 4 unpublished, no gap, the red canary, and a rerun that reproduces the report byte for byte |
+| arm64 clean install | `host-agent-linux-arm64.gz` `d308eb0f…` |
 | Distribution | Go's read-only canary passes on the locally packed 0.4.0 launcher. After the declared renames, the site preview differs from Go's only in the tools D28, D37 and D39 changed and in `run_host_local_recipe`'s description, from which platform-neutral removes the Platform name |
 
 ### 7.4 Prerequisite for shipping 0.4.0: the proposed install surfaces
