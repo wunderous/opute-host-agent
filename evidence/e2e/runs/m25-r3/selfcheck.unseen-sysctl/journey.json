@@ -1,0 +1,38 @@
+{
+ "cleanup": [
+  {
+   "guest": "sysctl -qw vm.swappiness=60",
+   "id": "remove"
+  }
+ ],
+ "description": "Negative control for m25: a runtime sysctl, undeclared. The observer before m25 did not see it.",
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.unseen-sysctl",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "requirement": "Harness: a runtime sysctl is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "guest": "sysctl -qw vm.swappiness=37",
+   "id": "plant"
+  }
+ ]
+}

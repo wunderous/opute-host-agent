@@ -325,7 +325,7 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   `rust-0.3.0-rc7` as reviewed on run `m24-r1` (packet section 6). Go stays
   the production owner until the owner starts cutover through the normal
   rollout path; nothing was tagged, published or selected.
-  *Reopened by D53:* review the successor candidate `rust-0.3.0-rc8`
+  *Reopened by D53:* review the successor candidate `rust-0.3.0-rc9`
   against the expanded m25 evidence.
 - [ ] 6.4 After the rollback window, make a separate, evidenced retirement
   decision for Go and a separate ownership decision for releases and the

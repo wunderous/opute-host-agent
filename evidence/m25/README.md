@@ -72,3 +72,15 @@ listener. The PostgreSQL journey passed on its single rerun and its first
 receipt is archived at `.parity/retired/m25-r1-e2e2.data-incus-proxy`.
 Cutover readiness lists e2e-5 and WSL2 as blocked, with Q4 and Q18
 unverified. Candidate review remains open under task 6.3.
+
+## Supply-chain update
+
+CI on PR #67 flagged RUSTSEC-2026-0592 for `url` 2.5.8. Both lines now
+lock `url` 2.5.9 and its required `form_urlencoded` 1.2.3. Local
+`make supply-chain` passed on both lines. The earlier candidate runs
+keep their own binary hashes. The updated builds are `rust-0.3.0-rc9`
+and `rust-0.4.0-rc6`, and their fresh E2E runs are `m25-r3` and `m25-r4`.
+The partial rc5 journey run is archived under `.parity/retired/m25-r2-rc5`.
+In `m25-r3` all 59 receipts verified on rc9 and every journey passed on
+its first attempt; the gates now name `m25-r3`. `m25-r1` stays as the rc8
+record.
