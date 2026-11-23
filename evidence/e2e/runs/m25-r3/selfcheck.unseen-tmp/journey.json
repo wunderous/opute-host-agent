@@ -1,0 +1,38 @@
+{
+ "cleanup": [
+  {
+   "guest": "rm -f /tmp/opute-e2e-probe",
+   "id": "remove"
+  }
+ ],
+ "description": "Negative control for m25: a file under /tmp, undeclared. The observer before m25 did not see it.",
+ "effects": {
+  "allow": [],
+  "persist": []
+ },
+ "gate": "e2e-0",
+ "id": "selfcheck.unseen-tmp",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit (opute-bootstrap-mcp.service), test identity e2e-devvm-agent, test bearer token"
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "requirement": "Harness: a file under /tmp is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "steps": [
+  {
+   "guest": "touch /tmp/opute-e2e-probe",
+   "id": "plant"
+  }
+ ]
+}

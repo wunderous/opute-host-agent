@@ -1,0 +1,53 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "links/m25probe",
+   "modules/dummy",
+   "system/units/sys-devices-virtual-net-m25probe.device",
+   "system/units/sys-subsystem-net-devices-m25probe.device"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": [
+   "links/m25probe"
+  ]
+ },
+ "failures": [
+  "undeclared-effect"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.unseen-link",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "plant"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: a network link is an effect",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "plant": 147
+  },
+  "stepsSeconds": 45.0
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

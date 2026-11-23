@@ -78,6 +78,16 @@ the guest's `e2e-pg-relay` device and disappeared during cleanup. The
 journey now verifies the socket against that device and declares it
 through guest removal.
 
+## 0.3.0 candidate evidence
+
+All 59 receipts for the seven runnable gates on `rust-0.3.0-rc8`
+verified under `m25-r1`. All 14 observer probes identified their exact
+planted effects. The installed-provider journey checked the loopback
+listener. The PostgreSQL journey passed on its single rerun and its first
+receipt is archived at `.parity/retired/m25-r1-e2e2.data-incus-proxy`.
+Cutover readiness lists e2e-5 and WSL2 as blocked, with Q4 and Q18
+unverified. Candidate review remains open under task 6.3.
+
 ## Supply-chain update
 
 CI on PR #67 flagged RUSTSEC-2026-0592 for `url` 2.5.8. Both lines now
@@ -88,3 +98,6 @@ and `rust-0.4.0-rc6`, and their fresh E2E runs are `m25-r3` and `m25-r4`.
 The partial rc5 journey run is archived under `.parity/retired/m25-r2-rc5`.
 In `m25-r4` all 63 receipts verified on rc6 and every journey passed on
 its first attempt; the 0.4.0 gates now name `m25-r4`.
+In `m25-r3` all 59 receipts verified on rc9 and every journey passed on
+its first attempt; the 0.3.0 gates name `m25-r3`. `m25-r1` stays as the rc8
+record.

@@ -6,7 +6,7 @@ nothing and authorizes nothing. Go v0.2.4 stays the production owner until
 the owners sign below and the responsible owner authorizes cutover through
 its normal rollout path (spec, *Cutover requires specification-based
 evidence*). The owners signed off on rc7 on 2026-11-21. D53 reopens
-review under task 6.3 for rc8 (section 6).
+review under task 6.3 for the successor candidate (section 6).
 
 Machine-checked form: `make cutover-readiness` (`evidence/cutover/readiness.py`,
 items in `evidence/cutover/readiness.json`). Its `candidate` item fails
@@ -63,52 +63,49 @@ no product defect (section 2a). Every gate reran on rc7 under the three rules.
 m25 extends the journey observer to additional host files and runtime state.
 It found that provider executables listened beyond loopback (P1). D53
 restricts the binding to `127.0.0.1`. The successor candidate is
-`rust-0.3.0-rc8`. The expanded journey evidence is in progress.
+initially `rust-0.3.0-rc8`, verified under `m25-r1`. PR #67's
+supply-chain check then flagged `url` 2.5.8 (RUSTSEC-2026-0592). The
+lockfile update to 2.5.9 supersedes rc8 with `rust-0.3.0-rc9`, whose
+gates and receipts verify under `m25-r3`.
 
 ## 1. The candidate
 
 | Field | Value |
 |---|---|
-| Name | `rust-0.3.0-rc8` ([`evidence/cutover/candidate.json`](../../../evidence/cutover/candidate.json)) |
+| Name | `rust-0.3.0-rc9` ([`evidence/cutover/candidate.json`](../../../evidence/cutover/candidate.json)) |
 | Version | `0.3.0` (the binary's `--version`; D28 makes 0.3.0 the first Rust package) |
-| Commit | `a8c018197e6ba0136c02274d9d7a78bad2973655` (branch `claude/m25-observer-coverage`) |
+| Commit | `0883e47fa7a63a6b7a874e8f7f0f20c72646f2c5` (branch `claude/m25-observer-coverage`) |
 | Built | locally with `tools/release/build-artifacts.sh`, `VERSION=0.3.0`; no tag, no publish. The set carries a CycloneDX SBOM, `sbom.cdx.json`, with its own checksum |
-| `SHA256SUMS` | `sha256:e87d480ed303d2dc859fd859c2cf54965076aa12031801fb3ef7dafd4904aa87` |
-| `host-agent-linux-x64` | `0cd61080aad40c6e40730f9a96d49adddbbb43aa06ae390c35957e848089fc60` |
-| `host-agent-linux-x64.gz` | `f8fe9ea72594cd17c4d51bdcbb1dc653c2fe6df00a07ad535a2d56f583628817` |
-| `host-agent-linux-arm64.gz` | `c9f77a7721a52fe6ccee21cfc5701eb0ec264cf39a2715c4cfc1d06e638cdb03` |
-| `opute-provider-k3s-linux-x64` | `5726d74524c3b68948feb78a045ee1ed2191971a4e94f7ce7a725a2f479429bc` |
-| `opute-provider-cloudflare-linux-x64` | `9f8224dfd60932b0dfcfd1847ee810e3efdc9ec90f33e331fe8847bc012d875d` |
-| `opute-provider-tailscale-linux-x64` | `975b3fd51f223f0c7bc5e6ccda2ada8775d12fce67b5bedd1a268c3e272238c4` |
+| `SHA256SUMS` | `sha256:2679c551c743fb1c09d2b2a360a08bc01375f04f269f97748c99305b63e52e56` |
+| `host-agent-linux-x64` | `569a27d3549f677ba227044d5220a0a501bd36ffe7157861810c822e522a62da` |
+| `host-agent-linux-x64.gz` | `f20b3f0da43b3bb575b24d9108b908a28a3ce4671e15bba713ef639c36b891f8` |
+| `host-agent-linux-arm64.gz` | `705a4bbfafff74dd2208fbd29b1053d5514f53e8793ade9ef2398538484c1c07` |
+| `opute-provider-k3s-linux-x64` | `535bd3fa94e360949919ffdb4533929f059cd446adecc237347328aca78826e4` |
+| `opute-provider-cloudflare-linux-x64` | `8a4d857191ca770caa22d9b15e47c50c15da93a5534296ed484d37b6f3dfd383` |
+| `opute-provider-tailscale-linux-x64` | `abff2d496589dc7fe53164d287ee38e67ee4fe19bc3d26aff4269d13027f4dfc` |
 | Catalog revision, standalone | `sha256:9aba4c895695d25c6b8f91aecf06297a813283561bfe308a50cc3569fb20d912` (142 public tools; the site capture from the binary reports the same revision) |
 | Catalog revision, platform | `sha256:257a3f615b68b4b889f182659dc3c9aa32540bfa2653d53ece099050884d0483` |
-| Upgrade target | `rust-0.3.0-rc8-next`, `0.3.1-e2e`, the same commit, used only by the in-place upgrade journeys |
+| Upgrade target | `rust-0.3.0-rc9-next`, `0.3.1-e2e`, the same commit |
 
 The dev VM build verifies that the installed binary reports `0.3.0`. Go stays the published v0.2.4 release
 (`baseline/source-lock.json`).
 
 ## 2. Gates and receipts
 
-Every gate ran on rc7 under one run id, `m24-r1`
-(`evidence/e2e/runs/m24-r1/`), with the m22 outcome rule, the m23 effect
-rule and the m24 allowance rule on. Each receipt passed at the m24
-revision. Every `tools/call`
-and `tasks/get` step of every journey asserts its outcome. Every mutation a
-journey expects to succeed is confirmed by a later observation, or opts out
-with its reason. Every effects pattern matches a change of the journey's
-own run and names no whole tree. `evidence/e2e/outcomes.py --check` flags no
-step or pattern under the three rules, and `make e2e-test` runs it. Each journey names the spec requirements it proves in its
-`results.json`.
+All seven runnable gates verified on rc9 under `m25-r3` with the m22
+outcome rule, the m23 effect confirmation rule, the m24 allowance rule
+and the m25 host observer. The verifier matched all 59 receipts,
+including the exact effects paths of the 14 new probes.
 
 | Gate | Journeys | Spec requirements passed | What it proves |
 |---|---|---|---|
-| e2e-0 | 12 | 12 | The harness can fail: undeclared effects, a broken pass condition, a schema violation, a tool error no assertion expects (`unchecked-outcome`, m22), a mutation nothing confirms or whose confirmation finds nothing (`unconfirmed-effect`, `pass-condition`, m23), and an allowance the run never uses or one that covers a whole tree (`unused-allowance`, `broad-allowance`, m24) are reported as failures, and the VM restores between journeys |
-| e2e-1 | 8 | 20 | Install and first success: the system and user units, the npm launcher (packed locally), tutorial clients, auth and admission refusals with no durable writes, two agents and the writer lock, restart recovery, and migration from Go v0.2.4 with an in-place upgrade |
-| e2e-2 | 5 | 30 | Typed domain work: host operations, Incus containers and VMs with ownership, cross-domain plans and cancellation, OCI build/push/run on K3s, PostgreSQL and SQLite data services |
-| e2e-3a | 5 | 17 | A three-server HA K3s cluster built only through typed calls: workload, losing one server, quorum loss with fail-closed calls and recovery, and the optional cluster endpoint (Q19) |
-| e2e-3 | 3 | 15 | Use cases: cluster discovery through the neutral name, the site deploy recipe, local model serving through the gateway (a test runtime) |
-| e2e-4 | 2 | 10 | Cutover: Rust on Go v0.2.4's real state with work in flight, Rust's new work, rollback to Go on Rust's state; SIGTERM, SIGKILL and an in-place upgrade mid-work |
-| e2e-6 | 10 | 14 | Host faults and pressure (m16, D31): a full state directory refuses effectful calls and recovers without a restart; a truncated store stops startup and the restored store starts intact; SIGKILL during a plan step and twelve SIGKILLs with tasks in flight leave a whole store; a hung or garbage-printing `incus` ends the call typed and the agent serves on; a clock stepped back an hour keeps tokens and reservations; admission refuses beyond the operation limit and below the floors; a 1 GiB declared body is answered 413 (D29), and so is one sent to the serving relay or to the k3s provider executable (D41, `e2e6.provider-body`); the 15-minute resource budget holds; a recipe step's child holds none of the agent's secrets (D40, `e2e6.child-env`); with a marker for each secret class, OAuth, an LLM relay, a host cluster agent and a public MCP connector leave no secret on any argv, in the journal, the store or a response, and every file holding one is 0600 (D46-D51, `e2e6.secret-sweep`); the connector call now gets past its origin probe (D52) |
+| e2e-0 | 26 | 25 | The harness can fail: undeclared effects, a broken pass condition, a schema violation, a tool error no assertion expects (`unchecked-outcome`, m22), a mutation nothing confirms or whose confirmation finds nothing (`unconfirmed-effect`, `pass-condition`, m23), and an allowance the run never uses or one that covers a whole tree (`unused-allowance`, `broad-allowance`, m24) are reported as failures, and the VM restores between journeys Fourteen probes identify their exact planted filesystem and runtime effects. |
+| e2e-1 | 8 | 34 | Install and first success: the system and user units, the npm launcher (packed locally), tutorial clients, auth and admission refusals with no durable writes, two agents and the writer lock, restart recovery, and migration from Go v0.2.4 with an in-place upgrade |
+| e2e-2 | 5 | 32 | Typed domain work: host operations, Incus containers and VMs with ownership, cross-domain plans and cancellation, OCI build/push/run on K3s, PostgreSQL and SQLite data services |
+| e2e-3a | 5 | 29 | A three-server HA K3s cluster built only through typed calls: workload, losing one server, quorum loss with fail-closed calls and recovery, and the optional cluster endpoint (Q19) |
+| e2e-3 | 3 | 17 | Use cases: cluster discovery through the neutral name, the site deploy recipe, local model serving through the gateway (a test runtime) |
+| e2e-4 | 2 | 11 | Cutover: Rust on Go v0.2.4's real state with work in flight, Rust's new work, rollback to Go on Rust's state; SIGTERM, SIGKILL and an in-place upgrade mid-work |
+| e2e-6 | 10 | 21 | Host faults and pressure (m16, D31): a full state directory refuses effectful calls and recovers without a restart; a truncated store stops startup and the restored store starts intact; SIGKILL during a plan step and twelve SIGKILLs with tasks in flight leave a whole store; a hung or garbage-printing `incus` ends the call typed and the agent serves on; a clock stepped back an hour keeps tokens and reservations; admission refuses beyond the operation limit and below the floors; a 1 GiB declared body is answered 413 (D29), and so is one sent to the serving relay or to the k3s provider executable (D41, `e2e6.provider-body`); the 15-minute resource budget holds; a recipe step's child holds none of the agent's secrets (D40, `e2e6.child-env`); with a marker for each secret class, OAuth, an LLM relay, a host cluster agent and a public MCP connector leave no secret on any argv, in the journal, the store or a response, and every file holding one is 0600 (D46-D51, `e2e6.secret-sweep`); the connector call now gets past its origin probe (D52) |
 
 Two earlier runs were retired with their cause: `m16-r1` (rc2) when fuzzing
 found F5, and `m16-r2` (rc3) when CI's `cargo fmt` check failed and formatting
@@ -121,7 +118,7 @@ kept as its record; `m19-r1` named rc6 and is kept as its record; `m21-r1`
 named rc7 before the outcome rule and is kept as its record; `m22-r1`
 named rc7 under the outcome rule and is kept as its record; `m23-r1`
 named rc7 under both rules and is kept as its record; `m24-r1` replaces it
-as the candidate's run. One journey start in `m19-r1`
+as the rc7 run. One journey start in `m19-r1`
 (`e2e1.user-unit-npm`) was refused before it recorded anything, because the
 dev VM's ports were still in TIME-WAIT after the previous journey's reboot; it
 ran once the ports were free. In `m21-r1` every journey passed on its first
@@ -130,13 +127,19 @@ failed on downloads: the Ubuntu archive served the guest at 20-37 kB/s, and
 the package steps' deadlines expired. They were retired with that cause
 (`.parity/retired/m22-r1-apt-slow/`) and each reran once under the same run
 id after the mirror recovered. In `m23-r1` and in `m24-r1` every journey
-passed on its first attempt.
+passed on its first attempt. In `m25-r1`, the first data journey exposed
+an Incus loopback proxy that remains available until guest cleanup.
+The attempt was archived at `.parity/retired/m25-r1-e2e2.data-incus-proxy`.
+The journey verified the socket against its Incus device and passed on
+its single rerun. `m25-r1` named rc8 and is kept as its record; `m25-r3`
+replaces it as the rc9 run, and every journey in it passed on its first
+attempt.
 
 | Receipt | Where | What it proves |
 |---|---|---|
-| Contract suites | [`contract-suites.json`](../../../evidence/cutover/contract-suites.json), binary `f5b11757…` | D8 OAuth issuance 24/24, D10 standalone read-only gate 8/8, D11 rejected calls leave no audit writes 3/3, D12 refusal before an operation record 3/3, D13 evidence redaction 4/4 |
-| Seam report | [`evidence/seam/m21`](../../../evidence/seam/m21) and its validation | D14: 133 compliant capabilities, 17 unported, no gap; the dispatch canary turns the verifier red |
-| arm64 clean install | [`arm64/receipt.json`](../../../evidence/cutover/arm64/receipt.json), `host-agent-linux-arm64.gz` `b2396cc0…` | Debian 12 arm64 under emulation: checksum, install, launch, MCP `tools/list` and `get_host_info` with the exact agent id, SIGTERM stop, relaunch, stop, uninstall |
+| Contract suites | [`contract-suites.json`](../../../evidence/cutover/contract-suites.json), binary `569a27d3…` | D8 OAuth issuance 24/24, D10 standalone read-only gate 8/8, D11 rejected calls leave no audit writes 3/3, D12 refusal before an operation record 3/3, D13 evidence redaction 4/4 |
+| Seam report | [`evidence/seam/m25-rc9`](../../../evidence/seam/m25-rc9) and its validation | D14: 133 compliant capabilities, 17 unported, no gap; the dispatch canary turns the verifier red |
+| arm64 clean install | [`arm64/receipt.json`](../../../evidence/cutover/arm64/receipt.json), `host-agent-linux-arm64.gz` `705a4bbf…` | Debian 12 arm64 under emulation: checksum, install, launch, MCP `tools/list` and `get_host_info` with the exact agent id, SIGTERM stop, relaunch, stop, uninstall |
 | Reproducible build | `make reproducible-build` (CI job `supply-chain`) | Two clean, offline, `--locked` builds of the agent and the four provider executables are byte-identical |
 | Supply chain | `deny.toml`, `make supply-chain` (CI) | cargo-deny: advisories, licences, sources (crates.io only), duplicate versions; exceptions carry their reason (one accepted advisory, Q30) |
 | Distribution | [`distribution.json`](../../../evidence/cutover/distribution.json) | Go's published-package read-only canary passes (1/1) on the locally packed 0.3.0 launcher starting the candidate; the site preview from the candidate's catalog equals Go's after the declared renames except in exactly the four tools D28 changed (below); Go's own `check-site` passes from Go v0.2.4 |
@@ -145,7 +148,7 @@ The distribution checks map onto tasks 5.1 and 5.2 as follows. All are local.
 
 | Check | Evidence |
 |---|---|
-| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m24-r1) |
+| Clean-machine install (x64) | `e2e1.system-unit`, `e2e1.user-unit-npm` (both in m25-r3) |
 | Clean-machine install (arm64) | the arm64 receipt |
 | Upgrade from Go v0.2.4 | `e2e1.migrate-upgrade` and `e2e4.cutover` |
 | Rollback to Go v0.2.4 | `e2e4.cutover` |
