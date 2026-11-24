@@ -1,16 +1,16 @@
 {
  "id": "e2e4.upgrade-chain",
  "gate": "e2e-4",
- "description": "The release path (m21): the host is reinstalled as Go v0.2.4 on Go's unit and leaves a run in flight; the previous Rust release (0.3.0) takes over on the same unit and state and installs an LLM relay and a user-scoped public MCP connector with marked tokens; the 0.4.0 candidate takes over on the proposed 0.4.0 unit and does more work; then 0.3.0 is rolled back onto the same 0.4.0 unit. Each step reads the previous binary's records back and searches the host for the tokens.",
+ "description": "The release path (m21, m28): the host is reinstalled as Go v0.2.4 on Go's unit and leaves a run in flight; 0.3.0 takes over on the same unit and state and installs an LLM relay and a user-scoped public MCP connector with marked tokens; 0.4.0 takes over on its 0.4.0 unit, then the 0.5.0 candidate on the proposed 0.5.0 unit, each doing more work; then 0.4.0 is rolled back with its own unit. Each step reads the previous binary's records back and searches the host for the tokens.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
-  "previous": "the previous Rust release (${PARITY}/e2e/release/rust-0.3.0-rc9), copied in",
+  "previous": "the previous Rust releases, 0.4.0 (${PARITY}/e2e/release/rust-0.4.0-rc6) and 0.3.0 (${PARITY}/e2e/release/rust-0.3.0-rc9), copied in",
   "slow": "a local endpoint answering after 60 s (e2etool slow)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -18,7 +18,7 @@
    },
    "secretsweep": {
     "path": "${REPO}/evidence/e2e/guest-tools/secretsweep.py",
-    "sha256": "46fa086d70bb5eda4af463477fb9001568d76d7bfe4377ef448444ec52891fe6"
+    "sha256": "0145e40893eb886662d58e1d8283ea3c9b9b3432473924508706f659ca24ffe3"
    },
    "goUnit": {
     "path": "${PARITY}/go-src/deploy/opute-bootstrap-mcp.service",
@@ -28,9 +28,17 @@
     "path": "${REPO}/evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service",
     "sha256": "8ade0e7e59673216ba4e5f283dacbe707a30075b32ee5b6127fb590281622a3f"
    },
+   "proposedUnit05": {
+    "path": "${REPO}/evidence/cutover/proposed-0.5.0/opute-bootstrap-mcp.service",
+    "sha256": "3df1aee7d637e8913269c68190e6115af6a6ed6c39eac594c9ddb95502ecfb35"
+   },
    "rust03": {
     "path": "${PARITY}/e2e/release/rust-0.3.0-rc9/host-agent-linux-x64.gz",
     "sha256": "f20b3f0da43b3bb575b24d9108b908a28a3ce4671e15bba713ef639c36b891f8"
+   },
+   "rust04": {
+    "path": "${PARITY}/e2e/release/rust-0.4.0-rc6/host-agent-linux-x64.gz",
+    "sha256": "be2019297d7e669adc1312a4c842223cec3e6341c04942e1df5db64fd2d2ae23"
    }
   }
  },
@@ -184,6 +192,86 @@
      "equals": true
     },
     {
+     "step": "r5Install",
+     "path": "stdout",
+     "matches": "\n0\\.5\\.0\n$"
+    },
+    {
+     "step": "r5Db",
+     "path": "json.integrity",
+     "equals": "ok"
+    },
+    {
+     "step": "r5Db",
+     "path": "json.counts",
+     "equalsStep": {
+      "step": "r4Stop",
+      "path": "json.counts"
+     }
+    },
+    {
+     "step": "r5Db",
+     "path": "json.operationIds",
+     "equalsStep": {
+      "step": "r4Stop",
+      "path": "json.operationIds"
+     }
+    },
+    {
+     "step": "r5Db",
+     "path": "json.planRunIds",
+     "equalsStep": {
+      "step": "r4Stop",
+      "path": "json.planRunIds"
+     }
+    },
+    {
+     "step": "r5GoDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "r5GoFlight",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "cancelled"
+    },
+    {
+     "step": "r5R3Plan",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "r5R4Plan",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "r5R4Task",
+     "path": "response.body.result.status",
+     "equalsStep": {
+      "step": "r4Task",
+      "path": "response.body.result.status"
+     }
+    },
+    {
+     "step": "r5R4Tunnel",
+     "path": "response.body.result.status",
+     "equalsStep": {
+      "step": "r4Tunnel",
+      "path": "response.body.result.status"
+     }
+    },
+    {
+     "step": "r5R4TaskOp",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "r5Read",
+     "path": "response.body.result.structuredContent.exists",
+     "equals": true
+    },
+    {
      "step": "goDoneFile",
      "path": "stdout",
      "equals": "e2e\n"
@@ -214,21 +302,26 @@
      "equals": "n1\n"
     },
     {
+     "step": "r5PlanFile",
+     "path": "stdout",
+     "equals": "n1\n"
+    },
+    {
      "step": "chainFiles",
      "path": "stdout",
-     "equals": "r3\nr4\nback\n"
+     "equals": "r3\nr4\nr5\nback\n"
     }
    ],
-   "scenario": "Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with its relay, connector, plan and task, is served by 0.4.0: counts and ids reconcile per table and every record reads back with the status last reported"
+   "scenario": "Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with its relay, connector, plan and task, is served by 0.4.0; 0.4.0's by the 0.5.0 candidate: counts and ids reconcile per table and every record reads back with the status last reported"
   },
   {
    "spec": "openspec/changes/reimplement-host-agent-in-rust/milestones.md M12 (forward and rollback: Go rolled back onto Rust's state reports every task, Rust-era work included, with the status Rust last reported) and D1 (bit-compatible schema: conversion is the identity)",
-   "requirement": "Rollback: 0.3.0 serves 0.4.0's state unchanged",
+   "requirement": "Rollback: 0.4.0 serves 0.5.0's state unchanged",
    "pass": [
     {
      "step": "backInstall",
      "path": "stdout",
-     "matches": "\n0\\.3\\.0\n$"
+     "matches": "\n0\\.4\\.0\n$"
     },
     {
      "step": "backDb",
@@ -239,7 +332,7 @@
      "step": "backDb",
      "path": "json.counts",
      "equalsStep": {
-      "step": "r4Stop",
+      "step": "r5Stop",
       "path": "json.counts"
      }
     },
@@ -247,7 +340,7 @@
      "step": "backDb",
      "path": "json.operationIds",
      "equalsStep": {
-      "step": "r4Stop",
+      "step": "r5Stop",
       "path": "json.operationIds"
      }
     },
@@ -255,7 +348,7 @@
      "step": "backDb",
      "path": "json.planRunIds",
      "equalsStep": {
-      "step": "r4Stop",
+      "step": "r5Stop",
       "path": "json.planRunIds"
      }
     },
@@ -275,10 +368,23 @@
      "equals": "completed"
     },
     {
-     "step": "backR4Task",
+     "step": "backR5Plan",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "backR5Task",
      "path": "response.body.result.status",
      "equalsStep": {
-      "step": "r4Task",
+      "step": "r5Task",
+      "path": "response.body.result.status"
+     }
+    },
+    {
+     "step": "backR5Tunnel",
+     "path": "response.body.result.status",
+     "equalsStep": {
+      "step": "r5Tunnel",
       "path": "response.body.result.status"
      }
     },
@@ -291,15 +397,7 @@
      }
     },
     {
-     "step": "backR3Tunnel",
-     "path": "response.body.result.status",
-     "equalsStep": {
-      "step": "r3Tunnel",
-      "path": "response.body.result.status"
-     }
-    },
-    {
-     "step": "backR4TaskOp",
+     "step": "backR5TaskOp",
      "path": "response.body.result.structuredContent.status",
      "equals": "completed"
     },
@@ -309,7 +407,7 @@
      "equals": true
     }
    ],
-   "scenario": "0.3.0 started on 0.4.0's state, on the same 0.4.0 unit, reads every operation, task and plan run, 0.4.0-era work included, with the status 0.4.0 last reported"
+   "scenario": "0.4.0 started on 0.5.0's state, with its own 0.4.0 unit back, reads every operation, task and plan run, 0.5.0-era work included, with the status 0.5.0 last reported"
   },
   {
    "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md",
@@ -342,6 +440,19 @@
      ]
     },
     {
+     "step": "r5PlanDone",
+     "path": "response.body.result.structuredContent.status",
+     "equals": "completed"
+    },
+    {
+     "step": "r5Write",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
      "step": "backWrite",
      "path": "response.body.result.isError",
      "in": [
@@ -358,9 +469,14 @@
      "step": "r4Task",
      "path": "response.body.result.result.structuredContent.stdout",
      "equals": "r4-era\n"
+    },
+    {
+     "step": "r5Task",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "r5-era\n"
     }
    ],
-   "scenario": "Each release admits mutations from its unit: 0.3.0 from Go's unit, 0.4.0 from the proposed unit, and 0.3.0 again from the proposed unit after rollback"
+   "scenario": "Each release admits mutations from its unit: 0.3.0 from Go's unit, 0.4.0 from the 0.4.0 unit's setting, 0.5.0 from the 0.5.0 unit's --allow-mutations, and 0.4.0 again from its own unit after rollback"
   },
   {
    "spec": "openspec/changes/secret-placement/specs/secret-placement/spec.md",
@@ -387,6 +503,11 @@
      "equals": "completed"
     },
     {
+     "step": "r5Tunnel",
+     "path": "response.body.result.status",
+     "equals": "completed"
+    },
+    {
      "step": "backTunnel",
      "path": "response.body.result.status",
      "equals": "completed"
@@ -412,6 +533,16 @@
      "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
     },
     {
+     "step": "r5Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "r5Tunnel",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
      "step": "backTunnel",
      "path": "response.body.result.result.isError",
      "equals": true
@@ -432,22 +563,32 @@
      "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
     },
     {
-     "step": "backR4Tunnel",
+     "step": "r5R4Tunnel",
      "path": "response.body.result.result.isError",
      "equals": true
     },
     {
-     "step": "backR4Tunnel",
+     "step": "r5R4Tunnel",
      "path": "response.body.result.result.content[0].text",
      "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
     },
     {
-     "step": "backR3Tunnel",
+     "step": "backR5Tunnel",
      "path": "response.body.result.result.isError",
      "equals": true
     },
     {
-     "step": "backR3Tunnel",
+     "step": "backR5Tunnel",
+     "path": "response.body.result.result.content[0].text",
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
+    },
+    {
+     "step": "backR4Tunnel",
+     "path": "response.body.result.result.isError",
+     "equals": true
+    },
+    {
+     "step": "backR4Tunnel",
      "path": "response.body.result.result.content[0].text",
      "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
     },
@@ -457,9 +598,14 @@
      "equals": "r3-era\n"
     },
     {
-     "step": "backR4Task",
+     "step": "r5R4Task",
      "path": "response.body.result.result.structuredContent.stdout",
      "equals": "r4-era\n"
+    },
+    {
+     "step": "backR5Task",
+     "path": "response.body.result.result.structuredContent.stdout",
+     "equals": "r5-era\n"
     },
     {
      "step": "r3Supervisor",
@@ -517,6 +663,26 @@
      "equals": {}
     },
     {
+     "step": "r5Scan",
+     "path": "json.journal",
+     "equals": []
+    },
+    {
+     "step": "r5Scan",
+     "path": "json.store",
+     "equals": []
+    },
+    {
+     "step": "r5Scan",
+     "path": "json.looseFiles",
+     "equals": []
+    },
+    {
+     "step": "r5Scan",
+     "path": "json.strayEnviron",
+     "equals": {}
+    },
+    {
      "step": "backScan",
      "path": "json.journal",
      "equals": []
@@ -537,7 +703,7 @@
      "equals": {}
     }
    ],
-   "scenario": "The relay's and the user-scoped connector's tokens, written under 0.3.0 and ensured again under 0.4.0 and after rollback onto the same one connector, are in no journal line, no store row and no file that is not 0600 and the agent's user's, and in no process's environment; each connector call proves its origin and stops only at the unreachable public endpoint"
+   "scenario": "The relay's and the user-scoped connector's tokens, written under 0.3.0 and ensured again under 0.4.0, 0.5.0 and after rollback onto the same one connector, are in no journal line, no store row and no file that is not 0600 and the agent's user's, and in no process's environment; each connector call proves its origin and stops only at the unreachable public endpoint"
   },
   {
    "spec": "openspec/specs/host-agent-contract/spec.md",
@@ -559,6 +725,11 @@
      "equals": "e2e-devvm-agent"
     },
     {
+     "step": "r5Health",
+     "path": "response.body.agentId",
+     "equals": "e2e-devvm-agent"
+    },
+    {
      "step": "backHealth",
      "path": "response.body.agentId",
      "equals": "e2e-devvm-agent"
@@ -576,6 +747,7 @@
    "files//home/opute/.local/share/opute/tunnels*",
    "files//etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf",
    "files//opt/opute-e2e/chain*",
+   "files//etc/systemd/system/opute-bootstrap-mcp.service/sha256",
    "files//root/e2e-chain",
    "files//root/e2e-chain/markers.json",
    "files//root/e2e-chain/oauth.env",
@@ -634,9 +806,19 @@
    "to": "/opt/opute-e2e/chain/proposed.service"
   },
   {
+   "id": "unit05Copy",
+   "copy": "proposedUnit05",
+   "to": "/opt/opute-e2e/chain/proposed-0.5.service"
+  },
+  {
    "id": "rust03Copy",
    "copy": "rust03",
    "to": "/opt/opute-e2e/chain/rust-0.3.x/host-agent-linux-x64.gz"
+  },
+  {
+   "id": "rust04Copy",
+   "copy": "rust04",
+   "to": "/opt/opute-e2e/chain/rust-0.4.x/host-agent-linux-x64.gz"
   },
   {
    "id": "plant",
@@ -1095,7 +1277,7 @@
   },
   {
    "id": "r4Install",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/chain/proposed.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/chain/proposed.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/chain/rust-0.4.x/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "r4Health",
@@ -1307,7 +1489,7 @@
   },
   {
    "id": "r4PlanFile",
-   "guest": "cat /home/opute/e2e/n1.txt",
+   "guest": "cat /home/opute/e2e/n1.txt && rm /home/opute/e2e/n1.txt",
    "confirms": [
     "r4Plan"
    ]
@@ -1380,8 +1562,305 @@
    "guest": "systemctl stop opute-bootstrap-mcp.service && python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
   },
   {
+   "id": "r5Install",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/chain/proposed-0.5.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+  },
+  {
+   "id": "r5Health",
+   "health": true
+  },
+  {
+   "id": "r5Db",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
+  },
+  {
+   "id": "r5GoDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_DONE}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5GoFlight",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${GO_FLIGHT}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5R3Plan",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${R3_RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5R4Plan",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${R4_RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5R4Task",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_r4Task}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "r5R4Tunnel",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_r4Tunnel}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "r5R4TaskOp",
+   "mcp": "tools/call",
+   "tool": "get_operation",
+   "arguments": {
+    "operationId": "${TID_r4Task}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5Read",
+   "mcp": "tools/call",
+   "tool": "inspect_host_file",
+   "arguments": {
+    "path": "~/e2e/chain-r4.txt",
+    "scope": "user"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5TunnelCall",
+   "mcp": "tools/call",
+   "tool": "ensure_public_mcp_tunnel",
+   "arguments": {
+    "bindingId": "e2e-chain",
+    "endpoint": "https://e2e-chain.invalid/mcp",
+    "scope": "user",
+    "localTarget": "http://127.0.0.1:3014/mcp",
+    "tunnelToken": "${SECRET:tunnelToken}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "capture": {
+    "TID_r5Tunnel": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5Tunnel",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_r5Tunnel}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 300,
+   "interval": 3
+  },
+  {
+   "id": "r5Plan",
+   "mcp": "tools/call",
+   "tool": "run_host_plan",
+   "arguments": {
+    "plan": {
+     "contractVersion": "host-plan.v1",
+     "planId": "e2e.chain.r5",
+     "generation": 1,
+     "idempotencyKey": "e2e-chain-r5",
+     "nodes": [
+      {
+       "id": "file",
+       "action": {
+        "tool": "ensure_host_file",
+        "args": {
+         "path": "~/e2e/n1.txt",
+         "content": "n1\n",
+         "scope": "user"
+        }
+       },
+       "validate": {
+        "tool": "inspect_host_file",
+        "args": {
+         "path": "~/e2e/n1.txt",
+         "scope": "user"
+        },
+        "assert": [
+         {
+          "path": "/exists",
+          "op": "eq",
+          "value": true
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "capture": {
+    "R5_RUN": "response.body.result.structuredContent.runId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5PlanDone",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${R5_RUN}"
+   },
+   "until": {
+    "path": "response.body.result.structuredContent.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 90,
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5PlanFile",
+   "guest": "cat /home/opute/e2e/n1.txt",
+   "confirms": [
+    "r5Plan"
+   ]
+  },
+  {
+   "id": "r5TaskCall",
+   "mcp": "tools/call",
+   "tool": "run_host_command",
+   "arguments": {
+    "command": "echo r5-era"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "capture": {
+    "TID_r5Task": "response.body.result.taskId"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5Task",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_r5Task}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "until": {
+    "path": "response.body.result.status",
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ]
+   },
+   "timeout": 600,
+   "interval": 3,
+   "effectUnobservable": "the command only prints; its output is asserted"
+  },
+  {
+   "id": "r5Write",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file",
+   "arguments": {
+    "path": "~/e2e/chain-r5.txt",
+    "content": "r5\n",
+    "scope": "user"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "r5Scan",
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py scan --markers /root/e2e-chain/markers.json --unit opute-bootstrap-mcp.service --state /home/opute/.config/opute/instances/standalone/state --owner root --owner opute --root /etc --root /opt --root /tmp --root /var/tmp --root /home --root /root --root /run --root /usr/local --root /srv"
+  },
+  {
+   "id": "r5Stop",
+   "guest": "systemctl stop opute-bootstrap-mcp.service && python3 /opt/opute-e2e/guest/e2etool.py db /home/opute/.config/opute/instances/standalone/state/state.db"
+  },
+  {
    "id": "backInstall",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/chain/proposed.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/chain/rust-0.3.x/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/chain/proposed.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/chain/rust-0.4.x/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "backHealth",
@@ -1425,10 +1904,35 @@
    ]
   },
   {
-   "id": "backR4Task",
+   "id": "backR5Plan",
+   "mcp": "tools/call",
+   "tool": "get_host_plan_run",
+   "arguments": {
+    "runId": "${R5_RUN}"
+   },
+   "retryOn": [
+    "host_capacity_saturated"
+   ]
+  },
+  {
+   "id": "backR5Task",
    "mcp": "tasks/get",
    "params": {
-    "taskId": "${TID_r4Task}"
+    "taskId": "${TID_r5Task}"
+   },
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   }
+  },
+  {
+   "id": "backR5Tunnel",
+   "mcp": "tasks/get",
+   "params": {
+    "taskId": "${TID_r5Tunnel}"
    },
    "meta": {
     "io.modelcontextprotocol/clientCapabilities": {
@@ -1453,25 +1957,11 @@
    }
   },
   {
-   "id": "backR3Tunnel",
-   "mcp": "tasks/get",
-   "params": {
-    "taskId": "${TID_r3Tunnel}"
-   },
-   "meta": {
-    "io.modelcontextprotocol/clientCapabilities": {
-     "extensions": {
-      "io.modelcontextprotocol/tasks": {}
-     }
-    }
-   }
-  },
-  {
-   "id": "backR4TaskOp",
+   "id": "backR5TaskOp",
    "mcp": "tools/call",
    "tool": "get_operation",
    "arguments": {
-    "operationId": "${TID_r4Task}"
+    "operationId": "${TID_r5Task}"
    },
    "retryOn": [
     "host_capacity_saturated"
@@ -1482,7 +1972,7 @@
    "mcp": "tools/call",
    "tool": "inspect_host_file",
    "arguments": {
-    "path": "~/e2e/chain-r4.txt",
+    "path": "~/e2e/chain-r5.txt",
     "scope": "user"
    },
    "retryOn": [
@@ -1554,10 +2044,11 @@
   },
   {
    "id": "chainFiles",
-   "guest": "cat /home/opute/e2e/chain-r3.txt /home/opute/e2e/chain-r4.txt /home/opute/e2e/chain-back.txt",
+   "guest": "cat /home/opute/e2e/chain-r3.txt /home/opute/e2e/chain-r4.txt /home/opute/e2e/chain-r5.txt /home/opute/e2e/chain-back.txt",
    "confirms": [
     "r3Write",
     "r4Write",
+    "r5Write",
     "backWrite"
    ]
   },
@@ -1585,7 +2076,7 @@
   },
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service; rm -f /etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf; install -m 0644 /opt/opute-e2e/chain/vm.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-chain-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; rm -rf /home/opute/e2e /home/opute/.config/opute-e2e /opt/opute-e2e/chain /root/e2e-chain; true"
+   "guest": "systemctl stop opute-bootstrap-mcp.service; rm -f /etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf; install -m 0644 /opt/opute-e2e/chain/vm.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-chain-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; rm -rf /home/opute/e2e /home/opute/.config/opute-e2e /opt/opute-e2e/chain /root/e2e-chain; true"
   }
  ],
  "maxMinutes": 25

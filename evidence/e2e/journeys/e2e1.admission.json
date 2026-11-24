@@ -7,7 +7,7 @@
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -33,7 +33,12 @@
     {
      "step": "mutation",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
+    },
+    {
+     "step": "mutation",
+     "path": "response.body.result.structuredContent.code",
+     "equals": "mutation_refused"
     },
     {
      "step": "destructive",
@@ -43,7 +48,12 @@
     {
      "step": "destructive",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+     "equals": "Error: mutation refused: remove_host_file has effect destructive; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
+    },
+    {
+     "step": "destructive",
+     "path": "response.body.result.structuredContent.code",
+     "equals": "mutation_refused"
     },
     {
      "step": "planGate",
@@ -53,7 +63,12 @@
     {
      "step": "planGate",
      "path": "response.body.result.content[0].text",
-     "equals": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+     "equals": "Error: mutation refused: run_host_plan has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
+    },
+    {
+     "step": "planGate",
+     "path": "response.body.result.structuredContent.code",
+     "equals": "mutation_refused"
     },
     {
      "step": "gatedRead",
@@ -262,7 +277,7 @@
   },
   {
    "id": "limitedAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start limited --port 3020 --id e2e-limited-agent --env MCP_AUTH_TOKEN=${SECRET:limited} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES=1048576"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start limited --port 3020 --id e2e-limited-agent --env MCP_AUTH_TOKEN=${SECRET:limited} --allow-mutations --env OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES=1048576"
   },
   {
    "id": "limitedList",

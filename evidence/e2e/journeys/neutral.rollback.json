@@ -1,14 +1,14 @@
 {
  "id": "neutral.rollback",
  "gate": "e2e-neutral",
- "description": "Upgrade a Platform-style host from the previous 0.3.x release to 0.4.0 and roll it back, with one environment holding both settings sets (OPUTE_AGENT_MODE=platform next to the explicit bind, port, mutation, instance and OAuth client settings).",
+ "description": "Upgrade a host from 0.4.0 to the 0.5.0 candidate and roll it back to 0.4.0 and 0.3.0, on one state: 0.4.0's unit carries the three old mutation and mode settings, 0.5.0's only --allow-mutations (D55). Between them the 0.5.0 binary runs under the old unit, and 0.4.0 is tried alone under the new one.",
  "inputs": {
-  "agent": "the 0.4.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` and explicit settings",
-  "previous": "the previous Rust release, 0.3.0-rc9 (${PARITY}/e2e/release/rust-0.3.0-rc9), copied in",
+  "agent": "the 0.5.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` and explicit settings",
+  "previous": "the previous Rust releases, 0.4.0 (${PARITY}/e2e/release/rust-0.4.0-rc6) and 0.3.0 (${PARITY}/e2e/release/rust-0.3.0-rc9), copied in",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -16,9 +16,13 @@
    },
    "probe": {
     "path": "${REPO}/evidence/e2e/guest-tools/neutralprobe.py",
-    "sha256": "1ed02ede839e09d7f4d0bea7779ae9e248951f6deb7c79a015af76cfbadfbdad"
+    "sha256": "662e5867c4e3485299ebf54c343ceb64a5c38ad4fdc7e793a93332537c71227b"
    },
    "rust04": {
+    "path": "${PARITY}/e2e/release/rust-0.5.0-rc1/host-agent-linux-x64.gz",
+    "sha256": "ce3c83923b061f4e18225752e4d8952457fef5e8f997900fdaa2d7fc8f4f2a35"
+   },
+   "rustPrev": {
     "path": "${PARITY}/e2e/release/rust-0.4.0-rc6/host-agent-linux-x64.gz",
     "sha256": "be2019297d7e669adc1312a4c842223cec3e6341c04942e1df5db64fd2d2ae23"
    },
@@ -30,13 +34,13 @@
  },
  "requirements": [
   {
-   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md",
-   "requirement": "One serving profile",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md",
+   "requirement": "No mutation setting other than the flag",
    "pass": [
     {
-     "step": "unpack03",
+     "step": "unpackP",
      "path": "stdout",
-     "equals": "0.3.0\n"
+     "equals": "0.4.0\n"
     },
     {
      "step": "old",
@@ -44,11 +48,9 @@
      "equals": "e2e-roll"
     },
     {
-     "step": "oldListen",
-     "path": "json.addresses",
-     "equals": [
-      "0.0.0.0:3004"
-     ]
+     "step": "oldList",
+     "path": "response.status",
+     "equals": 200
     },
     {
      "step": "write1",
@@ -58,6 +60,50 @@
       "<absent>"
      ]
     },
+    {
+     "step": "leftover",
+     "path": "json.agentId",
+     "equals": "e2e-roll"
+    },
+    {
+     "step": "leftoverRead1",
+     "path": "response.body.result.structuredContent.exists",
+     "equals": true
+    },
+    {
+     "step": "leftoverWrite",
+     "path": "response.body.result.isError",
+     "equals": true
+    },
+    {
+     "step": "leftoverWrite",
+     "path": "response.body.result.content[0].text",
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
+    },
+    {
+     "step": "leftoverNoFile",
+     "path": "exit",
+     "equals": 0
+    },
+    {
+     "step": "leftoverSummary",
+     "path": "json.profileLines",
+     "equals": [
+      "bind=0.0.0.0 port=3004 bearer_mutations=false"
+     ]
+    },
+    {
+     "step": "leftoverSummary",
+     "path": "json.hits",
+     "equals": []
+    }
+   ],
+   "scenario": "A leftover setting: the 0.5.0 binary under the 0.4.0 unit, whose OPUTE_HOST_ALLOW_MUTATIONS, OPUTE_STANDALONE_ALLOW_MUTATIONS and OPUTE_AGENT_MODE grant nothing, serves 0.4.0's state with a read-only bearer, and nothing it prints names them"
+  },
+  {
+   "spec": "openspec/changes/per-client-mutation-authority/specs/platform-neutral-host-agent/spec.md",
+   "requirement": "One serving profile",
+   "pass": [
     {
      "step": "new",
      "path": "json.agentId",
@@ -74,7 +120,7 @@
      "step": "newSummary",
      "path": "json.profileLines",
      "equals": [
-      "bind=0.0.0.0 port=3004 mutations=true"
+      "bind=0.0.0.0 port=3004 bearer_mutations=true"
      ]
     },
     {
@@ -101,12 +147,17 @@
      "equals": "ok"
     }
    ],
-   "scenario": "A host carrying both settings sets is upgraded from 0.3.x to 0.4.0 with nothing switched: it serves at the same address with mutations admitted, on the same state"
+   "scenario": "Upgrade from 0.4.0 to 0.5.0 with the 0.5.0 unit: it serves at the same address on the same state, and --allow-mutations admits the bearer's mutations"
   },
   {
-   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md",
-   "requirement": "No mode setting exists",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/cutover-review-packet.md section 9 (0.5.0 rollback)",
+   "requirement": "Rollback restores the previous release's unit with its binary",
    "pass": [
+    {
+     "step": "binaryOnly",
+     "path": "stdout",
+     "equals": "flag provided but not defined: -allow-mutations\nexit=1\n"
+    },
     {
      "step": "back",
      "path": "json.agentId",
@@ -138,12 +189,40 @@
      "equals": "ok"
     },
     {
+     "step": "unpack03",
+     "path": "stdout",
+     "equals": "0.3.0\n"
+    },
+    {
+     "step": "back3",
+     "path": "json.agentId",
+     "equals": "e2e-roll"
+    },
+    {
+     "step": "back3Read3",
+     "path": "response.body.result.structuredContent.exists",
+     "equals": true
+    },
+    {
+     "step": "write4",
+     "path": "response.body.result.isError",
+     "in": [
+      false,
+      "<absent>"
+     ]
+    },
+    {
+     "step": "back3Db",
+     "path": "json.integrity",
+     "equals": "ok"
+    },
+    {
      "step": "rollFiles",
      "path": "stdout",
-     "equals": "r1\nr2\nr3\n"
+     "equals": "r1\nr2\nr3\nr4\n"
     }
    ],
-   "scenario": "Rollback to 0.3.x keeps both settings sets: the old binary reads OPUTE_AGENT_MODE, the new one ignored it, and work done under 0.4.0 is there"
+   "scenario": "0.4.0 put back alone under the 0.5.0 unit exits on --allow-mutations before serving; with 0.4.0's unit back, 0.4.0 and then 0.3.0 serve 0.5.0's state, 0.5.0's work included, and admit mutations from that unit's settings"
   },
   {
    "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md",
@@ -179,14 +258,28 @@
       "step": "oldMint",
       "path": "json.credSha256"
      }
+    },
+    {
+     "step": "back3Mint",
+     "path": "json.listStatus",
+     "equals": 200
+    },
+    {
+     "step": "back3Mint",
+     "path": "json.credSha256",
+     "equalsStep": {
+      "step": "oldMint",
+      "path": "json.credSha256"
+     }
     }
    ],
-   "scenario": "An orchestrator's machine client listed in OPUTE_OAUTH_CLIENTS keeps its generated credential across the upgrade and the rollback"
+   "scenario": "An orchestrator's machine client listed in OPUTE_OAUTH_CLIENTS keeps its generated credential, and gets a working token, across the upgrade and both rollbacks"
   }
  ],
  "effects": {
   "allow": [
-   "files//opt/opute-e2e/releases/rust-0.4.0*",
+   "files//opt/opute-e2e/releases/rust-candidate*",
+   "files//opt/opute-e2e/releases/rust-0.4.x*",
    "files//opt/opute-e2e/releases/rust-0.3.x*",
    "files//tmp/e2e-agents",
    "files//tmp/e2e-agents/roll*"
@@ -212,11 +305,20 @@
   {
    "id": "copy04",
    "copy": "rust04",
-   "to": "/opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz"
+   "to": "/opt/opute-e2e/releases/rust-candidate/host-agent-linux-x64.gz"
   },
   {
    "id": "unpack04",
-   "guest": "gzip -dc /opt/opute-e2e/releases/rust-0.4.0/host-agent-linux-x64.gz > /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent && chmod 0755 /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent && /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent --version"
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust-candidate/host-agent-linux-x64.gz > /opt/opute-e2e/releases/rust-candidate/opute-host-agent && chmod 0755 /opt/opute-e2e/releases/rust-candidate/opute-host-agent && /opt/opute-e2e/releases/rust-candidate/opute-host-agent --version"
+  },
+  {
+   "id": "copyP",
+   "copy": "rustPrev",
+   "to": "/opt/opute-e2e/releases/rust-0.4.x/host-agent-linux-x64.gz"
+  },
+  {
+   "id": "unpackP",
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust-0.4.x/host-agent-linux-x64.gz > /opt/opute-e2e/releases/rust-0.4.x/opute-host-agent && chmod 0755 /opt/opute-e2e/releases/rust-0.4.x/opute-host-agent && /opt/opute-e2e/releases/rust-0.4.x/opute-host-agent --version"
   },
   {
    "id": "copy03",
@@ -229,11 +331,7 @@
   },
   {
    "id": "old",
-   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='OPUTE_AGENT_MODE=platform' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' /opt/opute-e2e/releases/rust-0.3.x/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
-  },
-  {
-   "id": "oldListen",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3004"
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' --setenv='OPUTE_AGENT_MODE=standalone' --setenv='OPUTE_STANDALONE_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.4.x/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
   },
   {
    "id": "oldList",
@@ -262,22 +360,55 @@
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop roll"
   },
   {
+   "id": "leftover",
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' --setenv='OPUTE_AGENT_MODE=standalone' --setenv='OPUTE_STANDALONE_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-candidate/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
+  },
+  {
+   "id": "leftoverSummary",
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3004 --token '${SECRET:roll}' --unit e2e-agent-roll --binary /opt/opute-e2e/releases/rust-candidate/opute-host-agent"
+  },
+  {
+   "id": "leftoverRead1",
+   "mcp": "tools/call",
+   "tool": "inspect_host_file",
+   "arguments": {
+    "path": ".config/opute-e2e/r1.txt",
+    "scope": "user"
+   },
+   "port": 3004,
+   "auth": "secret:roll"
+  },
+  {
+   "id": "leftoverWrite",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file",
+   "arguments": {
+    "path": ".config/opute-e2e/r-left.txt",
+    "content": "x\n",
+    "scope": "user"
+   },
+   "port": 3004,
+   "auth": "secret:roll"
+  },
+  {
+   "id": "leftoverNoFile",
+   "guest": "test ! -e /tmp/e2e-agents/roll/home/.config/opute-e2e/r-left.txt"
+  },
+  {
+   "id": "leftoverStop",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop roll"
+  },
+  {
    "id": "new",
-   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='OPUTE_AGENT_MODE=platform' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' /opt/opute-e2e/releases/rust-candidate/opute-host-agent serve --allow-mutations && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
   },
   {
    "id": "newListen",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3004"
   },
   {
-   "id": "newList",
-   "mcp": "tools/list",
-   "port": 3004,
-   "auth": "secret:roll"
-  },
-  {
    "id": "newSummary",
-   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3004 --token '${SECRET:roll}' --unit e2e-agent-roll --binary /opt/opute-e2e/releases/rust-0.4.0/opute-host-agent"
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py summary --port 3004 --token '${SECRET:roll}' --unit e2e-agent-roll --binary /opt/opute-e2e/releases/rust-candidate/opute-host-agent"
   },
   {
    "id": "newRead1",
@@ -319,18 +450,16 @@
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db"
   },
   {
+   "id": "binaryOnly",
+   "guest": "/opt/opute-e2e/releases/rust-0.4.x/opute-host-agent serve --transport http --allow-mutations 2>&1 | tail -1; echo exit=${PIPESTATUS[0]}"
+  },
+  {
    "id": "back",
-   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='OPUTE_AGENT_MODE=platform' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' /opt/opute-e2e/releases/rust-0.3.x/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' --setenv='OPUTE_AGENT_MODE=standalone' --setenv='OPUTE_STANDALONE_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.4.x/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
   },
   {
    "id": "backListen",
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py listen 3004"
-  },
-  {
-   "id": "backList",
-   "mcp": "tools/list",
-   "port": 3004,
-   "auth": "secret:roll"
   },
   {
    "id": "backRead2",
@@ -368,19 +497,59 @@
    "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db"
   },
   {
+   "id": "back3",
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/roll /tmp/e2e-agents/roll/home && systemd-run --quiet --collect --unit=e2e-agent-roll --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/roll/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-roll' --setenv='MCP_AUTH_TOKEN=${SECRET:roll}' --setenv='HOST_MCP_BIND_HOST=0.0.0.0' --setenv='HOST_MCP_PORT=3004' --setenv='OPUTE_HOST_AGENT_INSTANCE=platform' --setenv='OPUTE_OAUTH_CLIENTS=opute-mcp-host' --setenv='OPUTE_AGENT_MODE=standalone' --setenv='OPUTE_STANDALONE_ALLOW_MUTATIONS=true' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' /opt/opute-e2e/releases/rust-0.3.x/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3004/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3004/health"
+  },
+  {
+   "id": "back3Read3",
+   "mcp": "tools/call",
+   "tool": "inspect_host_file",
+   "arguments": {
+    "path": ".config/opute-e2e/r3.txt",
+    "scope": "user"
+   },
+   "port": 3004,
+   "auth": "secret:roll"
+  },
+  {
+   "id": "write4",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file",
+   "arguments": {
+    "path": ".config/opute-e2e/r4.txt",
+    "content": "r4\n",
+    "scope": "user"
+   },
+   "port": 3004,
+   "auth": "secret:roll"
+  },
+  {
+   "id": "back3Mint",
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3004 --client opute-mcp-host --cred /tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/credentials/opute-mcp-host.json"
+  },
+  {
+   "id": "back3Stop",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent stop roll"
+  },
+  {
+   "id": "back3Db",
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py db /tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db"
+  },
+  {
    "id": "rollFiles",
-   "guest": "cat /tmp/e2e-agents/roll/home/.config/opute-e2e/r1.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r2.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r3.txt",
+   "guest": "cat /tmp/e2e-agents/roll/home/.config/opute-e2e/r1.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r2.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r3.txt /tmp/e2e-agents/roll/home/.config/opute-e2e/r4.txt",
    "confirms": [
     "write1",
     "write2",
-    "write3"
+    "write3",
+    "write4"
    ]
   }
  ],
  "cleanup": [
   {
    "id": "clean",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove roll >/dev/null; rm -rf /opt/opute-e2e/releases/rust-0.4.0 /opt/opute-e2e/releases/rust-0.3.x /opt/opute-e2e/guest/neutralprobe.py; true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove roll >/dev/null; rm -rf /opt/opute-e2e/releases/rust-candidate /opt/opute-e2e/releases/rust-0.4.x /opt/opute-e2e/releases/rust-0.3.x /opt/opute-e2e/guest/neutralprobe.py; true"
   }
  ],
  "maxMinutes": 15

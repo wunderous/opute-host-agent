@@ -3,11 +3,11 @@
  "gate": "e2e-1",
  "description": "Flow 1 and 3, tutorial first success with scripted clients, each from a clean connection: a 2026-07-28 MCP client; a legacy-handshake client (an agent started with OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true, ADR 0011); the published Go client library pkg/hostagentclient (v0.2.4, built offline); and the VS Code configuration the tutorial documents, used exactly as written. Each follows the published steps (tools/list, catalog, get_host_info, a read-only call), then, with mutations enabled, one approved mutation as a host plan polled to completion. The published tutorial is read-only and documents no mutation step, so the mutation is judged against the spec only.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -380,7 +380,7 @@
   },
   {
    "id": "legacyAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start legacy --port 3017 --id e2e-legacy-agent --env MCP_AUTH_TOKEN=${SECRET:legacy} --env OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start legacy --port 3017 --id e2e-legacy-agent --env MCP_AUTH_TOKEN=${SECRET:legacy} --env OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true --allow-mutations"
   },
   {
    "id": "legacyInit",

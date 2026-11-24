@@ -3,11 +3,11 @@
  "gate": "e2e-6",
  "description": "Admission under pressure: an agent with one normal operation slot refuses work beyond it and admits again after; one whose memory and disk floors cannot be met refuses effectful work; one sent a 1 GiB body answers 413 with bounded memory (D29), and so does its serving relay (D41).",
  "inputs": {
-  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "agent": "transient Rust agents of the installed release candidate (0.5.0) under /tmp/e2e-agents",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -222,7 +222,7 @@
   },
   {
    "id": "limAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start lim --port 3046 --id e2e-lim-agent --env MCP_AUTH_TOKEN=${SECRET:lim} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_MAX_NORMAL_OPERATIONS=1 --user root"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start lim --port 3046 --id e2e-lim-agent --env MCP_AUTH_TOKEN=${SECRET:lim} --allow-mutations --env OPUTE_HOST_MAX_NORMAL_OPERATIONS=1 --user root"
   },
   {
    "id": "listLim",
@@ -370,7 +370,7 @@
   },
   {
    "id": "lowAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start low --port 3047 --id e2e-low-agent --env MCP_AUTH_TOKEN=${SECRET:low} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --env OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES=1125899906842624 --env OPUTE_HOST_MIN_AVAILABLE_DISK_BYTES=1125899906842624"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start low --port 3047 --id e2e-low-agent --env MCP_AUTH_TOKEN=${SECRET:low} --allow-mutations --env OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES=1125899906842624 --env OPUTE_HOST_MIN_AVAILABLE_DISK_BYTES=1125899906842624"
   },
   {
    "id": "listLow",
@@ -448,7 +448,7 @@
   },
   {
    "id": "bigAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start big --port 3048 --id e2e-big-agent --env MCP_AUTH_TOKEN=${SECRET:big} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start big --port 3048 --id e2e-big-agent --env MCP_AUTH_TOKEN=${SECRET:big} --allow-mutations"
   },
   {
    "id": "listBig",

@@ -3,17 +3,21 @@
  "gate": "e2e-4",
  "description": "Forward cutover and rollback on a Go host's own accumulated state: the host is reinstalled as Go v0.2.4 (same unit, instance root and agent ID), does real mixed work and is stopped with an open synchronous call, a working task and a running plan in flight; the Rust release starts on that state, which must reconcile per table and read back; Rust does new work; then Go starts again on Rust's state and must report every record with the status Rust last reported.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
   "slow": "a local endpoint answering after 25 s (e2etool slow)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "goUnit": {
+    "path": "${PARITY}/go-src/deploy/opute-bootstrap-mcp.service",
+    "sha256": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5"
    }
   }
  },
@@ -117,7 +121,7 @@
     {
      "step": "rustInstall",
      "path": "stdout",
-     "matches": "\n0\\.4\\.0\n$"
+     "matches": "\n0\\.5\\.0\n$"
     },
     {
      "step": "rustDb",
@@ -362,6 +366,8 @@
   "allow": [
    "files//home/opute/.local/share/opute/opute-host-agent/sha256",
    "files//home/opute/e2e*",
+   "files//etc/systemd/system/opute-bootstrap-mcp.service/sha256",
+   "files//opt/opute-e2e/cutover*",
    "files//tmp/e2e-cutover-rust-instances*",
    "files//tmp/e2e-go-state.sha",
    "files//tmp/e2e-sync.json",
@@ -425,12 +431,17 @@
    "to": "/opt/opute-e2e/guest/mcpwire.py"
   },
   {
+   "id": "goUnitCopy",
+   "copy": "goUnit",
+   "to": "/opt/opute-e2e/cutover/go.service"
+  },
+  {
    "id": "aside",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && mv /home/opute/.config/opute/instances /tmp/e2e-cutover-rust-instances && echo aside"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && mv /home/opute/.config/opute/instances /tmp/e2e-cutover-rust-instances && cp /etc/systemd/system/opute-bootstrap-mcp.service /opt/opute-e2e/cutover/vm.service && echo aside"
   },
   {
    "id": "goInstall",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/cutover/go.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "goHealth",
@@ -762,7 +773,7 @@
   },
   {
    "id": "rustInstall",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/cutover/vm.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "rustHealth",
@@ -771,7 +782,7 @@
   {
    "id": "goSecond",
    "timeout": 60,
-   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second"
+   "guest": "args=$(sed -n 's/^ExecStart=[^ ]* //p' /opt/opute-e2e/cutover/go.service) && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second"
   },
   {
    "id": "rustStillServes",
@@ -1019,7 +1030,7 @@
   },
   {
    "id": "goBack",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/cutover/go.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "goBackHealth",
@@ -1028,7 +1039,7 @@
   {
    "id": "rustSecond",
    "timeout": 60,
-   "guest": "args=$(systemctl show -p ExecStart --value opute-bootstrap-mcp.service | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' | cut -d' ' -f2-) && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second"
+   "guest": "args=$(sed -n 's/^ExecStart=[^ ]* //p' /opt/opute-e2e/cutover/vm.service) && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute -p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second"
   },
   {
    "id": "goStillServes",
@@ -1125,7 +1136,7 @@
  "cleanup": [
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases /home/opute/.config/opute/instances/standalone/databases /tmp/e2e-sync.json /tmp/e2e-go-state.sha; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
+   "guest": "systemctl stop opute-bootstrap-mcp.service; python3 /opt/opute-e2e/guest/e2etool.py slow stop >/dev/null; install -m 0644 /opt/opute-e2e/cutover/vm.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 >/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done; loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; rm -rf /home/opute/e2e /home/opute/.opute/databases /home/opute/.config/opute/instances/standalone/databases /tmp/e2e-sync.json /tmp/e2e-go-state.sha /opt/opute-e2e/cutover; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; true"
   }
  ],
  "maxMinutes": 28

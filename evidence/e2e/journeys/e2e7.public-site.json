@@ -286,7 +286,7 @@
  "gate": "e2e-7",
  "id": "e2e7.public-site",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "files": {
    "cloudflareEnv": {
     "path": "${PARITY}/minimal-site/cloudflare.env",
@@ -297,7 +297,7 @@
    },
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "leakcheck": {
     "path": "${REPO}/evidence/e2e/guest-tools/leakcheck.py",
@@ -905,7 +905,7 @@
   },
   {
    "arguments": {
-    "content": "[Unit]\nDescription=Opute k3s provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4320\nExecStart=/opt/opute-e2e/releases/rust/v0.4.0/opute-provider-k3s-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
+    "content": "[Unit]\nDescription=Opute k3s provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4320\nExecStart=/opt/opute-e2e/releases/rust/v0.5.0/opute-provider-k3s-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
     "mode": 420,
     "path": "/home/opute/.config/systemd/user/opute-provider-k3s.service",
     "scope": "user"
@@ -983,7 +983,7 @@
   },
   {
    "arguments": {
-    "content": "[Unit]\nDescription=Opute cloudflare provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4330\nEnvironment=OPUTE_HOST_AGENT_ENDPOINT=http://127.0.0.1:3014/mcp\nEnvironmentFile=/etc/opute/host-agent.env\nEnvironmentFile=/home/opute/.config/opute-e2e7/cloudflare.env\nExecStart=/opt/opute-e2e/releases/rust/v0.4.0/opute-provider-cloudflare-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
+    "content": "[Unit]\nDescription=Opute cloudflare provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4330\nEnvironment=OPUTE_HOST_AGENT_ENDPOINT=http://127.0.0.1:3014/mcp\nEnvironmentFile=/etc/opute/host-agent.env\nEnvironmentFile=/home/opute/.config/opute-e2e7/cloudflare.env\nExecStart=/opt/opute-e2e/releases/rust/v0.5.0/opute-provider-cloudflare-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
     "mode": 420,
     "path": "/home/opute/.config/systemd/user/opute-provider-cloudflare.service",
     "scope": "user"

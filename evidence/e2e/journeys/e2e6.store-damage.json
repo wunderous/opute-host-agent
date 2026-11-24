@@ -3,11 +3,11 @@
  "gate": "e2e-6",
  "description": "D31: the agent's state.db truncated, its header overwritten, and a middle page overwritten; startup refuses without serving or writing, and the restored store starts with the earlier task's record intact.",
  "inputs": {
-  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "agent": "transient Rust agents of the installed release candidate (0.5.0) under /tmp/e2e-agents",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -119,7 +119,7 @@
   },
   {
    "id": "dmgAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --allow-mutations  --user root"
   },
   {
    "id": "list",
@@ -183,7 +183,7 @@
   },
   {
    "id": "startTruncated",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --user root >/dev/null 2>&1; echo exit=$?; python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --allow-mutations --user root >/dev/null 2>&1; echo exit=$?; python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null"
   },
   {
    "id": "listenTruncated",
@@ -199,7 +199,7 @@
   },
   {
    "id": "startHeader",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --user root >/dev/null 2>&1; echo exit=$?; python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --allow-mutations --user root >/dev/null 2>&1; echo exit=$?; python3 /opt/opute-e2e/guest/e2etool.py agent stop dmg >/dev/null"
   },
   {
    "id": "afterHeader",
@@ -211,7 +211,7 @@
   },
   {
    "id": "startPage",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --user root >/dev/null 2>&1; echo exit=$?"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --allow-mutations --user root >/dev/null 2>&1; echo exit=$?"
   },
   {
    "id": "pageRead",
@@ -227,7 +227,7 @@
   },
   {
    "id": "restoredAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start dmg --port 3041 --id e2e-dmg-agent --env MCP_AUTH_TOKEN=${SECRET:dmg} --allow-mutations  --user root"
   },
   {
    "id": "listAgain",
