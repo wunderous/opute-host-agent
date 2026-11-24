@@ -1,0 +1,822 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/k3s-activate.yaml",
+   "files//opt/opute-e2e/providers",
+   "files//opt/opute-e2e/providers/opute-provider-k3s",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/b",
+   "files//tmp/e2e-agents/b/home",
+   "files//tmp/e2e-agents/b/home/.cache",
+   "files//tmp/e2e-agents/b/home/.cache/incus",
+   "files//tmp/e2e-agents/b/home/.config",
+   "files//tmp/e2e-agents/b/home/.config/incus",
+   "files//tmp/e2e-agents/b/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/b/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/b/home/.config/opute",
+   "files//tmp/e2e-agents/b/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/b/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/b/instance",
+   "files//tmp/e2e-agents/b/instance/host-agent.lock",
+   "files//tmp/e2e-agents/b/state",
+   "files//tmp/e2e-agents/b/state/authz.sqlite",
+   "files//tmp/e2e-agents/b/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/b/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/b/state/credentials",
+   "files//tmp/e2e-agents/b/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/b/state/host-agent.lock",
+   "files//tmp/e2e-agents/b/state/state.db",
+   "files//tmp/e2e-agents/b/state/state.db-shm",
+   "files//tmp/e2e-agents/b/state/state.db-wal",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "modules/br_netfilter",
+   "modules/ip6_udp_tunnel",
+   "modules/ip_set",
+   "modules/ipt_REJECT",
+   "modules/iptable_filter",
+   "modules/iptable_mangle",
+   "modules/iptable_nat",
+   "modules/nf_conntrack_netlink",
+   "modules/nf_reject_ipv4",
+   "modules/nfnetlink_acct",
+   "modules/nfnetlink_log",
+   "modules/nft_compat",
+   "modules/overlay",
+   "modules/udp_tunnel",
+   "modules/veth",
+   "modules/vxlan",
+   "modules/xt_MASQUERADE",
+   "modules/xt_NFLOG",
+   "modules/xt_addrtype",
+   "modules/xt_comment",
+   "modules/xt_conntrack",
+   "modules/xt_limit",
+   "modules/xt_mark",
+   "modules/xt_multiport",
+   "modules/xt_nat",
+   "modules/xt_nfacct",
+   "modules/xt_physdev",
+   "modules/xt_statistic",
+   "modules/xt_tcpudp",
+   "processes//system.slice/e2e-agent-b.service opute-host-agen",
+   "processes//system.slice/e2e-provider-k3s-b.service opute-provider-",
+   "processes//system.slice/e2e-provider-k3s.service opute-provider-",
+   "sockets/tcp 127.0.0.1:3031 opute-host-agen",
+   "sockets/tcp 127.0.0.1:4320 opute-provider-",
+   "sockets/tcp 127.0.0.1:4321 opute-provider-",
+   "sysctl/net.bridge.bridge-nf-call-arptables",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables",
+   "sysctl/net.bridge.bridge-nf-call-iptables",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev",
+   "sysctl/net.fan.vxlan",
+   "system/unitFiles/e2e-agent-b.service",
+   "system/unitFiles/e2e-provider-k3s-b.service",
+   "system/unitFiles/e2e-provider-k3s.service",
+   "system/units/e2e-agent-b.service",
+   "system/units/e2e-provider-k3s-b.service",
+   "system/units/e2e-provider-k3s.service"
+  ],
+  "residue": [
+   "modules/br_netfilter",
+   "modules/ip6_udp_tunnel",
+   "modules/ip_set",
+   "modules/ipt_REJECT",
+   "modules/iptable_filter",
+   "modules/iptable_mangle",
+   "modules/iptable_nat",
+   "modules/nf_conntrack_netlink",
+   "modules/nf_reject_ipv4",
+   "modules/nfnetlink_acct",
+   "modules/nfnetlink_log",
+   "modules/nft_compat",
+   "modules/overlay",
+   "modules/udp_tunnel",
+   "modules/veth",
+   "modules/vxlan",
+   "modules/xt_MASQUERADE",
+   "modules/xt_NFLOG",
+   "modules/xt_addrtype",
+   "modules/xt_comment",
+   "modules/xt_conntrack",
+   "modules/xt_limit",
+   "modules/xt_mark",
+   "modules/xt_multiport",
+   "modules/xt_nat",
+   "modules/xt_nfacct",
+   "modules/xt_physdev",
+   "modules/xt_statistic",
+   "modules/xt_tcpudp",
+   "sysctl/net.bridge.bridge-nf-call-arptables",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables",
+   "sysctl/net.bridge.bridge-nf-call-iptables",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev",
+   "sysctl/net.fan.vxlan"
+  ],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-3a",
+ "harnessErrors": [],
+ "journey": "e2e3a.quorum-removal",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "setup"
+    },
+    {
+     "actual": "2\n",
+     "equals": "2\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "setup"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installA"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "installB"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.listed",
+     "step": "providerToolsB"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "catalogA"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "vm1"
+    },
+    {
+     "actual": "container:local:e2e-k1",
+     "equals": "container:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm1"
+    },
+    {
+     "actual": "running",
+     "equals": "running",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "info1"
+    },
+    {
+     "actual": "container:local:e2e-k2",
+     "equals": "container:local:e2e-k2",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm2"
+    },
+    {
+     "actual": "container:local:e2e-k3",
+     "equals": "container:local:e2e-k3",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.uri",
+     "step": "vm3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "provision"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.provisioned",
+     "step": "provision"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.version",
+     "step": "provision"
+    },
+    {
+     "actual": "cluster:local:e2e-k1",
+     "equals": "cluster:local:e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusters[0].uri",
+     "step": "listClusters"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.readyForServerPromotion",
+     "step": "prepareHa"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "prepareHa"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "redeem2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "join2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join2"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "redeem3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.redeemed",
+     "step": "redeem3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "redeem3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "join3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joined",
+     "step": "join3"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.datastoreMode",
+     "step": "join3"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.serverCount",
+     "step": "members"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "members"
+    },
+    {
+     "actual": "embedded-etcd",
+     "equals": "embedded-etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.datastoreMode",
+     "step": "members"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.clusterIdentityKnown",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k1",
+     "equals": "e2e-k1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[0].version",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k2",
+     "equals": "e2e-k2",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[1].version",
+     "step": "members"
+    },
+    {
+     "actual": "e2e-k3",
+     "equals": "e2e-k3",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].name",
+     "step": "members"
+    },
+    {
+     "actual": "Ready",
+     "equals": "Ready",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].status",
+     "step": "members"
+    },
+    {
+     "actual": [
+      "control-plane",
+      "etcd",
+      "master"
+     ],
+     "contains": "etcd",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].roles",
+     "step": "members"
+    },
+    {
+     "actual": "v1.31.8+k3s1",
+     "equals": "v1.31.8+k3s1",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes[2].version",
+     "step": "members"
+    },
+    {
+     "actual": 3,
+     "equals": 3,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyNodeCount",
+     "step": "status"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Three Incus server containers provisioned and configured through typed Host Agent operations as a K3s cluster with embedded-etcd",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare2"
+    },
+    {
+     "actual": "host-agent-handshake",
+     "equals": "host-agent-handshake",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.secretDelivery",
+     "step": "prepare2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.joinMaterialExposed",
+     "step": "prepare3"
+    },
+    {
+     "actual": "RSA-OAEP-SHA256",
+     "equals": "RSA-OAEP-SHA256",
+     "ok": true,
+     "path": "response.body.result.structuredContent.keyAlgorithm",
+     "step": "key2"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "joinToken"
+    },
+    {
+     "actual": "<secret:K3S_TOKEN>",
+     "equals": "<secret:K3S_TOKEN>",
+     "ok": true,
+     "path": "stdout",
+     "step": "joinToken"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "tokenLeaks"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "tokenLeaks"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "writeBefore"
+    },
+    {
+     "actual": "stopped",
+     "equals": "stopped",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stop2"
+    },
+    {
+     "actual": "stopped",
+     "equals": "stopped",
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.status",
+     "step": "stop3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "writeNoQuorum"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "statusNoQuorum"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "K3s datastore quorum: with a majority of servers lost, Kubernetes writes are not available",
+   "spec": "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/availability/ (test record 2026-09-25)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "recover"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.quorumRestored",
+     "step": "recover"
+    },
+    {
+     "actual": "{\n    \"apiVersion\": \"v1\",\n    \"data\": {\n        \"written\": \"before-quorum-loss\"\n    },\n    \"kind\": \"ConfigMap\",\n    \"metadata\": {\n        \"annotations\": {\n            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"v1\\\",\\\"data\\\":{\\\"written\\\":\\\"before-quorum-loss\\\"},\\\"kind\\\":\\\"ConfigMap\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"e2e-before-loss\\\",\\\"namespace\\\":\\\"default\\\"}}\\n\"\n        },\n        \"creationTimestamp\": \"2026-11-24T13:27:06Z\",\n        \"name\": \"e2e-before-loss\",\n        \"namespace\": \"default\",\n        \"resourceVersion\": \"1165\",\n        \"uid\": \"334e13a4-760d-406f-b0a1-8157a7517279\"\n    }\n}\n",
+     "matches": "before-quorum-loss",
+     "ok": true,
+     "path": "response.body.result.structuredContent.json",
+     "step": "readRecovered"
+    },
+    {
+     "actual": "e2e-k2,STOPPED\ne2e-k3,STOPPED\n",
+     "equals": "e2e-k2,STOPPED\ne2e-k3,STOPPED\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "stopped"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "recover-quorum restores a single-member etcd majority",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "removeNode2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.removedNodeWasReady",
+     "step": "removeNode2"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "removeNode3"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.removedNodeWasReady",
+     "step": "removeNode3"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.serverCount",
+     "step": "membersAfter"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.readyServers",
+     "step": "membersAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Dead servers are retired once quorum recovery settles",
+   "spec": "openspec/changes/k3s-quorum-recovery-retirement/specs/k3s-membership/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "remove"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.removed",
+     "step": "remove"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "response.body.result.structuredContent.total",
+     "step": "clustersAfter"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.deleted",
+     "step": "delete1"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.deleted",
+     "step": "delete2"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.result.structuredContent.deleted",
+     "step": "delete3"
+    },
+    {
+     "actual": [],
+     "in": [
+      [],
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.structuredContent.vms",
+     "step": "vmsAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "remove and delete_vm leave no cluster or guest",
+   "spec": "baseline/inventory/catalog/provider-k3s.json (opute.capability.kubernetes, D22 neutral names)"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "catalogA": 52,
+   "catalogAfterA": 22,
+   "catalogAfterB": 245,
+   "catalogB": 522,
+   "clustersAfter": 167,
+   "delete1": 3003,
+   "delete1Call": 11,
+   "delete2": 3002,
+   "delete2Call": 12,
+   "delete3": 3002,
+   "delete3Call": 12,
+   "info1": 121,
+   "installA": 208,
+   "installB": 431,
+   "join2": 38691,
+   "join2Call": 224,
+   "join3": 35743,
+   "join3Call": 216,
+   "joinToken": 181,
+   "key2": 277,
+   "key3": 223,
+   "listClusters": 296,
+   "members": 317,
+   "membersAfter": 367,
+   "prepare2": 3002,
+   "prepare2Call": 14,
+   "prepare3": 3002,
+   "prepare3Call": 12,
+   "prepareHa": 3002,
+   "prepareHaCall": 13,
+   "providerCopy": 476,
+   "providerToolsA": 238,
+   "providerToolsB": 227,
+   "provision": 24011,
+   "provisionCall": 11,
+   "readRecovered": 217,
+   "recipeCopy": 435,
+   "recover": 129061,
+   "recoverCall": 11,
+   "redeem2": 209,
+   "redeem2Call": 227,
+   "redeem3": 200,
+   "redeem3Call": 213,
+   "remove": 3002,
+   "removeCall": 11,
+   "removeNode2": 63026,
+   "removeNode2Call": 11,
+   "removeNode3": 3002,
+   "removeNode3Call": 12,
+   "settle": 20145,
+   "setup": 1190,
+   "status": 189,
+   "statusNoQuorum": 229,
+   "stop2": 3002,
+   "stop2Call": 12,
+   "stop3": 3002,
+   "stop3Call": 12,
+   "stopped": 155,
+   "tokenLeaks": 171,
+   "tool": 288,
+   "vm1": 9005,
+   "vm1Call": 12,
+   "vm2": 6621,
+   "vm2Call": 574,
+   "vm3": 6624,
+   "vm3Call": 220,
+   "vmsAfter": 49,
+   "wire": 286,
+   "writeBefore": 3002,
+   "writeBeforeCall": 13,
+   "writeNoQuorum": 3003,
+   "writeNoQuorumCall": 12
+  },
+  "stepsSeconds": 424.7
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

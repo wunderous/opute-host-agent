@@ -1,0 +1,50 @@
+{
+ "allowances": {
+  "broad": [
+   "files//etc*"
+  ],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//etc/opute-e2e-broad-probe"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [
+  "broad-allowance"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.broad-allowance",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "touch"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: an allowance broader than its effect fails",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "touch": 141
+  },
+  "stepsSeconds": 44.8
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

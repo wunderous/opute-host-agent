@@ -1,0 +1,316 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/.config/opute-e2e",
+   "files//home/opute/.config/opute-e2e/j7-kill.txt",
+   "files//home/opute/.config/opute-e2e/j7-term.txt"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-1",
+ "harnessErrors": [],
+ "journey": "e2e1.restart",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "slow"
+    },
+    {
+     "actual": 2,
+     "gte": 1,
+     "ok": true,
+     "path": "attempts",
+     "step": "termInFlight"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "termInFlight"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "term"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "termStart"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "termList"
+    },
+    {
+     "actual": "f2e773fb-6dcc-4c8d-8801-384031789538",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "ok": true,
+     "other": "f2e773fb-6dcc-4c8d-8801-384031789538",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "termAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "termDb"
+    },
+    {
+     "actual": 1,
+     "equals": 1,
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.n2.attempts",
+     "step": "killInFlight"
+    },
+    {
+     "actual": "active",
+     "equals": "active",
+     "ok": true,
+     "path": "json.ActiveState",
+     "step": "kill"
+    },
+    {
+     "actual": "1",
+     "matches": "^[1-9][0-9]*$",
+     "ok": true,
+     "path": "json.NRestarts",
+     "step": "kill"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "killList"
+    },
+    {
+     "actual": "20c8aefc-6e71-41ba-8442-305d10ce0e12",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": true,
+     "other": "20c8aefc-6e71-41ba-8442-305d10ce0e12",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "killAfter"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "killDb"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "integrity"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "json.rows",
+     "step": "secretInDb"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "secretInJournal"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "f2e773fb-6dcc-4c8d-8801-384031789538",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "termRun"
+     },
+     "ok": true,
+     "other": "f2e773fb-6dcc-4c8d-8801-384031789538",
+     "path": "json.planRunIds[0]",
+     "step": "termDb"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "json.planRunIds[1]",
+     "step": "termDb"
+    },
+    {
+     "actual": "20c8aefc-6e71-41ba-8442-305d10ce0e12",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "killRun"
+     },
+     "ok": true,
+     "other": "20c8aefc-6e71-41ba-8442-305d10ce0e12",
+     "path": "json.planRunIds[0]",
+     "step": "killDb"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "json.planRunIds[1]",
+     "step": "killDb"
+    },
+    {
+     "actual": "1\n",
+     "equals": "1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "termFile"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "termAfter"
+    },
+    {
+     "actual": "unknown",
+     "equals": "unknown",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "killAfter"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An interrupted plan or task reads back truthfully",
+   "spec": "openspec/changes/truthful-interrupted-plan/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "resubmit"
+    },
+    {
+     "absent": true,
+     "actual": "<absent>",
+     "ok": true,
+     "path": "response.body.result.structuredContent.code",
+     "step": "resubmit"
+    },
+    {
+     "actual": "task not found: 20c8aefc-6e71-41ba-8442-305d10ce0e12",
+     "matches": "^task not found: ",
+     "ok": true,
+     "path": "response.body.error.message",
+     "step": "killTask"
+    },
+    {
+     "actual": [
+      "20c8aefc-6e71-41ba-8442-305d10ce0e12"
+     ],
+     "equalsStep": {
+      "path": "json.planRunIds",
+      "step": "killDb"
+     },
+     "ok": true,
+     "other": [
+      "20c8aefc-6e71-41ba-8442-305d10ce0e12"
+     ],
+     "path": "json.planRunIds",
+     "step": "resubmitDb"
+    },
+    {
+     "actual": "running\n",
+     "matches": "^(running|completed)\n$",
+     "ok": true,
+     "path": "stdout",
+     "step": "resubmitStatus"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A crashed plan run's orphaned reservation is reclaimed without a task",
+   "spec": "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-reservation-inheritance/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "integrity": 191,
+   "kill": 3765,
+   "killAfter": 15,
+   "killDb": 190,
+   "killInFlight": 1018,
+   "killList": 27,
+   "killRun": 53,
+   "killTask": 1,
+   "resubmit": 44,
+   "resubmitDb": 190,
+   "resubmitStatus": 196,
+   "secretInDb": 192,
+   "secretInJournal": 149,
+   "slow": 213,
+   "slowStop": 197,
+   "term": 717,
+   "termAfter": 19,
+   "termDb": 193,
+   "termFile": 143,
+   "termInFlight": 1017,
+   "termList": 28,
+   "termRun": 62,
+   "termStart": 755,
+   "tool": 279,
+   "wire": 286
+  },
+  "stepsSeconds": 54.4
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

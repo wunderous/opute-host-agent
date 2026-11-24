@@ -1,0 +1,339 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//home/opute/e2e",
+   "files//home/opute/e2e/c1.txt",
+   "files//home/opute/e2e/p1.txt",
+   "files//home/opute/e2e/r1.txt",
+   "files//home/opute/e2e/recipe.yaml",
+   "incus/instances/e2e-p1",
+   "incus/instances/e2e-r1",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/container/e2e-p1",
+   "incus/volumes/default/container/e2e-r1",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "links/veth53da5c03",
+   "links/vethd38eb242",
+   "modules/veth",
+   "processes//lxc.monitor.e2e-p1 incusd",
+   "processes//lxc.monitor.e2e-r1 incusd",
+   "processes//lxc.payload.e2e-p1 guest",
+   "processes//lxc.payload.e2e-r1 guest",
+   "processes//system.slice/e2e-slow.service python3",
+   "sockets/tcp 127.0.0.1:8799 python3",
+   "system/unitFiles/e2e-slow.service",
+   "system/units/e2e-slow.service",
+   "system/units/sys-devices-virtual-net-veth53da5c03.device",
+   "system/units/sys-devices-virtual-net-vethd38eb242.device",
+   "system/units/sys-subsystem-net-devices-veth53da5c03.device",
+   "system/units/sys-subsystem-net-devices-vethd38eb242.device"
+  ],
+  "residue": [
+   "modules/veth"
+  ],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-2",
+ "harnessErrors": [],
+ "journey": "e2e2.plans",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.valid",
+     "step": "validate"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "done"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "step": "done"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "done"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.data.status",
+     "step": "done"
+    },
+    {
+     "actual": "f7d13db8-206c-4a40-913f-0e620409131b",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "run"
+     },
+     "ok": true,
+     "other": "f7d13db8-206c-4a40-913f-0e620409131b",
+     "path": "response.body.result.structuredContent.runId",
+     "step": "again"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "againDone"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.plan.valid",
+     "step": "recipeValidate"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.data.status",
+     "step": "recipeDone"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One typed plan and recipe execution path",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "operation"
+    },
+    {
+     "actual": "f7d13db8-206c-4a40-913f-0e620409131b",
+     "equalsStep": {
+      "path": "response.body.result.structuredContent.runId",
+      "step": "run"
+     },
+     "ok": true,
+     "other": "f7d13db8-206c-4a40-913f-0e620409131b",
+     "path": "response.body.result.structuredContent.taskId",
+     "step": "operation"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "operations"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "unknown"
+    },
+    {
+     "actual": "Error: operation not found: no-such-operation",
+     "equals": "Error: operation not found: no-such-operation",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "unknown"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Durable and redacted observations",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "operation"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "An operation record reports its task's terminal status",
+   "spec": "openspec/changes/truthful-operation-status/specs/operation-records/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "slow"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "step": "waiting"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "cancel"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "cancel"
+    },
+    {
+     "actual": "cancelled",
+     "equals": "cancelled",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "cancelled"
+    },
+    {
+     "actual": "applied",
+     "equals": "applied",
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.file.status",
+     "step": "cancelled"
+    },
+    {
+     "actual": "pending",
+     "in": [
+      "pending",
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "cancelled"
+    },
+    {
+     "actual": "0\nfile-kept\n",
+     "equals": "0\nfile-kept\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "afterCancel"
+    },
+    {
+     "actual": "p1\nRUNNING\nmain.sqlite\n",
+     "equals": "p1\nRUNNING\nmain.sqlite\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "p1State"
+    },
+    {
+     "actual": "p1\nRUNNING\nmain.sqlite\n",
+     "equals": "p1\nRUNNING\nmain.sqlite\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "p1Again"
+    },
+    {
+     "actual": "recipe\nRUNNING\nmain.sqlite\n",
+     "equals": "recipe\nRUNNING\nmain.sqlite\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "r1State"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "cancelAgain"
+    },
+    {
+     "actual": "Error: host plan run cannot be cancelled in status \"cancelled\"",
+     "matches": "cannot be cancelled in status",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "cancelAgain"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One typed plan and recipe execution path (Interrupted plan)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "afterCancel": 30160,
+   "again": 29,
+   "againDone": 1017,
+   "cancel": 103,
+   "cancelAgain": 57,
+   "cancelled": 13,
+   "done": 7091,
+   "operation": 16,
+   "operations": 14,
+   "own": 142,
+   "p1Again": 158,
+   "p1State": 155,
+   "r1State": 158,
+   "recipeCopy": 426,
+   "recipeDone": 5064,
+   "recipeRun": 34,
+   "recipeValidate": 10,
+   "released": 5141,
+   "released2": 5142,
+   "run": 41,
+   "settle": 3364,
+   "slow": 215,
+   "slowRun": 94,
+   "tool": 284,
+   "unknown": 30,
+   "validate": 25,
+   "waiting": 1018,
+   "wire": 292
+  },
+  "stepsSeconds": 109.0
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

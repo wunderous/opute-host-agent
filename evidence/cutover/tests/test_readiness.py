@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE.parent))
 import readiness  # noqa: E402
 
 REPO = readiness.ROOT
-RUN = "m25-r4"  # a receipt recorded under the current harness (m25 widened the observer)
+RUN = "m28-r1"  # a receipt recorded under the current harness (m28: the 0.5.0 candidate)
 JOURNEY = "selfcheck.noop"
 
 
@@ -255,6 +255,17 @@ class CandidateTest(unittest.TestCase):
         result = self.result(root)
         self.assertEqual(result["status"], "failed")
         self.assertIn("provider", result["detail"])
+
+    def test_a_journey_input_from_a_declared_rollback_target_passes(self):
+        root, _ = self.tree()
+        self.rewrite(root, f"evidence/e2e/runs/{RUN}/{JOURNEY}/journey.json", lambda j: j["inputs"].setdefault(
+            "files", {}).update(rust03={"path": "${PARITY}/e2e/release/rust-0.3.0/host-agent-linux-x64.gz",
+                                        "sha256": "f" * 64}))
+        self.assertEqual(self.result(root)["status"], "failed")
+        self.rewrite(root, "evidence/cutover/candidate.json", lambda c: c.update(
+            rollbackTarget={"artifacts": {"host-agent-linux-x64.gz": "e" * 64}},
+            earlierRollbackTargets=[{"artifacts": {"host-agent-linux-x64.gz": "f" * 64}}]))
+        self.assertEqual(self.result(root)["status"], "passed", self.result(root))
 
     def test_a_missing_candidate_record_fails(self):
         root, _ = self.tree()

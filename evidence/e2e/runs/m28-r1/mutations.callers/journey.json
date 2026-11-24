@@ -1,0 +1,637 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent remove callers >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove leftover >/dev/null; python3 /opt/opute-e2e/guest/e2etool.py agent remove flagged >/dev/null; rm -rf /tmp/e2e-agents/former; rmdir /tmp/e2e-agents 2>/dev/null; rm -rf /opt/opute-e2e/releases/rust-candidate /opt/opute-e2e/releases/rust-0.4.x /opt/opute-e2e/releases/rust-0.3.x /opt/opute-e2e/guest/neutralprobe.py; true",
+   "id": "clean"
+  }
+ ],
+ "description": "Per-client mutation authority (D55) on the 0.5.0 candidate: the bootstrap bearer with and without --allow-mutations, OAuth machine clients granted read and mutate on one agent, the interactive client approved for each scope, an agent still carrying the old settings, the former mcp scope, and the tools' annotations.",
+ "effects": {
+  "allow": [
+   "files//opt/opute-e2e/releases/rust-candidate*",
+   "system/units/e2e-agent-callers.service",
+   "system/unitFiles/e2e-agent-callers.service",
+   "system/units/e2e-agent-leftover.service",
+   "system/unitFiles/e2e-agent-leftover.service",
+   "system/units/e2e-agent-flagged.service",
+   "system/unitFiles/e2e-agent-flagged.service",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/callers*",
+   "files//tmp/e2e-agents/leftover*",
+   "files//tmp/e2e-agents/flagged*",
+   "processes//system.slice/e2e-agent-callers.service opute-host-agen",
+   "processes//system.slice/e2e-agent-leftover.service opute-host-agen",
+   "processes//system.slice/e2e-agent-flagged.service opute-host-agen",
+   "files//tmp/e2e-agents/former*",
+   "sockets/tcp 127.0.0.1:3061 opute-host-agen",
+   "sockets/tcp 127.0.0.1:3062 opute-host-agen",
+   "sockets/tcp 127.0.0.1:3063 opute-host-agen"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-mutations",
+ "id": "mutations.callers",
+ "inputs": {
+  "agent": "the 0.5.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` and explicit settings",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "probe": {
+    "path": "${REPO}/evidence/e2e/guest-tools/neutralprobe.py",
+    "sha256": "662e5867c4e3485299ebf54c343ceb64a5c38ad4fdc7e793a93332537c71227b"
+   },
+   "rust04": {
+    "path": "${PARITY}/e2e/release/rust-0.5.0-rc1/host-agent-linux-x64.gz",
+    "sha256": "ce3c83923b061f4e18225752e4d8952457fef5e8f997900fdaa2d7fc8f4f2a35"
+   }
+  }
+ },
+ "maxMinutes": 10,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "0.5.0\n",
+     "path": "stdout",
+     "step": "unpack04"
+    },
+    {
+     "equals": "e2e-callers",
+     "path": "json.agentId",
+     "step": "callers"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "bearerRead"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "bearerMutation"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
+     "path": "response.body.result.content[0].text",
+     "step": "bearerMutation"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "response.body.result.structuredContent.code",
+     "step": "bearerMutation"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "bearerNoFile"
+    }
+   ],
+   "requirement": "Mutation authority belongs to the caller",
+   "scenario": "Bearer without the flag",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "e2e-flagged",
+     "path": "json.agentId",
+     "step": "flagged"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "flaggedMutation"
+    },
+    {
+     "equals": "flag\n",
+     "path": "stdout",
+     "step": "flaggedFile"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "flaggedRo"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client ro holds the read scope. Grant it with OPUTE_OAUTH_CLIENTS=ro:mutate and request a token with scope mutate.",
+     "path": "json.call.text",
+     "step": "flaggedRo"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "flaggedRo"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "flaggedRoNoFile"
+    }
+   ],
+   "requirement": "Mutation authority belongs to the caller",
+   "scenario": "Bearer with the flag; the flag does not raise a read client",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "read",
+     "path": "json.scope",
+     "step": "ro"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "ro"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client ro holds the read scope. Grant it with OPUTE_OAUTH_CLIENTS=ro:mutate and request a token with scope mutate.",
+     "path": "json.call.text",
+     "step": "ro"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "ro"
+    },
+    {
+     "equals": "read",
+     "path": "json.scope",
+     "step": "plain"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "plain"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client plain holds the read scope. Grant it with OPUTE_OAUTH_CLIENTS=plain:mutate and request a token with scope mutate.",
+     "path": "json.call.text",
+     "step": "plain"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "plain"
+    },
+    {
+     "equals": "mutate",
+     "path": "json.scope",
+     "step": "rw"
+    },
+    {
+     "equals": false,
+     "path": "json.call.isError",
+     "step": "rw"
+    },
+    {
+     "equals": "rw\n",
+     "path": "stdout",
+     "step": "rwFile"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "refusedNoFiles"
+    }
+   ],
+   "requirement": "Mutation authority belongs to the caller",
+   "scenario": "Two clients on one agent: ro (read) and plain (listed without a scope) are refused, rw (mutate) is admitted",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": 400,
+     "path": "json.tokenStatus",
+     "step": "roAbove"
+    },
+    {
+     "equals": "invalid_scope",
+     "path": "json.error",
+     "step": "roAbove"
+    },
+    {
+     "equals": false,
+     "path": "json.issued",
+     "step": "roAbove"
+    },
+    {
+     "equals": "read",
+     "path": "json.scope",
+     "step": "rwRead"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "rwRead"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client rw holds a token with the read scope. Request a token with scope mutate.",
+     "path": "json.call.text",
+     "step": "rwRead"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "rwRead"
+    }
+   ],
+   "requirement": "OAuth scopes are read and mutate",
+   "scenario": "Asking above the grant is invalid_scope; a mutate client's read token reads only",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "json.pageNamesScope",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": [
+      "host-agent-bootstrap scope=read"
+     ],
+     "path": "json.pending",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": "read",
+     "path": "json.scope",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client host-agent-bootstrap holds a token with the read scope. Authorize it again with scope mutate and approve the request (opute-host-agent oauth approve).",
+     "path": "json.call.text",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "interactiveNoFile"
+    },
+    {
+     "equals": true,
+     "path": "json.pageNamesScope",
+     "step": "interactiveMutate"
+    },
+    {
+     "equals": [
+      "host-agent-bootstrap scope=mutate"
+     ],
+     "path": "json.pending",
+     "step": "interactiveMutate"
+    },
+    {
+     "matches": " with scope mutate$",
+     "path": "json.approved",
+     "step": "interactiveMutate"
+    },
+    {
+     "equals": "mutate",
+     "path": "json.scope",
+     "step": "interactiveMutate"
+    },
+    {
+     "equals": false,
+     "path": "json.call.isError",
+     "step": "interactiveMutate"
+    },
+    {
+     "equals": "i-mutate\n",
+     "path": "stdout",
+     "step": "interactiveFile"
+    }
+   ],
+   "requirement": "OAuth scopes are read and mutate",
+   "scenario": "Interactive approval: the request names its scope (read by default), the operator's listing and approval show it, and the token carries it",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "OPUTE_OAUTH_CLIENTS: client ci asks for unknown scope \"mcp\"; grant ci:read or ci:mutate\nexit=1\n0\n",
+     "path": "stdout",
+     "step": "former"
+    }
+   ],
+   "requirement": "OAuth scopes are read and mutate",
+   "scenario": "Former scope: OPUTE_OAUTH_CLIENTS=ci:mcp fails the start, naming read and mutate, and writes nothing",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "e2e-leftover",
+     "path": "json.agentId",
+     "step": "leftover"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "leftoverMutation"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
+     "path": "response.body.result.content[0].text",
+     "step": "leftoverMutation"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "response.body.result.structuredContent.code",
+     "step": "leftoverMutation"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "leftoverNoFile"
+    }
+   ],
+   "requirement": "No mutation setting other than the flag",
+   "scenario": "A leftover setting",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "bearerMutation"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
+     "path": "response.body.result.content[0].text",
+     "step": "bearerMutation"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "response.body.result.structuredContent.code",
+     "step": "bearerMutation"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "ro"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client ro holds the read scope. Grant it with OPUTE_OAUTH_CLIENTS=ro:mutate and request a token with scope mutate.",
+     "path": "json.call.text",
+     "step": "ro"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "ro"
+    },
+    {
+     "equals": true,
+     "path": "json.call.isError",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; OAuth client host-agent-bootstrap holds a token with the read scope. Authorize it again with scope mutate and approve the request (opute-host-agent oauth approve).",
+     "path": "json.call.text",
+     "step": "interactiveRead"
+    },
+    {
+     "equals": "mutation_refused",
+     "path": "json.call.code",
+     "step": "interactiveRead"
+    }
+   ],
+   "requirement": "A refusal names the grant that admits the call",
+   "scenario": "Bearer refused; read client refused; interactive client refused",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "gte": 100,
+     "path": "json.tools",
+     "step": "annotations"
+    },
+    {
+     "equals": [],
+     "path": "json.disagree",
+     "step": "annotations"
+    },
+    {
+     "equals": [
+      "credential_bearing",
+      "destructive",
+      "mutation",
+      "read"
+     ],
+     "path": "json.effects",
+     "step": "annotations"
+    }
+   ],
+   "requirement": "Tool annotations follow the effect",
+   "scenario": "Effects and hints agree",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "probe",
+   "id": "probeCopy",
+   "to": "/opt/opute-e2e/guest/neutralprobe.py"
+  },
+  {
+   "copy": "rust04",
+   "id": "copy04",
+   "to": "/opt/opute-e2e/releases/rust-candidate/host-agent-linux-x64.gz"
+  },
+  {
+   "guest": "gzip -dc /opt/opute-e2e/releases/rust-candidate/host-agent-linux-x64.gz > /opt/opute-e2e/releases/rust-candidate/opute-host-agent && chmod 0755 /opt/opute-e2e/releases/rust-candidate/opute-host-agent && /opt/opute-e2e/releases/rust-candidate/opute-host-agent --version",
+   "id": "unpack04"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/callers /tmp/e2e-agents/callers/home && systemd-run --quiet --collect --unit=e2e-agent-callers --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/callers/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-callers' --setenv='MCP_AUTH_TOKEN=${SECRET:callers}' --setenv='HOST_MCP_PORT=3061' --setenv='OPUTE_OAUTH_CLIENTS=ro:read,rw:mutate,plain' /opt/opute-e2e/releases/rust-candidate/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3061/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3061/health",
+   "id": "callers"
+  },
+  {
+   "auth": "secret:callers",
+   "id": "callersList",
+   "mcp": "tools/list",
+   "port": 3061
+  },
+  {
+   "arguments": {},
+   "auth": "secret:callers",
+   "id": "bearerRead",
+   "mcp": "tools/call",
+   "port": 3061,
+   "tool": "get_host_info"
+  },
+  {
+   "arguments": {
+    "content": "bearer\n",
+    "path": ".config/opute-e2e/m-bearer.txt",
+    "scope": "user"
+   },
+   "auth": "secret:callers",
+   "id": "bearerMutation",
+   "mcp": "tools/call",
+   "port": 3061,
+   "tool": "ensure_host_file"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/callers/home/.config/opute-e2e/m-bearer.txt",
+   "id": "bearerNoFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3061 --client ro --cred /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state/credentials/ro.json --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-ro.txt\", \"content\": \"ro\\n\", \"scope\": \"user\"}'",
+   "id": "ro"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3061 --client ro --cred /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state/credentials/ro.json --scope mutate",
+   "id": "roAbove"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3061 --client plain --cred /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state/credentials/plain.json --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-plain.txt\", \"content\": \"plain\\n\", \"scope\": \"user\"}'",
+   "id": "plain"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3061 --client rw --cred /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state/credentials/rw.json --scope read --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-rw-read.txt\", \"content\": \"rw-read\\n\", \"scope\": \"user\"}'",
+   "id": "rwRead"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/callers/home/.config/opute-e2e/m-ro.txt && test ! -e /tmp/e2e-agents/callers/home/.config/opute-e2e/m-plain.txt && test ! -e /tmp/e2e-agents/callers/home/.config/opute-e2e/m-rw-read.txt",
+   "id": "refusedNoFiles"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3061 --client rw --cred /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state/credentials/rw.json --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-rw.txt\", \"content\": \"rw\\n\", \"scope\": \"user\"}'",
+   "id": "rw"
+  },
+  {
+   "confirms": [
+    "rw"
+   ],
+   "guest": "cat /tmp/e2e-agents/callers/home/.config/opute-e2e/m-rw.txt",
+   "id": "rwFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py interactive --port 3061 --binary /opt/opute-e2e/releases/rust-candidate/opute-host-agent --state-dir /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-i-read.txt\", \"content\": \"i-read\\n\", \"scope\": \"user\"}'",
+   "id": "interactiveRead"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/callers/home/.config/opute-e2e/m-i-read.txt",
+   "id": "interactiveNoFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py interactive --port 3061 --binary /opt/opute-e2e/releases/rust-candidate/opute-host-agent --state-dir /tmp/e2e-agents/callers/home/.config/opute/instances/standalone/state --scope mutate --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-i-mutate.txt\", \"content\": \"i-mutate\\n\", \"scope\": \"user\"}'",
+   "id": "interactiveMutate"
+  },
+  {
+   "confirms": [
+    "interactiveMutate"
+   ],
+   "guest": "cat /tmp/e2e-agents/callers/home/.config/opute-e2e/m-i-mutate.txt",
+   "id": "interactiveFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py annotations --port 3061 --token '${SECRET:callers}'",
+   "id": "annotations"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/leftover /tmp/e2e-agents/leftover/home && systemd-run --quiet --collect --unit=e2e-agent-leftover --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/leftover/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-leftover' --setenv='MCP_AUTH_TOKEN=${SECRET:leftover}' --setenv='HOST_MCP_PORT=3062' --setenv='OPUTE_HOST_ALLOW_MUTATIONS=true' --setenv='OPUTE_STANDALONE_ALLOW_MUTATIONS=true' --setenv='OPUTE_AGENT_MODE=standalone' /opt/opute-e2e/releases/rust-candidate/opute-host-agent serve && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3062/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3062/health",
+   "id": "leftover"
+  },
+  {
+   "auth": "secret:leftover",
+   "id": "leftoverList",
+   "mcp": "tools/list",
+   "port": 3062
+  },
+  {
+   "arguments": {
+    "content": "left\n",
+    "path": ".config/opute-e2e/m-left.txt",
+    "scope": "user"
+   },
+   "auth": "secret:leftover",
+   "id": "leftoverMutation",
+   "mcp": "tools/call",
+   "port": 3062,
+   "tool": "ensure_host_file"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/leftover/home/.config/opute-e2e/m-left.txt",
+   "id": "leftoverNoFile"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents /tmp/e2e-agents/flagged /tmp/e2e-agents/flagged/home && systemd-run --quiet --collect --unit=e2e-agent-flagged --uid=opute --gid=opute --property=Restart=no --setenv='HOME=/tmp/e2e-agents/flagged/home' --setenv='OPUTE_REMOTE_AGENT_ID=e2e-flagged' --setenv='MCP_AUTH_TOKEN=${SECRET:flagged}' --setenv='HOST_MCP_PORT=3063' --setenv='OPUTE_OAUTH_CLIENTS=ro:read' /opt/opute-e2e/releases/rust-candidate/opute-host-agent serve --allow-mutations && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3063/health && break; sleep 0.5; done; curl -fsS http://127.0.0.1:3063/health",
+   "id": "flagged"
+  },
+  {
+   "auth": "secret:flagged",
+   "id": "flaggedList",
+   "mcp": "tools/list",
+   "port": 3063
+  },
+  {
+   "arguments": {
+    "content": "flag\n",
+    "path": ".config/opute-e2e/m-flag.txt",
+    "scope": "user"
+   },
+   "auth": "secret:flagged",
+   "id": "flaggedMutation",
+   "mcp": "tools/call",
+   "port": 3063,
+   "tool": "ensure_host_file"
+  },
+  {
+   "confirms": [
+    "flaggedMutation"
+   ],
+   "guest": "cat /tmp/e2e-agents/flagged/home/.config/opute-e2e/m-flag.txt",
+   "id": "flaggedFile"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/neutralprobe.py oauth --port 3063 --client ro --cred /tmp/e2e-agents/flagged/home/.config/opute/instances/standalone/state/credentials/ro.json --call ensure_host_file --arguments '{\"path\": \".config/opute-e2e/m-flag-ro.txt\", \"content\": \"flag-ro\\n\", \"scope\": \"user\"}'",
+   "id": "flaggedRo"
+  },
+  {
+   "guest": "test ! -e /tmp/e2e-agents/flagged/home/.config/opute-e2e/m-flag-ro.txt",
+   "id": "flaggedRoNoFile"
+  },
+  {
+   "guest": "install -d -o opute -g opute /tmp/e2e-agents/former && runuser -u opute -- env -i PATH=/usr/bin:/bin HOME=/tmp/e2e-agents/former OPUTE_REMOTE_AGENT_ID=e2e-former OPUTE_OAUTH_CLIENTS=ci:mcp /opt/opute-e2e/releases/rust-candidate/opute-host-agent serve 2>&1 | tail -1; echo exit=${PIPESTATUS[0]}; find /tmp/e2e-agents/former -mindepth 1 | wc -l",
+   "id": "former"
+  }
+ ]
+}

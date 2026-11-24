@@ -1,0 +1,50 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [
+   "files//etc/opute-e2e-never-written"
+  ],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//etc/opute-e2e-unused-probe"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [
+  "unused-allowance"
+ ],
+ "gate": "e2e-0",
+ "harnessErrors": [],
+ "journey": "selfcheck.unused-allowance",
+ "pass": false,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "touch"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Harness: an allowance the run never uses fails",
+   "spec": "evidence/e2e/README.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "touch": 140
+  },
+  "stepsSeconds": 45.0
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

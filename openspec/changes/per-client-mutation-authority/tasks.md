@@ -21,6 +21,6 @@
 
 ## 5. Evidence and release
 
-- [ ] 5.1 Journeys: every mutating agent starts with `--allow-mutations` or a `mutate` client; new journeys per caller and refusal; rollback journeys to 0.4.0 and 0.3.0 assert read-only and intact state.
-- [ ] 5.2 New candidate `rust-0.5.0-rc1` (fmt, clippy, 60 s fuzz, stale grep); every gate under one run id; readiness; packet.
+- [x] 5.1 Journeys: every mutating agent starts with `--allow-mutations` or a `mutate` client; new journeys per caller and refusal; rollback journeys to 0.4.0 and 0.3.0 assert read-only and intact state. Measured: 0.4.0 alone under the 0.5.0 unit exits on the flag before it serves, so a rollback restores 0.4.0's unit (packet 9.4).
+- [x] 5.2 New candidate `rust-0.5.0-rc1` (fmt, clippy, 60 s fuzz, stale grep); every gate under one run id; readiness; packet. Every gate passes under `m28-r1` on its first attempt; readiness lists only e2e-5, WSL2 and Q4; packet section 9.
 - [ ] 5.3 Owner sign-off; publish through the m26 release path.

@@ -1,0 +1,438 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//opt/opute-e2e/releases/rust-0.3.x",
+   "files//opt/opute-e2e/releases/rust-0.3.x/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/releases/rust-0.3.x/opute-host-agent",
+   "files//opt/opute-e2e/releases/rust-0.4.x",
+   "files//opt/opute-e2e/releases/rust-0.4.x/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/releases/rust-0.4.x/opute-host-agent",
+   "files//opt/opute-e2e/releases/rust-candidate",
+   "files//opt/opute-e2e/releases/rust-candidate/host-agent-linux-x64.gz",
+   "files//opt/opute-e2e/releases/rust-candidate/opute-host-agent",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/roll",
+   "files//tmp/e2e-agents/roll/home",
+   "files//tmp/e2e-agents/roll/home/.cache",
+   "files//tmp/e2e-agents/roll/home/.cache/incus",
+   "files//tmp/e2e-agents/roll/home/.config",
+   "files//tmp/e2e-agents/roll/home/.config/incus",
+   "files//tmp/e2e-agents/roll/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/roll/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/roll/home/.config/opute",
+   "files//tmp/e2e-agents/roll/home/.config/opute-e2e",
+   "files//tmp/e2e-agents/roll/home/.config/opute-e2e/r1.txt",
+   "files//tmp/e2e-agents/roll/home/.config/opute-e2e/r2.txt",
+   "files//tmp/e2e-agents/roll/home/.config/opute-e2e/r3.txt",
+   "files//tmp/e2e-agents/roll/home/.config/opute-e2e/r4.txt",
+   "files//tmp/e2e-agents/roll/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/roll/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/host-agent.lock",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/authz.sqlite",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/credentials",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/credentials/opute-mcp-host.json",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db-shm",
+   "files//tmp/e2e-agents/roll/home/.config/opute/instances/platform/state/state.db-wal"
+  ],
+  "residue": [],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-neutral",
+ "harnessErrors": [],
+ "journey": "neutral.rollback",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "0.4.0\n",
+     "equals": "0.4.0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "unpackP"
+    },
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "old"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "response.status",
+     "step": "oldList"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write1"
+    },
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "leftover"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "leftoverRead1"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "leftoverWrite"
+    },
+    {
+     "actual": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
+     "equals": "Error: mutation refused: ensure_host_file has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
+     "ok": true,
+     "path": "response.body.result.content[0].text",
+     "step": "leftoverWrite"
+    },
+    {
+     "actual": 0,
+     "equals": 0,
+     "ok": true,
+     "path": "exit",
+     "step": "leftoverNoFile"
+    },
+    {
+     "actual": [
+      "bind=0.0.0.0 port=3004 bearer_mutations=false"
+     ],
+     "equals": [
+      "bind=0.0.0.0 port=3004 bearer_mutations=false"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "leftoverSummary"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.hits",
+     "step": "leftoverSummary"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "No mutation setting other than the flag",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "new"
+    },
+    {
+     "actual": [
+      "0.0.0.0:3004"
+     ],
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "newListen"
+    },
+    {
+     "actual": [
+      "bind=0.0.0.0 port=3004 bearer_mutations=true"
+     ],
+     "equals": [
+      "bind=0.0.0.0 port=3004 bearer_mutations=true"
+     ],
+     "ok": true,
+     "path": "json.profileLines",
+     "step": "newSummary"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "newRead1"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write2"
+    },
+    {
+     "actual": "platform\n",
+     "equals": "platform\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "newState"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "newDb"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "One serving profile",
+   "spec": "openspec/changes/per-client-mutation-authority/specs/platform-neutral-host-agent/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": "flag provided but not defined: -allow-mutations\nexit=1\n",
+     "equals": "flag provided but not defined: -allow-mutations\nexit=1\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "binaryOnly"
+    },
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "back"
+    },
+    {
+     "actual": [
+      "0.0.0.0:3004"
+     ],
+     "equals": [
+      "0.0.0.0:3004"
+     ],
+     "ok": true,
+     "path": "json.addresses",
+     "step": "backListen"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "backRead2"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write3"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "backDb"
+    },
+    {
+     "actual": "0.3.0\n",
+     "equals": "0.3.0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "unpack03"
+    },
+    {
+     "actual": "e2e-roll",
+     "equals": "e2e-roll",
+     "ok": true,
+     "path": "json.agentId",
+     "step": "back3"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.exists",
+     "step": "back3Read3"
+    },
+    {
+     "actual": "<absent>",
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "ok": true,
+     "path": "response.body.result.isError",
+     "step": "write4"
+    },
+    {
+     "actual": "ok",
+     "equals": "ok",
+     "ok": true,
+     "path": "json.integrity",
+     "step": "back3Db"
+    },
+    {
+     "actual": "r1\nr2\nr3\nr4\n",
+     "equals": "r1\nr2\nr3\nr4\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "rollFiles"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Rollback restores the previous release's unit with its binary",
+   "spec": "openspec/changes/reimplement-host-agent-in-rust/cutover-review-packet.md section 9 (0.5.0 rollback)"
+  },
+  {
+   "assertions": [
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "oldMint"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "newMint"
+    },
+    {
+     "actual": "3ca3d3f9899cc92e362487a740d659cd2b434c4f90a268fb09c338b1e275ccb2",
+     "equalsStep": {
+      "path": "json.credSha256",
+      "step": "oldMint"
+     },
+     "ok": true,
+     "other": "3ca3d3f9899cc92e362487a740d659cd2b434c4f90a268fb09c338b1e275ccb2",
+     "path": "json.credSha256",
+     "step": "newMint"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "backMint"
+    },
+    {
+     "actual": "3ca3d3f9899cc92e362487a740d659cd2b434c4f90a268fb09c338b1e275ccb2",
+     "equalsStep": {
+      "path": "json.credSha256",
+      "step": "oldMint"
+     },
+     "ok": true,
+     "other": "3ca3d3f9899cc92e362487a740d659cd2b434c4f90a268fb09c338b1e275ccb2",
+     "path": "json.credSha256",
+     "step": "backMint"
+    },
+    {
+     "actual": 200,
+     "equals": 200,
+     "ok": true,
+     "path": "json.listStatus",
+     "step": "back3Mint"
+    },
+    {
+     "actual": "3ca3d3f9899cc92e362487a740d659cd2b434c4f90a268fb09c338b1e275ccb2",
+     "equalsStep": {
+      "path": "json.credSha256",
+      "step": "oldMint"
+     },
+     "ok": true,
+     "other": "3ca3d3f9899cc92e362487a740d659cd2b434c4f90a268fb09c338b1e275ccb2",
+     "path": "json.credSha256",
+     "step": "back3Mint"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "Every orchestrator is an ordinary client",
+   "spec": "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "back": 709,
+   "back3": 711,
+   "back3Db": 191,
+   "back3Mint": 277,
+   "back3Read3": 280,
+   "back3Stop": 266,
+   "backDb": 188,
+   "backListen": 195,
+   "backMint": 265,
+   "backRead2": 238,
+   "backStop": 218,
+   "binaryOnly": 147,
+   "copy03": 365,
+   "copy04": 370,
+   "copyP": 354,
+   "leftover": 713,
+   "leftoverNoFile": 142,
+   "leftoverRead1": 269,
+   "leftoverStop": 286,
+   "leftoverSummary": 259,
+   "leftoverWrite": 207,
+   "new": 714,
+   "newDb": 191,
+   "newListen": 195,
+   "newMint": 247,
+   "newRead1": 327,
+   "newState": 139,
+   "newStop": 216,
+   "newSummary": 269,
+   "old": 747,
+   "oldList": 531,
+   "oldMint": 252,
+   "oldStop": 252,
+   "probeCopy": 283,
+   "rollFiles": 146,
+   "tool": 282,
+   "unpack03": 233,
+   "unpack04": 236,
+   "unpackP": 237,
+   "wire": 290,
+   "write1": 254,
+   "write2": 226,
+   "write3": 230,
+   "write4": 239
+  },
+  "stepsSeconds": 58.3
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}
