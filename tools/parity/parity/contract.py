@@ -205,6 +205,14 @@ def _sweep(ctx: Context, spec: dict) -> dict:
             return ((tool.get("_meta") or {}).get("capability") or {}).get("privilege", _MISSING)
         names = sorted(n for n, t in published.items() if _check(privilege(t), want) is None)
     refusal = ctx.expand(spec["refusal"])
+
+    def expected(name: str) -> re.Pattern:
+        # A refusal may name the tool ({tool}) and its effect ({effect}): the
+        # published effect, any effect for a tool the agent does not publish.
+        effect = ((published.get(name, {}).get("_meta") or {}).get("capability") or {}).get("effect")
+        pattern = re.escape(refusal).replace(re.escape("{tool}"), re.escape(name))
+        pattern = pattern.replace(re.escape("{effect}"), re.escape(effect) if effect else "[a-z_]+")
+        return re.compile(pattern)
     refused, other = [], []
     for name in names:
         params = {"name": name, "arguments": spec.get("arguments", {}), **ctx.expand(spec.get("params", {}))}
@@ -213,7 +221,8 @@ def _sweep(ctx: Context, spec: dict) -> dict:
         result = body.get("result") if isinstance(body, dict) else None
         content = (result or {}).get("content") or [{}]
         text = content[0].get("text") if isinstance(content[0], dict) else None
-        (refused if (result or {}).get("isError") and text == refusal else other).append(name)
+        matched = isinstance(text, str) and expected(name).fullmatch(text) is not None
+        (refused if (result or {}).get("isError") and matched else other).append(name)
     return {"selected": len(names), "refused": refused, "notRefused": other,
             "published": sorted(n for n in names if n in published)}
 

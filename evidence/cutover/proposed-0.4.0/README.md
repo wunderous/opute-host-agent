@@ -25,3 +25,8 @@ Nothing here is published.
   binary without `--mode=standalone`. The distribution receipt
   (`tools/parity/parity/dist.py`) applies it to its site clone for a 0.4.x
   binary only and restores the script after the capture.
+
+**Retired by 0.5.0 (D55).** These files shipped in host-agents v0.4.0. Their
+dual design, both mutation settings kept so a rollback reads the old one,
+ends with 0.5.0, where no setting grants mutations; see
+`evidence/cutover/proposed-0.5.0/`. They stay as the record of 0.4.0.

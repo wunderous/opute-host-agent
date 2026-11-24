@@ -277,7 +277,7 @@
      "expect": {
       "status": 200,
       "body.result.isError": true,
-      "body.result.content.0.text": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "body.result.content.0.text": "Error: mutation refused: create_vm has effect mutation; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      }
     },
     {
@@ -303,7 +303,9 @@
      "expect": {
       "status": 200,
       "body.result.resultType": "complete",
-      "body.result._meta": {"$re": "^\\{\"io\\.modelcontextprotocol/serverInfo\": \\{\"name\": \"host-agent\", \"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"\\}\\}$"}
+      "body.result._meta": {
+       "$re": "^\\{\"io\\.modelcontextprotocol/serverInfo\": \\{\"name\": \"host-agent\", \"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"\\}\\}$"
+      }
      }
     },
     {
@@ -415,9 +417,10 @@
      "as": "provision",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -447,9 +450,10 @@
      "as": "start",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -679,7 +683,9 @@
      "expect": {
       "status": 200,
       "body.result.resultType": "complete",
-      "body.result._meta": {"$re": "^\\{\"io\\.modelcontextprotocol/serverInfo\": \\{\"name\": \"host-agent\", \"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"\\}\\}$"}
+      "body.result._meta": {
+       "$re": "^\\{\"io\\.modelcontextprotocol/serverInfo\": \\{\"name\": \"host-agent\", \"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"\\}\\}$"
+      }
      }
     },
     {
@@ -749,9 +755,10 @@
      "as": "restart",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -793,7 +800,11 @@
     {
      "as": "provision",
      "serve": {
-      "profile": "platform"
+      "profile": "standalone",
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -822,7 +833,11 @@
     {
      "as": "start",
      "serve": {
-      "profile": "platform"
+      "profile": "standalone",
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -1052,7 +1067,9 @@
      "expect": {
       "status": 200,
       "body.result.resultType": "complete",
-      "body.result._meta": {"$re": "^\\{\"io\\.modelcontextprotocol/serverInfo\": \\{\"name\": \"host-agent\", \"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"\\}\\}$"}
+      "body.result._meta": {
+       "$re": "^\\{\"io\\.modelcontextprotocol/serverInfo\": \\{\"name\": \"host-agent\", \"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"\\}\\}$"
+      }
      }
     },
     {
@@ -1121,7 +1138,11 @@
     {
      "as": "restart",
      "serve": {
-      "profile": "platform"
+      "profile": "standalone",
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true

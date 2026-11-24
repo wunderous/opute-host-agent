@@ -125,7 +125,7 @@ def main():
                                "10GiB", "1.5TB", "-1", "18446744073709551616B"]):
         add("resource_identity", f"value-{i}", value)
 
-    add("env_file", "unit", "OPUTE_AGENT_MODE=standalone\nHOST_MCP_PORT=3014\n# comment\n"
+    add("env_file", "unit", "OPUTE_TRANSPORT=http\nHOST_MCP_PORT=3014\n# comment\n"
         "export OPUTE_REMOTE_AGENT_ID=\"agent one\"\nBAD LINE\n=novalue\n")
 
     add("state_store", "empty", b"")

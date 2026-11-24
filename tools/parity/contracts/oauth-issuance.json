@@ -3139,7 +3139,7 @@
      "log": {},
      "expect": {
       "text": {
-       "$re": "msg=oauth event=issue client_id=host-agent-provider grant=client_credentials resource=http://127\\.0\\.0\\.1:\\d+/mcp outcome=issued remote=127\\.0\\.0\\.1",
+       "$re": "msg=oauth event=issue client_id=host-agent-provider grant=client_credentials resource=http://127\\.0\\.0\\.1:\\d+/mcp outcome=issued remote=127\\.0\\.0\\.1 scope=mutate",
        "$contains": [
         "event=deny client_id=host-agent-provider grant=client_credentials",
         "outcome=invalid_client",

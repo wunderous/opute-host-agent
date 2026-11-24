@@ -40,10 +40,10 @@ pub const CLIENTS_ENV: &str = "OPUTE_OAUTH_CLIENTS";
 pub const BOOTSTRAP_CLIENT_ID: &str = "host-agent-bootstrap";
 const MIGRATION_ID: &str = "oauth-issuance.v1";
 /// D55: requests, consents and codes carry the scope they were approved for.
+/// Rows written before it read only.
 const SCOPES_MIGRATION_ID: &str = "oauth-scopes.v1";
-const SCOPES_DDL: &str = r#"
-ALTER TABLE pending_authorizations ADD COLUMN scope TEXT NOT NULL DEFAULT 'read';
-ALTER TABLE consents ADD COLUMN scope TEXT NOT NULL DEFAULT 'read';
+const SCOPE_COLUMN: &str = "scope TEXT NOT NULL DEFAULT 'read'";
+const CODE_SCOPES_DDL: &str = r#"
 CREATE TABLE IF NOT EXISTS code_scopes (
   code TEXT PRIMARY KEY,
   scope TEXT NOT NULL
@@ -456,23 +456,30 @@ pub fn prepare(conn: &Connection, state_dir: &Path, clients: &[String]) -> Resul
             ],
         );
     }
-    let scoped: bool = conn
-        .query_row(
-            "SELECT 1 FROM schema_migrations WHERE id=?",
-            [SCOPES_MIGRATION_ID],
-            |_| Ok(()),
-        )
-        .optional()
-        .map_err(|e| e.to_string())?
-        .is_some();
-    if !scoped {
-        conn.execute_batch(SCOPES_DDL).map_err(|e| e.to_string())?;
-        conn.execute(
-            "INSERT INTO schema_migrations(id, applied_at) VALUES(?, ?)",
-            params![SCOPES_MIGRATION_ID, now()],
-        )
-        .map_err(|e| e.to_string())?;
+    // Each step checks the schema itself, so a store whose migration record
+    // was lost is brought up again without failing.
+    for table in ["pending_authorizations", "consents"] {
+        let scoped: bool = conn
+            .query_row(
+                &format!("SELECT 1 FROM pragma_table_info('{table}') WHERE name='scope'"),
+                [],
+                |_| Ok(()),
+            )
+            .optional()
+            .map_err(|e| e.to_string())?
+            .is_some();
+        if !scoped {
+            conn.execute_batch(&format!("ALTER TABLE {table} ADD COLUMN {SCOPE_COLUMN};"))
+                .map_err(|e| e.to_string())?;
+        }
     }
+    conn.execute_batch(CODE_SCOPES_DDL)
+        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES(?, ?)",
+        params![SCOPES_MIGRATION_ID, now()],
+    )
+    .map_err(|e| e.to_string())?;
     // The bootstrap client has no secret, so it is public: it may only use
     // operator-approved authorization codes.
     set_client(

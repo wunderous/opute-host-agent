@@ -659,9 +659,9 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
                     ("client_id", &client_id),
                     ("grant", &grant_type),
                     ("resource", &resource),
-                    ("scope", scope.as_str()),
                     ("outcome", "issued"),
                     ("remote", &remote_ip(req)),
+                    ("scope", scope.as_str()),
                 ],
             );
             oauth_json(
