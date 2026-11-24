@@ -1,6 +1,6 @@
 # Tasks: platform-neutral Host Agent
 
-Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
+Target 0.4.0. Merge only after the 0.3.0 cutover and its rollback window (5 minutes, D54).
 
 ## 1. Decision
 
@@ -42,7 +42,7 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
 
 ## 4. Journeys
 
-- [ ] 4.0 Prerequisites outside this repository (owned by the release
+- [x] 4.0 Prerequisites outside this repository (owned by the release
   owners): the npm launcher and the recorded deploy unit drop `--mode`; the
   unit adds `OPUTE_HOST_ALLOW_MUTATIONS=true`. The journeys below do not
   wait on them: they start their own 0.4.0 agents with `serve` and
@@ -53,8 +53,9 @@ Target 0.4.0. Merge only after the 0.3.0 cutover and its 14-day window.
   capture patch). The dev VM installs that unit, the journeys' launcher
   is the patched tree, the distribution receipt captures a 0.4.x site
   catalog with the patched script, and the guest tool passes `--mode`
-  only to Go and 0.3.x. The release owners still ship these files; this
-  task stays open until they do.
+  only to Go and 0.3.x. *Shipped 2026-11-24* with the 0.4.0 release
+  (wunderous/host-agents#33): the deploy unit, the launcher and the site's
+  catalog capture as proposed.
 
 Gate `e2e-neutral` passes on run `e2e-neutral-r2` (2026-11-10), on a
 0.4.0 release set built from this branch. r1 is retired: the journeys had
