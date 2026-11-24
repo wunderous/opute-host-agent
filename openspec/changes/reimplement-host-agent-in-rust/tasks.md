@@ -280,9 +280,9 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   tools (`evidence/cutover/distribution.json`). Re-anchoring the public
   release catalog is the publication step and stays with its owners.
   *m26 note (2026-11-24), partial: the box stays unticked.* host-agents
-  v0.3.0 is published from rc9's pinned files and the site carries the
-  0.3.0 preview catalog; npm 0.3.0 waits on a renewed `NPM_TOKEN`, then the
-  catalog is promoted and the website owner deploys the image (packet 8).
+  v0.3.0 is published from rc9's pinned files, npm `@opute/host-agent@0.3.0`
+  is `latest` and the site's 0.3.0 catalog is promoted from its published
+  canary; the website owner deploys the site image (packet 8).
 - [ ] 5.3 Exercise Platform registration, routing, authorization boundary,
   exact agent ID, task correlation, and semantic-outcome separation using a
   dedicated Rust validation identity. Gate: an actual client and Platform
