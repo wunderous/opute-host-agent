@@ -279,6 +279,10 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   passes and the site preview differs from Go's only in the declared
   tools (`evidence/cutover/distribution.json`). Re-anchoring the public
   release catalog is the publication step and stays with its owners.
+  *m26 note (2026-11-24), partial: the box stays unticked.* host-agents
+  v0.3.0 is published from rc9's pinned files and the site carries the
+  0.3.0 preview catalog; npm 0.3.0 waits on a renewed `NPM_TOKEN`, then the
+  catalog is promoted and the website owner deploys the image (packet 8).
 - [ ] 5.3 Exercise Platform registration, routing, authorization boundary,
   exact agent ID, task correlation, and semantic-outcome separation using a
   dedicated Rust validation identity. Gate: an actual client and Platform
@@ -313,7 +317,7 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
     binding).
   - **Still open:** the bounded rollback window is a cutover decision (M13),
     and the rehearsal on staging needs M11.
-- [ ] 6.3 Review the complete manifest with Host Agent, Platform, release,
+- [x] 6.3 Review the complete manifest with Host Agent, Platform, release,
   and deployment owners before any production selection. Gate: Go remains the
   production owner until the whole-agent gate passes and the responsible owner
   explicitly authorizes cutover through its normal rollout path.
@@ -325,8 +329,9 @@ Evidence for 4.2 and 4.3: [native validation](../../../evidence/local-e2e/native
   `rust-0.3.0-rc7` as reviewed on run `m24-r1` (packet section 6). Go stays
   the production owner until the owner starts cutover through the normal
   rollout path; nothing was tagged, published or selected.
-  *Reopened by D53:* review the successor candidate `rust-0.3.0-rc9`
-  against the expanded m25 evidence.
+  *Reopened by D53, re-signed 2026-11-23:* the owner approved
+  `rust-0.3.0-rc9` on run `m25-r3` and authorized the 0.3.0 cutover through
+  the normal rollout path (goal m26).
 - [ ] 6.4 After the rollback window, make a separate, evidenced retirement
   decision for Go and a separate ownership decision for releases and the
   website. Gate: no Go artifact or registration is removed by this spec alone.
