@@ -1,66 +1,174 @@
-# Opute Host Agent — Rust reimplementation
+# Opute Host Agent
 
-This repository is the **new implementation target** for a behavior-preserving
-Rust reimplementation of the Go Host Agent. It holds the contract baseline, the
-OpenSpec change, the differential parity harness, and the Rust agent as it is
-built milestone by milestone. Through M3 the Rust binary implements Go's command
-line, configuration, lifecycle, HTTP server behavior, bearer authentication,
-MCP 2026-07-28 wire contract (including the ADR 0011 legacy gate), catalog and
-read-only host tools. Owner-approved Rust divergences cover OAuth issuance
-(D8), the standalone read-only gate (D10), and zero audit writes for rejected
-calls (D11). Full admission, tasks, plans, providers and mutations remain later
-milestones. The whole-agent cutover gate remains closed.
+[![CI](https://github.com/wunderous/opute-host-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/wunderous/opute-host-agent/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@opute/host-agent)](https://www.npmjs.com/package/@opute/host-agent)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-```sh
-make rust-check     # fmt, clippy -D warnings, unit tests
-make rust-build     # target/release/opute-host-agent
-make parity-m3      # harness checks, Go vs Rust, real MCP client, D8/D10/D11 contracts and canaries
+**Let an AI assistant run your Linux server: VMs, K3s clusters, databases and
+tunnels, through typed MCP tools that are read-only until you say otherwise.**
+
+Opute Host Agent is an [MCP](https://modelcontextprotocol.io) server that runs
+on your own machine. Connect Claude, Cursor, VS Code or any MCP client and ask
+in plain language. The assistant calls typed, schema-checked tools that the
+agent carries out on the host. Nothing changes on your machine until you allow
+it.
+
+## What it can do
+
+- **Inspect the host.** Hardware, capacity, services, files and the
+  virtualization stack.
+- **Run Incus VMs and system containers.** Create, start, stop, network and
+  run commands in them, and probe GPU access.
+- **Build K3s clusters,** including highly available ones across several VMs.
+  Install Helm charts, apply manifests, and read pods, events and resources.
+- **Run services on them.** PostgreSQL (CloudNativePG), an OCI registry,
+  image builds and service domains.
+- **Expose them safely.** Cloudflare tunnels and Tailscale through provider
+  plugins.
+- **Run whole setups as recipes.** A recipe is a declarative plan the agent
+  runs durably, with idempotency, cancellation and a recorded result for each
+  step.
+
+The 0.5.0 catalog has 138 tools. The
+[capability reference](https://www.opute.io/docs/capabilities/) lists them,
+and your client sees the live list through `tools/list`.
+
+## Safe by default
+
+- It listens on `127.0.0.1:3014` only.
+- **Every client is read-only** until it holds a grant to change the host:
+  - The bearer token mutates only when the agent starts with
+    `--allow-mutations`.
+  - OAuth clients get a `read` or `mutate` scope each. An interactive client
+    that asks for `mutate` waits for you to approve it with
+    `opute-host-agent oauth approve`.
+- A refused call says which grant would admit it.
+- Each tool declares its effect (`readOnlyHint`, `destructiveHint`), so your
+  client can ask before a destructive call.
+- Secrets in results are redacted according to each tool's schema. Tools that
+  reset or remove data check ownership and require an explicit confirmation.
+
+## Quickstart
+
+You need Linux (x64 or arm64) or WSL2, and Node.js 18 or newer.
+
+**1. Start the agent.**
+
+```bash
+export OPUTE_REMOTE_AGENT_ID="local-$(openssl rand -hex 8)"   # this agent's identity
+export MCP_AUTH_TOKEN="$(openssl rand -hex 32)"                 # the bearer token
+npx -y @opute/host-agent start --background
 ```
 
-The source baseline is `wunderous/host-agents` commit
-`ace7013df17528fee1bed13a1d70a132d6c5eb9b` (tree
-`ac17cfb298f789095e7a3af2219837e3490f798a`), built with the pinned Go 1.25.4
-toolchain; see
-[source-lock.json](baseline/source-lock.json). The pinned tree and its typed
-contracts/tests are the behavioral reference. A release catalog snapshot is
-useful evidence, but the catalog exposed by `tools/list` also depends on mode
-and active providers. The full parity inventory is an implementation gate.
+The launcher downloads the release binary for your CPU, verifies its checksum
+and serves MCP at `http://127.0.0.1:3014/mcp`. Run
+`npx @opute/host-agent status` to check it and `npx @opute/host-agent stop` to
+stop it.
 
-The earlier, uncommitted `wunderous/opute-host-agent-rs` port is excluded. No
-code, contracts, or design from that port are imported into this repository.
-The Go Host Agent remains the production implementation until the whole-agent
-parity and cutover gates in this specification pass.
+**2. Connect your client.** In the same shell:
 
-## Read the specification
+- **Claude Code:**
 
-- [Preserved Host Agent contract](openspec/specs/host-agent-contract/spec.md)
-- [Rust migration proposal](openspec/changes/reimplement-host-agent-in-rust/proposal.md)
-- [Architecture and parity design](openspec/changes/reimplement-host-agent-in-rust/design.md)
-- [Ordered implementation gates](openspec/changes/reimplement-host-agent-in-rust/tasks.md)
-- [Milestones and E2E validation plan](openspec/changes/reimplement-host-agent-in-rust/milestones.md)
-- [Legacy and compatibility inventory](openspec/changes/reimplement-host-agent-in-rust/legacy-inventory.md)
-- [Proposed cutover parity invariant](.agents/decisions/rust-cutover-parity-gate.json)
+  ```bash
+  claude mcp add --transport http opute http://127.0.0.1:3014/mcp \
+    --header "Authorization: Bearer $MCP_AUTH_TOKEN"
+  ```
 
-OpenSpec uses `skip_specs: true` for this change because the requested refactor
-changes implementation, not product requirements. The main spec records the
-existing behavior that the Rust implementation must preserve. OpenSpec's
-[spec-driven workflow](https://openspec.dev/docs/schemas/spec-driven) explicitly
-supports this form of behavior-preserving refactor.
+- **Cursor, Claude Desktop and other `mcpServers` clients:**
 
-## Parity harness
+  ```json
+  {
+    "mcpServers": {
+      "opute": {
+        "type": "http",
+        "url": "http://127.0.0.1:3014/mcp",
+        "headers": { "Authorization": "Bearer <your MCP_AUTH_TOKEN>" }
+      }
+    }
+  }
+  ```
 
-`tools/parity/` holds the differential Go/Rust harness, `baseline/inventory/` the
-captured Go contract, and `parity-manifest.json` the fail-closed gates. See
-[tools/parity/README.md](tools/parity/README.md) and
-[evidence/m0/README.md](evidence/m0/README.md).
+- **VS Code:** follow the
+  [get-started tutorial](https://www.opute.io/docs/get-started/), which keeps
+  the token in a password prompt.
 
-## Validate the planning artifacts
+Keep the token out of version control.
 
-Node.js 20.19+ is required for the pinned OpenSpec CLI:
+**3. Ask.** Try *"What is this host and what can you do on it?"* The assistant
+calls `get_host_info` and reads the live tool list.
 
-```sh
-make spec-validate
+**4. Allow changes when you want them.** Restart with mutations allowed:
+
+```bash
+npx @opute/host-agent stop
+npx -y @opute/host-agent start --background --allow-mutations
 ```
 
-This validates document structure only. It does not prove Rust parity or
-authorize a cutover.
+Then try *"Install Incus and create a small Ubuntu VM called sandbox."* VM and
+cluster tools need Incus, and `install_virtualization_stack` installs it when
+the host user has the privileges to.
+
+## Example: a website from one recipe
+
+[`evidence/m20/minimal-site.recipe.yaml`](evidence/m20/minimal-site.recipe.yaml)
+takes a host with Incus to a public website in one run. It builds an Incus
+guest, installs K3s and an OCI registry, builds and deploys the site image,
+and publishes it through a Cloudflare tunnel.
+[`minimal-site-teardown.recipe.yaml`](evidence/m20/minimal-site-teardown.recipe.yaml)
+removes all of it. Recipes like these run on every release candidate, on a
+disposable VM.
+
+## Install without npm
+
+Each [GitHub release](https://github.com/wunderous/opute-host-agent/releases)
+ships Linux x64 and arm64 binaries, the K3s, Cloudflare and Tailscale provider
+plugins, `SHA256SUMS` and a CycloneDX SBOM. To build from source with the
+pinned Rust toolchain:
+
+```bash
+make rust-build                      # target/release/opute-host-agent
+./target/release/opute-host-agent    # serves MCP over HTTP on 127.0.0.1:3014
+```
+
+Configuration is environment-based. See the
+[configuration reference](https://www.opute.io/docs/configuration/).
+
+## Documentation
+
+- [Get started](https://www.opute.io/docs/get-started/)
+- [Install and run](https://www.opute.io/docs/install/)
+- [Connect an MCP client](https://www.opute.io/docs/mcp-clients/)
+- [Concepts](https://www.opute.io/docs/concepts/)
+- [Recipes and plans](https://www.opute.io/docs/recipes/)
+- [Resources and safety](https://www.opute.io/docs/resources/)
+- [Troubleshooting](https://www.opute.io/docs/troubleshooting/)
+- [How this project is built](docs/engineering.md): the specification,
+  decisions, evidence and release gates kept in this repository
+
+## Status and limits
+
+- 0.5.0 is the current release. Each release is accepted on end-to-end
+  journeys that run on a disposable VM, including rollback to the previous
+  release.
+- Hosts must run Linux or WSL2. Native macOS and Windows hosts aren't
+  supported.
+- Transport is Streamable HTTP only. stdio isn't supported.
+- The tool contract may still change between minor versions. The release
+  notes say what changed.
+
+## Related repositories
+
+[`wunderous/host-agents`](https://github.com/wunderous/host-agents) holds the
+npm launcher, the [www.opute.io](https://www.opute.io) documentation site and
+the frozen Go implementation, which is kept as a rollback target.
+
+## Contributing
+
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md)
+first, and report vulnerabilities privately as described in
+[SECURITY.md](SECURITY.md). Everyone taking part follows the
+[Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+[MIT](LICENSE)
