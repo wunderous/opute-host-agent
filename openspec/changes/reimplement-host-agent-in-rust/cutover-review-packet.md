@@ -255,7 +255,7 @@ linked changes.
 | D25 | One writer per instance state: a second agent on the same state is refused (Go and Rust) | owner, 2026-11-01 |
 | D26 | hostos, cloudflare, tailscale and k3s providers are Rust executables; ollama stays out (D15) | owner, 2026-11-02 |
 | D27 | The spec, not Go, is the authority after the parity record | owner, 2026-11-04 |
-| D28 | Q0–Q28 answered: the fixes in Q5, Q7, Q9, Q14–Q17, Q20–Q28; the 14-day rollback window; 0.3.0 as the first Rust package; npm postponed | owner, 2026-11-07 |
+| D28 | Q0–Q28 answered: the fixes in Q5, Q7, Q9, Q14–Q17, Q20–Q28; the 14-day rollback window (D54 makes it 5 minutes); 0.3.0 as the first Rust package; npm postponed | owner, 2026-11-07 |
 | D28 follow-ups | Q19 (optional HA endpoint, off by default) and Q29 (one workload unit per task) | owner, 2026-11-08 |
 | D29 | `/mcp` reads at most 4 MiB of a request body and answers 413 beyond it | owner, 2026-11-10 |
 | D30 | A resource id containing any Unicode whitespace is refused | owner, 2026-11-10 |
@@ -270,6 +270,7 @@ linked changes.
 | D51 | `ensure_local_llm_relay.upstreamToken` is published `writeOnly` | Host Agent owner, delegated 2026-11-11 |
 | D52 | The public-MCP connector probes the agent's own resources with an in-process token; Go asked its token endpoint without a secret | Host Agent owner, delegated 2026-11-11 |
 | D53 | Provider executables listen on IPv4 loopback at their configured port | Host Agent owner, 2026-11-21 |
+| D54 | The rollback window after a host's cutover is 5 minutes, replacing D28's 14 days | owner, 2026-11-23 |
 
 D1 (bit-compatible SQLite), D4–D7, D14 and D15 constrain how the migration
 was done or scoped; they change no observable behaviour against Go.
@@ -282,8 +283,8 @@ was done or scoped; they change no observable behaviour against Go.
 | WSL2 | blocked | Opute release owners | a Windows host with WSL2 as a runner (5.1) |
 | Q4 | unverified | Opute Platform owners | the owner confirms whether Platform stores hashes |
 | Q18 | unverified (deferred) | Host Agent owner | D28 defers it as a new capability; not a cutover blocker |
-| npm | postponed | release owners | D28: publishing 0.3.0, including to npm, is a separate rollout step; nothing here was published |
-| Public site and catalog claims (5.2) | not started | release and website owners | re-anchoring `site/context/release-catalog.json` on the candidate's catalog at publication |
+| npm | waiting on the owner | release owners | `@opute/host-agent@0.3.0`: the Publish job failed on the expired `NPM_TOKEN`; rerun it once the secret is renewed (section 8) |
+| Public site and catalog claims (5.2) | 0.3.0 preview committed | release and website owners | promote the catalog from npm's published canary evidence; the website owner deploys the image (section 8) |
 | O1 audit retention | open observation | Host Agent owner | D42 decides it for 0.4.0; D43 keeps 0.3.0 without a new setting. Not a cutover blocker by the spec. A2, A4 and A5 are fixed in rc5, S1 to S6 in rc6, U1 in rc7 (section 2a) |
 
 `make cutover-readiness` lists exactly e2e-5, WSL2, Q4 and Q18 as not passed.
@@ -300,20 +301,22 @@ hosts, Platform registration, tunnels and DNS were never touched.
 | 2 | On the Go host, keep the unit, binary path, instance root, env file and `OPUTE_REMOTE_AGENT_ID` unchanged | `e2e1.migrate-upgrade`, `e2e4.cutover` |
 | 3 | Snapshot the instance state directory after Go stops | not on the candidate: the `m12a` gate (task 6.2) snapshotted isolated copies on an earlier build. `e2e4.cutover` rolls back on Rust's live state without a snapshot |
 | 4 | Stop Go with SIGTERM; in-flight policy is Go's: drain requests, cancel running tasks and wait (D12 for tasks still in binding) | `e2e4.cutover` (stopped with an open call, a working task and a running plan), `e2e1.restart` |
-| 5 | Replace the binary with `host-agent-linux-x64` from the candidate; keep Go v0.2.4's binary on the host (selectable for 14 days) | `e2e1.migrate-upgrade`, `e2e4.cutover` |
+| 5 | Replace the binary with `host-agent-linux-x64` from the candidate; keep Go v0.2.4's binary on the host (selectable for 5 minutes, D54) | `e2e1.migrate-upgrade`, `e2e4.cutover` |
 | 6 | Start Rust on Go's state; it reconciles per table; read back operations, tasks and plan runs | `e2e4.cutover` |
 | 7 | Confirm the writer lock: no second agent on the same state | `e2e1.two-agents`, `e2e4.cutover` (D25) |
 | 8 | Confirm first success with the tutorial clients and the exact agent id | `e2e1.tutorial-clients`, `e2e1.auth` |
 | 9 | Observe through the window: restart and kill mid-work recover truthfully | `e2e1.restart`, `e2e4.restart` |
 | 10 | In-place Rust upgrade during the window | `e2e1.migrate-upgrade`, `e2e4.restart` (to `0.3.1-e2e`) |
-| R1 | Rollback, any time within 14 days: stop Rust with SIGTERM, put Go v0.2.4's binary back, start Go on Rust's state; every record reports the status Rust last reported | `e2e4.cutover` |
-| R2 | After 14 days with evidence green: a separate, evidenced decision to retire Go (task 6.4); nothing is removed by this packet | — |
+| R1 | Rollback, any time within 5 minutes (D54): stop Rust with SIGTERM, put Go v0.2.4's binary back, start Go on Rust's state; every record reports the status Rust last reported | `e2e4.cutover` |
+| R2 | After 5 minutes with evidence green: a separate, evidenced decision to retire Go (task 6.4); nothing is removed by this packet | — |
 
 ## 6. Sign-off
 
-The 2026-11-21 approval covers rc7 on `m24-r1`. The provider listener
-change in D53 reopens review for the successor candidate. The owner rows
-below preserve the historical decision.
+The 2026-11-21 approval covered rc7 on `m24-r1`. D53 reopened review for
+the successor candidate. On 2026-11-23 the owner, who holds all four roles,
+re-signed for `rust-0.3.0-rc9` on run `m25-r3` ("I sign off on everything
+you recommend"), including the 0.3.0 cutover through the normal rollout
+path (goal m26). The rc7 rows stay as the historical record.
 
 
 The owner, who holds all four roles, signed off in the session on
@@ -328,6 +331,11 @@ stays the production owner until then (task 6.3).
 | Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | e2e-5 and Q4 stay open (section 4) |
 | Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | WSL2 stays blocked; publishing, npm and the site's catalog claims (5.2) stay separate steps (D28) |
 | Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | Cutover follows the section 5 runbook when the owner starts it; rollback window 14 days |
+| Host Agent | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | Q18 stays deferred as a new capability (D28); O1 stays open in 0.3.0 (D43); D53 fixes P1 |
+| Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | e2e-5 and Q4 stay open (section 4) |
+| Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | WSL2 stays blocked; the owner authorizes publishing 0.3.0 (GitHub release, npm, site catalog) through the normal rollout path (m26) |
+| Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | Cutover follows the section 5 runbook; rollback window 5 minutes per host (D54, replacing D28's 14 days) |
+
 
 ## 7. Rust 0.4.0 candidate (goals m15, m17, m20, m19, m21, m22, m23, m24 and m25)
 
@@ -573,3 +581,30 @@ Measured by `e2e4.upgrade-chain` (m21) on one host:
 `make cutover-readiness` on `rust-0.4.0` lists e2e-5, WSL2 and Q4, the same
 owners and unblockers as section 4. Q18 is answered by D32 and passes. No
 observation from the hardening review is open in 0.4.0.
+
+## 8. Publication (0.3.0, goal m26)
+
+On 2026-11-23/24 the 0.3.0 release went out through the existing release
+surfaces ([`evidence/m26`](../../../evidence/m26/README.md)). Nothing was
+rebuilt: every published file is one of rc9's, by digest.
+
+| Surface | State | Evidence |
+|---|---|---|
+| `wunderous/opute-host-agent` release `v0.3.0` | published, tag on `0883e47fa` (rc9's commit) | the 9 files of rc9's set; `SHA256SUMS` `2679c551…` |
+| `wunderous/host-agents` release `v0.3.0` (Latest) | published by its Publish workflow from the pin `release/v0.3.0.json` (host-agents #30, #31) | each file fetched, checked against the pin and `SHA256SUMS`, the npm read-only canary passed on it; downloaded again from the public release: all 9 equal the pin |
+| `@opute/host-agent@0.3.0` on npm | not published | the npm job failed with E404 on the PUT, the expired `NPM_TOKEN` of m12a; it is rerun on the same tag once the owner renews the secret |
+| Site | 0.3.0 preview catalog captured from rc9's binary (revision `sha256:9aba4c89…`), image built to ghcr | deploying the image to the public website stays with the website owner; the catalog is promoted from the published canary evidence after npm |
+| Go `v0.2.4` | unchanged | the rollback release (section 5) |
+
+The first Publish run for host-agents `v0.3.0` stopped in its release-notes
+step on a quoting defect, after the checks and before any release or npm
+job. Nothing was published from it, so the unreleased tag was moved to the
+fixed commit (host-agents #31) instead of choosing another version.
+
+The dev-VM journeys were not rerun against the public URLs: the published
+files are byte-identical to the ones every gate ran on under `m25-r3`, and
+the launcher's download path is checked by the canary in the Publish run.
+The Platform builds its own agent from source and follows no release
+(`evidence/m26/surfaces.json`); moving it to Rust is its owners' rollout
+(e2e-5). No host was cut over: each host's cutover follows section 5, and its
+5-minute rollback window (D54) starts then.

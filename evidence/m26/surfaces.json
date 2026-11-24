@@ -1,0 +1,23 @@
+{
+ "schemaVersion": "opute-m26-release-surfaces.v1",
+ "recorded": "2026-11-23",
+ "candidate": "rust-0.3.0-rc9",
+ "surfaces": [
+  {"id": "github-release", "where": "wunderous/host-agents GitHub releases", "today": "v0.2.4 (Go), marked latest",
+   "consumers": "the npm launcher (by version), the site's get-started link (by package version)",
+   "pins": "version", "m26": "v0.3.0 with rc9's exact assets"},
+  {"id": "npm-launcher", "where": "@opute/host-agent on npmjs.org", "today": "0.2.3 (latest); 0.2.4 never published (expired NPM_TOKEN, m12a)",
+   "fetches": "https://github.com/wunderous/host-agents/releases/download/v<packageVersion>/host-agent-linux-<arch>.gz, checked against that release's SHA256SUMS",
+   "pins": "its own package version", "m26": "0.3.0, version bump only"},
+  {"id": "site", "where": "wunderous/host-agents site/, image ghcr.io/wunderous/host-agent-www", "today": "catalog captured from the Go binary, packageVersion 0.2.4",
+   "capture": "site/scripts/capture-catalog.mjs runs OPUTE_HOST_AGENT_BINARY; check_site_release_parity requires the catalog's packageVersion to equal the launcher's",
+   "pins": "package version", "m26": "catalog captured from rc9's binary; deploying the image stays with the website owner"},
+  {"id": "install-scripts", "where": "none published", "today": "no curl|sh installer; installs go through the launcher or a downloaded release asset",
+   "pins": "n/a", "m26": "nothing to change"},
+  {"id": "platform-artifacts", "where": "wunderous/opute (private), publish.yml and Dockerfile", "today": "builds the Go agent from source into its own image (host-agent-dist); scripts/fetch-host-agent-ci-artifacts.sh takes an explicit host-agents CI run id",
+   "pins": "source checkout / explicit run id; never follows a host-agents release or latest", "m26": "unchanged; moving the Platform to Rust is the Platform owners' rollout (e2e-5, Q4)"},
+  {"id": "windows-asset", "where": "host-agent-windows-x64.gz in Go releases", "today": "published by Go; the launcher refuses Windows (D3)",
+   "m26": "not in 0.3.0: Rust builds no Windows target; v0.2.4 keeps its asset"}
+ ],
+ "latest": "GitHub v0.3.0 may be marked latest: no consumer follows latest unpinned"
+}
