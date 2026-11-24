@@ -582,6 +582,22 @@ Measured by `e2e4.upgrade-chain` (m21) on one host:
 owners and unblockers as section 4. Q18 is answered by D32 and passes. No
 observation from the hardening review is open in 0.4.0.
 
+### 7.6 Sign-off
+
+On 2026-11-24 the owner, who holds all four roles, signed off on 0.4.0 in
+the session ("i sign off on 0.40 - take care of #2"): `rust-0.4.0-rc6` as
+reviewed on run `m25-r4`, its publication through the release path of
+section 8, and shipping the install surfaces of 7.4 (#2). The rc6 source
+that ships is the source its gates ran on; only the fuzz harness's lockfile
+changed since.
+
+| Owner | Name | Decision | Date | Notes |
+|---|---|---|---|---|
+| Host Agent | Houman Kamali (wunderous) | Approved: `rust-0.4.0-rc6` | 2026-11-24 | Platform-neutral (no `--mode`); Q18 answered by D32 |
+| Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.4.0-rc6` | 2026-11-24 | e2e-5 and Q4 stay open; the Platform builds its own agent |
+| Release | Houman Kamali (wunderous) | Approved: `rust-0.4.0-rc6` | 2026-11-24 | Ship the 7.4 surfaces with the release; WSL2 stays blocked |
+| Deployment | Houman Kamali (wunderous) | Approved: `rust-0.4.0-rc6` | 2026-11-24 | Upgrade per 7.4; rollback to 0.3.0 within 5 minutes (D54) |
+
 ## 8. Publication (0.3.0, goal m26)
 
 On 2026-11-23/24 the 0.3.0 release went out through the existing release
@@ -608,3 +624,19 @@ The Platform builds its own agent from source and follows no release
 (`evidence/m26/surfaces.json`); moving it to Rust is its owners' rollout
 (e2e-5). No host was cut over: each host's cutover follows section 5, and its
 5-minute rollback window (D54) starts then.
+
+### 8.1 Publication (0.4.0, 2026-11-24)
+
+0.4.0 went out the same way, from `rust-0.4.0-rc6`'s files
+([`evidence/m27`](../../../evidence/m27/README.md)), with the 7.4 install
+surfaces shipped in the same host-agents change (#33).
+
+| Surface | State | Evidence |
+|---|---|---|
+| `wunderous/opute-host-agent` release `v0.4.0` | published, tag on `dd38feade` (rc6's commit) | the 9 files of rc6's set; `SHA256SUMS` `5dacdb8f…` |
+| `wunderous/host-agents` release `v0.4.0` (Latest) | published by Publish run 45337632821 from `release/v0.4.0.json` | every file checked against the pin before and after publication |
+| `@opute/host-agent@0.4.0` on npm | published, `latest`, with provenance | `gitHead` `29be23dc`; the published read-only canary passed |
+| Install surfaces | shipped: the deploy unit without `--mode` and with `OPUTE_HOST_ALLOW_MUTATIONS`, the launcher and the site capture without `--mode` | host-agents #33; the site documents 0.4.0's settings |
+| Site | 0.4.0 catalog (`sha256:6ceca360…`, 138 tools) promoted from the canary (host-agents #34); 0.3.0's archived | deploying the image stays with the website owner |
+| 0.3.0, Go `v0.2.4` | unchanged | 0.3.0 is 0.4.0's rollback (7.4, D54) |
+
