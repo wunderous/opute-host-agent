@@ -778,9 +778,14 @@ and unblockers as section 4.
 
 ### 9.6 Sign-off
 
+On 2026-11-24 the owner, who holds all four roles, signed off in the session
+on `rust-0.5.0-rc1` as reviewed on run `m28-r1`. The sign-off covers its
+publication through the release path of section 8 and shipping the 9.4
+install surfaces with it.
+
 | Owner | Name | Decision | Date | Notes |
 |---|---|---|---|---|
-| Host Agent | | | | |
-| Opute Platform | | | | |
-| Release | | | | |
-| Deployment | | | | |
+| Host Agent | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Per-client mutation authority (D55) |
+| Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | e2e-5 and Q4 stay open |
+| Release | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Ship the 9.4 surfaces with the release; WSL2 stays blocked |
+| Deployment | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Upgrade per 9.4. Roll back to 0.4.0 with 0.4.0's unit within 5 minutes (D54). |
