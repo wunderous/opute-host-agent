@@ -283,8 +283,8 @@ was done or scoped; they change no observable behaviour against Go.
 | WSL2 | blocked | Opute release owners | a Windows host with WSL2 as a runner (5.1) |
 | Q4 | unverified | Opute Platform owners | the owner confirms whether Platform stores hashes |
 | Q18 | unverified (deferred) | Host Agent owner | D28 defers it as a new capability; not a cutover blocker |
-| npm | waiting on the owner | release owners | `@opute/host-agent@0.3.0`: the Publish job failed on the expired `NPM_TOKEN`; rerun it once the secret is renewed (section 8) |
-| Public site and catalog claims (5.2) | 0.3.0 preview committed | release and website owners | promote the catalog from npm's published canary evidence; the website owner deploys the image (section 8) |
+| npm | published | release owners | `@opute/host-agent@0.3.0` is `latest` (section 8) |
+| Public site and catalog claims (5.2) | 0.3.0 catalog promoted | website owner | deploying the site image to the public website (section 8) |
 | O1 audit retention | open observation | Host Agent owner | D42 decides it for 0.4.0; D43 keeps 0.3.0 without a new setting. Not a cutover blocker by the spec. A2, A4 and A5 are fixed in rc5, S1 to S6 in rc6, U1 in rc7 (section 2a) |
 
 `make cutover-readiness` lists exactly e2e-5, WSL2, Q4 and Q18 as not passed.
@@ -346,8 +346,8 @@ rebuilt: every published file is one of rc9's, by digest.
 |---|---|---|
 | `wunderous/opute-host-agent` release `v0.3.0` | published, tag on `0883e47fa` (rc9's commit) | the 9 files of rc9's set; `SHA256SUMS` `2679c551…` |
 | `wunderous/host-agents` release `v0.3.0` (Latest) | published by its Publish workflow from the pin `release/v0.3.0.json` (host-agents #30, #31) | each file fetched, checked against the pin and `SHA256SUMS`, the npm read-only canary passed on it; downloaded again from the public release: all 9 equal the pin |
-| `@opute/host-agent@0.3.0` on npm | not published | the npm job failed with E404 on the PUT, the expired `NPM_TOKEN` of m12a; it is rerun on the same tag once the owner renews the secret |
-| Site | 0.3.0 preview catalog captured from rc9's binary (revision `sha256:9aba4c89…`), image built to ghcr | deploying the image to the public website stays with the website owner; the catalog is promoted from the published canary evidence after npm |
+| `@opute/host-agent@0.3.0` on npm | published, dist-tag `latest`, with provenance | the npm job of the same run, attempt 3, after the owner renewed `NPM_TOKEN` (attempt 1: E404, the expired token; attempt 2: E403, a token without 2FA bypass). `gitHead` is host-agents `730ee336`; the published read-only canary passed every check |
+| Site | 0.3.0 catalog captured from rc9's binary (revision `sha256:9aba4c89…`), promoted to stable from the published canary evidence (host-agents #32) | deploying the image to the public website stays with the website owner |
 | Go `v0.2.4` | unchanged | the rollback release (section 5) |
 
 The first Publish run for host-agents `v0.3.0` stopped in its release-notes

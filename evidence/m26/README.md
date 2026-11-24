@@ -14,8 +14,11 @@ section 8.
   published by Publish run 45328650629 from the pin `release/v0.3.0.json`
   (host-agents #30, #31). Downloaded again: all 9 files equal the pin; the
   launcher URL for `host-agent-linux-x64.gz` answers 200.
-- npm: not published (E404 on the PUT: the expired `NPM_TOKEN`). Rerun the
-  failed `npm` job of run 45328650629 once the owner renews the secret.
+- npm: `@opute/host-agent@0.3.0`, dist-tag `latest`, published by the npm
+  job of run 45328650629 attempt 3 after the owner renewed `NPM_TOKEN`
+  (attempt 1 E404, expired; attempt 2 E403, no 2FA bypass). The published
+  read-only canary passed; the site catalog is promoted from its evidence
+  (host-agents #32).
 - Not in 0.3.0: a Windows binary (D3), and a build-provenance attestation
   (the host-agents workflow re-hosts files it did not build; provenance is
   the pinned commit and `make reproducible-build`).
