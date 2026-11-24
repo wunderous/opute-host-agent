@@ -789,3 +789,18 @@ install surfaces with it.
 | Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | e2e-5 and Q4 stay open |
 | Release | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Ship the 9.4 surfaces with the release; WSL2 stays blocked |
 | Deployment | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Upgrade per 9.4. Roll back to 0.4.0 with 0.4.0's unit within 5 minutes (D54). |
+
+### 9.7 Publication (0.5.0, 2026-11-24)
+
+0.5.0 went out through the release path of section 8, from
+`rust-0.5.0-rc1`'s files ([`evidence/m28`](../../../evidence/m28/README.md)),
+with the 9.4 install surfaces shipped in the same host-agents change (#35).
+
+| Surface | State | Evidence |
+|---|---|---|
+| `wunderous/opute-host-agent` release `v0.5.0` | published, tag on `ddefaa2b0` (rc1's commit) | the 9 files of rc1's set; `SHA256SUMS` `c3129bae…` |
+| `wunderous/host-agents` release `v0.5.0` (Latest) | published by Publish run 45450198950 from `release/v0.5.0.json` | every file checked against the pin after publication |
+| `@opute/host-agent@0.5.0` on npm | published, `latest` | `gitHead` `c8e52c0e`; the published read-only canary passed |
+| Install surfaces | shipped: the deploy unit with `--allow-mutations` and none of the old settings, and the launcher that forwards the flag | host-agents #35 |
+| Site | 0.5.0 catalog (`sha256:6ceca360…`, 138 tools) promoted from the canary (host-agents #36); 0.4.0's archived | deploying the image stays with the website owner |
+| 0.4.0, 0.3.0, Go `v0.2.4` | unchanged | 0.4.0 with its own unit is 0.5.0's rollback (9.4, D54) |
