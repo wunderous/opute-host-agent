@@ -194,8 +194,34 @@ impl Claims {
 pub struct Delegations {
     key: Vec<u8>,
     active: Arc<Mutex<HashMap<String, String>>>,
+    mutating: Arc<std::sync::atomic::AtomicUsize>,
+}
+/// D55: held for the duration of a provider call whose effect is not
+/// `read`; see [`Delegations::act_for`].
+pub struct MutatingCall(Option<Arc<std::sync::atomic::AtomicUsize>>);
+impl Drop for MutatingCall {
+    fn drop(&mut self) {
+        if let Some(count) = &self.0 {
+            count.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
 }
 impl Delegations {
+    /// D55: a control-class provider operation carries no delegation, so a
+    /// callback without one cannot name its parent. It may mutate only while
+    /// a provider call whose effect is not `read` runs; that call was
+    /// admitted only for a caller granted `mutate`.
+    pub fn act_for(&self, effect: &str) -> MutatingCall {
+        if effect == "read" {
+            return MutatingCall(None);
+        }
+        self.mutating
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        MutatingCall(Some(self.mutating.clone()))
+    }
+    pub fn mutating_in_flight(&self) -> bool {
+        self.mutating.load(std::sync::atomic::Ordering::SeqCst) > 0
+    }
     #[cfg(test)]
     pub fn active_count(&self) -> usize {
         self.active.lock().unwrap().len()
@@ -206,6 +232,7 @@ impl Delegations {
         Ok(Self {
             key,
             active: Arc::default(),
+            mutating: Arc::default(),
         })
     }
     /// Issuance follows the independent durable task identity in context;
@@ -468,6 +495,7 @@ mod tests {
         let owner = Delegations {
             key: hex::decode(input["key"].as_str().unwrap()).unwrap(),
             active: Arc::default(),
+            mutating: Arc::default(),
         };
         for (id, token) in input["active"].as_object().unwrap() {
             owner
@@ -578,6 +606,24 @@ mod tests {
     /// operation whose effect is not `read` was admitted only with `mutate`;
     /// an unknown or unverifiable parent acts for `read`.
     #[test]
+    fn a_callback_without_a_delegation_mutates_only_inside_a_mutating_call() {
+        // A control-class provider operation carries no delegation, so its
+        // callbacks mutate only while a provider call that is not read runs.
+        let owner = Delegations::new().unwrap();
+        assert!(!owner.mutating_in_flight());
+        let observe = owner.act_for("read");
+        assert!(!owner.mutating_in_flight());
+        let change = owner.act_for("mutation");
+        let remove = owner.clone().act_for("destructive");
+        assert!(owner.mutating_in_flight());
+        drop(change);
+        assert!(owner.mutating_in_flight());
+        drop(remove);
+        assert!(!owner.mutating_in_flight());
+        drop(observe);
+    }
+
+    #[test]
     fn a_callback_acts_with_the_effect_of_its_parent_operation() {
         let owner = Delegations::new().unwrap();
         let mut catalog = crate::catalog::internal().clone();
@@ -654,6 +700,7 @@ mod tests {
         let owner = Delegations {
             key: hex::decode(input["key"].as_str().unwrap()).unwrap(),
             active: Arc::default(),
+            mutating: Arc::default(),
         };
         let tasks = Registry::default();
         let task_id = string(&input["registryTask"]);
@@ -817,6 +864,7 @@ mod tests {
             let owner = Delegations {
                 key: hex::decode(input["key"].as_str().unwrap()).unwrap(),
                 active: Arc::default(),
+                mutating: Arc::default(),
             };
             for (id, token) in input["active"].as_object().unwrap() {
                 owner

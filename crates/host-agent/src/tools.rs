@@ -177,7 +177,7 @@ impl Caller {
             Caller::Interactive { id, .. } => format!(
                 "OAuth client {id} holds a token with the read scope. Authorize it again with scope mutate and approve the request (opute-host-agent oauth approve)."
             ),
-            Caller::Provider => "the provider client holds the read scope outside a provider call. A provider callback acts with the grant of the call it acts for.".to_string(),
+            Caller::Provider => "the provider client holds the read scope outside a provider call that is not read. A provider callback acts with the grant of the call it acts for.".to_string(),
         };
         format!("mutation refused: {tool} has effect {effect}; {held}")
     }
@@ -259,6 +259,11 @@ pub fn call(
                 "mutation refused: {wire} has effect {effect}; this provider callback acts for a call admitted as read."
             )),
             Some(_) => None,
+            None if matches!(caller, Caller::Provider)
+                && server.providers.delegations.mutating_in_flight() =>
+            {
+                None
+            }
             None => (!caller.may_mutate()).then(|| caller.refusal(wire, &effect)),
         };
         if let Some(refusal) = refusal {

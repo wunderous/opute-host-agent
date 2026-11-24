@@ -83,6 +83,7 @@ impl Operation {
             .accept(runtime.lifecycle, runtime.candidates, runtime.mounts)
             .map_err(InvocationError::Refused)?;
         let token = ctx.resource_delegation();
+        let _authority = runtime.delegations.act_for(&self.descriptor.effect);
         accepted
             .call(&ctx, arguments, &token)
             .await

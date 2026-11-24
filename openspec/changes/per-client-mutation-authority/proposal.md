@@ -64,9 +64,14 @@ Measured on `rust-0.4.0-rc6`:
 
 - **Breaking:** settings, scopes and the CLI change. The release is 0.5.0,
   because a 0.4.x patch must stay compatible.
-- **Rollback to 0.4.0 or 0.3.0 comes up read-only.** Their settings are no
-  longer in the unit, and the owner accepts this. Rollback journeys assert
-  read-only and an intact state.
+- **Rollback restores the previous unit with the binary.** The owner
+  accepted that a rollback to 0.4.0 or 0.3.0 may come up read-only. Measured
+  in m28, a rollback of the binary alone does not come up at all: 0.4.0 and
+  0.3.0 exit on the 0.5.0 unit's `--allow-mutations` (`flag provided but not
+  defined`). So a rollback puts the 0.4.0 unit back with the binary, and
+  0.4.0 or 0.3.0 then serves 0.5.0's state with mutations admitted from that
+  unit's settings. The 0.5.0 binary under the 0.4.0 unit comes up read-only.
+  `neutral.rollback` asserts all three, with the state intact.
 - **Supersedes:**
   - D10's switch (`standalone-read-only-gate`) and its message;
   - the `OPUTE_HOST_ALLOW_MUTATIONS` setting in
