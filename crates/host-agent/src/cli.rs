@@ -108,6 +108,11 @@ fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
             false,
             "validate configuration and state access, then exit",
         )
+        .bool(
+            "allow-mutations",
+            false,
+            "let the MCP_AUTH_TOKEN bearer run tools that change the host; OAuth clients use their own scope",
+        )
         .multi("env", "set a KEY=VALUE environment override; repeatable");
     let flags = parse(&fs, args, io)?;
 
@@ -144,7 +149,7 @@ fn run_server(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
         let _ = writeln!(io.stdout, "configuration ok");
         return Ok(());
     }
-    app::run(&env, io.stderr)
+    app::run(&env, flags.bool("allow-mutations"), io.stderr)
 }
 
 /// Placeholder for the host operations later milestones implement. It runs
@@ -377,11 +382,12 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
             let now = crate::oauth::now();
             for p in crate::oauth::pending_list(&conn) {
                 out.push_str(&format!(
-                    "{}  {}  {}  {}  expires in {}s\n",
+                    "{}  {}  {}  {}  scope={}  expires in {}s\n",
                     p.user_code,
                     p.client_id,
                     p.redirect_uri,
                     p.resource,
+                    p.scope.as_str(),
                     (p.expires_at - now).max(0)
                 ));
             }
@@ -399,7 +405,7 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
             let record = crate::oauth::decide(&conn, &pos[0], sub == "approve", days, "cli")
                 .map_err(goerr::Error)?;
             out.push_str(&format!(
-                "{} {} for {} on {}\n",
+                "{} {} for {} on {} with scope {}\n",
                 if sub == "approve" {
                     "approved"
                 } else {
@@ -407,13 +413,16 @@ fn run_oauth(args: &[String], mut env: Env, io: &mut Io<'_>) -> Result<()> {
                 },
                 record.user_code,
                 record.client_id,
-                record.resource
+                record.resource,
+                record.scope.as_str()
             ));
         }
         "consents" => {
             need(0)?;
-            for (client, resource, expires) in crate::oauth::consent_list(&conn) {
-                out.push_str(&format!("{client}  {resource}  expires_at={expires}\n"));
+            for (client, resource, expires, scope) in crate::oauth::consent_list(&conn) {
+                out.push_str(&format!(
+                    "{client}  {resource}  scope={scope}  expires_at={expires}\n"
+                ));
             }
             if out.is_empty() {
                 out.push_str("no remembered approvals\n");

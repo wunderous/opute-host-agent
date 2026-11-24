@@ -919,6 +919,22 @@ pub fn standalone_read_only(catalog: &Snapshot, name: &str) -> bool {
         .is_some_and(|e| e == "read")
 }
 
+/// D55: the effect a mutation refusal names: the published one, else the
+/// declared one, else `mutation`. A standalone mutation is never `read`.
+pub fn admission_effect(catalog: &Snapshot, name: &str) -> String {
+    let effect = match catalog.find(name) {
+        Some(d) => Some(d.effect.clone()),
+        None => source()
+            .internal
+            .iter()
+            .find(|d| d.name == name)
+            .and_then(declared_effect),
+    };
+    effect
+        .filter(|e| !e.is_empty() && e != "read")
+        .unwrap_or_else(|| "mutation".into())
+}
+
 fn descriptor(provider: &str, def: &Definition) -> Descriptor {
     let meta = def.meta.as_ref();
     let effect = effect(def);
@@ -1661,6 +1677,13 @@ pub fn published_tools(snapshot: &Snapshot, prefix: &str) -> Vec<J> {
             if let Some(schema) = d.output_schema.as_ref().filter(|s| !s.is_null()) {
                 tool.insert("outputSchema".into(), schema.clone());
             }
+            // D55: the hints follow the published effect, for every caller.
+            let annotations = if d.effect == "read" {
+                json!({"readOnlyHint": true})
+            } else {
+                json!({"readOnlyHint": false, "destructiveHint": d.effect == "destructive"})
+            };
+            tool.insert("annotations".into(), annotations);
             J::Object(tool)
         })
         .collect();

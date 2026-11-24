@@ -3,7 +3,7 @@
 //! The SDK layer has already decoded and validated the request envelope. This
 //! module resolves the wire name to a registered capability, decodes the
 //! arguments the way `json.Unmarshal` into `map[string]any` does, checks the
-//! requested catalog revision, applies the standalone mutation gate, and
+//! requested catalog revision, applies the caller's mutation authority, and
 //! dispatches. Capabilities whose handlers have not been ported yet fail
 //! closed with a typed `not_implemented` capability error; the catalog still
 //! publishes them, so `tools/list` stays identical to Go.
@@ -128,6 +128,61 @@ fn decode_arguments(params: Option<&Node>) -> Result<Map<String, J>, String> {
     ))
 }
 
+/// D55 (`per-client-mutation-authority`): who made a `tools/call`, and the
+/// grant it holds. Every caller may run `read` tools.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Caller {
+    /// The bootstrap bearer: it mutates only on an agent started with
+    /// `--allow-mutations`.
+    Bearer { mutate: bool },
+    /// A machine client listed in `OPUTE_OAUTH_CLIENTS`: its token's scope,
+    /// capped by the client's grant now.
+    Listed {
+        id: String,
+        token: crate::oauth::Scope,
+        grant: crate::oauth::Scope,
+    },
+    /// A client that authorized interactively, with the approved scope.
+    Interactive {
+        id: String,
+        scope: crate::oauth::Scope,
+    },
+    /// The built-in provider client: it acts only for a provider call, so
+    /// it holds the authority of that call's delegation and none of its own.
+    Provider,
+}
+
+impl Caller {
+    fn may_mutate(&self) -> bool {
+        use crate::oauth::Scope::Mutate;
+        match self {
+            Caller::Bearer { mutate } => *mutate,
+            Caller::Listed { token, grant, .. } => (*token).min(*grant) == Mutate,
+            Caller::Interactive { scope, .. } => *scope == Mutate,
+            Caller::Provider => false,
+        }
+    }
+
+    /// The refusal of a mutation: the tool, its effect, the caller's grant
+    /// and the exact grant that would admit the call.
+    fn refusal(&self, tool: &str, effect: &str) -> String {
+        let held = match self {
+            Caller::Bearer { .. } => "the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.".to_string(),
+            Caller::Listed { id, grant: crate::oauth::Scope::Read, .. } => format!(
+                "OAuth client {id} holds the read scope. Grant it with OPUTE_OAUTH_CLIENTS={id}:mutate and request a token with scope mutate."
+            ),
+            Caller::Listed { id, .. } => format!(
+                "OAuth client {id} holds a token with the read scope. Request a token with scope mutate."
+            ),
+            Caller::Interactive { id, .. } => format!(
+                "OAuth client {id} holds a token with the read scope. Authorize it again with scope mutate and approve the request (opute-host-agent oauth approve)."
+            ),
+            Caller::Provider => "the provider client holds the read scope outside a provider call. A provider callback acts with the grant of the call it acts for.".to_string(),
+        };
+        format!("mutation refused: {tool} has effect {effect}; {held}")
+    }
+}
+
 fn requested_revision(params: Option<&Node>) -> String {
     params
         .and_then(|p| p.field("_meta"))
@@ -137,7 +192,12 @@ fn requested_revision(params: Option<&Node>) -> String {
         .unwrap_or_default()
 }
 
-pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCallOutcome {
+pub fn call(
+    server: &Arc<Server>,
+    caller: &Caller,
+    wire: &str,
+    params: Option<&Node>,
+) -> ToolCallOutcome {
     let catalog_snapshot = server.catalog.snapshot();
     let Some(name) = registered(server, wire) else {
         return ToolCallOutcome::Unknown;
@@ -184,12 +244,30 @@ pub fn call(server: &Arc<Server>, wire: &str, params: Option<&Node>) -> ToolCall
         Ok(ctx) => ctx.reservation().is_some().then_some(ctx),
         Err(e) => return ToolCallOutcome::Result(error_result(e)),
     };
-    // Decision D10 (standalone-read-only-gate): with mutations disabled,
-    // the agent runs read tools only.
-    if !server.allow_mutations && !catalog::standalone_read_only(&catalog_snapshot, &name) {
-        return ToolCallOutcome::Result(error_result(
-            "mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
-        ));
+    // D55 (per-client-mutation-authority): a tool whose effect is not `read`
+    // runs only for a caller granted `mutate`. A provider callback carries
+    // the grant of the call it acts for: one whose effect is not `read` was
+    // admitted only with `mutate`.
+    if !catalog::standalone_read_only(&catalog_snapshot, &name) {
+        let effect = catalog::admission_effect(&catalog_snapshot, &name);
+        let parent = server
+            .providers
+            .delegations
+            .parent_effect(meta.as_ref(), &catalog_snapshot);
+        let refusal = match parent {
+            Some(parent) if parent == "read" => Some(format!(
+                "mutation refused: {wire} has effect {effect}; this provider callback acts for a call admitted as read."
+            )),
+            Some(_) => None,
+            None => (!caller.may_mutate()).then(|| caller.refusal(wire, &effect)),
+        };
+        if let Some(refusal) = refusal {
+            return ToolCallOutcome::Result(capability_error(
+                "admission",
+                "mutation_refused",
+                &refusal,
+            ));
+        }
     }
     // D31: with the state directory full, an effectful call is refused before
     // it runs, so nothing it does on the host goes unrecorded.

@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 const FORBIDDEN: &[&str] = &[
     "OPUTE_AGENT_MODE",
     "OPUTE_STANDALONE_ALLOW_MUTATIONS",
+    // D55: mutation authority is per caller; no setting grants it.
+    "OPUTE_HOST_ALLOW_MUTATIONS",
     "agent_mode",
     // `platform` as a behaviour switch; a host's OS platform is not one.
     "== \"platform\"",
