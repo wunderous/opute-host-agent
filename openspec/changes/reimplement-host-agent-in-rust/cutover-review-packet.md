@@ -640,3 +640,152 @@ surfaces shipped in the same host-agents change (#33).
 | Site | 0.4.0 catalog (`sha256:6ceca360…`, 138 tools) promoted from the canary (host-agents #34); 0.3.0's archived | deploying the image stays with the website owner |
 | 0.3.0, Go `v0.2.4` | unchanged | 0.3.0 is 0.4.0's rollback (7.4, D54) |
 
+
+## 9. Rust 0.5.0 candidate (goal m28, D55)
+
+Sections 7 and 8 are 0.4.0, published. This section is the next candidate,
+from branch `claude/m28-impl`. Nothing here was tagged or published.
+`evidence/cutover/candidate.json` names this set, and `make cutover-readiness`
+checks it.
+
+### 9.1 What changed from 0.4.0
+
+The owner ruled on 2026-11-24 that 0.5.0 keeps no compatibility for the
+mutation switch, because nobody depends on it (D55,
+[per-client-mutation-authority](../per-client-mutation-authority/proposal.md)).
+Mutation authority now belongs to the caller, not to the agent:
+
+| Caller | Mutates when | Refusal names |
+|---|---|---|
+| Bootstrap bearer (`MCP_AUTH_TOKEN`, loopback) | the agent was started with `--allow-mutations` | `--allow-mutations` |
+| Listed OAuth client (`OPUTE_OAUTH_CLIENTS`) | listed as `id:mutate` and its token has scope `mutate` | `OPUTE_OAUTH_CLIENTS=<id>:mutate` and the scope `mutate` |
+| Interactive OAuth client | re-authorized with scope `mutate` and approved by the operator | re-authorization with `mutate` and the operator's approval |
+| Provider callback | the call it acts for may mutate. A control-class operation carries no delegation, so its callbacks mutate only while a provider call that is not `read` is running. | the grant of the call it acts for |
+
+- **Scopes.** The scopes are `read` and `mutate`, and `mutate` includes
+  `read`. An entry of just `id` grants `read`. The former `mcp` scope fails
+  the start. A token request above the client's grant gets `invalid_scope`.
+  `oauth pending` and `oauth approve` show the scope, and protected-resource
+  metadata lists both scopes.
+- **Removed settings.** 0.5.0 no longer reads `OPUTE_HOST_ALLOW_MUTATIONS`,
+  `OPUTE_STANDALONE_ALLOW_MUTATIONS` or `OPUTE_AGENT_MODE`. They are not in
+  its code, help, errors or install surfaces.
+- **Annotations.** Every tool carries `annotations.readOnlyHint`, and every
+  non-`read` tool also carries `destructiveHint`, both derived from the
+  published effect.
+- **Catalog revision.** It is unchanged at `sha256:6ceca360…`, because the
+  revision covers the tools' contracts and not their annotations.
+- **Tests.** Each scenario had a test that failed on 0.4.0's code
+  ([`evidence/m28/before-d55.log`](../../../evidence/m28/before-d55.log)) and
+  passes on rc1 ([`after-d55.log`](../../../evidence/m28/after-d55.log)).
+- **Callback gap, found and fixed before the round.** A code review found
+  that the control-class provider callbacks would have been refused.
+  `e2e7.public-site` would have failed on them: its tunnels, public ingress
+  and K3s provisioning are 68 control-class operations in the bundled
+  catalogs. The fix is the in-flight bound described in the table above.
+
+### 9.2 The candidate
+
+| Field | Value |
+|---|---|
+| Name | `rust-0.5.0-rc1`, version `0.5.0` |
+| Commit | `ddefaa2b00b37b8ba18337ccce4603fbca54fb86` (branch `claude/m28-impl`) |
+| `SHA256SUMS` | `sha256:c3129bae49a711c5f3e8b93a6a8e1acb9a17114c0e5b018a38a8e168731e9c9b` |
+| `host-agent-linux-x64` | `053396f92c3258f48e3582bdda57cbd72627725b65d6d88db28b7f67727b8eee` |
+| `host-agent-linux-arm64.gz` | `c0a5ee6e70e054dcbc149b2ee55cf3f6706ac4e3e143f3d6e35f3d82146f8a77` |
+| Upgrade target | `rust-0.5.0-rc1-next`, `0.5.1-e2e`, the same commit |
+| Rollback target | `rust-0.4.0-rc6` (published as `v0.4.0`), and `rust-0.3.0-rc9` behind it |
+
+Before the build, `cargo fmt` and clippy were clean, and the stale grep found
+no earlier candidate named as current. A 60 s pass over all 18 fuzz targets
+found nothing ([`evidence/m28/fuzz-050.txt`](../../../evidence/m28/fuzz-050.txt)).
+
+### 9.3 Gates and receipts
+
+Every gate ran on rc1 under run `m28-r1`, and every journey passed on its
+first attempt; no attempt was retired. `evidence/e2e/verify.py --gate`
+passes each, and `make cutover-readiness` passes. The candidate record now
+also names `rust-0.3.0-rc9` as an earlier rollback target
+(`earlierRollbackTargets`), because the rollback journeys go back through
+0.4.0 to 0.3.0. Before the round, four draft rounds on rc1's code found only
+journey defects: Go cannot start under the 0.5.0 unit, so Go now runs on
+its own unit; the rollback journey took the candidate for 0.4.0; tool calls
+lacked a `tools/list` first; and a scratch directory was left behind.
+
+| Gate | Journeys | Spec requirements passed | New in 0.5.0 |
+|---|---|---|---|
+| e2e-0 | 26 | 25 | none |
+| e2e-1 | 8 | 35 | Every mutating agent starts with `--allow-mutations`. `e2e1.admission` asserts the bearer's refusal text without the flag. The migrate-upgrade journey runs Go v0.2.4 on Go's own unit. |
+| e2e-2 | 5 | 38 | none |
+| e2e-3a | 5 | 33 | The K3s provider's host callbacks are admitted under the bootstrap bearer's `--allow-mutations` grant. |
+| e2e-3 | 3 | 19 | none |
+| e2e-4 | 3 | 16 | `e2e4.cutover` runs Go on Go's unit and Rust on the 0.5.0 unit. `e2e4.upgrade-chain` goes Go v0.2.4, 0.3.0, 0.4.0 on its unit, then 0.5.0 on the 0.5.0 unit, and rolls back to 0.4.0 with its own unit. Every record reads back at each step, and no token appears anywhere. |
+| e2e-neutral | 3 | 14 | `neutral.rollback` (9.4): the 0.5.0 binary under 0.4.0's unit is read-only; the upgrade; 0.4.0 alone under the 0.5.0 unit exits; 0.4.0's unit back, then 0.4.0 and 0.3.0 on 0.5.0's state |
+| e2e-mutations | 1 | 9 | New gate. `mutations.callers` runs each caller against one mutation: a bearer without the flag is refused and with the flag is admitted; OAuth `read`, `mutate` and unscoped clients; an interactive client approved for `read`, then `mutate`; `mcp` and a token above its grant refused; leftover settings grant nothing. Every refusal's exact text is asserted, and annotations are checked for all tools. |
+| e2e-6 | 9 | 21 | none |
+| e2e-7 | 1 | 6 | `e2e7.public-site`: the site recipe's control-class tunnel and ingress callbacks are admitted under the in-flight bound |
+
+| Receipt | What it proves |
+|---|---|
+| Contract suites | Binary `053396f9…`. D8 OAuth issuance passes 23/23, D10 7/7, D11 3/3, D12 3/3 and D13 4/4. The suites start mutating agents with `--allow-mutations`. |
+| Seam `m28-rc1` | 144 compliant, 2 unported, 4 unpublished and no gap. The canary turns the verifier red. |
+| arm64 clean install | `host-agent-linux-arm64.gz` `c0a5ee6e…` |
+| Distribution | Go's read-only canary passes on the locally packed launcher. After the declared renames, the site preview differs from Go v0.2.4's as it did in 0.4.0. The site capture serves read-only with no flag and no mode. |
+
+### 9.4 Install surfaces, upgrade and rollback
+
+0.5.0 refuses neither old setting, but neither grants anything. The release
+ships the surfaces in
+[`evidence/cutover/proposed-0.5.0/`](../../../evidence/cutover/proposed-0.5.0/README.md),
+and the gates ran on them:
+
+- **The unit.** `--allow-mutations` in `ExecStart`, with none of the three
+  settings.
+- **The launcher.** It forwards `--allow-mutations` and strips both old
+  settings.
+- **The host-agents change.** It includes the READMEs and the site docs.
+
+`neutral.rollback` measured these steps on one state:
+
+1. **The 0.5.0 binary under 0.4.0's unit.** It serves 0.4.0's state, and its
+   bearer is read-only. A mutation is refused with the text that names
+   `--allow-mutations`, and nothing it prints names the old settings.
+2. **Upgrade.** Install the 0.5.0 unit and binary. 0.5.0 serves at the same
+   address on the same state, and the bearer mutates.
+3. **Rollback by swapping only the binary does not work.** 0.4.0 exits on
+   `--allow-mutations` ("flag provided but not defined") before it serves.
+   A rollback must therefore put 0.4.0's unit back together with its binary.
+   This is stricter than D55's accepted case ("may come up read-only"):
+   without 0.4.0's unit it does not come up at all.
+4. **With 0.4.0's unit back.** 0.4.0, and then 0.3.0, serve 0.5.0's state,
+   including 0.5.0's own work, and admit mutations from that unit's
+   settings. The orchestrator's generated OAuth credential stays the same
+   throughout.
+
+The runbook of section 5, with 7.4's changes, applies to 0.5.0 with three
+more changes:
+
+- In step 5, install the 0.5.0 unit with the binary.
+- R1 restores 0.4.0's unit (from the v0.4.0 host-agents release) together
+  with the 0.4.0 binary, within the 5-minute window (D54).
+- An OAuth client that must mutate is listed as `id:mutate` in
+  `OPUTE_OAUTH_CLIENTS`.
+
+### 9.5 Not passed
+
+`make cutover-readiness` lists only e2e-5, WSL2 and Q4, with the same owners
+and unblockers as section 4.
+
+### 9.6 Sign-off
+
+On 2026-11-24 the owner, who holds all four roles, signed off in the session
+on `rust-0.5.0-rc1` as reviewed on run `m28-r1`. The sign-off covers its
+publication through the release path of section 8 and shipping the 9.4
+install surfaces with it.
+
+| Owner | Name | Decision | Date | Notes |
+|---|---|---|---|---|
+| Host Agent | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Per-client mutation authority (D55) |
+| Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | e2e-5 and Q4 stay open |
+| Release | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Ship the 9.4 surfaces with the release; WSL2 stays blocked |
+| Deployment | Houman Kamali (wunderous) | Approved: `rust-0.5.0-rc1` | 2026-11-24 | Upgrade per 9.4. Roll back to 0.4.0 with 0.4.0's unit within 5 minutes (D54). |

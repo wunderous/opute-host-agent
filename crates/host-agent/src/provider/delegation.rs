@@ -194,8 +194,34 @@ impl Claims {
 pub struct Delegations {
     key: Vec<u8>,
     active: Arc<Mutex<HashMap<String, String>>>,
+    mutating: Arc<std::sync::atomic::AtomicUsize>,
+}
+/// D55: held for the duration of a provider call whose effect is not
+/// `read`; see [`Delegations::act_for`].
+pub struct MutatingCall(Option<Arc<std::sync::atomic::AtomicUsize>>);
+impl Drop for MutatingCall {
+    fn drop(&mut self) {
+        if let Some(count) = &self.0 {
+            count.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
 }
 impl Delegations {
+    /// D55: a control-class provider operation carries no delegation, so a
+    /// callback without one cannot name its parent. It may mutate only while
+    /// a provider call whose effect is not `read` runs; that call was
+    /// admitted only for a caller granted `mutate`.
+    pub fn act_for(&self, effect: &str) -> MutatingCall {
+        if effect == "read" {
+            return MutatingCall(None);
+        }
+        self.mutating
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        MutatingCall(Some(self.mutating.clone()))
+    }
+    pub fn mutating_in_flight(&self) -> bool {
+        self.mutating.load(std::sync::atomic::Ordering::SeqCst) > 0
+    }
     #[cfg(test)]
     pub fn active_count(&self) -> usize {
         self.active.lock().unwrap().len()
@@ -206,6 +232,7 @@ impl Delegations {
         Ok(Self {
             key,
             active: Arc::default(),
+            mutating: Arc::default(),
         })
     }
     /// Issuance follows the independent durable task identity in context;
@@ -323,6 +350,40 @@ impl Delegations {
         }
         Ok(claims)
     }
+    /// D55: the published effect of the provider operation a verified
+    /// delegation acts for, or None when the call carries no delegation.
+    /// A delegation whose operation is not in the catalog acts for `read`.
+    pub fn parent_effect(
+        &self,
+        meta: Option<&serde_json::Map<String, serde_json::Value>>,
+        catalog: &crate::catalog::Snapshot,
+    ) -> Option<String> {
+        let token = meta
+            .and_then(|meta| meta.get("io.opute/host-resource-delegation"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .trim();
+        if token.is_empty() {
+            return None;
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let Ok(claims) = self.verify(token, now) else {
+            return Some("read".into());
+        };
+        let effect = catalog
+            .tools
+            .iter()
+            .find(|d| {
+                d.provider == claims.strings[6]
+                    && d.generation_id == claims.strings[7]
+                    && d.operation_id == claims.strings[8]
+            })
+            .map_or("read", |d| d.effect.as_str());
+        Some(effect.to_string())
+    }
     /// Reattaches a verified resource owner before ordinary authenticated
     /// dispatch. This check supplies no authorization or admission decision.
     pub fn callback(
@@ -434,6 +495,7 @@ mod tests {
         let owner = Delegations {
             key: hex::decode(input["key"].as_str().unwrap()).unwrap(),
             active: Arc::default(),
+            mutating: Arc::default(),
         };
         for (id, token) in input["active"].as_object().unwrap() {
             owner
@@ -540,6 +602,74 @@ mod tests {
         output
     }
 
+    /// D55: a callback holds the grant of the call it acts for. A parent
+    /// operation whose effect is not `read` was admitted only with `mutate`;
+    /// an unknown or unverifiable parent acts for `read`.
+    #[test]
+    fn a_callback_without_a_delegation_mutates_only_inside_a_mutating_call() {
+        // A control-class provider operation carries no delegation, so its
+        // callbacks mutate only while a provider call that is not read runs.
+        let owner = Delegations::new().unwrap();
+        assert!(!owner.mutating_in_flight());
+        let observe = owner.act_for("read");
+        assert!(!owner.mutating_in_flight());
+        let change = owner.act_for("mutation");
+        let remove = owner.clone().act_for("destructive");
+        assert!(owner.mutating_in_flight());
+        drop(change);
+        assert!(owner.mutating_in_flight());
+        drop(remove);
+        assert!(!owner.mutating_in_flight());
+        drop(observe);
+    }
+
+    #[test]
+    fn a_callback_acts_with_the_effect_of_its_parent_operation() {
+        let owner = Delegations::new().unwrap();
+        let mut catalog = crate::catalog::internal().clone();
+        let template = catalog.tools[0].clone();
+        catalog.tools.clear();
+        for (operation, effect) in [("observe", "read"), ("change", "mutation")] {
+            let mut descriptor = template.clone();
+            descriptor.provider = "example".into();
+            descriptor.generation_id = "g1".into();
+            descriptor.operation_id = operation.into();
+            descriptor.effect = effect.into();
+            catalog.tools.push(descriptor);
+        }
+        let permit = |operation: &str| {
+            owner.sign(&Claims {
+                strings: [
+                    VERSION,
+                    "d1",
+                    "r1",
+                    "agent",
+                    "task",
+                    "parent.op",
+                    "example",
+                    "g1",
+                    operation,
+                ]
+                .map(String::from),
+                expires_at: i64::MAX,
+            })
+        };
+        let effect = |token: &str| {
+            let meta = serde_json::json!({"io.opute/host-resource-delegation": token});
+            owner.parent_effect(meta.as_object(), &catalog)
+        };
+        assert_eq!(owner.parent_effect(None, &catalog), None);
+        let change = permit("change");
+        assert_eq!(effect(change.token()).as_deref(), Some("mutation"));
+        drop(change);
+        let observe = permit("observe");
+        assert_eq!(effect(observe.token()).as_deref(), Some("read"));
+        drop(observe);
+        let unknown = permit("unknown");
+        assert_eq!(effect(unknown.token()).as_deref(), Some("read"));
+        assert_eq!(effect("forged.token").as_deref(), Some("read"));
+    }
+
     #[test]
     #[ignore = "requires actual owning Go callback scope and task-owner driver"]
     fn callback_scope_fixture() {
@@ -570,6 +700,7 @@ mod tests {
         let owner = Delegations {
             key: hex::decode(input["key"].as_str().unwrap()).unwrap(),
             active: Arc::default(),
+            mutating: Arc::default(),
         };
         let tasks = Registry::default();
         let task_id = string(&input["registryTask"]);
@@ -733,6 +864,7 @@ mod tests {
             let owner = Delegations {
                 key: hex::decode(input["key"].as_str().unwrap()).unwrap(),
                 active: Arc::default(),
+                mutating: Arc::default(),
             };
             for (id, token) in input["active"].as_object().unwrap() {
                 owner

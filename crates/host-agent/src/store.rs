@@ -1178,6 +1178,7 @@ impl AuthzStore {
             [hash],
             |r| {
                 Ok(TokenRecord {
+                    client_id: r.get(1)?,
                     resource: r.get(2)?,
                     scope: r.get(3)?,
                     expires_at: r.get(4)?,
@@ -1210,6 +1211,7 @@ impl AuthzStore {
 /// The columns `Authorize` reads from a token row.
 #[derive(Debug)]
 pub struct TokenRecord {
+    pub client_id: String,
     pub resource: String,
     pub scope: String,
     pub expires_at: i64,

@@ -1,0 +1,488 @@
+{
+ "cleanup": [
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py watch stop >/dev/null; python3 /opt/opute-e2e/guest/secretsweep.py bridge stop >/dev/null; true",
+   "id": "unwatchAgain"
+  },
+  {
+   "guest": "for u in /etc/systemd/system/opute-cloudflared-*.service; do [ -e \"$u\" ] && systemctl disable --now \"$(basename \"$u\")\"; done; rm -f /etc/systemd/system/opute-cloudflared-*.service; rm -rf /etc/opute/tunnels /opt/opute/tunnels; rmdir /opt/opute 2>/dev/null; true",
+   "id": "removeConnector"
+  },
+  {
+   "guest": "systemctl disable --now opute-cluster-agent 2>/dev/null; rm -f /etc/systemd/system/opute-cluster-agent.service /etc/opute/cluster-agent.json /usr/local/lib/opute/cluster-agent; rmdir /usr/local/lib/opute 2>/dev/null; systemctl daemon-reload; true",
+   "id": "removeClusterAgent"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py agent stop sweep >/dev/null; rm -rf /root/e2e-sweep; true",
+   "id": "removeAgent"
+  },
+  {
+   "guest": "umount /sys/kernel/debug/tracing 2>/dev/null; true",
+   "id": "unmountTracing"
+  }
+ ],
+ "description": "Where each secret goes (m19): an agent holding a marker per secret class runs the OAuth grant, an LLM relay, a host cluster agent install and a public MCP connector; argv (strace of its tree, bpftrace of the host), every process's environment, the journal, the store, files under the host's writable roots and every response are searched for each marker, raw and base64-encoded.",
+ "effects": {
+  "allow": [
+   "files//etc/opute/cluster-agent.json",
+   "files//etc/opute/tunnels",
+   "files//etc/opute/tunnels/e2e-sweep.env",
+   "files//etc/systemd/system/multi-user.target.wants/opute-cloudflared-e2e-sweep.service",
+   "files//etc/systemd/system/multi-user.target.wants/opute-cluster-agent.service",
+   "files//etc/systemd/system/opute-cloudflared-e2e-sweep.service",
+   "files//etc/systemd/system/opute-cluster-agent.service",
+   "files//opt/opute",
+   "files//opt/opute/tunnels",
+   "files//opt/opute/tunnels/e2e-sweep",
+   "files//opt/opute/tunnels/e2e-sweep/cloudflared",
+   "files//usr/local/lib/opute",
+   "files//usr/local/lib/opute/cluster-agent",
+   "system/units/sys-kernel-debug-tracing.mount",
+   "system/units/e2e-sweep-bridge.service",
+   "system/unitFiles/e2e-sweep-bridge.service",
+   "system/units/e2e-sweep-sweep.service",
+   "system/unitFiles/e2e-sweep-sweep.service",
+   "system/units/opute-cloudflared-e2e-sweep.service",
+   "system/unitFiles/opute-cloudflared-e2e-sweep.service",
+   "system/units/opute-cluster-agent.service",
+   "system/unitFiles/opute-cluster-agent.service",
+   "files//root/e2e-sweep*",
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/sweep*",
+   "mounts//sys/kernel/debug/tracing tracefs",
+   "processes//system.slice/e2e-sweep-bridge.service python3",
+   "processes//system.slice/e2e-sweep-sweep.service opute-host-agen",
+   "processes//system.slice/opute-cluster-agent.service sleep",
+   "sockets/tcp 127.0.0.1:3056 opute-host-agen",
+   "sockets/tcp 127.0.0.1:3057 python3",
+   "sockets/tcp 127.0.0.1:3058 opute-host-agen"
+  ],
+  "persist": []
+ },
+ "gate": "e2e-6",
+ "id": "e2e6.secret-sweep",
+ "inputs": {
+  "agent": "transient Rust agents of the installed release candidate (0.5.0) under /tmp/e2e-agents",
+  "files": {
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   },
+   "secretsweep": {
+    "path": "${REPO}/evidence/e2e/guest-tools/secretsweep.py",
+    "sha256": "0145e40893eb886662d58e1d8283ea3c9b9b3432473924508706f659ca24ffe3"
+   }
+  }
+ },
+ "maxMinutes": 15,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "plant"
+    },
+    {
+     "equals": 0,
+     "path": "exit",
+     "step": "sweepAgent"
+    },
+    {
+     "equals": true,
+     "path": "json.strace",
+     "step": "watch"
+    },
+    {
+     "equals": true,
+     "path": "json.bpftrace",
+     "step": "watch"
+    },
+    {
+     "equals": true,
+     "path": "json.serving",
+     "step": "bridge"
+    },
+    {
+     "equals": true,
+     "path": "json.issued",
+     "step": "oauth"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "oauth"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.ready",
+     "step": "relay"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.status",
+     "step": "cluster"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.result.isError",
+     "step": "cluster"
+    },
+    {
+     "equals": "1\n",
+     "path": "stdout",
+     "step": "relayListens"
+    },
+    {
+     "equals": "active\n",
+     "path": "stdout",
+     "step": "clusterAgent"
+    },
+    {
+     "in": [
+      "completed",
+      "failed"
+     ],
+     "path": "response.body.result.status",
+     "step": "tunnel"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.result.isError",
+     "step": "tunnel"
+    },
+    {
+     "matches": "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within .*e2e-sweep\\.invalid",
+     "path": "response.body.result.result.content[0].text",
+     "step": "tunnel"
+    },
+    {
+     "matches": "^[1-9][0-9]*\n$",
+     "path": "stdout",
+     "step": "connectorRan"
+    },
+    {
+     "matches": "^[1-9][0-9]*\n$",
+     "path": "stdout",
+     "step": "connectorToken"
+    },
+    {
+     "gte": 1,
+     "path": "json.execsTraced",
+     "step": "scan"
+    },
+    {
+     "equals": {},
+     "path": "json.argv",
+     "step": "scan"
+    }
+   ],
+   "requirement": "A secret never travels on a command line",
+   "scenario": "An agent holding its bearer, an OAuth client secret and three provider credentials issues an OAuth token, starts an LLM relay, installs a host cluster agent and a public MCP connector; no process on the host carries any of them, or the tool inputs' tokens, in its arguments",
+   "spec": "openspec/changes/secret-placement/specs/secret-placement/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "0o600",
+     "path": "json.mode",
+     "step": "markProvider"
+    },
+    {
+     "equals": 0,
+     "path": "json.uid",
+     "step": "markProvider"
+    },
+    {
+     "equals": "0o600",
+     "path": "json.mode",
+     "step": "markClient"
+    },
+    {
+     "equals": 0,
+     "path": "json.uid",
+     "step": "markClient"
+    },
+    {
+     "equals": [],
+     "path": "json.looseFiles",
+     "step": "scan"
+    }
+   ],
+   "requirement": "A file holding a secret is private to the agent's user",
+   "scenario": "Every file under /etc, /opt, /tmp, /var/tmp, /home, /root, /run, /usr/local and /srv that holds a secret, raw or base64-encoded, is 0600 or stricter and owned by the agent's user",
+   "spec": "openspec/changes/secret-placement/specs/secret-placement/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": [],
+     "path": "json.journal",
+     "step": "scan"
+    },
+    {
+     "equals": [],
+     "path": "json.store",
+     "step": "scan"
+    },
+    {
+     "excludes": "<secret:",
+     "path": "response.body",
+     "step": "list"
+    },
+    {
+     "excludes": "<secret:",
+     "path": "response.body",
+     "step": "relay"
+    },
+    {
+     "excludes": "<secret:",
+     "path": "response.body",
+     "step": "clusterCall"
+    },
+    {
+     "excludes": "<secret:",
+     "path": "response.body",
+     "step": "cluster"
+    },
+    {
+     "excludes": "<secret:",
+     "path": "response.body",
+     "step": "tunnelCall"
+    },
+    {
+     "excludes": "<secret:",
+     "path": "response.body",
+     "step": "tunnel"
+    }
+   ],
+   "requirement": "Logs, the store and responses carry a secret only redacted",
+   "scenario": "The journal, the agent's state directory and every MCP response hold no secret",
+   "spec": "openspec/changes/secret-placement/specs/secret-placement/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": {},
+     "path": "json.strayEnviron",
+     "step": "scan"
+    }
+   ],
+   "requirement": "A child process never receives the agent's secrets",
+   "scenario": "After the calls, only the agent's own process holds its secrets in its environment",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "secretsweep",
+   "id": "sweepTool",
+   "to": "/opt/opute-e2e/guest/secretsweep.py"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py plant --env /root/e2e-sweep/agent.env --markers /root/e2e-sweep/markers.json --set MCP_AUTH_TOKEN=${SECRET:sweep} --setting OPUTE_OAUTH_CLIENTS=e2e-sweep --set CLOUDFLARE_API_TOKEN=${SECRET:cfToken} --set TAILSCALE_AUTH_KEY=${SECRET:tsKey} --set TAILSCALE_API_KEY=${SECRET:tsApi} --setting OPUTE_REMOTE_AGENT_ID=e2e-sweep-agent --marker tunnelToken=${SECRET:tunnelToken} --marker bridgeToken=${SECRET:bridgeToken} --marker incomingToken=${SECRET:relayIn} --marker upstreamToken=${SECRET:relayUp}",
+   "id": "plant"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py agent start sweep --port 3056 --env /root/e2e-sweep/agent.env --allow-mutations",
+   "id": "sweepAgent"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py mark --credential /tmp/e2e-agents/sweep/state/credentials/host-agent-provider.json --as providerSecret --markers /root/e2e-sweep/markers.json",
+   "id": "markProvider"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py mark --credential /tmp/e2e-agents/sweep/state/credentials/e2e-sweep.json --as oauthClient --markers /root/e2e-sweep/markers.json",
+   "id": "markClient"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py watch start --unit e2e-sweep-sweep.service",
+   "id": "watch"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py bridge start --port 3057",
+   "id": "bridge"
+  },
+  {
+   "auth": "secret:sweep",
+   "id": "list",
+   "mcp": "tools/list",
+   "port": 3056
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py oauth --port 3056 --client e2e-sweep --secret oauthClient --basic --as accessToken --markers /root/e2e-sweep/markers.json",
+   "id": "oauth"
+  },
+  {
+   "arguments": {
+    "allowedSourceCIDRs": [
+     "127.0.0.1/32"
+    ],
+    "incomingToken": "${SECRET:relayIn}",
+    "listenHost": "127.0.0.1",
+    "listenPort": 3058,
+    "sessionId": "e2e-sweep",
+    "targetHost": "127.0.0.1",
+    "targetPort": 3059,
+    "upstreamToken": "${SECRET:relayUp}"
+   },
+   "auth": "secret:sweep",
+   "id": "relay",
+   "mcp": "tools/call",
+   "port": 3056,
+   "tool": "ensure_local_llm_relay"
+  },
+  {
+   "confirms": [
+    "relay"
+   ],
+   "guest": "ss -ltnH 'sport = :3058' | wc -l",
+   "id": "relayListens"
+  },
+  {
+   "arguments": {
+    "agentId": "e2e-sweep-agent",
+    "bridgeToken": "${SECRET:bridgeToken}",
+    "bridgeUrl": "http://127.0.0.1:3057",
+    "clusterId": "e2e-sweep",
+    "clusterName": "e2e-sweep",
+    "source": "k3s-host"
+   },
+   "auth": "secret:sweep",
+   "capture": {
+    "TID_cluster": "response.body.result.taskId"
+   },
+   "id": "clusterCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "port": 3056,
+   "tool": "install_cluster_agent"
+  },
+  {
+   "auth": "secret:sweep",
+   "id": "cluster",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "params": {
+    "taskId": "${TID_cluster}"
+   },
+   "port": 3056,
+   "timeout": 300,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "confirms": [
+    "cluster"
+   ],
+   "guest": "systemctl is-active opute-cluster-agent",
+   "id": "clusterAgent"
+  },
+  {
+   "arguments": {
+    "bindingId": "e2e-sweep",
+    "endpoint": "https://e2e-sweep.invalid/mcp",
+    "localTarget": "http://127.0.0.1:3056/mcp",
+    "scope": "system",
+    "tunnelToken": "${SECRET:tunnelToken}"
+   },
+   "auth": "secret:sweep",
+   "capture": {
+    "TID_tunnel": "response.body.result.taskId"
+   },
+   "id": "tunnelCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "port": 3056,
+   "tool": "ensure_public_mcp_tunnel"
+  },
+  {
+   "auth": "secret:sweep",
+   "id": "tunnel",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "params": {
+    "taskId": "${TID_tunnel}"
+   },
+   "port": 3056,
+   "timeout": 300,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "guest": "for i in $(seq 40); do c=$(grep -c '^/opt/opute/tunnels/[^ ]*/cloudflared tunnel' /root/e2e-sweep/execve.log || true); [ \"$c\" -ge 2 ] && break; sleep 1; done; echo \"$c\"",
+   "id": "connectorRan"
+  },
+  {
+   "guest": "journalctl -u 'opute-cloudflared-*' --no-pager -o cat | grep -c 'Provided Tunnel token is not valid' || true",
+   "id": "connectorToken"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py watch stop",
+   "id": "unwatch"
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/secretsweep.py scan --markers /root/e2e-sweep/markers.json --unit e2e-sweep-sweep.service --state /tmp/e2e-agents/sweep/state --holder /tmp/e2e-agents/sweep/state/credentials/host-agent-provider.json --holder /tmp/e2e-agents/sweep/state/credentials/e2e-sweep.json --root /etc --root /opt --root /tmp --root /var/tmp --root /home --root /root --root /run --root /usr/local --root /srv",
+   "id": "scan"
+  }
+ ]
+}

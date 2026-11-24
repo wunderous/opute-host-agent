@@ -55,7 +55,11 @@ pub struct Server {
     /// Committed provider-neutral publication, shared by all catalog readers.
     pub catalog: Arc<crate::provider::publication::Publication>,
     pub providers: Arc<crate::provider::runtime::Runtime>,
+    /// `--allow-mutations`: the bootstrap bearer may run tools whose effect
+    /// is not `read` (D55). OAuth callers carry their own scope.
     pub allow_mutations: bool,
+    /// `OPUTE_OAUTH_CLIENTS`: each listed machine client's grant (D55).
+    pub client_grants: std::collections::HashMap<String, crate::oauth::Scope>,
     pub host: crate::tools::Host,
     /// The MCP Tasks registry.
     pub tasks: crate::tasks::Registry,
@@ -370,6 +374,7 @@ struct Decision {
     allowed: bool,
     status: u16,
     www_auth: String,
+    caller: Option<crate::tools::Caller>,
 }
 
 fn www_authenticate(req: &Request) -> String {
@@ -380,7 +385,7 @@ fn www_authenticate(req: &Request) -> String {
     format!(
         "Bearer resource_metadata={}, scope={}",
         quote(&metadata),
-        quote("mcp")
+        quote("read")
     )
 }
 
@@ -397,6 +402,7 @@ fn authorize(server: &Server, req: &Request) -> Decision {
         allowed: false,
         status,
         www_auth: www_authenticate(req),
+        caller: None,
     };
     let auth = req.headers.get("Authorization");
     let token = auth.strip_prefix("Bearer ").map(str::trim).unwrap_or("");
@@ -412,6 +418,9 @@ fn authorize(server: &Server, req: &Request) -> Decision {
             allowed: true,
             status: 200,
             www_auth: String::new(),
+            caller: Some(crate::tools::Caller::Bearer {
+                mutate: server.allow_mutations,
+            }),
         };
     }
     let hash = hex::encode(<sha2::Sha256 as sha2::Digest>::digest(token));
@@ -432,13 +441,27 @@ fn authorize(server: &Server, req: &Request) -> Decision {
     if record.resource != canonical_mcp_resource(req) {
         return deny(403);
     }
-    if !record.scope.is_empty() && record.scope != "mcp" {
-        return deny(403);
-    }
+    let scope = crate::oauth::Scope::stored(&record.scope);
+    let caller = if record.client_id == crate::oauth::PROVIDER_CLIENT_ID {
+        crate::tools::Caller::Provider
+    } else if let Some(grant) = server.client_grants.get(&record.client_id) {
+        // A grant lowered since the token was issued lowers the token.
+        crate::tools::Caller::Listed {
+            id: record.client_id,
+            token: scope,
+            grant: *grant,
+        }
+    } else {
+        crate::tools::Caller::Interactive {
+            id: record.client_id,
+            scope,
+        }
+    };
     Decision {
         allowed: true,
         status: 200,
         www_auth: String::new(),
+        caller: Some(caller),
     }
 }
 
@@ -452,7 +475,7 @@ fn prm(req: &Request) -> Response {
         &json!({
             "resource": canonical_mcp_resource(req),
             "authorization_servers": [issuer],
-            "scopes_supported": ["mcp"],
+            "scopes_supported": ["read", "mutate"],
             "bearer_methods_supported": ["header"],
             "resource_documentation": format!("{issuer}/mcp"),
         }),
@@ -477,7 +500,7 @@ fn as_metadata(req: &Request) -> Response {
             "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post", "none"],
             "authorization_response_iss_parameter_supported": true,
             "client_id_metadata_document_supported": true,
-            "scopes_supported": ["mcp"],
+            "scopes_supported": ["read", "mutate"],
         }),
     )
 }
@@ -572,7 +595,7 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
     let Ok(post) = parse_form(req, body).await else {
         return oauth_error(400, "invalid_request", "malformed body");
     };
-    let grant = first_form(req, &post, "grant_type");
+    let grant_type = first_form(req, &post, "grant_type");
     let (client_id, secret) = basic_auth(req).unwrap_or_else(|| {
         (
             first_form(req, &post, "client_id"),
@@ -586,15 +609,29 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
     let resource = first_form(req, &post, "resource");
     let canonical = canonical_mcp_resource(req);
     let served = |r: &str| r == canonical;
+    let requested = first_form(req, &post, "scope");
+    // The provider client acts only for a provider call; its callbacks are
+    // bounded by that call's delegation, not by its token (D55).
+    let grant = |id: &str| {
+        if id == crate::oauth::PROVIDER_CLIENT_ID {
+            crate::oauth::Scope::Mutate
+        } else {
+            server
+                .client_grants
+                .get(id)
+                .copied()
+                .unwrap_or(crate::oauth::Scope::Read)
+        }
+    };
     let outcome = {
         let Ok(store) = server.authz.lock() else {
             return oauth_error(500, "server_error", "store unavailable");
         };
         let conn = store.conn();
-        match grant.as_str() {
-            "client_credentials" => {
-                crate::oauth::client_credentials(conn, &client_id, &secret, &resource, &served)
-            }
+        match grant_type.as_str() {
+            "client_credentials" => crate::oauth::client_credentials(
+                conn, &client_id, &secret, &resource, &requested, &grant, &served,
+            ),
             "authorization_code" => crate::oauth::redeem_code(
                 conn,
                 &first_form(req, &post, "code"),
@@ -611,15 +648,20 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
         }
     };
     match outcome {
-        crate::oauth::Grant::Issued { token, resource } => {
+        crate::oauth::Grant::Issued {
+            token,
+            resource,
+            scope,
+        } => {
             crate::oauth::audit(
                 "issue",
                 &[
                     ("client_id", &client_id),
-                    ("grant", &grant),
+                    ("grant", &grant_type),
                     ("resource", &resource),
                     ("outcome", "issued"),
                     ("remote", &remote_ip(req)),
+                    ("scope", scope.as_str()),
                 ],
             );
             oauth_json(
@@ -628,7 +670,7 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
                     "access_token": token,
                     "token_type": "Bearer",
                     "expires_in": crate::oauth::ACCESS_TOKEN_TTL,
-                    "scope": "mcp",
+                    "scope": scope.as_str(),
                     "resource": resource,
                 }),
             )
@@ -646,7 +688,7 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
                     "deny",
                     &[
                         ("client_id", &client_id),
-                        ("grant", &grant),
+                        ("grant", &grant_type),
                         ("resource", &resource),
                         ("outcome", "backoff"),
                         ("remote", &remote_ip(req)),
@@ -661,7 +703,7 @@ async fn token_endpoint(server: &Server, req: &Request, body: &mut Body) -> Resp
                 "deny",
                 &[
                     ("client_id", &client_id),
-                    ("grant", &grant),
+                    ("grant", &grant_type),
                     ("resource", &resource),
                     ("outcome", code),
                     ("remote", &remote_ip(req)),
@@ -790,12 +832,24 @@ async fn authorize_endpoint(server: &Server, req: &Request, body: &mut Body) -> 
     if !crate::oauth::redirect_allowed(&client.redirect_uris, &redirect_uri) {
         return Response::error("invalid redirect_uri", 400);
     }
+    let iss = request_origin(req);
+    // D55: an interactive authorization names its scope, `read` by default.
+    let scope = match crate::oauth::Scope::requested(&field("scope")) {
+        Ok(scope) => scope.unwrap_or(crate::oauth::Scope::Read),
+        Err(_) => {
+            return redirect_to(&with_query(
+                &redirect_uri,
+                &[("error", "invalid_scope"), ("iss", &iss), ("state", &state)],
+            ))
+        }
+    };
     let request = crate::oauth::AuthorizeRequest {
         client_id: client.client_id.clone(),
         redirect_uri: redirect_uri.clone(),
         resource,
         code_challenge: challenge,
         state: state.clone(),
+        scope,
     };
     let outcome = {
         let Ok(store) = server.authz.lock() else {
@@ -803,7 +857,6 @@ async fn authorize_endpoint(server: &Server, req: &Request, body: &mut Body) -> 
         };
         crate::oauth::begin_authorization(store.conn(), &request)
     };
-    let iss = request_origin(req);
     match outcome {
         crate::oauth::AuthorizeOutcome::Code(code) => redirect_to(&with_query(
             &redirect_uri,
@@ -872,6 +925,7 @@ fn unknown_pending() -> crate::oauth::PendingRecord {
         state: String::new(),
         status: String::new(),
         expires_at: 0,
+        scope: crate::oauth::Scope::Read,
     }
 }
 
@@ -1313,8 +1367,13 @@ async fn mcp(server: &Arc<Server>, req: &Request, body: &mut Body) -> Response {
         };
     }
     let protected = !server.disable_localhost_protection && is_local_host_address(req.host.trim());
+    // An admitted request always names its caller; none would read only.
+    let caller = decision
+        .caller
+        .unwrap_or(crate::tools::Caller::Bearer { mutate: false });
     let serve = move |server: &Arc<Server>, req: &Request, raw: &[u8]| {
-        let call = |name: &str, params: Option<&Node>| crate::tools::call(server, name, params);
+        let call =
+            |name: &str, params: Option<&Node>| crate::tools::call(server, &caller, name, params);
         let snapshot = server.catalog.wire_snapshot();
         let tools = crate::catalog::published_tools(&snapshot, &server.tool_prefix);
         let capabilities =

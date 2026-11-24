@@ -135,7 +135,7 @@ def build_steps(endpoint: bool = False) -> list[dict]:
             f"for p in 4320:e2e-provider-k3s 4321:e2e-provider-k3s-b; do systemd-run --collect "
             f"--unit=${{p#*:}} --uid=opute --gid=opute --setenv=HOME=/home/opute "
             f"--setenv=OPUTE_PROVIDER_PORT=${{p%%:*}} {enable}--property=Restart=no {PROVIDER} || exit 1; done && "
-            f"{T} agent start b --port {B_PORT} --id e2e-ha-b --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+            f"{T} agent start b --port {B_PORT} --id e2e-ha-b --allow-mutations "
             "--env MCP_AUTH_TOKEN='${SECRET:tokenB}' >/dev/null && "
             "for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && ss -ltnH 'sport = :4321' | grep -q . "
             "&& break; sleep 0.5; done; ss -ltnH '( sport = :4320 or sport = :4321 )' | wc -l")},

@@ -13,9 +13,10 @@
      "as": "provision",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -45,9 +46,10 @@
      "as": "start",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -550,9 +552,10 @@
      "as": "restart",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -593,7 +596,11 @@
     {
      "as": "provision",
      "serve": {
-      "profile": "platform"
+      "profile": "standalone",
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -622,7 +629,11 @@
     {
      "as": "start",
      "serve": {
-      "profile": "platform"
+      "profile": "standalone",
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -1124,7 +1135,11 @@
     {
      "as": "restart",
      "serve": {
-      "profile": "platform"
+      "profile": "standalone",
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -1167,10 +1182,13 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true",
        "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
        "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES": "9223372036854775807"
-      }
+      },
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -1201,10 +1219,13 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true",
        "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
        "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES": "9223372036854775807"
-      }
+      },
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -1366,10 +1387,13 @@
      "serve": {
       "profile": "standalone",
       "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true",
        "OPUTE_HOST_RESOURCE_ENFORCEMENT": "advisory",
        "OPUTE_HOST_MIN_AVAILABLE_MEMORY_BYTES": "9223372036854775807"
-      }
+      },
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true

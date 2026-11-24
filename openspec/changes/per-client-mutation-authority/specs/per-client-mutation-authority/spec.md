@@ -38,6 +38,10 @@ be admitted to `read` tools.
 - **WHEN** a provider executable calls back into a host mutation on behalf of a call made with a `read` grant
 - **THEN** the callback is refused before any effect
 
+#### Scenario: Provider callback without a delegation
+- **WHEN** a provider operation of resource class `control`, which carries no resource delegation, calls back into a host mutation
+- **THEN** the callback is admitted only while a provider call whose effect is not `read` is running on the agent, and refused otherwise
+
 ### Requirement: OAuth scopes are read and mutate
 
 The agent SHALL define exactly two OAuth scopes, `read` and `mutate`, where

@@ -3,11 +3,11 @@
  "gate": "e2e-6",
  "description": "An agent killed with SIGKILL during a plan's slow step, then twelve times with task calls in flight; the plan reads back unknown and stays so, and the store stays whole.",
  "inputs": {
-  "agent": "transient Rust agents of the installed release candidate (0.4.0) under /tmp/e2e-agents",
+  "agent": "transient Rust agents of the installed release candidate (0.5.0) under /tmp/e2e-agents",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
@@ -124,7 +124,7 @@
   },
   {
    "id": "kpAgent",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --allow-mutations  --user root"
   },
   {
    "id": "list",
@@ -220,7 +220,7 @@
   },
   {
    "id": "restart",
-   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true  --user root"
+   "guest": "python3 /opt/opute-e2e/guest/e2etool.py agent start kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --allow-mutations  --user root"
   },
   {
    "id": "listAgain",
@@ -254,7 +254,7 @@
   },
   {
    "id": "loop",
-   "guest": "E2E_TOKEN=${SECRET:kp} python3 /opt/opute-e2e/guest/e2etool.py killloop kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true --rounds 12 --calls 4 --user root"
+   "guest": "E2E_TOKEN=${SECRET:kp} python3 /opt/opute-e2e/guest/e2etool.py killloop kp --port 3042 --id e2e-kp-agent --env MCP_AUTH_TOKEN=${SECRET:kp} --allow-mutations --rounds 12 --calls 4 --user root"
   },
   {
    "id": "afterLoop",

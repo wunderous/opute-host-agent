@@ -817,7 +817,8 @@ SITE_CAPTURE_PATCH = TOOLS_DIR.parents[1] / "evidence/cutover/proposed-0.4.0/sit
 
 def _site_capture(tree: Path, binary: Path) -> dict:
     version = subprocess.run([str(binary), "--version"], capture_output=True, text=True).stdout.strip()
-    proposed = version.startswith("0.4.")
+    # From 0.4.0 the agent has no --mode; every later release takes the same script.
+    proposed = tuple(int(part) for part in version.split("-")[0].split(".")[:2]) >= (0, 4)
     if proposed:
         subprocess.run(["git", "-C", str(tree), "apply", str(SITE_CAPTURE_PATCH)], check=True, capture_output=True)
     try:

@@ -206,7 +206,8 @@ pub struct Config {
     pub ownership_mode: String,
     pub standalone_state_dir: PathBuf,
     pub sqlite_database_root: PathBuf,
-    /// `OPUTE_HOST_ALLOW_MUTATIONS`: admit tools whose effect is not `read`.
+    /// `--allow-mutations` (D55): the bootstrap bearer may run tools whose
+    /// effect is not `read`. No setting sets it.
     pub allow_mutations: bool,
     pub standalone_instance_id: String,
     pub shared_host_owner_instance: String,
@@ -219,6 +220,8 @@ pub struct Config {
     pub mcp_auth_token: String,
     /// `OPUTE_OAUTH_CLIENTS`: configured machine client ids.
     pub oauth_clients: Vec<String>,
+    /// `OPUTE_OAUTH_CLIENTS`: each configured machine client's grant (D55).
+    pub oauth_grants: Vec<(String, crate::oauth::Scope)>,
     pub provider_id: String,
     pub host_resource_lock_dir: PathBuf,
     pub host_resource_max_normal: i64,
@@ -357,7 +360,7 @@ impl Config {
             ownership_mode: ownership.into(),
             standalone_state_dir: state_dir,
             sqlite_database_root: sqlite_root,
-            allow_mutations: env.get("OPUTE_HOST_ALLOW_MUTATIONS") == "true",
+            allow_mutations: false,
             standalone_instance_id: env
                 .value("OPUTE_LOCAL_HOST_AGENT_INSTANCE_ID")
                 .trim()
@@ -374,6 +377,8 @@ impl Config {
             identity: identity::read_identity(env),
             mcp_auth_token: env.value("MCP_AUTH_TOKEN").trim().to_string(),
             oauth_clients: crate::oauth::parse_clients(&env.value(crate::oauth::CLIENTS_ENV))
+                .unwrap_or_default(),
+            oauth_grants: crate::oauth::client_grants(&env.value(crate::oauth::CLIENTS_ENV))
                 .unwrap_or_default(),
             provider_id: "incus".into(),
             host_resource_lock_dir: PathBuf::from(
@@ -776,15 +781,10 @@ mod tests {
         let mut env = base();
         env.set("HOST_MCP_BIND_HOST", "0.0.0.0");
         env.set("HOST_MCP_PORT", "3004");
-        env.set("OPUTE_HOST_ALLOW_MUTATIONS", "true");
         let c = Config::load(&env);
         assert_eq!(
-            (
-                c.host_mcp_port,
-                c.host_mcp_bind_host.as_str(),
-                c.allow_mutations
-            ),
-            (3004, "0.0.0.0", true)
+            (c.host_mcp_port, c.host_mcp_bind_host.as_str()),
+            (3004, "0.0.0.0")
         );
     }
 
@@ -797,6 +797,8 @@ mod tests {
             ("OPUTE_AGENT_MODE", "platform"),
             ("OPUTE_AGENT_MODE", "not-a-mode"),
             ("OPUTE_STANDALONE_ALLOW_MUTATIONS", "true"),
+            // D55: only `--allow-mutations` lets the bearer mutate.
+            ("OPUTE_HOST_ALLOW_MUTATIONS", "true"),
             ("OPUTE_MCP_URL", "https://orchestrator.example.test/mcp"),
             (
                 "OPUTE_MCP_HEALTH_URL",

@@ -130,15 +130,16 @@ def agent(a):
         os.makedirs(f"{root}/{d}", mode=0o700, exist_ok=True)
     env = {"HOST_MCP_PORT": str(a.port), "HOME": f"{root}/home", "OPUTE_HOST_AGENT_INSTANCE_ROOT": f"{root}/instance",
            "OPUTE_STANDALONE_STATE_DIR": f"{root}/state"}
-    # As e2etool: 0.4.0 has no `--mode` and reads OPUTE_HOST_ALLOW_MUTATIONS
-    # (platform-neutral-host-agent); 0.3.x takes both of the old ones.
+    # As e2etool: 0.4.0 has no `--mode` (platform-neutral-host-agent), and a
+    # release's own way lets the bearer mutate (e2etool.mutation_settings).
+    from e2etool import mutation_settings
     version = sh([a.binary, "--version"], check=False).stdout.strip()
     legacy = version.startswith(("0.2.", "0.3."))
-    if not legacy and "OPUTE_STANDALONE_ALLOW_MUTATIONS=true\n" in open(a.env).read():
-        env["OPUTE_HOST_ALLOW_MUTATIONS"] = "true"
     mode = ["--mode", "standalone"] if legacy else []
+    env.update(mutation_settings(version, a.allow_mutations))
+    flags = ["--allow-mutations"] if a.allow_mutations and not mutation_settings(version, True) else []
     sh(["systemd-run", f"--unit={unit}", "--property=Restart=no", "--collect", f"--property=EnvironmentFile={a.env}"]
-       + [f"--setenv={k}={v}" for k, v in env.items()] + [a.binary, "serve", *mode, "--transport", "http"])
+       + [f"--setenv={k}={v}" for k, v in env.items()] + [a.binary, "serve", *mode, "--transport", "http", *flags])
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         h = health(a.port)
@@ -360,6 +361,7 @@ def main():
     ag.add_argument("--port", type=int)
     ag.add_argument("--env")
     ag.add_argument("--binary", default=BINARY)
+    ag.add_argument("--allow-mutations", action="store_true")
     w = sub.add_parser("watch")
     w.add_argument("action", choices=["start", "stop"])
     w.add_argument("--unit")

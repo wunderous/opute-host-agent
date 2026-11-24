@@ -34,7 +34,6 @@ fn server(dir: &std::path::Path) -> Arc<Server> {
         ("XDG_RUNTIME_DIR", dir.join("run").to_str().unwrap()),
         ("PATH", empty.to_str().unwrap()),
         ("OPUTE_REMOTE_AGENT_ID", "seam-verifier"),
-        ("OPUTE_HOST_ALLOW_MUTATIONS", "true"),
         (
             "OPUTE_STANDALONE_STATE_DIR",
             dir.join("state").to_str().unwrap(),
@@ -51,7 +50,8 @@ fn server(dir: &std::path::Path) -> Arc<Server> {
         ("HOST_MCP_PORT", "1"),
     ]);
     let runtime = crate::app::new_runtime(&env).unwrap();
-    let cfg = runtime.config.clone();
+    let mut cfg = runtime.config.clone();
+    cfg.allow_mutations = true;
     let authz_dir = if cfg.standalone_state_dir.as_os_str().is_empty() {
         cfg.instance_root.clone()
     } else {

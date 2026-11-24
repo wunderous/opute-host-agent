@@ -35,10 +35,20 @@ use sha2::{Digest, Sha256};
 
 pub const PROVIDER_CLIENT_ID: &str = "host-agent-provider";
 /// Operator setting: the machine clients this host provisions, comma-separated
-/// `id` or `id:scopes` (space-separated; only `mcp` exists). Empty by default.
+/// `id` (granted `read`), `id:read` or `id:mutate` (D55). Empty by default.
 pub const CLIENTS_ENV: &str = "OPUTE_OAUTH_CLIENTS";
 pub const BOOTSTRAP_CLIENT_ID: &str = "host-agent-bootstrap";
 const MIGRATION_ID: &str = "oauth-issuance.v1";
+/// D55: requests, consents and codes carry the scope they were approved for.
+/// Rows written before it read only.
+const SCOPES_MIGRATION_ID: &str = "oauth-scopes.v1";
+const SCOPE_COLUMN: &str = "scope TEXT NOT NULL DEFAULT 'read'";
+const CODE_SCOPES_DDL: &str = r#"
+CREATE TABLE IF NOT EXISTS code_scopes (
+  code TEXT PRIMARY KEY,
+  scope TEXT NOT NULL
+);
+"#;
 pub const ACCESS_TOKEN_TTL: i64 = 3600;
 const CODE_TTL: i64 = 600;
 const PENDING_TTL: i64 = 600;
@@ -74,6 +84,56 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
   applied_at INTEGER NOT NULL
 );
 "#;
+
+/// D55: what an OAuth token lets its holder do. `mutate` includes `read`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Scope {
+    Read,
+    Mutate,
+}
+
+impl Scope {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Scope::Read => "read",
+            Scope::Mutate => "mutate",
+        }
+    }
+
+    fn parse(value: &str) -> Option<Scope> {
+        match value {
+            "read" => Some(Scope::Read),
+            "mutate" => Some(Scope::Mutate),
+            _ => None,
+        }
+    }
+
+    /// A request's `scope` parameter: space-separated, the highest named
+    /// wins, absent is None. An unknown scope is an error.
+    pub fn requested(raw: &str) -> Result<Option<Scope>, String> {
+        let mut highest = None;
+        for name in raw.split_whitespace() {
+            let scope = Scope::parse(name).ok_or_else(|| {
+                format!(
+                    "unknown scope {} (the scopes are read and mutate)",
+                    crate::goerr::quote(name)
+                )
+            })?;
+            highest = highest.max(Some(scope));
+        }
+        Ok(highest)
+    }
+
+    /// A stored scope. Anything but `mutate`, including the `mcp` of tokens
+    /// written before D55, reads only.
+    pub fn stored(value: &str) -> Scope {
+        if value == "mutate" {
+            Scope::Mutate
+        } else {
+            Scope::Read
+        }
+    }
+}
 
 pub fn now() -> i64 {
     std::time::SystemTime::now()
@@ -254,16 +314,22 @@ fn builtin_redirects(_client_id: &str) -> &'static str {
     "[]"
 }
 
-/// `OPUTE_OAUTH_CLIENTS`: the configured machine client ids, in order. An
-/// unknown scope, a duplicate, an empty entry, a malformed id or a built-in
-/// id is refused, so a typo fails the start instead of provisioning nothing.
+/// `OPUTE_OAUTH_CLIENTS`: the configured machine client ids, in order.
 pub fn parse_clients(raw: &str) -> Result<Vec<String>, String> {
+    Ok(client_grants(raw)?.into_iter().map(|(id, _)| id).collect())
+}
+
+/// `OPUTE_OAUTH_CLIENTS`: each configured machine client and its grant. An
+/// unknown scope (the former `mcp` too), a duplicate, an empty entry, a
+/// malformed id or a built-in id is refused, so a typo fails the start
+/// instead of provisioning nothing.
+pub fn client_grants(raw: &str) -> Result<Vec<(String, Scope)>, String> {
     if raw.trim().is_empty() {
         return Ok(Vec::new());
     }
-    let mut ids: Vec<String> = Vec::new();
+    let mut grants: Vec<(String, Scope)> = Vec::new();
     for entry in raw.split(',') {
-        let (id, scopes) = entry.split_once(':').unwrap_or((entry, "mcp"));
+        let (id, scope) = entry.split_once(':').unwrap_or((entry, "read"));
         let id = id.trim();
         let valid = !id.is_empty()
             && id.len() <= 64
@@ -279,18 +345,18 @@ pub fn parse_clients(raw: &str) -> Result<Vec<String>, String> {
         if id == PROVIDER_CLIENT_ID || id == BOOTSTRAP_CLIENT_ID {
             return Err(format!("{CLIENTS_ENV}: {id} is a built-in client"));
         }
-        if let Some(scope) = scopes.split_whitespace().find(|s| *s != "mcp") {
+        let Some(scope) = Scope::parse(scope.trim()) else {
             return Err(format!(
-                "{CLIENTS_ENV}: client {id} asks for unknown scope {} (only mcp exists)",
-                crate::goerr::quote(scope)
+                "{CLIENTS_ENV}: client {id} asks for unknown scope {}; grant {id}:read or {id}:mutate",
+                crate::goerr::quote(scope.trim())
             ));
-        }
-        if ids.iter().any(|known| known == id) {
+        };
+        if grants.iter().any(|(known, _)| known == id) {
             return Err(format!("{CLIENTS_ENV}: client {id} is listed twice"));
         }
-        ids.push(id.to_string());
+        grants.push((id.to_string(), scope));
     }
-    Ok(ids)
+    Ok(grants)
 }
 
 /// The credential this host's own probes mint with: the first configured
@@ -390,6 +456,30 @@ pub fn prepare(conn: &Connection, state_dir: &Path, clients: &[String]) -> Resul
             ],
         );
     }
+    // Each step checks the schema itself, so a store whose migration record
+    // was lost is brought up again without failing.
+    for table in ["pending_authorizations", "consents"] {
+        let scoped: bool = conn
+            .query_row(
+                &format!("SELECT 1 FROM pragma_table_info('{table}') WHERE name='scope'"),
+                [],
+                |_| Ok(()),
+            )
+            .optional()
+            .map_err(|e| e.to_string())?
+            .is_some();
+        if !scoped {
+            conn.execute_batch(&format!("ALTER TABLE {table} ADD COLUMN {SCOPE_COLUMN};"))
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    conn.execute_batch(CODE_SCOPES_DDL)
+        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT OR IGNORE INTO schema_migrations(id, applied_at) VALUES(?, ?)",
+        params![SCOPES_MIGRATION_ID, now()],
+    )
+    .map_err(|e| e.to_string())?;
     // The bootstrap client has no secret, so it is public: it may only use
     // operator-approved authorization codes.
     set_client(
@@ -475,13 +565,14 @@ pub fn insert_token(
     conn: &Connection,
     client_id: &str,
     resource: &str,
+    scope: Scope,
     ttl: i64,
 ) -> rusqlite::Result<String> {
     let token = new_access_token();
     let issued = now();
     conn.execute(
         "INSERT INTO tokens(token_hash, client_id, resource, scope, expires_at, revoked, created_at) VALUES(?,?,?,?,?,0,?)",
-        params![sha256_hex(&token), client_id, resource, "mcp", issued + ttl, issued],
+        params![sha256_hex(&token), client_id, resource, scope.as_str(), issued + ttl, issued],
     )?;
     // Collect rows expired for more than an hour (as Go does).
     let _ = conn.execute("DELETE FROM tokens WHERE expires_at < ?", [issued - 3600]);
@@ -520,6 +611,7 @@ pub enum Grant {
     Issued {
         token: String,
         resource: String,
+        scope: Scope,
     },
     Error {
         status: u16,
@@ -537,12 +629,16 @@ fn grant_error(status: u16, code: &'static str, description: impl Into<String>) 
 }
 
 /// `client_credentials`: a confidential client authenticating with its
-/// registered secret, for a resource this agent serves.
+/// registered secret, for a resource this agent serves. The token gets the
+/// requested scope, or the client's whole grant when none is requested; a
+/// request above the grant is `invalid_scope`.
 pub fn client_credentials(
     conn: &Connection,
     client_id: &str,
     client_secret: &str,
     resource: &str,
+    requested: &str,
+    grant: &dyn Fn(&str) -> Scope,
     served: &dyn Fn(&str) -> bool,
 ) -> Grant {
     if client_id.is_empty() {
@@ -578,10 +674,29 @@ pub fn client_credentials(
             "resource is not served by this Host Agent",
         );
     }
-    match insert_token(conn, &record.client_id, resource, ACCESS_TOKEN_TTL) {
+    let granted = grant(&record.client_id);
+    let scope = match Scope::requested(requested) {
+        Err(e) => return grant_error(400, "invalid_scope", e),
+        Ok(None) => granted,
+        Ok(Some(scope)) if scope <= granted => scope,
+        Ok(Some(scope)) => {
+            return grant_error(
+                400,
+                "invalid_scope",
+                format!(
+                    "client {} is granted {}, not {}",
+                    record.client_id,
+                    granted.as_str(),
+                    scope.as_str()
+                ),
+            )
+        }
+    };
+    match insert_token(conn, &record.client_id, resource, scope, ACCESS_TOKEN_TTL) {
         Ok(token) => Grant::Issued {
             token,
             resource: resource.to_string(),
+            scope,
         },
         Err(_) => grant_error(500, "server_error", "token persist failed"),
     }
@@ -646,10 +761,21 @@ pub fn redeem_code(
     if !digest_eq(&s256(verifier), &challenge) {
         return grant_error(400, "invalid_grant", "pkce verification failed");
     }
-    match insert_token(conn, &c_client, &c_resource, ACCESS_TOKEN_TTL) {
+    // The scope the operator approved; a code without one reads only.
+    let scope = conn
+        .query_row("SELECT scope FROM code_scopes WHERE code=?", [&hash], |r| {
+            r.get::<_, String>(0)
+        })
+        .optional()
+        .ok()
+        .flatten()
+        .map_or(Scope::Read, |s| Scope::stored(&s));
+    let _ = conn.execute("DELETE FROM code_scopes WHERE code=?", [&hash]);
+    match insert_token(conn, &c_client, &c_resource, scope, ACCESS_TOKEN_TTL) {
         Ok(token) => Grant::Issued {
             token,
             resource: c_resource,
+            scope,
         },
         Err(_) => grant_error(500, "server_error", "token persist failed"),
     }
@@ -706,6 +832,7 @@ pub struct AuthorizeRequest {
     pub resource: String,
     pub code_challenge: String,
     pub state: String,
+    pub scope: Scope,
 }
 
 #[derive(Debug, PartialEq)]
@@ -726,6 +853,10 @@ fn issue_code(conn: &Connection, req: &AuthorizeRequest) -> rusqlite::Result<Str
         "INSERT INTO codes(code, client_id, resource, code_challenge, redirect_uri, expires_at, used) VALUES(?,?,?,?,?,?,0)",
         params![sha256_hex(&code), req.client_id, req.resource, req.code_challenge, req.redirect_uri, now() + CODE_TTL],
     )?;
+    conn.execute(
+        "INSERT INTO code_scopes(code, scope) VALUES(?,?)",
+        params![sha256_hex(&code), req.scope.as_str()],
+    )?;
     Ok(code)
 }
 
@@ -737,25 +868,26 @@ fn expire_pending(conn: &Connection) {
 }
 
 /// Record a validated authorization request, or issue a code at once when the
-/// operator remembered consent for this client and resource.
+/// operator remembered consent for this client and resource at this scope.
 pub fn begin_authorization(conn: &Connection, req: &AuthorizeRequest) -> AuthorizeOutcome {
     expire_pending(conn);
     let consented = conn
         .query_row(
-            "SELECT 1 FROM consents WHERE client_id=? AND resource=? AND expires_at > ?",
+            "SELECT scope FROM consents WHERE client_id=? AND resource=? AND expires_at > ?",
             params![req.client_id, req.resource, now()],
-            |_| Ok(()),
+            |r| r.get::<_, String>(0),
         )
         .optional()
         .ok()
         .flatten()
-        .is_some();
+        .is_some_and(|scope| Scope::stored(&scope) >= req.scope);
     if consented {
         audit(
             "approve",
             &[
                 ("client_id", &req.client_id),
                 ("resource", &req.resource),
+                ("scope", req.scope.as_str()),
                 ("decided_by", "consent"),
             ],
         );
@@ -785,9 +917,9 @@ pub fn begin_authorization(conn: &Connection, req: &AuthorizeRequest) -> Authori
     for _ in 0..5 {
         let code = user_code();
         let inserted = conn.execute(
-            "INSERT INTO pending_authorizations(id, user_code, client_id, redirect_uri, resource, code_challenge, state, status, created_at, expires_at)
-             VALUES(?,?,?,?,?,?,?,'pending',?,?)",
-            params![id, code, req.client_id, req.redirect_uri, req.resource, req.code_challenge, req.state, now(), now() + PENDING_TTL],
+            "INSERT INTO pending_authorizations(id, user_code, client_id, redirect_uri, resource, code_challenge, state, scope, status, created_at, expires_at)
+             VALUES(?,?,?,?,?,?,?,?,'pending',?,?)",
+            params![id, code, req.client_id, req.redirect_uri, req.resource, req.code_challenge, req.state, req.scope.as_str(), now(), now() + PENDING_TTL],
         );
         if inserted.is_ok() {
             audit(
@@ -795,6 +927,7 @@ pub fn begin_authorization(conn: &Connection, req: &AuthorizeRequest) -> Authori
                 &[
                     ("client_id", &req.client_id),
                     ("resource", &req.resource),
+                    ("scope", req.scope.as_str()),
                     ("user_code", &code),
                 ],
             );
@@ -817,10 +950,11 @@ pub struct PendingRecord {
     pub state: String,
     pub status: String,
     pub expires_at: i64,
+    pub scope: Scope,
 }
 
 const PENDING_COLUMNS: &str =
-    "id, user_code, client_id, redirect_uri, resource, code_challenge, state, status, expires_at";
+    "id, user_code, client_id, redirect_uri, resource, code_challenge, state, status, expires_at, scope";
 
 fn pending_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<PendingRecord> {
     Ok(PendingRecord {
@@ -833,6 +967,7 @@ fn pending_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<PendingRecord> {
         state: r.get(6)?,
         status: r.get(7)?,
         expires_at: r.get(8)?,
+        scope: Scope::stored(&r.get::<_, String>(9)?),
     })
 }
 
@@ -900,6 +1035,7 @@ pub fn poll(conn: &Connection, id: &str) -> StatusOutcome {
                 resource: p.resource,
                 code_challenge: p.code_challenge,
                 state: p.state.clone(),
+                scope: p.scope,
             };
             match issue_code(conn, &req) {
                 Ok(code) => StatusOutcome::Approved {
@@ -954,9 +1090,9 @@ pub fn decide(
     }
     if approve && remember_days > 0 {
         conn.execute(
-            "INSERT INTO consents(client_id, resource, granted_at, expires_at) VALUES(?,?,?,?)
-             ON CONFLICT(client_id, resource) DO UPDATE SET granted_at=excluded.granted_at, expires_at=excluded.expires_at",
-            params![record.client_id, record.resource, now(), now() + remember_days * 86_400],
+            "INSERT INTO consents(client_id, resource, granted_at, expires_at, scope) VALUES(?,?,?,?,?)
+             ON CONFLICT(client_id, resource) DO UPDATE SET granted_at=excluded.granted_at, expires_at=excluded.expires_at, scope=excluded.scope",
+            params![record.client_id, record.resource, now(), now() + remember_days * 86_400, record.scope.as_str()],
         )
         .map_err(|e| e.to_string())?;
     }
@@ -965,6 +1101,7 @@ pub fn decide(
         &[
             ("client_id", &record.client_id),
             ("resource", &record.resource),
+            ("scope", record.scope.as_str()),
             ("decided_by", decided_by),
         ],
     );
@@ -995,13 +1132,15 @@ pub fn revoke_consent(conn: &Connection, client_id: &str, resource: &str) -> Res
     Ok(revoked)
 }
 
-pub fn consent_list(conn: &Connection) -> Vec<(String, String, i64)> {
-    let Ok(mut stmt) = conn.prepare("SELECT client_id, resource, expires_at FROM consents WHERE expires_at > ? ORDER BY client_id, resource") else {
+pub fn consent_list(conn: &Connection) -> Vec<(String, String, i64, String)> {
+    let Ok(mut stmt) = conn.prepare("SELECT client_id, resource, expires_at, scope FROM consents WHERE expires_at > ? ORDER BY client_id, resource") else {
         return Vec::new();
     };
-    stmt.query_map([now()], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
-        .map(|rows| rows.filter_map(Result::ok).collect())
-        .unwrap_or_default()
+    stmt.query_map([now()], |r| {
+        Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+    })
+    .map(|rows| rows.filter_map(Result::ok).collect())
+    .unwrap_or_default()
 }
 
 pub fn consent_days(env: &crate::config::Env) -> i64 {
@@ -1047,7 +1186,8 @@ pub fn approval_page(p: &PendingRecord, status_path: &str, message: &str) -> Str
             "<p>An application is asking for access to this Host Agent.</p>\
              <dl><dt>Application</dt><dd><code>{client}</code></dd>\
              <dt>Returns to</dt><dd><code>{host}</code></dd>\
-             <dt>Resource</dt><dd><code>{resource}</code></dd></dl>\
+             <dt>Resource</dt><dd><code>{resource}</code></dd>\
+             <dt>Access</dt><dd><code>{scope}</code> ({meaning})</dd></dl>\
              <p>Your code: <strong style=\"font-size:1.6em;letter-spacing:.1em\">{code}</strong></p>\
              <p>To allow it, run this on the host:</p>\
              <pre>opute-host-agent oauth approve {code}</pre>\
@@ -1056,6 +1196,11 @@ pub fn approval_page(p: &PendingRecord, status_path: &str, message: &str) -> Str
             host = html_escape(redirect_host),
             resource = html_escape(&p.resource),
             code = html_escape(&p.user_code),
+            scope = p.scope.as_str(),
+            meaning = match p.scope {
+                Scope::Read => "read tools only",
+                Scope::Mutate => "read tools and tools that change this host",
+            },
         )
     } else {
         format!("<p>{}</p>", html_escape(message))
@@ -1242,21 +1387,45 @@ mod tests {
         let (dir, conn) = store();
         let cred = read_credential(&credential_path(dir.path(), PROVIDER_CLIENT_ID)).unwrap();
         assert!(matches!(
-            client_credentials(&conn, PROVIDER_CLIENT_ID, "", RES, &served),
+            client_credentials(
+                &conn,
+                PROVIDER_CLIENT_ID,
+                "",
+                RES,
+                "",
+                &|_| Scope::Mutate,
+                &served
+            ),
             Grant::Error {
                 code: "invalid_client",
                 ..
             }
         ));
         assert!(matches!(
-            client_credentials(&conn, PROVIDER_CLIENT_ID, "wrong", RES, &served),
+            client_credentials(
+                &conn,
+                PROVIDER_CLIENT_ID,
+                "wrong",
+                RES,
+                "",
+                &|_| Scope::Mutate,
+                &served
+            ),
             Grant::Error {
                 code: "invalid_client",
                 ..
             }
         ));
         assert!(matches!(
-            client_credentials(&conn, BOOTSTRAP_CLIENT_ID, "anything", RES, &served),
+            client_credentials(
+                &conn,
+                BOOTSTRAP_CLIENT_ID,
+                "anything",
+                RES,
+                "",
+                &|_| Scope::Mutate,
+                &served
+            ),
             Grant::Error {
                 code: "unauthorized_client",
                 ..
@@ -1268,6 +1437,8 @@ mod tests {
                 PROVIDER_CLIENT_ID,
                 &cred.client_secret,
                 "https://unrelated.example/mcp",
+                "",
+                &|_| Scope::Mutate,
                 &served
             ),
             Grant::Error {
@@ -1276,7 +1447,15 @@ mod tests {
             }
         ));
         assert!(matches!(
-            client_credentials(&conn, PROVIDER_CLIENT_ID, &cred.client_secret, RES, &served),
+            client_credentials(
+                &conn,
+                PROVIDER_CLIENT_ID,
+                &cred.client_secret,
+                RES,
+                "",
+                &|_| Scope::Mutate,
+                &served
+            ),
             Grant::Issued { .. }
         ));
     }
@@ -1286,7 +1465,15 @@ mod tests {
         let (_dir, conn) = store();
         set_client(&conn, "legacy-confidential", "", "confidential", true, "[]").unwrap();
         assert!(matches!(
-            client_credentials(&conn, "legacy-confidential", "anything", RES, &served),
+            client_credentials(
+                &conn,
+                "legacy-confidential",
+                "anything",
+                RES,
+                "",
+                &|_| Scope::Mutate,
+                &served
+            ),
             Grant::Error {
                 code: "invalid_client",
                 ..
@@ -1351,9 +1538,15 @@ mod tests {
         let (dir, conn) = store();
         prepare(&conn, dir.path(), &["ci-runner".into()]).unwrap();
         let cred = read_credential(&credential_path(dir.path(), "ci-runner")).unwrap();
-        let Grant::Issued { token, .. } =
-            client_credentials(&conn, "ci-runner", &cred.client_secret, RES, &served)
-        else {
+        let Grant::Issued { token, .. } = client_credentials(
+            &conn,
+            "ci-runner",
+            &cred.client_secret,
+            RES,
+            "",
+            &|_| Scope::Mutate,
+            &served,
+        ) else {
             panic!("a configured client gets a token");
         };
         // Unlisted on the next start: its row, tokens and credential go.
@@ -1377,11 +1570,24 @@ mod tests {
     fn oauth_clients_setting_is_parsed_strictly() {
         assert_eq!(parse_clients(""), Ok(vec![]));
         assert_eq!(
-            parse_clients(" ci-runner , deploy.bot:mcp "),
-            Ok(vec!["ci-runner".to_string(), "deploy.bot".to_string()])
+            parse_clients(" ci-runner , deploy.bot:mutate , ro:read "),
+            Ok(vec![
+                "ci-runner".to_string(),
+                "deploy.bot".to_string(),
+                "ro".to_string()
+            ])
+        );
+        assert_eq!(
+            client_grants("ci-runner,deploy.bot:mutate"),
+            Ok(vec![
+                ("ci-runner".to_string(), Scope::Read),
+                ("deploy.bot".to_string(), Scope::Mutate)
+            ])
         );
         for bad in [
             "a:admin",
+            "a:mcp",
+            "a:read mutate",
             "a,a",
             "bad id",
             PROVIDER_CLIENT_ID,
@@ -1410,9 +1616,15 @@ mod tests {
             .unwrap();
         assert_eq!(revoked, 1);
         let cred = read_credential(&credential_path(dir.path(), PROVIDER_CLIENT_ID)).unwrap();
-        let Grant::Issued { token, .. } =
-            client_credentials(&conn, PROVIDER_CLIENT_ID, &cred.client_secret, RES, &served)
-        else {
+        let Grant::Issued { token, .. } = client_credentials(
+            &conn,
+            PROVIDER_CLIENT_ID,
+            &cred.client_secret,
+            RES,
+            "",
+            &|_| Scope::Mutate,
+            &served,
+        ) else {
             panic!()
         };
         prepare(&conn, dir.path(), &[]).unwrap();
@@ -1440,6 +1652,7 @@ mod tests {
             resource: RES.into(),
             code_challenge: s256(&verifier),
             state: "xyz".into(),
+            scope: Scope::Read,
         };
         let AuthorizeOutcome::Pending { id, user_code } = begin_authorization(&conn, &req) else {
             panic!()
@@ -1495,6 +1708,7 @@ mod tests {
             resource: RES.into(),
             code_challenge: s256(&verifier),
             state: String::new(),
+            scope: Scope::Read,
         };
         let AuthorizeOutcome::Pending { id, user_code } = begin_authorization(&conn, &req) else {
             panic!()
@@ -1534,6 +1748,7 @@ mod tests {
             resource: RES.into(),
             code_challenge: format!("c{n}"),
             state: String::new(),
+            scope: Scope::Read,
         };
         let AuthorizeOutcome::Pending { id, user_code } = begin_authorization(&conn, &req(0))
         else {
@@ -1618,6 +1833,7 @@ mod tests {
             state: String::new(),
             status: "pending".into(),
             expires_at: 0,
+            scope: Scope::Mutate,
         };
         let page = approval_page(&p, "/oauth/authorize/status?request=i", "");
         assert!(!page.contains("<form") && !page.contains("<button") && !page.contains("<script>"));

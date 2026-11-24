@@ -1,25 +1,29 @@
 {
  "id": "e2e1.migrate-upgrade",
  "gate": "e2e-1",
- "description": "Flow 14, migration and upgrade: the host is reinstalled as a Go v0.2.4 install (the published release, the same unit, path, instance root and agent ID) and does work, one run completed and one stopped in flight; the binary is then replaced by the Rust 0.4.0 release candidate, and then upgraded in place to a newer local Rust build (0.4.1-e2e, built locally; no tag, no publish). Go is the source install, not an oracle.",
+ "description": "Flow 14, migration and upgrade: the host is reinstalled as a Go v0.2.4 install (the published release, the same unit, path, instance root and agent ID) and does work, one run completed and one stopped in flight; the binary is then replaced by the Rust 0.5.0 release candidate, and then upgraded in place to a newer local Rust build (0.5.1-e2e, built locally; no tag, no publish). Go is the source install, not an oracle.",
  "inputs": {
-  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.4.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token)",
   "files": {
    "e2etool": {
     "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
-    "sha256": "41b6bbf3b75c8d8a0dcb52b2bfe3f4f465bf70c7cdb755a9d2ae60cfded464d9"
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
    },
    "mcpwire": {
     "path": "${REPO}/evidence/e2e/mcpwire.py",
     "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
    },
    "rustNext": {
-    "path": "${PARITY}/e2e/release/rust-0.4.0-rc6-next/host-agent-linux-x64.gz",
-    "sha256": "2805713feee63f145ed41cec8ea73b418fce5848aaa06ba9d160a0146d59b696"
+    "path": "${PARITY}/e2e/release/rust-0.5.0-rc1-next/host-agent-linux-x64.gz",
+    "sha256": "cabbede97858156dc7cda57d2e2993d72140e2c225639321ff540ca4fe55422c"
+   },
+   "goUnit": {
+    "path": "${PARITY}/go-src/deploy/opute-bootstrap-mcp.service",
+    "sha256": "02246cf65d446b7bdd1dfaa62e7652ff7583e36b61a872d33835ed5799d3c3e5"
    }
   },
   "go": "/opt/opute-e2e/releases/go/v0.2.4 (published Go v0.2.4 release, SHA256SUMS pinned)",
-  "next": "Rust release set built locally with VERSION=0.4.1-e2e"
+  "next": "Rust release set built locally with VERSION=0.5.1-e2e"
  },
  "requirements": [
   {
@@ -79,7 +83,7 @@
     {
      "step": "rustInstall",
      "path": "stdout",
-     "matches": "\n0\\.4\\.0\n$"
+     "matches": "\n0\\.5\\.0\n$"
     },
     {
      "step": "rustList",
@@ -156,7 +160,7 @@
     {
      "step": "upgrade",
      "path": "stdout",
-     "matches": "\n0\\.4\\.1\\-e2e\n$"
+     "matches": "\n0\\.5\\.1\\-e2e\n$"
     },
     {
      "step": "nextList",
@@ -252,6 +256,7 @@
    "files//home/opute/.local/share/opute/opute-host-agent/sha256",
    "files//home/opute/.config/opute-e2e*",
    "files//opt/opute-e2e/releases/rust-next*",
+   "files//opt/opute-e2e/j8*",
    "files//tmp/e2e-j8-rust-instances*"
   ],
   "persist": []
@@ -273,12 +278,17 @@
    "to": "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"
   },
   {
+   "id": "goUnitCopy",
+   "copy": "goUnit",
+   "to": "/opt/opute-e2e/j8/go.service"
+  },
+  {
    "id": "aside",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && mv /home/opute/.config/opute/instances /tmp/e2e-j8-rust-instances"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && mv /home/opute/.config/opute/instances /tmp/e2e-j8-rust-instances && cp /etc/systemd/system/opute-bootstrap-mcp.service /opt/opute-e2e/j8/vm.service"
   },
   {
    "id": "goInstall",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/j8/go.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/go/v0.2.4/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "goHealth",
@@ -442,7 +452,7 @@
   },
   {
    "id": "rustInstall",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/j8/vm.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && /home/opute/.local/share/opute/opute-host-agent --version"
   },
   {
    "id": "rustHealth",
@@ -512,7 +522,7 @@
  "cleanup": [
   {
    "id": "restoreRust",
-   "guest": "systemctl stop opute-bootstrap-mcp.service && gzip -dc /opt/opute-e2e/releases/rust/v0.4.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-j8-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/releases/rust-next"
+   "guest": "systemctl stop opute-bootstrap-mcp.service && install -m 0644 /opt/opute-e2e/j8/vm.service /etc/systemd/system/opute-bootstrap-mcp.service && systemctl daemon-reload && gzip -dc /opt/opute-e2e/releases/rust/v0.5.0/host-agent-linux-x64.gz > /tmp/oha && install -o opute -g opute -m 0755 /tmp/oha /home/opute/.local/share/opute/opute-host-agent && rm /tmp/oha && sha256sum /home/opute/.local/share/opute/opute-host-agent | cut -c1-64 && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-j8-rust-instances /home/opute/.config/opute/instances && systemctl start opute-bootstrap-mcp.service && for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:3014/health && break; sleep 0.5; done && rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/releases/rust-next /opt/opute-e2e/j8"
   }
  ],
  "maxMinutes": 20

@@ -1,0 +1,227 @@
+{
+ "allowances": {
+  "broad": [],
+  "unusedAllow": [],
+  "unusedPersist": []
+ },
+ "effects": {
+  "changed": [
+   "files//tmp/e2e-agents",
+   "files//tmp/e2e-agents/cenv",
+   "files//tmp/e2e-agents/cenv/home",
+   "files//tmp/e2e-agents/cenv/home/.cache",
+   "files//tmp/e2e-agents/cenv/home/.cache/incus",
+   "files//tmp/e2e-agents/cenv/home/.config",
+   "files//tmp/e2e-agents/cenv/home/.config/incus",
+   "files//tmp/e2e-agents/cenv/home/.config/incus/config.yml",
+   "files//tmp/e2e-agents/cenv/home/.config/incus/oidctokens",
+   "files//tmp/e2e-agents/cenv/home/.config/opute",
+   "files//tmp/e2e-agents/cenv/home/.config/opute/host-resource-coordinator",
+   "files//tmp/e2e-agents/cenv/home/.config/opute/host-resource-coordinator/reservations.lock",
+   "files//tmp/e2e-agents/cenv/home/child-env.done",
+   "files//tmp/e2e-agents/cenv/instance",
+   "files//tmp/e2e-agents/cenv/instance/host-agent.lock",
+   "files//tmp/e2e-agents/cenv/state",
+   "files//tmp/e2e-agents/cenv/state/authz.sqlite",
+   "files//tmp/e2e-agents/cenv/state/authz.sqlite-shm",
+   "files//tmp/e2e-agents/cenv/state/authz.sqlite-wal",
+   "files//tmp/e2e-agents/cenv/state/credentials",
+   "files//tmp/e2e-agents/cenv/state/credentials/host-agent-provider.json",
+   "files//tmp/e2e-agents/cenv/state/host-agent.lock",
+   "files//tmp/e2e-agents/cenv/state/state.db",
+   "files//tmp/e2e-agents/cenv/state/state.db-shm",
+   "files//tmp/e2e-agents/cenv/state/state.db-wal",
+   "files//tmp/e2e-agents/child-env-recipe.yaml",
+   "incus/instances/e2e-v6",
+   "incus/networks/incusbr0/used_by",
+   "incus/profiles/default/used_by",
+   "incus/storage/default/used_by",
+   "incus/volumes/default/image/218cdcb32645f937f1fff55b7614310d7f40d7e21120e818da04023e7ba0150b",
+   "incus/volumes/default/virtual-machine/e2e-v6",
+   "links/tap99ac9a6c",
+   "modules/tap",
+   "modules/vhost_net",
+   "mounts//var/lib/incus/devices/e2e-v6/config.mount btrfs",
+   "processes//system.slice/e2e-agent-cenv.service opute-host-agen",
+   "processes//system.slice/incus.service qemu-system-x86",
+   "sockets/tcp 127.0.0.1:3050 opute-host-agen",
+   "system/unitFiles/e2e-agent-cenv.service",
+   "system/units/e2e-agent-cenv.service",
+   "system/units/sys-devices-virtual-net-tap99ac9a6c.device",
+   "system/units/sys-subsystem-net-devices-tap99ac9a6c.device",
+   "system/units/var-lib-incus-devices-e2e\\x2dv6-config.mount.mount"
+  ],
+  "residue": [
+   "modules/tap",
+   "modules/vhost_net"
+  ],
+  "residueUndeclared": [],
+  "undeclared": []
+ },
+ "failures": [],
+ "gate": "e2e-6",
+ "harnessErrors": [],
+ "journey": "e2e6.child-env",
+ "pass": true,
+ "requirements": [
+  {
+   "assertions": [
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.status",
+     "step": "vm"
+    },
+    {
+     "actual": false,
+     "equals": false,
+     "ok": true,
+     "path": "response.body.result.result.isError",
+     "step": "vm"
+    },
+    {
+     "actual": "started",
+     "equals": "started",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "console"
+    },
+    {
+     "actual": "sent",
+     "equals": "sent",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "ctrlA"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "response.body.result.structuredContent.closed",
+     "step": "detach"
+    },
+    {
+     "actual": "RUNNING\n",
+     "equals": "RUNNING\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "vmState"
+    },
+    {
+     "actual": "0\n",
+     "equals": "0\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "detached"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "consoleEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "consoleEnv"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  },
+  {
+   "assertions": [
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.agentHasExpected",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": 1,
+     "gte": 1,
+     "ok": true,
+     "path": "json.found",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": [],
+     "equals": [],
+     "ok": true,
+     "path": "json.leaked",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": true,
+     "equals": true,
+     "ok": true,
+     "path": "json.childrenKeep",
+     "step": "recipeEnv"
+    },
+    {
+     "actual": "completed",
+     "equals": "completed",
+     "ok": true,
+     "path": "response.body.result.structuredContent.status",
+     "step": "recipeDone"
+    },
+    {
+     "actual": "done\n",
+     "equals": "done\n",
+     "ok": true,
+     "path": "stdout",
+     "step": "recipeFile"
+    }
+   ],
+   "outcome": "pass",
+   "requirement": "A child process never receives the agent's secrets",
+   "spec": "openspec/changes/child-process-environment/specs/child-process-environment/spec.md"
+  }
+ ],
+ "schemaErrors": [],
+ "timings": {
+  "steps": {
+   "cenvAgent": 557,
+   "console": 864,
+   "consoleEnv": 233,
+   "ctrlA": 899,
+   "detach": 395,
+   "detached": 163,
+   "list": 540,
+   "recipeCopy": 433,
+   "recipeDone": 40479,
+   "recipeEnv": 212,
+   "recipeFile": 141,
+   "recipeRun": 247,
+   "tool": 285,
+   "vm": 6621,
+   "vmCall": 221,
+   "vmState": 160,
+   "wire": 286
+  },
+  "stepsSeconds": 98.4
+ },
+ "uncheckedOutcomes": [],
+ "unconfirmedEffects": [],
+ "unverified": []
+}

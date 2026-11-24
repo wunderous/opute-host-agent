@@ -1,0 +1,1578 @@
+{
+ "cleanup": [
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "cleanup",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml"
+   },
+   "capture": {
+    "RUN_cleanDown": "response.body.result.structuredContent.runId"
+   },
+   "id": "cleanDownStart",
+   "mcp": "tools/call",
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN_cleanDown}"
+   },
+   "id": "cleanDown",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 600,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "guest": "incus delete -f e2e-s7 2>/dev/null; runuser -u opute -- env XDG_RUNTIME_DIR=/run/user/$(id -u opute) systemctl --user stop opute-provider-k3s opute-provider-cloudflare 2>/dev/null; rm -f /home/opute/.config/systemd/user/opute-provider-*.service; rmdir /home/opute/.config/systemd/user /home/opute/.config/systemd 2>/dev/null; rm -rf /home/opute/.config/opute-e2e7 /home/opute/.opute/build-contexts/e2e-s7-v1 /opt/opute-e2e/guest/leakcheck.py; incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | xargs -r -I{} incus storage volume delete default image/{}; loginctl disable-linger opute; rm -rf /home/opute/.local/share/containers /home/opute/.config/containers /home/opute/.config/cni /home/opute/.opute/build-contexts; rmdir /home/opute/.opute 2>/dev/null; if [ -f /tmp/e2e-pkgs-before ]; then dpkg -l | awk '/^ii/{print $2}' | sort > /tmp/e2e-pkgs-after; comm -13 /tmp/e2e-pkgs-before /tmp/e2e-pkgs-after | DEBIAN_FRONTEND=noninteractive xargs -r apt-get purge -y -q >/dev/null 2>&1; fi; rm -f /tmp/e2e-pkgs-before /tmp/e2e-pkgs-after; pkill -x catatonit; rm -rf /tmp/containers-user-1001 /tmp/podman-run-1001 /var/lib/containers; rm -rf /etc/containers; mkdir -p -m 0755 /etc/apparmor.d/disable; systemctl daemon-reload; systemctl stop packagekit.service boot-complete.target 2>/dev/null; systemctl reset-failed podman-restart.service 2>/dev/null; true",
+   "id": "cleanSetup"
+  }
+ ],
+ "description": "A public website from one host-local recipe: providers installed by typed calls, then evidence/m20/minimal-site.recipe.yaml brings a K3s Service up at e2e-<run>.opute.io through a dedicated Cloudflare tunnel, the host fetches it over verified TLS, a second run skips every node, a deleted pod is replaced, no record holds a token, and the teardown recipe removes the CNAME, tunnel and guest.",
+ "effects": {
+  "allow": [
+   "files//var/lib/dpkg/info/aardvark-dns.*",
+   "files//var/lib/dpkg/info/buildah.*",
+   "files//var/lib/dpkg/info/catatonit.*",
+   "files//var/lib/dpkg/info/conmon.*",
+   "files//var/lib/dpkg/info/containernetworking-plugins.*",
+   "files//var/lib/dpkg/info/crun.*",
+   "files//var/lib/dpkg/info/fuse-overlayfs.*",
+   "files//var/lib/dpkg/info/golang-github-containers-common.*",
+   "files//var/lib/dpkg/info/golang-github-containers-image.*",
+   "files//var/lib/dpkg/info/libslirp0:amd64.*",
+   "files//var/lib/dpkg/info/libsubid4:amd64.*",
+   "files//var/lib/dpkg/info/libyajl2:amd64.*",
+   "files//var/lib/dpkg/info/netavark.*",
+   "files//var/lib/dpkg/info/passt.*",
+   "files//var/lib/dpkg/info/podman.*",
+   "files//var/lib/dpkg/info/slirp4netns.*",
+   "files//var/lib/dpkg/info/uidmap.*",
+   "files//usr/bin/buildah",
+   "files//usr/bin/catatonit",
+   "files//usr/bin/conmon",
+   "files//usr/bin/crun",
+   "files//usr/bin/fuse-overlayfs",
+   "files//usr/bin/getsubids",
+   "files//usr/bin/newgidmap",
+   "files//usr/bin/newuidmap",
+   "files//usr/bin/passt",
+   "files//usr/bin/passt.avx2",
+   "files//usr/bin/pasta",
+   "files//usr/bin/pasta.avx2",
+   "files//usr/bin/podman",
+   "files//usr/bin/podmansh",
+   "files//usr/bin/qrap",
+   "files//usr/bin/slirp4netns",
+   "files//usr/lib/systemd/system/podman*",
+   "files//usr/lib/systemd/system/cni-dhcp.*",
+   "files//usr/lib/systemd/user/podman*",
+   "files//usr/lib/systemd/system-generators/podman-system-generator",
+   "files//usr/lib/systemd/user-generators/podman-user-generator",
+   "files//etc/apparmor.d/abstractions/passt",
+   "files//etc/apparmor.d/abstractions/pasta",
+   "files//etc/apparmor.d/local/usr.bin.passt",
+   "files//etc/apparmor.d/usr.bin.passt",
+   "files//etc/cni*",
+   "files//etc/containers*",
+   "files//etc/systemd/system/default.target.wants",
+   "files//etc/systemd/system/default.target.wants/podman*",
+   "files//etc/systemd/system/sockets.target.wants/podman.socket",
+   "files//etc/systemd/system/timers.target.wants",
+   "files//etc/systemd/system/timers.target.wants/podman-auto-update.timer",
+   "system/unitFiles/podman*",
+   "system/unitFiles/cni-dhcp.*",
+   "system/units/podman*",
+   "system/units/boot-complete.target",
+   "system/units/packagekit.service",
+   "files//home/opute/.local/share/containers*",
+   "files//home/opute/.config/cni*",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/cni-dhcp.service.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/cni-dhcp.socket.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/default.target.wants",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/default.target.wants/podman-auto-update.service",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/default.target.wants/podman-clean-transient.service",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/default.target.wants/podman-restart.service",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/default.target.wants/podman.service",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/podman-auto-update.service.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/podman-auto-update.timer.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/podman-clean-transient.service.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/podman-restart.service.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/podman.service.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/podman.socket.dsh-also",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/sockets.target.wants/podman.socket",
+   "files//var/lib/systemd/deb-systemd-helper-enabled/timers.target.wants/podman-auto-update.timer",
+   "files//var/lib/apt/extended_states*",
+   "files//tmp/e2e-pkgs-before",
+   "files//tmp/containers-user-1001*",
+   "files//tmp/podman-run-1001*",
+   "files//var/lib/containers*",
+   "opute/units/podman-pause-*",
+   "processes//user.slice/user-1001.slice/user@1001.service/user.slice/podman-pause-*",
+   "processes//system.slice/opute-bootstrap-mcp.service catatonit",
+   "linger",
+   "files//var/lib/systemd/linger/opute",
+   "system/units/user@1001.service",
+   "system/units/user-runtime-dir@1001.service",
+   "system/units/user-1001.slice",
+   "system/units/run-user-1001.mount",
+   "opute/running",
+   "mounts//run/user/1001 tmpfs",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope systemd",
+   "processes//user.slice/user-1001.slice/user@1001.service/init.scope (sd-pam)",
+   "processes//user.slice/user-1001.slice/user@1001.service/session.slice/dbus.service dbus-daemon",
+   "opute/units/dbus.service",
+   "opute/units/dbus.socket",
+   "opute/units/dirmngr.socket",
+   "opute/units/gpg-agent-browser.socket",
+   "opute/units/gpg-agent-extra.socket",
+   "opute/units/gpg-agent-ssh.socket",
+   "opute/units/gpg-agent.socket",
+   "opute/units/init.scope",
+   "opute/units/keyboxd.socket",
+   "opute/units/launchpadlib-cache-clean.timer",
+   "opute/units/pk-debconf-helper.socket",
+   "opute/units/snapd.session-agent.socket",
+   "files//home/opute/.config/opute-e2e7*",
+   "files//home/opute/.config/systemd*",
+   "files//home/opute/.opute*",
+   "incus/volumes/default/image/657a74a5bcd3b9d8c6ee35175048b14c1423847f9ef97ecd68f52f145215026c",
+   "incus/storage/default/used_by",
+   "modules/br_netfilter",
+   "modules/ip6_udp_tunnel",
+   "modules/ip_set",
+   "modules/ipt_REJECT",
+   "modules/iptable_filter",
+   "modules/iptable_mangle",
+   "modules/iptable_nat",
+   "modules/nf_conntrack_netlink",
+   "modules/nf_reject_ipv4",
+   "modules/nfnetlink_acct",
+   "modules/nfnetlink_log",
+   "modules/nft_compat",
+   "modules/overlay",
+   "modules/tls",
+   "modules/udp_tunnel",
+   "modules/vxlan",
+   "modules/xt_MASQUERADE",
+   "modules/xt_NFLOG",
+   "modules/xt_addrtype",
+   "modules/xt_comment",
+   "modules/xt_conntrack",
+   "modules/xt_limit",
+   "modules/xt_mark",
+   "modules/xt_multiport",
+   "modules/xt_nat",
+   "modules/xt_nfacct",
+   "modules/xt_physdev",
+   "modules/xt_statistic",
+   "modules/xt_tcpudp",
+   "sysctl/net.bridge.bridge-nf-call-arptables",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables",
+   "sysctl/net.bridge.bridge-nf-call-iptables",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev",
+   "sysctl/net.fan.vxlan",
+   "modules/veth",
+   "files//var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble*",
+   "files//var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security*",
+   "files//var/lib/apt/lists/pkgs.zabbly.com_incus_stable_dists_noble*",
+   "files//var/lib/dpkg/status*",
+   "processes//system.slice/packagekit.service packagekitd"
+  ],
+  "optional": {
+   "files//tmp/podman-run-1001*": "Podman uses a /tmp runtime directory only without XDG_RUNTIME_DIR",
+   "files//var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble*": "the archive's indexes depend on the mirror's state at run time",
+   "files//var/lib/apt/lists/pkgs.zabbly.com_incus_stable_dists_noble*": "the archive's indexes depend on the mirror's state at run time",
+   "files//var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security*": "the archive's indexes depend on the mirror's state at run time",
+   "modules/br_netfilter": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/ip6_udp_tunnel": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/ip_set": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/ipt_REJECT": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/iptable_filter": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/iptable_mangle": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/iptable_nat": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/nf_conntrack_netlink": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/nf_reject_ipv4": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/nfnetlink_acct": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/nfnetlink_log": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/nft_compat": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/overlay": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/tls": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/udp_tunnel": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/vxlan": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_MASQUERADE": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_NFLOG": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_addrtype": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_comment": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_conntrack": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_limit": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_mark": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_multiport": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_nat": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_nfacct": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_physdev": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_statistic": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "modules/xt_tcpudp": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "processes//system.slice/opute-bootstrap-mcp.service catatonit": "Podman may still have its pause process",
+   "processes//system.slice/packagekit.service packagekitd": "PackageKit exits on its own idle timer",
+   "sysctl/net.bridge.bridge-nf-call-arptables": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "sysctl/net.bridge.bridge-nf-call-iptables": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev": "which modules K3s loads depends on how far its networking came up and on the host kernel",
+   "sysctl/net.fan.vxlan": "which modules K3s loads depends on how far its networking came up and on the host kernel"
+  },
+  "persist": [
+   "modules/br_netfilter",
+   "modules/ip6_udp_tunnel",
+   "modules/ip_set",
+   "modules/ipt_REJECT",
+   "modules/iptable_filter",
+   "modules/iptable_mangle",
+   "modules/iptable_nat",
+   "modules/nf_conntrack_netlink",
+   "modules/nf_reject_ipv4",
+   "modules/nfnetlink_acct",
+   "modules/nfnetlink_log",
+   "modules/nft_compat",
+   "modules/overlay",
+   "modules/tls",
+   "modules/udp_tunnel",
+   "modules/vxlan",
+   "modules/xt_MASQUERADE",
+   "modules/xt_NFLOG",
+   "modules/xt_addrtype",
+   "modules/xt_comment",
+   "modules/xt_conntrack",
+   "modules/xt_limit",
+   "modules/xt_mark",
+   "modules/xt_multiport",
+   "modules/xt_nat",
+   "modules/xt_nfacct",
+   "modules/xt_physdev",
+   "modules/xt_statistic",
+   "modules/xt_tcpudp",
+   "sysctl/net.bridge.bridge-nf-call-arptables",
+   "sysctl/net.bridge.bridge-nf-call-ip6tables",
+   "sysctl/net.bridge.bridge-nf-call-iptables",
+   "sysctl/net.bridge.bridge-nf-filter-pppoe-tagged",
+   "sysctl/net.bridge.bridge-nf-filter-vlan-tagged",
+   "sysctl/net.bridge.bridge-nf-pass-vlan-input-dev",
+   "sysctl/net.fan.vxlan",
+   "modules/veth",
+   "files//var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble*",
+   "files//var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_noble-security*",
+   "files//var/lib/apt/lists/pkgs.zabbly.com_incus_stable_dists_noble*",
+   "files//var/lib/dpkg/status*",
+   "processes//system.slice/packagekit.service packagekitd"
+  ]
+ },
+ "gate": "e2e-7",
+ "id": "e2e7.public-site",
+ "inputs": {
+  "agent": "the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust 0.5.0 release candidate binary, test identity e2e-devvm-agent, test token)",
+  "files": {
+   "cloudflareEnv": {
+    "path": "${PARITY}/minimal-site/cloudflare.env",
+    "secret": true,
+    "secretKeys": [
+     "CLOUDFLARE_API_TOKEN"
+    ]
+   },
+   "e2etool": {
+    "path": "${REPO}/evidence/e2e/guest-tools/e2etool.py",
+    "sha256": "fb3d5480cc4a6b5f352ae67e0036a2b91179fdd8b4f1ccf9aa205474b2ba89fb"
+   },
+   "leakcheck": {
+    "path": "${REPO}/evidence/e2e/guest-tools/leakcheck.py",
+    "sha256": "3ecdae345c7723a1e09f9612a6d2bf0ea4d8b6329ea9f0f80dbbda157aed59b8"
+   },
+   "mcpwire": {
+    "path": "${REPO}/evidence/e2e/mcpwire.py",
+    "sha256": "ab7a4bbac670918d7ab10f31ad5f157998404c8548b5c3ec974cae7aec0ab4fc"
+   }
+  },
+  "hostname": "e2e-${RUN}.opute.io, a CNAME the Cloudflare provider creates in the owner's opute.io zone and removes",
+  "k3s": "K3s v1.31.8+k3s1, downloaded by the provider; nginx and cloudflared images pulled from public registries",
+  "providers": "the release's K3s and Cloudflare provider executables, started as user units by typed calls",
+  "site": "evidence/m20/e2e-site, a static page built into an nginx image"
+ },
+ "maxMinutes": 30,
+ "requirements": [
+  {
+   "pass": [
+    {
+     "equals": "127.0.0.1:4320\n",
+     "path": "stdout",
+     "step": "k3sPort"
+    },
+    {
+     "equals": "127.0.0.1:4330\n",
+     "path": "stdout",
+     "step": "cloudflarePort"
+    }
+   ],
+   "requirement": "Provider executables listen on loopback only",
+   "scenario": "Each installed provider listens on its configured IPv4 loopback socket",
+   "spec": "openspec/changes/provider-loopback-listen/specs/provider-loopback-listen/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.plan.valid",
+     "step": "validateSite"
+    },
+    {
+     "equals": true,
+     "path": "response.body.result.structuredContent.plan.valid",
+     "step": "validateDown"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.context.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.cluster.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.registry.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.image.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.workload.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.domain.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.tunnel.status",
+     "step": "up"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.context.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.guest-address.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.cluster.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.registry.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.image.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.workload.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.domain.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.tunnel.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.connector.status",
+     "step": "again"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.public.status",
+     "step": "again"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "page"
+    },
+    {
+     "equals": true,
+     "path": "response.tlsVerified",
+     "step": "page"
+    },
+    {
+     "contains": "e2e7 public site",
+     "path": "response.body",
+     "step": "page"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.result.isError",
+     "step": "deletePod"
+    },
+    {
+     "equals": "replaced\n",
+     "path": "stdout",
+     "step": "podBack"
+    },
+    {
+     "equals": 200,
+     "path": "response.status",
+     "step": "pageAgain"
+    },
+    {
+     "contains": "e2e7 public site",
+     "path": "response.body",
+     "step": "pageAgain"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "down"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.tunnel.status",
+     "step": "down"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "down"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.context.status",
+     "step": "down"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "downAgain"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.tunnel.status",
+     "step": "downAgain"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "downAgain"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.context.status",
+     "step": "downAgain"
+    },
+    {
+     "in": [
+      0,
+      3
+     ],
+     "path": "response.json.Status",
+     "step": "dns"
+    },
+    {
+     "absent": true,
+     "path": "response.json.Answer",
+     "step": "dns"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.structuredContent.routed",
+     "step": "tunnelGone"
+    },
+    {
+     "equals": "",
+     "path": "response.body.result.structuredContent.tunnelId",
+     "step": "tunnelGone"
+    },
+    {
+     "equals": "0\n",
+     "path": "stdout",
+     "step": "guestGone"
+    },
+    {
+     "equals": "0\n0\n0\n",
+     "path": "stdout",
+     "step": "unitsGone"
+    }
+   ],
+   "requirement": "One typed plan and recipe execution path",
+   "scenario": "One host-local recipe run brings a K3s Service up at a public hostname that the host fetches over verified TLS, a second run skips every node, a deleted pod is replaced, and one teardown run removes the CNAME, the tunnel and the guest (goal m20)",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": true,
+     "path": "response.body.result.isError",
+     "step": "validateNested"
+    },
+    {
+     "matches": "recipe node \"inner\" cannot recursively run run_host_local_recipe",
+     "path": "response.body.result.content[0].text",
+     "step": "validateNested"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sInstall"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareInstall"
+    },
+    {
+     "equals": "completed",
+     "path": "response.body.result.structuredContent.status",
+     "step": "up"
+    }
+   ],
+   "requirement": "A plan node never starts a plan run of its own",
+   "scenario": "A recipe that runs another recipe is refused at validation; the providers installed by typed calls first serve the site recipe's nodes (D44)",
+   "spec": "openspec/changes/refuse-nested-plan-runs/specs/refuse-nested-plan-runs/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.guest-address.status",
+     "step": "up"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.connector.status",
+     "step": "up"
+    },
+    {
+     "equals": "satisfied",
+     "path": "response.body.result.structuredContent.nodes.public.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.guest.status",
+     "step": "up"
+    },
+    {
+     "equals": "applied",
+     "path": "response.body.result.structuredContent.nodes.tunnel.status",
+     "step": "up"
+    }
+   ],
+   "requirement": "A validation-only node always evaluates its validation",
+   "scenario": "guest-address, connector and public each follow an applied node and are satisfied by their validation (D45)",
+   "spec": "openspec/changes/validation-only-node-validates/specs/validation-only-node-validates/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "600 opute\n",
+     "path": "stdout",
+     "step": "envOwner"
+    },
+    {
+     "equals": true,
+     "path": "json.apiToken.present",
+     "step": "leaks"
+    },
+    {
+     "equals": true,
+     "path": "json.runToken.present",
+     "step": "leaks"
+    },
+    {
+     "equals": true,
+     "path": "json.clean",
+     "step": "leaks"
+    }
+   ],
+   "requirement": "Durable and redacted observations",
+   "scenario": "The Cloudflare API token and the tunnel's run token are in no file under the agent's home but the owner's credentials file, in no journal line and in neither run record",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  },
+  {
+   "pass": [
+    {
+     "equals": "ready",
+     "path": "response.body.result.structuredContent.status",
+     "step": "supervisor"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "builder"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sUnit"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sStart"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sActivation"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "k3sStop"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareUnit"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareStart"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareActivation"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "cloudflareStop"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "k3sUnitRemove"
+    },
+    {
+     "equals": false,
+     "path": "response.body.result.result.isError",
+     "step": "cloudflareUnitRemove"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "siteRecipe"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "downRecipe"
+    },
+    {
+     "in": [
+      false,
+      "<absent>"
+     ],
+     "path": "response.body.result.isError",
+     "step": "nestedRecipe"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "k3sListed"
+    },
+    {
+     "equals": "yes\nbus\n",
+     "path": "stdout",
+     "step": "linger"
+    },
+    {
+     "equals": "/usr/bin/podman\n",
+     "path": "stdout",
+     "step": "podman"
+    },
+    {
+     "equals": "91f0b596492e3c72fb5eacba4c14c6141e7da584eebfa88bc4ffbc72573c7788\n",
+     "path": "stdout",
+     "step": "k3sActivationFile"
+    },
+    {
+     "equals": "6fec9957909058f39bc48bd35becae2e46be55a06b9b2ff4a9928a608772f460\n",
+     "path": "stdout",
+     "step": "cloudflareActivationFile"
+    },
+    {
+     "equals": "58c168a741ddefc655389bc5e3f4e541c276cb5af1281acd919b8a81cc803149\n24331621f8ef9d3db03db3f0e23685d63da9d7c66555e272768ad8e95584aee8\n3255cf1b92ac9a4fc2782acee31095d2b1bab3ef2ee2df4ffb4ae75d5f05a16c\n",
+     "path": "stdout",
+     "step": "recipeFiles"
+    },
+    {
+     "equals": true,
+     "path": "json.listed",
+     "step": "cloudflareListed"
+    }
+   ],
+   "requirement": "Revisioned provider-neutral catalog and lifecycle",
+   "scenario": "The K3s and Cloudflare providers, started as user units and installed by opute.provider.install, publish their tools in the agent's catalog",
+   "spec": "openspec/specs/host-agent-contract/spec.md"
+  }
+ ],
+ "steps": [
+  {
+   "copy": "e2etool",
+   "id": "tool",
+   "to": "/opt/opute-e2e/guest/e2etool.py"
+  },
+  {
+   "copy": "mcpwire",
+   "id": "wire",
+   "to": "/opt/opute-e2e/guest/mcpwire.py"
+  },
+  {
+   "copy": "leakcheck",
+   "id": "leakCopy",
+   "to": "/opt/opute-e2e/guest/leakcheck.py"
+  },
+  {
+   "copy": "cloudflareEnv",
+   "id": "envCopy",
+   "mode": "0600",
+   "to": "/home/opute/.config/opute-e2e7/cloudflare.env"
+  },
+  {
+   "guest": "chown -R opute:opute /home/opute/.config/opute-e2e7 && stat -c '%a %U' /home/opute/.config/opute-e2e7/cloudflare.env",
+   "id": "envOwner"
+  },
+  {
+   "arguments": {},
+   "id": "supervisor",
+   "mcp": "tools/call",
+   "tool": "ensure_host_service_supervisor"
+  },
+  {
+   "confirms": [
+    "supervisor"
+   ],
+   "guest": "for i in $(seq 100); do [ -S /run/user/$(id -u opute)/bus ] && break; sleep 0.1; done; loginctl show-user opute -p Linger --value; test -S /run/user/$(id -u opute)/bus && echo bus",
+   "id": "linger"
+  },
+  {
+   "guest": "dpkg -l | awk '/^ii/{print $2}' | sort > /tmp/e2e-pkgs-before && echo recorded",
+   "id": "pkgsBefore"
+  },
+  {
+   "arguments": {},
+   "capture": {
+    "TID_builder": "response.body.result.taskId"
+   },
+   "id": "builderCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "tool": "ensure_oci_builder"
+  },
+  {
+   "id": "builder",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     }
+    }
+   },
+   "params": {
+    "taskId": "${TID_builder}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "confirms": [
+    "builder"
+   ],
+   "guest": "command -v podman",
+   "id": "podman"
+  },
+  {
+   "arguments": {
+    "content": "[Unit]\nDescription=Opute k3s provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4320\nExecStart=/opt/opute-e2e/releases/rust/v0.5.0/opute-provider-k3s-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
+    "mode": 420,
+    "path": "/home/opute/.config/systemd/user/opute-provider-k3s.service",
+    "scope": "user"
+   },
+   "id": "k3sUnit",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "state": "restart",
+    "uri": "host-service:local:user/opute-provider-k3s"
+   },
+   "id": "k3sStart",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.k3s.managed\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-kubernetes\n  servingContract: kubernetes.v1\n  capabilities: [kubernetes]\nactivation:\n  capability: kubernetes\n  servingContract: kubernetes.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [get_host_info]\ninputs:\n  providerId:\n    default: com.opute.k3s\n    schema: {type: string, const: com.opute.k3s}\n  # Provider activation is repeatable. A caller-scoped nonce keeps a fresh\n  # activation from replaying a terminal plan that belongs to an older\n  # provider generation.\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.k3s.managed\n  generation: 1\n  idempotencyKey: com.opute.k3s-$${vars.inputs.providerId}-$${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: get_host_info\n",
+    "mode": 420,
+    "path": "/home/opute/.config/opute-e2e7/k3s-activate.yaml",
+    "scope": "user"
+   },
+   "id": "k3sActivation",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "confirms": [
+    "k3sUnit",
+    "k3sStart"
+   ],
+   "guest": "for i in $(seq 60); do ss -ltnH 'sport = :4320' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4320' | awk '{print $4}'",
+   "id": "k3sPort"
+  },
+  {
+   "confirms": [
+    "k3sActivation"
+   ],
+   "guest": "sha256sum /home/opute/.config/opute-e2e7/k3s-activate.yaml | cut -c1-64",
+   "id": "k3sActivationFile"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.kubernetes.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.k3s",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4320/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.2"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e7/k3s-activate.yaml"
+   },
+   "id": "k3sInstall",
+   "mcp": "tools/call",
+   "tool": "opute.provider.install"
+  },
+  {
+   "confirms": [
+    "k3sInstall"
+   ],
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"opute.capability.kubernetes.provision\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"opute.capability.kubernetes.provision\" in names, \"tools\": len(names)}))' '${TOKEN}'",
+   "id": "k3sListed"
+  },
+  {
+   "arguments": {
+    "content": "[Unit]\nDescription=Opute cloudflare provider (e2e7)\n\n[Service]\nEnvironment=OPUTE_PROVIDER_PORT=4330\nEnvironment=OPUTE_HOST_AGENT_ENDPOINT=http://127.0.0.1:3014/mcp\nEnvironmentFile=/etc/opute/host-agent.env\nEnvironmentFile=/home/opute/.config/opute-e2e7/cloudflare.env\nExecStart=/opt/opute-e2e/releases/rust/v0.5.0/opute-provider-cloudflare-linux-x64\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n",
+    "mode": 420,
+    "path": "/home/opute/.config/systemd/user/opute-provider-cloudflare.service",
+    "scope": "user"
+   },
+   "id": "cloudflareUnit",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "state": "restart",
+    "uri": "host-service:local:user/opute-provider-cloudflare"
+   },
+   "id": "cloudflareStart",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "content": "contractVersion: runtime-recipe.v1\nrecipeId: com.opute.cloudflare.activate-tunneling\nrecipeVersion: 1.0.0\nruntime:\n  id: provider-tunneling\n  servingContract: tunneling.v1\n  capabilities: [tunneling]\nactivation:\n  capability: tunneling\n  servingContract: tunneling.v1\n  inputBindings:\n    providerId: providerId\ncompatibility:\n  requiredTools: [get_host_info]\ninputs:\n  providerId:\n    default: com.opute.cloudflare\n    schema: {type: string, const: com.opute.cloudflare}\n  activationNonce:\n    default: default\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.cloudflare.activate-tunneling\n  generation: 1\n  idempotencyKey: com.opute.cloudflare.tunneling-$${vars.inputs.providerId}-$${vars.inputs.activationNonce}\n  nodes:\n    - id: host\n      action:\n        tool: get_host_info\n",
+    "mode": 420,
+    "path": "/home/opute/.config/opute-e2e7/cloudflare-activate.yaml",
+    "scope": "user"
+   },
+   "id": "cloudflareActivation",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "confirms": [
+    "cloudflareUnit",
+    "cloudflareStart"
+   ],
+   "guest": "for i in $(seq 60); do ss -ltnH 'sport = :4330' | grep -q . && break; sleep 0.5; done; ss -ltnH 'sport = :4330' | awk '{print $4}'",
+   "id": "cloudflarePort"
+  },
+  {
+   "confirms": [
+    "cloudflareActivation"
+   ],
+   "guest": "sha256sum /home/opute/.config/opute-e2e7/cloudflare-activate.yaml | cut -c1-64",
+   "id": "cloudflareActivationFile"
+  },
+  {
+   "arguments": {
+    "activate": true,
+    "descriptor": {
+     "capabilities": [
+      {
+       "id": "opute.capability.tunneling.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.mesh-runtime.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.mesh-membership.v1",
+       "version": 1
+      },
+      {
+       "id": "opute.capability.public-ingress.v1",
+       "version": 1
+      }
+     ],
+     "pluginId": "com.opute.cloudflare",
+     "schema": "opute-provider-plugin.v1",
+     "server": {
+      "endpoint": "http://127.0.0.1:4330/mcp",
+      "transport": "streamable_http"
+     },
+     "version": "1.0.1"
+    },
+    "recipeSource": "/home/opute/.config/opute-e2e7/cloudflare-activate.yaml"
+   },
+   "id": "cloudflareInstall",
+   "mcp": "tools/call",
+   "tool": "opute.provider.install"
+  },
+  {
+   "confirms": [
+    "cloudflareInstall"
+   ],
+   "guest": "python3 -c 'import sys, time, json; sys.path.insert(0, \"/opt/opute-e2e/guest\"); import mcpwire\nfor i in range(120):\n    r = mcpwire.mcp(3014, sys.argv[1], \"tools/list\", request_id=i + 1)\n    names = [t[\"name\"] for t in ((r.get(\"body\") or {}).get(\"result\") or {}).get(\"tools\") or []]\n    if \"ensure_cloudflared_tunnel\" in names: break\n    time.sleep(0.5)\nprint(json.dumps({\"listed\": \"ensure_cloudflared_tunnel\" in names, \"tools\": len(names)}))' '${TOKEN}'",
+   "id": "cloudflareListed"
+  },
+  {
+   "id": "catalogProviders",
+   "mcp": "tools/list"
+  },
+  {
+   "arguments": {
+    "content": "# m20: a static website served from a K3s Service and published at a Cloudflare hostname, brought up by one\n# run_host_local_recipe. Every node is a typed tool with a validate on its effect, so a second run finds each\n# effect in place and skips every action (status \"satisfied\").\n#\n# Host prerequisites, set up once by typed calls before the first run (evidence/m20/README.md): the K3s and\n# Cloudflare providers installed with opute.provider.install (an install runs its own activation recipe, which\n# a node of this recipe cannot do, D44), and the container builder.\n#\n# The cluster pulls the image from the in-cluster registry as localhost:30500 (the registry's NodePort on the\n# node itself), which containerd reaches over plain HTTP with no registry configuration. The host pushes to\n# the same registry at the guest's address.\ncontractVersion: host-recipe.v1\nrecipeId: com.opute.host-agent.minimal-site\nrecipeVersion: 1.0.0\nexecution:\n  coordinator: host-agent\n  mode: local\ncompatibility:\n  requiredTools:\n    - provision_vm\n    - get_vm_info\n    - opute.capability.kubernetes.provision\n    - opute.capability.kubernetes.status\n    - install_oci_registry\n    - get_oci_registry_status\n    - stage_build_context\n    - inspect_host_file\n    - build_and_push_oci_image\n    - probe_http_endpoint\n    - apply_manifest\n    - get_cluster_resource_status\n    - configure_service_domain\n    - get_cluster_resource\n    - ensure_cloudflared_tunnel\n    - get_cloudflare_tunnel_status\ninputs:\n  hostname:\n    required: true\n    description: Public hostname; the provider creates its tunnel route and CNAME.\n    schema: {type: string, pattern: '^(minimal|e2e-[a-z0-9-]{1,40})\\.opute\\.io$'}\n  tunnelName:\n    required: true\n    description: Name of the dedicated Cloudflare tunnel that serves the hostname.\n    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,62}$'}\n  name:\n    required: true\n    description: Name of the guest container and its single-node K3s cluster.\n    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,30}$'}\n  guestImage:\n    required: true\n    description: Incus image alias for the guest container.\n    schema: {type: string, minLength: 1}\n  contextDir:\n    required: true\n    description: Absolute host directory the build context is staged into, one per site version.\n    schema: {type: string, pattern: '^/.+$'}\n  contextFiles:\n    required: true\n    description: The site's build context (relative path to file content), with a Dockerfile at its root.\n    schema: {type: object, minProperties: 1, additionalProperties: {type: string}, required: [Dockerfile]}\n  contextEncoding:\n    default: utf8\n    schema: {type: string, enum: [utf8, base64]}\n  siteVersion:\n    required: true\n    description: Version of the site image; a new context needs a new version.\n    schema: {type: string, pattern: '^[a-z0-9][a-z0-9.-]{0,40}$'}\n  containerPort:\n    default: 80\n    schema: {type: integer, minimum: 1, maximum: 65535}\n  k3sVersion:\n    default: v1.31.8+k3s1\n    schema: {type: string, minLength: 1}\n  runNonce:\n    default: default\n    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.host-agent.minimal-site\n  generation: 1\n  idempotencyKey: com.opute.host-agent.minimal-site-$${vars.inputs.name}-$${vars.inputs.hostname}-$${vars.inputs.siteVersion}-$${vars.inputs.runNonce}\n  defaults:\n    timeoutMs: 900000\n  # A node reads its effect before acting (preflight) unless a node it depends on was applied in this run. A\n  # read of a guest or cluster that does not exist yet is refused, so every node that creates one depends on\n  # the node applied just before it: from clean state each runs its action, and on a second run each finds\n  # its effect and skips. The teardown removes the staged context, which starts that chain again.\n  nodes:\n    - id: context\n      action:\n        tool: stage_build_context\n        args: {destDir: '$${vars.inputs.contextDir}', files: '$${vars.inputs.contextFiles}',\n          fileEncoding: '$${vars.inputs.contextEncoding}'}\n      validate:\n        tool: inspect_host_file\n        args: {path: '$${vars.inputs.contextDir}/Dockerfile'}\n        assert:\n          - {path: /exists, op: eq, value: true}\n    - id: guest\n      dependsOn: [context]\n      timeoutMs: 600000\n      action:\n        tool: provision_vm\n        args: {name: '$${vars.inputs.name}', image: '$${vars.inputs.guestImage}', instanceType: container, cpus: 2,\n          memory: 4GiB, disk: 20GiB}\n      validate:\n        tool: get_vm_info\n        args: {uri: 'container:local:$${vars.inputs.name}', fast: true}\n        assert:\n          - {path: /status, op: eq, value: running}\n    # Validation only: waits for the guest's address, which the image node pushes to.\n    - id: guest-address\n      dependsOn: [guest]\n      validate:\n        tool: get_vm_info\n        args: {uri: 'container:local:$${vars.inputs.name}', fast: true}\n        assert:\n          - {path: /ipv4/0, op: matches, value: '^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$'}\n        pollIntervalMs: 2000\n        timeoutMs: 120000\n    - id: cluster\n      dependsOn: [guest, guest-address]\n      timeoutMs: 1200000\n      action:\n        tool: opute.capability.kubernetes.provision\n        args: {targetUri: 'container:local:$${vars.inputs.name}', providerInstanceName: '$${vars.inputs.name}',\n          instanceType: container, version: '$${vars.inputs.k3sVersion}', clusterInit: true}\n      validate:\n        tool: opute.capability.kubernetes.status\n        args: {targetUri: 'cluster:local:$${vars.inputs.name}', providerInstanceName: '$${vars.inputs.name}',\n          instanceType: container}\n        assert:\n          - {path: /readyNodeCount, op: eq, value: 1}\n        pollIntervalMs: 5000\n        timeoutMs: 300000\n    - id: registry\n      dependsOn: [cluster]\n      timeoutMs: 600000\n      action:\n        tool: install_oci_registry\n        args: {uri: 'cluster:local:$${vars.inputs.name}', image: 'registry:2.8.3', storageSize: 1Gi}\n      validate:\n        tool: get_oci_registry_status\n        args: {uri: 'cluster:local:$${vars.inputs.name}'}\n        assert:\n          - {path: /deployment/status/readyReplicas, op: eq, value: 1}\n        pollIntervalMs: 5000\n        timeoutMs: 300000\n    - id: image\n      dependsOn: [registry, context]\n      timeoutMs: 1200000\n      action:\n        tool: build_and_push_oci_image\n        args: {contextDir: '$${vars.inputs.contextDir}', insecureRegistry: true,\n          image: '$${nodes.guest-address.output.ipv4.0}:30500/site/$${vars.inputs.siteVersion}:latest'}\n      # A repository per version: its tag list exists once that version is pushed.\n      validate:\n        tool: probe_http_endpoint\n        args: {endpoint: 'http://$${nodes.guest-address.output.ipv4.0}:30500/v2/site/$${vars.inputs.siteVersion}/tags/list'}\n        assert:\n          - {path: /statusCode, op: eq, value: 200}\n    - id: workload\n      dependsOn: [image]\n      timeoutMs: 600000\n      action:\n        tool: apply_manifest\n        args:\n          uri: 'cluster:local:$${vars.inputs.name}'\n          manifest: |\n            apiVersion: v1\n            kind: Namespace\n            metadata:\n              name: site\n            ---\n            apiVersion: apps/v1\n            kind: Deployment\n            metadata:\n              name: site-$${vars.inputs.siteVersion}\n              namespace: site\n            spec:\n              replicas: 1\n              selector:\n                matchLabels: {app.kubernetes.io/name: site, app.kubernetes.io/version: '$${vars.inputs.siteVersion}'}\n              template:\n                metadata:\n                  labels: {app.kubernetes.io/name: site, app.kubernetes.io/version: '$${vars.inputs.siteVersion}'}\n                spec:\n                  containers:\n                    - name: web\n                      image: localhost:30500/site/$${vars.inputs.siteVersion}:latest\n                      ports: [{name: http, containerPort: $${vars.inputs.containerPort}}]\n                      readinessProbe:\n                        httpGet: {path: /, port: http}\n            ---\n            apiVersion: v1\n            kind: Service\n            metadata:\n              name: site\n              namespace: site\n            spec:\n              selector: {app.kubernetes.io/name: site, app.kubernetes.io/version: '$${vars.inputs.siteVersion}'}\n              ports: [{name: http, port: 80, targetPort: http}]\n      # Assertion values are not interpolated, so the version is in the Deployment's name: a new version is a\n      # new Deployment, and the Service's selector moves to it.\n      validate:\n        tool: get_cluster_resource_status\n        args: {uri: 'cluster:local:$${vars.inputs.name}', resourceKind: Deployment, namespace: site,\n          resourceName: 'site-$${vars.inputs.siteVersion}'}\n        assert:\n          - {path: /status, op: eq, value: ready}\n        pollIntervalMs: 5000\n        timeoutMs: 300000\n    - id: domain\n      dependsOn: [workload]\n      action:\n        tool: configure_service_domain\n        args: {uri: 'cluster:local:$${vars.inputs.name}', namespace: site, ingressName: '$${vars.inputs.hostname}', ingressClass: traefik,\n          hostname: '$${vars.inputs.hostname}', serviceName: site, servicePort: 80}\n      validate:\n        tool: get_cluster_resource\n        args: {uri: 'cluster:local:$${vars.inputs.name}', kind: Ingress, namespace: site,\n          resourceName: '$${vars.inputs.hostname}'}\n        assert:\n          # The read returns the resource as JSON text; the Ingress is named after the hostname it routes.\n          - {path: /json, op: notEmpty}\n    # The connector runs in the cluster and sends the public hostname to Traefik, which routes it by the\n    # domain's Ingress.\n    - id: tunnel\n      dependsOn: [domain]\n      timeoutMs: 600000\n      action:\n        tool: ensure_cloudflared_tunnel\n        args: &tunnel\n          bindingId: site\n          hostname: '$${vars.inputs.hostname}'\n          tunnelName: '$${vars.inputs.tunnelName}'\n          localTarget: 'http://traefik.kube-system.svc.cluster.local:80'\n          placement: kubernetes\n          targetUri: 'cluster:local:$${vars.inputs.name}'\n          manageHostConnector: true\n      validate:\n        tool: get_cloudflare_tunnel_status\n        args: *tunnel\n        assert:\n          - {path: /routed, op: eq, value: true}\n    # Validation only: the connector the tunnel node installed is running.\n    - id: connector\n      dependsOn: [tunnel]\n      validate:\n        tool: get_cluster_resource_status\n        args: {uri: 'cluster:local:$${vars.inputs.name}', resourceKind: Deployment, namespace: cloudflare-connector,\n          resourceName: cloudflared}\n        assert:\n          - {path: /status, op: eq, value: ready}\n        pollIntervalMs: 5000\n        timeoutMs: 300000\n    # Validation only: the public URL answers over TLS the agent verifies.\n    - id: public\n      dependsOn: [connector]\n      validate:\n        tool: probe_http_endpoint\n        args: {endpoint: 'https://$${vars.inputs.hostname}/'}\n        assert:\n          - {path: /statusCode, op: eq, value: 200}\n        pollIntervalMs: 10000\n        timeoutMs: 600000\n",
+    "mode": 420,
+    "path": "/home/opute/.config/opute-e2e7/minimal-site.recipe.yaml",
+    "scope": "user"
+   },
+   "id": "siteRecipe",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "content": "# m20: removes what minimal-site.recipe.yaml made: the guest container with its cluster, registry, workload\n# and connector, then the tunnel and its CNAME at Cloudflare. Each node validates the absence it makes, so\n# a second run skips every action.\n#\n# The guest goes first because the connector runs in its cluster, and remove-host-tunnel stops only a\n# host-placed connector. Cloudflare refuses to delete a tunnel that still has connections (error 1022, found\n# by e2e7 under m20-r1), and closes them within minutes of the connector stopping, so the tunnel node retries.\n#\n# Removing the staged context's Dockerfile makes the next site run stage it again, so that run applies every\n# node from clean state.\n#\n# Assertion values are not interpolated, and a read of a removed guest is refused rather than answered, so the\n# guest node asserts the guest's absence from list_vms by its literal name. The caller fills in e2e-s7\n# with the `name` input, as the www-opute-io deploy script fills in its recipe's expected image.\ncontractVersion: host-recipe.v1\nrecipeId: com.opute.host-agent.minimal-site.teardown\nrecipeVersion: 1.0.0\nexecution:\n  coordinator: host-agent\n  mode: local\ncompatibility:\n  requiredTools:\n    - opute.capability.tunneling.remove-host-tunnel\n    - get_cloudflare_tunnel_status\n    - delete_vm\n    - list_vms\n    - remove_host_file\n    - inspect_host_file\ninputs:\n  hostname:\n    required: true\n    schema: {type: string, pattern: '^(minimal|e2e-[a-z0-9-]{1,40})\\.opute\\.io$'}\n  tunnelName:\n    required: true\n    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,62}$'}\n  name:\n    required: true\n    schema: {type: string, pattern: '^[a-z][a-z0-9-]{0,30}$'}\n  contextDir:\n    required: true\n    schema: {type: string, pattern: '^/.+$'}\n  runNonce:\n    default: default\n    description: A new value starts a new run with the same inputs; it finds every effect in place and skips.\n    schema: {type: string, minLength: 1, maxLength: 128}\nplan:\n  contractVersion: host-plan.v1\n  planId: com.opute.host-agent.minimal-site.teardown\n  generation: 1\n  idempotencyKey: com.opute.host-agent.minimal-site.teardown-$${vars.inputs.name}-$${vars.inputs.hostname}-$${vars.inputs.runNonce}\n  defaults:\n    timeoutMs: 600000\n  nodes:\n    - id: guest\n      action:\n        tool: delete_vm\n        args: {uri: 'container:local:$${vars.inputs.name}'}\n      validate:\n        tool: list_vms\n        args: {fast: true}\n        assert:\n          - path: /vms\n            op: all\n            assertions:\n              - {path: /name, op: ne, value: e2e-s7}\n        pollIntervalMs: 2000\n        timeoutMs: 120000\n    - id: tunnel\n      dependsOn: [guest]\n      retry: {maxAttempts: 6, backoffMs: 10000, backoffFactor: 2}\n      action:\n        tool: opute.capability.tunneling.remove-host-tunnel\n        args: &tunnel\n          bindingId: site\n          hostname: '$${vars.inputs.hostname}'\n          tunnelName: '$${vars.inputs.tunnelName}'\n          localTarget: 'http://traefik.kube-system.svc.cluster.local:80'\n          placement: kubernetes\n          targetUri: 'cluster:local:$${vars.inputs.name}'\n      validate:\n        tool: get_cloudflare_tunnel_status\n        args: *tunnel\n        assert:\n          - {path: /routed, op: eq, value: false}\n          - {path: /tunnelId, op: empty}\n    - id: context\n      dependsOn: [tunnel]\n      action:\n        tool: remove_host_file\n        args: {path: '$${vars.inputs.contextDir}/Dockerfile', confirm: true}\n      validate:\n        tool: inspect_host_file\n        args: {path: '$${vars.inputs.contextDir}/Dockerfile'}\n        assert:\n          - {path: /exists, op: eq, value: false}\n",
+    "mode": 420,
+    "path": "/home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml",
+    "scope": "user"
+   },
+   "id": "downRecipe",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "arguments": {
+    "content": "{\"contractVersion\": \"host-recipe.v1\", \"recipeId\": \"com.opute.e2e.nested\", \"recipeVersion\": \"1.0.0\", \"execution\": {\"coordinator\": \"host-agent\", \"mode\": \"local\"}, \"compatibility\": {\"requiredTools\": [\"run_host_local_recipe\", \"get_host_plan_run\"]}, \"plan\": {\"contractVersion\": \"host-plan.v1\", \"planId\": \"com.opute.e2e.nested\", \"generation\": 1, \"idempotencyKey\": \"e2e-nested\", \"nodes\": [{\"id\": \"inner\", \"action\": {\"tool\": \"run_host_local_recipe\", \"args\": {\"source\": \"/home/opute/.config/opute-e2e7/minimal-site.recipe.yaml\"}}, \"validate\": {\"tool\": \"get_host_plan_run\", \"args\": {\"runId\": \"x\"}, \"assert\": [{\"path\": \"/status\", \"op\": \"eq\", \"value\": \"completed\"}]}}]}}",
+    "mode": 420,
+    "path": "/home/opute/.config/opute-e2e7/nested.recipe.yaml",
+    "scope": "user"
+   },
+   "id": "nestedRecipe",
+   "mcp": "tools/call",
+   "tool": "ensure_host_file"
+  },
+  {
+   "confirms": [
+    "siteRecipe",
+    "downRecipe",
+    "nestedRecipe"
+   ],
+   "guest": "sha256sum /home/opute/.config/opute-e2e7/minimal-site.recipe.yaml /home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml /home/opute/.config/opute-e2e7/nested.recipe.yaml | cut -c1-64",
+   "id": "recipeFiles"
+  },
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "contextFiles": {
+      "Dockerfile": "FROM docker.io/library/nginx:1.27-alpine\nCOPY index.html /usr/share/nginx/html/index.html\n# stage_build_context writes files 0600; nginx reads them as its own user\nRUN chmod -R a+rX /usr/share/nginx/html\n",
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>e2e7 public site</title></head>\n<body><h1>e2e7 public site</h1><p>Served by a K3s Service through a Cloudflare tunnel.</p></body>\n</html>\n"
+     },
+     "guestImage": "parity-noble",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "up",
+     "siteVersion": "v1",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site.recipe.yaml"
+   },
+   "id": "validateSite",
+   "mcp": "tools/call",
+   "tool": "validate_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "down",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml"
+   },
+   "id": "validateDown",
+   "mcp": "tools/call",
+   "tool": "validate_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "source": "/home/opute/.config/opute-e2e7/nested.recipe.yaml"
+   },
+   "id": "validateNested",
+   "mcp": "tools/call",
+   "tool": "validate_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "contextFiles": {
+      "Dockerfile": "FROM docker.io/library/nginx:1.27-alpine\nCOPY index.html /usr/share/nginx/html/index.html\n# stage_build_context writes files 0600; nginx reads them as its own user\nRUN chmod -R a+rX /usr/share/nginx/html\n",
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>e2e7 public site</title></head>\n<body><h1>e2e7 public site</h1><p>Served by a K3s Service through a Cloudflare tunnel.</p></body>\n</html>\n"
+     },
+     "guestImage": "parity-noble",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "up",
+     "siteVersion": "v1",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site.recipe.yaml"
+   },
+   "capture": {
+    "RUN_up": "response.body.result.structuredContent.runId"
+   },
+   "id": "upStart",
+   "mcp": "tools/call",
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN_up}"
+   },
+   "id": "up",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 1200,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "confirms": [
+    "upStart"
+   ],
+   "fetch": "https://e2e-${RUN}.opute.io/",
+   "id": "page",
+   "interval": 10,
+   "retryTimeout": 300,
+   "until": {
+    "in": [
+     200
+    ],
+    "path": "response.status"
+   }
+  },
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "contextFiles": {
+      "Dockerfile": "FROM docker.io/library/nginx:1.27-alpine\nCOPY index.html /usr/share/nginx/html/index.html\n# stage_build_context writes files 0600; nginx reads them as its own user\nRUN chmod -R a+rX /usr/share/nginx/html\n",
+      "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>e2e7 public site</title></head>\n<body><h1>e2e7 public site</h1><p>Served by a K3s Service through a Cloudflare tunnel.</p></body>\n</html>\n"
+     },
+     "guestImage": "parity-noble",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "again",
+     "siteVersion": "v1",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site.recipe.yaml"
+   },
+   "capture": {
+    "RUN_again": "response.body.result.structuredContent.runId"
+   },
+   "id": "againStart",
+   "mcp": "tools/call",
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN_again}"
+   },
+   "id": "again",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 600,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "arguments": {
+    "namespace": "site",
+    "uri": "cluster:local:e2e-s7"
+   },
+   "capture": {
+    "POD": "response.body.result.structuredContent.pods[0].name"
+   },
+   "id": "pods",
+   "mcp": "tools/call",
+   "tool": "list_pods"
+  },
+  {
+   "arguments": {
+    "kind": "Pod",
+    "namespace": "site",
+    "resourceName": "${POD}",
+    "uri": "cluster:local:e2e-s7"
+   },
+   "capture": {
+    "TID_deletePod": "response.body.result.taskId"
+   },
+   "id": "deletePodCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "tool": "delete_cluster_resource"
+  },
+  {
+   "id": "deletePod",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "params": {
+    "taskId": "${TID_deletePod}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "confirms": [
+    "deletePod"
+   ],
+   "guest": "for i in $(seq 90); do n=$(incus exec e2e-s7 -- k3s kubectl -n site get pods -l app.kubernetes.io/name=site -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{\"\\n\"}{end}' | grep -v -x '${POD}' | head -1); [ -n \"$n\" ] && break; sleep 2; done; [ -n \"$n\" ] && echo replaced",
+   "id": "podBack",
+   "timeout": 240
+  },
+  {
+   "confirms": [
+    "againStart"
+   ],
+   "fetch": "https://e2e-${RUN}.opute.io/",
+   "id": "pageAgain",
+   "interval": 5,
+   "retryTimeout": 120,
+   "until": {
+    "in": [
+     200
+    ],
+    "path": "response.status"
+   }
+  },
+  {
+   "guest": "python3 /opt/opute-e2e/guest/leakcheck.py --env /home/opute/.config/opute-e2e7/cloudflare.env --key CLOUDFLARE_API_TOKEN --guest e2e-s7 --secret cloudflare-connector/cloudflared-token/token --run '${RUN_up}' --run '${RUN_again}'",
+   "id": "leaks"
+  },
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "down",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml"
+   },
+   "capture": {
+    "RUN_down": "response.body.result.structuredContent.runId"
+   },
+   "id": "downStart",
+   "mcp": "tools/call",
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN_down}"
+   },
+   "id": "down",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 600,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "arguments": {
+    "inputs": {
+     "contextDir": "/home/opute/.opute/build-contexts/e2e-s7-v1",
+     "hostname": "e2e-${RUN}.opute.io",
+     "name": "e2e-s7",
+     "runNonce": "downAgain",
+     "tunnelName": "e2e-${RUN}"
+    },
+    "source": "/home/opute/.config/opute-e2e7/minimal-site-teardown.recipe.yaml"
+   },
+   "capture": {
+    "RUN_downAgain": "response.body.result.structuredContent.runId"
+   },
+   "id": "downAgainStart",
+   "mcp": "tools/call",
+   "tool": "run_host_local_recipe"
+  },
+  {
+   "arguments": {
+    "runId": "${RUN_downAgain}"
+   },
+   "id": "downAgain",
+   "interval": 5,
+   "mcp": "tools/call",
+   "timeout": 300,
+   "tool": "get_host_plan_run",
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.structuredContent.status"
+   }
+  },
+  {
+   "fetch": "https://cloudflare-dns.com/dns-query?name=e2e-${RUN}.opute.io&type=CNAME",
+   "headers": {
+    "Accept": "application/dns-json"
+   },
+   "id": "dns",
+   "interval": 10,
+   "retryTimeout": 360,
+   "until": {
+    "matches": "^(?![\\s\\S]*\"Answer\")",
+    "path": "response.body"
+   }
+  },
+  {
+   "arguments": {
+    "bindingId": "site",
+    "hostname": "e2e-${RUN}.opute.io",
+    "localTarget": "http://traefik.kube-system.svc.cluster.local:80",
+    "placement": "kubernetes",
+    "targetUri": "cluster:local:e2e-s7",
+    "tunnelName": "e2e-${RUN}"
+   },
+   "id": "tunnelGone",
+   "mcp": "tools/call",
+   "tool": "get_cloudflare_tunnel_status"
+  },
+  {
+   "confirms": [
+    "downStart",
+    "downAgainStart"
+   ],
+   "guest": "incus list -f csv -c n | grep -c -x e2e-s7; true",
+   "id": "guestGone"
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "state": "stop",
+    "uri": "host-service:local:user/opute-provider-k3s"
+   },
+   "id": "k3sStop",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "path": "/home/opute/.config/systemd/user/opute-provider-k3s.service",
+    "scope": "user"
+   },
+   "capture": {
+    "TID_k3sUnitRemove": "response.body.result.taskId"
+   },
+   "id": "k3sUnitRemoveCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "tool": "remove_host_file"
+  },
+  {
+   "id": "k3sUnitRemove",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "params": {
+    "taskId": "${TID_k3sUnitRemove}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "arguments": {
+    "scope": "user",
+    "state": "stop",
+    "uri": "host-service:local:user/opute-provider-cloudflare"
+   },
+   "id": "cloudflareStop",
+   "mcp": "tools/call",
+   "tool": "set_host_service_state"
+  },
+  {
+   "arguments": {
+    "confirm": true,
+    "path": "/home/opute/.config/systemd/user/opute-provider-cloudflare.service",
+    "scope": "user"
+   },
+   "capture": {
+    "TID_cloudflareUnitRemove": "response.body.result.taskId"
+   },
+   "id": "cloudflareUnitRemoveCall",
+   "mcp": "tools/call",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "tool": "remove_host_file"
+  },
+  {
+   "id": "cloudflareUnitRemove",
+   "interval": 3,
+   "mcp": "tasks/get",
+   "meta": {
+    "io.modelcontextprotocol/clientCapabilities": {
+     "extensions": {
+      "io.modelcontextprotocol/tasks": {}
+     },
+     "roots": {}
+    }
+   },
+   "params": {
+    "taskId": "${TID_cloudflareUnitRemove}"
+   },
+   "timeout": 600,
+   "until": {
+    "in": [
+     "completed",
+     "failed",
+     "cancelled"
+    ],
+    "path": "response.body.result.status"
+   }
+  },
+  {
+   "confirms": [
+    "k3sStop",
+    "k3sUnitRemove",
+    "cloudflareStop",
+    "cloudflareUnitRemove"
+   ],
+   "guest": "ls /home/opute/.config/systemd/user 2>/dev/null | grep -c -E '^opute-(provider|cloudflare)'; systemctl list-units --all --no-legend 'cloudflared*' | wc -l; ss -ltnH '( sport = :4320 or sport = :4330 )' | wc -l",
+   "id": "unitsGone"
+  }
+ ]
+}

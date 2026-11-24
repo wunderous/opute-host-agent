@@ -31,7 +31,7 @@ Q5_SPEC = "openspec/changes/truthful-interrupted-plan/specs/truthful-interrupted
 TASKS_META = base.TASKS_META
 BUDGET = json.loads((base.REPO / "evidence/hardening/resource-budget.json").read_text())
 ROOT = "/tmp/e2e-agents"
-MUT = "--env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"
+MUT = "--allow-mutations"
 # Each transient agent's systemd unit exists only while its journey runs;
 # cleanup removes it, so the residue check still holds. A journey allows the
 # units of the agents it starts, by name (m24).
@@ -262,7 +262,7 @@ def kill() -> dict:
         {"id": "settle", "guest": "sleep 45; echo waited"},
         call("runLater", "get_host_plan_run", {"runId": "${RUN}"}, **o),
         {"id": "loop", "guest": f"E2E_TOKEN=${{SECRET:{n}}} {T} killloop {n} --port {port} --id e2e-{n}-agent "
-                                f"--env MCP_AUTH_TOKEN=${{SECRET:{n}}} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+                                f"--env MCP_AUTH_TOKEN=${{SECRET:{n}}} --allow-mutations "
                                 "--rounds 12 --calls 4 --user root"},
         call("afterLoop", "get_host_info", **o),
         {"id": "audit", "guest": f"{T} audit {state(n)}/state.db"},
@@ -642,7 +642,7 @@ def secret_sweep() -> dict:
     plant = (f"{SW} plant --env {SWEEP}/agent.env --markers {markers} --set MCP_AUTH_TOKEN=${{SECRET:{n}}} "
              + client + "--set CLOUDFLARE_API_TOKEN=${SECRET:cfToken} --set TAILSCALE_AUTH_KEY=${SECRET:tsKey} "
              "--set TAILSCALE_API_KEY=${SECRET:tsApi} "
-             f"--setting OPUTE_REMOTE_AGENT_ID=e2e-{n}-agent --setting OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+             f"--setting OPUTE_REMOTE_AGENT_ID=e2e-{n}-agent "
              "--marker tunnelToken=${SECRET:tunnelToken} --marker bridgeToken=${SECRET:bridgeToken} "
              "--marker incomingToken=${SECRET:relayIn} --marker upstreamToken=${SECRET:relayUp}")
     relay = {"sessionId": "e2e-sweep", "listenHost": "127.0.0.1", "listenPort": 3058, "targetHost": "127.0.0.1",
@@ -662,7 +662,7 @@ def secret_sweep() -> dict:
     steps = base.TOOL_STEPS + [
         {"id": "sweepTool", "copy": "secretsweep", "to": "/opt/opute-e2e/guest/secretsweep.py"},
         {"id": "plant", "guest": plant},
-        {"id": "sweepAgent", "guest": f"{SW} agent start {n} --port {port} --env {SWEEP}/agent.env"},
+        {"id": "sweepAgent", "guest": f"{SW} agent start {n} --port {port} --env {SWEEP}/agent.env --allow-mutations"},
         # the provider client's secret, which the agent generates into its 0600 credential file
         {"id": "markProvider", "guest": f"{SW} mark --credential {provider_cred} --as providerSecret "
                                         f"--markers {markers}"},

@@ -319,13 +319,21 @@ fn resolve_listen_addr(addr: &str) -> Result<Vec<SocketAddr>> {
 
 /// `app.Run`: build the runtime, open authz, bind, and serve until SIGINT or
 /// SIGTERM. A graceful stop returns `Ok`, which exits 0 like Go.
-pub fn run(env: &Env, stderr: &mut dyn Write) -> Result<()> {
-    run_with(env, stderr, None)
+/// `allow_mutations` is `--allow-mutations`: whether the bootstrap bearer
+/// may mutate (D55).
+pub fn run(env: &Env, allow_mutations: bool, stderr: &mut dyn Write) -> Result<()> {
+    run_with(env, allow_mutations, stderr, None)
 }
 
-fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()> {
+fn run_with(
+    env: &Env,
+    allow_mutations: bool,
+    stderr: &mut dyn Write,
+    fault: Option<&str>,
+) -> Result<()> {
     let runtime = new_runtime_with(env, fault)?;
-    let cfg = runtime.config.clone();
+    let mut cfg = runtime.config.clone();
+    cfg.allow_mutations = allow_mutations;
     let authz_dir = if cfg.standalone_state_dir.as_os_str().is_empty() {
         cfg.instance_root.clone()
     } else {
@@ -349,7 +357,7 @@ fn run_with(env: &Env, stderr: &mut dyn Write, fault: Option<&str>) -> Result<()
             ("bind", &cfg.host_mcp_bind_host),
             ("port", &cfg.host_mcp_port.to_string()),
             (
-                "mutations",
+                "bearer_mutations",
                 if cfg.allow_mutations { "true" } else { "false" },
             ),
         ],
@@ -621,6 +629,7 @@ pub(crate) fn compose(
         catalog: publication,
         providers,
         allow_mutations: cfg.allow_mutations,
+        client_grants: cfg.oauth_grants.iter().cloned().collect(),
         host,
         tasks,
         task_workers: std::sync::Mutex::new(Vec::new()),
@@ -891,7 +900,7 @@ mod tests {
             expected_files.sort();
             expected_files.dedup();
             let mut sink = Vec::new();
-            let err = run_with(&env, &mut sink, Some(stage)).unwrap_err();
+            let err = run_with(&env, false, &mut sink, Some(stage)).unwrap_err();
             assert_eq!(err.0, format!("injected fault at {stage}"));
             assert!(sink.is_empty(), "{stage}: no listener log before failure");
             assert_eq!(listing(dir.path()), expected_files, "{stage}");
@@ -903,14 +912,15 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let env = env(dir.path(), &[]);
         let mut sink = Vec::new();
-        assert!(run_with(&env, &mut sink, Some("listener")).is_err());
+        assert!(run_with(&env, false, &mut sink, Some("listener")).is_err());
         let log = String::from_utf8(sink).unwrap();
         assert!(
             log.contains(" level=INFO msg=\"HTTP transport listening\" addr=127.0.0.1:1\n"),
             "{log}"
         );
         // The effective profile, once, from the agent's own settings.
-        let profile = " level=INFO msg=\"serving profile\" bind=127.0.0.1 port=1 mutations=false\n";
+        let profile =
+            " level=INFO msg=\"serving profile\" bind=127.0.0.1 port=1 bearer_mutations=false\n";
         assert_eq!(log.matches(profile).count(), 1, "{log}");
         let files = listing(dir.path());
         assert!(files.contains(&"state/authz.sqlite".to_string()));
@@ -1073,7 +1083,7 @@ mod tests {
         let cfg = Config::load(&env);
         let held = InstanceLock::acquire(&[&cfg.instance_root]).unwrap();
         let mut sink = Vec::new();
-        let err = run_with(&env, &mut sink, None).unwrap_err();
+        let err = run_with(&env, false, &mut sink, None).unwrap_err();
         assert_eq!(err.0, refusal(&cfg.instance_root));
         assert!(sink.is_empty());
         assert_eq!(check(&env).unwrap_err().0, refusal(&cfg.instance_root));

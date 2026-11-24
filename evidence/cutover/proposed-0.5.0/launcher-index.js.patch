@@ -1,0 +1,42 @@
+diff --git a/npm/local-host-agent/index.js b/npm/local-host-agent/index.js
+index 8bd5e10..84ade41 100644
+--- a/npm/local-host-agent/index.js
++++ b/npm/local-host-agent/index.js
+@@ -305,8 +305,6 @@ function buildAgentEnv(instanceId = '') {
+         || key === 'OPUTE_HOST_AGENT_SHA256'
+         || key === 'OPUTE_LOCAL_HOST_AGENT_RUNTIME_DIR'
+         || key === 'OPUTE_STANDALONE_STATE_DIR'
+-        || key === 'OPUTE_STANDALONE_ALLOW_MUTATIONS'
+-        || key === 'OPUTE_HOST_ALLOW_MUTATIONS'
+         || key === 'OPUTE_STANDALONE_ALLOW_INSECURE_DOWNLOADS'
+         || key === 'OPUTE_INFRA_PROVIDER_ID'
+       ) {
+@@ -315,7 +313,6 @@ function buildAgentEnv(instanceId = '') {
+       delete env[key]
+     }
+   }
+-  env.OPUTE_AGENT_MODE = 'standalone'
+   if (instanceId) env.OPUTE_LOCAL_HOST_AGENT_INSTANCE_ID = instanceId
+   env.HOST_MCP_BIND_HOST = bindHost()
+   env.HOST_MCP_PORT = String(mcpPort())
+@@ -334,7 +331,10 @@ function printUsage() {
+   console.log(`Usage: opute-host-agent <command>
+ 
+ Commands:
+-  start [--background|-d]  Start standalone Streamable HTTP MCP (default: foreground)
++  start [--background|-d] [--allow-mutations]
++                           Start standalone Streamable HTTP MCP (default: foreground).
++                           --allow-mutations lets MCP_AUTH_TOKEN run tools that change
++                           the host; without it the agent is read-only.
+   stop                     Stop a background daemon started by this launcher
+   status                   Show daemon/listener status and MCP URL
+   url                      Print the MCP URL (http://127.0.0.1:3014/mcp by default)
+@@ -345,8 +345,6 @@ Environment:
+   OPUTE_REMOTE_AGENT_ID    Required explicit opaque canonical agent id
+   MCP_AUTH_TOKEN           Bearer token required by /mcp when set
+   OPUTE_HOST_AGENT_BINARY  Use a local binary instead of downloading a release
+-  OPUTE_HOST_ALLOW_MUTATIONS=true        Enable mutating tools (0.4.0 and later)
+-  OPUTE_STANDALONE_ALLOW_MUTATIONS=true  Enable mutating tools (0.3.x; ignored from 0.4.0)
+ 
+ MCP client config (include Authorization when MCP_AUTH_TOKEN is set):
+   {

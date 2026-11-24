@@ -396,11 +396,21 @@ class Format(unittest.TestCase):
         sys.path.insert(0, str(E2E / "journeys"))
         import make_e2e1
         if not all(Path(r.replace("${PARITY}", str(make_e2e1.PARITY))).exists()
-                   for r in (make_e2e1.CANDIDATE, make_e2e1.PREVIOUS)):
+                   for r in (make_e2e1.CANDIDATE, make_e2e1.PREVIOUS, make_e2e1.PREVIOUS03)):
             self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
         import make_neutral  # hashes its inputs on import
         for name, text in make_neutral.render().items():
             self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_neutral.py")
+
+    def test_mutations_journeys_are_the_generator_output(self):
+        sys.path.insert(0, str(E2E / "journeys"))
+        import make_e2e1
+        if not all(Path(r.replace("${PARITY}", str(make_e2e1.PARITY))).exists()
+                   for r in (make_e2e1.CANDIDATE, make_e2e1.PREVIOUS, make_e2e1.PREVIOUS03)):
+            self.skipTest("the journeys' pinned inputs live under .parity/ (absent on CI)")
+        import make_mutations  # hashes its inputs on import
+        for name, text in make_mutations.render().items():
+            self.assertEqual((E2E / "journeys" / name).read_text(), text, f"{name}: rerun make_mutations.py")
 
     def test_m25_probes_match_the_generator_and_gate(self):
         sys.path.insert(0, str(E2E / "journeys"))

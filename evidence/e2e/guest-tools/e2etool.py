@@ -78,6 +78,20 @@ def health(port):
         return None
 
 
+def mutation_settings(version, allow):
+    """How a release lets the bearer mutate. From 0.5.0 only `--allow-mutations`
+    does (D55); an earlier release, run for an upgrade or a rollback, reads its
+    own setting: 0.4.x OPUTE_HOST_ALLOW_MUTATIONS, Go and 0.3.x
+    OPUTE_STANDALONE_ALLOW_MUTATIONS."""
+    if not allow:
+        return {}
+    if version.startswith(("0.2.", "0.3.")):
+        return {"OPUTE_STANDALONE_ALLOW_MUTATIONS": "true"}
+    if version.startswith("0.4."):
+        return {"OPUTE_HOST_ALLOW_MUTATIONS": "true"}
+    return {}
+
+
 def agent_start(a):
     root = f"{ROOT}/{a.name}"
     for d in ("instance", "state", "home"):
@@ -86,16 +100,15 @@ def agent_start(a):
     env = {"OPUTE_REMOTE_AGENT_ID": a.id, "HOST_MCP_PORT": str(a.port), "HOME": f"{root}/home",
            "OPUTE_HOST_AGENT_INSTANCE_ROOT": f"{root}/instance", "OPUTE_STANDALONE_STATE_DIR": f"{root}/state"}
     env.update(dict(kv.split("=", 1) for kv in a.env))
-    # Both settings sets, as the proposed 0.4.0 unit carries them
-    # (evidence/cutover/proposed-0.4.0): 0.4.0 reads only the new one.
-    if env.get("OPUTE_STANDALONE_ALLOW_MUTATIONS") == "true":
-        env.setdefault("OPUTE_HOST_ALLOW_MUTATIONS", "true")
     # 0.4.0 has no `--mode` (platform-neutral-host-agent, N5); Go and 0.3.x take it.
     version = sh([a.binary, "--version"], check=False).stdout.strip()
-    mode = ["--mode", a.mode] if version.startswith(("0.2.", "0.3.")) else []
+    legacy = version.startswith(("0.2.", "0.3."))
+    mode = ["--mode", a.mode] if legacy else []
+    env.update(mutation_settings(version, a.allow_mutations))
+    flags = ["--allow-mutations"] if a.allow_mutations and not mutation_settings(version, True) else []
     argv = ["systemd-run", f"--unit=e2e-agent-{a.name}", f"--uid={a.user}", f"--gid={a.user}",
             "--property=Restart=no", "--collect"] + [f"--setenv={k}={v}" for k, v in env.items()] + \
-        [a.binary, "serve", *mode, "--transport", "http"]
+        [a.binary, "serve", *mode, "--transport", "http", *flags]
     sh(argv)
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
@@ -219,7 +232,8 @@ def killloop(a):
             time.sleep(0.2)
         rounds.append({"round": r, "accepted": len(accepted)})
         restart = sh([sys.executable, os.path.abspath(__file__), "agent", "start", a.name, "--port", str(a.port),
-                      "--id", a.id, "--user", a.user] + [x for kv in a.env for x in ("--env", kv)], check=False)
+                      "--id", a.id, "--user", a.user] + [x for kv in a.env for x in ("--env", kv)]
+                     + (["--allow-mutations"] if a.allow_mutations else []), check=False)
         if restart.returncode != 0:
             return {"rounds": rounds, "restartFailed": r, "stdout": restart.stdout[-1000:]}
     return {"rounds": rounds, "acceptedTotal": sum(x["accepted"] for x in rounds), "restarts": a.rounds}
@@ -386,6 +400,7 @@ def main():
     ag.add_argument("--user", default="opute")
     ag.add_argument("--mode", default="standalone")
     ag.add_argument("--binary", default=BINARY)
+    ag.add_argument("--allow-mutations", action="store_true")
     d = sub.add_parser("db")
     d.add_argument("path")
     d.add_argument("--plan-id")
@@ -410,6 +425,7 @@ def main():
     kl.add_argument("--port", type=int, required=True)
     kl.add_argument("--id", required=True)
     kl.add_argument("--env", action="append", default=[])
+    kl.add_argument("--allow-mutations", action="store_true")
     kl.add_argument("--rounds", type=int, default=10)
     kl.add_argument("--calls", type=int, default=4)
     kl.add_argument("--user", default="opute")

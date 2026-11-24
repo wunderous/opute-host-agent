@@ -21,6 +21,7 @@ the verifier and the committed receipts.
 | `journeys/make_e2e1.py` | writes the e2e-1 journeys, with their hash pins |
 | `journeys/make_e2e3a.py` | writes the e2e-3a (HA k3s) journeys, with their hash pins |
 | `journeys/make_e2e4a.py` | writes the e2e-4a journeys (gates e2e-2, e2e-3 and e2e-4), with their hash pins |
+| `journeys/make_mutations.py` | writes the per-client mutation authority journey (gate e2e-mutations, D55), with its hash pins |
 | `journeys/inputs/` | hash-pinned journey inputs kept in the repository: the M9 k3s activation recipe; the cross-domain recipe; the opute-site-deploy recipe variants and workload manifest; the OpenAI-compatible test fixture |
 | `../gaps/e2e-4a.json` | the gaps the e2e-4a journeys hit, each with its step, tool, Go handler and remedy |
 

@@ -24,7 +24,7 @@
       "privilege": {
        "$ne": "read"
       },
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      },
      "expect": {
       "selected": 84,
@@ -68,7 +68,7 @@
      "as": "sweep",
      "sweep": {
       "privilege": "read",
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      },
      "expect": {
       "selected": 54,
@@ -120,7 +120,7 @@
        "install_sql_forward_sidecar",
        "release_sql_connector"
       ],
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      },
      "expect": {
       "published": [],
@@ -175,7 +175,7 @@
       "names": [
        "get_sql_connector_status"
       ],
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      },
      "expect": {
       "published": [],
@@ -196,9 +196,10 @@
      "as": "start",
      "serve": {
       "profile": "standalone",
-      "env": {
-       "OPUTE_HOST_ALLOW_MUTATIONS": "true"
-      }
+      "argv": [
+       "serve",
+       "--allow-mutations"
+      ]
      },
      "expect": {
       "ready": true
@@ -210,7 +211,7 @@
       "privilege": {
        "$ne": "read"
       },
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      },
      "expect": {
       "selected": 84,
@@ -230,7 +231,7 @@
        "install_sql_forward_sidecar",
        "release_sql_connector"
       ],
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope."
      },
      "expect": {
       "refused": []
@@ -258,7 +259,7 @@
       "privilege": {
        "$ne": "read"
       },
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
       "arguments": {
        "uri": "vm:default:vm-a",
        "command": "true",
@@ -281,7 +282,7 @@
        "install_sql_forward_sidecar",
        "release_sql_connector"
       ],
-      "refusal": "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true",
+      "refusal": "Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.",
       "arguments": {
        "command": "true"
       }
