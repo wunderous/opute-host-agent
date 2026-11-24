@@ -17,10 +17,10 @@
 ## 4. Surfaces
 
 - [x] 4.1 `evidence/cutover/proposed-0.5.0/`: the unit (`--allow-mutations` in `ExecStart`, no mutation or mode settings), the launcher (no passthrough, help or `OPUTE_AGENT_MODE` for either setting; forwards `--allow-mutations`), the site capture. Retire `proposed-0.4.0`'s dual design.
-- [ ] 4.2 Ship them, the npm README and the site docs (no "earlier releases" notes) with 0.5.0 in host-agents.
+- [x] 4.2 Ship them, the npm README and the site docs (no "earlier releases" notes) with 0.5.0 in host-agents. Shipped in host-agents #35 (released as `v0.5.0`).
 
 ## 5. Evidence and release
 
 - [x] 5.1 Journeys: every mutating agent starts with `--allow-mutations` or a `mutate` client; new journeys per caller and refusal; rollback journeys to 0.4.0 and 0.3.0 assert read-only and intact state. Measured: 0.4.0 alone under the 0.5.0 unit exits on the flag before it serves, so a rollback restores 0.4.0's unit (packet 9.4).
 - [x] 5.2 New candidate `rust-0.5.0-rc1` (fmt, clippy, 60 s fuzz, stale grep); every gate under one run id; readiness; packet. Every gate passes under `m28-r1` on its first attempt; readiness lists only e2e-5, WSL2 and Q4; packet section 9.
-- [ ] 5.3 Owner sign-off; publish through the m26 release path.
+- [x] 5.3 Owner sign-off; publish through the m26 release path. Signed off 2026-11-24 (packet 9.6); published 2026-11-24 (packet 9.7, `evidence/m28/README.md`).
