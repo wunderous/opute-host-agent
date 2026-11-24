@@ -52,7 +52,10 @@ def tools(listed):
 
 def summary(a):
     listed = mcpwire.mcp(a.port, a.token, "tools/list")
-    journal = run(["journalctl", "-u", a.unit, "--no-pager", "-o", "cat"])
+    # this start of the unit only: a journey restarts one transient unit name on several releases
+    invocation = run(["systemctl", "show", "-p", "InvocationID", "--value", a.unit]).strip()
+    match = [f"_SYSTEMD_INVOCATION_ID={invocation}"] if invocation else ["-u", a.unit]
+    journal = run(["journalctl", *match, "--no-pager", "-o", "cat"])
     sources = {"journal": journal, "tools/list": json.dumps(listed.get("body")),
                "help": run([a.binary, "help"])}
     hits = sorted({f"{name}: {m.group(0)}" for name, text in sources.items() for m in PLATFORM.finditer(text)})

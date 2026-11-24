@@ -54,6 +54,8 @@ BIN = "/home/opute/.local/share/opute/opute-host-agent"
 UNIT = "opute-bootstrap-mcp.service"
 REL = f"/opt/opute-e2e/releases/rust/v{RUST_VERSION}"
 GO_REL = "/opt/opute-e2e/releases/go/v0.2.4"
+# Go v0.2.4's own unit: from 0.5.0 the VM's unit passes --allow-mutations, which Go does not define (D55).
+GO_UNIT = "${PARITY}/go-src/deploy/opute-bootstrap-mcp.service"
 SDB = "/home/opute/.config/opute/instances/standalone/state/state.db"
 ADB = "/home/opute/.config/opute/instances/standalone/state/authz.sqlite"
 CRED = "/home/opute/.config/opute/instances/standalone/state/credentials/host-agent-provider.json"
@@ -160,6 +162,13 @@ def install_binary(gz: str) -> str:
 def swap(id_: str, gz: str) -> dict:
     return {"id": id_, "guest": f"systemctl stop {UNIT} && {install_binary(gz)} && systemctl start {UNIT} && "
                                  f"{WAIT_HEALTH.format(port=3014)} && {BIN} --version"}
+
+
+def unit_swap(id_: str, unit_file: str, gz: str) -> dict:
+    """Stop the agent, install a unit file and a binary, start it and print its version."""
+    return {"id": id_, "guest": (f"systemctl stop {UNIT} && install -m 0644 {unit_file} /etc/systemd/system/{UNIT} "
+                                 f"&& systemctl daemon-reload && {install_binary(gz)} && systemctl start {UNIT} && "
+                                 f"{WAIT_HEALTH.format(port=3014)} && {BIN} --version")}
 
 
 # --- 1. system unit ---------------------------------------------------------------------
@@ -788,15 +797,18 @@ def j7() -> dict:
 # --- 8. migrate a Go-installed host, then upgrade -------------------------------------------------------
 
 def j8() -> dict:
-    files = {**TOOL_FILES, "rustNext": inp(CANDIDATE_NEXT + "/host-agent-linux-x64.gz")}
+    files = {**TOOL_FILES, "rustNext": inp(CANDIDATE_NEXT + "/host-agent-linux-x64.gz"), "goUnit": inp(GO_UNIT)}
+    units = "/opt/opute-e2e/j8"
     done_plan = plan("e2e1-j8-done", "e2e1-j8-done-1", ".config/opute-e2e/j8-done.txt")
     flight_plan = plan("e2e1-j8-flight", "e2e1-j8-flight-1", ".config/opute-e2e/j8-flight.txt", slow=True)
     run_id = lambda step: {"step": step, "path": "response.body.result.structuredContent.runId"}  # noqa: E731
     steps = TOOL_STEPS + [
         {"id": "nextCopy", "copy": "rustNext", "to": "/opt/opute-e2e/releases/rust-next/host-agent-linux-x64.gz"},
+        {"id": "goUnitCopy", "copy": "goUnit", "to": f"{units}/go.service"},
         {"id": "aside", "guest": f"systemctl stop {UNIT} && mv /home/opute/.config/opute/instances "
-                                 "/tmp/e2e-j8-rust-instances"},
-        swap("goInstall", f"{GO_REL}/host-agent-linux-x64.gz"),
+                                 f"/tmp/e2e-j8-rust-instances && cp /etc/systemd/system/{UNIT} {units}/vm.service"},
+        # a Go install runs on Go's unit; the migration installs the release's unit with its binary
+        unit_swap("goInstall", f"{units}/go.service", f"{GO_REL}/host-agent-linux-x64.gz"),
         {"id": "goHealth", "health": True},
         mcp("goList", "tools/list"),
         {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 60"},
@@ -808,7 +820,7 @@ def j8() -> dict:
              until={"path": "response.body.result.structuredContent.nodes.n2.attempts", "in": [1]}, timeout=30),
         read_file("goFlightFile", "/home/opute/.config/opute-e2e/j8-flight.txt", "goFlight"),
         {"id": "goStop", "guest": f"systemctl stop {UNIT} && {T} db {SDB}"},
-        swap("rustInstall", f"{REL}/host-agent-linux-x64.gz"),
+        unit_swap("rustInstall", f"{units}/vm.service", f"{REL}/host-agent-linux-x64.gz"),
         {"id": "rustHealth", "health": True},
         mcp("rustList", "tools/list"),
         {"id": "rustDb", "guest": f"{T} db {SDB}"},
@@ -822,11 +834,13 @@ def j8() -> dict:
         call("nextFlight", "get_host_plan_run", {"runId": "${FLIGHT}"}),
         {"id": "slowStop", "guest": f"{T} slow stop"},
     ]
-    cleanup = [{"id": "restoreRust", "guest": f"systemctl stop {UNIT} && {install_binary(f'{REL}/host-agent-linux-x64.gz')} "
+    cleanup = [{"id": "restoreRust", "guest": f"systemctl stop {UNIT} && install -m 0644 {units}/vm.service "
+                                              f"/etc/systemd/system/{UNIT} && systemctl daemon-reload && "
+                                              f"{install_binary(f'{REL}/host-agent-linux-x64.gz')} "
                                               "&& rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-j8-rust-instances "
                                               f"/home/opute/.config/opute/instances && systemctl start {UNIT} && "
                                               f"{WAIT_HEALTH.format(port=3014)} && rm -rf /home/opute/.config/opute-e2e "
-                                              "/opt/opute-e2e/releases/rust-next"}]
+                                              f"/opt/opute-e2e/releases/rust-next {units}"}]
     reqs = [
         req(SPEC, "Durable and redacted observations",
             ok("aside"), ok("goInstall"), a("goInstall", "stdout", matches="\n0\\.2\\.4\n$"),
@@ -877,7 +891,7 @@ def j8() -> dict:
          "next": f"Rust release set built locally with VERSION={NEXT_VERSION}"},
         reqs, steps, cleanup,
         allow=["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/.config/opute-e2e*",
-               "files//opt/opute-e2e/releases/rust-next*",
+               "files//opt/opute-e2e/releases/rust-next*", "files//opt/opute-e2e/j8*",
                # Rust's instance root, set aside while Go runs and put back by cleanup (m25)
                "files//tmp/e2e-j8-rust-instances*"],
         minutes=20)

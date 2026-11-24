@@ -390,7 +390,7 @@ def rollback() -> dict:
         return base.call(id_, "inspect_host_file", {"path": f".config/opute-e2e/r{n}.txt", "scope": "user"}, **host)
 
     steps = SETUP + [
-        {"id": "copyP", "copy": "rust04", "to": f"{RELP}/host-agent-linux-x64.gz"},
+        {"id": "copyP", "copy": "rustPrev", "to": f"{RELP}/host-agent-linux-x64.gz"},
         {"id": "unpackP", "guest": f"gzip -dc {RELP}/host-agent-linux-x64.gz > {BINP} && chmod 0755 {BINP} && "
                                     f"{BINP} --version"},
         {"id": "copy03", "copy": "rust03", "to": f"{REL3}/host-agent-linux-x64.gz"},
@@ -398,6 +398,7 @@ def rollback() -> dict:
                                     f"{BIN3} --version"},
         # 0.4.0 on its own unit's settings
         {"id": "old", "guest": start("roll", env04, port=3004, binary=BINP)},
+        base.mcp("oldList", "tools/list", **host),
         write(1),
         {"id": "oldMint", "guest": mint},
         {"id": "oldStop", "guest": stop("roll")},
@@ -448,7 +449,8 @@ def rollback() -> dict:
     same_cred = {"step": "oldMint", "path": "json.credSha256"}
     reqs = [
         req(MSPEC, "No mutation setting other than the flag",
-            a("unpackP", "stdout", equals="0.4.0\n"), *served("old"), wrote("write1"),
+            a("unpackP", "stdout", equals="0.4.0\n"), *served("old"), a("oldList", "response.status", equals=200),
+            wrote("write1"),
             *served("leftover"), exists("leftoverRead1"),
             a("leftoverWrite", "response.body.result.isError", equals=True),
             a("leftoverWrite", "response.body.result.content[0].text", equals=GATE4()),
@@ -492,7 +494,7 @@ def rollback() -> dict:
         "state: 0.4.0's unit carries the three old mutation and mode settings, 0.5.0's only --allow-mutations "
         "(D55). Between them the 0.5.0 binary runs under the old unit, and 0.4.0 is tried alone under the new one.",
         reqs, steps, clean("roll"), allow=[f"files/{RELP}*", f"files/{REL3}*", f"files/{ROOT}", f"files/{ROOT}/roll*"],
-        files={**FILES, "rust04": inp(base.PREVIOUS + "/host-agent-linux-x64.gz"),
+        files={**FILES, "rustPrev": inp(base.PREVIOUS + "/host-agent-linux-x64.gz"),
                "rust03": inp(base.PREVIOUS03 + "/host-agent-linux-x64.gz")},
         previous=f"the previous Rust releases, 0.4.0 ({base.PREVIOUS}) and 0.3.0 ({base.PREVIOUS03}), copied in")
 

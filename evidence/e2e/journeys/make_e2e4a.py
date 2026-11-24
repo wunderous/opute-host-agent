@@ -1682,22 +1682,26 @@ PRINTS = "the command only prints; its output is asserted"
 TWIN = "the command only sleeps; the twins step saw both running, each in its own unit"
 
 
-def second_writer(id_: str, gz: str) -> dict:
-    """D25: another release started on the serving agent's instance root, as the unit runs it; it must
+def second_writer(id_: str, gz: str, unit_file: str) -> dict:
+    """D25: another release started on the serving agent's instance root, as its own unit runs it; it must
     refuse with the decided line and exit 1 while the first keeps serving."""
     return {"id": id_, "timeout": 60, "guest": (
-        f"args=$(systemctl show -p ExecStart --value {UNIT} | sed -n 's/.*argv\\[\\]=\\([^;]*\\) ;.*/\\1/p' "
-        f"| cut -d' ' -f2-) && gzip -dc {gz} > /tmp/e2e-second && chmod 0755 /tmp/e2e-second && "
+        f"args=$(sed -n 's/^ExecStart=[^ ]* //p' {unit_file}) && gzip -dc {gz} > /tmp/e2e-second && "
+        "chmod 0755 /tmp/e2e-second && "
         "systemd-run --quiet --wait --pipe --collect --uid=opute --gid=opute "
         "-p EnvironmentFile=/etc/opute/host-agent.env --setenv=HOME=/home/opute --setenv=HOST_MCP_PORT=3099 "
         "timeout 30 /tmp/e2e-second $args 2>&1; echo exit=$?; rm -f /tmp/e2e-second")}
 
 def cutover() -> dict:
-    files = {**base.TOOL_FILES}
+    files = {**base.TOOL_FILES, "goUnit": inp(base.GO_UNIT)}
+    units = "/opt/opute-e2e/cutover"
+    go_unit, vm_unit = f"{units}/go.service", f"{units}/vm.service"
     steps = base.TOOL_STEPS + [
+        {"id": "goUnitCopy", "copy": "goUnit", "to": go_unit},
         {"id": "aside", "guest": f"systemctl stop {UNIT} && mv /home/opute/.config/opute/instances "
-                                 "/tmp/e2e-cutover-rust-instances && echo aside"},
-        base.swap("goInstall", f"{base.GO_REL}/host-agent-linux-x64.gz"),
+                                 f"/tmp/e2e-cutover-rust-instances && cp /etc/systemd/system/{UNIT} {vm_unit} && echo aside"},
+        # each release on its own unit: Go's, and the release's (D55: Go does not define --allow-mutations)
+        unit_swap("goInstall", go_unit, f"{base.GO_REL}/host-agent-linux-x64.gz"),
         {"id": "goHealth", "health": True},
         {"id": "goList", "mcp": "tools/list"},
         {"id": "slow", "guest": f"{T} slow start --port 8799 --delay 25"},
@@ -1730,9 +1734,9 @@ def cutover() -> dict:
                                   "/tmp/e2e-go-state.sha"},
         {"id": "syncAnswer", "guest": "cat /tmp/e2e-sync.json"},
         # forward: the Rust release on the same instance root and identity
-        base.swap("rustInstall", f"{base.REL}/host-agent-linux-x64.gz"),
+        unit_swap("rustInstall", vm_unit, f"{base.REL}/host-agent-linux-x64.gz"),
         {"id": "rustHealth", "health": True},
-        second_writer("goSecond", f"{base.GO_REL}/host-agent-linux-x64.gz"),
+        second_writer("goSecond", f"{base.GO_REL}/host-agent-linux-x64.gz", go_unit),
         {"id": "rustStillServes", "health": True},
         {"id": "rustList", "mcp": "tools/list"},
         {"id": "rustDb", "guest": f"{T} db {SDB_}"},
@@ -1756,9 +1760,9 @@ def cutover() -> dict:
         *unobservable(task("rustTaskNew", "run_host_command", {"command": "echo rust-era"}), PRINTS),
         {"id": "rustStop", "guest": f"systemctl stop {UNIT} && {T} db {SDB_}"},
         # rollback: Go on Rust's state
-        base.swap("goBack", f"{base.GO_REL}/host-agent-linux-x64.gz"),
+        unit_swap("goBack", go_unit, f"{base.GO_REL}/host-agent-linux-x64.gz"),
         {"id": "goBackHealth", "health": True},
-        second_writer("rustSecond", f"{base.REL}/host-agent-linux-x64.gz"),
+        second_writer("rustSecond", f"{base.REL}/host-agent-linux-x64.gz", vm_unit),
         {"id": "goStillServes", "health": True},
         call("goBackOps", "list_operations", {"limit": 100}),
         call("goBackRustTask", "get_operation", {"operationId": "${TID_rustTaskNew}"}),
@@ -1846,14 +1850,16 @@ def cutover() -> dict:
                      "run, Rust-era work included, with the status Rust last reported"),
     ]
     cleanup = [{"id": "restoreRust", "guest": (
-        f"systemctl stop {UNIT}; {T} slow stop >/dev/null; {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} "
+        f"systemctl stop {UNIT}; {T} slow stop >/dev/null; install -m 0644 {vm_unit} /etc/systemd/system/{UNIT} && "
+        f"systemctl daemon-reload && {base.install_binary(f'{base.REL}/host-agent-linux-x64.gz')} "
         ">/dev/null && rm -rf /home/opute/.config/opute/instances && mv /tmp/e2e-cutover-rust-instances "
         f"/home/opute/.config/opute/instances && systemctl start {UNIT} && {base.WAIT_HEALTH.format(port=3014)}; "
         "loginctl disable-linger opute; for n in e2e-g1 e2e-f1 e2e-n1; do incus delete -f $n 2>/dev/null; done; "
-        f"rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /tmp/e2e-sync.json /tmp/e2e-go-state.sha; "
+        f"rm -rf {HOME}/e2e {HOME}/.opute/databases {SQLITE} /tmp/e2e-sync.json /tmp/e2e-go-state.sha {units}; "
         "incus storage volume list default -f csv | awk -F, '$1==\"image\"{print $2}' | "
         "xargs -r -I{} incus storage volume delete default image/{}; true")}]
     allow = (["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*",
+              "files//etc/systemd/system/opute-bootstrap-mcp.service/sha256", "files//opt/opute-e2e/cutover*",
               "files//tmp/e2e-cutover-rust-instances*", "files//tmp/e2e-go-state.sha", "files//tmp/e2e-sync.json",
               "opute/units/opute-host-workload-*.service",
               f"processes//user.slice/user-{OPUTE_UID}.slice/user@{OPUTE_UID}.service/"
@@ -1891,11 +1897,7 @@ ROOTS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.
 PAST_ORIGIN = "^Error: probe authenticated public MCP endpoint: public MCP endpoint did not become ready within "
 
 
-def unit_swap(id_: str, unit_file: str, gz: str) -> dict:
-    """Stop the agent, install a unit file and a binary, start it and print its version."""
-    return {"id": id_, "guest": (f"systemctl stop {UNIT} && install -m 0644 {unit_file} /etc/systemd/system/{UNIT} "
-                                 f"&& systemctl daemon-reload && {base.install_binary(gz)} && systemctl start {UNIT} && "
-                                 f"{base.WAIT_HEALTH.format(port=3014)} && {base.BIN} --version")}
+unit_swap = base.unit_swap
 
 
 def chain_task(id_: str, tool: str, args: dict) -> list[dict]:
@@ -2144,6 +2146,7 @@ def upgrade_chain() -> dict:
              "files//home/opute/.config/opute-e2e*", "files//home/opute/.config/systemd*",
              "files//home/opute/.config/opute/tunnels*", "files//home/opute/.local/share/opute/tunnels*",
              "files//etc/systemd/system/opute-bootstrap-mcp.service.d/chain.conf", "files//opt/opute-e2e/chain*",
+             "files//etc/systemd/system/opute-bootstrap-mcp.service/sha256",
              "files//root/e2e-chain", "files//root/e2e-chain/markers.json", "files//root/e2e-chain/oauth.env",
              "files//tmp/e2e-chain-rust-instances*", "opute/units/opute-cloudflared-e2e-chain.service",
              *USER_SESSION]

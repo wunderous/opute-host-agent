@@ -74,6 +74,7 @@ def callers() -> dict:
               f"| tail -1; echo exit=${{PIPESTATUS[0]}}; find {ROOT}/former -mindepth 1 | wc -l")
     steps = SETUP + [
         {"id": "callers", "guest": start("callers", env, port=3061)},
+        base.mcp("callersList", "tools/list", **host),
         base.call("bearerRead", "get_host_info", {}, **host),
         base.call("bearerMutation", TARGET, target("callers", "bearer"), **host),
         {"id": "bearerNoFile", "guest": f"test ! -e {file('callers', 'bearer')}"},
@@ -91,9 +92,11 @@ def callers() -> dict:
         {"id": "interactiveFile", "guest": f"cat {file('callers', 'i-mutate')}", "confirms": ["interactiveMutate"]},
         {"id": "annotations", "guest": f"{P} annotations --port 3061 --token '${{SECRET:callers}}'"},
         {"id": "leftover", "guest": start("leftover", leftover, port=3062)},
+        base.mcp("leftoverList", "tools/list", port=3062, auth="secret:leftover"),
         base.call("leftoverMutation", TARGET, target("leftover", "left"), port=3062, auth="secret:leftover"),
         {"id": "leftoverNoFile", "guest": f"test ! -e {file('leftover', 'left')}"},
         {"id": "flagged", "guest": start("flagged", flagged, port=3063, args=FLAG)},
+        base.mcp("flaggedList", "tools/list", port=3063, auth="secret:flagged"),
         base.call("flaggedMutation", TARGET, target("flagged", "flag"), port=3063, auth="secret:flagged"),
         {"id": "flaggedFile", "guest": f"cat {file('flagged', 'flag')}", "confirms": ["flaggedMutation"]},
         client("flaggedRo", "ro", "flag-ro", port=3063, agent="flagged"),
@@ -169,7 +172,7 @@ def callers() -> dict:
         "client approved for each scope, an agent still carrying the old settings, the former mcp scope, and "
         "the tools' annotations.",
         {"agent": neutral.AGENT04, "files": neutral.FILES}, reqs, steps,
-        clean(*agents, more=f"rm -rf {ROOT}/former; "),
+        clean(*agents, more=f"rm -rf {ROOT}/former; rmdir {ROOT} 2>/dev/null; "),
         allow=neutral.EFFECTS + units(*(f"e2e-agent-{n}" for n in agents)) + agent_effects(*agents)
         + [f"files/{ROOT}/former*"] + [f"sockets/tcp 127.0.0.1:{p} opute-host-agen" for p in (3061, 3062, 3063)],
         minutes=10, gate=GATE)
