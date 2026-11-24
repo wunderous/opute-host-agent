@@ -282,8 +282,8 @@ was done or scoped; they change no observable behaviour against Go.
 | WSL2 | blocked | Opute release owners | a Windows host with WSL2 as a runner (5.1) |
 | Q4 | unverified | Opute Platform owners | the owner confirms whether Platform stores hashes |
 | Q18 | unverified (deferred) | Host Agent owner | D28 defers it as a new capability; not a cutover blocker |
-| npm | postponed | release owners | D28: publishing 0.3.0, including to npm, is a separate rollout step; nothing here was published |
-| Public site and catalog claims (5.2) | not started | release and website owners | re-anchoring `site/context/release-catalog.json` on the candidate's catalog at publication |
+| npm | waiting on the owner | release owners | `@opute/host-agent@0.3.0`: the Publish job failed on the expired `NPM_TOKEN`; rerun it once the secret is renewed (section 8) |
+| Public site and catalog claims (5.2) | 0.3.0 preview committed | release and website owners | promote the catalog from npm's published canary evidence; the website owner deploys the image (section 8) |
 | O1 audit retention | open observation | Host Agent owner | D42 decides it for 0.4.0; D43 keeps 0.3.0 without a new setting. Not a cutover blocker by the spec. A2, A4 and A5 are fixed in rc5, S1 to S6 in rc6, U1 in rc7 (section 2a) |
 
 `make cutover-readiness` lists exactly e2e-5, WSL2, Q4 and Q18 as not passed.
@@ -334,3 +334,30 @@ stays the production owner until then (task 6.3).
 | Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | e2e-5 and Q4 stay open (section 4) |
 | Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | WSL2 stays blocked; the owner authorizes publishing 0.3.0 (GitHub release, npm, site catalog) through the normal rollout path (m26) |
 | Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | Cutover follows the section 5 runbook; rollback window 14 days per host |
+
+## 8. Publication (0.3.0, goal m26)
+
+On 2026-11-23/24 the 0.3.0 release went out through the existing release
+surfaces ([`evidence/m26`](../../../evidence/m26/README.md)). Nothing was
+rebuilt: every published file is one of rc9's, by digest.
+
+| Surface | State | Evidence |
+|---|---|---|
+| `wunderous/opute-host-agent` release `v0.3.0` | published, tag on `0883e47fa` (rc9's commit) | the 9 files of rc9's set; `SHA256SUMS` `2679c551…` |
+| `wunderous/host-agents` release `v0.3.0` (Latest) | published by its Publish workflow from the pin `release/v0.3.0.json` (host-agents #30, #31) | each file fetched, checked against the pin and `SHA256SUMS`, the npm read-only canary passed on it; downloaded again from the public release: all 9 equal the pin |
+| `@opute/host-agent@0.3.0` on npm | not published | the npm job failed with E404 on the PUT, the expired `NPM_TOKEN` of m12a; it is rerun on the same tag once the owner renews the secret |
+| Site | 0.3.0 preview catalog captured from rc9's binary (revision `sha256:9aba4c89…`), image built to ghcr | deploying the image to the public website stays with the website owner; the catalog is promoted from the published canary evidence after npm |
+| Go `v0.2.4` | unchanged | the rollback release (section 5) |
+
+The first Publish run for host-agents `v0.3.0` stopped in its release-notes
+step on a quoting defect, after the checks and before any release or npm
+job. Nothing was published from it, so the unreleased tag was moved to the
+fixed commit (host-agents #31) instead of choosing another version.
+
+The dev-VM journeys were not rerun against the public URLs: the published
+files are byte-identical to the ones every gate ran on under `m25-r3`, and
+the launcher's download path is checked by the canary in the Publish run.
+The Platform builds its own agent from source and follows no release
+(`evidence/m26/surfaces.json`); moving it to Rust is its owners' rollout
+(e2e-5). No host was cut over: each host's cutover follows section 5, and its
+14-day rollback window starts then.
