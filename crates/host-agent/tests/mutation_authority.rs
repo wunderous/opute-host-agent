@@ -34,12 +34,23 @@ impl Drop for Agent {
     }
 }
 
+/// A free port no other test in this process has drawn: tests run in
+/// parallel, and a port handed out twice would let one test's readiness
+/// probe reach another test's agent.
 fn free_port() -> u16 {
-    TcpListener::bind("127.0.0.1:0")
-        .unwrap()
-        .local_addr()
-        .unwrap()
-        .port()
+    static TAKEN: std::sync::Mutex<Vec<u16>> = std::sync::Mutex::new(Vec::new());
+    let mut taken = TAKEN.lock().unwrap();
+    loop {
+        let port = TcpListener::bind("127.0.0.1:0")
+            .unwrap()
+            .local_addr()
+            .unwrap()
+            .port();
+        if !taken.contains(&port) {
+            taken.push(port);
+            return port;
+        }
+    }
 }
 
 fn command(home: &Path, state: &Path, port: u16, env: &[(&str, &str)], args: &[&str]) -> Command {
@@ -60,37 +71,71 @@ fn command(home: &Path, state: &Path, port: u16, env: &[(&str, &str)], args: &[&
     cmd
 }
 
-fn start(env: &[(&str, &str)], args: &[&str]) -> Agent {
-    let dir = tempfile::tempdir().unwrap();
-    let (home, state, port) = (
-        dir.path().join("home"),
-        dir.path().join("state"),
-        free_port(),
+/// Whether this agent, and not another listener, answers on `port`.
+fn serving(port: u16) -> bool {
+    let Ok(mut stream) = TcpStream::connect(("127.0.0.1", port)) else {
+        return false;
+    };
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+    let req = format!(
+        "GET /.well-known/oauth-protected-resource/mcp HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
     );
-    let mut child = command(&home, &state, port, env, args)
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    let deadline = Instant::now() + Duration::from_secs(30);
-    while TcpStream::connect(("127.0.0.1", port)).is_err() {
-        if Instant::now() > deadline || child.try_wait().unwrap().is_some() {
-            let _ = child.kill();
-            let out = child.wait_with_output().unwrap();
-            panic!(
-                "agent did not start serving; stderr:\n{}",
-                String::from_utf8_lossy(&out.stderr)
-            );
+    let mut raw = String::new();
+    stream.write_all(req.as_bytes()).is_ok()
+        && stream.read_to_string(&mut raw).is_ok()
+        && raw.starts_with("HTTP/1.1 200")
+        && raw.contains(&format!("127.0.0.1:{port}/mcp"))
+}
+
+/// Start the agent on a fresh port. Each agent also opens provider listeners
+/// on ephemeral ports, so a drawn port can be taken before the agent binds
+/// it: that start is retried on another port.
+fn start(env: &[(&str, &str)], args: &[&str]) -> Agent {
+    for _ in 0..5 {
+        let dir = tempfile::tempdir().unwrap();
+        let (home, state, port) = (
+            dir.path().join("home"),
+            dir.path().join("state"),
+            free_port(),
+        );
+        let log = dir.path().join("agent.log");
+        let mut child = command(&home, &state, port, env, args)
+            .stdout(Stdio::null())
+            .stderr(std::fs::File::create(&log).unwrap())
+            .spawn()
+            .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(30);
+        loop {
+            if child.try_wait().unwrap().is_some() {
+                let stderr = std::fs::read_to_string(&log).unwrap_or_default();
+                if stderr.contains("address already in use")
+                    || stderr.contains("Address already in use")
+                {
+                    break;
+                }
+                panic!("agent exited before serving; stderr:\n{stderr}");
+            }
+            if serving(port) {
+                return Agent {
+                    child,
+                    port,
+                    state,
+                    home,
+                    _dir: dir,
+                };
+            }
+            if Instant::now() > deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!(
+                    "agent did not start serving; stderr:\n{}",
+                    std::fs::read_to_string(&log).unwrap_or_default()
+                );
+            }
+            std::thread::sleep(Duration::from_millis(50));
         }
-        std::thread::sleep(Duration::from_millis(50));
     }
-    Agent {
-        child,
-        port,
-        state,
-        home,
-        _dir: dir,
-    }
+    panic!("no free port held for the agent in five attempts");
 }
 
 struct Reply {
