@@ -97,7 +97,26 @@ Keep the token out of version control.
 **3. Ask.** Try *"What is this host and what can you do on it?"* The assistant
 calls `get_host_info` and reads the live tool list.
 
-**4. Allow changes when you want them.** Restart with mutations allowed:
+**4. Allow changes when you want them.** The agent runs changes inside a
+systemd slice with resource limits, and it refuses them until those limits
+exist. Create the slice once in your user session. You may set lower limits,
+but not higher ones.
+
+```bash
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/opute-workload.slice <<'EOF'
+[Slice]
+MemoryHigh=10G
+MemoryMax=11G
+MemorySwapMax=1G
+CPUQuota=600%
+CPUWeight=100
+TasksMax=4096
+EOF
+systemctl --user daemon-reload
+```
+
+Then restart with mutations allowed:
 
 ```bash
 npx @opute/host-agent stop
