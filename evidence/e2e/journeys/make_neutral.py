@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Write the platform-neutral (0.4.0) journeys as JSON.
+"""Write the platform-neutral journeys as JSON.
 
   python3 evidence/e2e/journeys/make_neutral.py
 
-The dev VM runs the 0.4.0 candidate. Each journey copies the candidate's
-release binary in (and, for the rollback, the previous 0.3.x release) and
-starts its own agents from it with `serve` and explicit settings only (no
-`--mode`), under /tmp/e2e-agents. An agent that must
+The dev VM runs the release candidate (since m28, 0.5.0). Each journey copies
+the candidate's release binary in (and, for the rollback, the previous 0.4.0
+and 0.3.0 releases) and starts its own agents from it with `serve` and
+explicit settings only (no `--mode`; `--allow-mutations` where an agent's
+bearer must mutate, D55), under /tmp/e2e-agents. An agent that must
 listen on the profile's default 127.0.0.1:3014, which the VM's own agent
 holds, runs in a private network namespace and is reached with nsenter.
 """
@@ -20,12 +21,25 @@ from make_e2e3a import direct, res, task
 
 GATE = "e2e-neutral"
 NSPEC = "openspec/changes/platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
-REL4 = "/opt/opute-e2e/releases/rust-0.4.0"
+# "One serving profile" as D55 modifies it (the flag replaces OPUTE_HOST_ALLOW_MUTATIONS).
+MSPEC_NEUTRAL = "openspec/changes/per-client-mutation-authority/specs/platform-neutral-host-agent/spec.md"
+CUTOVER_ROLLBACK = "openspec/changes/reimplement-host-agent-in-rust/cutover-review-packet.md section 9 (0.5.0 rollback)"
+MSPEC = "openspec/changes/per-client-mutation-authority/specs/per-client-mutation-authority/spec.md"
+# The candidate (REL4 since 0.4.0's gates) and the previous releases a rollback returns to.
+REL4 = "/opt/opute-e2e/releases/rust-candidate"
 BIN4 = f"{REL4}/opute-host-agent"
+RELP = "/opt/opute-e2e/releases/rust-0.4.x"
+BINP = f"{RELP}/opute-host-agent"
 REL3 = "/opt/opute-e2e/releases/rust-0.3.x"
 BIN3 = f"{REL3}/opute-host-agent"
 P = "python3 /opt/opute-e2e/guest/neutralprobe.py"
-GATE4 = "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"
+FLAG = ["--allow-mutations"]
+
+
+def GATE4(tool: str = "ensure_host_file", effect: str = "mutation") -> str:
+    """The bootstrap bearer's refusal on an agent started without --allow-mutations (D55)."""
+    return (f"Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. "
+            "Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.")
 ROOT = "/tmp/e2e-agents"
 
 FILES = {**base.TOOL_FILES,
@@ -38,8 +52,8 @@ SETUP = base.TOOL_STEPS + [
                                 f"{BIN4} --version"},
 ]
 EFFECTS = [f"files/{REL4}*"]
-AGENT04 = ("the 0.4.0 candidate's release binary (the one the dev VM runs), started by the journey with `serve` "
-           "and explicit settings")
+AGENT04 = (f"the {base.RUST_VERSION} candidate's release binary (the one the dev VM runs), started by the journey "
+           "with `serve` and explicit settings")
 
 
 def pid(name: str) -> str:
@@ -50,14 +64,16 @@ def ns(name: str) -> str:
     return f"nsenter -t {pid(name)} -n "
 
 
-def start(name: str, env: dict, port: int = 3014, private: bool = False, binary: str = BIN4) -> str:
-    """Start an agent as a transient unit with exactly `env` (plus HOME), and print its /health."""
+def start(name: str, env: dict, port: int = 3014, private: bool = False, binary: str = BIN4,
+          args: list[str] = ()) -> str:
+    """Start an agent as a transient unit with exactly `env` (plus HOME) and `serve args`, and print its /health."""
     env = {"HOME": f"{ROOT}/{name}/home", **env}
     setenv = " ".join(f"--setenv='{k}={v}'" for k, v in env.items())
     reach = ns(name) if private else ""
     return (f"install -d -o opute -g opute {ROOT} {ROOT}/{name} {ROOT}/{name}/home && "
             f"systemd-run --quiet --collect --unit=e2e-agent-{name} --uid=opute --gid=opute "
-            f"--property=Restart=no {'--property=PrivateNetwork=yes ' if private else ''}{setenv} {binary} serve && "
+            f"--property=Restart=no {'--property=PrivateNetwork=yes ' if private else ''}{setenv} {binary} serve"
+            f"{''.join(' ' + x for x in args)} && "
             f"for i in $(seq 120); do {reach}curl -fsS -o /dev/null http://127.0.0.1:{port}/health && break; "
             f"sleep 0.5; done; {reach}curl -fsS http://127.0.0.1:{port}/health")
 
@@ -95,14 +111,15 @@ def agent_effects(*names: str) -> list[str]:
 
 
 def journey(id_, description, requirements, steps, cleanup, files=FILES, allow=(), minutes=15, **inputs):
-    """`allow` names the journey's own effects beyond the 0.4.0 release it unpacks (m24)."""
+    """`allow` names the journey's own effects beyond the candidate release it unpacks (m24)."""
     return base.journey(id_, description, {"agent": AGENT04, **inputs, "files": files}, requirements, steps,
                         cleanup, allow=EFFECTS + list(allow), minutes=minutes, gate=GATE)
 
 
 def clean(*names: str, more: str = "") -> list[dict]:
     removes = "; ".join(f"{T} agent remove {n} >/dev/null" for n in names)
-    return [{"id": "clean", "guest": f"{removes}; {more}rm -rf {REL4} {REL3} /opt/opute-e2e/guest/neutralprobe.py; true"}]
+    return [{"id": "clean", "guest": f"{removes}; {more}rm -rf {REL4} {RELP} {REL3} /opt/opute-e2e/guest/neutralprobe.py; "
+                                     "true"}]
 
 
 # --- 1. the single profile, the old variables, ordinary clients -------------------------------------------
@@ -143,8 +160,7 @@ def profile() -> dict:
         # exposed on purpose
         {"id": "exposed", "guest": start("exposed", {
             "OPUTE_REMOTE_AGENT_ID": "e2e-exposed", "MCP_AUTH_TOKEN": "${SECRET:exposed}",
-            "HOST_MCP_BIND_HOST": "0.0.0.0", "HOST_MCP_PORT": "3004", "OPUTE_HOST_ALLOW_MUTATIONS": "true"},
-            port=3004)},
+            "HOST_MCP_BIND_HOST": "0.0.0.0", "HOST_MCP_PORT": "3004"}, port=3004, args=FLAG)},
         {"id": "exposedListen", "guest": f"{T} listen 3004"},
         base.mcp("exposedList", "tools/list", **exposed),
         {"id": "exposedSummary", "guest": summary("exposed", "${SECRET:exposed}", port=3004)},
@@ -164,12 +180,12 @@ def profile() -> dict:
         {"id": "oauthReuse", "guest": f"{P} reuse --port 3051 --token-file {ROOT}/oauth/token"},
         base.mcp("oauthBearerAfter", "tools/list", **oauth),
     ]
-    default_line = ["bind=127.0.0.1 port=3014 mutations=false"]
+    default_line = ["bind=127.0.0.1 port=3014 bearer_mutations=false"]
     refused = lambda s: [a(s, "json.body.result.isError", equals=True),  # noqa: E731
-                         a(s, "json.body.result.content[0].text", equals=GATE4)]
+                         a(s, "json.body.result.content[0].text", equals=GATE4())]
     reqs = [
-        req(NSPEC, "One serving profile",
-            a("unpack04", "stdout", equals="0.4.0\n"),
+        req(MSPEC_NEUTRAL, "One serving profile",
+            a("unpack04", "stdout", equals=base.RUST_VERSION + "\n"),
             a("plain", "json.agentId", equals="e2e-plain"),
             a("plainListen", "stdout", equals="127.0.0.1:3014\n"),
             *refused("plainMutation"), ok("plainNoFile"),
@@ -179,20 +195,21 @@ def profile() -> dict:
             a("plainSummary", "json.tools", gte=100), a("plainSummary", "json.helpBytes", gte=100),
             scenario="Started with only an id and a token: it serves on 127.0.0.1:3014 with read tools only, and "
                      "its journal, tools/list and help name no Platform identifier"),
-        req(NSPEC, "One serving profile",
+        req(MSPEC_NEUTRAL, "One serving profile",
             a("exposed", "json.agentId", equals="e2e-exposed"),
             a("exposedListen", "json.addresses", equals=["0.0.0.0:3004"]),
             a("exposedWrite", "response.body.result.isError", **{"in": [False, "<absent>"]}),
             a("exposedFile", "stdout", equals="e2e\n"),
             a("exposedSummary", "json.catalogSha", equalsStep={"step": "plainSummary", "path": "json.catalogSha"}),
-            scenario="A host exposed on purpose (bind 0.0.0.0, port 3004, mutations true) serves there with "
-                     "mutations admitted and the same catalog"),
-        req(NSPEC, "One serving profile",
+            scenario="A host exposed on purpose (bind 0.0.0.0, port 3004, --allow-mutations) serves there with "
+                     "the bearer's mutations admitted and the same catalog"),
+        req(MSPEC_NEUTRAL, "One serving profile",
             a("plainSummary", "json.profileLines", equals=default_line),
-            a("exposedSummary", "json.profileLines", equals=["bind=0.0.0.0 port=3004 mutations=true"]),
-            scenario="The effective bind, port and mutation policy are logged once"),
-        req(NSPEC, "One serving profile", *refused("plainMutation"),
-            scenario="Mutations not enabled: the refusal names OPUTE_HOST_ALLOW_MUTATIONS"),
+            a("exposedSummary", "json.profileLines", equals=["bind=0.0.0.0 port=3004 bearer_mutations=true"]),
+            scenario="The effective bind, port and whether the bearer may mutate are logged once"),
+        req(MSPEC_NEUTRAL, "One serving profile", *refused("plainMutation"),
+            scenario="Mutations not enabled: the refusal starts 'mutation refused: ' and names the tool, its "
+                     "effect and --allow-mutations"),
         req(NSPEC, "No mode setting exists",
             a("oldMode", "json.agentId", equals="e2e-oldmode"),
             a("oldModeListen", "stdout", equals="127.0.0.1:3014\n"),
@@ -227,7 +244,8 @@ def profile() -> dict:
     ]
     return journey(
         "neutral.profile",
-        "The single serving profile of 0.4.0: an agent with only an id and a token; agents that still carry the old "
+        f"The single serving profile of {base.RUST_VERSION}: an agent with only an id and a token; agents that still "
+        "carry the old "
         "mode and mutation variables; a host exposed on purpose; and OAuth machine clients from operator "
         "configuration.",
         reqs, steps, clean(*PROFILE_AGENTS),
@@ -269,7 +287,7 @@ def reserved() -> dict:
 
     def agent(name: str, port: int) -> str:
         return start(name, {"OPUTE_REMOTE_AGENT_ID": f"e2e-cf-{name}", "MCP_AUTH_TOKEN": "${SECRET:" + name + "}",
-                            "HOST_MCP_PORT": str(port), "OPUTE_HOST_ALLOW_MUTATIONS": "true"}, port=port)
+                            "HOST_MCP_PORT": str(port)}, port=port, args=FLAG)
 
     def tunnel(hostname: str, port: int) -> dict:
         return {"bindingId": "e2e", "placement": "host", "localTarget": f"http://127.0.0.1:{port}/mcp",
@@ -331,7 +349,8 @@ def reserved() -> dict:
             "rm -rf /home/opute/.config/opute-e2e /opt/opute-e2e/providers; ")
     return journey(
         "neutral.reserved",
-        "The Cloudflare provider's reserved-name guard as operator configuration: two 0.4.0 agents, each with "
+        f"The Cloudflare provider's reserved-name guard as operator configuration: two {base.RUST_VERSION} agents, "
+        "each with "
         "its own Cloudflare provider and no Cloudflare credentials; one provider runs with "
         "OPUTE_RESERVED_HOSTNAMES=*.opute.io.",
         reqs, steps, clean("r", "n", more=more), files=files,
@@ -344,15 +363,19 @@ def reserved() -> dict:
         provider="the Rust Cloudflare provider 1.0.1 from the same release set, without Cloudflare credentials")
 
 
-# --- 3. upgrade and rollback with both settings sets ------------------------------------------------------
+# --- 3. upgrade and rollback across 0.4.0 and 0.5.0 (D55) -----------------------------------------------
+
+# The units' settings: 0.4.0's unit carries all three mutation and mode settings and no flag
+# (evidence/cutover/proposed-0.4.0); 0.5.0's carries --allow-mutations and none of them (proposed-0.5.0).
+UNIT04 = {"OPUTE_AGENT_MODE": "standalone", "OPUTE_STANDALONE_ALLOW_MUTATIONS": "true",
+          "OPUTE_HOST_ALLOW_MUTATIONS": "true"}
+
 
 def rollback() -> dict:
     env = {"OPUTE_REMOTE_AGENT_ID": "e2e-roll", "MCP_AUTH_TOKEN": "${SECRET:roll}",
-           # the 0.3.x settings of a Platform-managed host
-           "OPUTE_AGENT_MODE": "platform",
-           # the explicit settings its owners add before 0.4.0
-           "HOST_MCP_BIND_HOST": "0.0.0.0", "HOST_MCP_PORT": "3004", "OPUTE_HOST_ALLOW_MUTATIONS": "true",
+           "HOST_MCP_BIND_HOST": "0.0.0.0", "HOST_MCP_PORT": "3004",
            "OPUTE_HOST_AGENT_INSTANCE": "platform", "OPUTE_OAUTH_CLIENTS": "opute-mcp-host"}
+    env04 = {**env, **UNIT04}
     host = {"port": 3004, "auth": "secret:roll"}
     state = f"{ROOT}/roll/home/.config/opute/instances"
     cred = f"{state}/platform/state/credentials/opute-mcp-host.json"
@@ -367,19 +390,28 @@ def rollback() -> dict:
         return base.call(id_, "inspect_host_file", {"path": f".config/opute-e2e/r{n}.txt", "scope": "user"}, **host)
 
     steps = SETUP + [
+        {"id": "copyP", "copy": "rust04", "to": f"{RELP}/host-agent-linux-x64.gz"},
+        {"id": "unpackP", "guest": f"gzip -dc {RELP}/host-agent-linux-x64.gz > {BINP} && chmod 0755 {BINP} && "
+                                    f"{BINP} --version"},
         {"id": "copy03", "copy": "rust03", "to": f"{REL3}/host-agent-linux-x64.gz"},
         {"id": "unpack03", "guest": f"gzip -dc {REL3}/host-agent-linux-x64.gz > {BIN3} && chmod 0755 {BIN3} && "
                                     f"{BIN3} --version"},
-        {"id": "old", "guest": start("roll", env, port=3004, binary=BIN3)},
-        {"id": "oldListen", "guest": f"{T} listen 3004"},
-        base.mcp("oldList", "tools/list", **host),
+        # 0.4.0 on its own unit's settings
+        {"id": "old", "guest": start("roll", env04, port=3004, binary=BINP)},
         write(1),
         {"id": "oldMint", "guest": mint},
         {"id": "oldStop", "guest": stop("roll")},
-        # upgrade: the same environment, the 0.4.0 binary
-        {"id": "new", "guest": start("roll", env, port=3004)},
+        # the 0.5.0 binary under the 0.4.0 unit: its settings grant nothing
+        {"id": "leftover", "guest": start("roll", env04, port=3004)},
+        {"id": "leftoverSummary", "guest": summary("roll", "${SECRET:roll}", port=3004)},
+        read("leftoverRead1", 1),
+        base.call("leftoverWrite", "ensure_host_file",
+                  {"path": ".config/opute-e2e/r-left.txt", "content": "x\n", "scope": "user"}, **host),
+        {"id": "leftoverNoFile", "guest": f"test ! -e {ROOT}/roll/home/.config/opute-e2e/r-left.txt"},
+        {"id": "leftoverStop", "guest": stop("roll")},
+        # upgrade: the 0.5.0 unit, --allow-mutations and no setting
+        {"id": "new", "guest": start("roll", env, port=3004, args=FLAG)},
         {"id": "newListen", "guest": f"{T} listen 3004"},
-        base.mcp("newList", "tools/list", **host),
         {"id": "newSummary", "guest": summary("roll", "${SECRET:roll}", port=3004)},
         read("newRead1", 1),
         write(2),
@@ -387,57 +419,82 @@ def rollback() -> dict:
         {"id": "newState", "guest": f"ls {state}"},
         {"id": "newStop", "guest": stop("roll")},
         {"id": "newDb", "guest": f"{T} db {sdb}"},
-        # rollback: the same environment, the 0.3.x binary
-        {"id": "back", "guest": start("roll", env, port=3004, binary=BIN3)},
+        # a rollback that swaps only the binary: 0.4.0 refuses the 0.5.0 unit's flag before it serves
+        {"id": "binaryOnly", "guest": f"{BINP} serve --transport http --allow-mutations 2>&1 | tail -1; "
+                                      "echo exit=${PIPESTATUS[0]}"},
+        # rollback with 0.4.0's unit back
+        {"id": "back", "guest": start("roll", env04, port=3004, binary=BINP)},
         {"id": "backListen", "guest": f"{T} listen 3004"},
-        base.mcp("backList", "tools/list", **host),
         read("backRead2", 2),
         write(3),
         {"id": "backMint", "guest": mint},
         {"id": "backStop", "guest": stop("roll")},
         {"id": "backDb", "guest": f"{T} db {sdb}"},
+        # and 0.3.0 on the same 0.4.0 unit
+        {"id": "back3", "guest": start("roll", env04, port=3004, binary=BIN3)},
+        read("back3Read3", 3),
+        write(4),
+        {"id": "back3Mint", "guest": mint},
+        {"id": "back3Stop", "guest": stop("roll")},
+        {"id": "back3Db", "guest": f"{T} db {sdb}"},
         # each release's write, on the host
         {"id": "rollFiles", "guest": " ".join(["cat"] + [f"{ROOT}/roll/home/.config/opute-e2e/r{n}.txt"
-                                                         for n in (1, 2, 3)]),
-         "confirms": ["write1", "write2", "write3"]},
+                                                         for n in (1, 2, 3, 4)]),
+         "confirms": ["write1", "write2", "write3", "write4"]},
     ]
     served = lambda s: [a(s, "json.agentId", equals="e2e-roll")]  # noqa: E731
     wrote = lambda s: a(s, "response.body.result.isError", **{"in": [False, "<absent>"]})  # noqa: E731
     exists = lambda s: a(s, "response.body.result.structuredContent.exists", equals=True)  # noqa: E731
     same_cred = {"step": "oldMint", "path": "json.credSha256"}
     reqs = [
-        req(NSPEC, "One serving profile",
-            a("unpack03", "stdout", equals="0.3.0\n"),
-            *served("old"), a("oldListen", "json.addresses", equals=["0.0.0.0:3004"]), wrote("write1"),
+        req(MSPEC, "No mutation setting other than the flag",
+            a("unpackP", "stdout", equals="0.4.0\n"), *served("old"), wrote("write1"),
+            *served("leftover"), exists("leftoverRead1"),
+            a("leftoverWrite", "response.body.result.isError", equals=True),
+            a("leftoverWrite", "response.body.result.content[0].text", equals=GATE4()),
+            ok("leftoverNoFile"),
+            a("leftoverSummary", "json.profileLines", equals=["bind=0.0.0.0 port=3004 bearer_mutations=false"]),
+            a("leftoverSummary", "json.hits", equals=[]),
+            scenario="A leftover setting: the 0.5.0 binary under the 0.4.0 unit, whose OPUTE_HOST_ALLOW_MUTATIONS, "
+                     "OPUTE_STANDALONE_ALLOW_MUTATIONS and OPUTE_AGENT_MODE grant nothing, serves 0.4.0's state "
+                     "with a read-only bearer, and nothing it prints names them"),
+        req(MSPEC_NEUTRAL, "One serving profile",
             *served("new"), a("newListen", "json.addresses", equals=["0.0.0.0:3004"]),
-            a("newSummary", "json.profileLines", equals=["bind=0.0.0.0 port=3004 mutations=true"]),
+            a("newSummary", "json.profileLines", equals=["bind=0.0.0.0 port=3004 bearer_mutations=true"]),
             exists("newRead1"), wrote("write2"), a("newState", "stdout", equals="platform\n"),
             a("newDb", "json.integrity", equals="ok"),
-            scenario="A host carrying both settings sets is upgraded from 0.3.x to 0.4.0 with nothing switched: "
-                     "it serves at the same address with mutations admitted, on the same state"),
-        req(NSPEC, "No mode setting exists",
+            scenario="Upgrade from 0.4.0 to 0.5.0 with the 0.5.0 unit: it serves at the same address on the same "
+                     "state, and --allow-mutations admits the bearer's mutations"),
+        req(CUTOVER_ROLLBACK, "Rollback restores the previous release's unit with its binary",
+            a("binaryOnly", "stdout", equals="flag provided but not defined: -allow-mutations\nexit=1\n"),
             *served("back"), a("backListen", "json.addresses", equals=["0.0.0.0:3004"]),
             exists("backRead2"), wrote("write3"), a("backDb", "json.integrity", equals="ok"),
-            a("rollFiles", "stdout", equals="r1\nr2\nr3\n"),
-            scenario="Rollback to 0.3.x keeps both settings sets: the old binary reads OPUTE_AGENT_MODE, the new "
-                     "one ignored it, and work done under 0.4.0 is there"),
+            a("unpack03", "stdout", equals="0.3.0\n"), *served("back3"), exists("back3Read3"), wrote("write4"),
+            a("back3Db", "json.integrity", equals="ok"),
+            a("rollFiles", "stdout", equals="r1\nr2\nr3\nr4\n"),
+            scenario="0.4.0 put back alone under the 0.5.0 unit exits on --allow-mutations before serving; with "
+                     "0.4.0's unit back, 0.4.0 and then 0.3.0 serve 0.5.0's state, 0.5.0's work included, and "
+                     "admit mutations from that unit's settings"),
         req(NSPEC, "Every orchestrator is an ordinary client",
             a("oldMint", "json.listStatus", equals=200),
             a("newMint", "json.listStatus", equals=200),
             a("newMint", "json.credSha256", equalsStep=same_cred),
             a("backMint", "json.listStatus", equals=200),
             a("backMint", "json.credSha256", equalsStep=same_cred),
+            a("back3Mint", "json.listStatus", equals=200),
+            a("back3Mint", "json.credSha256", equalsStep=same_cred),
             scenario="An orchestrator's machine client listed in OPUTE_OAUTH_CLIENTS keeps its generated "
-                     "credential across the upgrade and the rollback"),
+                     "credential, and gets a working token, across the upgrade and both rollbacks"),
     ]
     return journey(
         "neutral.rollback",
-        "Upgrade a Platform-style host from the previous 0.3.x release to 0.4.0 and roll it back, with one environment "
-        "holding both settings sets (OPUTE_AGENT_MODE=platform next to the explicit bind, port, mutation, "
-        "instance and OAuth client settings).",
-        reqs, steps, clean("roll"), allow=[f"files/{REL3}*", f"files/{ROOT}", f"files/{ROOT}/roll*"],
-        files={**FILES, "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")},
-        previous="the previous Rust release, 0.3.0-rc9 (" + base.PREVIOUS + "), copied in")
+        f"Upgrade a host from 0.4.0 to the {base.RUST_VERSION} candidate and roll it back to 0.4.0 and 0.3.0, on one "
+        "state: 0.4.0's unit carries the three old mutation and mode settings, 0.5.0's only --allow-mutations "
+        "(D55). Between them the 0.5.0 binary runs under the old unit, and 0.4.0 is tried alone under the new one.",
+        reqs, steps, clean("roll"), allow=[f"files/{RELP}*", f"files/{REL3}*", f"files/{ROOT}", f"files/{ROOT}/roll*"],
+        files={**FILES, "rust04": inp(base.PREVIOUS + "/host-agent-linux-x64.gz"),
+               "rust03": inp(base.PREVIOUS03 + "/host-agent-linux-x64.gz")},
+        previous=f"the previous Rust releases, 0.4.0 ({base.PREVIOUS}) and 0.3.0 ({base.PREVIOUS03}), copied in")
 
 
 JOURNEYS = [profile, reserved, rollback]

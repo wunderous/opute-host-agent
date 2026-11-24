@@ -33,17 +33,19 @@ Q15_SPEC = "openspec/changes/reclaim-orphaned-plan-run-reservations/specs/plan-r
 TASKS_META = {"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}}
 DOCS = "published docs, host-agents c9f9e775 (v0.2.4) site/public/docs/"
 DIST = "baseline/inventory/distribution.json"
-PROPOSED = "evidence/cutover/proposed-0.4.0/README.md"
+PROPOSED = "evidence/cutover/proposed-0.5.0/README.md"
 
 # The Rust release under test (m15): one candidate for every gate, and a newer local build of the same
 # sources as the in-place upgrade target. Go stays the published v0.2.4. E2E_CANDIDATE points draft
 # journeys (never committed) at a draft release set.
-RUST_VERSION = "0.4.0"
-CANDIDATE = os.environ.get("E2E_CANDIDATE", "${PARITY}/e2e/release/rust-0.4.0-rc6")
+RUST_VERSION = "0.5.0"
+CANDIDATE = os.environ.get("E2E_CANDIDATE", "${PARITY}/e2e/release/rust-0.5.0-rc1")
 CANDIDATE_NEXT = CANDIDATE + "-next"
-NEXT_VERSION = "0.4.1-e2e"
-# The previous Rust release (0.3.x), for the platform-neutral upgrade and rollback.
-PREVIOUS = "${PARITY}/e2e/release/rust-0.3.0-rc9"
+NEXT_VERSION = "0.5.1-e2e"
+# The previous Rust releases, for the upgrade and rollback journeys: 0.4.0 (rc6's set, published as v0.4.0)
+# and 0.3.0 (rc9's set, published as v0.3.0).
+PREVIOUS = "${PARITY}/e2e/release/rust-0.4.0-rc6"
+PREVIOUS03 = "${PARITY}/e2e/release/rust-0.3.0-rc9"
 # What the installed candidate prints after its hash line.
 RUST_MATCH = "\n" + RUST_VERSION.replace(".", "\\.") + "\n$"
 LAUNCHER = f"opute-host-agent-{RUST_VERSION}.tgz"
@@ -56,7 +58,10 @@ SDB = "/home/opute/.config/opute/instances/standalone/state/state.db"
 ADB = "/home/opute/.config/opute/instances/standalone/state/authz.sqlite"
 CRED = "/home/opute/.config/opute/instances/standalone/state/credentials/host-agent-provider.json"
 T = "python3 /opt/opute-e2e/guest/e2etool.py"
-GATE_TEXT = "Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true"  # platform-neutral-host-agent
+# The bearer's refusal on an agent started without --allow-mutations (D55).
+def GATE_TEXT(tool, effect):
+    return (f"Error: mutation refused: {tool} has effect {effect}; the bearer token is read-only on this agent. "
+            "Start the agent with --allow-mutations, or use an OAuth client granted the mutate scope.")
 WAIT_HEALTH = "for i in $(seq 120); do curl -fsS -o /dev/null http://127.0.0.1:{port}/health && break; sleep 0.5; done"
 AGENT = (f"the dev VM's production-style system unit opute-bootstrap-mcp.service (Rust {RUST_VERSION} release candidate "
          "binary, "
@@ -212,13 +217,13 @@ def j1() -> dict:
             a("deployHashes", "stdout",
               contains="38eca4cda3325c61ca1fcc7fe5220eabfb3be2628061b5faffe0c0f4734013ad  /etc/sudoers.d/"
                        "opute-host-agent")),
-        req(PROPOSED, "The proposed 0.4.0 unit",
+        req(PROPOSED, "The proposed 0.5.0 unit",
             a("deployHashes", "stdout",
-              contains=f"{sha(REPO / 'evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service')}  "
+              contains=f"{sha(REPO / 'evidence/cutover/proposed-0.5.0/opute-bootstrap-mcp.service')}  "
                        "/etc/systemd/system/opute-bootstrap-mcp.service"),
-            scenario="The recorded unit (deployFiles 02246cf6...) passes --mode, which 0.4.0 rejects; the VM "
-                     "installs the proposed unit, without --mode and with both mutation settings (owner "
-                     "decision 2026-11-11)"),
+            scenario="The recorded unit (deployFiles 02246cf6...) passes --mode, which 0.4.0 and later reject; the "
+                     "VM installs the proposed 0.5.0 unit, without --mode or any mutation setting and with "
+                     "--allow-mutations in ExecStart (D55)"),
         req(SPEC, "One exact Host Agent identity",
             a("health", "response.status", equals=200),
             a("health", "response.body.agentId", equals="e2e-devvm-agent"),
@@ -381,7 +386,7 @@ def j3() -> dict:
         # (b) a legacy-handshake client against an agent with the opt-in exception
         {"id": "legacyAgent", "guest": f"{T} agent start legacy --port 3017 --id e2e-legacy-agent "
                                        "--env MCP_AUTH_TOKEN=${SECRET:legacy} --env OPUTE_MCP_ALLOW_LEGACY_HANDSHAKE=true "
-                                       "--env OPUTE_STANDALONE_ALLOW_MUTATIONS=true"},
+                                       "--allow-mutations"},
         mcp("legacyInit", "initialize", params={"protocolVersion": "2025-06-18", "capabilities": {},
                                                 "clientInfo": {"name": "e2e-legacy", "version": "1"}}, **legacy),
         mcp("legacyList", "tools/list", **legacy),
@@ -567,7 +572,7 @@ def j5() -> dict:
         call("gatedRead", "get_host_info", **gated),
         {"id": "gatedNoFile", "guest": "test ! -e /tmp/e2e-agents/gated/home/.config/opute-e2e/j5.txt"},
         {"id": "limitedAgent", "guest": f"{T} agent start limited --port 3020 --id e2e-limited-agent "
-                                        "--env MCP_AUTH_TOKEN=${SECRET:limited} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+                                        "--env MCP_AUTH_TOKEN=${SECRET:limited} --allow-mutations "
                                         "--env OPUTE_HOST_RESOURCE_MEMORY_CAPACITY_BYTES=1048576"},
         mcp("limitedList", "tools/list", **limited),
         call("limitedCapacity", "get_host_capacity", **limited),
@@ -577,11 +582,13 @@ def j5() -> dict:
         {"id": "limitedNoFile", "guest": "test ! -e /tmp/e2e-agents/limited/home/.config/opute-e2e/j5.txt"},
         {"id": "stop", "guest": f"{T} agent remove gated && {T} agent remove limited"},
     ]
-    gate = lambda s: [a(s, "response.body.result.isError", equals=True),  # noqa: E731
-                      a(s, "response.body.result.content[0].text", equals=GATE_TEXT)]
+    gate = lambda s, tool, effect: [a(s, "response.body.result.isError", equals=True),  # noqa: E731
+                                    a(s, "response.body.result.content[0].text", equals=GATE_TEXT(tool, effect)),
+                                    a(s, "response.body.result.structuredContent.code", equals="mutation_refused")]
     reqs = [
         req(GATE_SPEC, "Standalone without mutations runs read tools only",
-            ok("gatedAgent"), *gate("mutation"), *gate("destructive"), *gate("planGate"),
+            ok("gatedAgent"), *gate("mutation", "ensure_host_file", "mutation"),
+            *gate("destructive", "remove_host_file", "destructive"), *gate("planGate", "run_host_plan", "mutation"),
             a("gatedRead", "response.body.result.isError", **{"in": [False, "<absent>"]}),
             a("gatedRead", "response.body.result.structuredContent.uri", matches=":e2e-gated-agent$")),
         req(GATE_SPEC, "The gate refuses before any effect",

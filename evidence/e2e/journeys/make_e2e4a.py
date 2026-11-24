@@ -357,7 +357,7 @@ V1 = "vm:local:e2e-v1"
 FOREIGN = "container:local:e2e-foreign"
 
 
-START_B = (f"{T} agent start b --port {B_PORT} --id {B_ID} --env OPUTE_STANDALONE_ALLOW_MUTATIONS=true "
+START_B = (f"{T} agent start b --port {B_PORT} --id {B_ID} --allow-mutations "
            f"--env OPUTE_HOST_AGENT_INSTANCE={B_ID} --env OPUTE_INCUS_OWNERSHIP_MODE=enforce "
            f"--env OPUTE_SHARED_HOST_OWNER_INSTANCE={B_ID} --env MCP_AUTH_TOKEN='${{SECRET:tokenB}}' >/dev/null "
            "&& echo started")
@@ -1872,7 +1872,7 @@ def cutover() -> dict:
                 "slow": "a local endpoint answering after 25 s (e2etool slow)", "files": files})
 
 
-# --- e2e-4 / 3. the release path: Go v0.2.4 -> 0.3.0 -> 0.4.0 -> 0.3.0 (m21) -----------------------------
+# --- e2e-4 / 3. the release path: Go v0.2.4 -> 0.3.0 -> 0.4.0 -> 0.5.0 -> 0.4.0 (m21, m28) ---------------------
 
 CHAIN_SPEC = CH + "secret-placement/specs/secret-placement/spec.md"
 NEUTRAL_SPEC = CH + "platform-neutral-host-agent/specs/platform-neutral-host-agent/spec.md"
@@ -1880,6 +1880,7 @@ CHAIN = "/opt/opute-e2e/chain"
 CHAIN_WORK = "/root/e2e-chain"
 SW = "python3 /opt/opute-e2e/guest/secretsweep.py"
 REL03 = f"{CHAIN}/rust-0.3.x/host-agent-linux-x64.gz"
+REL04 = f"{CHAIN}/rust-0.4.x/host-agent-linux-x64.gz"
 CHAIN_STATE = "/home/opute/.config/opute/instances/standalone/state"
 CHAIN_ROOTS = ("/etc", "/opt", "/tmp", "/var/tmp", "/home", "/root", "/run", "/usr/local", "/srv")
 # ensure_public_mcp_tunnel is task-aware and needs the roots capability
@@ -1940,7 +1941,9 @@ def upgrade_chain() -> dict:
         {"id": "sweepTool", "copy": "secretsweep", "to": "/opt/opute-e2e/guest/secretsweep.py"},
         {"id": "goUnitCopy", "copy": "goUnit", "to": f"{CHAIN}/go.service"},
         {"id": "neutralUnitCopy", "copy": "proposedUnit", "to": f"{CHAIN}/proposed.service"},
+        {"id": "unit05Copy", "copy": "proposedUnit05", "to": f"{CHAIN}/proposed-0.5.service"},
         {"id": "rust03Copy", "copy": "rust03", "to": REL03},
+        {"id": "rust04Copy", "copy": "rust04", "to": REL04},
         {"id": "plant", "guest": plant},
         {"id": "aside", "guest": f"systemctl stop {UNIT} && mv /home/opute/.config/opute/instances "
                                  f"/tmp/e2e-chain-rust-instances && cp /etc/systemd/system/{UNIT} {CHAIN}/vm.service "
@@ -1983,8 +1986,8 @@ def upgrade_chain() -> dict:
         write("r3Write", "r3"),
         chain_scan("r3Scan"),
         db("r3Stop"),
-        # 3. rust-0.4.0 on the proposed 0.4.0 unit (packet 7.4)
-        unit_swap("r4Install", f"{CHAIN}/proposed.service", f"{base.REL}/host-agent-linux-x64.gz"),
+        # 3. rust-0.4.0 on the 0.4.0 unit (packet 7.4)
+        unit_swap("r4Install", f"{CHAIN}/proposed.service", REL04),
         {"id": "r4Health", "health": True},
         {"id": "r4Db", "guest": f"{T} db {SDB_}"},
         call("r4GoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
@@ -1996,25 +1999,45 @@ def upgrade_chain() -> dict:
         *chain_task("r4Tunnel", "ensure_public_mcp_tunnel", tunnel),
         run("r4Plan", "R4_RUN", "r4"), base.poll_run("r4PlanDone", "R4_RUN"),
         # r3PlanFile removed the file r3's run wrote: this one is r4's
-        {"id": "r4PlanFile", "guest": f"cat {HOME}/e2e/n1.txt", "confirms": ["r4Plan"]},
+        {"id": "r4PlanFile", "guest": f"cat {HOME}/e2e/n1.txt && rm {HOME}/e2e/n1.txt", "confirms": ["r4Plan"]},
         *unobservable(task("r4Task", "run_host_command", {"command": "echo r4-era"}), PRINTS),
         write("r4Write", "r4"),
         chain_scan("r4Scan"),
         db("r4Stop"),
-        # 4. rollback: rust-0.3.0 on the same 0.4.0 unit
-        unit_swap("backInstall", f"{CHAIN}/proposed.service", REL03),
+        # 4. the 0.5.0 candidate on the proposed 0.5.0 unit: --allow-mutations, no setting (D55)
+        unit_swap("r5Install", f"{CHAIN}/proposed-0.5.service", f"{base.REL}/host-agent-linux-x64.gz"),
+        {"id": "r5Health", "health": True},
+        {"id": "r5Db", "guest": f"{T} db {SDB_}"},
+        call("r5GoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
+        call("r5GoFlight", "get_host_plan_run", {"runId": "${GO_FLIGHT}"}),
+        call("r5R3Plan", "get_host_plan_run", {"runId": "${R3_RUN}"}),
+        call("r5R4Plan", "get_host_plan_run", {"runId": "${R4_RUN}"}),
+        wire("r5R4Task", "TID_r4Task"), wire("r5R4Tunnel", "TID_r4Tunnel"),
+        call("r5R4TaskOp", "get_operation", {"operationId": "${TID_r4Task}"}),
+        call("r5Read", "inspect_host_file", {"path": "~/e2e/chain-r4.txt", "scope": "user"}),
+        *chain_task("r5Tunnel", "ensure_public_mcp_tunnel", tunnel),
+        run("r5Plan", "R5_RUN", "r5"), base.poll_run("r5PlanDone", "R5_RUN"),
+        {"id": "r5PlanFile", "guest": f"cat {HOME}/e2e/n1.txt", "confirms": ["r5Plan"]},
+        *unobservable(task("r5Task", "run_host_command", {"command": "echo r5-era"}), PRINTS),
+        write("r5Write", "r5"),
+        chain_scan("r5Scan"),
+        db("r5Stop"),
+        # 5. rollback: 0.4.0 with its own unit back (packet 9): 0.4.0 rejects the 0.5.0 unit's flag
+        unit_swap("backInstall", f"{CHAIN}/proposed.service", REL04),
         {"id": "backHealth", "health": True},
         {"id": "backDb", "guest": f"{T} db {SDB_}"},
         call("backGoDone", "get_host_plan_run", {"runId": "${GO_DONE}"}),
         call("backR3Plan", "get_host_plan_run", {"runId": "${R3_RUN}"}),
         call("backR4Plan", "get_host_plan_run", {"runId": "${R4_RUN}"}),
-        wire("backR4Task", "TID_r4Task"), wire("backR4Tunnel", "TID_r4Tunnel"), wire("backR3Tunnel", "TID_r3Tunnel"),
-        call("backR4TaskOp", "get_operation", {"operationId": "${TID_r4Task}"}),
-        call("backRead", "inspect_host_file", {"path": "~/e2e/chain-r4.txt", "scope": "user"}),
+        call("backR5Plan", "get_host_plan_run", {"runId": "${R5_RUN}"}),
+        wire("backR5Task", "TID_r5Task"), wire("backR5Tunnel", "TID_r5Tunnel"), wire("backR4Tunnel", "TID_r4Tunnel"),
+        call("backR5TaskOp", "get_operation", {"operationId": "${TID_r5Task}"}),
+        call("backRead", "inspect_host_file", {"path": "~/e2e/chain-r5.txt", "scope": "user"}),
         *chain_task("backTunnel", "ensure_public_mcp_tunnel", tunnel),
         write("backWrite", "back"),
-        {"id": "chainFiles", "guest": f"cat {HOME}/e2e/chain-r3.txt {HOME}/e2e/chain-r4.txt {HOME}/e2e/chain-back.txt",
-         "confirms": ["r3Write", "r4Write", "backWrite"]},
+        {"id": "chainFiles", "guest": f"cat {HOME}/e2e/chain-r3.txt {HOME}/e2e/chain-r4.txt {HOME}/e2e/chain-r5.txt "
+                                      f"{HOME}/e2e/chain-back.txt",
+         "confirms": ["r3Write", "r4Write", "r5Write", "backWrite"]},
         chain_scan("backScan"),
         {"id": "connectors", "guest": "ls /home/opute/.config/systemd/user/ | grep -c '^opute-cloudflared-' || true"},
         {"id": "tokenFiles", "guest": "stat -c '%a %U' /home/opute/.config/opute/tunnels/*.env"},
@@ -2036,50 +2059,63 @@ def upgrade_chain() -> dict:
             a("r3Install", "stdout", matches="\n0\\.3\\.0\n$"), a("r3Db", "json.integrity", equals="ok"),
             *same("r3Db", "goStop"), status("r3GoDone"),
             direct("r3GoFlight", "structuredContent.status", equals="cancelled"),
-            a("r4Install", "stdout", matches=base.RUST_MATCH), a("r4Db", "json.integrity", equals="ok"),
+            a("r4Install", "stdout", matches="\n0\\.4\\.0\n$"), a("r4Db", "json.integrity", equals="ok"),
             *same("r4Db", "r3Stop"), status("r4GoDone"),
             direct("r4GoFlight", "structuredContent.status", equals="cancelled"), status("r4R3Plan"),
             as_before("r4R3Task", "r3Task"), as_before("r4R3Tunnel", "r3Tunnel"), status("r4R3TaskOp"),
             direct("r4Read", "structuredContent.exists", equals=True),
+            a("r5Install", "stdout", matches=base.RUST_MATCH), a("r5Db", "json.integrity", equals="ok"),
+            *same("r5Db", "r4Stop"), status("r5GoDone"),
+            direct("r5GoFlight", "structuredContent.status", equals="cancelled"), status("r5R3Plan"),
+            status("r5R4Plan"), as_before("r5R4Task", "r4Task"), as_before("r5R4Tunnel", "r4Tunnel"),
+            status("r5R4TaskOp"), direct("r5Read", "structuredContent.exists", equals=True),
             a("goDoneFile", "stdout", equals="e2e\n"), a("goFlightFile", "stdout", equals="e2e\n"),
             a("r3Linger", "stdout", equals="yes\nbus\n"), a("r3RelayListens", "stdout", equals="1\n"),
             a("r3PlanFile", "stdout", equals="n1\n"), a("r4PlanFile", "stdout", equals="n1\n"),
-            a("chainFiles", "stdout", equals="r3\nr4\nback\n"),
+            a("r5PlanFile", "stdout", equals="n1\n"),
+            a("chainFiles", "stdout", equals="r3\nr4\nr5\nback\n"),
             scenario="Go v0.2.4's state, with a run stopped in flight, is served by 0.3.0; 0.3.0's state, with "
-                     "its relay, connector, plan and task, is served by 0.4.0: counts and ids "
-                     "reconcile per table and every record reads back with the status last reported"),
-        req(CUTOVER, "Rollback: 0.3.0 serves 0.4.0's state unchanged",
-            a("backInstall", "stdout", matches="\n0\\.3\\.0\n$"), a("backDb", "json.integrity", equals="ok"),
-            *same("backDb", "r4Stop"), status("backGoDone"), status("backR3Plan"), status("backR4Plan"),
-            as_before("backR4Task", "r4Task"), as_before("backR4Tunnel", "r4Tunnel"),
-            as_before("backR3Tunnel", "r3Tunnel"), status("backR4TaskOp"),
+                     "its relay, connector, plan and task, is served by 0.4.0; 0.4.0's by the 0.5.0 candidate: "
+                     "counts and ids reconcile per table and every record reads back with the status last reported"),
+        req(CUTOVER, "Rollback: 0.4.0 serves 0.5.0's state unchanged",
+            a("backInstall", "stdout", matches="\n0\\.4\\.0\n$"), a("backDb", "json.integrity", equals="ok"),
+            *same("backDb", "r5Stop"), status("backGoDone"), status("backR3Plan"), status("backR4Plan"),
+            status("backR5Plan"), as_before("backR5Task", "r5Task"), as_before("backR5Tunnel", "r5Tunnel"),
+            as_before("backR4Tunnel", "r4Tunnel"), status("backR5TaskOp"),
             direct("backRead", "structuredContent.exists", equals=True),
-            scenario="0.3.0 started on 0.4.0's state, on the same 0.4.0 unit, reads every operation, task and "
-                     "plan run, 0.4.0-era work included, with the status 0.4.0 last reported"),
+            scenario="0.4.0 started on 0.5.0's state, with its own 0.4.0 unit back, reads every operation, task "
+                     "and plan run, 0.5.0-era work included, with the status 0.5.0 last reported"),
         req(NEUTRAL_SPEC, "One serving profile",
-            status("r3PlanDone"), wrote("r3Write"), status("r4PlanDone"), wrote("r4Write"), wrote("backWrite"),
+            status("r3PlanDone"), wrote("r3Write"), status("r4PlanDone"), wrote("r4Write"),
+            status("r5PlanDone"), wrote("r5Write"), wrote("backWrite"),
             res("r3Task", "structuredContent.stdout", equals="r3-era\n"),
             res("r4Task", "structuredContent.stdout", equals="r4-era\n"),
-            scenario="Each release admits mutations from its unit: 0.3.0 from Go's unit, 0.4.0 from the proposed "
-                     "unit, and 0.3.0 again from the proposed unit after rollback"),
+            res("r5Task", "structuredContent.stdout", equals="r5-era\n"),
+            scenario="Each release admits mutations from its unit: 0.3.0 from Go's unit, 0.4.0 from the 0.4.0 "
+                     "unit's setting, 0.5.0 from the 0.5.0 unit's --allow-mutations, and 0.4.0 again from its own "
+                     "unit after rollback"),
         req(CHAIN_SPEC, "A file holding a secret is private to the agent's user",
             ok("plant"), direct("r3Relay", "structuredContent.ready", equals=True),
-            *[a(t, "response.body.result.status", equals="completed") for t in ("r3Tunnel", "r4Tunnel", "backTunnel")],
+            *[a(t, "response.body.result.status", equals="completed")
+              for t in ("r3Tunnel", "r4Tunnel", "r5Tunnel", "backTunnel")],
             # the endpoint is .invalid, so each call ends at the public probe: past the origin (D52 in 0.3.0)
-            *[x for t in ("r3Tunnel", "r4Tunnel", "backTunnel", "r4R3Tunnel", "backR4Tunnel", "backR3Tunnel")
+            *[x for t in ("r3Tunnel", "r4Tunnel", "r5Tunnel", "backTunnel", "r4R3Tunnel", "r5R4Tunnel",
+                          "backR5Tunnel", "backR4Tunnel")
               for x in (res(t, "isError", equals=True), res(t, "content[0].text", matches=PAST_ORIGIN))],
             res("r4R3Task", "structuredContent.stdout", equals="r3-era\n"),
-            res("backR4Task", "structuredContent.stdout", equals="r4-era\n"),
+            res("r5R4Task", "structuredContent.stdout", equals="r4-era\n"),
+            res("backR5Task", "structuredContent.stdout", equals="r5-era\n"),
             direct("r3Supervisor", "structuredContent.status", equals="ready"),
             a("connectors", "stdout", equals="1\n"), a("tokenFiles", "stdout", equals="600 opute\n"),
-            *clean("r3Scan"), *clean("r4Scan"), *clean("backScan"),
+            *clean("r3Scan"), *clean("r4Scan"), *clean("r5Scan"), *clean("backScan"),
             scenario="The relay's and the user-scoped connector's tokens, written under 0.3.0 and ensured again "
-                     "under 0.4.0 and after rollback onto the same one connector, are in no journal line, no store "
-                     "row and no file that is not 0600 and the agent's user's, and in no process's environment; "
-                     "each connector call proves its origin and stops only at the unreachable public endpoint"),
+                     "under 0.4.0, 0.5.0 and after rollback onto the same one connector, are in no journal line, "
+                     "no store row and no file that is not 0600 and the agent's user's, and in no process's "
+                     "environment; each connector call proves its origin and stops only at the unreachable "
+                     "public endpoint"),
         req(SPEC, "One exact Host Agent identity",
             *[a(h, "response.body.agentId", equals="e2e-devvm-agent")
-              for h in ("goHealth", "r3Health", "r4Health", "backHealth")]),
+              for h in ("goHealth", "r3Health", "r4Health", "r5Health", "backHealth")]),
     ]
     cleanup = [
         {"id": "slowStopAgain", "guest": f"{T} slow stop >/dev/null; true"},
@@ -2100,7 +2136,9 @@ def upgrade_chain() -> dict:
     files = {**base.TOOL_FILES, "secretsweep": inp("${REPO}/evidence/e2e/guest-tools/secretsweep.py"),
              "goUnit": inp("${PARITY}/go-src/deploy/opute-bootstrap-mcp.service"),
              "proposedUnit": inp("${REPO}/evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service"),
-             "rust03": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")}
+             "proposedUnit05": inp("${REPO}/evidence/cutover/proposed-0.5.0/opute-bootstrap-mcp.service"),
+             "rust03": inp(base.PREVIOUS03 + "/host-agent-linux-x64.gz"),
+             "rust04": inp(base.PREVIOUS + "/host-agent-linux-x64.gz")}
     # the connector's user unit and tunnel, the chain's drop-in, and the opute user manager (m24)
     allow = ["files//home/opute/.local/share/opute/opute-host-agent/sha256", "files//home/opute/e2e*",
              "files//home/opute/.config/opute-e2e*", "files//home/opute/.config/systemd*",
@@ -2111,14 +2149,15 @@ def upgrade_chain() -> dict:
              *USER_SESSION]
     return journey(
         "e2e4.upgrade-chain", "e2e-4",
-        "The release path (m21): the host is reinstalled as Go v0.2.4 on Go's unit and leaves a run in flight; "
-        "the previous Rust release (0.3.0) takes over on the same unit and state and installs an LLM relay and a "
-        "user-scoped public MCP connector with marked tokens; the 0.4.0 candidate takes over on the "
-        "proposed 0.4.0 unit and does more work; then 0.3.0 is rolled back onto the same 0.4.0 unit. Each step "
+        "The release path (m21, m28): the host is reinstalled as Go v0.2.4 on Go's unit and leaves a run in "
+        "flight; 0.3.0 takes over on the same unit and state and installs an LLM relay and a user-scoped public "
+        "MCP connector with marked tokens; 0.4.0 takes over on its 0.4.0 unit, then the 0.5.0 candidate on the "
+        "proposed 0.5.0 unit, each doing more work; then 0.4.0 is rolled back with its own unit. Each step "
         "reads the previous binary's records back and searches the host for the tokens.",
         reqs, steps, cleanup, allow=allow, minutes=25,
         inputs={"agent": base.AGENT, "go": f"{base.GO_REL} (published Go v0.2.4 release, SHA256SUMS pinned)",
-                "previous": f"the previous Rust release ({base.PREVIOUS}), copied in",
+                "previous": f"the previous Rust releases, 0.4.0 ({base.PREVIOUS}) and 0.3.0 ({base.PREVIOUS03}), "
+                            "copied in",
                 "slow": "a local endpoint answering after 60 s (e2etool slow)", "files": files})
 
 

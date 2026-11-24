@@ -53,11 +53,12 @@ VCPUS, MEMORY_MB, DISK = 8, 16384, "100G"
 SSH_PORT, MCP_PORT = 42222, 43014
 AGENT_ID = "e2e-devvm-agent"
 UNIT = "opute-bootstrap-mcp.service"
-# The Rust release the VM is built from (m15: the 0.4.0 candidate); Go stays v0.2.4.
-VERSION = "0.4.0"
-# 0.4.0 rejects `--mode`: the VM installs the proposed unit in place of Go's
-# (evidence/cutover/proposed-0.4.0/README.md); the sudoers file stays Go's.
-PROPOSED_UNIT = Path(__file__).resolve().parents[2] / "cutover/proposed-0.4.0/opute-bootstrap-mcp.service"
+# The Rust release the VM is built from (m28: the 0.5.0 candidate); Go stays v0.2.4.
+VERSION = "0.5.0"
+# 0.4.0 and later reject `--mode`, and from 0.5.0 only `--allow-mutations` lets the
+# bearer mutate (D55): the VM installs the proposed 0.5.0 unit in place of Go's
+# (evidence/cutover/proposed-0.5.0/README.md); the sudoers file stays Go's.
+PROPOSED_UNIT = Path(__file__).resolve().parents[2] / "cutover/proposed-0.5.0/opute-bootstrap-mcp.service"
 POOL, BRIDGE, PROJECT = "opute-e2e", "opute-e2e0", "opute-e2e"
 HOST_KEY_ALIAS = "opute-parity-t2-golden"
 
@@ -227,7 +228,7 @@ def build(rust_release: Path) -> dict:
         if deploy_pins[f"deploy/{name}"] != actual:
             raise SystemExit(f"refused: deploy/{name} does not match the recorded distribution contract")
         deploy[name] = actual
-    deploy["opute-bootstrap-mcp.service"] = {"installed": "evidence/cutover/proposed-0.4.0/opute-bootstrap-mcp.service",
+    deploy["opute-bootstrap-mcp.service"] = {"installed": "evidence/cutover/proposed-0.5.0/opute-bootstrap-mcp.service",
                                             "sha256": sha256_file(PROPOSED_UNIT),
                                             "derivedFrom": deploy["opute-bootstrap-mcp.service"]}
     releases = {
