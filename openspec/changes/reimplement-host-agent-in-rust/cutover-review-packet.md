@@ -311,9 +311,11 @@ hosts, Platform registration, tunnels and DNS were never touched.
 
 ## 6. Sign-off
 
-The 2026-11-21 approval covers rc7 on `m24-r1`. The provider listener
-change in D53 reopens review for the successor candidate. The owner rows
-below preserve the historical decision.
+The 2026-11-21 approval covered rc7 on `m24-r1`. D53 reopened review for
+the successor candidate. On 2026-11-23 the owner, who holds all four roles,
+re-signed for `rust-0.3.0-rc9` on run `m25-r3` ("I sign off on everything
+you recommend"), including the 0.3.0 cutover through the normal rollout
+path (goal m26). The rc7 rows stay as the historical record.
 
 
 The owner, who holds all four roles, signed off in the session on
@@ -328,3 +330,7 @@ stays the production owner until then (task 6.3).
 | Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | e2e-5 and Q4 stay open (section 4) |
 | Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | WSL2 stays blocked; publishing, npm and the site's catalog claims (5.2) stay separate steps (D28) |
 | Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc7` | 2026-11-21 | Cutover follows the section 5 runbook when the owner starts it; rollback window 14 days |
+| Host Agent | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | Q18 stays deferred as a new capability (D28); O1 stays open in 0.3.0 (D43); D53 fixes P1 |
+| Opute Platform | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | e2e-5 and Q4 stay open (section 4) |
+| Release | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | WSL2 stays blocked; the owner authorizes publishing 0.3.0 (GitHub release, npm, site catalog) through the normal rollout path (m26) |
+| Deployment | Houman Kamali (wunderous) | Approved: `rust-0.3.0-rc9` | 2026-11-23 | Cutover follows the section 5 runbook; rollback window 14 days per host |
