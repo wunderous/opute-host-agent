@@ -1,0 +1,125 @@
+# D55 failing-first run: crates/host-agent/tests/mutation_authority.rs against main 6114616b3 (0.4.0 code), 2026-11-24
+
+running 10 tests
+test a_token_above_the_grant_is_refused ... FAILED
+test an_interactive_client_gets_the_approved_scope ... FAILED
+test bearer_mutates_with_the_flag ... FAILED
+test the_flag_does_not_raise_a_read_client ... FAILED
+test read_and_mutate_clients_on_one_agent ... FAILED
+test protected_resource_metadata_lists_read_and_mutate ... FAILED
+test a_leftover_setting_grants_nothing ... FAILED
+test bearer_is_read_only_without_the_flag ... FAILED
+test annotations_follow_the_effect ... FAILED
+test the_former_scope_fails_the_start ... FAILED
+
+failures:
+
+---- a_token_above_the_grant_is_refused stdout ----
+
+thread 'a_token_above_the_grant_is_refused' (2086784) panicked at crates/host-agent/tests/mutation_authority.rs:76:13:
+agent did not start serving; stderr:
+OPUTE_OAUTH_CLIENTS: client ro asks for unknown scope "read" (only mcp exists)
+
+
+---- an_interactive_client_gets_the_approved_scope stdout ----
+
+thread 'an_interactive_client_gets_the_approved_scope' (2086785) panicked at crates/host-agent/tests/mutation_authority.rs:76:13:
+agent did not start serving; stderr:
+flag provided but not defined: -allow-mutations
+Usage of serve:
+  -check
+    	validate configuration and state access, then exit
+  -env value
+    	set a KEY=VALUE environment override; repeatable
+  -env-file string
+    	load KEY=VALUE settings from a file
+  -transport string
+    	MCP transport: http
+flag provided but not defined: -allow-mutations
+
+
+---- bearer_mutates_with_the_flag stdout ----
+
+thread 'bearer_mutates_with_the_flag' (2086788) panicked at crates/host-agent/tests/mutation_authority.rs:76:13:
+agent did not start serving; stderr:
+flag provided but not defined: -allow-mutations
+Usage of serve:
+  -check
+    	validate configuration and state access, then exit
+  -env value
+    	set a KEY=VALUE environment override; repeatable
+  -env-file string
+    	load KEY=VALUE settings from a file
+  -transport string
+    	MCP transport: http
+flag provided but not defined: -allow-mutations
+
+
+---- the_flag_does_not_raise_a_read_client stdout ----
+
+thread 'the_flag_does_not_raise_a_read_client' (2086792) panicked at crates/host-agent/tests/mutation_authority.rs:76:13:
+agent did not start serving; stderr:
+flag provided but not defined: -allow-mutations
+Usage of serve:
+  -check
+    	validate configuration and state access, then exit
+  -env value
+    	set a KEY=VALUE environment override; repeatable
+  -env-file string
+    	load KEY=VALUE settings from a file
+  -transport string
+    	MCP transport: http
+flag provided but not defined: -allow-mutations
+
+
+---- read_and_mutate_clients_on_one_agent stdout ----
+
+thread 'read_and_mutate_clients_on_one_agent' (2086790) panicked at crates/host-agent/tests/mutation_authority.rs:76:13:
+agent did not start serving; stderr:
+OPUTE_OAUTH_CLIENTS: client ro asks for unknown scope "read" (only mcp exists)
+
+
+---- protected_resource_metadata_lists_read_and_mutate stdout ----
+
+thread 'protected_resource_metadata_lists_read_and_mutate' (2086789) panicked at crates/host-agent/tests/mutation_authority.rs:342:5:
+assertion `left == right` failed
+  left: Array [String("mcp")]
+ right: Array [String("read"), String("mutate")]
+
+---- a_leftover_setting_grants_nothing stdout ----
+
+thread 'a_leftover_setting_grants_nothing' (2086783) panicked at crates/host-agent/tests/mutation_authority.rs:270:5:
+Error: host_resource_enforcement_unknown: class=normal pressure=critical reason=workload cgroup enforcement is not verified retryAfterMs=1000
+
+---- bearer_is_read_only_without_the_flag stdout ----
+
+thread 'bearer_is_read_only_without_the_flag' (2086787) panicked at crates/host-agent/tests/mutation_authority.rs:246:5:
+Error: mutations are disabled; set OPUTE_HOST_ALLOW_MUTATIONS=true
+
+---- annotations_follow_the_effect stdout ----
+
+thread 'annotations_follow_the_effect' (2086786) panicked at crates/host-agent/tests/mutation_authority.rs:356:9:
+assertion `left == right` failed: "apply_manifest"
+  left: Null
+ right: Bool(false)
+
+---- the_former_scope_fails_the_start stdout ----
+
+thread 'the_former_scope_fails_the_start' (2086794) panicked at crates/host-agent/tests/mutation_authority.rs:327:13:
+the agent started serving with the former scope mcp
+
+
+failures:
+    a_leftover_setting_grants_nothing
+    a_token_above_the_grant_is_refused
+    an_interactive_client_gets_the_approved_scope
+    annotations_follow_the_effect
+    bearer_is_read_only_without_the_flag
+    bearer_mutates_with_the_flag
+    protected_resource_metadata_lists_read_and_mutate
+    read_and_mutate_clients_on_one_agent
+    the_flag_does_not_raise_a_read_client
+    the_former_scope_fails_the_start
+
+test result: FAILED. 0 passed; 10 failed; 0 ignored; 0 measured; 0 filtered out; finished in 20.01s
+
